@@ -49,6 +49,12 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+#PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.1, [have_libnl3=yes], [have_libnl3=no])
+#if (test "${have_libnl3}" = "yes"); then
+#        CPPFLAGS+="$LIBNL3_CFLAGS"
+#        LIBS+="$LIBNL3_LIBS"
+#fi
+
 #Check libs used
 #AC_CHECK_LIB(pthread, pthread_create)
 #AC_CHECK_LIB(rt, shm_open)

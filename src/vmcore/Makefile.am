@@ -4,7 +4,8 @@ SUBDIRS =
 
 sbin_PROGRAMS = vmcore
 
-vmcore_SOURCES = main.cc
+vmcore_SOURCES = main.cc \
+		cnetlink.cc
 vmcore_LDADD = -lpthread \
 	-lrofl_control \
 	-lrofl \
@@ -12,4 +13,5 @@ vmcore_LDADD = -lpthread \
 	-lsoci_core \
 	-lsoci_sqlite3
 
-AM_LDFLAGS = -static
+AM_CPPFLAGS = -I/home/andi/local/include/libnl3
+AM_LDFLAGS = -static /home/andi/local/lib/libnl-route-3.a /home/andi/local/lib/libnl-3.a
