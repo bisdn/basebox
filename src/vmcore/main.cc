@@ -1,13 +1,12 @@
 #include "cnetlink.h"
+#include "vmcore.h"
 
 int
 main(int argc, char** argv)
 {
-	cnetlink_owner *owner = 0;
+	vmcore core;
 
-	cnetlink netlink(owner);
-
-	netlink.get_route_notifications();
+	cnetlink netlink(&core);
 
 	rofl::ciosrv::run();
 }

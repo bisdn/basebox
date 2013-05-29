@@ -5,7 +5,9 @@ SUBDIRS =
 sbin_PROGRAMS = vmcore
 
 vmcore_SOURCES = main.cc \
-		cnetlink.cc
+		cnetlink.cc \
+		croute.cc \
+		vmcore.cc
 vmcore_LDADD = -lpthread \
 	-lrofl_control \
 	-lrofl \
