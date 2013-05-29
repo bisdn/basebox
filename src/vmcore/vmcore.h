@@ -9,10 +9,17 @@
 #define VMCORE_H_ 1
 
 #include "cnetlink.h"
+#include <rofl/common/crofbase.h>
 
 class vmcore :
-	public cnetlink_owner
+	public cnetlink_owner, public rofl::crofbase
 {
+private:
+
+
+	rofl::cofdpt		*dpt;
+
+
 public:
 
 

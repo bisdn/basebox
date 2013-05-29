@@ -10,6 +10,7 @@
 
 
 struct croute::route_type_name_t rtype_names[] = {
+		{ 0, 						""				},
 		{ croute::RT_UNSPEC, 		"unspecified" 	},
 		{ croute::RT_UNICAST, 		"unicast" 		},
 		{ croute::RT_LOCAL, 		"local" 		},
@@ -25,6 +26,7 @@ struct croute::route_type_name_t rtype_names[] = {
 
 
 struct croute::route_proto_name_t rproto_names[] = {
+		{ 0,							""			},
 		{ croute::RT_PROTO_REDIRECT, 	"redirect"	},
 		{ croute::RT_PROTO_KERNEL, 		"kernel"	},
 		{ croute::RT_PROTO_BOOT,	 	"boot"		},
@@ -33,6 +35,7 @@ struct croute::route_proto_name_t rproto_names[] = {
 
 
 croute::croute(
+		uint16_t rt_family,
 		uint8_t route_type,
 		rofl::caddress const& dst,
 		rofl::caddress const& mask,
@@ -40,19 +43,20 @@ croute::croute(
 		rofl::caddress const& via,
 		std::string const& devname,
 		int ifindex) :
-		rt_type(route_type),
-		dst(dst),
-		mask(mask),
-		src(src),
-		via(via),
-		devname(devname),
-		ifindex(ifindex),
-		tos(0),
-		metric(1),
-		preference(0),
-		mtu(0),
-		table_id(0),
-		rt_proto(0)
+				rt_family(rt_family),
+				rt_type(route_type),
+				dst(dst),
+				mask(mask),
+				src(src),
+				via(via),
+				devname(devname),
+				ifindex(ifindex),
+				tos(0),
+				metric(1),
+				preference(0),
+				mtu(0),
+				table_id(0),
+				rt_proto(0)
 {
 
 }
@@ -80,7 +84,8 @@ croute::operator= (croute const& route)
 	if (this == &route)
 		return *this;
 
-	rt_type		= route.rt_type;
+	rt_family		= route.rt_family;
+	rt_type			= route.rt_type;
 	dst				= route.dst;
 	mask			= route.mask;
 	src				= route.src;
@@ -92,6 +97,7 @@ croute::operator= (croute const& route)
 	ifindex			= route.ifindex;
 	mtu				= route.mtu;
 	table_id		= route.table_id;
+	rt_proto		= route.rt_proto;
 
 	return *this;
 }
@@ -104,8 +110,8 @@ croute::c_str()
 	char info[size];
 	memset(info, 0, size);
 
-	snprintf(info, size-1, "to %s %s via %s dev %s(%d) proto %s table-id %d",
-			rt_type2str(rt_type), dst.addr_c_str(), via.addr_c_str(), devname.c_str(), ifindex, rt_proto2str(rt_proto), table_id);
+	snprintf(info, size-1, "[%d] to %s %s via %s dev %s(%d) proto %s table-id %d",
+			rt_family, rt_type2str(rt_type), dst.addr_c_str(), via.addr_c_str(), devname.c_str(), ifindex, rt_proto2str(rt_proto), table_id);
 	s_info.assign(info);
 
 	return s_info.c_str();

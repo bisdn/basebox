@@ -61,6 +61,7 @@ public:
 		RT_PROTO_MAX
 	};
 
+	uint16_t				rt_family;	// AF_INET, AF_INET6, ...
 	uint8_t					rt_type;
 	rofl::caddress			dst;		// route destination
 	rofl::caddress			mask;		// route netmask
@@ -80,7 +81,8 @@ public:
 	/**
 	 *
 	 */
-	croute(uint8_t route_type = RT_UNSPEC,
+	croute(uint16_t rt_family = 0,
+			uint8_t route_type = RT_UNSPEC,
 			rofl::caddress const& dst 	= 	rofl::caddress(AF_INET, "0.0.0.0"),
 			rofl::caddress const& mask 	= 	rofl::caddress(AF_INET, "0.0.0.0"),
 			rofl::caddress const& src 	= 	rofl::caddress(AF_INET, "0.0.0.0"),
