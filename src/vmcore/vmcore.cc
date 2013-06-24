@@ -1,8 +1,8 @@
 #include "vmcore.h"
 
+using namespace dptmap;
 
-vmcore::vmcore() :
-	dpt(0)
+vmcore::vmcore()
 {
 
 }
@@ -14,6 +14,89 @@ vmcore::~vmcore()
 }
 
 
+
+void
+vmcore::handle_dpath_open(
+		rofl::cofdpt *dpt)
+{
+	try {
+		// TODO: how many data path elements are allowed to connect to ourselves? only one makes sense ...
+
+		std::map<uint32_t, rofl::cofport*> ports = dpt->get_ports();
+		for (std::map<uint32_t, rofl::cofport*>::iterator
+				it = ports.begin(); it != ports.end(); ++it) {
+			rofl::cofport *port = it->second;
+			if (tapdevs[dpt].find(port->get_name()) == tapdevs[dpt].end()) {
+				tapdevs[dpt][port->get_name()] = new ctapdev(this, port->get_name());
+			}
+		}
+
+	} catch (eNetDevCritical& e) {
+
+		fprintf(stderr, "vmcore::handle_dpath_open() unable to create tap device\n");
+		throw;
+
+	}
+}
+
+
+
+void
+vmcore::handle_dpath_close(
+		rofl::cofdpt *dpt)
+{
+	for (std::map<std::string, ctapdev*>::iterator
+			it = tapdevs[dpt].begin(); it != tapdevs[dpt].end(); ++it) {
+		delete (it->second); // remove ctapdev instance from heap
+	}
+	tapdevs.erase(dpt);
+}
+
+
+
+void
+vmcore::handle_port_status(
+		rofl::cofdpt *dpt,
+		rofl::cofmsg_port_status *msg)
+{
+	try {
+		switch (msg->get_reason()) {
+		case OFPPR_ADD: {
+			if (tapdevs[dpt].find(msg->get_port().get_name()) == tapdevs[dpt].end()) {
+				tapdevs[dpt][msg->get_port().get_name()] = new ctapdev(this, msg->get_port().get_name());
+			}
+		} break;
+		case OFPPR_MODIFY: {
+
+			// TODO: mirror port status on ctapdev instance
+
+		} break;
+		case OFPPR_DELETE: {
+			if (tapdevs[dpt].find(msg->get_port().get_name()) != tapdevs[dpt].end()) {
+				delete tapdevs[dpt][msg->get_port().get_name()];
+				tapdevs[dpt].erase(msg->get_port().get_name());
+			}
+		} break;
+		default: {
+
+			fprintf(stderr, "vmcore::handle_port_status() message with invalid reason code received, ignoring\n");
+
+		} break;
+		}
+
+	} catch (eNetDevCritical& e) {
+
+		// TODO: handle error condition appropriately, for now: rethrow
+		throw;
+
+	}
+
+	delete msg;
+}
+
+
+
+#if 0
 void
 vmcore::nl_route_new(cnetlink const* netlink, croute const& route)
 {
@@ -171,5 +254,5 @@ vmcore::nl_route_change(cnetlink const* netlink, croute const& route)
 	} break;
 	}
 }
-
+#endif
 

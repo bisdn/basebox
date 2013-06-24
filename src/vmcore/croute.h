@@ -39,7 +39,7 @@ public:
 
 
 	enum croute_type_t {
-		RT_UNSPEC = 1,
+		RT_UNSPEC = 0,
 		RT_UNICAST,
 		RT_LOCAL,
 		RT_BROADCAST,

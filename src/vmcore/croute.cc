@@ -10,7 +10,6 @@
 
 
 struct croute::route_type_name_t rtype_names[] = {
-		{ 0, 						""				},
 		{ croute::RT_UNSPEC, 		"unspecified" 	},
 		{ croute::RT_UNICAST, 		"unicast" 		},
 		{ croute::RT_LOCAL, 		"local" 		},
