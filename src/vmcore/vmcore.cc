@@ -10,6 +10,14 @@ vmcore::vmcore()
 
 vmcore::~vmcore()
 {
+	for (std::map<rofl::cofdpt*, std::map<std::string, ctapdev*> >::iterator
+			jt = tapdevs.begin(); jt != tapdevs.end(); ++jt) {
+		for (std::map<std::string, ctapdev*>::iterator
+				it = tapdevs[jt->first].begin(); it != tapdevs[jt->first].end(); ++it) {
+			delete (it->second); // remove ctapdev instance from heap
+		}
+	}
+	tapdevs.clear();
 
 }
 
