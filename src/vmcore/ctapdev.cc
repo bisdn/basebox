@@ -60,7 +60,7 @@ ctapdev::tap_open(std::string const& devname)
 
 		enable_interface();
 
-		netdev_owner->netdev_open(this);
+		//netdev_owner->netdev_open(this);
 
 		register_filedesc_r(fd);
 
@@ -90,7 +90,7 @@ ctapdev::tap_close()
 		return;
 	}
 
-	netdev_owner->netdev_close(this);
+	//netdev_owner->netdev_close(this);
 
 	disable_interface();
 

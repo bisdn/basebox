@@ -62,7 +62,7 @@ public:
 
 	virtual ~cnetdev_owner() {};
 
-
+#if 0
 	/**
 	 * @brief	Signals a cnetdev open message to owner.
 	 *
@@ -77,7 +77,7 @@ public:
 	 * @param netdev cnetdev instance that closed its associated system port.
 	 */
 	virtual void netdev_close(cnetdev *netdev) {};
-
+#endif
 
 	/**
 	 * @brief	Enqeues a packet received on a cnetdevice to this cnetdevice_owner
