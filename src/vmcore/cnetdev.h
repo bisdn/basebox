@@ -132,6 +132,7 @@ protected:
 
 	std::string		 devname;
 	cnetdev_owner	*netdev_owner;
+	uint32_t 		 port_no;
 
 public:
 
@@ -142,7 +143,7 @@ public:
 	 * @param devname std::string containing name for this network device, e.g. eth0
 	 * @param netdev_owner pointer to cnetdev_owner instance attached to this network device
 	 */
-	cnetdev(cnetdev_owner *netdev_owner, std::string const& devname);
+	cnetdev(cnetdev_owner *netdev_owner, std::string const& devname, uint32_t port_no);
 
 	virtual ~cnetdev();
 
@@ -153,6 +154,14 @@ public:
 	 * @return const reference to std::string devname
 	 */
 	std::string const& get_devname() const;
+
+
+	/**
+	 * @brief	Returns uint32_t with network device OpenFlow port_no on data path.
+	 *
+	 * @return copy of uint32_t port_no
+	 */
+	uint32_t get_port_no() const;
 
 
 	/**

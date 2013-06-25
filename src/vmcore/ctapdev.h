@@ -47,7 +47,7 @@ class ctapdev : public cnetdev
 
 public:
 
-	ctapdev(cnetdev_owner *netdev_owner, std::string const& devname);
+	ctapdev(cnetdev_owner *netdev_owner, std::string const& devname, uint32_t port_no);
 
 
 	virtual ~ctapdev();

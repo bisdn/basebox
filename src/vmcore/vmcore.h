@@ -9,6 +9,7 @@
 #define VMCORE_H_ 1
 
 #include <map>
+#include <exception>
 
 //#include "cnetlink.h"
 #include <rofl/common/crofbase.h>
@@ -19,13 +20,19 @@
 namespace dptmap
 {
 
+class eVmCoreBase 			: public std::exception {};
+class eVmCoreCritical 		: public eVmCoreBase {};
+class eVmCoreNoDptAttached	: public eVmCoreBase {};
+class eVmCoreTapDevNotFound	: public eVmCoreBase {};
+
 class vmcore :
 	/*public cnetlink_owner,*/ public rofl::crofbase, public cnetdev_owner
 {
 private:
 
 
-	std::map<rofl::cofdpt*, std::map<uint32_t, ctapdev*> > tapdevs;
+	rofl::cofdpt *dpt;	// handle for cofdpt instance managed by this vmcore
+	std::map<rofl::cofdpt*, std::map<uint32_t, ctapdev*> > tapdevs;	// map of tap interfaces for dpt
 
 
 public:
@@ -64,6 +71,11 @@ public:
 	virtual void
 	handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg);
 
+	virtual void
+	enqueue(cnetdev *netdev, rofl::cpacket* pkt);
+
+	virtual void
+	enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts);
 
 public: // overloaded from cnetlink_owner
 

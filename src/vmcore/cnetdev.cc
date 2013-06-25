@@ -59,9 +59,10 @@ cnetdev_owner::enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
 
 
 
-cnetdev::cnetdev(cnetdev_owner *netdev_owner, std::string const& devname) :
+cnetdev::cnetdev(cnetdev_owner *netdev_owner, std::string const& devname, uint32_t port_no) :
 	devname(devname),
-	netdev_owner(netdev_owner)
+	netdev_owner(netdev_owner),
+	port_no(port_no)
 {
 	if (0 == netdev_owner) {
 		throw eNetDevInvalOwner();
@@ -82,6 +83,14 @@ std::string const&
 cnetdev::get_devname() const
 {
 	return devname;
+}
+
+
+
+uint32_t
+cnetdev::get_port_no() const
+{
+	return port_no;
 }
 
 
