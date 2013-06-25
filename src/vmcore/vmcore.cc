@@ -43,7 +43,7 @@ vmcore::handle_dpath_open(
 
 		for (std::map<uint8_t, rofl::coftable_stats_reply>::iterator
 				it = dpt->get_tables().begin(); it != dpt->get_tables().end(); ++it) {
-			fprintf(stderr, "table[%d]\n", it->first);
+			std::cout << it->second << std::endl;
 		}
 
 	} catch (eNetDevCritical& e) {
