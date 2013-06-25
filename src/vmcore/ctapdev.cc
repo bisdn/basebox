@@ -147,9 +147,9 @@ ctapdev::handle_revent(int fd)
 	rofl::cpacket *pkt = (rofl::cpacket*)0;
 	try {
 
-		pkt = cpacketpool::get_instance().acquire_pkt();
+		rofl::cmemory mem(1518);
 
-		int rc = read(fd, pkt->soframe(), pkt->framelen());
+		int rc = read(fd, mem.somem(), mem.memlen());
 
 		// error occured (or non-blocking)
 		if (rc < 0) {
@@ -158,6 +158,10 @@ ctapdev::handle_revent(int fd)
 			default: 		throw eNetDevCritical();
 			}
 		} else {
+			pkt = cpacketpool::get_instance().acquire_pkt();
+
+			pkt->unpack(OFPP_CONTROLLER, mem.somem(), rc);
+
 			netdev_owner->enqueue(this, pkt);
 		}
 

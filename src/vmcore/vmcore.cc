@@ -216,6 +216,8 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 
 	} catch (ePacketPoolExhausted& e) {
 
+		fprintf(stderr, "vmcore::handle_packet_in() packetpool exhausted\n");
+
 	}
 }
 
