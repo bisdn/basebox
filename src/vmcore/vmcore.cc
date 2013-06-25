@@ -39,6 +39,8 @@ vmcore::handle_dpath_open(
 			}
 		}
 
+		send_set_config_message(dpt, 0, 1518);
+
 	} catch (eNetDevCritical& e) {
 
 		fprintf(stderr, "vmcore::handle_dpath_open() unable to create tap device\n");
