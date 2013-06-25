@@ -21,5 +21,5 @@ vmcore_LDADD = -lpthread \
 	-lsoci_core \
 	-lsoci_sqlite3
 
-AM_CPPFLAGS = -I/home/andi/local/include/libnl3
+AM_CPPFLAGS = -I/usr/include/libnl3
 AM_LDFLAGS = -static -lnl-route-3 -lnl-3
