@@ -10,9 +10,9 @@ vmcore::vmcore()
 
 vmcore::~vmcore()
 {
-	for (std::map<rofl::cofdpt*, std::map<std::string, ctapdev*> >::iterator
+	for (std::map<rofl::cofdpt*, std::map<uint32_t, ctapdev*> >::iterator
 			jt = tapdevs.begin(); jt != tapdevs.end(); ++jt) {
-		for (std::map<std::string, ctapdev*>::iterator
+		for (std::map<uint32_t, ctapdev*>::iterator
 				it = tapdevs[jt->first].begin(); it != tapdevs[jt->first].end(); ++it) {
 			delete (it->second); // remove ctapdev instance from heap
 		}
@@ -34,8 +34,8 @@ vmcore::handle_dpath_open(
 		for (std::map<uint32_t, rofl::cofport*>::iterator
 				it = ports.begin(); it != ports.end(); ++it) {
 			rofl::cofport *port = it->second;
-			if (tapdevs[dpt].find(port->get_name()) == tapdevs[dpt].end()) {
-				tapdevs[dpt][port->get_name()] = new ctapdev(this, port->get_name());
+			if (tapdevs[dpt].find(port->get_port_no()) == tapdevs[dpt].end()) {
+				tapdevs[dpt][port->get_port_no()] = new ctapdev(this, port->get_name());
 			}
 		}
 
@@ -53,7 +53,7 @@ void
 vmcore::handle_dpath_close(
 		rofl::cofdpt *dpt)
 {
-	for (std::map<std::string, ctapdev*>::iterator
+	for (std::map<uint32_t, ctapdev*>::iterator
 			it = tapdevs[dpt].begin(); it != tapdevs[dpt].end(); ++it) {
 		delete (it->second); // remove ctapdev instance from heap
 	}
@@ -67,11 +67,13 @@ vmcore::handle_port_status(
 		rofl::cofdpt *dpt,
 		rofl::cofmsg_port_status *msg)
 {
+	uint32_t port_no = msg->get_port().get_port_no();
+
 	try {
 		switch (msg->get_reason()) {
 		case OFPPR_ADD: {
-			if (tapdevs[dpt].find(msg->get_port().get_name()) == tapdevs[dpt].end()) {
-				tapdevs[dpt][msg->get_port().get_name()] = new ctapdev(this, msg->get_port().get_name());
+			if (tapdevs[dpt].find(port_no) == tapdevs[dpt].end()) {
+				tapdevs[dpt][port_no] = new ctapdev(this, msg->get_port().get_name());
 			}
 		} break;
 		case OFPPR_MODIFY: {
@@ -80,9 +82,9 @@ vmcore::handle_port_status(
 
 		} break;
 		case OFPPR_DELETE: {
-			if (tapdevs[dpt].find(msg->get_port().get_name()) != tapdevs[dpt].end()) {
-				delete tapdevs[dpt][msg->get_port().get_name()];
-				tapdevs[dpt].erase(msg->get_port().get_name());
+			if (tapdevs[dpt].find(port_no) != tapdevs[dpt].end()) {
+				delete tapdevs[dpt][port_no];
+				tapdevs[dpt].erase(port_no);
 			}
 		} break;
 		default: {
@@ -100,6 +102,43 @@ vmcore::handle_port_status(
 	}
 
 	delete msg;
+}
+
+
+
+void
+vmcore::handle_packet_out(rofl::cofctl *ctl, rofl::cofmsg_packet_out *msg)
+{
+
+	delete msg;
+}
+
+
+
+void
+vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
+{
+	try {
+		uint32_t port_no = msg->get_match().get_in_port();
+
+		if (tapdevs[dpt].find(port_no) == tapdevs[dpt].end()) {
+			fprintf(stderr, "vmcore::handle_packet_in() frame for port_no=%d received, but port not found\n", port_no);
+
+			delete msg; return;
+		}
+
+		rofl::cpacket *pkt = cpacketpool::get_instance().acquire_pkt();
+
+		*pkt = msg->get_packet();
+		//pkt->unpack(port_no, msg->get_packet().soframe(), msg->get_packet().framelen());
+
+		tapdevs[dpt][port_no]->enqueue(pkt);
+
+		delete msg;
+
+	} catch (ePacketPoolExhausted& e) {
+
+	}
 }
 
 

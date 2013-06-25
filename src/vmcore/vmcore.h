@@ -25,7 +25,7 @@ class vmcore :
 private:
 
 
-	std::map<rofl::cofdpt*, std::map<std::string, ctapdev*> > tapdevs;
+	std::map<rofl::cofdpt*, std::map<uint32_t, ctapdev*> > tapdevs;
 
 
 public:
@@ -57,6 +57,12 @@ public:
 
 	virtual void
 	handle_port_status(rofl::cofdpt *dpt, rofl::cofmsg_port_status *msg);
+
+	virtual void
+	handle_packet_out(rofl::cofctl *ctl, rofl::cofmsg_packet_out *msg);
+
+	virtual void
+	handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg);
 
 
 public: // overloaded from cnetlink_owner
