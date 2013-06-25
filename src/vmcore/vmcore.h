@@ -16,6 +16,7 @@
 
 #include <cnetdev.h>
 #include <ctapdev.h>
+#include <clinkcache.h>
 
 namespace dptmap
 {

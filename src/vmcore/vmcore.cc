@@ -5,7 +5,7 @@ using namespace dptmap;
 vmcore::vmcore() :
 		dpt(0)
 {
-
+	clinkcache::get_instance();
 }
 
 

@@ -8,20 +8,45 @@
 #ifndef CLINKCACHE_H_
 #define CLINKCACHE_H_ 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <netlink/cache.h>
+#ifdef __cplusplus
+}
+#endif
+
+#include <exception>
+
 #include <rofl/common/ciosrv.h>
 
 namespace dptmap
 {
+
+class eLinkCacheBase 		: public std::exception {};
+class eLinkCacheCritical	: public eLinkCacheBase {};
 
 class clinkcache :
 		public rofl::ciosrv
 {
 
 	struct nl_cache_mngr *mngr;
-	struct nl_cache *linkcache;
+	struct nl_cache *cache;
 
 
 public:
+
+
+	/**
+	 *
+	 */
+	static clinkcache&
+	get_instance();
+
+
+private:
+
+	static clinkcache	*linkcache;
 
 	/**
 	 *
@@ -32,10 +57,14 @@ public:
 	/**
 	 *
 	 */
+	clinkcache(clinkcache const& linkcache);
+
+
+	/**
+	 *
+	 */
 	virtual
 	~clinkcache();
-
-
 };
 
 }; // end of namespace dptmap
