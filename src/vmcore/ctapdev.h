@@ -93,6 +93,7 @@ protected:
 	 */
 	virtual void
 	handle_wevent(int fd);
+
 };
 
 }; // end of namespace vmcore

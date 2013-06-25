@@ -12,7 +12,9 @@ vmcore_SOURCES = main.cc \
 		cpacketpool.h \
 		cpacketpool.cc \
 		ctapdev.h \
-		ctapdev.cc
+		ctapdev.cc \
+		clinkcache.h \
+		clinkcache.cc
 vmcore_LDADD = -lpthread \
 	-lrofl \
 	-lrt \
