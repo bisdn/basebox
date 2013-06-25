@@ -11,7 +11,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <netlink/cache.h>
+#include <libnl3/netlink/cache.h>
 #ifdef __cplusplus
 }
 #endif

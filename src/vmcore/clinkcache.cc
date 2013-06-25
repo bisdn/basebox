@@ -15,13 +15,13 @@ clinkcache::clinkcache() :
 		mngr(0),
 		cache(0)
 {
-	mngr = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE);
-	if (NULL == mngr) {
+	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
+	if (rc < 0) {
 		fprintf(stderr, "clinkcache::clinkcache() failed to allocate netlink cache manager\n");
 		throw eLinkCacheCritical();
 	}
 
-	cache = nl_cache_mngr_add(mngr, "route/link", NULL);
+	rc = nl_cache_mngr_add(mngr, "route/link", NULL, NULL, &cache);
 }
 
 
@@ -30,13 +30,13 @@ clinkcache::clinkcache(clinkcache const& linkcache) :
 		mngr(0),
 		cache(0)
 {
-	mngr = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE);
-	if (NULL == mngr) {
+	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
+	if (rc < 0) {
 		fprintf(stderr, "clinkcache::clinkcache() failed to allocate netlink cache manager\n");
 		throw eLinkCacheCritical();
 	}
 
-	cache = nl_cache_mngr_add(mngr, "route/link", NULL);
+	rc = nl_cache_mngr_add(mngr, "route/link", NULL, NULL, &cache);
 }
 
 
