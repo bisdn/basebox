@@ -5,12 +5,14 @@ using namespace dptmap;
 vmcore::vmcore() :
 		dpt(0)
 {
-	clinkcache::get_instance();
+	clinkcache::get_instance().subscribe(this);
 }
 
 
 vmcore::~vmcore()
 {
+	clinkcache::get_instance().unsubscribe(this);
+
 	for (std::map<rofl::cofdpt*, std::map<uint32_t, ctapdev*> >::iterator
 			jt = tapdevs.begin(); jt != tapdevs.end(); ++jt) {
 		for (std::map<uint32_t, ctapdev*>::iterator
@@ -19,7 +21,6 @@ vmcore::~vmcore()
 		}
 	}
 	tapdevs.clear();
-
 }
 
 
@@ -223,6 +224,26 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 
 
 
+
+void
+vmcore::linkcache_updated()
+{
+	fprintf(stderr, "vmcore::linkcache_updated()\n");
+
+	if (0 == dpt) {
+		return;
+	}
+
+	for (std::map<uint32_t, ctapdev*>::iterator
+			it = tapdevs[dpt].begin(); it != tapdevs[dpt].end(); ++it) {
+		clinkcache::get_instance().get_link(it->second->get_devname());
+	}
+}
+
+
+
+
+
 #if 0
 void
 vmcore::nl_route_new(cnetlink const* netlink, croute const& route)
@@ -304,7 +325,8 @@ vmcore::nl_route_del(cnetlink const* netlink, croute const& route)
 		fe.set_hard_timeout(0);
 		fe.set_table_id(0);
 
-		fe.match.set_in_port(port_no);
+		fe.match.set_in_port(p	virtual void
+				linkcache_updated();ort_no);
 
 		switch (rt.rt_family) {
 		case AF_INET: {
@@ -359,7 +381,8 @@ vmcore::nl_route_change(cnetlink const* netlink, croute const& route)
 
 		fe.match.set_in_port(port_no);
 
-		switch (rt.rt_family) {
+		switch (rt.rt_family) {	virtual void
+		linkcache_updated();
 		case AF_INET: {
 			fe.match.set_ipv4_dst(rt.dst);
 		} break;

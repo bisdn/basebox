@@ -27,7 +27,10 @@ class eVmCoreNoDptAttached	: public eVmCoreBase {};
 class eVmCoreTapDevNotFound	: public eVmCoreBase {};
 
 class vmcore :
-	/*public cnetlink_owner,*/ public rofl::crofbase, public cnetdev_owner
+	/*public cnetlink_owner,*/
+		public rofl::crofbase,
+		public cnetdev_owner,
+		public clinkcache_subscriber
 {
 private:
 
@@ -77,6 +80,9 @@ public:
 
 	virtual void
 	enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts);
+
+	virtual void
+	linkcache_updated();
 
 public: // overloaded from cnetlink_owner
 
