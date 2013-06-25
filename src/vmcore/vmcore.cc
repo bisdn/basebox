@@ -41,6 +41,11 @@ vmcore::handle_dpath_open(
 
 		send_set_config_message(dpt, 0, 1518);
 
+		for (std::map<uint8_t, rofl::coftable_stats_reply>::iterator
+				it = dpt->get_tables().begin(); it != dpt->get_tables().end(); ++it) {
+			fprintf(stderr, "table[%d]\n", it->first);
+		}
+
 	} catch (eNetDevCritical& e) {
 
 		fprintf(stderr, "vmcore::handle_dpath_open() unable to create tap device\n");
