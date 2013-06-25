@@ -13,6 +13,7 @@ extern "C" {
 #endif
 #include <libnl3/netlink/cache.h>
 #include <libnl3/netlink/route/link.h>
+#include <libnl3/netlink/route/addr.h>
 #ifdef __cplusplus
 }
 #endif
@@ -39,9 +40,13 @@ public:
 class clinkcache :
 		public rofl::ciosrv
 {
+	enum nl_cache_t {
+		NL_LINK_CACHE = 0,
+		NL_ADDR_CACHE = 1,
+	};
 
 	struct nl_cache_mngr *mngr;
-	struct nl_cache *cache;
+	std::map<enum nl_cache_t, struct nl_cache*> caches;
 	std::set<clinkcache_subscriber*> subscribers;
 
 
@@ -76,6 +81,14 @@ public:
 	 */
 	void
 	get_link(
+			std::string const& devname);
+
+
+	/**
+	 *
+	 */
+	void
+	get_addr(
 			std::string const& devname);
 
 

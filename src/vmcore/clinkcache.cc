@@ -12,8 +12,7 @@ using namespace dptmap;
 clinkcache* clinkcache::linkcache = (clinkcache*)0;
 
 clinkcache::clinkcache() :
-		mngr(0),
-		cache(0)
+		mngr(0)
 {
 	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
 	if (rc < 0) {
@@ -21,7 +20,9 @@ clinkcache::clinkcache() :
 		throw eLinkCacheCritical();
 	}
 
-	rc = nl_cache_mngr_add(mngr, "route/link", NULL, NULL, &cache);
+	rc = nl_cache_mngr_add(mngr, "route/link", NULL, NULL, &caches[NL_LINK_CACHE]);
+
+	rc = nl_cache_mngr_add(mngr, "route/addr", NULL, NULL, &caches[NL_ADDR_CACHE]);
 
 	register_filedesc_r(nl_cache_mngr_get_fd(mngr));
 }
@@ -29,8 +30,7 @@ clinkcache::clinkcache() :
 
 
 clinkcache::clinkcache(clinkcache const& linkcache) :
-		mngr(0),
-		cache(0)
+		mngr(0)
 {
 	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
 	if (rc < 0) {
@@ -38,7 +38,11 @@ clinkcache::clinkcache(clinkcache const& linkcache) :
 		throw eLinkCacheCritical();
 	}
 
-	rc = nl_cache_mngr_add(mngr, "route/link", NULL, NULL, &cache);
+	rc = nl_cache_mngr_add(mngr, "route/link", NULL, NULL, &caches[NL_LINK_CACHE]);
+
+	rc = nl_cache_mngr_add(mngr, "route/addr", NULL, NULL, &caches[NL_ADDR_CACHE]);
+
+	register_filedesc_r(nl_cache_mngr_get_fd(mngr));
 }
 
 
@@ -94,7 +98,7 @@ clinkcache::handle_revent(int fd)
 		//params.dp_type = NL_DUMP_DETAILS;
 		params.dp_buf = (char*)mem.somem();
 		params.dp_buflen = mem.memlen();
-		nl_cache_dump(cache, &params);
+		nl_cache_dump(linkcache, &params);
 		std::string s_str((const char*)mem.somem(), mem.memlen());
 		fprintf(stderr, "XXX: %s\n", s_str.c_str());
 #endif
@@ -110,11 +114,24 @@ clinkcache::handle_revent(int fd)
 void
 clinkcache::get_link(std::string const& devname)
 {
-
-
 	struct rtnl_link *link = (struct rtnl_link*)0;
 
-	link = rtnl_link_get_by_name(cache, devname.c_str());
+	link = rtnl_link_get_by_name(caches[NL_LINK_CACHE], devname.c_str());
 }
 
 
+
+void
+clinkcache::get_addr(std::string const& devname)
+{
+	struct rtnl_link *link = (struct rtnl_link*)0;
+
+	link = rtnl_link_get_by_name(caches[NL_LINK_CACHE], devname.c_str());
+
+	int ifindex = rtnl_link_get_ifindex(link);
+
+
+	struct rtnl_addr *addr = (struct rtnl_addr*)0;
+
+	addr = rtnl_addr_get(caches[NL_ADDR_CACHE], ifindex, 0);
+}
