@@ -28,6 +28,20 @@ namespace dptmap
 
 class crtaddr
 {
+private:
+
+
+	std::string			label;
+	int					ifindex;
+	int					af;
+	int					prefixlen;
+	int					scope;
+	int					flags;
+	rofl::caddress		local;
+	rofl::caddress		peer;
+	rofl::caddress		bcast;
+
+
 public:
 
 	/**
@@ -61,14 +75,23 @@ public:
 	 */
 	crtaddr(struct rtnl_addr* addr);
 
+
 	/**
 	 *
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, crtaddr const& rtaddr)
 	{
-		os << "crtaddr{" <<
-				""
+		os << "crtaddr{"
+				<< "label=" << rtaddr.label << " "
+				<< "ifindex=" << rtaddr.ifindex << " "
+				<< "af=" << rtaddr.af << " "
+				<< "prefixlen=" << rtaddr.prefixlen << " "
+				<< "scope=" << rtaddr.scope << " "
+				<< "flags=" << rtaddr.flags << " "
+				<< "local=" << rtaddr.local << " "
+				<< "peer=" << rtaddr.peer << " "
+				<< "broadcast=" << rtaddr.bcast << " "
 				<< "}";
 		return os;
 	};

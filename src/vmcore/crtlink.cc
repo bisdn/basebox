@@ -66,7 +66,7 @@ crtlink::crtlink(struct rtnl_link *link) :
 		ifindex(0),
 		mtu(0)
 {
-	char s_buf[18];
+	char s_buf[128];
 	memset(s_buf, 0, sizeof(s_buf));
 
 	nl_object_get((struct nl_object*)link); // increment reference counter by one
