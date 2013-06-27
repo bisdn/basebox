@@ -135,3 +135,6 @@ clinkcache::get_addr(std::string const& devname)
 
 	addr = rtnl_addr_get(caches[NL_ADDR_CACHE], ifindex, 0);
 }
+
+
+
