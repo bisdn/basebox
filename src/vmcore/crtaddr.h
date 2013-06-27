@@ -16,6 +16,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <assert.h>
 #include <netlink/object.h>
 #include <netlink/route/addr.h>
 #ifdef __cplusplus
@@ -28,7 +29,7 @@ namespace dptmap
 
 class crtaddr
 {
-private:
+public:
 
 
 	std::string			label;
@@ -74,6 +75,16 @@ public:
 	 *
 	 */
 	crtaddr(struct rtnl_addr* addr);
+
+
+	/**
+	 *
+	 */
+	bool
+	operator< (crtaddr const& rtaddr);
+
+
+public:
 
 
 	/**

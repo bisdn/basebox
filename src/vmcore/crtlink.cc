@@ -84,3 +84,20 @@ crtlink::crtlink(struct rtnl_link *link) :
 }
 
 
+
+void
+crtlink::addr_add(crtaddr const& rta)
+{
+	crtaddr t_rta(rta);
+	//addrs[t_rta.af].insert(t_rta);
+}
+
+
+
+void
+crtlink::addr_del(crtaddr const& rta)
+{
+	//addrs[rta.af].erase(rta);
+}
+
+

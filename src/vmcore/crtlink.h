@@ -10,6 +10,8 @@
 
 #include <ostream>
 #include <string>
+#include <map>
+#include <set>
 
 #include <rofl/common/cmacaddr.h>
 #include <rofl/common/cmemory.h>
@@ -23,11 +25,19 @@ extern "C" {
 }
 #endif
 
+#include <crtaddr.h>
+
 namespace dptmap
 {
 
 class crtlink
 {
+private:
+
+
+	std::map<int, std::set<crtaddr> >  addrs;	// key: address family, value: set of addresses
+
+
 public:
 
 
@@ -73,6 +83,27 @@ public:
 	 *
 	 */
 	crtlink(struct rtnl_link *link);
+
+
+public:
+
+
+	/**
+	 *
+	 */
+	void
+	addr_add(crtaddr const& rta);
+
+
+	/**
+	 *
+	 */
+	void
+	addr_del(crtaddr const& rta);
+
+
+
+public:
 
 
 	/**

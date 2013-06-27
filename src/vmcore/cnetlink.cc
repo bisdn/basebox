@@ -169,15 +169,20 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 	nl_object_get(obj); // get reference to object
 
+	unsigned int ifindex = rtnl_addr_get_ifindex((struct rtnl_addr*)obj);
+
 	switch (action) {
 	case NL_ACT_NEW: {
-		fprintf(stderr, "route/addr: NL-ACT-NEW\n");
+		crtaddr rta((struct rtnl_addr*)obj);
+		std::cerr << "route/addr: NL-ACT-NEW => " << rta << std::endl;
 	} break;
 	case NL_ACT_CHANGE: {
-		fprintf(stderr, "route/addr: NL-ACT-CHANGE\n");
+		crtaddr rta((struct rtnl_addr*)obj);
+		std::cerr << "route/addr: NL-ACT-CHANGE => " << rta << std::endl;
 	} break;
 	case NL_ACT_DEL: {
-		fprintf(stderr, "route/addr: NL-ACT-DEL\n");
+		crtaddr rta((struct rtnl_addr*)obj);
+		std::cerr << "route/addr: NL-ACT-DELETE => " << rta << std::endl;
 	} break;
 	default: {
 		fprintf(stderr, "route/addr: unknown NL action\n");

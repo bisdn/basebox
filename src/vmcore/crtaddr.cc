@@ -95,7 +95,17 @@ crtaddr::crtaddr(struct rtnl_addr* addr) :
 	peer 		= rofl::caddress(af, nl_addr2str(rtnl_addr_get_peer(addr), 		s_buf, sizeof(s_buf)));
 	bcast 		= rofl::caddress(af, nl_addr2str(rtnl_addr_get_broadcast(addr), s_buf, sizeof(s_buf)));
 
+	std::cerr << nl_addr2str(rtnl_addr_get_local(addr), 	s_buf, sizeof(s_buf)) << std::endl;
+
 	nl_object_put((struct nl_object*)addr); // decrement reference counter by one
+}
+
+
+
+bool
+crtaddr::operator< (crtaddr const& rtaddr)
+{
+	return (local < rtaddr.local);
 }
 
 
