@@ -14,7 +14,9 @@ vmcore_SOURCES = main.cc \
 		ctapdev.h \
 		ctapdev.cc \
 		cnetlink.h \
-		cnetlink.cc
+		cnetlink.cc \
+		crtlink.h \
+		crtlink.cc
 vmcore_LDADD = -lpthread \
 	-lrofl \
 	-lrt \

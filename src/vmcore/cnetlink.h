@@ -5,13 +5,14 @@
  *      Author: andreas
  */
 
-#ifndef CLINKCACHE_H_
-#define CLINKCACHE_H_ 1
+#ifndef CNETLINK_H_
+#define CNETLINK_H_ 1
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 #include <netlink/cache.h>
+#include <netlink/object.h>
 #include <netlink/route/link.h>
 #include <netlink/route/addr.h>
 #ifdef __cplusplus
@@ -29,15 +30,15 @@ class eLinkCacheBase 		: public std::exception {};
 class eLinkCacheCritical	: public eLinkCacheBase {};
 
 
-class cnlroute_subscriber
+class cnetlink_subscriber
 {
 public:
-	virtual ~cnlroute_subscriber() {};
+	virtual ~cnetlink_subscriber() {};
 	virtual void linkcache_updated() = 0;
 };
 
 
-class cnlroute :
+class cnetlink :
 		public rofl::ciosrv
 {
 	enum nl_cache_t {
@@ -47,7 +48,7 @@ class cnlroute :
 
 	struct nl_cache_mngr *mngr;
 	std::map<enum nl_cache_t, struct nl_cache*> caches;
-	std::set<cnlroute_subscriber*> subscribers;
+	std::set<cnetlink_subscriber*> subscribers;
 
 
 public:
@@ -57,20 +58,20 @@ public:
 	 *
 	 */
 	static void
-	link_cache_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data);
+	route_link_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data);
 
 
 	/**
 	 *
 	 */
 	static void
-	addr_cache_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data);
+	route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data);
 
 
 	/**
 	 *
 	 */
-	static cnlroute&
+	static cnetlink&
 	get_instance();
 
 
@@ -79,7 +80,7 @@ public:
 	 */
 	void
 	subscribe(
-			cnlroute_subscriber* subscriber);
+			cnetlink_subscriber* subscriber);
 
 
 	/**
@@ -87,7 +88,7 @@ public:
 	 */
 	void
 	unsubscribe(
-			cnlroute_subscriber* subscriber);
+			cnetlink_subscriber* subscriber);
 
 
 	/**
@@ -108,25 +109,25 @@ public:
 
 private:
 
-	static cnlroute	*linkcache;
+	static cnetlink	*netlink;
 
 	/**
 	 *
 	 */
-	cnlroute();
+	cnetlink();
 
 
 	/**
 	 *
 	 */
-	cnlroute(cnlroute const& linkcache);
+	cnetlink(cnetlink const& linkcache);
 
 
 	/**
 	 *
 	 */
 	virtual
-	~cnlroute();
+	~cnetlink();
 
 
 	/**

@@ -16,7 +16,7 @@
 
 #include <cnetdev.h>
 #include <ctapdev.h>
-#include <clinkcache.h>
+#include <cnetlink.h>
 
 namespace dptmap
 {
@@ -30,7 +30,7 @@ class vmcore :
 	/*public cnetlink_owner,*/
 		public rofl::crofbase,
 		public cnetdev_owner,
-		public cnlroute_subscriber
+		public cnetlink_subscriber
 {
 private:
 

@@ -5,13 +5,13 @@ using namespace dptmap;
 vmcore::vmcore() :
 		dpt(0)
 {
-	cnlroute::get_instance().subscribe(this);
+	cnetlink::get_instance().subscribe(this);
 }
 
 
 vmcore::~vmcore()
 {
-	cnlroute::get_instance().unsubscribe(this);
+	cnetlink::get_instance().unsubscribe(this);
 
 	for (std::map<rofl::cofdpt*, std::map<uint32_t, ctapdev*> >::iterator
 			jt = tapdevs.begin(); jt != tapdevs.end(); ++jt) {
@@ -236,7 +236,7 @@ vmcore::linkcache_updated()
 
 	for (std::map<uint32_t, ctapdev*>::iterator
 			it = tapdevs[dpt].begin(); it != tapdevs[dpt].end(); ++it) {
-		cnlroute::get_instance().get_link(it->second->get_devname());
+		cnetlink::get_instance().get_link(it->second->get_devname());
 	}
 }
 
