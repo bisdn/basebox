@@ -35,7 +35,7 @@ class crtlink
 private:
 
 
-	std::map<int, std::set<crtaddr> >  addrs;	// key: address family, value: set of addresses
+	std::list<crtaddr>  addrs;	// list of addresses
 
 
 public:
@@ -91,8 +91,8 @@ public:
 	/**
 	 *
 	 */
-	void
-	addr_add(crtaddr const& rta);
+	crtaddr&
+	set_addr(crtaddr const& rta);
 
 
 	/**

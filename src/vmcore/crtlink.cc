@@ -85,11 +85,12 @@ crtlink::crtlink(struct rtnl_link *link) :
 
 
 
-void
-crtlink::addr_add(crtaddr const& rta)
+crtaddr&
+crtlink::set_addr(crtaddr const& rta)
 {
-	crtaddr t_rta(rta);
-	//addrs[t_rta.af].insert(t_rta);
+	std::cerr << "crtlink::set_addr() route/addr: NL-ACT-NEW => " << rta << std::endl;
+	addrs.push_back(rta);
+	return addrs.back();
 }
 
 

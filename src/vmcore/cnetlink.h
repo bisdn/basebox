@@ -99,6 +99,14 @@ public:
 	 *
 	 */
 	crtlink&
+	set_link(
+			crtlink const& rtl);
+
+
+	/**
+	 *
+	 */
+	crtlink&
 	get_link(
 			std::string const& devname);
 

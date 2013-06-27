@@ -115,10 +115,29 @@ cnetlink::handle_revent(int fd)
 		std::string s_str((const char*)mem.somem(), mem.memlen());
 		fprintf(stderr, "XXX: %s\n", s_str.c_str());
 #endif
+		struct nl_object* obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
+		while (0 != obj) {
+			nl_object_get(obj);
+			set_link(crtlink((struct rtnl_link*)obj));
+			nl_object_put(obj);
+			obj = nl_cache_get_next(obj);
+		}
+
+		obj = nl_cache_get_first(caches[NL_ADDR_CACHE]);
+		while (0 != obj) {
+			nl_object_get(obj);
+			unsigned int ifindex = rtnl_addr_get_ifindex((struct rtnl_addr*)obj);
+			get_link(ifindex).set_addr(crtaddr((struct rtnl_addr*)obj));
+			nl_object_put(obj);
+			obj = nl_cache_get_next(obj);
+		}
+
+#if 0
 		for (std::set<cnetlink_subscriber*>::iterator
 				it = subscribers.begin(); it != subscribers.end(); ++it) {
 			(*it)->linkcache_updated();
 		}
+#endif
 	}
 }
 
@@ -134,18 +153,15 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 	nl_object_get(obj); // get reference to object
 
-	unsigned int ifindex = rtnl_link_get_ifindex((struct rtnl_link*)obj);
-
 	switch (action) {
 	case NL_ACT_NEW: {
-		cnetlink::get_instance().links[ifindex] = crtlink((struct rtnl_link*)obj);
-		std::cerr << "route/link: NL-ACT-NEW => " << cnetlink::get_instance().links[ifindex] << std::endl;
+		cnetlink::get_instance().set_link(crtlink((struct rtnl_link*)obj));
 	} break;
 	case NL_ACT_CHANGE: {
-		cnetlink::get_instance().links[ifindex] = crtlink((struct rtnl_link*)obj);
-		std::cerr << "route/link: NL-ACT-CHANGE => " << cnetlink::get_instance().links[ifindex] << std::endl;
+		cnetlink::get_instance().set_link(crtlink((struct rtnl_link*)obj));
 	} break;
 	case NL_ACT_DEL: {
+		unsigned int ifindex = rtnl_link_get_ifindex((struct rtnl_link*)obj);
 		std::cerr << "route/link: NL-ACT-DEL => ifindex=" << ifindex << std::endl;
 		cnetlink::get_instance().links.erase(ifindex);
 	} break;
@@ -173,12 +189,12 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 	switch (action) {
 	case NL_ACT_NEW: {
-		crtaddr rta((struct rtnl_addr*)obj);
-		std::cerr << "route/addr: NL-ACT-NEW => " << rta << std::endl;
+		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).set_addr(crtaddr((struct rtnl_addr*)obj));
+
 	} break;
 	case NL_ACT_CHANGE: {
-		crtaddr rta((struct rtnl_addr*)obj);
-		std::cerr << "route/addr: NL-ACT-CHANGE => " << rta << std::endl;
+		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).set_addr(crtaddr((struct rtnl_addr*)obj));
+
 	} break;
 	case NL_ACT_DEL: {
 		crtaddr rta((struct rtnl_addr*)obj);
@@ -241,5 +257,14 @@ cnetlink::get_addr(std::string const& devname)
 	addr = rtnl_addr_get(caches[NL_ADDR_CACHE], ifindex, 0);
 }
 
+
+
+crtlink&
+cnetlink::set_link(crtlink const& rtl)
+{
+	std::cerr << "cnetlink::set_link() => route/link: NL-ACT-NEW => " << rtl << std::endl;
+	links[rtl.ifindex] = rtl;
+	return links[rtl.ifindex];
+}
 
 
