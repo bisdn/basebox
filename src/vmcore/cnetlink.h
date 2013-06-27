@@ -11,9 +11,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <libnl3/netlink/cache.h>
-#include <libnl3/netlink/route/link.h>
-#include <libnl3/netlink/route/addr.h>
+#include <netlink/cache.h>
+#include <netlink/route/link.h>
+#include <netlink/route/addr.h>
 #ifdef __cplusplus
 }
 #endif
@@ -29,15 +29,15 @@ class eLinkCacheBase 		: public std::exception {};
 class eLinkCacheCritical	: public eLinkCacheBase {};
 
 
-class clinkcache_subscriber
+class cnlroute_subscriber
 {
 public:
-	virtual ~clinkcache_subscriber() {};
+	virtual ~cnlroute_subscriber() {};
 	virtual void linkcache_updated() = 0;
 };
 
 
-class clinkcache :
+class cnlroute :
 		public rofl::ciosrv
 {
 	enum nl_cache_t {
@@ -47,7 +47,7 @@ class clinkcache :
 
 	struct nl_cache_mngr *mngr;
 	std::map<enum nl_cache_t, struct nl_cache*> caches;
-	std::set<clinkcache_subscriber*> subscribers;
+	std::set<cnlroute_subscriber*> subscribers;
 
 
 public:
@@ -56,7 +56,21 @@ public:
 	/**
 	 *
 	 */
-	static clinkcache&
+	static void
+	link_cache_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data);
+
+
+	/**
+	 *
+	 */
+	static void
+	addr_cache_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data);
+
+
+	/**
+	 *
+	 */
+	static cnlroute&
 	get_instance();
 
 
@@ -65,7 +79,7 @@ public:
 	 */
 	void
 	subscribe(
-			clinkcache_subscriber* subscriber);
+			cnlroute_subscriber* subscriber);
 
 
 	/**
@@ -73,7 +87,7 @@ public:
 	 */
 	void
 	unsubscribe(
-			clinkcache_subscriber* subscriber);
+			cnlroute_subscriber* subscriber);
 
 
 	/**
@@ -94,25 +108,39 @@ public:
 
 private:
 
-	static clinkcache	*linkcache;
+	static cnlroute	*linkcache;
 
 	/**
 	 *
 	 */
-	clinkcache();
+	cnlroute();
 
 
 	/**
 	 *
 	 */
-	clinkcache(clinkcache const& linkcache);
+	cnlroute(cnlroute const& linkcache);
 
 
 	/**
 	 *
 	 */
 	virtual
-	~clinkcache();
+	~cnlroute();
+
+
+	/**
+	 *
+	 */
+	void
+	init_caches();
+
+
+	/**
+	 *
+	 */
+	void
+	destroy_caches();
 
 
 	/**

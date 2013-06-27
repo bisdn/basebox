@@ -30,7 +30,7 @@ class vmcore :
 	/*public cnetlink_owner,*/
 		public rofl::crofbase,
 		public cnetdev_owner,
-		public clinkcache_subscriber
+		public cnlroute_subscriber
 {
 private:
 

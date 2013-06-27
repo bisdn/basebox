@@ -13,13 +13,13 @@ vmcore_SOURCES = main.cc \
 		cpacketpool.cc \
 		ctapdev.h \
 		ctapdev.cc \
-		clinkcache.h \
-		clinkcache.cc
+		cnetlink.h \
+		cnetlink.cc
 vmcore_LDADD = -lpthread \
 	-lrofl \
 	-lrt \
 	-lsoci_core \
 	-lsoci_sqlite3
 
-AM_CPPFLAGS = -I/usr/include/libnl3
-AM_LDFLAGS = -static -lnl-route-3 -lnl-3
+AM_CPPFLAGS = -I/home/andreas/local/include/libnl3
+AM_LDFLAGS = -static -L/home/andreas/local/lib -lnl-route-3 -lnl-3
