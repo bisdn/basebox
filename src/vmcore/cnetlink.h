@@ -23,11 +23,14 @@ extern "C" {
 
 #include <rofl/common/ciosrv.h>
 
+#include <crtlink.h>
+
 namespace dptmap
 {
 
 class eLinkCacheBase 		: public std::exception {};
 class eLinkCacheCritical	: public eLinkCacheBase {};
+class eNetlinkNotFound		: public eLinkCacheBase {};
 
 
 class cnetlink_subscriber
@@ -50,6 +53,7 @@ class cnetlink :
 	std::map<enum nl_cache_t, struct nl_cache*> caches;
 	std::set<cnetlink_subscriber*> subscribers;
 
+	std::map<unsigned int, crtlink>		links;	// all links in system => key:ifindex, value=crtlink instance
 
 public:
 
@@ -94,9 +98,17 @@ public:
 	/**
 	 *
 	 */
-	void
+	crtlink&
 	get_link(
 			std::string const& devname);
+
+
+	/**
+	 *
+	 */
+	crtlink&
+	get_link(
+			unsigned int ifindex);
 
 
 	/**

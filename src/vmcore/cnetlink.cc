@@ -134,15 +134,20 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 	nl_object_get(obj); // get reference to object
 
+	unsigned int ifindex = rtnl_link_get_ifindex((struct rtnl_link*)obj);
+
 	switch (action) {
 	case NL_ACT_NEW: {
-		fprintf(stderr, "route/link: NL-ACT-NEW\n");
+		cnetlink::get_instance().links[ifindex] = crtlink((struct rtnl_link*)obj);
+		std::cerr << "route/link: NL-ACT-NEW => " << cnetlink::get_instance().links[ifindex] << std::endl;
 	} break;
 	case NL_ACT_CHANGE: {
-		fprintf(stderr, "route/link: NL-ACT-CHANGE\n");
+		cnetlink::get_instance().links[ifindex] = crtlink((struct rtnl_link*)obj);
+		std::cerr << "route/link: NL-ACT-CHANGE => " << cnetlink::get_instance().links[ifindex] << std::endl;
 	} break;
 	case NL_ACT_DEL: {
-		fprintf(stderr, "route/link: NL-ACT-DEL\n");
+		std::cerr << "route/link: NL-ACT-DEL => ifindex=" << ifindex << std::endl;
+		cnetlink::get_instance().links.erase(ifindex);
 	} break;
 	default: {
 		fprintf(stderr, "route/link: unknown NL action\n");
@@ -183,14 +188,35 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 }
 
 
-
-
 void
+test()
+{
+	cnetlink::get_instance().get_link(std::string("ge0")).mtu;
+}
+
+
+crtlink&
 cnetlink::get_link(std::string const& devname)
 {
-	struct rtnl_link *link = (struct rtnl_link*)0;
+	std::map<unsigned int, crtlink>::iterator it;
+	if ((it = find_if(links.begin(), links.end(),
+			crtlink::crtlink_find_by_devname(devname))) == links.end()) {
+		throw eNetlinkNotFound();
+	}
+	return it->second;
+}
 
-	link = rtnl_link_get_by_name(caches[NL_LINK_CACHE], devname.c_str());
+
+
+crtlink&
+cnetlink::get_link(unsigned int ifindex)
+{
+	std::map<unsigned int, crtlink>::iterator it;
+	if ((it = find_if(links.begin(), links.end(),
+			crtlink::crtlink_find_by_ifindex(ifindex))) == links.end()) {
+		throw eNetlinkNotFound();
+	}
+	return it->second;
 }
 
 

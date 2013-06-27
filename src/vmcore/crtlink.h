@@ -11,7 +11,6 @@
 #include <ostream>
 #include <string>
 
-#include <rofl/common/ciosrv.h>
 #include <rofl/common/cmacaddr.h>
 #include <rofl/common/cmemory.h>
 
@@ -27,8 +26,7 @@ extern "C" {
 namespace dptmap
 {
 
-class crtlink :
-		public rofl::ciosrv
+class crtlink
 {
 public:
 
@@ -94,6 +92,40 @@ public:
 				<< "mtu=" << rtlink.mtu << " "
 				<< "}";
 		return os;
+	};
+
+
+	/**
+	 *
+	 */
+	class crtlink_find_by_ifindex : public std::unary_function<crtlink,bool> {
+		unsigned int ifindex;
+	public:
+		crtlink_find_by_ifindex(unsigned int ifindex) :
+			ifindex(ifindex) {};
+		bool operator() (crtlink const& rtl) {
+			return (ifindex == rtl.ifindex);
+		};
+		bool operator() (std::pair<unsigned int, crtlink> const& p) {
+			return (ifindex == p.second.ifindex);
+		};
+	};
+
+
+	/**
+	 *
+	 */
+	class crtlink_find_by_devname : public std::unary_function<crtlink,bool> {
+		std::string devname;
+	public:
+		crtlink_find_by_devname(std::string const& devname) :
+			devname(devname) {};
+		bool operator() (crtlink const& rtl) {
+			return (devname == rtl.devname);
+		};
+		bool operator() (std::pair<unsigned int, crtlink> const& p) {
+			return (devname == p.second.devname);
+		};
 	};
 };
 
