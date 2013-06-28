@@ -61,9 +61,9 @@ ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
 			throw eTapDevIoctlFailed();
 		}
 
-		enable_interface();
-
 		set_hwaddr(hwaddr);
+
+		enable_interface();
 
 		//netdev_owner->netdev_open(this);
 
