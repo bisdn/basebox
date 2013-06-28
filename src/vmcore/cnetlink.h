@@ -140,6 +140,16 @@ public:
 
 	/**
 	 *
+	 * @param rtr
+	 * @return
+	 */
+	unsigned int
+	get_route(
+			crtroute const& rtr);
+
+
+	/**
+	 *
 	 */
 	unsigned int
 	set_route(
@@ -274,6 +284,27 @@ public:
 	 * @param ifindex
 	 */
 	virtual void addr_deleted(unsigned int ifindex, uint16_t adindex) {};
+
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void route_created(unsigned int rtindex) {};
+
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void route_updated(unsigned int rtindex) {};
+
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	virtual void route_deleted(unsigned int rtindex) {};
 };
 
 

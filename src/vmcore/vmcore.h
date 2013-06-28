@@ -94,6 +94,15 @@ public:
 	virtual void
 	addr_deleted(unsigned int ifindex, uint16_t adindex);
 
+	virtual void
+	route_created(unsigned int rtindex);
+
+	virtual void
+	route_updated(unsigned int rtindex);
+
+	virtual void
+	route_deleted(unsigned int rtindex);
+
 
 public: // overloaded from cnetlink_owner
 

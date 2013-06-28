@@ -241,38 +241,36 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 	nl_object_get(obj); // get reference to object
 
 	fprintf(stderr, "cnetlink::route_route_cb() called\n");
-#if 0
-	unsigned int ifindex = rtnl_addr_get_ifindex((struct rtnl_addr*)obj);
 
 	try {
 		switch (action) {
 		case NL_ACT_NEW: {
-			uint16_t adindex = cnetlink::get_instance().get_link(ifindex).set_addr(crtaddr((struct rtnl_addr*)obj));
+			unsigned int rtindex = cnetlink::get_instance().set_route(crtroute((struct rtnl_route*)obj));
 
 			for (std::set<cnetlink_subscriber*>::iterator
 					it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
-				(*it)->addr_created(ifindex, adindex);
+				(*it)->route_created(rtindex);
 			}
 
 		} break;
 		case NL_ACT_CHANGE: {
-			uint16_t adindex = cnetlink::get_instance().get_link(ifindex).set_addr(crtaddr((struct rtnl_addr*)obj));
+			unsigned int rtindex = cnetlink::get_instance().set_route(crtroute((struct rtnl_route*)obj));
 
 			for (std::set<cnetlink_subscriber*>::iterator
 					it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
-				(*it)->addr_updated(ifindex, adindex);
+				(*it)->route_updated(rtindex);
 			}
 
 		} break;
 		case NL_ACT_DEL: {
-			uint16_t adindex = cnetlink::get_instance().get_link(ifindex).get_addr(crtaddr((struct rtnl_addr*)obj));
+			unsigned int rtindex = cnetlink::get_instance().get_route(crtroute((struct rtnl_route*)obj));
 
 			for (std::set<cnetlink_subscriber*>::iterator
 					it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
-				(*it)->addr_deleted(ifindex, adindex);
+				(*it)->route_deleted(rtindex);
 			}
 
-			cnetlink::get_instance().get_link(ifindex).del_addr(adindex);
+			cnetlink::get_instance().del_route(rtindex);
 
 		} break;
 		default: {
@@ -282,7 +280,6 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 	} catch (eRtLinkNotFound& e) {
 		fprintf(stderr, "oops, route_addr_cb() was called with an invalid link\n");
 	}
-#endif
 
 	nl_object_put(obj); // release reference to object
 }
@@ -342,6 +339,18 @@ cnetlink::get_route(
 	return routes[rtindex];
 }
 
+
+
+unsigned int
+cnetlink::get_route(crtroute const& rtr)
+{
+	std::map<unsigned int, crtroute>::iterator it;
+	if ((it = find_if(routes.begin(), routes.end(),
+			crtroute::crtroute_find(rtr.get_table_id(), rtr.get_scope(), rtr.get_ifindex(), rtr.get_dst()))) == routes.end()) {
+		throw eRtLinkNotFound();
+	}
+	return it->first;
+}
 
 
 unsigned int

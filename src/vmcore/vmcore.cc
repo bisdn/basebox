@@ -239,6 +239,46 @@ vmcore::addr_deleted(unsigned int ifindex, uint16_t adindex)
 
 
 
+void
+vmcore::route_created(unsigned int rtindex)
+{
+#if 1
+	fprintf(stderr, "vmcore::route_created() rtindex=%d => ", rtindex);
+	std::cerr << cnetlink::get_instance().get_route(rtindex) << std::endl;
+#endif
+}
+
+
+
+void
+vmcore::route_updated(unsigned int rtindex)
+{
+#if 1
+	fprintf(stderr, "vmcore::route_updated() rtindex=%d => ", rtindex);
+	std::cerr << cnetlink::get_instance().get_route(rtindex) << std::endl;
+#endif
+}
+
+
+
+void
+vmcore::route_deleted(unsigned int rtindex)
+{
+#if 1
+	fprintf(stderr, "vmcore::route_deleted() rtindex=%d\n", rtindex);
+#endif
+}
+
+
+
+
+
+
+
+
+
+
+
 #if 0
 void
 vmcore::nl_route_new(cnetlink const* netlink, croute const& route)
