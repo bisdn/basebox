@@ -190,6 +190,9 @@ dptport::ip_endpoint_install_flow_mod(uint16_t adindex)
 		fe.set_hard_timeout(0);
 		fe.set_table_id(0);			// FIXME: check for first table-id in data path
 
+		fe.instructions.next() = rofl::cofinst_apply_actions();
+		fe.instructions.back().actions.next() = rofl::cofaction_output(OFPP_CONTROLLER, 1518); // FIXME: check the mtu value
+
 		switch (rta.get_family()) {
 		case AF_INET:  { fe.match.set_ipv4_dst(rta.get_local_addr()); } break;
 		case AF_INET6: { fe.match.set_ipv6_dst(rta.get_local_addr()); } break;
@@ -213,9 +216,6 @@ dptport::ip_endpoint_remove_flow_mod(uint16_t adindex)
 		rofl::cflowentry fe(dpt->get_version());
 
 		fe.set_command(OFPFC_DELETE_STRICT);
-		fe.set_buffer_id(OFP_NO_BUFFER);
-		fe.set_idle_timeout(0);
-		fe.set_hard_timeout(0);
 		fe.set_table_id(0);			// FIXME: check for first table-id in data path
 
 		switch (rta.get_family()) {
