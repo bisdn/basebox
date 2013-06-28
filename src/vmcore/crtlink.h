@@ -114,14 +114,14 @@ public:
 	/**
 	 *
 	 */
-	void
+	uint16_t
 	del_addr(uint16_t index = CRTLINK_ADDR_ALL);
 
 
 	/**
 	 *
 	 */
-	void
+	uint16_t
 	del_addr(crtaddr const& rta);
 
 

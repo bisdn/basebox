@@ -111,7 +111,7 @@ crtlink::set_addr(crtaddr const& rta)
 			crtaddr::crtaddr_find_by_local_addr(rta.get_local_addr()))) != addrs.end()) {
 
 		//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-CHG => index=" << it->first << " " << rta << std::endl;
-		std::cerr << "crtlink::set_addr() route/addr: NL-ACT-CHG => " << *this << std::endl;
+		//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-CHG => " << *this << std::endl;
 		it->second = rta;
 		return it->first;
 
@@ -122,7 +122,7 @@ crtlink::set_addr(crtaddr const& rta)
 			index++;
 		}
 		//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-NEW => index=" << index << " " << rta << std::endl;
-		std::cerr << "crtlink::set_addr() route/addr: NL-ACT-NEW => " << *this << std::endl;
+		//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-NEW => " << *this << std::endl;
 		addrs[index] = rta;
 		return index;
 	}
@@ -130,7 +130,7 @@ crtlink::set_addr(crtaddr const& rta)
 
 
 
-void
+uint16_t
 crtlink::del_addr(uint16_t index)
 {
 	if (CRTLINK_ADDR_ALL == index) {
@@ -139,15 +139,16 @@ crtlink::del_addr(uint16_t index)
 	} else {
 		//std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << index << std::endl;
 		if (addrs.find(index) == addrs.end())
-			return;
+			throw eRtLinkNotFound();
 		addrs.erase(index);
 	}
-	std::cerr << "crtlink::set_addr() route/addr: NL-ACT-DEL => " << *this << std::endl;
+	//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-DEL => " << *this << std::endl;
+	return index;
 }
 
 
 
-void
+uint16_t
 crtlink::del_addr(crtaddr const& rta)
 {
 	// find address
@@ -156,8 +157,10 @@ crtlink::del_addr(crtaddr const& rta)
 			crtaddr::crtaddr_find_by_local_addr(rta.get_local_addr()))) == addrs.end()) {
 		throw eRtLinkNotFound();
 	}
+	uint16_t index = it->first;
 	//std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << it->first << std::endl;
 	addrs.erase(it);
+	return index;
 }
 
 

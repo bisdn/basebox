@@ -137,12 +137,30 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 	switch (action) {
 	case NL_ACT_NEW: {
 		cnetlink::get_instance().set_link(crtlink((struct rtnl_link*)obj));
+
+		for (std::set<cnetlink_subscriber*>::iterator
+				it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
+			(*it)->link_created(ifindex);
+		}
+
 	} break;
 	case NL_ACT_CHANGE: {
 		cnetlink::get_instance().set_link(crtlink((struct rtnl_link*)obj));
+
+		for (std::set<cnetlink_subscriber*>::iterator
+				it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
+			(*it)->link_updated(ifindex);
+		}
+
 	} break;
 	case NL_ACT_DEL: {
 		cnetlink::get_instance().del_link(ifindex);
+
+		for (std::set<cnetlink_subscriber*>::iterator
+				it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
+			(*it)->link_deleted(ifindex);
+		}
+
 	} break;
 	default: {
 		fprintf(stderr, "route/link: unknown NL action\n");
@@ -169,15 +187,30 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 	try {
 		switch (action) {
 		case NL_ACT_NEW: {
-			cnetlink::get_instance().get_link(ifindex).set_addr(crtaddr((struct rtnl_addr*)obj));
+			uint16_t adindex = cnetlink::get_instance().get_link(ifindex).set_addr(crtaddr((struct rtnl_addr*)obj));
+
+			for (std::set<cnetlink_subscriber*>::iterator
+					it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
+				(*it)->addr_created(ifindex, adindex);
+			}
 
 		} break;
 		case NL_ACT_CHANGE: {
-			cnetlink::get_instance().get_link(ifindex).set_addr(crtaddr((struct rtnl_addr*)obj));
+			uint16_t adindex = cnetlink::get_instance().get_link(ifindex).set_addr(crtaddr((struct rtnl_addr*)obj));
+
+			for (std::set<cnetlink_subscriber*>::iterator
+					it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
+				(*it)->addr_updated(ifindex, adindex);
+			}
 
 		} break;
 		case NL_ACT_DEL: {
-			cnetlink::get_instance().get_link(ifindex).del_addr(crtaddr((struct rtnl_addr*)obj));
+			uint16_t adindex = cnetlink::get_instance().get_link(ifindex).del_addr(crtaddr((struct rtnl_addr*)obj));
+
+			for (std::set<cnetlink_subscriber*>::iterator
+					it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
+				(*it)->addr_deleted(ifindex, adindex);
+			}
 
 		} break;
 		default: {

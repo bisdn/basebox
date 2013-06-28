@@ -82,7 +82,22 @@ public:
 	enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts);
 
 	virtual void
-	linkcache_updated();
+	link_created(unsigned int ifindex);
+
+	virtual void
+	link_updated(unsigned int ifindex);
+
+	virtual void
+	link_deleted(unsigned int ifindex);
+
+	virtual void
+	addr_created(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_updated(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_deleted(unsigned int ifindex, uint16_t adindex);
 
 public: // overloaded from cnetlink_owner
 

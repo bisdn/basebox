@@ -5,14 +5,12 @@ using namespace dptmap;
 vmcore::vmcore() :
 		dpt(0)
 {
-	cnetlink::get_instance().subscribe(this);
+
 }
 
 
 vmcore::~vmcore()
 {
-	cnetlink::get_instance().unsubscribe(this);
-
 	for (std::map<rofl::cofdpt*, std::map<uint32_t, ctapdev*> >::iterator
 			jt = tapdevs.begin(); jt != tapdevs.end(); ++jt) {
 		for (std::map<uint32_t, ctapdev*>::iterator
@@ -226,9 +224,10 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 
 
 void
-vmcore::linkcache_updated()
+vmcore::link_created(unsigned int ifindex)
 {
-	fprintf(stderr, "vmcore::linkcache_updated()\n");
+	fprintf(stderr, "vmcore::link_created() ifindex=%d => ", ifindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
 
 	if (0 == dpt) {
 		return;
@@ -241,6 +240,56 @@ vmcore::linkcache_updated()
 }
 
 
+
+void
+vmcore::link_updated(unsigned int ifindex)
+{
+	fprintf(stderr, "vmcore::link_updated() ifindex=%d => ", ifindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
+
+	if (0 == dpt) {
+		return;
+	}
+
+	for (std::map<uint32_t, ctapdev*>::iterator
+			it = tapdevs[dpt].begin(); it != tapdevs[dpt].end(); ++it) {
+		cnetlink::get_instance().get_link(it->second->get_devname());
+	}
+}
+
+
+
+void
+vmcore::link_deleted(unsigned int ifindex)
+{
+	fprintf(stderr, "vmcore::link_deleted() ifindex=%d\n", ifindex);
+}
+
+
+
+void
+vmcore::addr_created(unsigned int ifindex, uint16_t adindex)
+{
+	fprintf(stderr, "vmcore::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+}
+
+
+
+void
+vmcore::addr_updated(unsigned int ifindex, uint16_t adindex)
+{
+	fprintf(stderr, "vmcore::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+}
+
+
+
+void
+vmcore::addr_deleted(unsigned int ifindex, uint16_t adindex)
+{
+	fprintf(stderr, "vmcore::addr_deleted() ifindex=%d adindex=%d\n", ifindex, adindex);
+}
 
 
 

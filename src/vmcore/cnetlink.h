@@ -32,14 +32,7 @@ class eLinkCacheBase 		: public std::exception {};
 class eLinkCacheCritical	: public eLinkCacheBase {};
 class eNetlinkNotFound		: public eLinkCacheBase {};
 
-
-class cnetlink_subscriber
-{
-public:
-	virtual ~cnetlink_subscriber() {};
-	virtual void linkcache_updated() = 0;
-};
-
+class cnetlink_subscriber;
 
 class cnetlink :
 		public rofl::ciosrv
@@ -171,6 +164,87 @@ private:
 	void
 	handle_revent(int fd);
 };
+
+
+
+
+class cnetlink_subscriber
+{
+public:
+	/**
+	 *
+	 */
+	cnetlink_subscriber() {
+		nl_subscribe();
+	};
+
+	/**
+	 *
+	 */
+	virtual ~cnetlink_subscriber() {
+		nl_unsubscribe();
+	};
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	void nl_subscribe() {
+		cnetlink::get_instance().subscribe(this);
+	};
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	void nl_unsubscribe() {
+		cnetlink::get_instance().unsubscribe(this);
+	};
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void link_created(unsigned int ifindex) = 0;
+
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void link_updated(unsigned int ifindex) = 0;
+
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	virtual void link_deleted(unsigned int ifindex) = 0;
+
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void addr_created(unsigned int ifindex, uint16_t adindex) = 0;
+
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void addr_updated(unsigned int ifindex, uint16_t adindex) = 0;
+
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	virtual void addr_deleted(unsigned int ifindex, uint16_t adindex) = 0;
+};
+
+
+
 
 }; // end of namespace dptmap
 
