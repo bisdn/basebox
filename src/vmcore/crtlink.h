@@ -8,6 +8,8 @@
 #ifndef CRTLINK_H_
 #define CRTLINK_H_ 1
 
+#include <exception>
+#include <algorithm>
 #include <ostream>
 #include <string>
 #include <map>
@@ -21,6 +23,7 @@ extern "C" {
 #endif
 #include <netlink/object.h>
 #include <netlink/route/link.h>
+#include <inttypes.h>
 #ifdef __cplusplus
 }
 #endif
@@ -30,12 +33,18 @@ extern "C" {
 namespace dptmap
 {
 
+class eRtLinkBase		: public std::exception {};
+class eRtLinkNotFound	: public eRtLinkBase {};
+
 class crtlink
 {
 private:
 
+	enum addr_index_t {
+		CRTLINK_ADDR_ALL = 0xffff,	// apply command to all addresses
+	};
 
-	std::list<crtaddr>  addrs;	// list of addresses
+	std::map<uint16_t, crtaddr>  addrs;	// key: index, value: address, index remains constant, as long as addrs endures
 
 
 public:
@@ -92,6 +101,13 @@ public:
 	 *
 	 */
 	crtaddr&
+	get_addr(uint16_t index);
+
+
+	/**
+	 *
+	 */
+	uint16_t
 	set_addr(crtaddr const& rta);
 
 
@@ -99,8 +115,65 @@ public:
 	 *
 	 */
 	void
-	addr_del(crtaddr const& rta);
+	del_addr(uint16_t index = CRTLINK_ADDR_ALL);
 
+
+	/**
+	 *
+	 */
+	void
+	del_addr(crtaddr const& rta);
+
+
+public:
+
+
+	/**
+	 *
+	 */
+	std::string get_devname() const { return devname; };
+
+
+	/**
+	 *
+	 */
+	rofl::cmacaddr get_hwaddr() const { return maddr; };
+
+
+	/**
+	 *
+	 */
+	rofl::cmacaddr get_broadcast() const { return bcast; };
+
+
+	/**
+	 *
+	 */
+	unsigned int get_flags() const { return flags; };
+
+
+	/**
+	 *
+	 */
+	int get_family() const { return af; };
+
+
+	/**
+	 *
+	 */
+	unsigned int get_arptype() const { return arptype; };
+
+
+	/**
+	 *
+	 */
+	int get_ifindex() const { return ifindex; };
+
+
+	/**
+	 *
+	 */
+	unsigned int get_mtu() const { return mtu; };
 
 
 public:
@@ -120,8 +193,13 @@ public:
 				<< "af=" << rtlink.af << " "
 				<< "arptype=" << rtlink.arptype << " "
 				<< "ifindex=" << rtlink.ifindex << " "
-				<< "mtu=" << rtlink.mtu << " "
-				<< "}";
+				<< "mtu=" << rtlink.mtu << " ";
+		for (std::map<uint16_t, crtaddr>::const_iterator
+				it = rtlink.addrs.begin(); it != rtlink.addrs.end(); ++it) {
+			os << it->second << " ";
+		}
+
+		os << "}";
 		return os;
 	};
 

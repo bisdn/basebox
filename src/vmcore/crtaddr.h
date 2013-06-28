@@ -90,6 +90,63 @@ public:
 	/**
 	 *
 	 */
+	std::string get_label() const { return label; };
+
+
+	/**
+	 *
+	 */
+	int get_ifindex() const { return ifindex; };
+
+
+	/**
+	 *
+	 */
+	int get_family() const { return af; };
+
+
+	/**
+	 *
+	 */
+	int get_prefixlen() const { return prefixlen; };
+
+
+	/**
+	 *
+	 */
+	int get_scope() const { return scope; };
+
+
+	/**
+	 *
+	 */
+	int get_flags() const { return flags; };
+
+
+	/**
+	 *
+	 */
+	rofl::caddress get_local_addr() const { return local; };
+
+
+	/**
+	 *
+	 */
+	rofl::caddress get_peer_addr() const { return peer; };
+
+
+	/**
+	 *
+	 */
+	rofl::caddress get_broadcast_addr() const { return bcast; };
+
+
+public:
+
+
+	/**
+	 *
+	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, crtaddr const& rtaddr)
 	{
@@ -105,6 +162,21 @@ public:
 				<< "broadcast=" << rtaddr.bcast << " "
 				<< "}";
 		return os;
+	};
+
+
+	/**
+	 *
+	 */
+	class crtaddr_find_by_local_addr : public std::unary_function<crtaddr,bool> {
+		rofl::caddress local;
+	public:
+		crtaddr_find_by_local_addr(rofl::caddress const& local) :
+			local(local) {};
+		bool
+		operator() (std::pair<uint16_t, crtaddr> const& p) {
+			return (local == p.second.local);
+		};
 	};
 };
 

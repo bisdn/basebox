@@ -86,19 +86,71 @@ crtlink::crtlink(struct rtnl_link *link) :
 
 
 crtaddr&
+crtlink::get_addr(uint16_t index)
+{
+	if (addrs.find(index) == addrs.end())
+		throw eRtLinkNotFound();
+	return addrs[index];
+}
+
+
+
+uint16_t
 crtlink::set_addr(crtaddr const& rta)
 {
-	std::cerr << "crtlink::set_addr() route/addr: NL-ACT-NEW => " << rta << std::endl;
-	addrs.push_back(rta);
-	return addrs.back();
+	// address already exists
+	std::map<uint16_t, crtaddr>::iterator it;
+	if ((it = find_if(addrs.begin(), addrs.end(),
+			crtaddr::crtaddr_find_by_local_addr(rta.get_local_addr()))) != addrs.end()) {
+
+		//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-CHG => index=" << it->first << " " << rta << std::endl;
+		std::cerr << "crtlink::set_addr() route/addr: NL-ACT-CHG => " << *this << std::endl;
+		it->second = rta;
+		return it->first;
+
+	} else {
+
+		unsigned int index = 0;
+		while (addrs.find(index) != addrs.end()) {
+			index++;
+		}
+		//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-NEW => index=" << index << " " << rta << std::endl;
+		std::cerr << "crtlink::set_addr() route/addr: NL-ACT-NEW => " << *this << std::endl;
+		addrs[index] = rta;
+		return index;
+	}
 }
 
 
 
 void
-crtlink::addr_del(crtaddr const& rta)
+crtlink::del_addr(uint16_t index)
 {
-	//addrs[rta.af].erase(rta);
+	if (CRTLINK_ADDR_ALL == index) {
+		//std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << index << std::endl;
+		addrs.clear();
+	} else {
+		//std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << index << std::endl;
+		if (addrs.find(index) == addrs.end())
+			return;
+		addrs.erase(index);
+	}
+	std::cerr << "crtlink::set_addr() route/addr: NL-ACT-DEL => " << *this << std::endl;
+}
+
+
+
+void
+crtlink::del_addr(crtaddr const& rta)
+{
+	// find address
+	std::map<uint16_t, crtaddr>::iterator it;
+	if ((it = find_if(addrs.begin(), addrs.end(),
+			crtaddr::crtaddr_find_by_local_addr(rta.get_local_addr()))) == addrs.end()) {
+		throw eRtLinkNotFound();
+	}
+	//std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << it->first << std::endl;
+	addrs.erase(it);
 }
 
 

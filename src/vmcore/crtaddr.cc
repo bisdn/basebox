@@ -85,8 +85,7 @@ crtaddr::crtaddr(struct rtnl_addr* addr) :
 
 	nl_object_get((struct nl_object*)addr); // increment reference counter by one
 
-	if (rtnl_addr_get_label(addr))
-		label.assign(rtnl_addr_get_label(addr));
+	if (rtnl_addr_get_label(addr)) label.assign(rtnl_addr_get_label(addr)); // label might be null in case of IPv6 addresses
 	ifindex 	= rtnl_addr_get_ifindex(addr);
 	af 			= rtnl_addr_get_family(addr);
 	prefixlen 	= rtnl_addr_get_prefixlen(addr);
@@ -98,7 +97,7 @@ crtaddr::crtaddr(struct rtnl_addr* addr) :
 	std::string s_bcast (nl_addr2str(rtnl_addr_get_broadcast(addr), s_buf, sizeof(s_buf)));
 
 	s_local = s_local.substr(0, s_local.find_first_of("/", 0));
-	s_peer  =  s_peer.substr(0,  s_peer.find_first_of("/", 0));
+	s_peer  = s_peer .substr(0,  s_peer.find_first_of("/", 0));
 	s_bcast = s_bcast.substr(0, s_bcast.find_first_of("/", 0));
 
 	local 		= rofl::caddress(af, s_local.c_str());

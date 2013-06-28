@@ -99,14 +99,6 @@ public:
 	 *
 	 */
 	crtlink&
-	set_link(
-			crtlink const& rtl);
-
-
-	/**
-	 *
-	 */
-	crtlink&
 	get_link(
 			std::string const& devname);
 
@@ -122,9 +114,18 @@ public:
 	/**
 	 *
 	 */
+	crtlink&
+	set_link(
+			crtlink const& rtl);
+
+
+	/**
+	 *
+	 */
 	void
-	get_addr(
-			std::string const& devname);
+	del_link(
+			unsigned int ifindex);
+
 
 
 private:
