@@ -12,8 +12,8 @@ using namespace dptmap;
 extern int errno;
 
 
-ctapdev::ctapdev(cnetdev_owner *netdev_owner, std::string const& devname, uint32_t port_no) :
-		cnetdev(netdev_owner, devname, port_no),
+ctapdev::ctapdev(cnetdev_owner *netdev_owner, std::string const& devname) :
+		cnetdev(netdev_owner, devname),
 		fd(-1)
 {
 	tap_open(devname);

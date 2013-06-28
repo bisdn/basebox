@@ -11,14 +11,14 @@ vmcore::vmcore() :
 
 vmcore::~vmcore()
 {
-	for (std::map<rofl::cofdpt*, std::map<uint32_t, ctapdev*> >::iterator
-			jt = tapdevs.begin(); jt != tapdevs.end(); ++jt) {
-		for (std::map<uint32_t, ctapdev*>::iterator
-				it = tapdevs[jt->first].begin(); it != tapdevs[jt->first].end(); ++it) {
-			delete (it->second); // remove ctapdev instance from heap
+	for (std::map<rofl::cofdpt*, std::map<uint32_t, dptport*> >::iterator
+			jt = dptports.begin(); jt != dptports.end(); ++jt) {
+		for (std::map<uint32_t, dptport*>::iterator
+				it = dptports[jt->first].begin(); it != dptports[jt->first].end(); ++it) {
+			delete (it->second); // remove dptport instance from heap
 		}
 	}
-	tapdevs.clear();
+	dptports.clear();
 }
 
 
@@ -33,11 +33,11 @@ vmcore::handle_dpath_open(
 		/*
 		 * remove all old pending tap devices
 		 */
-		for (std::map<uint32_t, ctapdev*>::iterator
-				it = tapdevs[dpt].begin(); it != tapdevs[dpt].end(); ++it) {
-			delete (it->second); // remove ctapdev instance from heap
+		for (std::map<uint32_t, dptport*>::iterator
+				it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
+			delete (it->second); // remove dptport instance from heap
 		}
-		tapdevs.erase(dpt);
+		dptports.erase(dpt);
 
 
 		// TODO: how many data path elements are allowed to connect to ourselves? only one makes sense ...
@@ -50,8 +50,8 @@ vmcore::handle_dpath_open(
 		for (std::map<uint32_t, rofl::cofport*>::iterator
 				it = ports.begin(); it != ports.end(); ++it) {
 			rofl::cofport *port = it->second;
-			if (tapdevs[dpt].find(port->get_port_no()) == tapdevs[dpt].end()) {
-				tapdevs[dpt][port->get_port_no()] = new ctapdev(this, port->get_name(), port->get_port_no());
+			if (dptports[dpt].find(port->get_port_no()) == dptports[dpt].end()) {
+				dptports[dpt][port->get_port_no()] = new dptport(this, dpt, port->get_port_no());
 			}
 		}
 
@@ -80,11 +80,11 @@ void
 vmcore::handle_dpath_close(
 		rofl::cofdpt *dpt)
 {
-	for (std::map<uint32_t, ctapdev*>::iterator
-			it = tapdevs[dpt].begin(); it != tapdevs[dpt].end(); ++it) {
-		delete (it->second); // remove ctapdev instance from heap
+	for (std::map<uint32_t, dptport*>::iterator
+			it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
+		delete (it->second); // remove dptport instance from heap
 	}
-	tapdevs.erase(dpt);
+	dptports.erase(dpt);
 
 	this->dpt = (rofl::cofdpt*)0;
 }
@@ -106,19 +106,19 @@ vmcore::handle_port_status(
 	try {
 		switch (msg->get_reason()) {
 		case OFPPR_ADD: {
-			if (tapdevs[dpt].find(port_no) == tapdevs[dpt].end()) {
-				tapdevs[dpt][port_no] = new ctapdev(this, msg->get_port().get_name(), msg->get_port().get_port_no());
+			if (dptports[dpt].find(port_no) == dptports[dpt].end()) {
+				dptports[dpt][port_no] = new dptport(this, dpt, msg->get_port().get_port_no());
 			}
 		} break;
 		case OFPPR_MODIFY: {
 
-			// TODO: mirror port status on ctapdev instance
+			// TODO: mirror port status on dptport instance
 
 		} break;
 		case OFPPR_DELETE: {
-			if (tapdevs[dpt].find(port_no) != tapdevs[dpt].end()) {
-				delete tapdevs[dpt][port_no];
-				tapdevs[dpt].erase(port_no);
+			if (dptports[dpt].find(port_no) != dptports[dpt].end()) {
+				delete dptports[dpt][port_no];
+				dptports[dpt].erase(port_no);
 			}
 		} break;
 		default: {
@@ -148,49 +148,6 @@ vmcore::handle_packet_out(rofl::cofctl *ctl, rofl::cofmsg_packet_out *msg)
 
 
 
-void
-vmcore::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
-{
-	try {
-		if (0 == dpt) {
-			throw eVmCoreNoDptAttached();
-		}
-
-		ctapdev* tapdev = dynamic_cast<ctapdev*>( netdev );
-		if (0 == tapdev) {
-			throw eVmCoreTapDevNotFound();
-		}
-
-		rofl::cofaclist actions;
-		actions.next() = rofl::cofaction_output(tapdev->get_port_no());
-
-		send_packet_out_message(dpt, OFP_NO_BUFFER, OFPP_CONTROLLER, actions, pkt->soframe(), pkt->framelen());
-
-	} catch (eVmCoreNoDptAttached& e) {
-
-		fprintf(stderr, "vmcore::enqueue() no data path attached\n");
-
-	} catch (eVmCoreTapDevNotFound& e) {
-
-		fprintf(stderr, "vmcore::enqueue() no tap device found\n");
-
-	}
-
-	cpacketpool::get_instance().release_pkt(pkt);
-}
-
-
-
-void
-vmcore::enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
-{
-	for (std::vector<rofl::cpacket*>::iterator
-			it = pkts.begin(); it != pkts.end(); ++it) {
-		enqueue(netdev, *it);
-	}
-}
-
-
 
 void
 vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
@@ -198,18 +155,13 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 	try {
 		uint32_t port_no = msg->get_match().get_in_port();
 
-		if (tapdevs[dpt].find(port_no) == tapdevs[dpt].end()) {
+		if (dptports[dpt].find(port_no) == dptports[dpt].end()) {
 			fprintf(stderr, "vmcore::handle_packet_in() frame for port_no=%d received, but port not found\n", port_no);
 
 			delete msg; return;
 		}
 
-		rofl::cpacket *pkt = cpacketpool::get_instance().acquire_pkt();
-
-		*pkt = msg->get_packet();
-		//pkt->unpack(port_no, msg->get_packet().soframe(), msg->get_packet().framelen());
-
-		tapdevs[dpt][port_no]->enqueue(pkt);
+		dptports[dpt][port_no]->handle_packet_in(msg->get_packet());
 
 		delete msg;
 
@@ -233,8 +185,8 @@ vmcore::link_created(unsigned int ifindex)
 		return;
 	}
 
-	for (std::map<uint32_t, ctapdev*>::iterator
-			it = tapdevs[dpt].begin(); it != tapdevs[dpt].end(); ++it) {
+	for (std::map<uint32_t, dptport*>::iterator
+			it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
 		cnetlink::get_instance().get_link(it->second->get_devname());
 	}
 }
@@ -251,8 +203,8 @@ vmcore::link_updated(unsigned int ifindex)
 		return;
 	}
 
-	for (std::map<uint32_t, ctapdev*>::iterator
-			it = tapdevs[dpt].begin(); it != tapdevs[dpt].end(); ++it) {
+	for (std::map<uint32_t, dptport*>::iterator
+			it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
 		cnetlink::get_instance().get_link(it->second->get_devname());
 	}
 }

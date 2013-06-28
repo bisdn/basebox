@@ -14,8 +14,7 @@
 //#include "cnetlink.h"
 #include <rofl/common/crofbase.h>
 
-#include <cnetdev.h>
-#include <ctapdev.h>
+#include <dptport.h>
 #include <cnetlink.h>
 
 namespace dptmap
@@ -24,19 +23,17 @@ namespace dptmap
 class eVmCoreBase 			: public std::exception {};
 class eVmCoreCritical 		: public eVmCoreBase {};
 class eVmCoreNoDptAttached	: public eVmCoreBase {};
-class eVmCoreTapDevNotFound	: public eVmCoreBase {};
 
 class vmcore :
 	/*public cnetlink_owner,*/
 		public rofl::crofbase,
-		public cnetdev_owner,
 		public cnetlink_subscriber
 {
 private:
 
 
 	rofl::cofdpt *dpt;	// handle for cofdpt instance managed by this vmcore
-	std::map<rofl::cofdpt*, std::map<uint32_t, ctapdev*> > tapdevs;	// map of tap interfaces for dpt
+	std::map<rofl::cofdpt*, std::map<uint32_t, dptport*> > dptports;	// mapped ports per data path element
 
 
 public:
@@ -75,11 +72,9 @@ public:
 	virtual void
 	handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg);
 
-	virtual void
-	enqueue(cnetdev *netdev, rofl::cpacket* pkt);
 
-	virtual void
-	enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts);
+public:
+
 
 	virtual void
 	link_created(unsigned int ifindex);
@@ -98,6 +93,7 @@ public:
 
 	virtual void
 	addr_deleted(unsigned int ifindex, uint16_t adindex);
+
 
 public: // overloaded from cnetlink_owner
 
