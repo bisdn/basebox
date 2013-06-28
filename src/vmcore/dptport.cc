@@ -143,6 +143,8 @@ dptport::addr_created(unsigned int ifindex, uint16_t adindex)
 
 	fprintf(stderr, "dptport::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+
+	ip_endpoint_install_flow_mod(adindex);
 }
 
 
@@ -168,7 +170,58 @@ dptport::addr_deleted(unsigned int ifindex, uint16_t adindex)
 		return;
 
 	fprintf(stderr, "dptport::addr_deleted() ifindex=%d adindex=%d\n", ifindex, adindex);
+
+	ip_endpoint_remove_flow_mod(adindex);
 }
 
+
+
+void
+dptport::ip_endpoint_install_flow_mod(uint16_t adindex)
+{
+	try {
+		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
+
+		rofl::cflowentry fe(dpt->get_version());
+
+		fe.set_command(OFPFC_ADD);
+		fe.set_buffer_id(OFP_NO_BUFFER);
+		fe.set_idle_timeout(0);
+		fe.set_hard_timeout(0);
+		fe.set_table_id(0);			// FIXME: check for first table-id in data path
+
+		fe.match.set_ipv4_dst(rta.get_local_addr());
+
+		rofbase->send_flow_mod_message(dpt, fe);
+
+	} catch (eRtLinkNotFound& e) {
+		fprintf(stderr, "dptport::ip_endpoint_install_flow_mod() unable to find link or address\n");
+	}
+}
+
+
+
+void
+dptport::ip_endpoint_remove_flow_mod(uint16_t adindex)
+{
+	try {
+		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
+
+		rofl::cflowentry fe(dpt->get_version());
+
+		fe.set_command(OFPFC_DELETE_STRICT);
+		fe.set_buffer_id(OFP_NO_BUFFER);
+		fe.set_idle_timeout(0);
+		fe.set_hard_timeout(0);
+		fe.set_table_id(0);			// FIXME: check for first table-id in data path
+
+		fe.match.set_ipv4_dst(rta.get_local_addr());
+
+		rofbase->send_flow_mod_message(dpt, fe);
+
+	} catch (eRtLinkNotFound& e) {
+		fprintf(stderr, "dptport::ip_endpoint_remove_flow_mod() unable to find link or address\n");
+	}
+}
 
 

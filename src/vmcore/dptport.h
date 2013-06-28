@@ -10,6 +10,7 @@
 
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cofdpt.h>
+#include <rofl/common/openflow/cflowentry.h>
 
 #include <ctapdev.h>
 #include <cnetlink.h>
@@ -121,6 +122,25 @@ public:
 	 * @param ifindex
 	 */
 	virtual void addr_deleted(unsigned int ifindex, uint16_t adindex);
+
+
+public:
+
+
+	/**
+	 *
+	 * @param adindex
+	 */
+	void
+	ip_endpoint_install_flow_mod(uint16_t adindex);
+
+
+	/**
+	 *
+	 * @param adindex
+	 */
+	void
+	ip_endpoint_remove_flow_mod(uint16_t adindex);
 };
 
 }; // end of namespace

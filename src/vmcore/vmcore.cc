@@ -178,8 +178,10 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 void
 vmcore::link_created(unsigned int ifindex)
 {
+#if 0
 	fprintf(stderr, "vmcore::link_created() ifindex=%d => ", ifindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
+#endif
 }
 
 
@@ -187,8 +189,10 @@ vmcore::link_created(unsigned int ifindex)
 void
 vmcore::link_updated(unsigned int ifindex)
 {
+#if 0
 	fprintf(stderr, "vmcore::link_updated() ifindex=%d => ", ifindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
+#endif
 }
 
 
@@ -196,7 +200,9 @@ vmcore::link_updated(unsigned int ifindex)
 void
 vmcore::link_deleted(unsigned int ifindex)
 {
+#if 0
 	fprintf(stderr, "vmcore::link_deleted() ifindex=%d\n", ifindex);
+#endif
 }
 
 
@@ -204,8 +210,10 @@ vmcore::link_deleted(unsigned int ifindex)
 void
 vmcore::addr_created(unsigned int ifindex, uint16_t adindex)
 {
+#if 0
 	fprintf(stderr, "vmcore::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+#endif
 }
 
 
@@ -213,8 +221,10 @@ vmcore::addr_created(unsigned int ifindex, uint16_t adindex)
 void
 vmcore::addr_updated(unsigned int ifindex, uint16_t adindex)
 {
+#if 0
 	fprintf(stderr, "vmcore::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+#endif
 }
 
 
@@ -222,7 +232,9 @@ vmcore::addr_updated(unsigned int ifindex, uint16_t adindex)
 void
 vmcore::addr_deleted(unsigned int ifindex, uint16_t adindex)
 {
+#if 0
 	fprintf(stderr, "vmcore::addr_deleted() ifindex=%d adindex=%d\n", ifindex, adindex);
+#endif
 }
 
 
