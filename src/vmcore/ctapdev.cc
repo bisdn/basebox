@@ -12,11 +12,14 @@ using namespace dptmap;
 extern int errno;
 
 
-ctapdev::ctapdev(cnetdev_owner *netdev_owner, std::string const& devname) :
+ctapdev::ctapdev(
+		cnetdev_owner *netdev_owner,
+		std::string const& devname,
+		rofl::cmacaddr const& hwaddr) :
 		cnetdev(netdev_owner, devname),
 		fd(-1)
 {
-	tap_open(devname);
+	tap_open(devname, hwaddr);
 }
 
 
@@ -29,7 +32,7 @@ ctapdev::~ctapdev()
 
 
 void
-ctapdev::tap_open(std::string const& devname)
+ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
 {
 	try {
 		struct ifreq ifr;
@@ -59,6 +62,8 @@ ctapdev::tap_open(std::string const& devname)
 		}
 
 		enable_interface();
+
+		set_hwaddr(hwaddr);
 
 		//netdev_owner->netdev_open(this);
 

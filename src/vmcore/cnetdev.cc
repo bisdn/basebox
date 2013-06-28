@@ -168,3 +168,80 @@ cnetdev::disable_interface()
 
 	close(sd);
 }
+
+
+
+unsigned int
+cnetdev::get_ifindex()
+{
+	// get ifindex for devname
+	int sd, rc;
+	if ((sd = socket(AF_PACKET, SOCK_RAW, 0)) < 0)
+		throw eNetDevSocket();
+
+	struct ifreq ifr;
+	bzero(&ifr, sizeof(ifr));
+	strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
+
+	if ((rc = ioctl(sd, SIOCGIFINDEX, &ifr)) < 0)
+		throw eNetDevIoctl();
+
+	close(sd);
+
+	ifindex = ifr.ifr_ifindex;
+
+	return ifindex;
+}
+
+
+
+rofl::cmacaddr
+cnetdev::get_hwaddr()
+{
+	// get ifr_ifhwaddr for devname
+	int sd, rc;
+	if ((sd = socket(AF_PACKET, SOCK_RAW, 0)) < 0)
+		throw eNetDevSocket();
+
+	struct ifreq ifr;
+	bzero(&ifr, sizeof(ifr));
+	strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
+
+	if ((rc = ioctl(sd, SIOCGIFHWADDR, &ifr)) < 0)
+		throw eNetDevIoctl();
+
+	memcpy(hwaddr.somem(), ifr.ifr_hwaddr.sa_data, OFP_ETH_ALEN);
+
+	close(sd);
+
+	return hwaddr;
+}
+
+
+
+void
+cnetdev::set_hwaddr(rofl::cmacaddr const& hwaddr)
+{
+	// get ifr_ifhwaddr for devname
+	int sd, rc;
+	if ((sd = socket(AF_PACKET, SOCK_RAW, 0)) < 0)
+		throw eNetDevSocket();
+
+	struct ifreq ifr;
+	bzero(&ifr, sizeof(ifr));
+	strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
+
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr.somem(), OFP_ETH_ALEN);
+
+	if ((rc = ioctl(sd, SIOCSIFHWADDR, &ifr)) < 0) {
+		throw eNetDevIoctl();
+	}
+
+	this->hwaddr = hwaddr;
+
+	close(sd);
+}
+
+
+

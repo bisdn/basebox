@@ -34,6 +34,7 @@ private:
 	rofl::cofdpt		*dpt;			// cofdpt handle for attached data path element
 	uint32_t			 of_port_no;	// OpenFlow portno assigned to port on dpt mapped to this dptport instance
 	ctapdev				*tapdev;		// tap device emulating the mapped port on this system
+	unsigned int		 ifindex;		// ifindex for tapdevice
 
 
 public:

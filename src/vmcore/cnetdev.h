@@ -133,6 +133,8 @@ protected:
 
 	std::string		 devname;
 	cnetdev_owner	*netdev_owner;
+	unsigned int	 ifindex;
+	rofl::cmacaddr	 hwaddr;
 
 
 public:
@@ -179,6 +181,24 @@ public:
 	 * @brief	disable interface (clear IFF_UP flag)
 	 */
 	virtual void disable_interface();
+
+
+	/**
+	 *
+	 */
+	virtual unsigned int get_ifindex();
+
+
+	/**
+	 *
+	 */
+	virtual rofl::cmacaddr get_hwaddr();
+
+
+	/**
+	 *
+	 */
+	virtual void set_hwaddr(rofl::cmacaddr const& hwaddr);
 };
 
 };

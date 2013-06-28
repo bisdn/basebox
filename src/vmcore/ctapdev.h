@@ -47,9 +47,22 @@ class ctapdev : public cnetdev
 
 public:
 
-	ctapdev(cnetdev_owner *netdev_owner, std::string const& devname);
+
+	/**
+	 *
+	 * @param netdev_owner
+	 * @param devname
+	 * @param hwaddr
+	 */
+	ctapdev(
+			cnetdev_owner *netdev_owner,
+			std::string const& devname,
+			rofl::cmacaddr const& hwaddr);
 
 
+	/**
+	 *
+	 */
 	virtual ~ctapdev();
 
 
@@ -70,7 +83,7 @@ protected:
 	 * @brief	open tapX device
 	 */
 	void
-	tap_open(std::string const& devname);
+	tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr);
 
 
 	/**

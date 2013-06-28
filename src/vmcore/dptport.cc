@@ -16,9 +16,12 @@ dptport::dptport(
 				rofbase(rofbase),
 				dpt(dpt),
 				of_port_no(of_port_no),
-				tapdev(0)
+				tapdev(0),
+				ifindex(0)
 {
-	tapdev = new ctapdev(this, dpt->get_ports()[of_port_no]->get_name());
+	tapdev = new ctapdev(this, dpt->get_ports()[of_port_no]->get_name(), dpt->get_ports()[of_port_no]->get_hwaddr());
+
+	ifindex = tapdev->get_ifindex();
 }
 
 
@@ -92,6 +95,10 @@ dptport::handle_packet_in(rofl::cpacket const& pack)
 void
 dptport::link_created(unsigned int ifindex)
 {
+	// filter out any events not related to our port
+	if (ifindex != this->ifindex)
+		return;
+
 	fprintf(stderr, "dptport::link_created() ifindex=%d => ", ifindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
 }
@@ -101,6 +108,10 @@ dptport::link_created(unsigned int ifindex)
 void
 dptport::link_updated(unsigned int ifindex)
 {
+	// filter out any events not related to our port
+	if (ifindex != this->ifindex)
+		return;
+
 	fprintf(stderr, "dptport::link_updated() ifindex=%d => ", ifindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
 
@@ -114,6 +125,10 @@ dptport::link_updated(unsigned int ifindex)
 void
 dptport::link_deleted(unsigned int ifindex)
 {
+	// filter out any events not related to our port
+	if (ifindex != this->ifindex)
+		return;
+
 	fprintf(stderr, "dptport::link_deleted() ifindex=%d\n", ifindex);
 }
 
@@ -122,6 +137,10 @@ dptport::link_deleted(unsigned int ifindex)
 void
 dptport::addr_created(unsigned int ifindex, uint16_t adindex)
 {
+	// filter out any events not related to our port
+	if (ifindex != this->ifindex)
+		return;
+
 	fprintf(stderr, "dptport::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 }
@@ -131,6 +150,10 @@ dptport::addr_created(unsigned int ifindex, uint16_t adindex)
 void
 dptport::addr_updated(unsigned int ifindex, uint16_t adindex)
 {
+	// filter out any events not related to our port
+	if (ifindex != this->ifindex)
+		return;
+
 	fprintf(stderr, "dptport::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 }
@@ -140,6 +163,10 @@ dptport::addr_updated(unsigned int ifindex, uint16_t adindex)
 void
 dptport::addr_deleted(unsigned int ifindex, uint16_t adindex)
 {
+	// filter out any events not related to our port
+	if (ifindex != this->ifindex)
+		return;
+
 	fprintf(stderr, "dptport::addr_deleted() ifindex=%d adindex=%d\n", ifindex, adindex);
 }
 
