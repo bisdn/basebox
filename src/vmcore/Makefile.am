@@ -7,10 +7,12 @@ sbin_PROGRAMS = vmcore
 vmcore_SOURCES = main.cc \
 		vmcore.h \
 		vmcore.cc \
-		cnetdev.h \
-		cnetdev.cc \
+		dptport.h \
+		dptport.cc \
 		cpacketpool.h \
 		cpacketpool.cc \
+		cnetdev.h \
+		cnetdev.cc \
 		ctapdev.h \
 		ctapdev.cc \
 		cnetlink.h \
@@ -19,8 +21,9 @@ vmcore_SOURCES = main.cc \
 		crtlink.cc \
 		crtaddr.h \
 		crtaddr.cc \
-		dptport.h \
-		dptport.cc
+		crtroute.h \
+		crtroute.cc
+		
 vmcore_LDADD = -lpthread \
 	-lrofl \
 	-lrt
