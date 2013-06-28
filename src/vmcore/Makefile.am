@@ -23,9 +23,7 @@ vmcore_SOURCES = main.cc \
 		dptport.cc
 vmcore_LDADD = -lpthread \
 	-lrofl \
-	-lrt \
-	-lsoci_core \
-	-lsoci_sqlite3
+	-lrt
 
 AM_CPPFLAGS = -I/home/andreas/local/include/libnl3
 AM_LDFLAGS = -static -L/home/andreas/local/lib -lnl-route-3 -lnl-3
