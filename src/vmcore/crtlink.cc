@@ -45,6 +45,13 @@ crtlink::operator= (crtlink const& rtlink)
 	if (this == &rtlink)
 		return *this;
 
+	addrs.clear();
+
+	for (std::map<uint16_t, crtaddr>::const_iterator
+			it = rtlink.addrs.begin(); it != rtlink.addrs.end(); ++it) {
+		addrs[it->first] = it->second;
+	}
+
 	devname		= rtlink.devname;
 	maddr		= rtlink.maddr;
 	bcast		= rtlink.bcast;

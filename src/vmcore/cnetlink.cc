@@ -192,12 +192,6 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 }
 
 
-void
-test()
-{
-	cnetlink::get_instance().get_link(std::string("ge0")).get_mtu();
-}
-
 
 crtlink&
 cnetlink::get_link(std::string const& devname)
