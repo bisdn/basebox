@@ -190,7 +190,10 @@ dptport::ip_endpoint_install_flow_mod(uint16_t adindex)
 		fe.set_hard_timeout(0);
 		fe.set_table_id(0);			// FIXME: check for first table-id in data path
 
-		fe.match.set_ipv4_dst(rta.get_local_addr());
+		switch (rta.get_family()) {
+		case AF_INET:  { fe.match.set_ipv4_dst(rta.get_local_addr()); } break;
+		case AF_INET6: { fe.match.set_ipv6_dst(rta.get_local_addr()); } break;
+		}
 
 		rofbase->send_flow_mod_message(dpt, fe);
 
@@ -215,7 +218,10 @@ dptport::ip_endpoint_remove_flow_mod(uint16_t adindex)
 		fe.set_hard_timeout(0);
 		fe.set_table_id(0);			// FIXME: check for first table-id in data path
 
-		fe.match.set_ipv4_dst(rta.get_local_addr());
+		switch (rta.get_family()) {
+		case AF_INET:  { fe.match.set_ipv4_dst(rta.get_local_addr()); } break;
+		case AF_INET6: { fe.match.set_ipv6_dst(rta.get_local_addr()); } break;
+		}
 
 		rofbase->send_flow_mod_message(dpt, fe);
 
