@@ -92,7 +92,8 @@ dptport::handle_packet_in(rofl::cpacket const& pack)
 void
 dptport::link_created(unsigned int ifindex)
 {
-
+	fprintf(stderr, "dptport::link_created() ifindex=%d => ", ifindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
 }
 
 
@@ -100,7 +101,12 @@ dptport::link_created(unsigned int ifindex)
 void
 dptport::link_updated(unsigned int ifindex)
 {
+	fprintf(stderr, "dptport::link_updated() ifindex=%d => ", ifindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
 
+	if (0 == dpt) {
+		return;
+	}
 }
 
 
@@ -108,7 +114,7 @@ dptport::link_updated(unsigned int ifindex)
 void
 dptport::link_deleted(unsigned int ifindex)
 {
-
+	fprintf(stderr, "dptport::link_deleted() ifindex=%d\n", ifindex);
 }
 
 
@@ -116,7 +122,8 @@ dptport::link_deleted(unsigned int ifindex)
 void
 dptport::addr_created(unsigned int ifindex, uint16_t adindex)
 {
-
+	fprintf(stderr, "dptport::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 }
 
 
@@ -124,7 +131,8 @@ dptport::addr_created(unsigned int ifindex, uint16_t adindex)
 void
 dptport::addr_updated(unsigned int ifindex, uint16_t adindex)
 {
-
+	fprintf(stderr, "dptport::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 }
 
 
@@ -132,7 +140,7 @@ dptport::addr_updated(unsigned int ifindex, uint16_t adindex)
 void
 dptport::addr_deleted(unsigned int ifindex, uint16_t adindex)
 {
-
+	fprintf(stderr, "dptport::addr_deleted() ifindex=%d adindex=%d\n", ifindex, adindex);
 }
 
 

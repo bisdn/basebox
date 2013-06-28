@@ -180,15 +180,6 @@ vmcore::link_created(unsigned int ifindex)
 {
 	fprintf(stderr, "vmcore::link_created() ifindex=%d => ", ifindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
-
-	if (0 == dpt) {
-		return;
-	}
-
-	for (std::map<uint32_t, dptport*>::iterator
-			it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
-		cnetlink::get_instance().get_link(it->second->get_devname());
-	}
 }
 
 
@@ -198,15 +189,6 @@ vmcore::link_updated(unsigned int ifindex)
 {
 	fprintf(stderr, "vmcore::link_updated() ifindex=%d => ", ifindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
-
-	if (0 == dpt) {
-		return;
-	}
-
-	for (std::map<uint32_t, dptport*>::iterator
-			it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
-		cnetlink::get_instance().get_link(it->second->get_devname());
-	}
 }
 
 
