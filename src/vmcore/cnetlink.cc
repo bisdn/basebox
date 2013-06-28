@@ -205,12 +205,14 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 		} break;
 		case NL_ACT_DEL: {
-			uint16_t adindex = cnetlink::get_instance().get_link(ifindex).del_addr(crtaddr((struct rtnl_addr*)obj));
+			uint16_t adindex = cnetlink::get_instance().get_link(ifindex).get_addr(crtaddr((struct rtnl_addr*)obj));
 
 			for (std::set<cnetlink_subscriber*>::iterator
 					it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
 				(*it)->addr_deleted(ifindex, adindex);
 			}
+
+			cnetlink::get_instance().get_link(ifindex).del_addr(adindex);
 
 		} break;
 		default: {

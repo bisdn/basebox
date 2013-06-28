@@ -103,6 +103,19 @@ crtlink::get_addr(uint16_t index)
 
 
 uint16_t
+crtlink::get_addr(crtaddr const& rta)
+{
+	std::map<uint16_t, crtaddr>::iterator it;
+	if ((it = find_if(addrs.begin(), addrs.end(),
+			crtaddr::crtaddr_find_by_local_addr(rta.get_local_addr()))) == addrs.end()) {
+		throw eRtLinkNotFound();
+	}
+	return it->first;
+}
+
+
+
+uint16_t
 crtlink::set_addr(crtaddr const& rta)
 {
 	// address already exists

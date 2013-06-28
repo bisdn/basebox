@@ -108,6 +108,13 @@ public:
 	 *
 	 */
 	uint16_t
+	get_addr(crtaddr const& rta);
+
+
+	/**
+	 *
+	 */
+	uint16_t
 	set_addr(crtaddr const& rta);
 
 
