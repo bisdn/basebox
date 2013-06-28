@@ -205,42 +205,42 @@ public:
 	 *
 	 * @param rtl
 	 */
-	virtual void link_created(unsigned int ifindex) = 0;
+	virtual void link_created(unsigned int ifindex) {};
 
 
 	/**
 	 *
 	 * @param rtl
 	 */
-	virtual void link_updated(unsigned int ifindex) = 0;
+	virtual void link_updated(unsigned int ifindex) {};
 
 
 	/**
 	 *
 	 * @param ifindex
 	 */
-	virtual void link_deleted(unsigned int ifindex) = 0;
+	virtual void link_deleted(unsigned int ifindex) {};
 
 
 	/**
 	 *
 	 * @param rtl
 	 */
-	virtual void addr_created(unsigned int ifindex, uint16_t adindex) = 0;
+	virtual void addr_created(unsigned int ifindex, uint16_t adindex) {};
 
 
 	/**
 	 *
 	 * @param rtl
 	 */
-	virtual void addr_updated(unsigned int ifindex, uint16_t adindex) = 0;
+	virtual void addr_updated(unsigned int ifindex, uint16_t adindex) {};
 
 
 	/**
 	 *
 	 * @param ifindex
 	 */
-	virtual void addr_deleted(unsigned int ifindex, uint16_t adindex) = 0;
+	virtual void addr_deleted(unsigned int ifindex, uint16_t adindex) {};
 };
 
 
