@@ -111,7 +111,7 @@ vmcore::handle_port_status(
 			}
 		} break;
 		case OFPPR_MODIFY: {
-			if (dptports[dpt].find(port_no) == dptports[dpt].end()) {
+			if (dptports[dpt].find(port_no) != dptports[dpt].end()) {
 				dptports[dpt][port_no]->handle_port_status();
 			}
 		} break;
