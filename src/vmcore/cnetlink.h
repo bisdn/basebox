@@ -24,13 +24,14 @@ extern "C" {
 #include <rofl/common/ciosrv.h>
 
 #include <crtlink.h>
+#include <crtroute.h>
 
 namespace dptmap
 {
 
-class eLinkCacheBase 		: public std::exception {};
-class eLinkCacheCritical	: public eLinkCacheBase {};
-class eNetlinkNotFound		: public eLinkCacheBase {};
+class eNetLinkBase 			: public std::exception {};
+class eNetLinkCritical		: public eNetLinkBase {};
+class eNetLinkNotFound		: public eNetLinkBase {};
 
 class cnetlink_subscriber;
 
@@ -47,7 +48,8 @@ class cnetlink :
 	std::map<enum nl_cache_t, struct nl_cache*> caches;
 	std::set<cnetlink_subscriber*> subscribers;
 
-	std::map<unsigned int, crtlink>		links;	// all links in system => key:ifindex, value=crtlink instance
+	std::map<unsigned int, crtlink>		links;	// all links in system => key:ifindex, value:crtlink instance
+	std::map<unsigned int, crtroute>	routes;	// all routes in system => key:routeindex, value:crtroute instance
 
 public:
 
@@ -127,6 +129,29 @@ public:
 	del_link(
 			unsigned int ifindex);
 
+
+	/**
+	 *
+	 */
+	crtroute&
+	get_route(
+			unsigned int rtindex);
+
+
+	/**
+	 *
+	 */
+	unsigned int
+	set_route(
+			crtroute const& rtr);
+
+
+	/**
+	 *
+	 */
+	void
+	del_route(
+			unsigned int rtindex);
 
 
 private:

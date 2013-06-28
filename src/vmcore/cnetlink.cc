@@ -42,7 +42,7 @@ cnetlink::init_caches()
 	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
 	if (rc < 0) {
 		fprintf(stderr, "clinkcache::clinkcache() failed to allocate netlink cache manager\n");
-		throw eLinkCacheCritical();
+		throw eNetLinkCritical();
 	}
 
 	rc = nl_cache_mngr_add(mngr, "route/link", (change_func_t)&route_link_cb, NULL, &caches[NL_LINK_CACHE]);
@@ -295,7 +295,7 @@ cnetlink::get_link(std::string const& devname)
 	std::map<unsigned int, crtlink>::iterator it;
 	if ((it = find_if(links.begin(), links.end(),
 			crtlink::crtlink_find_by_devname(devname))) == links.end()) {
-		throw eNetlinkNotFound();
+		throw eNetLinkNotFound();
 	}
 	return it->second;
 }
@@ -308,7 +308,7 @@ cnetlink::get_link(unsigned int ifindex)
 	std::map<unsigned int, crtlink>::iterator it;
 	if ((it = find_if(links.begin(), links.end(),
 			crtlink::crtlink_find_by_ifindex(ifindex))) == links.end()) {
-		throw eNetlinkNotFound();
+		throw eNetLinkNotFound();
 	}
 	return it->second;
 }
@@ -331,5 +331,52 @@ cnetlink::del_link(
 	links.erase(ifindex);
 }
 
+
+
+crtroute&
+cnetlink::get_route(
+		unsigned int rtindex)
+{
+	if (routes.find(rtindex) == routes.end())
+		throw eNetLinkNotFound();
+	return routes[rtindex];
+}
+
+
+
+unsigned int
+cnetlink::set_route(
+		crtroute const& rtr)
+{
+	// route already exists
+	std::map<unsigned int, crtroute>::iterator it;
+	if ((it = find_if(routes.begin(), routes.end(),
+			crtroute::crtroute_find(rtr.get_table_id(), rtr.get_scope(), rtr.get_ifindex(), rtr.get_dst()))) != routes.end()) {
+
+		it->second = rtr;
+		return it->first;
+
+	} else {
+
+		unsigned int rtindex = 0;
+		while (routes.find(rtindex) != routes.end()) {
+			rtindex++;
+		}
+
+		routes[rtindex] = rtr;
+		return rtindex;
+	}
+}
+
+
+
+void
+cnetlink::del_route(
+		unsigned int rtindex)
+{
+	if (routes.find(rtindex) == routes.end())
+		throw eNetLinkNotFound();
+	routes.erase(rtindex);
+}
 
 
