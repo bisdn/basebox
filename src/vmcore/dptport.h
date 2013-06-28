@@ -78,6 +78,7 @@ public:
 	 */
 	void handle_packet_in(rofl::cpacket const& pkt);
 
+	void handle_port_status();
 
 public:
 

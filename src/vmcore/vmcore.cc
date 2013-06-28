@@ -111,9 +111,9 @@ vmcore::handle_port_status(
 			}
 		} break;
 		case OFPPR_MODIFY: {
-
-			// TODO: mirror port status on dptport instance
-
+			if (dptports[dpt].find(port_no) == dptports[dpt].end()) {
+				dptports[dpt][port_no]->handle_port_status();
+			}
 		} break;
 		case OFPPR_DELETE: {
 			if (dptports[dpt].find(port_no) != dptports[dpt].end()) {

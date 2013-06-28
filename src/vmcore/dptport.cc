@@ -93,6 +93,27 @@ dptport::handle_packet_in(rofl::cpacket const& pack)
 
 
 void
+dptport::handle_port_status()
+{
+	try {
+		uint32_t config = dpt->get_port(of_port_no).get_config();
+
+		uint32_t state  = dpt->get_port(of_port_no).get_state();
+
+		if ((state & OFPPS_LINK_DOWN) || (config & OFPPC_PORT_DOWN)) {
+			tapdev->disable_interface();
+		} else {
+			tapdev->enable_interface();
+		}
+
+	} catch (rofl::eOFdpathNotFound& e) {
+
+	}
+}
+
+
+
+void
 dptport::link_created(unsigned int ifindex)
 {
 	// filter out any events not related to our port
