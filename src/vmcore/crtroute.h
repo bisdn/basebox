@@ -200,8 +200,13 @@ public:
 				<< "flags=" 	<< (unsigned int)rtr.flags << " "
 				<< "metric=" 	<< (int)rtr.metric << " "
 				<< "pref_src=" 	<< rtr.pref_src << " "
-				<< "ifindex=" 	<< (unsigned int)rtr.ifindex << " ";
-		// TODO: next hops
+				<< "ifindex=" 	<< (unsigned int)rtr.ifindex << " "
+				<< "nexthops={";
+		for (std::vector<crtnexthop>::const_iterator
+				it = rtr.nexthops.begin(); it != rtr.nexthops.end(); ++it) {
+			os << (*it) << " ";
+		}
+		os << "} ";
 		os << "}";
 		return os;
 	};
