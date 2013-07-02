@@ -146,3 +146,14 @@ crtroute::operator== (crtroute const& rtr)
 }
 
 
+
+crtnexthop&
+crtroute::get_nexthop(unsigned int index)
+{
+	if (index >= nexthops.size())
+		throw eRtRouteNotFound();
+	return nexthops[index];
+}
+
+
+

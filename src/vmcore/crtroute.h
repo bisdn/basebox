@@ -11,6 +11,7 @@
 #include <vector>
 #include <ostream>
 #include <algorithm>
+#include <exception>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +29,11 @@ extern "C" {
 
 namespace dptmap
 {
+
+
+class eRtRouteBase 			: public std::exception {};
+class eRtRouteNotFound 		: public eRtRouteBase {};
+
 
 class crtroute
 {
@@ -176,6 +182,12 @@ public:
 	 *
 	 */
 	std::vector<crtnexthop> get_nexthops() const { return nexthops; };
+
+
+	/**
+	 *
+	 */
+	crtnexthop& get_nexthop(unsigned int index);
 
 
 public:
