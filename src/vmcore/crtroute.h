@@ -8,6 +8,7 @@
 #ifndef CRTROUTE_H_
 #define CRTROUTE_H_ 1
 
+#include <vector>
 #include <ostream>
 #include <algorithm>
 
@@ -22,6 +23,8 @@ extern "C" {
 
 #include <rofl/common/caddress.h>
 
+#include <crtnexthop.h>
+
 
 namespace dptmap
 {
@@ -31,20 +34,20 @@ class crtroute
 private:
 
 
-	uint32_t 		table_id;
-	uint8_t			scope;
-	uint8_t			tos;
-	uint8_t			protocol;
-	uint32_t		priority;
-	uint8_t			family;
-	rofl::caddress	dst;
-	rofl::caddress	src;
-	uint8_t			type;
-	uint32_t		flags;
-	int				metric;
-	rofl::caddress	pref_src;
-	unsigned int	ifindex;
-	// TODO: next hops
+	uint32_t 				table_id;
+	uint8_t					scope;
+	uint8_t					tos;
+	uint8_t					protocol;
+	uint32_t				priority;
+	uint8_t					family;
+	rofl::caddress			dst;
+	rofl::caddress			src;
+	uint8_t					type;
+	uint32_t				flags;
+	int						metric;
+	rofl::caddress			pref_src;
+	unsigned int			ifindex;
+	std::vector<crtnexthop>	nexthops;
 
 
 public:
@@ -167,6 +170,12 @@ public:
 	 *
 	 */
 	int get_ifindex() const { return ifindex; };
+
+
+	/**
+	 *
+	 */
+	std::vector<crtnexthop> get_nexthops() const { return nexthops; };
 
 
 public:

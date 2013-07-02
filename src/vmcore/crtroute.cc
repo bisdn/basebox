@@ -76,7 +76,7 @@ crtroute::operator= (crtroute const& rtr)
 	metric		= rtr.metric;
 	pref_src	= rtr.pref_src;
 	ifindex		= rtr.ifindex;
-	// TODO: next hops
+	nexthops	= rtr.nexthops;
 
 	return *this;
 }
@@ -125,6 +125,10 @@ crtroute::crtroute(struct rtnl_route *route) :
 	dst 		= rofl::caddress(family, s_dst.c_str());
 	src 		= rofl::caddress(family, s_src.c_str());
 	pref_src	= rofl::caddress(family, s_pref_src.c_str());
+
+	for (int i = 0; i < rtnl_route_get_nnexthops(route); i++) {
+		nexthops.push_back(crtnexthop(route, rtnl_route_nexthop_n(route, i)));
+	}
 
 	rtnl_route_put(route); // decrement reference count by one
 }
