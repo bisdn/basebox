@@ -22,7 +22,9 @@ vmcore_SOURCES = main.cc \
 		crtaddr.h \
 		crtaddr.cc \
 		crtroute.h \
-		crtroute.cc
+		crtroute.cc \
+		crtnexthop.cc \
+		crtnexthop.h
 		
 vmcore_LDADD = -lpthread \
 	-lrofl \

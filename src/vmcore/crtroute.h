@@ -189,7 +189,7 @@ public:
 				<< "src=" 		<< rtr.src << " "
 				<< "type=" 		<< (unsigned int)rtr.type << " "
 				<< "flags=" 	<< (unsigned int)rtr.flags << " "
-				<< "metric=" 	<< rtr.metric << " "
+				<< "metric=" 	<< (int)rtr.metric << " "
 				<< "pref_src=" 	<< rtr.pref_src << " "
 				<< "ifindex=" 	<< (unsigned int)rtr.ifindex << " ";
 		// TODO: next hops

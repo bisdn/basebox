@@ -68,6 +68,13 @@ cnetlink::init_caches()
 		obj = nl_cache_get_next(obj);
 	}
 
+	obj = nl_cache_get_first(caches[NL_ROUTE_CACHE]);
+	while (0 != obj) {
+		nl_object_get(obj);
+		set_route(crtroute((struct rtnl_route*)obj));
+		nl_object_put(obj);
+		obj = nl_cache_get_next(obj);
+	}
 	register_filedesc_r(nl_cache_mngr_get_fd(mngr));
 }
 
@@ -362,6 +369,8 @@ cnetlink::set_route(
 	if ((it = find_if(routes.begin(), routes.end(),
 			crtroute::crtroute_find(rtr.get_table_id(), rtr.get_scope(), rtr.get_ifindex(), rtr.get_dst()))) != routes.end()) {
 
+		std::cerr << "cnetlink::set_route() update route => " << it->second << std::endl;
+
 		it->second = rtr;
 		return it->first;
 
@@ -371,6 +380,8 @@ cnetlink::set_route(
 		while (routes.find(rtindex) != routes.end()) {
 			rtindex++;
 		}
+
+		std::cerr << "cnetlink::set_route() new route => " << rtr << std::endl;
 
 		routes[rtindex] = rtr;
 		return rtindex;
