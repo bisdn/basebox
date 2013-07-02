@@ -7,6 +7,8 @@ sbin_PROGRAMS = vmcore
 vmcore_SOURCES = main.cc \
 		vmcore.h \
 		vmcore.cc \
+		dptroute.h \
+		dptroute.cc \
 		dptport.h \
 		dptport.cc \
 		cpacketpool.h \

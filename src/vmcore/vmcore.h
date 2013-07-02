@@ -15,6 +15,7 @@
 #include <rofl/common/crofbase.h>
 
 #include <dptport.h>
+#include <dptroute.h>
 #include <cnetlink.h>
 
 namespace dptmap
@@ -25,15 +26,15 @@ class eVmCoreCritical 		: public eVmCoreBase {};
 class eVmCoreNoDptAttached	: public eVmCoreBase {};
 
 class vmcore :
-	/*public cnetlink_owner,*/
 		public rofl::crofbase,
 		public cnetlink_subscriber
 {
 private:
 
 
-	rofl::cofdpt *dpt;	// handle for cofdpt instance managed by this vmcore
-	std::map<rofl::cofdpt*, std::map<uint32_t, dptport*> > dptports;	// mapped ports per data path element
+	rofl::cofdpt 												*dpt;		// handle for cofdpt instance managed by this vmcore
+	std::map<rofl::cofdpt*, std::map<uint32_t, dptport*> > 		 dptports;	// mapped ports per data path element
+	std::map<uint8_t, std::map<unsigned int, dptroute*> >		 dptroutes;	// active routes => key1:table_id, key2:routing index, value: dptroute instance
 
 
 public:
@@ -77,56 +78,23 @@ public:
 
 
 	virtual void
-	link_created(unsigned int ifindex);
+	route_created(uint8_t table_id, unsigned int rtindex);
 
 	virtual void
-	link_updated(unsigned int ifindex);
+	route_updated(uint8_t table_id, unsigned int rtindex);
 
 	virtual void
-	link_deleted(unsigned int ifindex);
-
-	virtual void
-	addr_created(unsigned int ifindex, uint16_t adindex);
-
-	virtual void
-	addr_updated(unsigned int ifindex, uint16_t adindex);
-
-	virtual void
-	addr_deleted(unsigned int ifindex, uint16_t adindex);
-
-	virtual void
-	route_created(unsigned int rtindex);
-
-	virtual void
-	route_updated(unsigned int rtindex);
-
-	virtual void
-	route_deleted(unsigned int rtindex);
+	route_deleted(uint8_t table_id, unsigned int rtindex);
 
 
-public: // overloaded from cnetlink_owner
+private:
 
-#if 0
-	/**
-	 *
-	 */
+
 	void
-	nl_route_new(cnetlink const* netlink, croute const& route);
+	delete_all_ports();
 
-
-	/**
-	 *
-	 */
 	void
-	nl_route_del(cnetlink const* netlink, croute const& route);
-
-
-	/**
-	 *
-	 */
-	void
-	nl_route_change(cnetlink const* netlink, croute const& route);
-#endif
+	delete_all_routes();
 };
 
 }; // end of namespace vmcore

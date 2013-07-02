@@ -11,6 +11,18 @@ vmcore::vmcore() :
 
 vmcore::~vmcore()
 {
+	if (0 != dpt) {
+		delete_all_routes();
+
+		delete_all_ports();
+	}
+}
+
+
+
+void
+vmcore::delete_all_ports()
+{
 	for (std::map<rofl::cofdpt*, std::map<uint32_t, dptport*> >::iterator
 			jt = dptports.begin(); jt != dptports.end(); ++jt) {
 		for (std::map<uint32_t, dptport*>::iterator
@@ -24,6 +36,21 @@ vmcore::~vmcore()
 
 
 void
+vmcore::delete_all_routes()
+{
+	for (std::map<uint8_t, std::map<unsigned int, dptroute*> >::iterator
+			it = dptroutes.begin(); it != dptroutes.end(); ++it) {
+		for (std::map<unsigned int, dptroute*>::iterator
+				jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			delete (jt->second); // remove dptroute instance from heap
+		}
+	}
+	dptroutes.clear();
+}
+
+
+
+void
 vmcore::handle_dpath_open(
 		rofl::cofdpt *dpt)
 {
@@ -31,13 +58,14 @@ vmcore::handle_dpath_open(
 		this->dpt = dpt;
 
 		/*
+		 * remove all routes
+		 */
+		delete_all_routes();
+
+		/*
 		 * remove all old pending tap devices
 		 */
-		for (std::map<uint32_t, dptport*>::iterator
-				it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
-			delete (it->second); // remove dptport instance from heap
-		}
-		dptports.erase(dpt);
+		delete_all_ports();
 
 
 		// TODO: how many data path elements are allowed to connect to ourselves? only one makes sense ...
@@ -80,11 +108,9 @@ void
 vmcore::handle_dpath_close(
 		rofl::cofdpt *dpt)
 {
-	for (std::map<uint32_t, dptport*>::iterator
-			it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
-		delete (it->second); // remove dptport instance from heap
-	}
-	dptports.erase(dpt);
+	delete_all_routes();
+
+	delete_all_ports();
 
 	this->dpt = (rofl::cofdpt*)0;
 }
@@ -176,268 +202,29 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 
 
 void
-vmcore::link_created(unsigned int ifindex)
+vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
-#if 0
-	fprintf(stderr, "vmcore::link_created() ifindex=%d => ", ifindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
-#endif
-}
-
-
-
-void
-vmcore::link_updated(unsigned int ifindex)
-{
-#if 0
-	fprintf(stderr, "vmcore::link_updated() ifindex=%d => ", ifindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
-#endif
-}
-
-
-
-void
-vmcore::link_deleted(unsigned int ifindex)
-{
-#if 0
-	fprintf(stderr, "vmcore::link_deleted() ifindex=%d\n", ifindex);
-#endif
-}
-
-
-
-void
-vmcore::addr_created(unsigned int ifindex, uint16_t adindex)
-{
-#if 0
-	fprintf(stderr, "vmcore::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
-#endif
-}
-
-
-
-void
-vmcore::addr_updated(unsigned int ifindex, uint16_t adindex)
-{
-#if 0
-	fprintf(stderr, "vmcore::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
-#endif
-}
-
-
-
-void
-vmcore::addr_deleted(unsigned int ifindex, uint16_t adindex)
-{
-#if 0
-	fprintf(stderr, "vmcore::addr_deleted() ifindex=%d adindex=%d\n", ifindex, adindex);
-#endif
-}
-
-
-
-void
-vmcore::route_created(unsigned int rtindex)
-{
-#if 1
-	fprintf(stderr, "vmcore::route_created() rtindex=%d => ", rtindex);
-	std::cerr << cnetlink::get_instance().get_route(rtindex) << std::endl;
-#endif
-}
-
-
-
-void
-vmcore::route_updated(unsigned int rtindex)
-{
-#if 1
-	fprintf(stderr, "vmcore::route_updated() rtindex=%d => ", rtindex);
-	std::cerr << cnetlink::get_instance().get_route(rtindex) << std::endl;
-#endif
-}
-
-
-
-void
-vmcore::route_deleted(unsigned int rtindex)
-{
-#if 1
-	fprintf(stderr, "vmcore::route_deleted() rtindex=%d\n", rtindex);
-#endif
-}
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-void
-vmcore::nl_route_new(cnetlink const* netlink, croute const& route)
-{
-	croute rt(route);
-
-	uint32_t port_no = 0;  // TODO: get mapping from ifindex in VM to port_no in data path
-
-	switch (rt.rt_type) {
-	/* a LOCAL route entry generates a FlowMod that redirects all packets
-	 * received at the data path towards the control plane, as it defines
-	 * an address assignment to a local interface
-	 */
-	case croute::RT_LOCAL: {
-		fprintf(stderr, "vmcore::nl_route_new() %s\n", rt.c_str());
-
-		uint8_t of_version = (dpt) ? dpt->get_version() : OFP12_VERSION; // for testing purpose
-#if 0
-		rofl::cflowentry fe(dpt->get_version());
-#endif
-		rofl::cflowentry fe(of_version);
-
-		fe.set_command(OFPFC_ADD);
-		fe.set_buffer_id(OFP_NO_BUFFER);
-		fe.set_idle_timeout(0);
-		fe.set_hard_timeout(0);
-		fe.set_table_id(0);
-
-		fe.match.set_in_port(port_no);
-
-		switch (rt.rt_family) {
-		case AF_INET: {
-			fe.match.set_ipv4_dst(rt.dst);
-		} break;
-		case AF_INET6: {
-			fe.match.set_ipv6_dst(rt.dst);
-		} break;
-		default: {
-			fprintf(stderr, "route family %d not implemented\n", rt.rt_family);
-		} return;
-		}
-
-		fe.instructions.next() = rofl::cofinst_apply_actions();
-		fe.instructions[0].actions.next() = rofl::cofaction_output(OFPP_CONTROLLER, rt.mtu);
-
-		fprintf(stderr, "vmcore::nl_route_new() FlowMod: %s", fe.c_str());
-
-		if (dpt)
-			send_flow_mod_message(dpt, fe);
-	} break;
+	//std::cerr << "vmcore::route_created() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+	if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
+		dptroutes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
 	}
 }
 
 
+
 void
-vmcore::nl_route_del(cnetlink const* netlink, croute const& route)
+vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 {
-	croute rt(route);
-
-	uint32_t port_no = 0;  // TODO: get mapping from ifindex in VM to port_no in data path
-
-	switch (rt.rt_type) {
-	/* a LOCAL route entry generates a FlowMod that redirects all packets
-	 * received at the data path towards the control plane, as it defines
-	 * an address assignment to a local interface
-	 */
-	case croute::RT_LOCAL: {
-		fprintf(stderr, "vmcore::nl_route_del() %s\n", rt.c_str());
-
-		uint8_t of_version = (dpt) ? dpt->get_version() : OFP12_VERSION; // for testing purpose
-#if 0
-		rofl::cflowentry fe(dpt->get_version());
-#endif
-		rofl::cflowentry fe(of_version);
-
-		fe.set_command(OFPFC_ADD);
-		fe.set_buffer_id(OFP_NO_BUFFER);
-		fe.set_idle_timeout(0);
-		fe.set_hard_timeout(0);
-		fe.set_table_id(0);
-
-		fe.match.set_in_port(p	virtual void
-				linkcache_updated();ort_no);
-
-		switch (rt.rt_family) {
-		case AF_INET: {
-			fe.match.set_ipv4_dst(rt.dst);
-		} break;
-		case AF_INET6: {
-			fe.match.set_ipv6_dst(rt.dst);
-		} break;
-		default: {
-			fprintf(stderr, "route family %d not implemented\n", rt.rt_family);
-		} return;
-		}
-
-		fe.instructions.next() = rofl::cofinst_apply_actions();
-		fe.instructions[0].actions.next() = rofl::cofaction_output(OFPP_CONTROLLER, rt.mtu);
-
-		fprintf(stderr, "vmcore::nl_route_del() FlowMod: %s", fe.c_str());
-
-		if (dpt)
-			send_flow_mod_message(dpt, fe);
-	} break;
-	}
+	//std::cerr << "vmcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+	// do nothing, this event is handled directly by dptroute instance
 }
 
 
 void
-vmcore::nl_route_change(cnetlink const* netlink, croute const& route)
+vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 {
-	croute rt(route);
-
-	uint32_t port_no = 0;  // TODO: get mapping from ifindex in VM to port_no in data path
-
-	switch (rt.rt_type) {
-	/* a LOCAL route entry generates a FlowMod that redirects all packets
-	 * received at the data path towards the control plane, as it defines
-	 * an address assignment to a local interface
-	 */
-	case croute::RT_LOCAL: {
-		fprintf(stderr, "vmcore::nl_route_change() %s\n", rt.c_str());
-
-		uint8_t of_version = (dpt) ? dpt->get_version() : OFP12_VERSION; // for testing purpose
-#if 0
-		rofl::cflowentry fe(dpt->get_version());
-#endif
-		rofl::cflowentry fe(of_version);
-
-		fe.set_command(OFPFC_ADD);
-		fe.set_buffer_id(OFP_NO_BUFFER);
-		fe.set_idle_timeout(0);
-		fe.set_hard_timeout(0);
-		fe.set_table_id(0);
-
-		fe.match.set_in_port(port_no);
-
-		switch (rt.rt_family) {	virtual void
-		linkcache_updated();
-		case AF_INET: {
-			fe.match.set_ipv4_dst(rt.dst);
-		} break;
-		case AF_INET6: {
-			fe.match.set_ipv6_dst(rt.dst);
-		} break;
-		default: {
-			fprintf(stderr, "route family %d not implemented\n", rt.rt_family);
-		} return;
-		}
-
-		fe.instructions.next() = rofl::cofinst_apply_actions();
-		fe.instructions[0].actions.next() = rofl::cofaction_output(OFPP_CONTROLLER, rt.mtu);
-
-		fprintf(stderr, "vmcore::nl_route_change() FlowMod: %s", fe.c_str());
-
-		if (dpt)
-			send_flow_mod_message(dpt, fe);
-	} break;
+	//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+	if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
+		delete dptroutes[table_id][rtindex];
 	}
 }
-#endif
-

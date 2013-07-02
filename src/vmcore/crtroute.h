@@ -47,6 +47,8 @@ private:
 	uint32_t				priority;
 	uint8_t					family;
 	rofl::caddress			dst;
+	unsigned int			prefixlen;
+	rofl::caddress			mask;
 	rofl::caddress			src;
 	uint8_t					type;
 	uint32_t				flags;
@@ -145,6 +147,18 @@ public:
 	/**
 	 *
 	 */
+	unsigned int get_prefixlen() const { return prefixlen; };
+
+
+	/**
+	 *
+	 */
+	rofl::caddress get_mask() const { return mask; };
+
+
+	/**
+	 *
+	 */
 	rofl::caddress get_src() const { return src; };
 
 
@@ -207,6 +221,8 @@ public:
 				<< "priority=" 	<< (unsigned int)rtr.priority << " "
 				<< "family=" 	<< (unsigned int)rtr.family << " "
 				<< "dst=" 		<< rtr.dst << " "
+				<< "prefixlen=" << rtr.prefixlen << " "
+				<< "mask=" 		<< rtr.mask << " "
 				<< "src=" 		<< rtr.src << " "
 				<< "type=" 		<< (unsigned int)rtr.type << " "
 				<< "flags=" 	<< (unsigned int)rtr.flags << " "

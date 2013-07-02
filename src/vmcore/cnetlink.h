@@ -49,7 +49,7 @@ class cnetlink :
 	std::set<cnetlink_subscriber*> subscribers;
 
 	std::map<unsigned int, crtlink>		links;	// all links in system => key:ifindex, value:crtlink instance
-	std::map<unsigned int, crtroute>	routes;	// all routes in system => key:routeindex, value:crtroute instance
+	std::map<uint8_t, std::map<unsigned int, crtroute> >	routes;	// all routes in system => key1:table_id, key2:routeindex, value:crtroute instance
 
 public:
 
@@ -135,6 +135,7 @@ public:
 	 */
 	crtroute&
 	get_route(
+			uint8_t table_id,
 			unsigned int rtindex);
 
 
@@ -161,6 +162,7 @@ public:
 	 */
 	void
 	del_route(
+			uint8_t table_id,
 			unsigned int rtindex);
 
 
@@ -290,21 +292,21 @@ public:
 	 *
 	 * @param rtl
 	 */
-	virtual void route_created(unsigned int rtindex) {};
+	virtual void route_created(uint8_t table_id, unsigned int rtindex) {};
 
 
 	/**
 	 *
 	 * @param rtl
 	 */
-	virtual void route_updated(unsigned int rtindex) {};
+	virtual void route_updated(uint8_t table_id, unsigned int rtindex) {};
 
 
 	/**
 	 *
 	 * @param ifindex
 	 */
-	virtual void route_deleted(unsigned int rtindex) {};
+	virtual void route_deleted(uint8_t table_id, unsigned int rtindex) {};
 };
 
 

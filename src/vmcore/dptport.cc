@@ -120,7 +120,7 @@ dptport::link_created(unsigned int ifindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	fprintf(stderr, "dptport::link_created() ifindex=%d => ", ifindex);
+	//fprintf(stderr, "dptport::link_created() ifindex=%d => ", ifindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
 }
 
@@ -133,7 +133,7 @@ dptport::link_updated(unsigned int ifindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	fprintf(stderr, "dptport::link_updated() ifindex=%d => ", ifindex);
+	//fprintf(stderr, "dptport::link_updated() ifindex=%d => ", ifindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
 
 	if (0 == dpt) {
@@ -150,7 +150,7 @@ dptport::link_deleted(unsigned int ifindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	fprintf(stderr, "dptport::link_deleted() ifindex=%d\n", ifindex);
+	//fprintf(stderr, "dptport::link_deleted() ifindex=%d\n", ifindex);
 }
 
 
@@ -162,7 +162,7 @@ dptport::addr_created(unsigned int ifindex, uint16_t adindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	fprintf(stderr, "dptport::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
+	//fprintf(stderr, "dptport::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 
 	ip_endpoint_install_flow_mod(adindex);
@@ -177,7 +177,7 @@ dptport::addr_updated(unsigned int ifindex, uint16_t adindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	fprintf(stderr, "dptport::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
+	//fprintf(stderr, "dptport::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 }
 
@@ -190,7 +190,7 @@ dptport::addr_deleted(unsigned int ifindex, uint16_t adindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	fprintf(stderr, "dptport::addr_deleted() ifindex=%d adindex=%d\n", ifindex, adindex);
+	//fprintf(stderr, "dptport::addr_deleted() ifindex=%d adindex=%d\n", ifindex, adindex);
 
 	ip_endpoint_remove_flow_mod(adindex);
 }

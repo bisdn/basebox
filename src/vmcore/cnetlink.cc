@@ -247,37 +247,40 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 
 	nl_object_get(obj); // get reference to object
 
-	fprintf(stderr, "cnetlink::route_route_cb() called\n");
+	//fprintf(stderr, "cnetlink::route_route_cb() called\n");
 
 	try {
 		switch (action) {
 		case NL_ACT_NEW: {
-			unsigned int rtindex = cnetlink::get_instance().set_route(crtroute((struct rtnl_route*)obj));
+			crtroute rtr((struct rtnl_route*)obj);
+			unsigned int rtindex = cnetlink::get_instance().set_route(rtr);
 
 			for (std::set<cnetlink_subscriber*>::iterator
 					it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
-				(*it)->route_created(rtindex);
+				(*it)->route_created(rtr.get_table_id(), rtindex);
 			}
 
 		} break;
 		case NL_ACT_CHANGE: {
-			unsigned int rtindex = cnetlink::get_instance().set_route(crtroute((struct rtnl_route*)obj));
+			crtroute rtr((struct rtnl_route*)obj);
+			unsigned int rtindex = cnetlink::get_instance().set_route(rtr);
 
 			for (std::set<cnetlink_subscriber*>::iterator
 					it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
-				(*it)->route_updated(rtindex);
+				(*it)->route_updated(rtr.get_table_id(), rtindex);
 			}
 
 		} break;
 		case NL_ACT_DEL: {
-			unsigned int rtindex = cnetlink::get_instance().get_route(crtroute((struct rtnl_route*)obj));
+			crtroute rtr((struct rtnl_route*)obj);
+			unsigned int rtindex = cnetlink::get_instance().get_route(rtr);
 
 			for (std::set<cnetlink_subscriber*>::iterator
 					it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
-				(*it)->route_deleted(rtindex);
+				(*it)->route_deleted(rtr.get_table_id(), rtindex);
 			}
 
-			cnetlink::get_instance().del_route(rtindex);
+			cnetlink::get_instance().del_route(rtr.get_table_id(), rtindex);
 
 		} break;
 		default: {
@@ -339,11 +342,12 @@ cnetlink::del_link(
 
 crtroute&
 cnetlink::get_route(
+		uint8_t table_id,
 		unsigned int rtindex)
 {
-	if (routes.find(rtindex) == routes.end())
+	if (routes[table_id].find(rtindex) == routes[table_id].end())
 		throw eNetLinkNotFound();
-	return routes[rtindex];
+	return routes[table_id][rtindex];
 }
 
 
@@ -351,9 +355,10 @@ cnetlink::get_route(
 unsigned int
 cnetlink::get_route(crtroute const& rtr)
 {
+	uint8_t table_id = rtr.get_table_id();
 	std::map<unsigned int, crtroute>::iterator it;
-	if ((it = find_if(routes.begin(), routes.end(),
-			crtroute::crtroute_find(rtr.get_table_id(), rtr.get_scope(), rtr.get_ifindex(), rtr.get_dst()))) == routes.end()) {
+	if ((it = find_if(routes[table_id].begin(), routes[table_id].end(),
+			crtroute::crtroute_find(rtr.get_table_id(), rtr.get_scope(), rtr.get_ifindex(), rtr.get_dst()))) == routes[table_id].end()) {
 		throw eRtLinkNotFound();
 	}
 	return it->first;
@@ -364,12 +369,13 @@ unsigned int
 cnetlink::set_route(
 		crtroute const& rtr)
 {
+	uint8_t table_id = rtr.get_table_id();
 	// route already exists
 	std::map<unsigned int, crtroute>::iterator it;
-	if ((it = find_if(routes.begin(), routes.end(),
-			crtroute::crtroute_find(rtr.get_table_id(), rtr.get_scope(), rtr.get_ifindex(), rtr.get_dst()))) != routes.end()) {
+	if ((it = find_if(routes[table_id].begin(), routes[table_id].end(),
+			crtroute::crtroute_find(rtr.get_table_id(), rtr.get_scope(), rtr.get_ifindex(), rtr.get_dst()))) != routes[table_id].end()) {
 
-		std::cerr << "cnetlink::set_route() update route => " << it->second << std::endl;
+		//std::cerr << "cnetlink::set_route() update route => " << it->second << std::endl;
 
 		it->second = rtr;
 		return it->first;
@@ -377,13 +383,13 @@ cnetlink::set_route(
 	} else {
 
 		unsigned int rtindex = 0;
-		while (routes.find(rtindex) != routes.end()) {
+		while (routes[table_id].find(rtindex) != routes[table_id].end()) {
 			rtindex++;
 		}
 
-		std::cerr << "cnetlink::set_route() new route => " << rtr << std::endl;
+		//std::cerr << "cnetlink::set_route() new route => " << rtr << std::endl;
 
-		routes[rtindex] = rtr;
+		routes[table_id][rtindex] = rtr;
 		return rtindex;
 	}
 }
@@ -392,11 +398,12 @@ cnetlink::set_route(
 
 void
 cnetlink::del_route(
+		uint8_t table_id,
 		unsigned int rtindex)
 {
-	if (routes.find(rtindex) == routes.end())
+	if (routes[table_id].find(rtindex) == routes[table_id].end())
 		throw eNetLinkNotFound();
-	routes.erase(rtindex);
+	routes[table_id].erase(rtindex);
 }
 
 

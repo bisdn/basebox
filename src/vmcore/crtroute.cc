@@ -19,6 +19,8 @@ crtroute::crtroute() :
 		priority(0),
 		family(0),
 		dst(rofl::caddress(AF_INET)),
+		prefixlen(0),
+		mask(rofl::caddress(AF_INET)),
 		src(rofl::caddress(AF_INET)),
 		type(0),
 		flags(0),
@@ -46,6 +48,8 @@ crtroute::crtroute(crtroute const& rtr) :
 		priority(0),
 		family(0),
 		dst(rofl::caddress(AF_INET)),
+		prefixlen(0),
+		mask(rofl::caddress(AF_INET)),
 		src(rofl::caddress(AF_INET)),
 		type(0),
 		flags(0),
@@ -70,6 +74,8 @@ crtroute::operator= (crtroute const& rtr)
 	priority	= rtr.priority;
 	family		= rtr.family;
 	dst			= rtr.dst;
+	prefixlen	= rtr.prefixlen;
+	mask		= rtr.mask;
 	src			= rtr.src;
 	type		= rtr.type;
 	flags		= rtr.flags;
@@ -91,6 +97,8 @@ crtroute::crtroute(struct rtnl_route *route) :
 		priority(0),
 		family(0),
 		dst(rofl::caddress(AF_INET)),
+		prefixlen(0),
+		mask(rofl::caddress(AF_INET)),
 		src(rofl::caddress(AF_INET)),
 		type(0),
 		flags(0),
@@ -113,6 +121,29 @@ crtroute::crtroute(struct rtnl_route *route) :
 	flags		= rtnl_route_get_flags(route);
 	metric		= rtnl_route_get_metric(route, 0, NULL); // FIXME: check the integer value
 	ifindex		= rtnl_route_get_iif(route);
+
+	prefixlen	= nl_addr_get_prefixlen(rtnl_route_get_dst(route));
+
+	switch (family) {
+	case AF_INET: {
+		mask = rofl::caddress(AF_INET);
+		mask.ca_s4addr->sin_addr.s_addr = htobe32(~((1 << (32 - prefixlen)) - 1));
+	} break;
+	case AF_INET6: {
+		mask = rofl::caddress(AF_INET6);
+		int segment 	= prefixlen / 32;
+		int t_prefixlen = prefixlen % 32;
+		for (int i = 0; i < 4; i++) {
+			if (segment == i) {
+				((uint32_t*)(mask.ca_s6addr->sin6_addr.s6_addr))[i] = htobe32(~((1 << (32 - t_prefixlen)) - 1));
+			} else if (i > segment) {
+				((uint32_t*)(mask.ca_s6addr->sin6_addr.s6_addr))[i] = htobe32(0x00000000);
+			} else if (i < segment) {
+				((uint32_t*)(mask.ca_s6addr->sin6_addr.s6_addr))[i] = htobe32(0xffffffff);
+			}
+		}
+	} break;
+	}
 
 	std::string s_dst(nl_addr2str(rtnl_route_get_dst(route), 			s_buf, sizeof(s_buf)));
 	std::string s_src(nl_addr2str(rtnl_route_get_src(route), 			s_buf, sizeof(s_buf)));
