@@ -42,6 +42,8 @@ dptroute::route_created(
 	try {
 		if ((this->table_id != table_id) || (this->rtindex != rtindex))
 			return;
+
+
 #if 1
 		std::cerr << "dptroute::route_created() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 #endif
@@ -54,6 +56,7 @@ dptroute::route_created(
 		flowentry.set_buffer_id(OFP_NO_BUFFER);
 		flowentry.set_idle_timeout(0);
 		flowentry.set_hard_timeout(0);
+		flowentry.set_priority(0x8000 + (rtr.get_prefixlen() << 8));
 		flowentry.set_table_id(0);			// FIXME: check for first table-id in data path
 
 		switch (rtr.get_family()) {
@@ -85,6 +88,8 @@ dptroute::route_created(
 		flowentry.instructions.back().actions.next() = rofl::cofaction_set_field(rofl::coxmatch_ofb_eth_src(eth_src));
 		flowentry.instructions.back().actions.next() = rofl::cofaction_set_field(rofl::coxmatch_ofb_eth_dst(eth_dst));
 		flowentry.instructions.back().actions.next() = rofl::cofaction_output(port_no);
+
+		fprintf(stderr, "flowentry: %s\n", flowentry.c_str());
 
 		rofbase->send_flow_mod_message(dpt, flowentry);
 
@@ -124,6 +129,8 @@ dptroute::route_deleted(
 #endif
 
 	flowentry.set_command(OFPFC_DELETE_STRICT);
+
+	fprintf(stderr, "flowentry: %s\n", flowentry.c_str());
 
 	rofbase->send_flow_mod_message(dpt, flowentry);
 }

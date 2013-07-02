@@ -49,7 +49,8 @@ dptport::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
 		rofl::cofaclist actions;
 		actions.next() = rofl::cofaction_output(of_port_no);
 
-		rofbase->send_packet_out_message(dpt, OFP_NO_BUFFER, OFPP_CONTROLLER, actions, pkt->soframe(), pkt->framelen());
+		// FIXME: check the crc stuff
+		rofbase->send_packet_out_message(dpt, OFP_NO_BUFFER, OFPP_CONTROLLER, actions, pkt->soframe(), pkt->framelen() - sizeof(uint32_t)/*CRC*/);
 
 	} catch (eDptPortNoDptAttached& e) {
 
@@ -209,6 +210,7 @@ dptport::ip_endpoint_install_flow_mod(uint16_t adindex)
 		fe.set_buffer_id(OFP_NO_BUFFER);
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
+		fe.set_priority(0xfffe);
 		fe.set_table_id(0);			// FIXME: check for first table-id in data path
 
 		fe.instructions.next() = rofl::cofinst_apply_actions();

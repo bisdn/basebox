@@ -204,6 +204,11 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 void
 vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
+	if ((255 == table_id) || (0 == table_id)) {
+		std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+		return;
+	}
+
 	//std::cerr << "vmcore::route_created() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 	if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
 		dptroutes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
@@ -215,6 +220,11 @@ vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 {
+	if ((255 == table_id) || (0 == table_id)) {
+		std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+		return;
+	}
+
 	//std::cerr << "vmcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 	// do nothing, this event is handled directly by dptroute instance
 }
@@ -223,6 +233,11 @@ vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 {
+	if ((255 == table_id) || (0 == table_id)) {
+		std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+		return;
+	}
+
 	//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 	if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
 		delete dptroutes[table_id][rtindex];
