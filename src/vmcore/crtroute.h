@@ -195,7 +195,7 @@ public:
 	/**
 	 *
 	 */
-	std::vector<crtnexthop> get_nexthops() const { return nexthops; };
+	std::vector<crtnexthop>& get_nexthops() { return nexthops; };
 
 
 	/**

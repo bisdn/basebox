@@ -140,12 +140,10 @@ dptroute::route_deleted(
 void
 dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 {
+	std::cerr << "dptroute::neigh_created() => ifindex=" << ifindex
+			<< " nbindex=" << (unsigned int)nbindex << std::endl;
+
 	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
-
-	// filter out any events not related to our port
-	if (ifindex != rtr.get_iif())
-		return;
-
 	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
 	// do for all next hops defined in crtroute ...
@@ -188,12 +186,10 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 void
 dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 {
+	std::cerr << "dptroute::neigh_updated() => ifindex=" << ifindex
+			<< " nbindex=" << (unsigned int)nbindex << std::endl;
+
 	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
-
-	// filter out any events not related to our port
-	if (ifindex != rtr.get_iif())
-		return;
-
 	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
 	std::cerr << "dptroute::neigh_updated() => " << dptnexthops[nbindex] << std::endl;
@@ -206,12 +202,10 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 void
 dptroute::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
 {
+	std::cerr << "dptroute::neigh_deleted() => ifindex=" << ifindex
+			<< " nbindex=" << (unsigned int)nbindex << std::endl;
+
 	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
-
-	// filter out any events not related to our port
-	if (ifindex != rtr.get_iif())
-		return;
-
 	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
 	// do for all next hops defined in crtroute ...
