@@ -26,7 +26,7 @@ crtroute::crtroute() :
 		flags(0),
 		metric(0),
 		pref_src(rofl::caddress(AF_INET)),
-		ifindex(0)
+		iif(0)
 {
 
 }
@@ -55,7 +55,7 @@ crtroute::crtroute(crtroute const& rtr) :
 		flags(0),
 		metric(0),
 		pref_src(rofl::caddress(AF_INET)),
-		ifindex(0){
+		iif(0){
 	*this = rtr;
 }
 
@@ -81,7 +81,7 @@ crtroute::operator= (crtroute const& rtr)
 	flags		= rtr.flags;
 	metric		= rtr.metric;
 	pref_src	= rtr.pref_src;
-	ifindex		= rtr.ifindex;
+	iif		= rtr.iif;
 	nexthops	= rtr.nexthops;
 
 	return *this;
@@ -104,7 +104,7 @@ crtroute::crtroute(struct rtnl_route *route) :
 		flags(0),
 		metric(0),
 		pref_src(rofl::caddress(AF_INET)),
-		ifindex(0)
+		iif(0)
 {
 	char s_buf[128];
 	memset(s_buf, 0, sizeof(s_buf));
@@ -120,7 +120,7 @@ crtroute::crtroute(struct rtnl_route *route) :
 	type 		= rtnl_route_get_type(route);
 	flags		= rtnl_route_get_flags(route);
 	metric		= rtnl_route_get_metric(route, 0, NULL); // FIXME: check the integer value
-	ifindex		= rtnl_route_get_iif(route);
+	iif		= rtnl_route_get_iif(route);
 
 	prefixlen	= nl_addr_get_prefixlen(rtnl_route_get_dst(route));
 
@@ -172,7 +172,7 @@ crtroute::operator== (crtroute const& rtr)
 	// FIXME: anything else beyond this?
 	return ((table_id 		== rtr.table_id) &&
 			(scope 			== rtr.scope) &&
-			(ifindex		== rtr.ifindex) &&
+			(iif		== rtr.iif) &&
 			(dst			== rtr.dst));
 }
 

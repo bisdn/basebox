@@ -124,7 +124,7 @@ dptaddr::flow_mod_delete()
 	try {
 		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
 
-		rofl::cflowentry fe(dpt->get_version());
+		rofl::cflowentry fe = this->fe;
 
 		fe.set_command(OFPFC_DELETE_STRICT);
 		fe.set_table_id(0);			// FIXME: check for first table-id in data path

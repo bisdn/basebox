@@ -427,7 +427,7 @@ cnetlink::get_route(crtroute const& rtr)
 	uint8_t table_id = rtr.get_table_id();
 	std::map<unsigned int, crtroute>::iterator it;
 	if ((it = find_if(routes[table_id].begin(), routes[table_id].end(),
-			crtroute::crtroute_find(rtr.get_table_id(), rtr.get_scope(), rtr.get_ifindex(), rtr.get_dst()))) == routes[table_id].end()) {
+			crtroute::crtroute_find(rtr.get_table_id(), rtr.get_scope(), rtr.get_iif(), rtr.get_dst()))) == routes[table_id].end()) {
 		throw eRtLinkNotFound();
 	}
 	return it->first;
@@ -442,7 +442,7 @@ cnetlink::set_route(
 	// route already exists
 	std::map<unsigned int, crtroute>::iterator it;
 	if ((it = find_if(routes[table_id].begin(), routes[table_id].end(),
-			crtroute::crtroute_find(rtr.get_table_id(), rtr.get_scope(), rtr.get_ifindex(), rtr.get_dst()))) != routes[table_id].end()) {
+			crtroute::crtroute_find(rtr.get_table_id(), rtr.get_scope(), rtr.get_iif(), rtr.get_dst()))) != routes[table_id].end()) {
 
 		//std::cerr << "cnetlink::set_route() update route => " << it->second << std::endl;
 

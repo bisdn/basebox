@@ -54,7 +54,7 @@ private:
 	uint32_t				flags;
 	int						metric;
 	rofl::caddress			pref_src;
-	unsigned int			ifindex;
+	unsigned int			iif;
 	std::vector<crtnexthop>	nexthops;
 
 
@@ -189,7 +189,7 @@ public:
 	/**
 	 *
 	 */
-	int get_ifindex() const { return ifindex; };
+	int get_iif() const { return iif; };
 
 
 	/**
@@ -228,7 +228,7 @@ public:
 				<< "flags=" 	<< (unsigned int)rtr.flags << " "
 				<< "metric=" 	<< (int)rtr.metric << " "
 				<< "pref_src=" 	<< rtr.pref_src << " "
-				<< "ifindex=" 	<< (unsigned int)rtr.ifindex << " "
+				<< "ifindex=" 	<< (unsigned int)rtr.iif << " "
 				<< "nexthops={";
 		for (std::vector<crtnexthop>::const_iterator
 				it = rtr.nexthops.begin(); it != rtr.nexthops.end(); ++it) {
@@ -254,7 +254,7 @@ public:
 		bool operator() (std::pair<unsigned int, crtroute> const& p) {
 			return ((table_id 		== p.second.table_id) &&
 					(scope 			== p.second.scope) &&
-					(ifindex		== p.second.ifindex) &&
+					(ifindex		== p.second.iif) &&
 					(dst			== p.second.dst));
 		};
 	};

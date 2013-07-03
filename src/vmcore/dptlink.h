@@ -30,17 +30,24 @@ extern "C" {
 namespace dptmap
 {
 
-class eDptPortBase 				: public std::exception {};
-class eDptPortCritical 			: public eDptPortBase {};
-class eDptPortNoDptAttached		: public eDptPortBase {};
-class eDptPortTapDevNotFound	: public eDptPortBase {};
+class eDptLinkBase 				: public std::exception {};
+class eDptLinkCritical 			: public eDptLinkBase {};
+class eDptLinkNoDptAttached		: public eDptLinkBase {};
+class eDptLinkTapDevNotFound	: public eDptLinkBase {};
+class eDptLinkNotFound			: public eDptLinkBase {};
 
 class dptlink :
 		public cnetlink_subscriber,
 		public cnetdev_owner
 {
+public:
+
+	static dptlink&
+	get_dptlink(unsigned int ifindex);
+
 private:
 
+	static std::map<unsigned int, dptlink*>		dptlinks;
 
 	rofl::crofbase				*rofbase; 		// OpenFlow endpoint
 	rofl::cofdpt				*dpt;			// cofdpt handle for attached data path element
@@ -49,6 +56,7 @@ private:
 	unsigned int		 		 ifindex;		// ifindex for tapdevice
 	std::map<uint16_t, dptaddr>  addrs;			// all addresses assigned to this link
 	std::map<uint16_t, dptneigh> neighs;		// all neighbors seen on this link (for ARP and NDP)
+
 
 public:
 

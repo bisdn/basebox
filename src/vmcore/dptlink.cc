@@ -9,6 +9,19 @@
 
 using namespace dptmap;
 
+std::map<unsigned int, dptlink*> dptlink::dptlinks;
+
+
+dptlink&
+dptlink::get_dptlink(unsigned int ifindex)
+{
+	if (dptlink::dptlinks.find(ifindex) == dptlink::dptlinks.end()) {
+		throw eDptLinkNotFound();
+	}
+	return *(dptlink::dptlinks[ifindex]);
+}
+
+
 dptlink::dptlink(
 		rofl::crofbase *rofbase,
 		rofl::cofdpt *dpt,
@@ -22,12 +35,16 @@ dptlink::dptlink(
 	tapdev = new ctapdev(this, dpt->get_ports()[of_port_no]->get_name(), dpt->get_ports()[of_port_no]->get_hwaddr());
 
 	ifindex = tapdev->get_ifindex();
+
+	dptlink::dptlinks[ifindex] = this;
 }
 
 
 
 dptlink::~dptlink()
 {
+	dptlink::dptlinks.erase(ifindex);
+
 	for (std::map<uint16_t, dptneigh>::iterator
 			it = neighs.begin(); it != neighs.end(); ++it) {
 		it->second.flow_mod_delete();
@@ -50,12 +67,12 @@ dptlink::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
 {
 	try {
 		if (0 == dpt) {
-			throw eDptPortNoDptAttached();
+			throw eDptLinkNoDptAttached();
 		}
 
 		ctapdev* tapdev = dynamic_cast<ctapdev*>( netdev );
 		if (0 == tapdev) {
-			throw eDptPortTapDevNotFound();
+			throw eDptLinkTapDevNotFound();
 		}
 
 		rofl::cofaclist actions;
@@ -64,11 +81,11 @@ dptlink::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
 		// FIXME: check the crc stuff
 		rofbase->send_packet_out_message(dpt, OFP_NO_BUFFER, OFPP_CONTROLLER, actions, pkt->soframe(), pkt->framelen() - sizeof(uint32_t)/*CRC*/);
 
-	} catch (eDptPortNoDptAttached& e) {
+	} catch (eDptLinkNoDptAttached& e) {
 
 		fprintf(stderr, "dptport::enqueue() no data path attached\n");
 
-	} catch (eDptPortTapDevNotFound& e) {
+	} catch (eDptLinkTapDevNotFound& e) {
 
 		fprintf(stderr, "dptport::enqueue() no tap device found\n");
 

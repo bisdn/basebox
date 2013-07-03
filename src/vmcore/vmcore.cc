@@ -95,6 +95,14 @@ vmcore::handle_dpath_open(
 		 */
 		delete_all_ports();
 
+		/*
+		 * purge all entries from data path
+		 */
+		rofl::cflowentry fe(dpt->get_version());
+		fe.set_command(OFPFC_DELETE);
+		send_flow_mod_message(dpt, fe);
+
+
 
 		// TODO: how many data path elements are allowed to connect to ourselves? only one makes sense ...
 
@@ -238,16 +246,18 @@ vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 			return;
 		}
 
-		int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
+#if 0
+		int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_iif();
 		dptlink& dptl = get_mapped_link_from_dpt(ifindex); // throws eVmCoreNotFound, if link is not mapped from dpt
+#endif
 
 		//std::cerr << "vmcore::route_created() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 		if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
-			dptroutes[table_id][rtindex] = new dptroute(this, dpt, dptl.get_of_port_no(), table_id, rtindex);
+			dptroutes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
 		}
 
 	} catch (eVmCoreNotFound& e) {
-		std::cerr << "vmcore::route_created() => ignoring ifindex=" << cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex() << std::endl;
+		std::cerr << "vmcore::route_created() => ignoring ifindex=" << cnetlink::get_instance().get_route(table_id, rtindex).get_iif() << std::endl;
 	}
 }
 
@@ -263,7 +273,7 @@ vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 			return;
 		}
 
-		int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
+		int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_iif();
 		dptlink& dptl = get_mapped_link_from_dpt(ifindex); // throws eVmCoreNotFound, if link is not mapped from dpt
 
 		//std::cerr << "vmcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
@@ -286,7 +296,7 @@ vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 			return;
 		}
 
-		int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
+		int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_iif();
 		dptlink& dptl = get_mapped_link_from_dpt(ifindex); // throws eVmCoreNotFound, if link is not mapped from dpt
 
 		//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;

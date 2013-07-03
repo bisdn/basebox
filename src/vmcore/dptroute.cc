@@ -14,12 +14,10 @@ using namespace dptmap;
 dptroute::dptroute(
 		rofl::crofbase* rofbase,
 		rofl::cofdpt* dpt,
-		uint32_t of_port_no,
 		uint8_t table_id,
 		unsigned int rtindex) :
 		rofbase(rofbase),
 		dpt(dpt),
-		of_port_no(of_port_no),
 		table_id(table_id),
 		rtindex(rtindex),
 		flowentry(OFP12_VERSION)
@@ -60,7 +58,7 @@ dptroute::route_created(
 		flowentry.set_idle_timeout(0);
 		flowentry.set_hard_timeout(0);
 		flowentry.set_priority(0x8000 + (rtr.get_prefixlen() << 8));
-		flowentry.set_table_id(0);			// FIXME: check for first table-id in data path
+		flowentry.set_table_id(1);			// FIXME: check for first table-id in data path
 
 		switch (rtr.get_family()) {
 		case AF_INET: {
@@ -87,11 +85,7 @@ dptroute::route_created(
 		uint32_t port_no = it->second->get_port_no();
 		rofl::cmacaddr eth_dst("00:00:00:00:00:00");
 
-		//flowentry.instructions.next() = rofl::cofinst_goto_table(3);
-		flowentry.instructions.next() = rofl::cofinst_write_actions();
-		flowentry.instructions.back().actions.next() = rofl::cofaction_set_field(rofl::coxmatch_ofb_eth_src(eth_src));
-		flowentry.instructions.back().actions.next() = rofl::cofaction_set_field(rofl::coxmatch_ofb_eth_dst(eth_dst));
-		flowentry.instructions.back().actions.next() = rofl::cofaction_output(port_no);
+		flowentry.instructions.next() = rofl::cofinst_goto_table(3);
 
 		fprintf(stderr, "flowentry: %s\n", flowentry.c_str());
 
@@ -149,7 +143,7 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
 
 	// filter out any events not related to our port
-	if (ifindex != rtr.get_ifindex())
+	if (ifindex != rtr.get_iif())
 		return;
 
 	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
@@ -159,17 +153,33 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 	for (it = rtr.get_nexthops().begin(); it != rtr.get_nexthops().end(); ++it) {
 		crtnexthop& rtnh = (*it);
 
+		// nexthop and neighbour must be bound to same link
+		if (rtnh.get_ifindex() != rtn.get_ifindex())
+			continue;
+
 		// gateway in nexthop must match dst address in neighbor instance
 		if (rtnh.get_gateway() != rtn.get_dst())
 			continue;
 
-		if (dptnexthops.find(nbindex) != dptnexthops.end()) {
-			dptnexthops[nbindex].flow_mod_delete();
-		}
-		dptnexthops[nbindex] = dptnexthop(rofbase, dpt, of_port_no, ifindex, nbindex, rtr.get_dst(), rtr.get_mask());
-		dptnexthops[nbindex].flow_mod_add();
+		// lookup the dptlink instance mapped to crtlink
+		try {
+			if (dptnexthops.find(nbindex) != dptnexthops.end()) {
+				dptnexthops[nbindex].flow_mod_delete();
+			}
+			dptnexthops[nbindex] = dptnexthop(
+										rofbase,
+										dpt,
+										dptlink::get_dptlink(rtnh.get_ifindex()).get_of_port_no(),
+										ifindex,
+										nbindex,
+										rtr.get_dst(),
+										rtr.get_mask());
+			dptnexthops[nbindex].flow_mod_add();
 
-		std::cerr << "dptroute::neigh_created() => " << dptnexthops[nbindex] << std::endl;
+			std::cerr << "dptroute::neigh_created() => " << dptnexthops[nbindex] << std::endl;
+		} catch (eDptLinkNotFound& e) {
+
+		}
 	}
 }
 
@@ -181,7 +191,7 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
 
 	// filter out any events not related to our port
-	if (ifindex != rtr.get_ifindex())
+	if (ifindex != rtr.get_iif())
 		return;
 
 	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
@@ -199,7 +209,7 @@ dptroute::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
 	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
 
 	// filter out any events not related to our port
-	if (ifindex != rtr.get_ifindex())
+	if (ifindex != rtr.get_iif())
 		return;
 
 	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);

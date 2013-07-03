@@ -24,6 +24,7 @@ extern "C" {
 #include <rofl/common/openflow/cflowentry.h>
 #include <cnetlink.h>
 #include <crtroute.h>
+#include <dptlink.h>
 #include <dptnexthop.h>
 
 namespace dptmap
@@ -37,7 +38,6 @@ private:
 
 	rofl::crofbase					*rofbase;
 	rofl::cofdpt					*dpt;
-	uint32_t						of_port_no;
 	uint8_t					 		table_id;
 	unsigned int			 		rtindex;
 	rofl::cflowentry		 		flowentry;
@@ -57,7 +57,6 @@ public:
 	dptroute(
 			rofl::crofbase* rofbase,
 			rofl::cofdpt* dpt,
-			uint32_t of_port_no,
 			uint8_t table_id,
 			unsigned int rtindex);
 
@@ -165,7 +164,6 @@ public:
 		os << "dptroute{";
 			os << "table_id=" 	<< (unsigned int)route.table_id << " ";
 			os << "rtindex=" 	<< route.rtindex << " ";
-			os << "ofportno=" 	<< (unsigned int)route.of_port_no << " ";
 			os << "flowentry=" 	<< s_buf << " ";
 		os << "}";
 		return os;
