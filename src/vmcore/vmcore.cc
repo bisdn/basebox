@@ -100,6 +100,7 @@ vmcore::handle_dpath_open(
 		 */
 		rofl::cflowentry fe(dpt->get_version());
 		fe.set_command(OFPFC_DELETE);
+		fe.set_table_id(OFPTT_ALL);
 		send_flow_mod_message(dpt, fe);
 
 
