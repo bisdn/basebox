@@ -28,6 +28,12 @@ dptlink::dptlink(
 
 dptlink::~dptlink()
 {
+	for (std::map<uint16_t, dptneigh>::iterator
+			it = neighs.begin(); it != neighs.end(); ++it) {
+		it->second.flow_mod_delete();
+	}
+	neighs.clear();
+
 	for (std::map<uint16_t, dptaddr>::iterator
 			it = addrs.begin(); it != addrs.end(); ++it) {
 		it->second.flow_mod_delete();
@@ -180,8 +186,6 @@ dptlink::addr_created(unsigned int ifindex, uint16_t adindex)
 	addrs[adindex] = dptaddr(rofbase, dpt, ifindex, adindex);
 
 	addrs[adindex].flow_mod_add();
-
-	//ip_endpoint_install_flow_mod(adindex);
 }
 
 
@@ -225,8 +229,6 @@ dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 	addrs[adindex].flow_mod_delete();
 
 	addrs.erase(adindex);
-
-	//ip_endpoint_remove_flow_mod(adindex);
 }
 
 
@@ -234,7 +236,21 @@ dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 void
 dptlink::neigh_created(unsigned int ifindex, uint16_t nbindex)
 {
-	std::cerr << "dptlink::neigh_created() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+	// filter out any events not related to our port
+	if (ifindex != this->ifindex)
+		return;
+
+	if (neighs.find(nbindex) != neighs.end()) {
+		// safe strategy: remove old FlowMod first
+		neighs[nbindex].flow_mod_delete();
+	}
+
+	fprintf(stderr, "dptlink::neigh_created() ifindex=%d nbindex=%d => ", ifindex, nbindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+
+	neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, ifindex, nbindex);
+
+	neighs[nbindex].flow_mod_add();
 }
 
 
@@ -242,7 +258,20 @@ dptlink::neigh_created(unsigned int ifindex, uint16_t nbindex)
 void
 dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 {
-	std::cerr << "dptlink::neigh_updated() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+	// filter out any events not related to our port
+	if (ifindex != this->ifindex)
+		return;
+
+	if (neighs.find(nbindex) == neighs.end()) {
+		neigh_created(ifindex, nbindex);
+	}
+
+	// TODO: check status changes and notify dptneigh instance
+
+	neighs[nbindex].flow_mod_modify();
+
+	fprintf(stderr, "dptlink::neigh_updated() ifindex=%d nbindex=%d => ", ifindex, nbindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
 }
 
 
@@ -250,6 +279,21 @@ dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 void
 dptlink::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
 {
-	std::cerr << "dptlink::neigh_deleted() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+	// filter out any events not related to our port
+	if (ifindex != this->ifindex)
+		return;
+
+	if (neighs.find(nbindex) == neighs.end()) {
+		// we have no dptaddr instance for the crtaddr instance scheduled for removal, so ignore it
+		return;
+	}
+
+	fprintf(stderr, "dptlink::neigh_deleted() ifindex=%d nbindex=%d => ", ifindex, nbindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+
+	neighs[nbindex].flow_mod_delete();
+
+	neighs.erase(nbindex);
 }
+
 

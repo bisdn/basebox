@@ -52,6 +52,12 @@ dptneigh::operator= (
 	if (this == &neigh)
 		return *this;
 
+	rofbase		= neigh.rofbase;
+	dpt			= neigh.dpt;
+	of_port_no	= neigh.of_port_no;
+	ifindex		= neigh.ifindex;
+	nbindex		= neigh.nbindex;
+	fe			= neigh.fe;
 
 	return *this;
 }
@@ -91,6 +97,10 @@ dptneigh::flow_mod_add()
 		fe.set_priority(0xfffe);
 		fe.set_table_id(3);			// FIXME: check for third table-id in data path
 
+
+		/*
+		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!
+		 */
 		switch (rtn.get_family()) {
 		case AF_INET:  { fe.match.set_ipv4_dst(rtn.get_dst()); } break;
 		case AF_INET6: { fe.match.set_ipv6_dst(rtn.get_dst()); } break;
