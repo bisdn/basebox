@@ -34,6 +34,20 @@ vmcore::link_is_mapped_from_dpt(int ifindex)
 
 
 
+dptlink&
+vmcore::get_mapped_link_from_dpt(int ifindex)
+{
+	std::map<uint32_t, dptlink*>::const_iterator it;
+	for (it = dptlinks[dpt].begin(); it != dptlinks[dpt].end(); ++it) {
+		if (it->second->get_ifindex() == ifindex) {
+			return *(it->second);
+		}
+	}
+	throw eVmCoreNotFound();
+}
+
+
+
 void
 vmcore::delete_all_ports()
 {
@@ -217,21 +231,23 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 void
 vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
-	// ignore local route table and unspecified table_id
-	if ((255 == table_id) || (0 == table_id)) {
-		std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
-		return;
-	}
+	try {
+		// ignore local route table and unspecified table_id
+		if ((255 == table_id) || (0 == table_id)) {
+			std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			return;
+		}
 
-	// if this route belongs to an interface not mirrored from the data path, ignore it
-	if (not link_is_mapped_from_dpt(cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex())) {
+		int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
+		dptlink& dptl = get_mapped_link_from_dpt(ifindex); // throws eVmCoreNotFound, if link is not mapped from dpt
+
+		//std::cerr << "vmcore::route_created() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+		if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
+			dptroutes[table_id][rtindex] = new dptroute(this, dpt, dptl.get_of_port_no(), table_id, rtindex);
+		}
+
+	} catch (eVmCoreNotFound& e) {
 		std::cerr << "vmcore::route_created() => ignoring ifindex=" << cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex() << std::endl;
-		return;
-	}
-
-	//std::cerr << "vmcore::route_created() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-	if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
-		dptroutes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
 	}
 }
 
@@ -240,20 +256,22 @@ vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 {
-	// ignore local route table and unspecified table_id
-	if ((255 == table_id) || (0 == table_id)) {
-		std::cerr << "vmcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
-		return;
-	}
+	try {
+		// ignore local route table and unspecified table_id
+		if ((255 == table_id) || (0 == table_id)) {
+			std::cerr << "vmcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			return;
+		}
 
-	// if this route belongs to an interface not mirrored from the data path, ignore it
-	if (not link_is_mapped_from_dpt(cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex())) {
-		std::cerr << "vmcore::route_updated() => ignoring ifindex=" << cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex() << std::endl;
-		return;
-	}
+		int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
+		dptlink& dptl = get_mapped_link_from_dpt(ifindex); // throws eVmCoreNotFound, if link is not mapped from dpt
 
-	//std::cerr << "vmcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-	// do nothing, this event is handled directly by dptroute instance
+		//std::cerr << "vmcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+		// do nothing, this event is handled directly by dptroute instance
+
+	} catch (eVmCoreNotFound& e) {
+
+	}
 }
 
 
@@ -261,21 +279,23 @@ vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 {
-	// ignore local route table and unspecified table_id
-	if ((255 == table_id) || (0 == table_id)) {
-		std::cerr << "vmcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
-		return;
-	}
+	try {
+		// ignore local route table and unspecified table_id
+		if ((255 == table_id) || (0 == table_id)) {
+			std::cerr << "vmcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			return;
+		}
 
-	// if this route belongs to an interface not mirrored from the data path, ignore it
-	if (not link_is_mapped_from_dpt(cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex())) {
-		std::cerr << "vmcore::route_deleted() => ignoring ifindex=" << cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex() << std::endl;
-		return;
-	}
+		int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
+		dptlink& dptl = get_mapped_link_from_dpt(ifindex); // throws eVmCoreNotFound, if link is not mapped from dpt
 
-	//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-	if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
-		delete dptroutes[table_id][rtindex];
+		//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+		if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
+			delete dptroutes[table_id][rtindex];
+		}
+
+	} catch (eVmCoreNotFound& e) {
+
 	}
 }
 

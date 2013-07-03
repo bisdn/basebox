@@ -8,6 +8,7 @@
 #ifndef DPTROUTE_H_
 #define DPTROUTE_H_ 1
 
+#include <map>
 #include <ostream>
 
 #ifdef __cplusplus
@@ -34,12 +35,17 @@ class dptroute :
 private:
 
 
-	rofl::crofbase			*rofbase;
-	rofl::cofdpt			*dpt;
-	uint8_t					 table_id;
-	unsigned int			 rtindex;
-	rofl::cflowentry		 flowentry;
-	std::set<dptnexthop>	 dptnexthops;
+	rofl::crofbase					*rofbase;
+	rofl::cofdpt					*dpt;
+	uint32_t						of_port_no;
+	uint8_t					 		table_id;
+	unsigned int			 		rtindex;
+	rofl::cflowentry		 		flowentry;
+
+	/* we make here one assumtpion: only one nexthop exists per neighbor and route
+	 * this should be valid under all circumstances
+	 */
+	std::map<uint16_t, dptnexthop> 	dptnexthops; // key1:nbindex, value:dptnexthop instance
 
 
 public:
@@ -51,6 +57,7 @@ public:
 	dptroute(
 			rofl::crofbase* rofbase,
 			rofl::cofdpt* dpt,
+			uint32_t of_port_no,
 			uint8_t table_id,
 			unsigned int rtindex);
 
@@ -94,18 +101,52 @@ public:
 			unsigned int rtindex);
 
 
+	/**
+	 *
+	 * @param ifindex
+	 * @param nbindex
+	 */
+	virtual void
+	neigh_created(
+			unsigned int ifindex,
+			uint16_t nbindex);
+
 
 	/**
 	 *
-	 * @param table_id
-	 * @param rtindex
-	 * @param nhindex
+	 * @param ifindex
+	 * @param nbindex
+	 */
+	virtual void
+	neigh_updated(
+			unsigned int ifindex,
+			uint16_t nbindex);
+
+
+	/**
+	 *
+	 * @param ifindex
+	 * @param nbindex
+	 */
+	virtual void
+	neigh_deleted(
+			unsigned int ifindex,
+			uint16_t nbindex);
+
+
+
+	/**
+	 *
 	 */
 	void
-	set_neigh(
-			uint8_t table_id,
-			unsigned int rtindex,
-			unsigned int nhindex);
+	set_nexthops();
+
+
+	/**
+	 *
+	 */
+	void
+	del_nexthops();
 
 
 public:
@@ -122,9 +163,10 @@ public:
 		memset(s_buf, 0, sizeof(s_buf));
 		snprintf(s_buf, sizeof(s_buf)-1, "%s", fe.c_str());
 		os << "dptroute{";
-		os << "table_id=" << (unsigned int)route.table_id << " ";
-		os << "rtindex=" << route.rtindex << " ";
-		os << "flowentry=" << s_buf << " ";
+			os << "table_id=" 	<< (unsigned int)route.table_id << " ";
+			os << "rtindex=" 	<< route.rtindex << " ";
+			os << "ofportno=" 	<< (unsigned int)route.of_port_no << " ";
+			os << "flowentry=" 	<< s_buf << " ";
 		os << "}";
 		return os;
 	};

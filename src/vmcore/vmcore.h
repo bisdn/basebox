@@ -24,6 +24,7 @@ namespace dptmap
 class eVmCoreBase 			: public std::exception {};
 class eVmCoreCritical 		: public eVmCoreBase {};
 class eVmCoreNoDptAttached	: public eVmCoreBase {};
+class eVmCoreNotFound		: public eVmCoreBase {};
 
 class vmcore :
 		public rofl::crofbase,
@@ -91,6 +92,9 @@ private:
 
 	bool
 	link_is_mapped_from_dpt(int ifindex);
+
+	dptlink&
+	get_mapped_link_from_dpt(int ifindex);
 
 	void
 	delete_all_ports();

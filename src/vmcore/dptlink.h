@@ -80,6 +80,12 @@ public:
 	unsigned int get_ifindex() const { return ifindex; }
 
 
+	/**
+	 *
+	 */
+	uint32_t get_of_port_no() const { return of_port_no; };
+
+
 public:
 
 
