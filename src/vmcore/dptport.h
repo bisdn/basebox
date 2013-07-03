@@ -62,6 +62,12 @@ public:
 	std::string get_devname() const { return dpt->get_ports()[of_port_no]->get_name(); };
 
 
+	/**
+	 *
+	 */
+	unsigned int get_ifindex() const { return ifindex; }
+
+
 public:
 
 

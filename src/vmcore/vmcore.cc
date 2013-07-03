@@ -200,12 +200,24 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 
 
 
-
 void
 vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
 	if ((255 == table_id) || (0 == table_id)) {
 		std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+		return;
+	}
+
+	// if this route belongs to an interface not mirrored from the data path, ignore it
+	int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
+
+	std::map<uint32_t, dptport*>::const_iterator it;
+	for (it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
+		if (it->second->get_ifindex() == ifindex) {
+			break;
+		}
+	}
+	if (it == dptports[dpt].end()) {
 		return;
 	}
 
@@ -225,9 +237,23 @@ vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 		return;
 	}
 
+	// if this route belongs to an interface not mirrored from the data path, ignore it
+	int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
+
+	std::map<uint32_t, dptport*>::const_iterator it;
+	for (it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
+		if (it->second->get_ifindex() == ifindex) {
+			break;
+		}
+	}
+	if (it == dptports[dpt].end()) {
+		return;
+	}
+
 	//std::cerr << "vmcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 	// do nothing, this event is handled directly by dptroute instance
 }
+
 
 
 void
@@ -238,8 +264,48 @@ vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 		return;
 	}
 
+	// if this route belongs to an interface not mirrored from the data path, ignore it
+	int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
+
+	std::map<uint32_t, dptport*>::const_iterator it;
+	for (it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
+		if (it->second->get_ifindex() == ifindex) {
+			break;
+		}
+	}
+	if (it == dptports[dpt].end()) {
+		return;
+	}
+
 	//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 	if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
 		delete dptroutes[table_id][rtindex];
 	}
 }
+
+
+
+void
+vmcore::neigh_created(unsigned int ifindex, uint16_t nbindex)
+{
+	std::cerr << "vmcore::neigh_created() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+}
+
+
+
+void
+vmcore::neigh_updated(unsigned int ifindex, uint16_t nbindex)
+{
+	std::cerr << "vmcore::neigh_updated() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+}
+
+
+
+void
+vmcore::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
+{
+	std::cerr << "vmcore::neigh_deleted() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+}
+
+
+
