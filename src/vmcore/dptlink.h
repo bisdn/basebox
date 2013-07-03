@@ -25,6 +25,7 @@ extern "C" {
 #include <cnetlink.h>
 #include <cpacketpool.h>
 #include <dptaddr.h>
+#include <dptneigh.h>
 
 namespace dptmap
 {
@@ -47,7 +48,7 @@ private:
 	ctapdev						*tapdev;		// tap device emulating the mapped port on this system
 	unsigned int		 		 ifindex;		// ifindex for tapdevice
 	std::map<uint16_t, dptaddr>  addrs;			// all addresses assigned to this link
-
+	std::map<uint16_t, dptneigh> neighs;		// all neighbors seen on this link (for ARP and NDP)
 
 public:
 
@@ -140,6 +141,30 @@ public:
 	 * @param ifindex
 	 */
 	virtual void addr_deleted(unsigned int ifindex, uint16_t adindex);
+
+
+	/**
+	 *
+	 * @param ifindex
+	 * @param nbindex
+	 */
+	virtual void neigh_created(unsigned int ifindex, uint16_t nbindex);
+
+
+	/**
+	 *
+	 * @param ifindex
+	 * @param nbindex
+	 */
+	virtual void neigh_updated(unsigned int ifindex, uint16_t nbindex);
+
+
+	/**
+	 *
+	 * @param ifindex
+	 * @param nbindex
+	 */
+	virtual void neigh_deleted(unsigned int ifindex, uint16_t nbindex);
 };
 
 }; // end of namespace

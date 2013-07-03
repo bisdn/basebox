@@ -1,34 +1,45 @@
 /*
- * dptaddr.h
+ * dptneigh.h
  *
  *  Created on: 03.07.2013
  *      Author: andreas
  */
 
-#ifndef DPTADDR_H_
-#define DPTADDR_H_ 1
+#ifndef DPTNEIGH_H_
+#define DPTNEIGH_H_ 1
+
+#include <ostream>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <inttypes.h>
+#ifdef __cplusplus
+}
+#endif
 
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cofdpt.h>
 #include <rofl/common/openflow/cflowentry.h>
 
-#include <crtaddr.h>
+#include <crtneigh.h>
 #include <flowmod.h>
 #include <cnetlink.h>
 
 namespace dptmap
 {
 
-class dptaddr :
+class dptneigh :
 		public flowmod
 {
 private:
 
-	rofl::crofbase*		rofbase;
-	rofl::cofdpt*		dpt;
-	int					ifindex;
-	uint16_t			adindex;
-	rofl::cflowentry	fe;
+	rofl::crofbase				*rofbase;
+	rofl::cofdpt				*dpt;
+	uint32_t					of_port_no;
+	int							ifindex;
+	uint16_t					nbindex;
+	rofl::cflowentry			fe;
 
 public:
 
@@ -36,36 +47,40 @@ public:
 	/**
 	 *
 	 */
-	dptaddr();
+	dptneigh();
 
 
 	/**
 	 *
 	 */
 	virtual
-	~dptaddr();
+	~dptneigh();
 
 
 	/**
 	 *
 	 */
-	dptaddr(
-			dptaddr const& addr);
+	dptneigh(
+			dptneigh const& neigh);
 
 
 	/**
 	 *
 	 */
-	dptaddr&
+	dptneigh&
 	operator= (
-			dptaddr const& addr);
+			dptneigh const& neigh);
 
 
 	/**
 	 *
 	 */
-	dptaddr(
-			rofl::crofbase *rofbase, rofl::cofdpt *dpt, int ifindex, uint16_t adindex);
+	dptneigh(
+			rofl::crofbase *rofbase,
+			rofl::cofdpt* dpt,
+			uint32_t of_port_no,
+			int ifindex,
+			uint16_t nbindex);
 
 
 public:
@@ -80,7 +95,7 @@ public:
 	/**
 	 *
 	 */
-	uint16_t get_adindex() const { return adindex; };
+	uint16_t get_nbindex() const { return nbindex; };
 
 
 	/**
@@ -90,7 +105,6 @@ public:
 
 
 public:
-
 
 	/**
 	 *
@@ -117,16 +131,16 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (std::ostream& os, dptaddr const& addr)
+	operator<< (std::ostream& os, dptneigh const& neigh)
 	{
-		rofl::cflowentry fe(addr.fe);
+		rofl::cflowentry fe(neigh.fe);
 		char s_fe[1024];
 		memset(s_fe, 0, sizeof(s_fe));
 		snprintf(s_fe, sizeof(s_fe)-1, "%s", fe.c_str());
 
-		os << "dptaddr{";
-			os << "ifindex=" << addr.ifindex << " ";
-			os << "adindex=" << (unsigned int)addr.adindex << " ";
+		os << "dptneigh{";
+			os << "ifindex=" << neigh.ifindex << " ";
+			os << "nbindex=" << (unsigned int)neigh.nbindex << " ";
 			os << "flowentry=" << s_fe << " ";
 		os << "}";
 		return os;
@@ -135,4 +149,6 @@ public:
 
 }; // end of namespace
 
-#endif /* DPTADDR_H_ */
+#endif /* DPTNEIGH_H_ */
+
+

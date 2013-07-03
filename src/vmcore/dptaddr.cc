@@ -77,7 +77,7 @@ dptaddr::dptaddr(
 
 
 void
-dptaddr::install_flow_mod()
+dptaddr::flow_mod_add()
 {
 	try {
 		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
@@ -101,15 +101,25 @@ dptaddr::install_flow_mod()
 
 		rofbase->send_flow_mod_message(dpt, fe);
 
+		std::cerr << "dptaddr::flow_mod_add() => " << *this << std::endl;
+
 	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "dptaddr::install_flow_mod() unable to find link or address\n");
+		fprintf(stderr, "dptaddr::flow_mod_add() unable to find link or address\n");
 	}
 }
 
 
 
 void
-dptaddr::revoke_flow_mod()
+dptaddr::flow_mod_modify()
+{
+	// TODO
+}
+
+
+
+void
+dptaddr::flow_mod_delete()
 {
 	try {
 		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
@@ -126,8 +136,10 @@ dptaddr::revoke_flow_mod()
 
 		rofbase->send_flow_mod_message(dpt, fe);
 
+		std::cerr << "dptaddr::flow_mod_delete() => " << *this << std::endl;
+
 	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "dptaddr::revoke_flow_mod() unable to find link or address\n");
+		fprintf(stderr, "dptaddr::flow_mod_delete() unable to find link or address\n");
 	}
 }
 

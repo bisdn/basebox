@@ -86,14 +86,6 @@ public:
 	virtual void
 	route_deleted(uint8_t table_id, unsigned int rtindex);
 
-	virtual void
-	neigh_created(unsigned int ifindex, uint16_t nbindex);
-
-	virtual void
-	neigh_updated(unsigned int ifindex, uint16_t nbindex);
-
-	virtual void
-	neigh_deleted(unsigned int ifindex, uint16_t nbindex);
 
 private:
 

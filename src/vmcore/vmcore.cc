@@ -281,27 +281,5 @@ vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 
 
 
-void
-vmcore::neigh_created(unsigned int ifindex, uint16_t nbindex)
-{
-	std::cerr << "vmcore::neigh_created() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
-}
-
-
-
-void
-vmcore::neigh_updated(unsigned int ifindex, uint16_t nbindex)
-{
-	std::cerr << "vmcore::neigh_updated() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
-}
-
-
-
-void
-vmcore::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
-{
-	std::cerr << "vmcore::neigh_deleted() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
-}
-
 
 

@@ -84,6 +84,7 @@ dptroute::route_created(
 		uint32_t port_no = it->second->get_port_no();
 		rofl::cmacaddr eth_dst("00:00:00:00:00:00");
 
+		//flowentry.instructions.next() = rofl::cofinst_goto_table(3);
 		flowentry.instructions.next() = rofl::cofinst_write_actions();
 		flowentry.instructions.back().actions.next() = rofl::cofaction_set_field(rofl::coxmatch_ofb_eth_src(eth_src));
 		flowentry.instructions.back().actions.next() = rofl::cofaction_set_field(rofl::coxmatch_ofb_eth_dst(eth_dst));

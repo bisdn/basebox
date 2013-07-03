@@ -30,7 +30,7 @@ dptlink::~dptlink()
 {
 	for (std::map<uint16_t, dptaddr>::iterator
 			it = addrs.begin(); it != addrs.end(); ++it) {
-		it->second.revoke_flow_mod();
+		it->second.flow_mod_delete();
 	}
 	addrs.clear();
 
@@ -171,15 +171,15 @@ dptlink::addr_created(unsigned int ifindex, uint16_t adindex)
 
 	if (addrs.find(adindex) != addrs.end()) {
 		// safe strategy: remove old FlowMod first
-		addrs[adindex].revoke_flow_mod();
+		addrs[adindex].flow_mod_delete();
 	}
-
-	addrs[adindex] = dptaddr(rofbase, dpt, ifindex, adindex);
-
-	addrs[adindex].install_flow_mod();
 
 	fprintf(stderr, "dptlink::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+
+	addrs[adindex] = dptaddr(rofbase, dpt, ifindex, adindex);
+
+	addrs[adindex].flow_mod_add();
 
 	//ip_endpoint_install_flow_mod(adindex);
 }
@@ -193,7 +193,13 @@ dptlink::addr_updated(unsigned int ifindex, uint16_t adindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	// TODO: check status changes
+	if (addrs.find(adindex) == addrs.end()) {
+		addr_created(ifindex, adindex);
+	}
+
+	// TODO: check status changes and notify dptaddr instance
+
+	addrs[adindex].flow_mod_modify();
 
 	fprintf(stderr, "dptlink::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
@@ -216,7 +222,7 @@ dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 	fprintf(stderr, "dptlink::addr_deleted() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 
-	addrs[adindex].revoke_flow_mod();
+	addrs[adindex].flow_mod_delete();
 
 	addrs.erase(adindex);
 
@@ -224,4 +230,26 @@ dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 }
 
 
+
+void
+dptlink::neigh_created(unsigned int ifindex, uint16_t nbindex)
+{
+	std::cerr << "dptlink::neigh_created() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+}
+
+
+
+void
+dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
+{
+	std::cerr << "dptlink::neigh_updated() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+}
+
+
+
+void
+dptlink::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
+{
+	std::cerr << "dptlink::neigh_deleted() => " << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+}
 

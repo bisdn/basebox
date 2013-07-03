@@ -13,6 +13,8 @@ vmcore_SOURCES = main.cc \
 		dptlink.cc \
 		dptaddr.h \
 		dptaddr.cc \
+		dptneigh.h \
+		dptneigh.cc \
 		cpacketpool.h \
 		cpacketpool.cc \
 		cnetdev.h \
