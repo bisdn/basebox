@@ -51,6 +51,8 @@ cnetlink::init_caches()
 
 	rc = nl_cache_mngr_add(mngr, "route/route", (change_func_t)&route_route_cb, NULL, &caches[NL_ROUTE_CACHE]);
 
+	rc = nl_cache_mngr_add(mngr, "route/neigh", (change_func_t)&route_neigh_cb, NULL, &caches[NL_NEIGH_CACHE]);
+
 	struct nl_object* obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
 	while (0 != obj) {
 		nl_object_get(obj);
@@ -75,6 +77,15 @@ cnetlink::init_caches()
 		nl_object_put(obj);
 		obj = nl_cache_get_next(obj);
 	}
+
+	obj = nl_cache_get_first(caches[NL_NEIGH_CACHE]);
+	while (0 != obj) {
+		nl_object_get(obj);
+		//set_route(crtroute((struct rtnl_neigh*)obj));
+		nl_object_put(obj);
+		obj = nl_cache_get_next(obj);
+	}
+
 	register_filedesc_r(nl_cache_mngr_get_fd(mngr));
 }
 
@@ -292,6 +303,16 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 	}
 
 	nl_object_put(obj); // release reference to object
+}
+
+
+
+void
+cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data)
+{
+
+		std::cerr << "cnetlink::route_neigh_cb() called" << std::endl;
+
 }
 
 

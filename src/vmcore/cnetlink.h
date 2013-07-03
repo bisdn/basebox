@@ -42,6 +42,7 @@ class cnetlink :
 		NL_LINK_CACHE = 0,
 		NL_ADDR_CACHE = 1,
 		NL_ROUTE_CACHE = 2,
+		NL_NEIGH_CACHE = 3,
 	};
 
 	struct nl_cache_mngr *mngr;
@@ -73,6 +74,13 @@ public:
 	 */
 	static void
 	route_route_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data);
+
+
+	/**
+	 *
+	 */
+	static void
+	route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data);
 
 
 	/**
