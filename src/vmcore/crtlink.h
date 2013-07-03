@@ -140,8 +140,22 @@ public:
 	/**
 	 *
 	 */
+	crtneigh&
+	get_neigh(rofl::caddress const& dst);
+
+
+	/**
+	 *
+	 */
 	uint16_t
-	get_neigh(crtneigh const& rtn);
+	get_neigh_index(crtneigh const& rtn);
+
+
+	/**
+	 *
+	 */
+	uint16_t
+	get_neigh_index(rofl::caddress const& dst);
 
 
 	/**

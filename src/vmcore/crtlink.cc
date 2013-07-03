@@ -188,8 +188,21 @@ crtlink::get_neigh(uint16_t index)
 
 
 
+crtneigh&
+crtlink::get_neigh(rofl::caddress const& dst)
+{
+	std::map<uint16_t, crtneigh>::iterator it;
+	if ((it = find_if(neighs.begin(), neighs.end(),
+			crtneigh::crtneigh_find_by_dst(dst))) == neighs.end()) {
+		throw eRtLinkNotFound();
+	}
+	return it->second;
+}
+
+
+
 uint16_t
-crtlink::get_neigh(crtneigh const& rtn)
+crtlink::get_neigh_index(crtneigh const& rtn)
 {
 	std::map<uint16_t, crtneigh>::iterator it;
 	if ((it = find_if(neighs.begin(), neighs.end(),
@@ -199,6 +212,18 @@ crtlink::get_neigh(crtneigh const& rtn)
 	return it->first;
 }
 
+
+
+uint16_t
+crtlink::get_neigh_index(rofl::caddress const& dst)
+{
+	std::map<uint16_t, crtneigh>::iterator it;
+	if ((it = find_if(neighs.begin(), neighs.end(),
+			crtneigh::crtneigh_find_by_dst(dst))) == neighs.end()) {
+		throw eRtLinkNotFound();
+	}
+	return it->first;
+}
 
 
 uint16_t

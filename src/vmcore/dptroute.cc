@@ -43,12 +43,13 @@ dptroute::route_created(
 		if ((this->table_id != table_id) || (this->rtindex != rtindex))
 			return;
 
-
 #if 1
 		std::cerr << "dptroute::route_created() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 #endif
 
 		crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
+
+		set_neigh(table_id, rtindex, 0);  // FIXME: handle all existing nexthops, there might be more than one!
 
 		flowentry = rofl::cflowentry(dpt->get_version());
 
@@ -136,5 +137,25 @@ dptroute::route_deleted(
 	rofbase->send_flow_mod_message(dpt, flowentry);
 }
 
+
+
+void
+dptroute::set_neigh(uint8_t table_id, unsigned int rtindex, unsigned int nhindex)
+{
+#if 0
+	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
+
+	uint16_t ifindex = rtr.get_ifindex();
+	uint16_t nbindex = cnetlink::get_instance().get_link(ifindex).get_neigh_index(rtr.get_nexthop(nhindex).get_gateway());
+
+	crtneigh& rtn = cnetlink::get_instance().get_link(rtr.get_ifindex()).get_neigh(nbindex);
+
+	rofl::caddress dstaddr = cnetlink::get_instance().get_route(table_id, rtindex).get_dst();
+	rofl::caddress dstmask = cnetlink::get_instance().get_route(table_id, rtindex).get_mask();
+
+	uint32_t of_port_no = 0;
+	dptneigh* neigh = new dptneigh(rofbase, dpt, of_port_no, rtn.get_ifindex(), 0, dstaddr, dstmask);
+#endif
+}
 
 

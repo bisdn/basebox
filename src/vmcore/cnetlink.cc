@@ -342,7 +342,7 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 
 		} break;
 		case NL_ACT_DEL: {
-			uint16_t nbindex = cnetlink::get_instance().get_link(ifindex).get_neigh(crtneigh(neigh));
+			uint16_t nbindex = cnetlink::get_instance().get_link(ifindex).get_neigh_index(crtneigh(neigh));
 
 			for (std::set<cnetlink_subscriber*>::iterator
 					it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {

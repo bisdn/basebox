@@ -1,12 +1,12 @@
 /*
- * dptneigh.h
+ * dptnexthop.h
  *
  *  Created on: 03.07.2013
  *      Author: andreas
  */
 
-#ifndef DPTNEIGH_H_
-#define DPTNEIGH_H_ 1
+#ifndef DPTNEXTHOP_H_
+#define DPTNEXTHOP_H_ 1
 
 #include <ostream>
 
@@ -29,7 +29,7 @@ extern "C" {
 namespace dptmap
 {
 
-class dptneigh :
+class dptnexthop :
 		public flowmod
 {
 private:
@@ -40,6 +40,8 @@ private:
 	int							ifindex;
 	uint16_t					nbindex;
 	rofl::cflowentry			fe;
+	rofl::caddress				dstaddr; // destination address when acting as a gateway
+	rofl::caddress				dstmask; // destination mask when acting as a gateway
 
 public:
 
@@ -47,40 +49,42 @@ public:
 	/**
 	 *
 	 */
-	dptneigh();
+	dptnexthop();
 
 
 	/**
 	 *
 	 */
 	virtual
-	~dptneigh();
+	~dptnexthop();
 
 
 	/**
 	 *
 	 */
-	dptneigh(
-			dptneigh const& neigh);
+	dptnexthop(
+			dptnexthop const& neigh);
 
 
 	/**
 	 *
 	 */
-	dptneigh&
+	dptnexthop&
 	operator= (
-			dptneigh const& neigh);
+			dptnexthop const& neigh);
 
 
 	/**
 	 *
 	 */
-	dptneigh(
+	dptnexthop(
 			rofl::crofbase *rofbase,
 			rofl::cofdpt* dpt,
 			uint32_t of_port_no,
 			int ifindex,
-			uint16_t nbindex);
+			uint16_t nbindex,
+			rofl::caddress const& dstaddr,
+			rofl::caddress const& dstmask);
 
 
 public:
@@ -102,6 +106,18 @@ public:
 	 *
 	 */
 	rofl::cflowentry get_flowentry() const { return fe; };
+
+
+	/**
+	 *
+	 */
+	rofl::caddress get_dstaddr() const { return dstaddr; };
+
+
+	/**
+	 *
+	 */
+	rofl::caddress get_dstmask() const { return dstmask; };
 
 
 public:
@@ -131,17 +147,19 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (std::ostream& os, dptneigh const& neigh)
+	operator<< (std::ostream& os, dptnexthop const& neigh)
 	{
 		rofl::cflowentry fe(neigh.fe);
 		char s_fe[1024];
 		memset(s_fe, 0, sizeof(s_fe));
 		snprintf(s_fe, sizeof(s_fe)-1, "%s", fe.c_str());
 
-		os << "dptneigh{";
+		os << "dptnexthop{";
 			os << "ifindex=" << neigh.ifindex << " ";
 			os << "nbindex=" << (unsigned int)neigh.nbindex << " ";
 			os << "ofportno=" << (unsigned int)neigh.of_port_no << " ";
+			os << "dstaddr=" << neigh.dstaddr << " ";
+			os << "dstmask=" << neigh.dstmask << " ";
 			os << "flowentry=" << s_fe << " ";
 		os << "}";
 		return os;

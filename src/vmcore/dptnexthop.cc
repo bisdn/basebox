@@ -1,22 +1,24 @@
 /*
- * dptneigh.cc
+ * dptnexthop.cc
  *
  *  Created on: 03.07.2013
  *      Author: andreas
  */
 
-#include <dptneigh.h>
+#include <dptnexthop.h>
 
 using namespace dptmap;
 
 
-dptneigh::dptneigh() :
+dptnexthop::dptnexthop() :
 		rofbase(0),
 		dpt(0),
 		of_port_no(0),
 		ifindex(0),
 		nbindex(0),
-		fe(OFP12_VERSION)
+		fe(OFP12_VERSION),
+		dstaddr(AF_INET),
+		dstmask(AF_INET)
 {
 
 }
@@ -24,30 +26,32 @@ dptneigh::dptneigh() :
 
 
 
-dptneigh::~dptneigh()
+dptnexthop::~dptnexthop()
 {
 
 }
 
 
 
-dptneigh::dptneigh(
-		dptneigh const& neigh) :
+dptnexthop::dptnexthop(
+		dptnexthop const& neigh) :
 		rofbase(0),
 		dpt(0),
 		of_port_no(0),
 		ifindex(0),
 		nbindex(0),
-		fe(OFP12_VERSION)
+		fe(OFP12_VERSION),
+		dstaddr(AF_INET),
+		dstmask(AF_INET)
 {
 	*this = neigh;
 }
 
 
 
-dptneigh&
-dptneigh::operator= (
-		dptneigh const& neigh)
+dptnexthop&
+dptnexthop::operator= (
+		dptnexthop const& neigh)
 {
 	if (this == &neigh)
 		return *this;
@@ -58,25 +62,30 @@ dptneigh::operator= (
 	ifindex		= neigh.ifindex;
 	nbindex		= neigh.nbindex;
 	fe			= neigh.fe;
-
+	dstaddr		= neigh.dstaddr;
+	dstmask		= neigh.dstmask;
 
 	return *this;
 }
 
 
 
-dptneigh::dptneigh(
+dptnexthop::dptnexthop(
 		rofl::crofbase *rofbase,
 		rofl::cofdpt* dpt,
 		uint32_t of_port_no,
 		int ifindex,
-		uint16_t nbindex) :
+		uint16_t nbindex,
+		rofl::caddress const& dstaddr,
+		rofl::caddress const& dstmask) :
 		rofbase(rofbase),
 		dpt(dpt),
 		of_port_no(of_port_no),
 		ifindex(ifindex),
 		nbindex(nbindex),
-		fe(dpt->get_version())
+		fe(dpt->get_version()),
+		dstaddr(dstaddr),
+		dstmask(dstmask)
 {
 
 }
@@ -84,7 +93,7 @@ dptneigh::dptneigh(
 
 
 void
-dptneigh::flow_mod_add()
+dptnexthop::flow_mod_add()
 {
 	try {
 		crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
@@ -98,13 +107,9 @@ dptneigh::flow_mod_add()
 		fe.set_priority(0xfffe);
 		fe.set_table_id(3);			// FIXME: check for third table-id in data path
 
-
-		/*
-		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!
-		 */
-		switch (rtn.get_family()) {
-		case AF_INET:  { fe.match.set_ipv4_dst(rtn.get_dst()); } break;
-		case AF_INET6: { fe.match.set_ipv6_dst(rtn.get_dst()); } break;
+		switch (dstaddr.ca_saddr->sa_family) {
+		case AF_INET:  { fe.match.set_ipv4_dst(dstaddr, dstmask); } break;
+		case AF_INET6: { fe.match.set_ipv6_dst(dstaddr, dstmask); } break;
 		}
 
 		rofl::cmacaddr eth_src(cnetlink::get_instance().get_link(ifindex).get_hwaddr());
@@ -117,17 +122,17 @@ dptneigh::flow_mod_add()
 
 		rofbase->send_flow_mod_message(dpt, fe);
 
-		std::cerr << "dptneigh::flow_mod_add() => " << *this << std::endl;
+		std::cerr << "dptnexthop::flow_mod_add() => " << *this << std::endl;
 
 	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "dptneigh::flow_mod_add() unable to find link or neighbor\n");
+		fprintf(stderr, "dptnexthop::flow_mod_add() unable to find link or neighbor\n");
 	}
 }
 
 
 
 void
-dptneigh::flow_mod_modify()
+dptnexthop::flow_mod_modify()
 {
 	// TODO
 }
@@ -135,7 +140,7 @@ dptneigh::flow_mod_modify()
 
 
 void
-dptneigh::flow_mod_delete()
+dptnexthop::flow_mod_delete()
 {
 	try {
 		crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
@@ -149,16 +154,16 @@ dptneigh::flow_mod_delete()
 		fe.set_priority(0xfffe);
 		fe.set_table_id(3);			// FIXME: check for third table-id in data path
 
-		switch (rtn.get_family()) {
-		case AF_INET:  { fe.match.set_ipv4_dst(rtn.get_dst()); } break;
-		case AF_INET6: { fe.match.set_ipv6_dst(rtn.get_dst()); } break;
+		switch (dstaddr.ca_saddr->sa_family) {
+		case AF_INET:  { fe.match.set_ipv4_dst(dstaddr, dstmask); } break;
+		case AF_INET6: { fe.match.set_ipv6_dst(dstaddr, dstmask); } break;
 		}
 
 		rofbase->send_flow_mod_message(dpt, fe);
 
-		std::cerr << "dptneigh::flow_mod_delete() => " << *this << std::endl;
+		std::cerr << "dptnexthop::flow_mod_delete() => " << *this << std::endl;
 
 	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "dptneigh::flow_mod_delete() unable to find link or neighbor\n");
+		fprintf(stderr, "dptnexthop::flow_mod_delete() unable to find link or neighbor\n");
 	}
 }

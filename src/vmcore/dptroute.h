@@ -23,6 +23,7 @@ extern "C" {
 #include <rofl/common/openflow/cflowentry.h>
 #include <cnetlink.h>
 #include <crtroute.h>
+#include <dptnexthop.h>
 
 namespace dptmap
 {
@@ -38,6 +39,7 @@ private:
 	uint8_t					 table_id;
 	unsigned int			 rtindex;
 	rofl::cflowentry		 flowentry;
+	std::set<dptnexthop>	 dptnexthops;
 
 
 public:
@@ -90,6 +92,21 @@ public:
 	route_deleted(
 			uint8_t table_id,
 			unsigned int rtindex);
+
+
+
+	/**
+	 *
+	 * @param table_id
+	 * @param rtindex
+	 * @param nhindex
+	 */
+	void
+	set_neigh(
+			uint8_t table_id,
+			unsigned int rtindex,
+			unsigned int nhindex);
+
 
 public:
 
