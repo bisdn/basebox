@@ -28,6 +28,12 @@ dptlink::dptlink(
 
 dptlink::~dptlink()
 {
+	for (std::map<uint16_t, dptaddr>::iterator
+			it = addrs.begin(); it != addrs.end(); ++it) {
+		it->second.revoke_flow_mod();
+	}
+	addrs.clear();
+
 	if (tapdev) delete tapdev;
 }
 
@@ -163,10 +169,19 @@ dptlink::addr_created(unsigned int ifindex, uint16_t adindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	//fprintf(stderr, "dptport::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
+	if (addrs.find(adindex) != addrs.end()) {
+		// safe strategy: remove old FlowMod first
+		addrs[adindex].revoke_flow_mod();
+	}
+
+	addrs[adindex] = dptaddr(rofbase, dpt, ifindex, adindex);
+
+	addrs[adindex].install_flow_mod();
+
+	fprintf(stderr, "dptlink::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 
-	ip_endpoint_install_flow_mod(adindex);
+	//ip_endpoint_install_flow_mod(adindex);
 }
 
 
@@ -178,7 +193,9 @@ dptlink::addr_updated(unsigned int ifindex, uint16_t adindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	//fprintf(stderr, "dptport::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
+	// TODO: check status changes
+
+	fprintf(stderr, "dptlink::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
 	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 }
 
@@ -191,66 +208,20 @@ dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	//fprintf(stderr, "dptport::addr_deleted() ifindex=%d adindex=%d\n", ifindex, adindex);
-
-	ip_endpoint_remove_flow_mod(adindex);
-}
-
-
-
-void
-dptlink::ip_endpoint_install_flow_mod(uint16_t adindex)
-{
-	try {
-		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
-
-		rofl::cflowentry fe(dpt->get_version());
-
-		fe.set_command(OFPFC_ADD);
-		fe.set_buffer_id(OFP_NO_BUFFER);
-		fe.set_idle_timeout(0);
-		fe.set_hard_timeout(0);
-		fe.set_priority(0xfffe);
-		fe.set_table_id(0);			// FIXME: check for first table-id in data path
-
-		fe.instructions.next() = rofl::cofinst_apply_actions();
-		fe.instructions.back().actions.next() = rofl::cofaction_output(OFPP_CONTROLLER, 1518); // FIXME: check the mtu value
-
-		switch (rta.get_family()) {
-		case AF_INET:  { fe.match.set_ipv4_dst(rta.get_local_addr()); } break;
-		case AF_INET6: { fe.match.set_ipv6_dst(rta.get_local_addr()); } break;
-		}
-
-		rofbase->send_flow_mod_message(dpt, fe);
-
-	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "dptport::ip_endpoint_install_flow_mod() unable to find link or address\n");
+	if (addrs.find(adindex) == addrs.end()) {
+		// we have no dptaddr instance for the crtaddr instance scheduled for removal, so ignore it
+		return;
 	}
+
+	fprintf(stderr, "dptlink::addr_deleted() ifindex=%d adindex=%d => ", ifindex, adindex);
+	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+
+	addrs[adindex].revoke_flow_mod();
+
+	addrs.erase(adindex);
+
+	//ip_endpoint_remove_flow_mod(adindex);
 }
 
-
-
-void
-dptlink::ip_endpoint_remove_flow_mod(uint16_t adindex)
-{
-	try {
-		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
-
-		rofl::cflowentry fe(dpt->get_version());
-
-		fe.set_command(OFPFC_DELETE_STRICT);
-		fe.set_table_id(0);			// FIXME: check for first table-id in data path
-
-		switch (rta.get_family()) {
-		case AF_INET:  { fe.match.set_ipv4_dst(rta.get_local_addr()); } break;
-		case AF_INET6: { fe.match.set_ipv6_dst(rta.get_local_addr()); } break;
-		}
-
-		rofbase->send_flow_mod_message(dpt, fe);
-
-	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "dptport::ip_endpoint_remove_flow_mod() unable to find link or address\n");
-	}
-}
 
 

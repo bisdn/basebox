@@ -8,6 +8,15 @@
 #ifndef DPTLINK_H_
 #define DPTLINK_H_ 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <inttypes.h>
+#ifdef __cplusplus
+}
+#endif
+
+
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cofdpt.h>
 #include <rofl/common/openflow/cflowentry.h>
@@ -15,6 +24,7 @@
 #include <ctapdev.h>
 #include <cnetlink.h>
 #include <cpacketpool.h>
+#include <dptaddr.h>
 
 namespace dptmap
 {
@@ -31,11 +41,12 @@ class dptlink :
 private:
 
 
-	rofl::crofbase		*rofbase; 		// OpenFlow endpoint
-	rofl::cofdpt		*dpt;			// cofdpt handle for attached data path element
-	uint32_t			 of_port_no;	// OpenFlow portno assigned to port on dpt mapped to this dptport instance
-	ctapdev				*tapdev;		// tap device emulating the mapped port on this system
-	unsigned int		 ifindex;		// ifindex for tapdevice
+	rofl::crofbase				*rofbase; 		// OpenFlow endpoint
+	rofl::cofdpt				*dpt;			// cofdpt handle for attached data path element
+	uint32_t			 		 of_port_no;	// OpenFlow portno assigned to port on dpt mapped to this dptport instance
+	ctapdev						*tapdev;		// tap device emulating the mapped port on this system
+	unsigned int		 		 ifindex;		// ifindex for tapdevice
+	std::map<uint16_t, dptaddr>  addrs;			// all addresses assigned to this link
 
 
 public:
@@ -129,25 +140,6 @@ public:
 	 * @param ifindex
 	 */
 	virtual void addr_deleted(unsigned int ifindex, uint16_t adindex);
-
-
-public:
-
-
-	/**
-	 *
-	 * @param adindex
-	 */
-	void
-	ip_endpoint_install_flow_mod(uint16_t adindex);
-
-
-	/**
-	 *
-	 * @param adindex
-	 */
-	void
-	ip_endpoint_remove_flow_mod(uint16_t adindex);
 };
 
 }; // end of namespace

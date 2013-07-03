@@ -11,6 +11,8 @@ vmcore_SOURCES = main.cc \
 		dptroute.cc \
 		dptlink.h \
 		dptlink.cc \
+		dptaddr.h \
+		dptaddr.cc \
 		cpacketpool.h \
 		cpacketpool.cc \
 		cnetdev.h \
@@ -28,7 +30,8 @@ vmcore_SOURCES = main.cc \
 		crtnexthop.cc \
 		crtnexthop.h \
 		crtneigh.h \
-		crtneigh.cc
+		crtneigh.cc \
+		flowmod.h
 		
 vmcore_LDADD = -lpthread \
 	-lrofl \
