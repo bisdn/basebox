@@ -14,7 +14,7 @@
 //#include "cnetlink.h"
 #include <rofl/common/crofbase.h>
 
-#include <dptport.h>
+#include <dptlink.h>
 #include <dptroute.h>
 #include <cnetlink.h>
 
@@ -33,7 +33,7 @@ private:
 
 
 	rofl::cofdpt 												*dpt;		// handle for cofdpt instance managed by this vmcore
-	std::map<rofl::cofdpt*, std::map<uint32_t, dptport*> > 		 dptports;	// mapped ports per data path element
+	std::map<rofl::cofdpt*, std::map<uint32_t, dptlink*> > 		 dptlinks;	// mapped ports per data path element
 	std::map<uint8_t, std::map<unsigned int, dptroute*> >		 dptroutes;	// active routes => key1:table_id, key2:routing index, value: dptroute instance
 
 
@@ -97,6 +97,8 @@ public:
 
 private:
 
+	bool
+	link_is_mapped_from_dpt(int ifindex);
 
 	void
 	delete_all_ports();

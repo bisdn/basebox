@@ -9,8 +9,8 @@ vmcore_SOURCES = main.cc \
 		vmcore.cc \
 		dptroute.h \
 		dptroute.cc \
-		dptport.h \
-		dptport.cc \
+		dptlink.h \
+		dptlink.cc \
 		cpacketpool.h \
 		cpacketpool.cc \
 		cnetdev.h \

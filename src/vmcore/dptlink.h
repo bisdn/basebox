@@ -5,8 +5,8 @@
  *      Author: andreas
  */
 
-#ifndef DPTPORT_H_
-#define DPTPORT_H_ 1
+#ifndef DPTLINK_H_
+#define DPTLINK_H_ 1
 
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cofdpt.h>
@@ -24,7 +24,7 @@ class eDptPortCritical 			: public eDptPortBase {};
 class eDptPortNoDptAttached		: public eDptPortBase {};
 class eDptPortTapDevNotFound	: public eDptPortBase {};
 
-class dptport :
+class dptlink :
 		public cnetlink_subscriber,
 		public cnetdev_owner
 {
@@ -43,7 +43,7 @@ public:
 	/**
 	 *
 	 */
-	dptport(
+	dptlink(
 			rofl::crofbase *rofbase,
 			rofl::cofdpt *dpt,
 			uint32_t of_port_no);
@@ -53,7 +53,7 @@ public:
 	 *
 	 */
 	virtual
-	~dptport();
+	~dptlink();
 
 
 	/**

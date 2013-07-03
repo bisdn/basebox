@@ -20,17 +20,31 @@ vmcore::~vmcore()
 
 
 
+bool
+vmcore::link_is_mapped_from_dpt(int ifindex)
+{
+	std::map<uint32_t, dptlink*>::const_iterator it;
+	for (it = dptlinks[dpt].begin(); it != dptlinks[dpt].end(); ++it) {
+		if (it->second->get_ifindex() == ifindex) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
 void
 vmcore::delete_all_ports()
 {
-	for (std::map<rofl::cofdpt*, std::map<uint32_t, dptport*> >::iterator
-			jt = dptports.begin(); jt != dptports.end(); ++jt) {
-		for (std::map<uint32_t, dptport*>::iterator
-				it = dptports[jt->first].begin(); it != dptports[jt->first].end(); ++it) {
+	for (std::map<rofl::cofdpt*, std::map<uint32_t, dptlink*> >::iterator
+			jt = dptlinks.begin(); jt != dptlinks.end(); ++jt) {
+		for (std::map<uint32_t, dptlink*>::iterator
+				it = dptlinks[jt->first].begin(); it != dptlinks[jt->first].end(); ++it) {
 			delete (it->second); // remove dptport instance from heap
 		}
 	}
-	dptports.clear();
+	dptlinks.clear();
 }
 
 
@@ -78,8 +92,8 @@ vmcore::handle_dpath_open(
 		for (std::map<uint32_t, rofl::cofport*>::iterator
 				it = ports.begin(); it != ports.end(); ++it) {
 			rofl::cofport *port = it->second;
-			if (dptports[dpt].find(port->get_port_no()) == dptports[dpt].end()) {
-				dptports[dpt][port->get_port_no()] = new dptport(this, dpt, port->get_port_no());
+			if (dptlinks[dpt].find(port->get_port_no()) == dptlinks[dpt].end()) {
+				dptlinks[dpt][port->get_port_no()] = new dptlink(this, dpt, port->get_port_no());
 			}
 		}
 
@@ -132,19 +146,19 @@ vmcore::handle_port_status(
 	try {
 		switch (msg->get_reason()) {
 		case OFPPR_ADD: {
-			if (dptports[dpt].find(port_no) == dptports[dpt].end()) {
-				dptports[dpt][port_no] = new dptport(this, dpt, msg->get_port().get_port_no());
+			if (dptlinks[dpt].find(port_no) == dptlinks[dpt].end()) {
+				dptlinks[dpt][port_no] = new dptlink(this, dpt, msg->get_port().get_port_no());
 			}
 		} break;
 		case OFPPR_MODIFY: {
-			if (dptports[dpt].find(port_no) != dptports[dpt].end()) {
-				dptports[dpt][port_no]->handle_port_status();
+			if (dptlinks[dpt].find(port_no) != dptlinks[dpt].end()) {
+				dptlinks[dpt][port_no]->handle_port_status();
 			}
 		} break;
 		case OFPPR_DELETE: {
-			if (dptports[dpt].find(port_no) != dptports[dpt].end()) {
-				delete dptports[dpt][port_no];
-				dptports[dpt].erase(port_no);
+			if (dptlinks[dpt].find(port_no) != dptlinks[dpt].end()) {
+				delete dptlinks[dpt][port_no];
+				dptlinks[dpt].erase(port_no);
 			}
 		} break;
 		default: {
@@ -181,13 +195,13 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 	try {
 		uint32_t port_no = msg->get_match().get_in_port();
 
-		if (dptports[dpt].find(port_no) == dptports[dpt].end()) {
+		if (dptlinks[dpt].find(port_no) == dptlinks[dpt].end()) {
 			fprintf(stderr, "vmcore::handle_packet_in() frame for port_no=%d received, but port not found\n", port_no);
 
 			delete msg; return;
 		}
 
-		dptports[dpt][port_no]->handle_packet_in(msg->get_packet());
+		dptlinks[dpt][port_no]->handle_packet_in(msg->get_packet());
 
 		delete msg;
 
@@ -203,21 +217,15 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 void
 vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
+	// ignore local route table and unspecified table_id
 	if ((255 == table_id) || (0 == table_id)) {
 		std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 		return;
 	}
 
 	// if this route belongs to an interface not mirrored from the data path, ignore it
-	int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
-
-	std::map<uint32_t, dptport*>::const_iterator it;
-	for (it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
-		if (it->second->get_ifindex() == ifindex) {
-			break;
-		}
-	}
-	if (it == dptports[dpt].end()) {
+	if (not link_is_mapped_from_dpt(cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex())) {
+		std::cerr << "vmcore::route_created() => ignoring ifindex=" << cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex() << std::endl;
 		return;
 	}
 
@@ -232,21 +240,15 @@ vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 {
+	// ignore local route table and unspecified table_id
 	if ((255 == table_id) || (0 == table_id)) {
-		std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+		std::cerr << "vmcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 		return;
 	}
 
 	// if this route belongs to an interface not mirrored from the data path, ignore it
-	int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
-
-	std::map<uint32_t, dptport*>::const_iterator it;
-	for (it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
-		if (it->second->get_ifindex() == ifindex) {
-			break;
-		}
-	}
-	if (it == dptports[dpt].end()) {
+	if (not link_is_mapped_from_dpt(cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex())) {
+		std::cerr << "vmcore::route_updated() => ignoring ifindex=" << cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex() << std::endl;
 		return;
 	}
 
@@ -259,21 +261,15 @@ vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 {
+	// ignore local route table and unspecified table_id
 	if ((255 == table_id) || (0 == table_id)) {
-		std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+		std::cerr << "vmcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 		return;
 	}
 
 	// if this route belongs to an interface not mirrored from the data path, ignore it
-	int ifindex = cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex();
-
-	std::map<uint32_t, dptport*>::const_iterator it;
-	for (it = dptports[dpt].begin(); it != dptports[dpt].end(); ++it) {
-		if (it->second->get_ifindex() == ifindex) {
-			break;
-		}
-	}
-	if (it == dptports[dpt].end()) {
+	if (not link_is_mapped_from_dpt(cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex())) {
+		std::cerr << "vmcore::route_deleted() => ignoring ifindex=" << cnetlink::get_instance().get_route(table_id, rtindex).get_ifindex() << std::endl;
 		return;
 	}
 

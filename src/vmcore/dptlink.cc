@@ -5,11 +5,11 @@
  *      Author: andreas
  */
 
-#include <dptport.h>
+#include <dptlink.h>
 
 using namespace dptmap;
 
-dptport::dptport(
+dptlink::dptlink(
 		rofl::crofbase *rofbase,
 		rofl::cofdpt *dpt,
 		uint32_t of_port_no) :
@@ -26,7 +26,7 @@ dptport::dptport(
 
 
 
-dptport::~dptport()
+dptlink::~dptlink()
 {
 	if (tapdev) delete tapdev;
 }
@@ -34,7 +34,7 @@ dptport::~dptport()
 
 
 void
-dptport::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
+dptlink::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
 {
 	try {
 		if (0 == dpt) {
@@ -68,7 +68,7 @@ dptport::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
 
 
 void
-dptport::enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
+dptlink::enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
 {
 	for (std::vector<rofl::cpacket*>::iterator
 			it = pkts.begin(); it != pkts.end(); ++it) {
@@ -79,7 +79,7 @@ dptport::enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
 
 
 void
-dptport::handle_packet_in(rofl::cpacket const& pack)
+dptlink::handle_packet_in(rofl::cpacket const& pack)
 {
 	if (0 == tapdev)
 		return;
@@ -94,7 +94,7 @@ dptport::handle_packet_in(rofl::cpacket const& pack)
 
 
 void
-dptport::handle_port_status()
+dptlink::handle_port_status()
 {
 	try {
 		uint32_t config = dpt->get_port(of_port_no).get_config();
@@ -115,7 +115,7 @@ dptport::handle_port_status()
 
 
 void
-dptport::link_created(unsigned int ifindex)
+dptlink::link_created(unsigned int ifindex)
 {
 	// filter out any events not related to our port
 	if (ifindex != this->ifindex)
@@ -128,7 +128,7 @@ dptport::link_created(unsigned int ifindex)
 
 
 void
-dptport::link_updated(unsigned int ifindex)
+dptlink::link_updated(unsigned int ifindex)
 {
 	// filter out any events not related to our port
 	if (ifindex != this->ifindex)
@@ -145,7 +145,7 @@ dptport::link_updated(unsigned int ifindex)
 
 
 void
-dptport::link_deleted(unsigned int ifindex)
+dptlink::link_deleted(unsigned int ifindex)
 {
 	// filter out any events not related to our port
 	if (ifindex != this->ifindex)
@@ -157,7 +157,7 @@ dptport::link_deleted(unsigned int ifindex)
 
 
 void
-dptport::addr_created(unsigned int ifindex, uint16_t adindex)
+dptlink::addr_created(unsigned int ifindex, uint16_t adindex)
 {
 	// filter out any events not related to our port
 	if (ifindex != this->ifindex)
@@ -172,7 +172,7 @@ dptport::addr_created(unsigned int ifindex, uint16_t adindex)
 
 
 void
-dptport::addr_updated(unsigned int ifindex, uint16_t adindex)
+dptlink::addr_updated(unsigned int ifindex, uint16_t adindex)
 {
 	// filter out any events not related to our port
 	if (ifindex != this->ifindex)
@@ -185,7 +185,7 @@ dptport::addr_updated(unsigned int ifindex, uint16_t adindex)
 
 
 void
-dptport::addr_deleted(unsigned int ifindex, uint16_t adindex)
+dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 {
 	// filter out any events not related to our port
 	if (ifindex != this->ifindex)
@@ -199,7 +199,7 @@ dptport::addr_deleted(unsigned int ifindex, uint16_t adindex)
 
 
 void
-dptport::ip_endpoint_install_flow_mod(uint16_t adindex)
+dptlink::ip_endpoint_install_flow_mod(uint16_t adindex)
 {
 	try {
 		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
@@ -231,7 +231,7 @@ dptport::ip_endpoint_install_flow_mod(uint16_t adindex)
 
 
 void
-dptport::ip_endpoint_remove_flow_mod(uint16_t adindex)
+dptlink::ip_endpoint_remove_flow_mod(uint16_t adindex)
 {
 	try {
 		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
