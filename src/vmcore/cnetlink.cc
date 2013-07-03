@@ -313,6 +313,58 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 
 		std::cerr << "cnetlink::route_neigh_cb() called" << std::endl;
 
+
+		if (std::string(nl_object_get_type(obj)) != std::string("route/neigh")) {
+			fprintf(stderr, "cnetlink::route_neigh_cb() ignoring non neighbor object received\n");
+			return;
+		}
+
+		nl_object_get(obj); // get reference to object
+
+		struct rtnl_neigh* neigh = (struct rtnl_neigh*)obj;
+
+		int ifindex = rtnl_neigh_get_ifindex(neigh);
+
+		try {
+			switch (action) {
+			case NL_ACT_NEW: {
+				uint16_t nbindex = cnetlink::get_instance().get_link(ifindex).set_neigh(crtneigh(neigh));
+
+				for (std::set<cnetlink_subscriber*>::iterator
+						it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
+					(*it)->neigh_created(ifindex, nbindex);
+				}
+
+			} break;
+			case NL_ACT_CHANGE: {
+				uint16_t nbindex = cnetlink::get_instance().get_link(ifindex).set_neigh(crtneigh(neigh));
+
+				for (std::set<cnetlink_subscriber*>::iterator
+						it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
+					(*it)->neigh_updated(ifindex, nbindex);
+				}
+
+			} break;
+			case NL_ACT_DEL: {
+				uint16_t nbindex = cnetlink::get_instance().get_link(ifindex).get_neigh(crtneigh(neigh));
+
+				for (std::set<cnetlink_subscriber*>::iterator
+						it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
+					(*it)->neigh_deleted(ifindex, nbindex);
+				}
+
+				cnetlink::get_instance().get_link(ifindex).del_neigh(nbindex);
+
+			} break;
+			default: {
+				fprintf(stderr, "route/addr: unknown NL action\n");
+			}
+			}
+		} catch (eRtLinkNotFound& e) {
+			fprintf(stderr, "oops, route_addr_cb() was called with an invalid link\n");
+		}
+
+		nl_object_put(obj); // release reference to object
 }
 
 

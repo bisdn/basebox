@@ -146,7 +146,7 @@ crtlink::set_addr(crtaddr const& rta)
 uint16_t
 crtlink::del_addr(uint16_t index)
 {
-	if (CRTLINK_ADDR_ALL == index) {
+	if (crtaddr::CRTLINK_ADDR_ALL == index) {
 		//std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << index << std::endl;
 		addrs.clear();
 	} else {
@@ -175,5 +175,96 @@ crtlink::del_addr(crtaddr const& rta)
 	addrs.erase(it);
 	return index;
 }
+
+
+
+crtneigh&
+crtlink::get_neigh(uint16_t index)
+{
+	if (neighs.find(index) == neighs.end())
+		throw eRtLinkNotFound();
+	return neighs[index];
+}
+
+
+
+uint16_t
+crtlink::get_neigh(crtneigh const& rtn)
+{
+	std::map<uint16_t, crtneigh>::iterator it;
+	if ((it = find_if(neighs.begin(), neighs.end(),
+			crtneigh::crtneigh_find_by_dst(rtn.get_dst()))) == neighs.end()) {
+		throw eRtLinkNotFound();
+	}
+	return it->first;
+}
+
+
+
+uint16_t
+crtlink::set_neigh(crtneigh const& rtn)
+{
+	// neighess already exists
+	std::map<uint16_t, crtneigh>::iterator it;
+	if ((it = find_if(neighs.begin(), neighs.end(),
+			crtneigh::crtneigh_find_by_dst(rtn.get_dst()))) != neighs.end()) {
+
+		//std::cerr << "crtlink::set_neigh() route/neigh: NL-ACT-CHG => index=" << it->first << " " << rta << std::endl;
+		//std::cerr << "crtlink::set_neigh() route/neigh: NL-ACT-CHG => " << *this << std::endl;
+		it->second = rtn;
+		return it->first;
+
+	} else {
+
+		unsigned int index = 0;
+		while (neighs.find(index) != neighs.end()) {
+			index++;
+		}
+		//std::cerr << "crtlink::set_neigh() route/neigh: NL-ACT-NEW => index=" << index << " " << rta << std::endl;
+		//std::cerr << "crtlink::set_neigh() route/neigh: NL-ACT-NEW => " << *this << std::endl;
+		neighs[index] = rtn;
+		return index;
+	}
+}
+
+
+
+uint16_t
+crtlink::del_neigh(uint16_t index)
+{
+	if (crtneigh::CRTNEIGH_ADDR_ALL == index) {
+		//std::cerr << "crtlink::del_neigh() route/neigh: NL-ACT-DEL => index=" << index << std::endl;
+		neighs.clear();
+	} else {
+		//std::cerr << "crtlink::del_neigh() route/neigh: NL-ACT-DEL => index=" << index << std::endl;
+		if (neighs.find(index) == neighs.end())
+			throw eRtLinkNotFound();
+		neighs.erase(index);
+	}
+	//std::cerr << "crtlink::set_neigh() route/neigh: NL-ACT-DEL => " << *this << std::endl;
+	return index;
+}
+
+
+
+uint16_t
+crtlink::del_neigh(crtneigh const& rtn)
+{
+	// find neighess
+	std::map<uint16_t, crtneigh>::iterator it;
+	if ((it = find_if(neighs.begin(), neighs.end(),
+			crtneigh::crtneigh_find_by_dst(rtn.get_dst()))) == neighs.end()) {
+		throw eRtLinkNotFound();
+	}
+	uint16_t index = it->first;
+	//std::cerr << "crtlink::del_neigh() route/neigh: NL-ACT-DEL => index=" << it->first << std::endl;
+	neighs.erase(it);
+	return index;
+}
+
+
+
+
+
 
 

@@ -31,6 +31,10 @@ class crtaddr
 {
 public:
 
+	enum addr_index_t {
+		CRTLINK_ADDR_ALL = 0xffff,	// apply command to all addresses
+	};
+
 
 	std::string			label;
 	int					ifindex;

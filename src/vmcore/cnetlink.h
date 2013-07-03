@@ -15,6 +15,7 @@ extern "C" {
 #include <netlink/object.h>
 #include <netlink/route/link.h>
 #include <netlink/route/addr.h>
+#include <netlink/route/neighbour.h>
 #ifdef __cplusplus
 }
 #endif
@@ -315,6 +316,27 @@ public:
 	 * @param ifindex
 	 */
 	virtual void route_deleted(uint8_t table_id, unsigned int rtindex) {};
+
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void neigh_created(unsigned int ifindex, uint16_t nbindex) {};
+
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void neigh_updated(unsigned int ifindex, uint16_t nbindex) {};
+
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	virtual void neigh_deleted(unsigned int ifindex, uint16_t nbindex) {};
 };
 
 

@@ -29,6 +29,7 @@ extern "C" {
 #endif
 
 #include <crtaddr.h>
+#include <crtneigh.h>
 
 namespace dptmap
 {
@@ -40,11 +41,8 @@ class crtlink
 {
 private:
 
-	enum addr_index_t {
-		CRTLINK_ADDR_ALL = 0xffff,	// apply command to all addresses
-	};
-
 	std::map<uint16_t, crtaddr>  addrs;	// key: index, value: address, index remains constant, as long as addrs endures
+	std::map<uint16_t, crtneigh> neighs; // key: index, valie: neigh, index remains constant throughout lifetime of neighbor entry
 
 
 public:
@@ -122,7 +120,7 @@ public:
 	 *
 	 */
 	uint16_t
-	del_addr(uint16_t index = CRTLINK_ADDR_ALL);
+	del_addr(uint16_t index = crtaddr::CRTLINK_ADDR_ALL);
 
 
 	/**
@@ -130,6 +128,41 @@ public:
 	 */
 	uint16_t
 	del_addr(crtaddr const& rta);
+
+
+	/**
+	 *
+	 */
+	crtneigh&
+	get_neigh(uint16_t index);
+
+
+	/**
+	 *
+	 */
+	uint16_t
+	get_neigh(crtneigh const& rtn);
+
+
+	/**
+	 *
+	 */
+	uint16_t
+	set_neigh(crtneigh const& rtn);
+
+
+	/**
+	 *
+	 */
+	uint16_t
+	del_neigh(uint16_t index = crtneigh::CRTNEIGH_ADDR_ALL);
+
+
+	/**
+	 *
+	 */
+	uint16_t
+	del_neigh(crtneigh const& rtn);
 
 
 public:
