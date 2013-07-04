@@ -11,7 +11,7 @@ vmcore::vmcore() :
 
 vmcore::~vmcore()
 {
-	if (0 != dpt) { // FIXME: check for dpt may be unnecessary
+	if (0 != dpt) {
 		delete_all_routes();
 
 		delete_all_ports();
