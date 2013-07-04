@@ -95,7 +95,7 @@ dptlink::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
 		actions.next() = rofl::cofaction_output(of_port_no);
 
 		// FIXME: check the crc stuff
-		rofbase->send_packet_out_message(dpt, OFP_NO_BUFFER, OFPP_CONTROLLER, actions, pkt->soframe(), pkt->framelen() - sizeof(uint32_t)/*CRC*/);
+		rofbase->send_packet_out_message(dpt, OFP_NO_BUFFER, OFPP_CONTROLLER, actions, pkt->soframe(), pkt->framelen());
 
 	} catch (eDptLinkNoDptAttached& e) {
 
