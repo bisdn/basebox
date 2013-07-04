@@ -251,13 +251,13 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 		// state of neighbor instance must be REACHABLE, PERMANENT, or NOARP
 		switch (rtn.get_state()) {
 		case NUD_INCOMPLETE:
-		case NUD_STALE:
 		case NUD_DELAY:
 		case NUD_PROBE:
 		case NUD_FAILED: {
 			continue;
 		} break;
 
+		case NUD_STALE:
 		case NUD_NOARP:
 		case NUD_REACHABLE:
 		case NUD_PERMANENT: {
@@ -319,7 +319,6 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 		// state of neighbor instance must be REACHABLE, PERMANENT, or NOARP
 		switch (rtn.get_state()) {
 		case NUD_INCOMPLETE:
-		case NUD_STALE:
 		case NUD_DELAY:
 		case NUD_PROBE:
 		case NUD_FAILED: {
@@ -331,6 +330,7 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 			dptnexthops.erase(nbindex);
 		} break;
 
+		case NUD_STALE:
 		case NUD_NOARP:
 		case NUD_REACHABLE:
 		case NUD_PERMANENT: {

@@ -94,7 +94,6 @@ dptlink::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
 		rofl::cofaclist actions;
 		actions.next() = rofl::cofaction_output(of_port_no);
 
-		// FIXME: check the crc stuff
 		rofbase->send_packet_out_message(dpt, OFP_NO_BUFFER, OFPP_CONTROLLER, actions, pkt->soframe(), pkt->framelen());
 
 	} catch (eDptLinkNoDptAttached& e) {
@@ -219,8 +218,10 @@ dptlink::addr_created(unsigned int ifindex, uint16_t adindex)
 			addrs[adindex].flow_mod_delete();
 		}
 
+#if 0
 		fprintf(stderr, "dptlink::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
 		std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+#endif
 
 		addrs[adindex] = dptaddr(rofbase, dpt, ifindex, adindex);
 
@@ -270,8 +271,10 @@ dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 			return;
 		}
 
+#if 0
 		fprintf(stderr, "dptlink::addr_deleted() ifindex=%d adindex=%d => ", ifindex, adindex);
 		std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+#endif
 
 		addrs[adindex].flow_mod_delete();
 
@@ -300,8 +303,10 @@ dptlink::neigh_created(unsigned int ifindex, uint16_t nbindex)
 			neighs[nbindex].flow_mod_delete();
 		}
 
+#if 0
 		fprintf(stderr, "dptlink::neigh_created() ifindex=%d nbindex=%d => ", ifindex, nbindex);
 		std::cerr << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+#endif
 
 		neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, /*of_table_id=*/2, ifindex, nbindex);
 
@@ -334,7 +339,6 @@ dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 
 	switch (rtn.get_state()) {
 	case NUD_INCOMPLETE:
-	case NUD_STALE:
 	case NUD_DELAY:
 	case NUD_PROBE:
 	case NUD_FAILED: {
@@ -346,6 +350,7 @@ dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 		neighs.erase(nbindex);
 	} break;
 
+	case NUD_STALE:
 	case NUD_NOARP:
 	case NUD_REACHABLE:
 	case NUD_PERMANENT: {
