@@ -72,6 +72,17 @@ public:
 
 	/**
 	 *
+	 * @param ifindex
+	 * @param adindex
+	 */
+	virtual void
+	addr_deleted(
+			unsigned int ifindex,
+			uint16_t adindex);
+
+
+	/**
+	 *
 	 * @param rtindex
 	 */
 	virtual void

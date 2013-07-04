@@ -285,6 +285,7 @@ vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 	//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 	if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
 		delete dptroutes[table_id][rtindex];
+		dptroutes[table_id].erase(rtindex);
 	}
 }
 

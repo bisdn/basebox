@@ -165,3 +165,14 @@ dptnexthop::flow_mod_delete()
 
 	std::cerr << "dptnexthop::flow_mod_delete() => " << *this << std::endl;
 }
+
+
+
+rofl::caddress
+dptnexthop::get_gateway() const
+{
+	return cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex).get_dst();
+}
+
+
+

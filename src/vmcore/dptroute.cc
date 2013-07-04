@@ -104,6 +104,38 @@ dptroute::delete_all_nexthops()
 
 
 void
+dptroute::addr_deleted(
+			unsigned int ifindex,
+			uint16_t adindex)
+{
+	std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex << std::endl;
+
+	crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
+
+	rofl::caddress addr = rta.get_local_addr();
+	rofl::caddress mask = rta.get_mask();
+
+	std::map<uint16_t, dptnexthop>::iterator it;
+restart:
+	for (it = dptnexthops.begin(); it != dptnexthops.end(); ++it) {
+		dptnexthop& nhop = it->second;
+		if ((nhop.get_ifindex() == ifindex) &&
+				((nhop.get_gateway() & rta.get_mask()) == (rta.get_local_addr() & rta.get_mask()))) {
+			it->second.flow_mod_delete();
+			dptnexthops.erase(it->first);
+			goto restart;
+		}
+	}
+	if (dptnexthops.empty()) {
+		std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex
+				<< "all next hops lost, deleting route" << std::endl;
+		route_deleted(table_id, rtindex);
+	}
+}
+
+
+
+void
 dptroute::route_created(
 		uint8_t table_id,
 		unsigned int rtindex)
@@ -186,6 +218,8 @@ dptroute::route_deleted(
 	flowentry.set_command(OFPFC_DELETE_STRICT);
 
 	rofbase->send_flow_mod_message(dpt, flowentry);
+
+	fprintf(stderr, "\n\n\n FLOWENTRY => %s\n\n\n\n", flowentry.c_str());
 
 	delete_all_nexthops();
 }

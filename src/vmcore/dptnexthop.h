@@ -122,6 +122,12 @@ public:
 	rofl::caddress get_dstmask() const { return dstmask; };
 
 
+	/**
+	 *
+	 */
+	rofl::caddress get_gateway() const;
+
+
 public:
 
 	/**

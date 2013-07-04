@@ -40,6 +40,7 @@ public:
 	int					ifindex;
 	int					af;
 	int					prefixlen;
+	rofl::caddress		mask;
 	int					scope;
 	int					flags;
 	rofl::caddress		local;
@@ -145,6 +146,12 @@ public:
 	rofl::caddress get_broadcast_addr() const { return bcast; };
 
 
+	/**
+	 *
+	 */
+	rofl::caddress get_mask() const { return mask; };
+
+
 public:
 
 
@@ -159,6 +166,7 @@ public:
 				<< "ifindex=" << rtaddr.ifindex << " "
 				<< "af=" << rtaddr.af << " "
 				<< "prefixlen=" << rtaddr.prefixlen << " "
+				<< "mask=" << rtaddr.mask << " "
 				<< "scope=" << rtaddr.scope << " "
 				<< "flags=" << rtaddr.flags << " "
 				<< "local=" << rtaddr.local << " "

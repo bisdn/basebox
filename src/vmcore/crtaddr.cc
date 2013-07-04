@@ -16,6 +16,7 @@ crtaddr::crtaddr() :
 		ifindex(0),
 		af(0),
 		prefixlen(0),
+		mask(AF_INET),
 		scope(0),
 		flags(0),
 		local(AF_INET),
@@ -38,6 +39,7 @@ crtaddr::crtaddr(crtaddr const& rtaddr) :
 		ifindex(0),
 		af(0),
 		prefixlen(0),
+		mask(AF_INET),
 		scope(0),
 		flags(0),
 		local(AF_INET),
@@ -59,6 +61,7 @@ crtaddr::operator= (crtaddr const& rtaddr)
 	ifindex		= rtaddr.ifindex;
 	af			= rtaddr.af;
 	prefixlen	= rtaddr.prefixlen;
+	mask		= rtaddr.mask;
 	scope		= rtaddr.scope;
 	flags		= rtaddr.flags;
 	local		= rtaddr.local;
@@ -74,6 +77,7 @@ crtaddr::crtaddr(struct rtnl_addr* addr) :
 		ifindex(0),
 		af(0),
 		prefixlen(0),
+		mask(AF_INET),
 		scope(0),
 		flags(0),
 		local(AF_INET),
@@ -92,9 +96,30 @@ crtaddr::crtaddr(struct rtnl_addr* addr) :
 	scope 		= rtnl_addr_get_scope(addr);
 	flags 		= rtnl_addr_get_flags(addr);
 
+	switch (af) {
+	case AF_INET: {
+		mask = rofl::caddress(AF_INET);
+		mask.ca_s4addr->sin_addr.s_addr = htobe32(~((1 << (32 - prefixlen)) - 1));
+	} break;
+	case AF_INET6: {
+		mask = rofl::caddress(AF_INET6);
+		int segment 	= prefixlen / 32;
+		int t_prefixlen = prefixlen % 32;
+		for (int i = 0; i < 4; i++) {
+			if (segment == i) {
+				((uint32_t*)(mask.ca_s6addr->sin6_addr.s6_addr))[i] = htobe32(~((1 << (32 - t_prefixlen)) - 1));
+			} else if (i > segment) {
+				((uint32_t*)(mask.ca_s6addr->sin6_addr.s6_addr))[i] = htobe32(0x00000000);
+			} else if (i < segment) {
+				((uint32_t*)(mask.ca_s6addr->sin6_addr.s6_addr))[i] = htobe32(0xffffffff);
+			}
+		}
+	} break;
+	}
+
 	std::string s_local(nl_addr2str(rtnl_addr_get_local(addr), 		s_buf, sizeof(s_buf)));
 	std::string s_peer (nl_addr2str(rtnl_addr_get_peer(addr), 		s_buf, sizeof(s_buf)));
-	std::string s_bcast (nl_addr2str(rtnl_addr_get_broadcast(addr), s_buf, sizeof(s_buf)));
+	std::string s_bcast(nl_addr2str(rtnl_addr_get_broadcast(addr),  s_buf, sizeof(s_buf)));
 
 	s_local = s_local.substr(0, s_local.find_first_of("/", 0));
 	s_peer  = s_peer .substr(0,  s_peer.find_first_of("/", 0));
