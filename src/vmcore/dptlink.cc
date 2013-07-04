@@ -45,19 +45,35 @@ dptlink::~dptlink()
 {
 	dptlink::dptlinks.erase(ifindex);
 
-	for (std::map<uint16_t, dptneigh>::iterator
-			it = neighs.begin(); it != neighs.end(); ++it) {
-		it->second.flow_mod_delete();
-	}
-	neighs.clear();
+	delete_all_neighs();
 
+	delete_all_addrs();
+
+	if (tapdev) delete tapdev;
+}
+
+
+
+void
+dptlink::delete_all_addrs()
+{
 	for (std::map<uint16_t, dptaddr>::iterator
 			it = addrs.begin(); it != addrs.end(); ++it) {
 		it->second.flow_mod_delete();
 	}
 	addrs.clear();
+}
 
-	if (tapdev) delete tapdev;
+
+
+void
+dptlink::delete_all_neighs()
+{
+	for (std::map<uint16_t, dptneigh>::iterator
+			it = neighs.begin(); it != neighs.end(); ++it) {
+		it->second.flow_mod_delete();
+	}
+	neighs.clear();
 }
 
 
@@ -159,15 +175,20 @@ dptlink::link_created(unsigned int ifindex)
 void
 dptlink::link_updated(unsigned int ifindex)
 {
-	// filter out any events not related to our port
-	if (ifindex != this->ifindex)
-		return;
+	try {
+		// filter out any events not related to our port
+		if (ifindex != this->ifindex)
+			return;
 
-	//fprintf(stderr, "dptport::link_updated() ifindex=%d => ", ifindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
+		//fprintf(stderr, "dptport::link_updated() ifindex=%d => ", ifindex);
+		std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
 
-	if (0 == dpt) {
-		return;
+		if (0 == dpt) {
+			return;
+		}
+
+	} catch (eNetLinkNotFound& e) {
+		std::cerr << "dptlink::link_updated() crtlink object not found" << std::endl;
 	}
 }
 
@@ -188,21 +209,29 @@ dptlink::link_deleted(unsigned int ifindex)
 void
 dptlink::addr_created(unsigned int ifindex, uint16_t adindex)
 {
-	// filter out any events not related to our port
-	if (ifindex != this->ifindex)
-		return;
+	try {
+		// filter out any events not related to our port
+		if (ifindex != this->ifindex)
+			return;
 
-	if (addrs.find(adindex) != addrs.end()) {
-		// safe strategy: remove old FlowMod first
-		addrs[adindex].flow_mod_delete();
+		if (addrs.find(adindex) != addrs.end()) {
+			// safe strategy: remove old FlowMod first
+			addrs[adindex].flow_mod_delete();
+		}
+
+		fprintf(stderr, "dptlink::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
+		std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+
+		addrs[adindex] = dptaddr(rofbase, dpt, ifindex, adindex);
+
+		addrs[adindex].flow_mod_add();
+
+	} catch (eNetLinkNotFound& e) {
+		std::cerr << "dptlink::addr_created() crtlink object not found" << std::endl;
+
+	} catch (eRtLinkNotFound& e) {
+		std::cerr << "dptlink::addr_created() crtaddr object not found" << std::endl;
 	}
-
-	fprintf(stderr, "dptlink::addr_created() ifindex=%d adindex=%d => ", ifindex, adindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
-
-	addrs[adindex] = dptaddr(rofbase, dpt, ifindex, adindex);
-
-	addrs[adindex].flow_mod_add();
 }
 
 
@@ -231,21 +260,29 @@ dptlink::addr_updated(unsigned int ifindex, uint16_t adindex)
 void
 dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 {
-	// filter out any events not related to our port
-	if (ifindex != this->ifindex)
-		return;
+	try {
+		// filter out any events not related to our port
+		if (ifindex != this->ifindex)
+			return;
 
-	if (addrs.find(adindex) == addrs.end()) {
-		// we have no dptaddr instance for the crtaddr instance scheduled for removal, so ignore it
-		return;
+		if (addrs.find(adindex) == addrs.end()) {
+			// we have no dptaddr instance for the crtaddr instance scheduled for removal, so ignore it
+			return;
+		}
+
+		fprintf(stderr, "dptlink::addr_deleted() ifindex=%d adindex=%d => ", ifindex, adindex);
+		std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+
+		addrs[adindex].flow_mod_delete();
+
+		addrs.erase(adindex);
+
+	} catch (eNetLinkNotFound& e) {
+		std::cerr << "dptlink::addr_deleted() crtlink object not found" << std::endl;
+
+	} catch (eRtLinkNotFound& e) {
+		std::cerr << "dptlink::addr_deleted() crtaddr object not found" << std::endl;
 	}
-
-	fprintf(stderr, "dptlink::addr_deleted() ifindex=%d adindex=%d => ", ifindex, adindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
-
-	addrs[adindex].flow_mod_delete();
-
-	addrs.erase(adindex);
 }
 
 
@@ -253,21 +290,29 @@ dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 void
 dptlink::neigh_created(unsigned int ifindex, uint16_t nbindex)
 {
-	// filter out any events not related to our port
-	if (ifindex != this->ifindex)
-		return;
+	try {
+		// filter out any events not related to our port
+		if (ifindex != this->ifindex)
+			return;
 
-	if (neighs.find(nbindex) != neighs.end()) {
-		// safe strategy: remove old FlowMod first
-		neighs[nbindex].flow_mod_delete();
+		if (neighs.find(nbindex) != neighs.end()) {
+			// safe strategy: remove old FlowMod first
+			neighs[nbindex].flow_mod_delete();
+		}
+
+		fprintf(stderr, "dptlink::neigh_created() ifindex=%d nbindex=%d => ", ifindex, nbindex);
+		std::cerr << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+
+		neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, /*of_table_id=*/2, ifindex, nbindex);
+
+		neighs[nbindex].flow_mod_add();
+
+	} catch (eNetLinkNotFound& e) {
+		std::cerr << "dptlink::neigh_created() crtlink object not found" << std::endl;
+
+	} catch (eRtLinkNotFound& e) {
+		std::cerr << "dptlink::neigh_created() crtneigh object not found" << std::endl;
 	}
-
-	fprintf(stderr, "dptlink::neigh_created() ifindex=%d nbindex=%d => ", ifindex, nbindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
-
-	neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, ifindex, nbindex);
-
-	neighs[nbindex].flow_mod_add();
 }
 
 
@@ -296,21 +341,29 @@ dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 void
 dptlink::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
 {
-	// filter out any events not related to our port
-	if (ifindex != this->ifindex)
-		return;
+	try {
+		// filter out any events not related to our port
+		if (ifindex != this->ifindex)
+			return;
 
-	if (neighs.find(nbindex) == neighs.end()) {
-		// we have no dptaddr instance for the crtaddr instance scheduled for removal, so ignore it
-		return;
+		if (neighs.find(nbindex) == neighs.end()) {
+			// we have no dptaddr instance for the crtaddr instance scheduled for removal, so ignore it
+			return;
+		}
+
+		fprintf(stderr, "dptlink::neigh_deleted() ifindex=%d nbindex=%d => ", ifindex, nbindex);
+		std::cerr << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+
+		neighs[nbindex].flow_mod_delete();
+
+		neighs.erase(nbindex);
+
+	} catch (eNetLinkNotFound& e) {
+		std::cerr << "dptlink::neigh_deleted() crtlink object not found" << std::endl;
+
+	} catch (eRtLinkNotFound& e) {
+		std::cerr << "dptlink::neigh_deleted() crtneigh object not found" << std::endl;
 	}
-
-	fprintf(stderr, "dptlink::neigh_deleted() ifindex=%d nbindex=%d => ", ifindex, nbindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
-
-	neighs[nbindex].flow_mod_delete();
-
-	neighs.erase(nbindex);
 }
 
 

@@ -133,21 +133,6 @@ public:
 			uint16_t nbindex);
 
 
-
-	/**
-	 *
-	 */
-	void
-	set_nexthops();
-
-
-	/**
-	 *
-	 */
-	void
-	del_nexthops();
-
-
 public:
 
 	/**
@@ -168,6 +153,24 @@ public:
 		os << "}";
 		return os;
 	};
+
+
+private:
+
+
+	/**
+	 *
+	 */
+	void
+	set_nexthops();
+
+
+	/**
+	 *
+	 */
+	void
+	delete_all_nexthops();
+
 };
 
 };

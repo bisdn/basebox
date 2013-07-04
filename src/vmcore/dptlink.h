@@ -179,6 +179,23 @@ public:
 	 * @param nbindex
 	 */
 	virtual void neigh_deleted(unsigned int ifindex, uint16_t nbindex);
+
+
+private:
+
+
+	/**
+	 *
+	 */
+	void
+	delete_all_addrs();
+
+
+	/**
+	 *
+	 */
+	void
+	delete_all_neighs();
 };
 
 }; // end of namespace

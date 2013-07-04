@@ -14,6 +14,7 @@ dptnexthop::dptnexthop() :
 		rofbase(0),
 		dpt(0),
 		of_port_no(0),
+		of_table_id(0),
 		ifindex(0),
 		nbindex(0),
 		fe(OFP12_VERSION),
@@ -38,6 +39,7 @@ dptnexthop::dptnexthop(
 		rofbase(0),
 		dpt(0),
 		of_port_no(0),
+		of_table_id(0),
 		ifindex(0),
 		nbindex(0),
 		fe(OFP12_VERSION),
@@ -59,6 +61,7 @@ dptnexthop::operator= (
 	rofbase		= neigh.rofbase;
 	dpt			= neigh.dpt;
 	of_port_no	= neigh.of_port_no;
+	of_table_id	= neigh.of_table_id;
 	ifindex		= neigh.ifindex;
 	nbindex		= neigh.nbindex;
 	fe			= neigh.fe;
@@ -74,6 +77,7 @@ dptnexthop::dptnexthop(
 		rofl::crofbase *rofbase,
 		rofl::cofdpt* dpt,
 		uint32_t of_port_no,
+		uint8_t of_table_id,
 		int ifindex,
 		uint16_t nbindex,
 		rofl::caddress const& dstaddr,
@@ -81,6 +85,7 @@ dptnexthop::dptnexthop(
 		rofbase(rofbase),
 		dpt(dpt),
 		of_port_no(of_port_no),
+		of_table_id(of_table_id),
 		ifindex(ifindex),
 		nbindex(nbindex),
 		fe(dpt->get_version()),
@@ -105,7 +110,7 @@ dptnexthop::flow_mod_add()
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(3);			// FIXME: check for third table-id in data path
+		fe.set_table_id(of_table_id);
 
 		switch (dstaddr.ca_saddr->sa_family) {
 		case AF_INET:  { fe.match.set_ipv4_dst(dstaddr, dstmask); } break;
@@ -152,7 +157,7 @@ dptnexthop::flow_mod_delete()
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(3);			// FIXME: check for third table-id in data path
+		fe.set_table_id(of_table_id);
 
 		switch (dstaddr.ca_saddr->sa_family) {
 		case AF_INET:  { fe.match.set_ipv4_dst(dstaddr, dstmask); } break;

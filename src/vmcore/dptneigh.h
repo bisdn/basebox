@@ -37,6 +37,7 @@ private:
 	rofl::crofbase				*rofbase;
 	rofl::cofdpt				*dpt;
 	uint32_t					of_port_no;
+	uint8_t 					of_table_id;
 	int							ifindex;
 	uint16_t					nbindex;
 	rofl::cflowentry			fe;
@@ -79,6 +80,7 @@ public:
 			rofl::crofbase *rofbase,
 			rofl::cofdpt* dpt,
 			uint32_t of_port_no,
+			uint8_t of_table_id,
 			int ifindex,
 			uint16_t nbindex);
 
@@ -142,6 +144,7 @@ public:
 			os << "ifindex=" << neigh.ifindex << " ";
 			os << "nbindex=" << (unsigned int)neigh.nbindex << " ";
 			os << "ofportno=" << (unsigned int)neigh.of_port_no << " ";
+			os << "oftableid=" << (unsigned int)neigh.of_table_id << " ";
 			os << "flowentry=" << s_fe << " ";
 		os << "}";
 		return os;

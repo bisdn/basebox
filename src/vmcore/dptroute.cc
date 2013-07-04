@@ -29,7 +29,76 @@ dptroute::dptroute(
 
 dptroute::~dptroute()
 {
+	delete_all_nexthops();
+
 	route_deleted(table_id, rtindex);
+}
+
+
+
+
+void
+dptroute::set_nexthops()
+{
+	std::cerr << "dptroute::set_nexthops()" << std::endl;
+
+	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
+
+	std::vector<crtnexthop>::iterator it;
+	for (it = rtr.get_nexthops().begin(); it != rtr.get_nexthops().end(); ++it) {
+		crtnexthop& rtnh = (*it);
+		try {
+
+			crtlink& rtl = cnetlink::get_instance().get_link(rtnh.get_ifindex());
+
+			crtneigh& rtn = rtl.get_neigh(rtnh.get_gateway());
+
+			uint16_t nbindex = rtl.get_neigh_index(rtn);
+
+			// dptnexthop instance already active? yes => continue with next next-hop
+			if (dptnexthops.find(nbindex) != dptnexthops.end())
+				continue;
+
+			// no => create new dptnexthop instance
+			dptnexthops[nbindex] = dptnexthop(
+										rofbase,
+										dpt,
+										dptlink::get_dptlink(rtnh.get_ifindex()).get_of_port_no(),
+										/*of_table_id=*/2,
+										rtnh.get_ifindex(),
+										nbindex,
+										rtr.get_dst(),
+										rtr.get_mask());
+
+			// and activate its FlowMod (installs FlowMod on data path element)
+			dptnexthops[nbindex].flow_mod_add();
+
+			std::cerr << "dptroute::set_nexthops() => " << dptnexthops[nbindex] << std::endl;
+
+		} catch (eNetLinkNotFound& e) {
+			// oops, link assigned to next hop not found, skip this one for now
+			continue;
+
+		} catch (eRtLinkNotFound& e){
+			// no valid neighbour entry found for gateway specified in next hop, skip this one for now
+			continue;
+		} catch (eDptLinkNotFound& e) {
+			// no dptlink instance found for interface referenced by ifindex
+			continue;
+		}
+	}
+}
+
+
+
+void
+dptroute::delete_all_nexthops()
+{
+	std::map<uint16_t, dptnexthop>::iterator it;
+	for (it = dptnexthops.begin(); it != dptnexthops.end(); ++it) {
+		it->second.flow_mod_delete();
+	}
+	dptnexthops.clear();
 }
 
 
@@ -69,29 +138,17 @@ dptroute::route_created(
 		} break;
 		}
 
-		//rtr.get_nexthop(0).get_gateway().get
-
-		rofl::cmacaddr eth_src = cnetlink::get_instance().get_link(rtr.get_nexthop(0).get_ifindex()).get_hwaddr();
-
-
-		std::map<uint32_t, rofl::cofport*>::iterator it;
-		if ((it = find_if(dpt->get_ports().begin(), dpt->get_ports().end(),
-				rofl::cofport_find_by_maddr(eth_src))) == dpt->get_ports().end()) {
-
-			// TODO: dump error
-
-			return;
-		}
-		uint32_t port_no = it->second->get_port_no();
-		rofl::cmacaddr eth_dst("00:00:00:00:00:00");
-
-		flowentry.instructions.next() = rofl::cofinst_goto_table(3);
+		flowentry.instructions.next() = rofl::cofinst_goto_table(2);
 
 		fprintf(stderr, "flowentry: %s\n", flowentry.c_str());
 
 		rofbase->send_flow_mod_message(dpt, flowentry);
 
 	} catch (eNetLinkNotFound& e) {
+		std::cerr << "dptroute::route_created() crtroute object not found" << std::endl;
+
+	} catch (eRtRouteNotFound& e) {
+		std::cerr << "dptroute::route_created() crtnexthop object not found" << std::endl;
 
 	}
 }
@@ -132,7 +189,7 @@ dptroute::route_deleted(
 
 	rofbase->send_flow_mod_message(dpt, flowentry);
 
-	del_nexthops();
+	delete_all_nexthops();
 }
 
 
@@ -168,6 +225,7 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 										rofbase,
 										dpt,
 										dptlink::get_dptlink(rtnh.get_ifindex()).get_of_port_no(),
+										/*of_table_id=*/2,
 										ifindex,
 										nbindex,
 										rtr.get_dst(),
@@ -213,6 +271,10 @@ dptroute::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
 	for (it = rtr.get_nexthops().begin(); it != rtr.get_nexthops().end(); ++it) {
 		crtnexthop& rtnh = (*it);
 
+		// nexthop and neighbour must be bound to same link
+		if (rtnh.get_ifindex() != rtn.get_ifindex())
+			continue;
+
 		// gateway in nexthop must match dst address in neighbor instance
 		if (rtnh.get_gateway() != rtn.get_dst())
 			continue;
@@ -230,19 +292,5 @@ dptroute::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
 
 
 
-
-void
-dptroute::set_nexthops()
-{
-
-}
-
-
-
-void
-dptroute::del_nexthops()
-{
-
-}
 
 
