@@ -88,12 +88,23 @@ crtneigh::crtneigh(
 	type	= rtnl_neigh_get_type(neigh);
 
 	memset(s_buf, 0, sizeof(s_buf));
-	lladdr 	= rofl::cmacaddr(nl_addr2str(rtnl_neigh_get_lladdr(neigh), s_buf, sizeof(s_buf)));
+	nl_addr2str(rtnl_neigh_get_lladdr(neigh), s_buf, sizeof(s_buf));
+	if (std::string(s_buf) != std::string("none"))
+		lladdr 	= rofl::cmacaddr(nl_addr2str(rtnl_neigh_get_lladdr(neigh), s_buf, sizeof(s_buf)));
+	else
+		lladdr 	= rofl::cmacaddr("00:00:00:00:00:00");
 
+
+	std::string s_dst;
 	memset(s_buf, 0, sizeof(s_buf));
-	std::string s_dst(nl_addr2str(rtnl_neigh_get_dst(neigh), s_buf, sizeof(s_buf)));
+	nl_addr2str(rtnl_neigh_get_dst(neigh), s_buf, sizeof(s_buf));
+	if (std::string(s_buf) != std::string("none"))
+		s_dst.assign(nl_addr2str(rtnl_neigh_get_dst(neigh), s_buf, sizeof(s_buf)));
+	else
+		s_dst.assign("0.0.0.0/0");
 	s_dst 	= s_dst.substr(0, s_dst.find_first_of("/", 0));
 	dst 	= rofl::caddress(family, s_dst.c_str());
+
 
 	nl_object_put((struct nl_object*)neigh); // decrement reference counter by one
 }

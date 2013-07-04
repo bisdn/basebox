@@ -265,7 +265,7 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
 	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
-	std::cerr << "dptroute::neigh_updated() => " << dptnexthops[nbindex] << std::endl;
+	std::cerr << "dptroute::neigh_updated() => " << rtn << std::endl;
 
 	// TODO: check status update and notify dptnexthop instance
 
@@ -282,7 +282,6 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 		if (rtnh.get_gateway() != rtn.get_dst())
 			continue;
 
-		// state of neighbor instance must be REACHABLE or PERMANENT
 		// state of neighbor instance must be REACHABLE, PERMANENT, or NOARP
 		switch (rtn.get_state()) {
 		case NUD_INCOMPLETE:

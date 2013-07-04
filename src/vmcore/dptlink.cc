@@ -330,10 +330,38 @@ dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 
 	// TODO: check status changes and notify dptneigh instance
 
-	neighs[nbindex].flow_mod_modify();
+	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
-	fprintf(stderr, "dptlink::neigh_updated() ifindex=%d nbindex=%d => ", ifindex, nbindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex) << std::endl;
+	switch (rtn.get_state()) {
+	case NUD_INCOMPLETE:
+	case NUD_STALE:
+	case NUD_DELAY:
+	case NUD_PROBE:
+	case NUD_FAILED: {
+		/* go on and delete entry */
+		if (neighs.find(nbindex) == neighs.end())
+			return;
+		std::cerr << "dptlink::neigh_updated() DELETE => " << neighs[nbindex] << std::endl;
+		neighs[nbindex].flow_mod_delete();
+		neighs.erase(nbindex);
+	} break;
+
+	case NUD_NOARP:
+	case NUD_REACHABLE:
+	case NUD_PERMANENT: {
+		if (neighs.find(nbindex) != neighs.end()) {
+			neighs[nbindex].flow_mod_delete();
+			neighs.erase(nbindex);
+		}
+
+		std::cerr << "dptlink::neigh_updated() ADD => " << neighs[nbindex] << std::endl;
+
+		neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, /*of_table_id=*/2, ifindex, nbindex);
+
+		neighs[nbindex].flow_mod_add();
+
+	} break;
+	}
 }
 
 

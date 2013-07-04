@@ -147,28 +147,21 @@ dptnexthop::flow_mod_modify()
 void
 dptnexthop::flow_mod_delete()
 {
-	try {
-		crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
+	this->fe = rofl::cflowentry(dpt->get_version());
 
-		this->fe = rofl::cflowentry(dpt->get_version());
+	fe.set_command(OFPFC_DELETE_STRICT);
+	fe.set_buffer_id(OFP_NO_BUFFER);
+	fe.set_idle_timeout(0);
+	fe.set_hard_timeout(0);
+	fe.set_priority(0xfffe);
+	fe.set_table_id(of_table_id);
 
-		fe.set_command(OFPFC_DELETE_STRICT);
-		fe.set_buffer_id(OFP_NO_BUFFER);
-		fe.set_idle_timeout(0);
-		fe.set_hard_timeout(0);
-		fe.set_priority(0xfffe);
-		fe.set_table_id(of_table_id);
-
-		switch (dstaddr.ca_saddr->sa_family) {
-		case AF_INET:  { fe.match.set_ipv4_dst(dstaddr, dstmask); } break;
-		case AF_INET6: { fe.match.set_ipv6_dst(dstaddr, dstmask); } break;
-		}
-
-		rofbase->send_flow_mod_message(dpt, fe);
-
-		std::cerr << "dptnexthop::flow_mod_delete() => " << *this << std::endl;
-
-	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "dptnexthop::flow_mod_delete() unable to find link or neighbor\n");
+	switch (dstaddr.ca_saddr->sa_family) {
+	case AF_INET:  { fe.match.set_ipv4_dst(dstaddr, dstmask); } break;
+	case AF_INET6: { fe.match.set_ipv6_dst(dstaddr, dstmask); } break;
 	}
+
+	rofbase->send_flow_mod_message(dpt, fe);
+
+	std::cerr << "dptnexthop::flow_mod_delete() => " << *this << std::endl;
 }
