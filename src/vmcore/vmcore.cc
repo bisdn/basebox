@@ -103,7 +103,17 @@ vmcore::handle_dpath_open(
 		fe.set_table_id(OFPTT_ALL);
 		send_flow_mod_message(dpt, fe);
 
+		/*
+		 * install default FlowMod entry for table 0 => GotoTable(1)
+		 */
+		rofl::cflowentry fe(dpt->get_version());
 
+		fe.set_command(OFPFC_ADD);
+		fe.set_table_id(0);
+		fe.set_priority(0); // lowest priority
+		fe.instructions.next() = rofl::cofinst_goto_table(1);
+
+		send_flow_mod_message(dpt, fe);
 
 		// TODO: how many data path elements are allowed to connect to ourselves? only one makes sense ...
 
