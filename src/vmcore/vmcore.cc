@@ -136,6 +136,8 @@ vmcore::handle_dpath_open(
 
 		fed.set_command(OFPFC_ADD);
 		fed.set_table_id(0);
+		fed.set_idle_timeout(0);
+		fed.set_hard_timeout(0);
 		fed.set_priority(0); // lowest priority
 		fed.instructions.next() = rofl::cofinst_goto_table(1);
 
