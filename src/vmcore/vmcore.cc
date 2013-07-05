@@ -106,7 +106,7 @@ vmcore::handle_dpath_open(
 		/*
 		 * install default FlowMod entry for table 0 => GotoTable(1)
 		 */
-		rofl::cflowentry fe(dpt->get_version());
+		fe = rofl::cflowentry(dpt->get_version());
 
 		fe.set_command(OFPFC_ADD);
 		fe.set_table_id(0);
