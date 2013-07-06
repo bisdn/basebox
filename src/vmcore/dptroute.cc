@@ -228,11 +228,13 @@ dptroute::route_deleted(
 void
 dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 {
-	std::cerr << "dptroute::neigh_created() => ifindex=" << ifindex
-			<< " nbindex=" << (unsigned int)nbindex << std::endl;
+	//std::cerr << "dptroute::neigh_created() => ifindex=" << ifindex
+	//		<< " nbindex=" << (unsigned int)nbindex << std::endl;
 
 	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
 	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
+
+	std::cerr << "dptroute::neigh_created() => " << rtn << std::endl;
 
 	// do for all next hops defined in crtroute ...
 	std::vector<crtnexthop>::iterator it;
@@ -281,6 +283,7 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 			dptnexthops[nbindex].flow_mod_add();
 
 			std::cerr << "dptroute::neigh_created() => " << dptnexthops[nbindex] << std::endl;
+
 		} catch (eDptLinkNotFound& e) {
 
 		}
