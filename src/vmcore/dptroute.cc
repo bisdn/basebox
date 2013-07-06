@@ -78,7 +78,6 @@ dptroute::set_nexthops()
 		} catch (eNetLinkNotFound& e) {
 			// oops, link assigned to next hop not found, skip this one for now
 			continue;
-
 		} catch (eRtLinkNotFound& e){
 			// no valid neighbour entry found for gateway specified in next hop, skip this one for now
 			continue;
@@ -293,9 +292,6 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 void
 dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 {
-	std::cerr << "dptroute::neigh_updated() => ifindex=" << ifindex
-			<< " nbindex=" << (unsigned int)nbindex << std::endl;
-
 	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
 	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
