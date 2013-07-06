@@ -121,6 +121,7 @@ vmcore::handle_dpath_open(
 		// get full-length packets (what is the ethernet max length on dpt?)
 		send_set_config_message(dpt, 0, 1518);
 
+#if 0
 		/*
 		 * dump dpt tables for debugging
 		 */
@@ -128,6 +129,7 @@ vmcore::handle_dpath_open(
 				it = dpt->get_tables().begin(); it != dpt->get_tables().end(); ++it) {
 			std::cout << it->second << std::endl;
 		}
+#endif
 
 		/*
 		 * install default FlowMod entry for table 0 => GotoTable(1)

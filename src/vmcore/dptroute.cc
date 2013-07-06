@@ -292,63 +292,70 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 void
 dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 {
-	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
-	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
+	try {
+		dptlink::get_dptlink(ifindex);
 
-	std::cerr << "dptroute::neigh_updated() => " << rtn << std::endl;
+		crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
+		crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
-	// TODO: check status update and notify dptnexthop instance
+		std::cerr << "dptroute::neigh_updated() => " << rtn << std::endl;
 
-	// do for all next hops defined in crtroute ...
-	std::vector<crtnexthop>::iterator it;
-	for (it = rtr.get_nexthops().begin(); it != rtr.get_nexthops().end(); ++it) {
-		crtnexthop& rtnh = (*it);
+		// TODO: check status update and notify dptnexthop instance
 
-		// nexthop and neighbour must be bound to same link
-		if (rtnh.get_ifindex() != rtn.get_ifindex())
-			continue;
+		// do for all next hops defined in crtroute ...
+		std::vector<crtnexthop>::iterator it;
+		for (it = rtr.get_nexthops().begin(); it != rtr.get_nexthops().end(); ++it) {
+			crtnexthop& rtnh = (*it);
 
-		// gateway in nexthop must match dst address in neighbor instance
-		if (rtnh.get_gateway() != rtn.get_dst())
-			continue;
-
-		// state of neighbor instance must be REACHABLE, PERMANENT, or NOARP
-		switch (rtn.get_state()) {
-		case NUD_INCOMPLETE:
-		case NUD_DELAY:
-		case NUD_PROBE:
-		case NUD_FAILED: {
-			/* go on and delete entry */
-			if (dptnexthops.find(nbindex) == dptnexthops.end())
+			// nexthop and neighbour must be bound to same link
+			if (rtnh.get_ifindex() != rtn.get_ifindex())
 				continue;
-			std::cerr << "dptroute::neigh_updated() DELETE => " << dptnexthops[nbindex] << std::endl;
-			dptnexthops[nbindex].flow_mod_delete();
-			dptnexthops.erase(nbindex);
-		} break;
 
-		case NUD_STALE:
-		case NUD_NOARP:
-		case NUD_REACHABLE:
-		case NUD_PERMANENT: {
-			if (dptnexthops.find(nbindex) != dptnexthops.end()) {
+			// gateway in nexthop must match dst address in neighbor instance
+			if (rtnh.get_gateway() != rtn.get_dst())
+				continue;
+
+			// state of neighbor instance must be REACHABLE, PERMANENT, or NOARP
+			switch (rtn.get_state()) {
+			case NUD_INCOMPLETE:
+			case NUD_DELAY:
+			case NUD_PROBE:
+			case NUD_FAILED: {
+				/* go on and delete entry */
+				if (dptnexthops.find(nbindex) == dptnexthops.end())
+					continue;
+				std::cerr << "dptroute::neigh_updated() DELETE => " << dptnexthops[nbindex] << std::endl;
 				dptnexthops[nbindex].flow_mod_delete();
 				dptnexthops.erase(nbindex);
+			} break;
+
+			case NUD_STALE:
+			case NUD_NOARP:
+			case NUD_REACHABLE:
+			case NUD_PERMANENT: {
+				if (dptnexthops.find(nbindex) != dptnexthops.end()) {
+					dptnexthops[nbindex].flow_mod_delete();
+					dptnexthops.erase(nbindex);
+				}
+
+				std::cerr << "dptroute::neigh_updated() ADD => " << dptnexthops[nbindex] << std::endl;
+				dptnexthops[nbindex] = dptnexthop(
+											rofbase,
+											dpt,
+											dptlink::get_dptlink(rtnh.get_ifindex()).get_of_port_no(),
+											/*of_table_id=*/2,
+											ifindex,
+											nbindex,
+											rtr.get_dst(),
+											rtr.get_mask());
+				dptnexthops[nbindex].flow_mod_add();
+
+			} break;
 			}
-
-			std::cerr << "dptroute::neigh_updated() ADD => " << dptnexthops[nbindex] << std::endl;
-			dptnexthops[nbindex] = dptnexthop(
-										rofbase,
-										dpt,
-										dptlink::get_dptlink(rtnh.get_ifindex()).get_of_port_no(),
-										/*of_table_id=*/2,
-										ifindex,
-										nbindex,
-										rtr.get_dst(),
-										rtr.get_mask());
-			dptnexthops[nbindex].flow_mod_add();
-
-		} break;
 		}
+
+	} catch (eDptLinkNotFound& e) {
+		// this happens, when an update for a non-data path interface is received
 	}
 }
 
