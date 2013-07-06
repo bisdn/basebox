@@ -242,21 +242,25 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 		crtnexthop& rtnh = (*it);
 
 		// nexthop and neighbour must be bound to same link
-		if (rtnh.get_ifindex() != rtn.get_ifindex())
+		if (rtnh.get_ifindex() != rtn.get_ifindex()) {
+			fprintf(stderr, "rtnh.get_ifindex(%d) != rtn.get_ifindex(%d)\n",
+					rtnh.get_ifindex(), rtn.get_ifindex());
 			continue;
+		}
 
 		// gateway in nexthop must match dst address in neighbor instance
-		if (rtnh.get_gateway() != rtn.get_dst())
+		if (rtnh.get_gateway() != rtn.get_dst()) {
+			std::cerr << "rtnh.get_gateway(" << rtnh.get_gateway() << ")!="
+					<< "rtn.get_dst(" << rtn.get_dst() << ")" << std::endl;
 			continue;
+		}
 
 		// state of neighbor instance must be REACHABLE, PERMANENT, or NOARP
 		switch (rtn.get_state()) {
-		case NUD_INCOMPLETE:
-		case NUD_DELAY:
-		case NUD_PROBE:
-		case NUD_FAILED: {
-			continue;
-		} break;
+		case NUD_INCOMPLETE: 	{ fprintf(stderr, "NUD_INCOMPLETE\n"); } 	continue;
+		case NUD_DELAY: 		{ fprintf(stderr, "NUD_DELAY\n"); } 		continue;
+		case NUD_PROBE: 		{ fprintf(stderr, "NUD_PROBE\n"); } 		continue;
+		case NUD_FAILED: 		{ fprintf(stderr, "NUD_FAILED\n"); } 		continue;
 
 		case NUD_STALE:
 		case NUD_NOARP:
