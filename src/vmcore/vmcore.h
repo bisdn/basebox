@@ -101,6 +101,12 @@ private:
 
 	void
 	delete_all_routes();
+
+	void
+	block_stp_frames();
+
+	void
+	unblock_stp_frames();
 };
 
 }; // end of namespace vmcore

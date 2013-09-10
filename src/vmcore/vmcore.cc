@@ -103,6 +103,11 @@ vmcore::handle_dpath_open(
 		fe.set_table_id(OFPTT_ALL);
 		send_flow_mod_message(dpt, fe);
 
+		/*
+		 * block all STP related frames for now
+		 */
+		block_stp_frames();
+
 		// TODO: how many data path elements are allowed to connect to ourselves? only one makes sense ...
 
 
@@ -304,6 +309,38 @@ vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 }
 
 
+
+void
+vmcore::block_stp_frames()
+{
+	if (0 == dpt)
+		return;
+
+	rofl::cflowentry fe(dpt->get_version());
+
+	fe.set_command(OFPFC_ADD);
+	fe.set_table_id(0);
+	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
+
+	send_flow_mod_message(dpt, fe);
+}
+
+
+
+void
+vmcore::unblock_stp_frames()
+{
+	if (0 == dpt)
+		return;
+
+	rofl::cflowentry fe(dpt->get_version());
+
+	fe.set_command(OFPFC_DELETE_STRICT);
+	fe.set_table_id(0);
+	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
+
+	send_flow_mod_message(dpt, fe);
+}
 
 
 
