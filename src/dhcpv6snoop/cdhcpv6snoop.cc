@@ -12,47 +12,41 @@ using namespace dhcpv6snoop;
 
 cdhcpv6snoop::~cdhcpv6snoop()
 {
-
+	for (std::map<std::string, cppcap*>::iterator
+			it = captures.begin(); it != captures.end(); ++it) {
+		delete it->second;
+	}
+	captures.clear();
 }
 
 
 
 void
-cdhcpv6snoop::handle_accepted(rofl::csocket *socket, int newsd, rofl::caddress const& ra)
+cdhcpv6snoop::add_capture_device(const std::string& devname)
 {
+	if (captures.find(devname) != captures.end()) {
+		throw eDhcpv6SnoopExists();
+	}
+	captures[devname] = new cppcap();
 
+	captures[devname]->start(devname);
 }
 
 
 
 void
-cdhcpv6snoop::handle_connected(rofl::csocket *socket, int sd)
+cdhcpv6snoop::del_capture_device(const std::string& devname)
 {
+	if (captures.find(devname) == captures.end()) {
+		return;
+	}
+	captures[devname]->stop();
 
+	delete captures[devname];
+
+	captures.erase(devname);
 }
 
 
-
-void
-cdhcpv6snoop::handle_connect_refused(rofl::csocket *socket, int sd)
-{
-
-}
-
-
-
-void
-cdhcpv6snoop::handle_read(rofl::csocket *socket, int sd)
-{
-
-}
-
-
-
-void
-cdhcpv6snoop::handle_closed(rofl::csocket *socket, int sd)
-{
-
-}
 
 

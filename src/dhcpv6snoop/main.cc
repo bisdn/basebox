@@ -12,6 +12,8 @@ main(int argc, char** argv)
 {
 	dhcpv6snoop::cdhcpv6snoop snoop;
 
+	snoop.add_capture_device("ge1");
+
 	rofl::ciosrv::run();
 
 	return 0;

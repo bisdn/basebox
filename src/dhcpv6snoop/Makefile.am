@@ -16,11 +16,14 @@ dhcpv6snoop_SOURCES = main.cc \
 		cdhcpmsg.h \
 		cdhcpmsg.cc \
 		cdhcpmsg_relay.h \
-		cdhcpmsg_relay.cc
+		cdhcpmsg_relay.cc \
+		cppcap.h \
+		cppcap.cc
 		
 dhcpv6snoop_LDADD = -lpthread \
 	-lrofl \
-	-lrt
+	-lrt \
+	-lpcap
 
 AM_CPPFLAGS = 
 AM_LDFLAGS = 

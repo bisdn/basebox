@@ -8,35 +8,38 @@
 #ifndef DHCPV6SNOOP_H_
 #define DHCPV6SNOOP_H_
 
+#include <map>
+#include <exception>
+
 #include <rofl/common/ciosrv.h>
-#include <rofl/common/csocket.h>
+
+#include "cppcap.h"
+
+using namespace rutils;
 
 namespace dhcpv6snoop
 {
 
+class eDhcpv6SnoopBase : public std::exception {};
+class eDhcpv6SnoopExists : public eDhcpv6SnoopBase {};
+class eDhcpv6SnoopNotFound : public eDhcpv6SnoopBase {};
+
 class cdhcpv6snoop :
-		public rofl::ciosrv,
-		public rofl::csocket_owner
+		public rofl::ciosrv
 {
+
+	std::map<std::string, cppcap*> captures;
+
 public:
 
 	virtual
 	~cdhcpv6snoop();
 
-	virtual void
-	handle_accepted(rofl::csocket *socket, int newsd, rofl::caddress const& ra);
+	void
+	add_capture_device(const std::string& devname);
 
-	virtual void
-	handle_connected(rofl::csocket *socket, int sd);
-
-	virtual void
-	handle_connect_refused(rofl::csocket *socket, int sd);
-
-	virtual void
-	handle_read(rofl::csocket *socket, int sd);
-
-	virtual void
-	handle_closed(rofl::csocket *socket, int sd);
+	void
+	del_capture_device(const std::string& devname);
 };
 
 }; // end of namespace
