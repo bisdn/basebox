@@ -24,6 +24,7 @@ namespace dhcpv6snoop
 {
 
 class eDhcpOptionBase : public std::exception {};
+class eDhcpOptionInval : public eDhcpOptionBase {};
 class eDhcpOptionSyntax : public eDhcpOptionBase {};
 class eDhcpOptionTooShort : public eDhcpOptionBase {};
 

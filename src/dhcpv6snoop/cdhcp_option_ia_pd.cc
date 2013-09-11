@@ -10,6 +10,17 @@
 using namespace dhcpv6snoop;
 
 
+
+cdhcp_option_ia_pd::cdhcp_option_ia_pd() :
+		cdhcp_option((size_t)sizeof(struct dhcp_option_ia_pd_hdr_t)),
+		hdr((struct dhcp_option_ia_pd_hdr_t*)somem())
+{
+	set_code(DHCP_OPTION_IA_PD);
+	set_length(sizeof(struct dhcp_option_ia_pd_hdr_t)); // Attention: DO NOT FORGET THE IA_PD-OPTIONS IN THE END!!!
+}
+
+
+
 cdhcp_option_ia_pd::cdhcp_option_ia_pd(uint8_t *buf, size_t buflen) :
 		cdhcp_option(buf, buflen),
 		hdr((struct dhcp_option_ia_pd_hdr_t*)somem())

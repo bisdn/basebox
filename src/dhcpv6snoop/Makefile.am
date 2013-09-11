@@ -10,7 +10,9 @@ dhcpv6snoop_SOURCES = main.cc \
 		cdhcp_option.h \
 		cdhcp_option.cc \
 		cdhcp_option_ia_pd.h \
-		cdhcp_option_ia_pd.cc
+		cdhcp_option_ia_pd.cc \
+		cdhcp_option_ia_pd_option_prefix.h \
+		cdhcp_option_ia_pd_option_prefix.cc
 		
 dhcpv6snoop_LDADD = -lpthread \
 	-lrofl \
