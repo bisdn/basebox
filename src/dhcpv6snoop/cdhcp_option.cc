@@ -86,6 +86,8 @@ cdhcp_option::pack(uint8_t *buf, size_t buflen)
 	if (buflen < length())
 		throw eDhcpOptionTooShort();
 
+	set_length(length());
+
 	rofl::cmemory::pack(buf, buflen);
 }
 

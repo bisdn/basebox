@@ -106,7 +106,7 @@ void
 cdhcp_option_ia_pd_option_prefix::unpack(uint8_t *buf, size_t buflen)
 {
 	if (buflen < sizeof(struct dhcp_option_ia_pd_option_prefix_hdr_t))
-		throw eDhcpOptionSyntax();
+		throw eDhcpOptionBadSyntax();
 
 	cdhcp_option::unpack(buf, sizeof(struct dhcp_option_ia_pd_option_prefix_hdr_t));
 

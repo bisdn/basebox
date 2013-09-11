@@ -23,10 +23,11 @@ extern "C" {
 namespace dhcpv6snoop
 {
 
-class eDhcpOptionBase : public std::exception {};
-class eDhcpOptionInval : public eDhcpOptionBase {};
-class eDhcpOptionSyntax : public eDhcpOptionBase {};
-class eDhcpOptionTooShort : public eDhcpOptionBase {};
+class eDhcpOptionBase 		: public std::exception {};
+class eDhcpOptionInval 		: public eDhcpOptionBase {};
+class eDhcpOptionBadSyntax 	: public eDhcpOptionBase {};
+class eDhcpOptionTooShort 	: public eDhcpOptionBase {};
+class eDhcpOptionNotFound 	: public eDhcpOptionBase {};
 
 class cdhcp_option :
 		public rofl::cmemory

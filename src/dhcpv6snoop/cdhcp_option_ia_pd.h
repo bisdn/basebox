@@ -8,11 +8,14 @@
 #ifndef CDHCP_OPTION_IA_PD_H_
 #define CDHCP_OPTION_IA_PD_H_
 
+#include <map>
+
 /*
  * RFC 3633: Identity Association for Prefix Delegation
  */
 
 #include "cdhcp_option.h"
+#include "cdhcp_option_ia_pd_option_prefix.h"
 
 namespace dhcpv6snoop
 {
@@ -37,6 +40,7 @@ public:
 private:
 
 	struct dhcp_option_ia_pd_hdr_t *hdr;
+	std::map<uint16_t, cdhcp_option*> options;
 
 public:
 
@@ -52,29 +56,57 @@ public:
 
 public:
 
-	virtual void validate();
+	virtual void
+	validate();
 
-	virtual uint8_t* resize(size_t len);
+	virtual uint8_t*
+	resize(size_t len);
 
-	virtual void pack(uint8_t *buf, size_t buflen);
+	virtual void
+	pack(uint8_t *buf, size_t buflen);
 
-	virtual void unpack(uint8_t *buf, size_t buflen);
+	virtual void
+	unpack(uint8_t *buf, size_t buflen);
 
-	virtual size_t length();
+	virtual size_t
+	length();
 
 public:
 
-	uint32_t get_iaid() const;
+	uint32_t
+	get_iaid() const;
 
-	void set_iaid(uint32_t iaid);
+	void
+	set_iaid(uint32_t iaid);
 
-	uint32_t get_t1() const;
+	uint32_t
+	get_t1() const;
 
-	void set_t1(uint32_t t1);
+	void
+	set_t1(uint32_t t1);
 
-	uint32_t get_t2() const;
+	uint32_t
+	get_t2() const;
 
-	void set_t2(uint32_t t2);
+	void
+	set_t2(uint32_t t2);
+
+	cdhcp_option&
+	get_option(uint16_t code);
+
+private:
+
+	size_t
+	options_length();
+
+	void
+	pack_options(uint8_t *buf, size_t buflen);
+
+	void
+	unpack_options(uint8_t *buf, size_t buflen);
+
+	void
+	purge_options();
 };
 
 
