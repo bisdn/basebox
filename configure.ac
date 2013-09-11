@@ -65,6 +65,8 @@ AC_CONFIG_FILES([
 	Makefile
 	src/Makefile
 	src/vmcore/Makefile
+	src/dhcpv6snoop/Makefile
+	
 	test/Makefile
 	test/vmcore/Makefile
 	])
