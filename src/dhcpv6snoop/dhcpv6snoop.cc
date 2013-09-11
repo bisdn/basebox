@@ -7,4 +7,4 @@
 
 #include "dhcpv6snoop.h"
 
-
+using namespace dhcpv6snoop;
