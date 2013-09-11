@@ -5,8 +5,8 @@ SUBDIRS =
 sbin_PROGRAMS = dhcpv6snoop
 
 dhcpv6snoop_SOURCES = main.cc \
-		dhcpv6snoop.h \
-		dhcpv6snoop.cc \
+		cdhcpv6snoop.h \
+		cdhcpv6snoop.cc \
 		cdhcp_option.h \
 		cdhcp_option.cc \
 		cdhcp_option_ia_pd.h \
