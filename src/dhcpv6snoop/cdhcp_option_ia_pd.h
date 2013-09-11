@@ -20,6 +20,8 @@ namespace dhcpv6snoop
 class cdhcp_option_ia_pd :
 		public cdhcp_option
 {
+public:
+
 	enum cdhcp_option_ia_pd_type {
 		DHCP_OPTION_IA_PD = 25,
 	};
@@ -31,6 +33,8 @@ class cdhcp_option_ia_pd :
 		uint32_t 	t2;
 		uint8_t 	data[0];
 	};
+
+private:
 
 	struct dhcp_option_ia_pd_hdr_t *hdr;
 

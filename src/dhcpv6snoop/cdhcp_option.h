@@ -31,11 +31,15 @@ class eDhcpOptionTooShort : public eDhcpOptionBase {};
 class cdhcp_option :
 		public rofl::cmemory
 {
+public:
+
 	struct dhcp_option_hdr_t {
 		uint16_t 	code;
 		uint16_t 	len;
 		uint8_t 	data[0];
 	};
+
+private:
 
 	struct dhcp_option_hdr_t* hdr;
 
