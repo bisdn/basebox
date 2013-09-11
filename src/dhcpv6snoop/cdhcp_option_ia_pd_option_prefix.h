@@ -86,6 +86,20 @@ public:
 
 	void
 	set_prefix(rofl::caddress const& prefix);
+
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const cdhcp_option_ia_pd_option_prefix& opt) {
+		os << dynamic_cast<const cdhcp_option&>( opt );
+		os << "<dhcp-option-ia-pd-option-prefix: ";
+			os << "preferred-lifetime: " << opt.get_preferred_lifetime() << " ";
+			os << "valid-lifetime: " << opt.get_valid_lifetime() << " ";
+			os << "prefixlen: " << opt.get_prefixlen() << " ";
+			os << "prefix: " << opt.get_prefix() << " ";
+		os << ">";
+		return os;
+	};
 };
 
 }; // end of namespace

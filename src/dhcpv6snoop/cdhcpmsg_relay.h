@@ -9,6 +9,7 @@
 #define CDHCPMSG_RELAY_H_
 
 #include <map>
+#include <iostream>
 
 #include <rofl/common/caddress.h>
 
@@ -97,6 +98,23 @@ private:
 
 	void
 	purge_options();
+
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const cdhcpmsg_relay& msg) {
+		os << dynamic_cast<const cdhcpmsg&>( msg );
+		os << "<cdhcpmsg_relay: ";
+			os << "hop_count: " << msg.get_hop_count() << " ";
+			os << "link_address: " << msg.get_link_address() << " ";
+			os << "peer_address: " << msg.get_peer_address() << " ";
+			for (std::map<uint16_t, cdhcp_option*>::const_iterator
+					it = msg.options.begin(); it != msg.options.end(); ++it) {
+				os << *(it->second) << " ";
+			}
+		os << ">";
+		return os;
+	};
 };
 
 }; // end of namespace

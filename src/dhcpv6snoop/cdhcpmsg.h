@@ -9,6 +9,7 @@
 #define CDHCPMSG_H_
 
 #include <exception>
+#include <iostream>
 
 #include <rofl/common/cmemory.h>
 
@@ -67,6 +68,17 @@ public:
 
 	void
 	set_msg_type(uint8_t msg_type);
+
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const cdhcpmsg& msg) {
+		os << "<cdhcpmsg: ";
+			os << "msg_type: " << msg.get_msg_type() << " ";
+			os << "length: " << msg.memlen() << " ";
+			os << ">";
+		return os;
+	};
 };
 
 }; // end of namespace

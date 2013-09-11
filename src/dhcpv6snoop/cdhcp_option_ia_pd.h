@@ -107,6 +107,23 @@ private:
 
 	void
 	purge_options();
+
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const cdhcp_option_ia_pd& opt) {
+		os << dynamic_cast<const cdhcp_option&>( opt );
+		os << "<dhcp-option-ia-pd: ";
+			os << "iaid: " << (int)opt.get_iaid() << " ";
+			os << "t1: " << (unsigned int)opt.get_t1() << " ";
+			os << "t2: " << (unsigned int)opt.get_t2() << " ";
+			for (std::map<uint16_t, cdhcp_option*>::const_iterator
+						it = opt.options.begin(); it != opt.options.end(); ++it) {
+					os << *(it->second) << " ";
+				}
+		os << ">";
+		return os;
+	};
 };
 
 

@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 #include <exception>
+#include <iostream>
 
 #include <rofl/common/cmemory.h>
 
@@ -77,6 +78,17 @@ public:
 	uint16_t get_length() const;
 
 	void set_length(uint16_t len);
+
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const cdhcp_option& opt) {
+		os << "<dhcp-option: ";
+			os << "code: " << opt.get_code() << " ";
+			os << "length: " << opt.get_length() << " ";
+		os << ">";
+		return os;
+	};
 };
 
 }; // end of namespace
