@@ -36,14 +36,8 @@ class cdhcp_option :
 public:
 
 	struct dhcp_option_hdr_t {
-		/* LITTLE ENDIAN */
-		uint16_t 	len;
-		uint16_t 	code;
-		/* BIG ENDIAN */
-#if 0
 		uint16_t 	code;
 		uint16_t 	len;
-#endif
 		uint8_t 	data[0];
 	};
 
