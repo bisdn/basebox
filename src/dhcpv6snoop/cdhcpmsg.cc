@@ -48,7 +48,8 @@ cdhcpmsg::operator= (const cdhcpmsg& msg)
 
 
 
-cdhcpmsg::cdhcpmsg(uint8_t *buf, size_t buflen)
+cdhcpmsg::cdhcpmsg(uint8_t *buf, size_t buflen) :
+		rofl::cmemory(buflen)
 {
 	unpack(buf, buflen);
 }

@@ -76,7 +76,7 @@ cppcap::do_capture()
 		return 0;
 	}
 
-	std::string s_filter("ip proto udp and port 587");
+	std::string s_filter("udp port 547");
 
 	if ((rc = pcap_compile(pcap_handle, &bpfp, s_filter.c_str(), 1, PCAP_NETMASK_UNKNOWN)) < 0) {
 		fprintf(stderr, "error compiling filter for pcap, aborting capture ...\n");
@@ -100,6 +100,9 @@ restart:
 		}
 
 		fprintf(stderr, "read packet with caplen: %d\n", phdr.caplen);
+
+		dhcpv6snoop::cdhcpmsg_relay msg((uint8_t*)data, phdr.caplen);
+		std::cerr << msg << std::endl;
 	}
 
 	tid = 0;

@@ -63,7 +63,7 @@ cdhcpmsg_relay::operator= (const cdhcpmsg_relay& msg)
 
 
 cdhcpmsg_relay::cdhcpmsg_relay(uint8_t *buf, size_t buflen) :
-		cdhcpmsg(buf, buflen)
+		cdhcpmsg(buflen)
 {
 	unpack(buf, buflen);
 }
