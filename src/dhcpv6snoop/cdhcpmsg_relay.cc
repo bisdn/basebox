@@ -250,6 +250,9 @@ cdhcpmsg_relay::unpack_options(uint8_t *buf, size_t buflen)
 
 		size_t opt_len = sizeof(struct cdhcp_option::dhcp_option_hdr_t) + be16toh(hdr->len);
 
+		if (opt_len > buflen)
+			throw eDhcpMsgBadSyntax();
+
 		// avoid duplicates => potential memory leak
 		if (options.find(be16toh(hdr->code)) != options.end()) {
 			delete options[be16toh(hdr->code)];

@@ -101,8 +101,10 @@ restart:
 
 		fprintf(stderr, "read packet with caplen: %d\n", phdr.caplen);
 
+		unsigned int offset = /* Ethernet */14 + /*IPv6*/40;
+
 		dhcpv6snoop::cdhcpmsg_relay msg;
-		msg.unpack((uint8_t*)data, phdr.caplen);
+		msg.unpack((uint8_t*)data + offset, phdr.caplen - offset);
 		std::cerr << msg << std::endl;
 	}
 
