@@ -103,9 +103,18 @@ restart:
 
 		unsigned int offset = /* Ethernet */14 + /*IPv6*/40 + /*UDP*/8;
 
-		dhcpv6snoop::cdhcpmsg_relay msg;
-		msg.unpack((uint8_t*)data + offset, phdr.caplen - offset);
-		std::cerr << msg << std::endl;
+		dhcpv6snoop::cdhcpmsg msg((uint8_t*)data + offset, phdr.caplen - offset);
+
+		switch (msg.get_msg_type()) {
+		/*RELAY-FORW*/ case 12:
+		/*RELAY-REPLY*/case 13: {
+			dhcpv6snoop::cdhcpmsg_relay msg((uint8_t*)data + offset, phdr.caplen - offset);
+			std::cerr << msg << std::endl;
+		} break;
+		default: {
+			fprintf(stderr, "ignoring DHCPv6 message of type %d\n", (int)msg.get_msg_type());
+		} break;
+		}
 	}
 
 	tid = 0;
