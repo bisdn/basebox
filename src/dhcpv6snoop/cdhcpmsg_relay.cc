@@ -98,12 +98,26 @@ cdhcpmsg_relay::unpack(uint8_t *buf, size_t buflen)
 	if (buflen < sizeof(struct dhcpmsg_relay_hdr_t))
 		throw eDhcpMsgBadSyntax();
 
+	resize(buflen);
+
 	cdhcpmsg::unpack(buf, sizeof(struct dhcpmsg_relay_hdr_t));
 
 	hdr = (struct dhcpmsg_relay_hdr_t*)somem();
 
 	// parse options
 	unpack_options(buf + sizeof(struct dhcpmsg_relay_hdr_t), buflen - sizeof(dhcpmsg_relay_hdr_t));
+}
+
+
+
+uint8_t*
+cdhcpmsg_relay::resize(size_t len)
+{
+	cdhcpmsg::resize(len);
+
+	hdr = (struct dhcpmsg_relay_hdr_t*)somem();
+
+	return somem();
 }
 
 

@@ -56,6 +56,9 @@ public:
 	virtual void
 	unpack(uint8_t *buf, size_t buflen);
 
+	virtual uint8_t*
+	resize(size_t len);
+
 private:
 
 	virtual void

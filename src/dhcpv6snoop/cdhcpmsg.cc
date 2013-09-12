@@ -94,9 +94,23 @@ cdhcpmsg::unpack(uint8_t *buf, size_t buflen)
 	if (buflen < sizeof(struct dhcpmsg_hdr_t))
 		throw eDhcpMsgTooShort();
 
+	resize(buflen);
+
 	rofl::cmemory::assign(buf, sizeof(struct dhcpmsg_hdr_t));
 
 	hdr = (struct dhcpmsg_hdr_t*)somem();
+}
+
+
+
+uint8_t*
+cdhcpmsg::resize(size_t len)
+{
+	rofl::cmemory::resize(len);
+
+	hdr = (struct dhcpmsg_hdr_t*)somem();
+
+	return somem();
 }
 
 
