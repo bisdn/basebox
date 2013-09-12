@@ -101,7 +101,8 @@ restart:
 
 		fprintf(stderr, "read packet with caplen: %d\n", phdr.caplen);
 
-		dhcpv6snoop::cdhcpmsg_relay msg((uint8_t*)data, phdr.caplen);
+		dhcpv6snoop::cdhcpmsg_relay msg;
+		msg.unpack((uint8_t*)data, phdr.caplen);
 		std::cerr << msg << std::endl;
 	}
 
