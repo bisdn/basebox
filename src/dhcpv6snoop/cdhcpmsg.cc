@@ -212,6 +212,12 @@ cdhcpmsg::unpack_options(uint8_t *buf, size_t buflen)
 		case cdhcp_option_clientid::DHCP_OPTION_CLIENTID: {
 			options[cdhcp_option_clientid::DHCP_OPTION_CLIENTID] = new cdhcp_option_clientid(buf, opt_len);
 		} break;
+		case cdhcp_option_serverid::DHCP_OPTION_SERVERID: {
+			options[cdhcp_option_serverid::DHCP_OPTION_SERVERID] = new cdhcp_option_serverid(buf, opt_len);
+		} break;
+		case cdhcp_option_ia_pd::DHCP_OPTION_IA_PD: {
+			options[cdhcp_option_ia_pd::DHCP_OPTION_IA_PD] = new cdhcp_option_ia_pd(buf, opt_len);
+		} break;
 		case cdhcp_option_ia_prefix::DHCP_OPTION_IA_PREFIX: {
 			options[cdhcp_option_ia_prefix::DHCP_OPTION_IA_PREFIX] = new cdhcp_option_ia_prefix(buf, opt_len);
 		} break;

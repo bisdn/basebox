@@ -224,6 +224,12 @@ cdhcp_option::unpack_options(uint8_t *buf, size_t buflen)
 		case DHCP_OPTION_CLIENTID: {
 			options[DHCP_OPTION_CLIENTID] = new cdhcp_option_clientid(buf, opt_len);
 		} break;
+		case DHCP_OPTION_SERVERID: {
+			options[DHCP_OPTION_SERVERID] = new cdhcp_option_serverid(buf, opt_len);
+		} break;
+		case DHCP_OPTION_IA_PD: {
+			options[DHCP_OPTION_IA_PD] = new cdhcp_option_ia_pd(buf, opt_len);
+		} break;
 		case DHCP_OPTION_IA_PREFIX: {
 			options[DHCP_OPTION_IA_PREFIX] = new cdhcp_option_ia_prefix(buf, opt_len);
 		} break;

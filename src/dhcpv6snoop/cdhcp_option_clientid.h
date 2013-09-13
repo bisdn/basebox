@@ -22,6 +22,7 @@ public:
 
 	enum cdhcp_option_client_id_type {
 		DHCP_OPTION_CLIENT_ID = 1,
+		DHCP_OPTION_SERVER_ID = 2,
 	};
 
 	struct dhcp_option_client_id_hdr_t {
@@ -82,6 +83,8 @@ public:
 		return os;
 	};
 };
+
+typedef cdhcp_option_clientid cdhcp_option_serverid;
 
 }
 
