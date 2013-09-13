@@ -9,6 +9,9 @@
 
 using namespace dhcpv6snoop;
 
+#include "cdhcp_option_clientid.h"
+#include "cdhcp_option_ia_pd.h"
+#include "cdhcp_option_ia_prefix.h"
 
 
 cdhcp_option::cdhcp_option(size_t len) :
@@ -22,7 +25,7 @@ cdhcp_option::cdhcp_option(size_t len) :
 
 cdhcp_option::~cdhcp_option()
 {
-
+	purge_options();
 }
 
 
@@ -149,6 +152,101 @@ void
 cdhcp_option::set_length(uint16_t len)
 {
 	hdr->len = htobe16(len);
+}
+
+
+
+
+
+cdhcp_option&
+cdhcp_option::get_option(uint16_t code)
+{
+	if (options.find(code) == options.end())
+		throw eDhcpOptionNotFound();
+
+	return *(options[code]);
+}
+
+
+
+size_t
+cdhcp_option::options_length()
+{
+	size_t opt_len = 0;
+	for (std::map<uint16_t, cdhcp_option*>::iterator
+			it = options.begin(); it != options.end(); ++it) {
+		opt_len += (*(it->second)).length();
+	}
+	return opt_len;
+}
+
+
+
+void
+cdhcp_option::pack_options(uint8_t *buf, size_t buflen)
+{
+	if (buflen < options_length())
+		throw eDhcpOptionTooShort();
+
+	for (std::map<uint16_t, cdhcp_option*>::iterator
+			it = options.begin(); it != options.end(); ++it) {
+		cdhcp_option *opt = (it->second);
+
+		opt->pack(buf, opt->length());
+
+		buf += opt->length();
+		buflen -= opt->length();
+	}
+}
+
+
+
+void
+cdhcp_option::unpack_options(uint8_t *buf, size_t buflen)
+{
+	purge_options();
+
+	while (buflen > 0) {
+
+		if (buflen < sizeof(cdhcp_option::dhcp_option_hdr_t))
+			throw eDhcpOptionBadSyntax();
+
+		struct cdhcp_option::dhcp_option_hdr_t *hdr = (struct cdhcp_option::dhcp_option_hdr_t*)buf;
+
+		size_t opt_len = sizeof(struct cdhcp_option::dhcp_option_hdr_t) + be16toh(hdr->len);
+
+		// avoid duplicates => potential memory leak
+		if (options.find(be16toh(hdr->code)) != options.end()) {
+			delete options[be16toh(hdr->code)];
+		}
+
+		switch (be16toh(hdr->code)) {
+		case DHCP_OPTION_CLIENTID: {
+			options[DHCP_OPTION_CLIENTID] = new cdhcp_option_clientid(buf, opt_len);
+		} break;
+		case DHCP_OPTION_IA_PREFIX: {
+			options[DHCP_OPTION_IA_PREFIX] = new cdhcp_option_ia_prefix(buf, opt_len);
+		} break;
+		default: {
+			options[be16toh(hdr->code)] = new cdhcp_option(buf, opt_len);
+		} break;
+		}
+
+		buf += opt_len;
+		buflen -= opt_len;
+	}
+}
+
+
+
+void
+cdhcp_option::purge_options()
+{
+	for (std::map<uint16_t, cdhcp_option*>::iterator
+			it = options.begin(); it != options.end(); ++it) {
+		delete (it->second);
+	}
+	options.clear();
 }
 
 

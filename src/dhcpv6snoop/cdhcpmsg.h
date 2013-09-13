@@ -14,7 +14,9 @@
 #include <rofl/common/cmemory.h>
 
 #include "cdhcp_option.h"
+#include "cdhcp_option_clientid.h"
 #include "cdhcp_option_ia_pd.h"
+#include "cdhcp_option_ia_prefix.h"
 
 namespace dhcpv6snoop
 {
