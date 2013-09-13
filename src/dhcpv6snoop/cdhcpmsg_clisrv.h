@@ -68,7 +68,7 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const cdhcpmsg_clisrv& msg) {
 		os << "<cdhcpmsg-clisrv: ";
-			os << "transaction-id: " << msg.get_transaction_id() << " ";
+			os << "transaction-id: " << (int)msg.get_transaction_id() << " ";
 		os << ">";
 		os << dynamic_cast<const cdhcpmsg&>( msg );
 		return os;

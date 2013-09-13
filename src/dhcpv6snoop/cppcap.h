@@ -22,6 +22,7 @@ extern "C" {
 #include <exception>
 
 #include "cdhcpmsg.h"
+#include "cdhcpmsg_clisrv.h"
 #include "cdhcpmsg_relay.h"
 
 namespace rutils

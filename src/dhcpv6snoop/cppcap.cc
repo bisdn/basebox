@@ -111,8 +111,10 @@ restart:
 			dhcpv6snoop::cdhcpmsg_relay msg((uint8_t*)data + offset, phdr.caplen - offset);
 			std::cerr << msg << std::endl;
 		} break;
+		/* default: all client/server messages */
 		default: {
-			fprintf(stderr, "ignoring DHCPv6 message of type %d\n", (int)msg.get_msg_type());
+			dhcpv6snoop::cdhcpmsg_clisrv msg((uint8_t*)data + offset, phdr.caplen - offset);
+			std::cerr << msg << std::endl;
 		} break;
 		}
 	}
