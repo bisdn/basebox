@@ -57,6 +57,8 @@ public:
 
 	cdhcp_option& operator= (const cdhcp_option& opt);
 
+	virtual cdhcp_option* clone();
+
 public:
 
 	virtual void validate();

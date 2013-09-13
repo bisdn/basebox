@@ -60,6 +60,14 @@ cdhcp_option::operator= (const cdhcp_option& opt)
 
 
 
+cdhcp_option*
+cdhcp_option::clone()
+{
+	return new cdhcp_option(*this);
+}
+
+
+
 void
 cdhcp_option::validate()
 {

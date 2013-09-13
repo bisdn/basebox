@@ -13,6 +13,9 @@
 
 #include <rofl/common/cmemory.h>
 
+#include "cdhcp_option.h"
+#include "cdhcp_option_ia_pd.h"
+
 namespace dhcpv6snoop
 {
 
@@ -32,6 +35,10 @@ class cdhcpmsg :
 	};
 
 	struct dhcpmsg_hdr_t *hdr;
+
+protected:
+
+	std::map<uint16_t, cdhcp_option*> options;
 
 public:
 
@@ -59,10 +66,19 @@ public:
 	virtual uint8_t*
 	resize(size_t len);
 
-private:
+protected:
 
-	virtual void
-	validate();
+	size_t
+	options_length();
+
+	void
+	pack_options(uint8_t *buf, size_t buflen);
+
+	void
+	unpack_options(uint8_t *buf, size_t buflen);
+
+	void
+	purge_options();
 
 public:
 
@@ -72,6 +88,14 @@ public:
 	void
 	set_msg_type(uint8_t msg_type);
 
+	cdhcp_option&
+	get_option(uint16_t opt_type);
+
+private:
+
+	virtual void
+	validate();
+
 public:
 
 	friend std::ostream&
@@ -79,6 +103,10 @@ public:
 		os << "<cdhcpmsg: ";
 			os << "msg_type: " << msg.get_msg_type() << " ";
 			os << "length: " << msg.memlen() << " ";
+			for (std::map<uint16_t, cdhcp_option*>::const_iterator
+					it = msg.options.begin(); it != msg.options.end(); ++it) {
+				os << *(it->second) << " ";
+			}
 			os << ">";
 		return os;
 	};
