@@ -21,6 +21,11 @@ extern "C" {
 #include <string>
 #include <exception>
 
+
+#include <rofl/common/protocols/fipv6frame.h>
+
+#include "cdhcpmsg.h"
+#include "cdhcpmsg_clisrv.h"
 #include "cdhcpmsg_relay.h"
 
 namespace rutils
@@ -60,6 +65,12 @@ private:
 
 	void*
 	do_capture();
+
+	void
+	handle_dhcpv6_relay_msg(uint8_t* buf, size_t buflen);
+
+	void
+	handle_dhcpv6_clisrv_msg(uint8_t* buf, size_t buflen);
 };
 
 }; // end of namespace
