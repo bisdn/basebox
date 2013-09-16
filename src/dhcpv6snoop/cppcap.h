@@ -24,7 +24,7 @@ extern "C" {
 
 #include <rofl/common/protocols/fipv6frame.h>
 
-
+#include "cdirectory.h"
 #include "cdhcpmsg.h"
 #include "cdhcpmsg_clisrv.h"
 #include "cdhcpmsg_relay.h"
@@ -44,6 +44,9 @@ class cppcap
 	pcap_t 				*pcap_handle;
 	struct bpf_program	bpfp;
 	char 				pcap_errbuf[PCAP_ERRBUF_SIZE];
+
+#define DEFAULT_DHCP_STATE_DIR "/var/lib/dhcpv6snoop"
+	cdirectory			*dir;
 
 public:
 

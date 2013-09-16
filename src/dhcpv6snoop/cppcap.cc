@@ -14,7 +14,8 @@ using namespace dhcpv6snoop;
 cppcap::cppcap() :
 		tid(0),
 		keep_going(false),
-		pcap_handle(0)
+		pcap_handle(0),
+		dir(0)
 {
 	memset(pcap_errbuf, 0, sizeof(pcap_errbuf));
 }
@@ -28,6 +29,9 @@ cppcap::~cppcap()
 		if (pthread_join(tid, 0) < 0) {
 			fprintf(stderr, "error terminating thread, aborting\n");
 		}
+	}
+	if (0 != dir) {
+		delete dir;
 	}
 }
 
@@ -89,6 +93,8 @@ cppcap::do_capture()
 		return 0;
 	}
 
+	dir = new cdirectory(DEFAULT_DHCP_STATE_DIR);
+
 restart:
 	while (keep_going) {
 
@@ -119,6 +125,8 @@ restart:
 
 		}
 	}
+
+	delete dir; dir = 0;
 
 	tid = 0;
 
@@ -165,6 +173,8 @@ cppcap::handle_dhcpv6_clisrv_msg(uint8_t *buf, size_t buflen)
 
 		cdhcp_option_serverid& serverid = dynamic_cast<cdhcp_option_serverid&>( msg.get_option(cdhcp_option::DHCP_OPTION_SERVERID) );
 		std::cerr << "SERVER-ID: " << serverid << std::endl;;
+
+		std::cerr << *dir << std::endl;
 
 	} break;
 	default: {

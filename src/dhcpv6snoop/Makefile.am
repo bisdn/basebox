@@ -22,7 +22,11 @@ dhcpv6snoop_SOURCES = main.cc \
 		cdhcpmsg_relay.h \
 		cdhcpmsg_relay.cc \
 		cppcap.h \
-		cppcap.cc
+		cppcap.cc \
+		cdirectory.h \
+		cdirectory.cc \
+		cfile.h \
+		cfile.cc
 		
 dhcpv6snoop_LDADD = -lpthread \
 	-lrofl \
