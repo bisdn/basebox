@@ -21,12 +21,10 @@ extern "C" {
 #include <string>
 #include <exception>
 
-<<<<<<< HEAD
 
 #include <rofl/common/protocols/fipv6frame.h>
 
-=======
->>>>>>> debug
+
 #include "cdhcpmsg.h"
 #include "cdhcpmsg_clisrv.h"
 #include "cdhcpmsg_relay.h"

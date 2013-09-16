@@ -101,10 +101,7 @@ restart:
 
 		fprintf(stderr, "read packet with caplen: %d\n", phdr.caplen);
 
-<<<<<<< HEAD
 
-=======
->>>>>>> debug
 		unsigned int offset = /* Ethernet */14 + /*IPv6*/40 + /*UDP*/8;
 
 		dhcpv6snoop::cdhcpmsg msg((uint8_t*)data + offset, phdr.caplen - offset);
@@ -112,22 +109,13 @@ restart:
 		switch (msg.get_msg_type()) {
 		/*RELAY-FORW*/ case 12:
 		/*RELAY-REPLY*/case 13: {
-<<<<<<< HEAD
 			handle_dhcpv6_relay_msg((uint8_t*)data, phdr.caplen);
 		} break;
 		/* default: all client/server messages */
 		default: {
 			handle_dhcpv6_clisrv_msg((uint8_t*)data, phdr.caplen);
-=======
-			dhcpv6snoop::cdhcpmsg_relay msg((uint8_t*)data + offset, phdr.caplen - offset);
-			std::cerr << msg << std::endl;
 		} break;
-		/* default: all client/server messages */
-		default: {
-			dhcpv6snoop::cdhcpmsg_clisrv msg((uint8_t*)data + offset, phdr.caplen - offset);
-			std::cerr << msg << std::endl;
->>>>>>> debug
-		} break;
+
 		}
 	}
 
