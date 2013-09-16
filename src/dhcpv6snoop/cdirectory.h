@@ -57,6 +57,10 @@ class cdirectory
 public:
 
 	cdirectory(
+			std::string const& dirname,
+			std::string const& dirpath);
+
+	cdirectory(
 			std::string const& dirpath);
 
 	virtual

@@ -29,6 +29,26 @@ cdirectory::cdirectory(std::string const& dirpath) :
 
 
 
+cdirectory::cdirectory(
+		std::string const& dirname,
+		std::string const& dirpath) :
+		dirpath(dirpath + "/" + dirname)
+{
+	if ((dir_handle = opendir(dirpath.c_str())) == 0) {
+		switch (errno) {
+		case EACCES: throw eDirAccess();
+		case EMFILE: throw eDirEMfile();
+		case ENFILE: throw eDirENfile();
+		case ENOENT: throw eDirNoEnt();
+		case ENOMEM: throw eDirNoMem();
+		case ENOTDIR: throw eDirNotDir();
+		}
+	}
+
+	readdir();
+}
+
+
 cdirectory::~cdirectory()
 {
 	purge_dirs();
@@ -152,7 +172,7 @@ cdirectory::adddir(
 	if (dirs.find(dirname) != dirs.end()) {
 		return;
 	}
-	dirs[dirname] = new cdirectory(dirname);
+	dirs[dirname] = new cdirectory(dirname, dirpath);
 }
 
 
