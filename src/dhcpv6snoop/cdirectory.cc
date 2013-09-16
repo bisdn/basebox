@@ -78,12 +78,27 @@ cdirectory::readdir()
 	struct dirent **namelist;
 	int n;
 
-    n = scandir(".", &namelist, NULL, alphasort);
+    n = scandir(dirpath.c_str(), &namelist, NULL, alphasort);
     if (n < 0)
         perror("scandir");
     else {
         while (n--) {
             fprintf(stderr, "%s\n", namelist[n]->d_name);
+    		struct stat statbuf;
+
+    		if (::stat(namelist[n]->d_name, &statbuf) < 0) {
+    			throw eDirSyscall();
+    		}
+
+    		if (S_ISREG(statbuf.st_mode)) {
+    			addfile(namelist[n]->d_name);
+    		}
+    		else if (S_ISDIR(statbuf.st_mode)) {
+    			adddir(namelist[n]->d_name);
+    		}
+    		else {
+
+    		}
             free(namelist[n]);
         }
         free(namelist);
