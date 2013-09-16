@@ -78,7 +78,7 @@ cdirectory::readdir()
 	struct dirent **namelist;
 	int n;
 
-    n = scandir(dirpath.c_str(), &namelist, NULL, alphasort);
+    n = scandir(dirpath.c_str(), &namelist, &select, alphasort);
     if (n < 0)
         perror("scandir");
     else {
@@ -87,7 +87,7 @@ cdirectory::readdir()
     		struct stat statbuf;
 
     		if (::stat(namelist[n]->d_name, &statbuf) < 0) {
-    			throw eDirSyscall();
+    			continue;
     		}
 
     		if (S_ISREG(statbuf.st_mode)) {
@@ -127,6 +127,21 @@ cdirectory::readdir()
 		}
 	}
 #endif
+}
+
+
+
+int
+cdirectory::select(const struct dirent* dir)
+{
+	std::string name(dir->d_name);
+
+	if (name == "..")
+		return 0;
+	if (name == ".")
+		return 0;
+
+	return 1;
 }
 
 

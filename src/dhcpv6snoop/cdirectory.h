@@ -73,6 +73,9 @@ private:
 	void
 	readdir();
 
+	static int
+	select(const struct dirent* dir);
+
 	void
 	addfile(
 			std::string const& filename);
