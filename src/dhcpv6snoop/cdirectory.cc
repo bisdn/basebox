@@ -75,7 +75,23 @@ cdirectory::readdir()
 
 	purge_files();
 
+	struct dirent **namelist;
+	int n;
+
+    n = scandir(".", &namelist, NULL, alphasort);
+    if (n < 0)
+        perror("scandir");
+    else {
+        while (n--) {
+            fprintf(stderr, "%s\n", namelist[n]->d_name);
+            free(namelist[n]);
+        }
+        free(namelist);
+    }
+
+#if 0
 	struct dirent *dp = (struct dirent*)0;
+
 
 	while ((dp = ::readdir(dir_handle)) != 0) {
 
@@ -95,6 +111,7 @@ cdirectory::readdir()
 
 		}
 	}
+#endif
 }
 
 
