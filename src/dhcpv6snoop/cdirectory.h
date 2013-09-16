@@ -18,6 +18,8 @@ extern "C" {
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
 #ifdef __cplusplus
 }
 #endif
@@ -69,6 +71,30 @@ public:
 	void
 	readdir();
 
+	cdirectory&
+	get_dir(
+			std::string const& dirname, bool create = false);
+
+	void
+	mk_dir(
+			std::string const& dirname);
+
+	void
+	rm_dir(
+			std::string const& dirname);
+
+	cfile&
+	get_file(
+			std::string const& filename, bool create = false);
+
+	void
+	mk_file(
+			std::string const& filename);
+
+	void
+	rm_file(
+			std::string const& filename);
+
 private:
 
 	void
@@ -105,13 +131,13 @@ public:
 			os << "<dirs: ";
 			for (std::map<std::string, cdirectory*>::const_iterator
 					it = dir.dirs.begin(); it != dir.dirs.end(); ++it) {
-				os << "\t" << *(it->second) << " ";
+				os << *(it->second) << " ";
 			}
 			os << "> ";
 			os <<"<files: ";
 			for (std::map<std::string, cfile*>::const_iterator
 					it = dir.files.begin(); it != dir.files.end(); ++it) {
-				os << "\t" << *(it->second) << " ";
+				os << *(it->second) << " ";
 			}
 			os << ">";
 		os << " >";

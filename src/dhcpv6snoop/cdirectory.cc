@@ -106,7 +106,9 @@ cdirectory::readdir()
             fprintf(stderr, "%s\n", namelist[n]->d_name);
     		struct stat statbuf;
 
-    		if (::stat(namelist[n]->d_name, &statbuf) < 0) {
+    		std::string filepath = dirpath + "/" + namelist[n]->d_name;
+
+            if (::stat(filepath.c_str(), &statbuf) < 0) {
     			continue;
     		}
 
@@ -186,6 +188,94 @@ cdirectory::deldir(
 	}
 	delete dirs[dirname];
 	dirs.erase(dirname);
+}
+
+
+
+cdirectory&
+cdirectory::get_dir(
+		std::string const& dirname, bool create)
+{
+	if (dirs.find(dirname) == dirs.end()) {
+		if (create) {
+			mk_dir(dirname);
+		} else {
+			throw eDirNotFound();
+		}
+	}
+	return *(dirs[dirname]);
+}
+
+
+
+void
+cdirectory::mk_dir(
+		std::string const& dirname)
+{
+	std::string fullpath = dirpath + "/" + dirname;
+
+	mode_t mode = 0755;
+
+	if (::mkdir(fullpath.c_str(), mode) < 0) {
+		fprintf(stderr, "syscall mkdir() failed => %d (%s)\n", errno, strerror(errno));
+		throw eDirSyscall();
+	}
+	adddir(dirname);
+}
+
+
+
+void
+cdirectory::rm_dir(
+		std::string const& dirname)
+{
+
+}
+
+
+
+cfile&
+cdirectory::get_file(
+		std::string const& filename, bool create)
+{
+	if (files.find(filename) == files.end()) {
+		if (create) {
+			mk_file(filename);
+		} else {
+			throw eDirNotFound();
+		}
+	}
+	return *(files[filename]);
+}
+
+
+
+void
+cdirectory::mk_file(
+		std::string const& filename)
+{
+	std::string fullpath = dirpath + "/" + filename;
+
+	mode_t mode = 0644;
+	int flags = O_CREAT;
+	int fd = 0;
+
+	if ((fd = ::open(fullpath.c_str(), flags, mode)) < 0) {
+		fprintf(stderr, "syscall mkdir() failed => %d (%s)\n", errno, strerror(errno));
+		throw eDirSyscall();
+	}
+	::close(fd);
+
+	addfile(filename);
+}
+
+
+
+void
+cdirectory::rm_file(
+		std::string const& filename)
+{
+
 }
 
 

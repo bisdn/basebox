@@ -162,6 +162,8 @@ cppcap::handle_dhcpv6_clisrv_msg(uint8_t *buf, size_t buflen)
 	// directory structure => ${VARETCDIR}/dhcpv6snoop/clientid/serverid/prefix
 	switch (msg.get_msg_type()) {
 	case dhcpv6snoop::cdhcpmsg::REPLY: {
+		cdirectory& snoopdir = *dir;
+
 		cdhcp_option_clientid& clientid = dynamic_cast<cdhcp_option_clientid&>( msg.get_option(cdhcp_option::DHCP_OPTION_CLIENTID) );
 		std::cerr << "CLIENT-ID: " << clientid << std::endl;;
 
@@ -174,8 +176,14 @@ cppcap::handle_dhcpv6_clisrv_msg(uint8_t *buf, size_t buflen)
 		cdhcp_option_serverid& serverid = dynamic_cast<cdhcp_option_serverid&>( msg.get_option(cdhcp_option::DHCP_OPTION_SERVERID) );
 		std::cerr << "SERVER-ID: " << serverid << std::endl;;
 
-		dir->readdir();
-		std::cerr << *dir << std::endl;
+		snoopdir.readdir();
+		std::cerr << snoopdir << std::endl;
+
+		cfile& file = snoopdir.get_dir(clientid.get_s_duid(), true).
+									get_dir(serverid.get_s_duid(), true).
+										get_file(iaprefix.get_prefix().addr_c_str(), true);
+
+		(void)file;
 
 	} break;
 	default: {
