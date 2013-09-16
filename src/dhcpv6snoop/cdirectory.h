@@ -62,6 +62,9 @@ public:
 	virtual
 	~cdirectory();
 
+	void
+	readdir();
+
 private:
 
 	void
@@ -70,8 +73,6 @@ private:
 	void
 	purge_dirs();
 
-	void
-	readdir();
 
 	static int
 	select(const struct dirent* dir);

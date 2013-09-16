@@ -174,6 +174,7 @@ cppcap::handle_dhcpv6_clisrv_msg(uint8_t *buf, size_t buflen)
 		cdhcp_option_serverid& serverid = dynamic_cast<cdhcp_option_serverid&>( msg.get_option(cdhcp_option::DHCP_OPTION_SERVERID) );
 		std::cerr << "SERVER-ID: " << serverid << std::endl;;
 
+		dir->readdir();
 		std::cerr << *dir << std::endl;
 
 	} break;
