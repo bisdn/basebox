@@ -103,30 +103,6 @@ cdirectory::readdir()
         }
         free(namelist);
     }
-
-#if 0
-	struct dirent *dp = (struct dirent*)0;
-
-
-	while ((dp = ::readdir(dir_handle)) != 0) {
-
-		struct stat statbuf;
-
-		if (::stat(dp->d_name, &statbuf) < 0) {
-			throw eDirSyscall();
-		}
-
-		if (S_ISREG(statbuf.st_mode)) {
-			addfile(dp->d_name);
-		}
-		else if (S_ISDIR(statbuf.st_mode)) {
-			adddir(dp->d_name);
-		}
-		else {
-
-		}
-	}
-#endif
 }
 
 
@@ -150,7 +126,7 @@ void
 cdirectory::addfile(std::string const& filename)
 {
 	if (files.find(filename) != files.end()) {
-		throw eDirExists();
+		return;
 	}
 	files[filename] = new cfile(filename, dirpath);
 }
@@ -161,7 +137,7 @@ void
 cdirectory::delfile(std::string const& filename)
 {
 	if (files.find(filename) == files.end()) {
-		throw eDirNotFound();
+		return;
 	}
 	delete files[filename];
 	files.erase(filename);
@@ -174,7 +150,7 @@ cdirectory::adddir(
 		std::string const& dirname)
 {
 	if (dirs.find(dirname) != dirs.end()) {
-		throw eDirExists();
+		return;
 	}
 	dirs[dirname] = new cdirectory(dirname);
 }
@@ -186,7 +162,7 @@ cdirectory::deldir(
 		std::string const& dirname)
 {
 	if (dirs.find(dirname) == dirs.end()) {
-		throw eDirNotFound();
+		return;
 	}
 	delete dirs[dirname];
 	dirs.erase(dirname);
