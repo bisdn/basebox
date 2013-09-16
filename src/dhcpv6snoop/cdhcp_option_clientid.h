@@ -8,6 +8,8 @@
 #ifndef CDHCP_OPTION_CLIENT_ID_H_
 #define CDHCP_OPTION_CLIENT_ID_H_
 
+#include <iomanip>
+
 #include <rofl/common/cmemory.h>
 
 #include "cdhcp_option.h"

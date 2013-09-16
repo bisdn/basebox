@@ -147,8 +147,8 @@ cdhcp_option_clientid::get_s_duid() const
 	std::stringstream s_duid;
 
 	for (unsigned int i = 0; i < duid.memlen(); ++i) {
-		s_duid << (std::hex) << duid[i];
-		if (0 == ((i+1) % 4)) { s_duid << ":"; };
+		s_duid << (std::hex) << std::setfill('0') << std::setw(2) << (int)duid[i];
+		if ((0 == ((i+1) % 2)) && (i < (duid.memlen()-1))) { s_duid << ":"; };
 	}
 
 	return s_duid.str();
