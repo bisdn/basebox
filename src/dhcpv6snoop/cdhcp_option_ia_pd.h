@@ -93,12 +93,12 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cdhcp_option_ia_pd& opt) {
-		os << dynamic_cast<const cdhcp_option&>( opt );
 		os << "<dhcp-option-ia-pd: ";
 			os << "iaid: " << (int)opt.get_iaid() << " ";
 			os << "t1: " << (unsigned int)opt.get_t1() << " ";
 			os << "t2: " << (unsigned int)opt.get_t2() << " ";
 		os << ">";
+		os << dynamic_cast<const cdhcp_option&>( opt );
 		return os;
 	};
 };
