@@ -75,6 +75,7 @@ public:
 	std::string
 	get_s_duid() const;
 
+
 public:
 
 	friend std::ostream&

@@ -16,6 +16,7 @@ extern "C" {
 }
 #endif
 
+#include <map>
 #include <exception>
 #include <iostream>
 
@@ -33,7 +34,35 @@ class eDhcpOptionNotFound 	: public eDhcpOptionBase {};
 class cdhcp_option :
 		public rofl::cmemory
 {
+protected:
+
+	std::map<uint16_t, cdhcp_option*> options;
+
 public:
+
+	enum dhcp_option_type_t {
+		DHCP_OPTION_CLIENTID		= 1,
+		DHCP_OPTION_SERVERID		= 2,
+		DHCP_OPTION_IA_NA			= 3,
+		DHCP_OPTION_IA_TA			= 4,
+		DHCP_OPTION_IAADDR			= 5,
+		DHCP_OPTION_ORO				= 6,
+		DHCP_OPTION_PREFERENCE		= 7,
+		DHCP_OPTION_ELAPSED_TIME	= 8,
+		DHCP_OPTION_RELAY_MSG		= 9,
+		DHCP_OPTION_AUTH			= 11,
+		DHCP_OPTION_UNICAST			= 12,
+		DHCP_OPTION_STATUS_CODE		= 13,
+		DHCP_OPTION_RAPID_COMMIT	= 14,
+		DHCP_OPTION_USER_CLASS		= 15,
+		DHCP_OPTION_VENDOR_CLASS	= 16,
+		DHCP_OPTION_VENDOR_OPTS		= 17,
+		DHCP_OPTION_INTERFACE_ID	= 18,
+		DHCP_OPTION_RECONF_MSG		= 19,
+		DHCP_OPTION_RECONF_ACCEPT	= 20,
+		DHCP_OPTION_IA_PD			= 25,
+		DHCP_OPTION_IA_PREFIX		= 26,
+	};
 
 	struct dhcp_option_hdr_t {
 		uint16_t 	code;
@@ -57,6 +86,8 @@ public:
 
 	cdhcp_option& operator= (const cdhcp_option& opt);
 
+	virtual cdhcp_option* clone();
+
 public:
 
 	virtual void validate();
@@ -79,6 +110,23 @@ public:
 
 	void set_length(uint16_t len);
 
+	cdhcp_option&
+	get_option(uint16_t code);
+
+protected:
+
+	size_t
+	options_length();
+
+	void
+	pack_options(uint8_t *buf, size_t buflen);
+
+	void
+	unpack_options(uint8_t *buf, size_t buflen);
+
+	void
+	purge_options();
+
 public:
 
 	friend std::ostream&
@@ -86,6 +134,11 @@ public:
 		os << "<dhcp-option: ";
 			os << "code: " << opt.get_code() << " ";
 			os << "length: " << opt.get_length() << " ";
+			os << "options: ";
+			for (std::map<uint16_t, cdhcp_option*>::const_iterator
+						it = opt.options.begin(); it != opt.options.end(); ++it) {
+				os << *(it->second) << " ";
+			}
 		os << ">";
 		return os;
 	};

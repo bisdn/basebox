@@ -14,8 +14,7 @@
 #include <rofl/common/caddress.h>
 
 #include "cdhcpmsg.h"
-#include "cdhcp_option.h"
-#include "cdhcp_option_ia_pd.h"
+
 
 namespace dhcpv6snoop
 {
@@ -23,7 +22,6 @@ namespace dhcpv6snoop
 class cdhcpmsg_relay :
 		public cdhcpmsg
 {
-
 	struct dhcpmsg_relay_hdr_t {
 		struct dhcpmsg_hdr_t header;
 		uint8_t hop_count;
@@ -33,8 +31,6 @@ class cdhcpmsg_relay :
 	};
 
 	struct dhcpmsg_relay_hdr_t *hdr;
-
-	std::map<uint16_t, cdhcp_option*> options;
 
 public:
 
@@ -59,6 +55,9 @@ public:
 	virtual void
 	unpack(uint8_t *buf, size_t buflen);
 
+	virtual uint8_t*
+	resize(size_t len);
+
 public:
 
 	uint8_t
@@ -79,40 +78,21 @@ public:
 	void
 	set_peer_address(rofl::caddress const& peer_address);
 
-	cdhcp_option&
-	get_option(uint16_t opt_type);
-
 private:
 
 	virtual void
 	validate();
 
-	size_t
-	options_length();
-
-	void
-	pack_options(uint8_t *buf, size_t buflen);
-
-	void
-	unpack_options(uint8_t *buf, size_t buflen);
-
-	void
-	purge_options();
-
 public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cdhcpmsg_relay& msg) {
-		os << dynamic_cast<const cdhcpmsg&>( msg );
-		os << "<cdhcpmsg_relay: ";
+		os << "<cdhcpmsg-relay: ";
 			os << "hop_count: " << msg.get_hop_count() << " ";
 			os << "link_address: " << msg.get_link_address() << " ";
 			os << "peer_address: " << msg.get_peer_address() << " ";
-			for (std::map<uint16_t, cdhcp_option*>::const_iterator
-					it = msg.options.begin(); it != msg.options.end(); ++it) {
-				os << *(it->second) << " ";
-			}
 		os << ">";
+		os << dynamic_cast<const cdhcpmsg&>( msg );
 		return os;
 	};
 };

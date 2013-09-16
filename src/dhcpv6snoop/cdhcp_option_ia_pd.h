@@ -15,7 +15,6 @@
  */
 
 #include "cdhcp_option.h"
-#include "cdhcp_option_ia_pd_option_prefix.h"
 
 namespace dhcpv6snoop
 {
@@ -40,7 +39,6 @@ public:
 private:
 
 	struct dhcp_option_ia_pd_hdr_t *hdr;
-	std::map<uint16_t, cdhcp_option*> options;
 
 public:
 
@@ -91,23 +89,6 @@ public:
 	void
 	set_t2(uint32_t t2);
 
-	cdhcp_option&
-	get_option(uint16_t code);
-
-private:
-
-	size_t
-	options_length();
-
-	void
-	pack_options(uint8_t *buf, size_t buflen);
-
-	void
-	unpack_options(uint8_t *buf, size_t buflen);
-
-	void
-	purge_options();
-
 public:
 
 	friend std::ostream&
@@ -117,10 +98,6 @@ public:
 			os << "iaid: " << (int)opt.get_iaid() << " ";
 			os << "t1: " << (unsigned int)opt.get_t1() << " ";
 			os << "t2: " << (unsigned int)opt.get_t2() << " ";
-			for (std::map<uint16_t, cdhcp_option*>::const_iterator
-						it = opt.options.begin(); it != opt.options.end(); ++it) {
-					os << *(it->second) << " ";
-				}
 		os << ">";
 		return os;
 	};

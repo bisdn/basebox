@@ -140,6 +140,7 @@ cdhcp_option_clientid::set_duid(rofl::cmemory const& duid)
 
 
 
+
 std::string
 cdhcp_option_clientid::get_s_duid() const
 {
@@ -152,6 +153,7 @@ cdhcp_option_clientid::get_s_duid() const
 
 	return s_duid.str();
 }
+
 
 
 

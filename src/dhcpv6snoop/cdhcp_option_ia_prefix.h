@@ -5,8 +5,8 @@
  *      Author: andreas
  */
 
-#ifndef CDHCP_OPTION_IA_PD_OPTION_PREFIX_H_
-#define CDHCP_OPTION_IA_PD_OPTION_PREFIX_H_
+#ifndef CDHCP_OPTION_IA_PREFIX_H_
+#define CDHCP_OPTION_IA_PREFIX_H_
 
 #include <rofl/common/caddress.h>
 
@@ -15,16 +15,16 @@
 namespace dhcpv6snoop
 {
 
-class cdhcp_option_ia_pd_option_prefix :
+class cdhcp_option_ia_prefix :
 		public cdhcp_option
 {
 public:
 
-	enum cdhcp_option_ia_pd_option_prefix_type {
+	enum cdhcp_option_ia_prefix_type {
 		DHCP_OPTION_IA_PREFIX = 26,
 	};
 
-	struct dhcp_option_ia_pd_option_prefix_hdr_t {
+	struct dhcp_option_ia_prefix_hdr_t {
 		struct dhcp_option_hdr_t header;
 		uint32_t preferred_lifetime;
 		uint32_t valid_lifetime;
@@ -35,19 +35,19 @@ public:
 
 private:
 
-	struct dhcp_option_ia_pd_option_prefix_hdr_t *hdr;
+	struct dhcp_option_ia_prefix_hdr_t *hdr;
 
 public:
 
-	cdhcp_option_ia_pd_option_prefix();
+	cdhcp_option_ia_prefix();
 
-	cdhcp_option_ia_pd_option_prefix(uint8_t *buf, size_t buflen);
+	cdhcp_option_ia_prefix(uint8_t *buf, size_t buflen);
 
-	virtual ~cdhcp_option_ia_pd_option_prefix();
+	virtual ~cdhcp_option_ia_prefix();
 
-	cdhcp_option_ia_pd_option_prefix(const cdhcp_option_ia_pd_option_prefix& opt);
+	cdhcp_option_ia_prefix(const cdhcp_option_ia_prefix& opt);
 
-	cdhcp_option_ia_pd_option_prefix& operator= (const cdhcp_option_ia_pd_option_prefix& opt);
+	cdhcp_option_ia_prefix& operator= (const cdhcp_option_ia_prefix& opt);
 
 public:
 
@@ -90,7 +90,7 @@ public:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const cdhcp_option_ia_pd_option_prefix& opt) {
+	operator<< (std::ostream& os, const cdhcp_option_ia_prefix& opt) {
 		os << dynamic_cast<const cdhcp_option&>( opt );
 		os << "<dhcp-option-ia-pd-option-prefix: ";
 			os << "preferred-lifetime: " << (unsigned int)opt.get_preferred_lifetime() << " ";

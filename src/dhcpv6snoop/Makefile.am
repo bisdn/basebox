@@ -9,12 +9,16 @@ dhcpv6snoop_SOURCES = main.cc \
 		cdhcpv6snoop.cc \
 		cdhcp_option.h \
 		cdhcp_option.cc \
+		cdhcp_option_clientid.h \
+		cdhcp_option_clientid.cc \
 		cdhcp_option_ia_pd.h \
 		cdhcp_option_ia_pd.cc \
-		cdhcp_option_ia_pd_option_prefix.h \
-		cdhcp_option_ia_pd_option_prefix.cc \
+		cdhcp_option_ia_prefix.h \
+		cdhcp_option_ia_prefix.cc \
 		cdhcpmsg.h \
 		cdhcpmsg.cc \
+		cdhcpmsg_clisrv.h \
+		cdhcpmsg_clisrv.cc \
 		cdhcpmsg_relay.h \
 		cdhcpmsg_relay.cc \
 		cppcap.h \
