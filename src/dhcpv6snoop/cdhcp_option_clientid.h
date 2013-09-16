@@ -80,9 +80,20 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cdhcp_option_clientid& opt) {
-		os << "<dhcp-option-client-id: ";
-			os << "duid: " << opt.get_duid().c_str() << " ";
-		os << ">";
+		switch (opt.get_code()) {
+		case cdhcp_option::DHCP_OPTION_CLIENTID: {
+			os << "<dhcp-option-client-id: ";
+				os << "duid: " << opt.get_s_duid() << " ";
+			os << ">";
+
+		} break;
+		case cdhcp_option::DHCP_OPTION_SERVERID: {
+			os << "<dhcp-option-server-id: ";
+				os << "duid: " << opt.get_s_duid() << " ";
+			os << ">";
+
+		} break;
+		}
 		os << dynamic_cast<const cdhcp_option&>( opt );
 		return os;
 	};

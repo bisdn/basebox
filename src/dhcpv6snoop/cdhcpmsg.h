@@ -30,6 +30,8 @@ class eDhcpMsgNotFound	: public eDhcpMsgBase {};
 class cdhcpmsg :
 		public rofl::cmemory
 {
+public:
+
 	enum dhcp_msg_type_t {
 		SOLICIT 			= 1,
 		ADVERTISE			= 2,
@@ -45,6 +47,8 @@ class cdhcpmsg :
 		RELAY_FORW			= 12,
 		RELAY_REPLY			= 13,
 	};
+
+private:
 
 	struct dhcpmsg_hdr_t {
 		uint8_t msg_type;

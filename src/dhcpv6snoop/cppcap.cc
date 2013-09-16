@@ -9,6 +9,7 @@
 
 using namespace rutils;
 
+using namespace dhcpv6snoop;
 
 cppcap::cppcap() :
 		tid(0),
@@ -148,6 +149,28 @@ cppcap::handle_dhcpv6_clisrv_msg(uint8_t *buf, size_t buflen)
 	unsigned int dhcp_offset = /* Ethernet */14 + /*IPv6*/40 + /*UDP*/8;
 	dhcpv6snoop::cdhcpmsg_clisrv msg((uint8_t*)buf + dhcp_offset, buflen - dhcp_offset);
 	std::cerr << msg << std::endl;
+
+
+	// directory structure => ${VARETCDIR}/dhcpv6snoop/clientid/serverid/prefix
+	switch (msg.get_msg_type()) {
+	case dhcpv6snoop::cdhcpmsg::REPLY: {
+		cdhcp_option_clientid clientid = dynamic_cast<cdhcp_option_clientid&>( msg.get_option(cdhcp_option::DHCP_OPTION_CLIENTID) );
+		std::cerr << "CLIENT-ID: " << clientid << std::endl;;
+
+		cdhcp_option_ia_pd iapd = dynamic_cast<cdhcp_option_ia_pd&>( msg.get_option(cdhcp_option::DHCP_OPTION_IA_PD) );
+		std::cerr << "IA PREFIX DELEGATION: " << iapd << std::endl;
+
+		cdhcp_option_ia_prefix iaprefix = dynamic_cast<cdhcp_option_ia_prefix&>( iapd.get_option(cdhcp_option::DHCP_OPTION_IA_PREFIX) );
+		std::cerr << "IA PREFIX: " << iaprefix << std::endl;
+
+		cdhcp_option_serverid serverid = dynamic_cast<cdhcp_option_serverid&>( msg.get_option(cdhcp_option::DHCP_OPTION_SERVERID) );
+		std::cerr << "SERVER-ID: " << serverid << std::endl;;
+
+	} break;
+	default: {
+		// do nothing
+	} break;
+	}
 }
 
 
