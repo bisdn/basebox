@@ -179,11 +179,29 @@ cppcap::handle_dhcpv6_clisrv_msg(uint8_t *buf, size_t buflen)
 		snoopdir.readdir();
 		std::cerr << snoopdir << std::endl;
 
-		cfile& file = snoopdir.get_dir(clientid.get_s_duid(), true).
+		try {
+			cfile& file = snoopdir.get_dir(clientid.get_s_duid(), true).
 									get_dir(serverid.get_s_duid(), true).
-										get_file(iaprefix.get_prefix().addr_c_str(), true);
+									get_file(iaprefix.get_prefix().addr_c_str(), false);
 
-		(void)file;
+			(void)file;
+
+		} catch (eDirNotFound& e) { // file not found
+
+			cfile& file = snoopdir.get_dir(clientid.get_s_duid(), true).
+									get_dir(serverid.get_s_duid(), true).
+									mk_file(iaprefix.get_prefix().addr_c_str());
+
+			std::string blub;
+
+			file.open();
+			file.write(blub);
+			file.write(blub);
+			file.close();
+		}
+
+
+
 
 	} break;
 	default: {

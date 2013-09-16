@@ -208,7 +208,7 @@ cdirectory::get_dir(
 
 
 
-void
+cdirectory&
 cdirectory::mk_dir(
 		std::string const& dirname)
 {
@@ -220,7 +220,10 @@ cdirectory::mk_dir(
 		fprintf(stderr, "syscall mkdir() failed => %d (%s)\n", errno, strerror(errno));
 		throw eDirSyscall();
 	}
+
 	adddir(dirname);
+
+	return get_dir(dirname);
 }
 
 
@@ -250,7 +253,7 @@ cdirectory::get_file(
 
 
 
-void
+cfile&
 cdirectory::mk_file(
 		std::string const& filename)
 {
@@ -267,6 +270,8 @@ cdirectory::mk_file(
 	::close(fd);
 
 	addfile(filename);
+
+	return get_file(filename);
 }
 
 

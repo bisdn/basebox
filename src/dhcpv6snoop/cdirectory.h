@@ -75,7 +75,7 @@ public:
 	get_dir(
 			std::string const& dirname, bool create = false);
 
-	void
+	cdirectory&
 	mk_dir(
 			std::string const& dirname);
 
@@ -87,7 +87,7 @@ public:
 	get_file(
 			std::string const& filename, bool create = false);
 
-	void
+	cfile&
 	mk_file(
 			std::string const& filename);
 

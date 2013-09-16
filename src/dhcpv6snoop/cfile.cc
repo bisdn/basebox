@@ -25,3 +25,26 @@ cfile::~cfile()
 
 
 
+void
+cfile::open()
+{
+
+}
+
+
+
+void
+cfile::close()
+{
+
+}
+
+
+
+void
+cfile::write(std::string const& line)
+{
+
+}
+
+

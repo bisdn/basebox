@@ -27,6 +27,14 @@ public:
 	virtual
 	~cfile();
 
+	void
+	open();
+
+	void
+	close();
+
+	void
+	write(std::string const& line);
 
 public:
 
