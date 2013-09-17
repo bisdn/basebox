@@ -149,60 +149,68 @@ cppcap::handle_dhcpv6_relay_msg(uint8_t *buf, size_t buflen)
 void
 cppcap::handle_dhcpv6_clisrv_msg(uint8_t *buf, size_t buflen)
 {
-	unsigned int ipv6_offset = /* Ethernet */14;
-	rofl::fipv6frame ipv6((uint8_t*)buf + ipv6_offset, buflen - ipv6_offset);
-	std::cerr << ipv6 << std::endl;
+	try {
+
+		unsigned int ipv6_offset = /* Ethernet */14;
+		rofl::fipv6frame ipv6((uint8_t*)buf + ipv6_offset, buflen - ipv6_offset);
+		std::cerr << ipv6 << std::endl;
 
 
-	unsigned int dhcp_offset = /* Ethernet */14 + /*IPv6*/40 + /*UDP*/8;
-	dhcpv6snoop::cdhcpmsg_clisrv msg((uint8_t*)buf + dhcp_offset, buflen - dhcp_offset);
-	std::cerr << msg << std::endl;
+		unsigned int dhcp_offset = /* Ethernet */14 + /*IPv6*/40 + /*UDP*/8;
+		dhcpv6snoop::cdhcpmsg_clisrv msg((uint8_t*)buf + dhcp_offset, buflen - dhcp_offset);
+		std::cerr << msg << std::endl;
 
 
-	// directory structure => /var/lib/dhcpv6snoop/clientid/serverid/prefix
-	switch (msg.get_msg_type()) {
-	case dhcpv6snoop::cdhcpmsg::REPLY: {
+		// directory structure => /var/lib/dhcpv6snoop/clientid/serverid/prefix
+		switch (msg.get_msg_type()) {
 
-		cdhcp_option_clientid& clientid = dynamic_cast<cdhcp_option_clientid&>( msg.get_option(cdhcp_option::DHCP_OPTION_CLIENTID) );
-		std::cerr << "CLIENT-ID: " << clientid << std::endl;;
+		case dhcpv6snoop::cdhcpmsg::REPLY: {
 
-		cdhcp_option_ia_pd& iapd = dynamic_cast<cdhcp_option_ia_pd&>( msg.get_option(cdhcp_option::DHCP_OPTION_IA_PD) );
-		std::cerr << "IA PREFIX DELEGATION: " << iapd << std::endl;
+			cdhcp_option_clientid& clientid = dynamic_cast<cdhcp_option_clientid&>( msg.get_option(cdhcp_option::DHCP_OPTION_CLIENTID) );
+			std::cerr << "CLIENT-ID: " << clientid << std::endl;;
 
-		cdhcp_option_ia_prefix& iaprefix = dynamic_cast<cdhcp_option_ia_prefix&>( iapd.get_option(cdhcp_option::DHCP_OPTION_IA_PREFIX) );
-		std::cerr << "IA PREFIX: " << iaprefix << std::endl;
+			cdhcp_option_ia_pd& iapd = dynamic_cast<cdhcp_option_ia_pd&>( msg.get_option(cdhcp_option::DHCP_OPTION_IA_PD) );
+			std::cerr << "IA PREFIX DELEGATION: " << iapd << std::endl;
 
-		cdhcp_option_serverid& serverid = dynamic_cast<cdhcp_option_serverid&>( msg.get_option(cdhcp_option::DHCP_OPTION_SERVERID) );
-		std::cerr << "SERVER-ID: " << serverid << std::endl;;
+			cdhcp_option_ia_prefix& iaprefix = dynamic_cast<cdhcp_option_ia_prefix&>( iapd.get_option(cdhcp_option::DHCP_OPTION_IA_PREFIX) );
+			std::cerr << "IA PREFIX: " << iaprefix << std::endl;
 
-		cdhclient* dhclient = (cdhclient*)0;
+			cdhcp_option_serverid& serverid = dynamic_cast<cdhcp_option_serverid&>( msg.get_option(cdhcp_option::DHCP_OPTION_SERVERID) );
+			std::cerr << "SERVER-ID: " << serverid << std::endl;;
 
-		if (dhclients.find(clientid.get_s_duid()) == dhclients.end()) {
-			dhclient = dhclients[clientid.get_s_duid()] = new cdhclient(clientid.get_s_duid());
-		} else {
-			dhclient = dhclients[clientid.get_s_duid()];
+			cdhclient* dhclient = (cdhclient*)0;
+
+			if (dhclients.find(clientid.get_s_duid()) == dhclients.end()) {
+				dhclient = dhclients[clientid.get_s_duid()] = new cdhclient(clientid.get_s_duid());
+			} else {
+				dhclient = dhclients[clientid.get_s_duid()];
+			}
+
+			dhclient->prefix_add(cprefix(devname, serverid.get_s_duid(), iaprefix.get_prefix(), iaprefix.get_prefixlen(), ipv6.get_ipv6_dst()));
+
+		} break;
+
+		case dhcpv6snoop::cdhcpmsg::RELEASE: {
+
+			cdhcp_option_clientid& clientid = dynamic_cast<cdhcp_option_clientid&>( msg.get_option(cdhcp_option::DHCP_OPTION_CLIENTID) );
+			std::cerr << "CLIENT-ID: " << clientid << std::endl;;
+
+			cdhcp_option_serverid& serverid = dynamic_cast<cdhcp_option_serverid&>( msg.get_option(cdhcp_option::DHCP_OPTION_SERVERID) );
+			std::cerr << "SERVER-ID: " << serverid << std::endl;;
+
+			if (dhclients.find(clientid.get_s_duid()) != dhclients.end()) {
+				dhclients[clientid.get_s_duid()]->prefix_del(serverid.get_s_duid());
+			}
+
+		} break;
+
+		default: {
+			// do nothing
+		} break;
 		}
 
-		dhclient->prefix_add(cprefix(devname, serverid.get_s_duid(), iaprefix.get_prefix(), iaprefix.get_prefixlen(), ipv6.get_ipv6_dst()));
-
-	} break;
-	case dhcpv6snoop::cdhcpmsg::RELEASE: {
-
-
-		cdhcp_option_clientid& clientid = dynamic_cast<cdhcp_option_clientid&>( msg.get_option(cdhcp_option::DHCP_OPTION_CLIENTID) );
-		std::cerr << "CLIENT-ID: " << clientid << std::endl;;
-
-		cdhcp_option_serverid& serverid = dynamic_cast<cdhcp_option_serverid&>( msg.get_option(cdhcp_option::DHCP_OPTION_SERVERID) );
-		std::cerr << "SERVER-ID: " << serverid << std::endl;;
-
-		if (dhclients.find(clientid.get_s_duid()) != dhclients.end()) {
-			dhclients[clientid.get_s_duid()]->prefix_del(serverid.get_s_duid());
-		}
-
-	} break;
-	default: {
-		// do nothing
-	} break;
+	} catch (eDhcpMsgNotFound& e) {
+		std::cerr << "exception: eDhcpMsgNotFound " << std::endl;
 	}
 }
 
