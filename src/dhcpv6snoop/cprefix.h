@@ -45,7 +45,6 @@ public:
 			unsigned int preflen,
 			rofl::caddress const& via);
 
-
 	bool
 	operator< (cprefix const& rt);
 
@@ -80,7 +79,13 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, cprefix const& rt) {
-
+		os << "<cprefix: ";
+			os << "devname: " << rt.devname << " ";
+			os << "serverid: " << rt.serverid << " ";
+			os << "pref: " << rt.pref << " ";
+			os << "preflen: " << rt.preflen << " ";
+			os << "via: " << rt.via << " ";
+		os << " >";
 		return os;
 	};
 
