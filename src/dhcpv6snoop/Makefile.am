@@ -26,7 +26,11 @@ dhcpv6snoop_SOURCES = main.cc \
 		cdirectory.h \
 		cdirectory.cc \
 		cfile.h \
-		cfile.cc
+		cfile.cc \
+		cdhclient.h \
+		cdhclient.cc \
+		cprefix.h \
+		cprefix.cc
 		
 dhcpv6snoop_LDADD = -lpthread \
 	-lrofl \

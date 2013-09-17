@@ -159,10 +159,9 @@ cppcap::handle_dhcpv6_clisrv_msg(uint8_t *buf, size_t buflen)
 	std::cerr << msg << std::endl;
 
 
-	// directory structure => ${VARETCDIR}/dhcpv6snoop/clientid/serverid/prefix
+	// directory structure => /var/lib/dhcpv6snoop/clientid/serverid/prefix
 	switch (msg.get_msg_type()) {
 	case dhcpv6snoop::cdhcpmsg::REPLY: {
-		cdirectory& snoopdir = *dir;
 
 		cdhcp_option_clientid& clientid = dynamic_cast<cdhcp_option_clientid&>( msg.get_option(cdhcp_option::DHCP_OPTION_CLIENTID) );
 		std::cerr << "CLIENT-ID: " << clientid << std::endl;;
@@ -176,32 +175,29 @@ cppcap::handle_dhcpv6_clisrv_msg(uint8_t *buf, size_t buflen)
 		cdhcp_option_serverid& serverid = dynamic_cast<cdhcp_option_serverid&>( msg.get_option(cdhcp_option::DHCP_OPTION_SERVERID) );
 		std::cerr << "SERVER-ID: " << serverid << std::endl;;
 
-		snoopdir.readdir();
-		std::cerr << snoopdir << std::endl;
+		cdhclient* dhclient = (cdhclient*)0;
 
-		try {
-			cfile& file = snoopdir.get_dir(clientid.get_s_duid(), true).
-									get_dir(serverid.get_s_duid(), true).
-									get_file(iaprefix.get_prefix().addr_c_str(), false);
-
-			(void)file;
-
-		} catch (eDirNotFound& e) { // file not found
-
-			cfile& file = snoopdir.get_dir(clientid.get_s_duid(), true).
-									get_dir(serverid.get_s_duid(), true).
-									mk_file(iaprefix.get_prefix().addr_c_str());
-
-			std::string blub;
-
-			file.open();
-			file.write(blub);
-			file.write(blub);
-			file.close();
+		if (dhclients.find(clientid.get_s_duid()) == dhclients.end()) {
+			dhclient = dhclients[clientid.get_s_duid()] = new cdhclient(clientid.get_s_duid());
+		} else {
+			dhclient = dhclients[clientid.get_s_duid()];
 		}
 
+		dhclient->prefix_add(cprefix(devname, serverid.get_s_duid(), iaprefix.get_prefix(), iaprefix.get_prefixlen(), ipv6.get_ipv6_dst()));
+
+	} break;
+	case dhcpv6snoop::cdhcpmsg::RELEASE: {
 
 
+		cdhcp_option_clientid& clientid = dynamic_cast<cdhcp_option_clientid&>( msg.get_option(cdhcp_option::DHCP_OPTION_CLIENTID) );
+		std::cerr << "CLIENT-ID: " << clientid << std::endl;;
+
+		cdhcp_option_serverid& serverid = dynamic_cast<cdhcp_option_serverid&>( msg.get_option(cdhcp_option::DHCP_OPTION_SERVERID) );
+		std::cerr << "SERVER-ID: " << serverid << std::endl;;
+
+		if (dhclients.find(clientid.get_s_duid()) != dhclients.end()) {
+			dhclients[clientid.get_s_duid()]->prefix_del(serverid.get_s_duid());
+		}
 
 	} break;
 	default: {

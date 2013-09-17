@@ -18,6 +18,7 @@ extern "C" {
 }
 #endif
 
+#include <map>
 #include <string>
 #include <exception>
 
@@ -25,6 +26,8 @@ extern "C" {
 #include <rofl/common/protocols/fipv6frame.h>
 
 #include "cdirectory.h"
+#include "cdhclient.h"
+#include "cprefix.h"
 #include "cdhcpmsg.h"
 #include "cdhcpmsg_clisrv.h"
 #include "cdhcpmsg_relay.h"
@@ -47,6 +50,8 @@ class cppcap
 
 #define DEFAULT_DHCP_STATE_DIR "/var/lib/dhcpv6snoop"
 	cdirectory			*dir;
+
+	std::map<std::string, dhcpv6snoop::cdhclient*>	dhclients;
 
 public:
 
