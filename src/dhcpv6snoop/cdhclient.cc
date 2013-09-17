@@ -55,7 +55,7 @@ void
 cdhclient::prefix_add(
 		cprefix const& prefix)
 {
-
+	std::cerr << "cdhclient::prefix_add() [1] " << *this << std::endl;
 	if (find_if(prefixes.begin(), prefixes.end(),
 			cprefix::cprefix_find_by_pref_and_preflen(prefix.get_pref(), prefix.get_pref_len()))
 					!= prefixes.end()) {
@@ -64,6 +64,7 @@ cdhclient::prefix_add(
 	cprefix *p = new cprefix(prefix);
 	prefixes.insert(p);
 	p->route_add();
+	std::cerr << "cdhclient::prefix_add() [2] " << *this << std::endl;
 }
 
 
@@ -72,6 +73,7 @@ void
 cdhclient::prefix_del(
 		std::string const& serverid)
 {
+    std::cerr << "cdhclient::prefix_del() [1] " << *this << std::endl;
 	std::set<cprefix*>::iterator it;
 	while ((it = find_if(prefixes.begin(), prefixes.end(),
 					cprefix::cprefix_find_by_serverid(serverid)))
@@ -80,6 +82,7 @@ cdhclient::prefix_del(
 		p->route_del();
 		prefixes.erase(it);
 	}
+	std::cerr << "cdhclient::prefix_del() [2] " << *this << std::endl;
 }
 
 
