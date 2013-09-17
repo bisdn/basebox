@@ -8,16 +8,46 @@
 #ifndef CPREFIX_H_
 #define CPREFIX_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <stdio.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#ifdef __cplusplus
+}
+#endif
+
 #include <string>
+#include <vector>
+#include <string>
+#include <ostream>
 #include <iostream>
 
 #include <rofl/common/caddress.h>
+
 
 namespace dhcpv6snoop
 {
 
 class cprefix
 {
+#define DEFAULT_UP_SCRIPT_PATH "/var/lib/dhcpv6snoop/prefix-up.sh"
+#define DEFAULT_DOWN_SCRIPT_PATH "/var/lib/dhcpv6snoop/prefix-down.sh"
+
+	static std::string	prefix_up_script_path;
+	static std::string	prefix_down_script_path;
+
+	static void
+	execute(
+			std::string const& executable,
+			std::vector<std::string> argv,
+			std::vector<std::string> envp);
+
+
+private:
+
 	std::string			devname;
 	std::string 		serverid;
 	rofl::caddress		pref;
