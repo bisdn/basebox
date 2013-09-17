@@ -2,6 +2,11 @@
 
 using namespace dptmap;
 
+std::string	vmcore::dpath_open_script_path(DEFAULT_DPATH_OPEN_SCRIPT_PATH);
+std::string	vmcore::dpath_close_script_path(DEFAULT_DPATH_CLOSE_SCRIPT_PATH);
+
+
+
 vmcore::vmcore() :
 		dpt(0)
 {
@@ -156,6 +161,8 @@ vmcore::handle_dpath_open(
 
 		send_flow_mod_message(dpt, fed);
 
+		run_dpath_open_script();
+
 	} catch (eNetDevCritical& e) {
 
 		fprintf(stderr, "vmcore::handle_dpath_open() unable to create tap device\n");
@@ -170,6 +177,8 @@ void
 vmcore::handle_dpath_close(
 		rofl::cofdpt *dpt)
 {
+	run_dpath_close_script();
+
 	delete_all_routes();
 
 	delete_all_ports();
@@ -346,6 +355,77 @@ vmcore::unblock_stp_frames()
 	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
 
 	send_flow_mod_message(dpt, fe);
+}
+
+
+
+void
+vmcore::run_dpath_open_script()
+{
+	std::vector<std::string> argv;
+	std::vector<std::string> envp;
+
+	std::stringstream s_dpid;
+	s_dpid << "DPID=" << dpt->get_dpid();
+	envp.push_back(s_dpid.str());
+
+	vmcore::execute(vmcore::dpath_open_script_path, argv, envp);
+}
+
+
+
+void
+vmcore::run_dpath_close_script()
+{
+	std::vector<std::string> argv;
+	std::vector<std::string> envp;
+
+	std::stringstream s_dpid;
+	s_dpid << "DPID=" << dpt->get_dpid();
+	envp.push_back(s_dpid.str());
+
+	vmcore::execute(vmcore::dpath_close_script_path, argv, envp);
+}
+
+
+
+void
+vmcore::execute(
+		std::string const& executable,
+		std::vector<std::string> argv,
+		std::vector<std::string> envp)
+{
+	pid_t pid = 0;
+
+	if ((pid = fork()) < 0) {
+		fprintf(stderr, "syscall error fork(): %d (%s)\n", errno, strerror(errno));
+		return;
+	}
+
+	if (pid > 0) { // father process
+		return;
+	}
+
+
+	// child process
+
+	std::vector<const char*> vctargv;
+	for (std::vector<std::string>::iterator
+			it = argv.begin(); it != argv.end(); ++it) {
+		vctargv.push_back((*it).c_str());
+	}
+	vctargv.push_back(NULL);
+
+
+	std::vector<const char*> vctenvp;
+	for (std::vector<std::string>::iterator
+			it = envp.begin(); it != envp.end(); ++it) {
+		vctenvp.push_back((*it).c_str());
+	}
+	vctenvp.push_back(NULL);
+
+
+	execvpe(executable.c_str(), (char*const*)&vctargv[0], (char*const*)&vctenvp[0]);
 }
 
 

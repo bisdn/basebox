@@ -8,7 +8,19 @@
 #ifndef VMCORE_H_
 #define VMCORE_H_ 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <stdio.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#ifdef __cplusplus
+}
+#endif
+
 #include <map>
+#include <vector>
 #include <exception>
 
 //#include "cnetlink.h"
@@ -30,6 +42,17 @@ class vmcore :
 		public rofl::crofbase,
 		public cnetlink_subscriber
 {
+	#define DEFAULT_DPATH_OPEN_SCRIPT_PATH "/var/lib/vmcore/dpath-open.sh"
+	#define DEFAULT_DPATH_CLOSE_SCRIPT_PATH "/var/lib/vmcore/dpath-close.sh"
+
+	static std::string	dpath_open_script_path;
+	static std::string	dpath_close_script_path;
+
+	static void
+	execute(
+			std::string const& executable,
+			std::vector<std::string> argv,
+			std::vector<std::string> envp);
 private:
 
 
@@ -107,6 +130,12 @@ private:
 
 	void
 	unblock_stp_frames();
+
+	void
+	run_dpath_open_script();
+
+	void
+	run_dpath_close_script();
 };
 
 }; // end of namespace vmcore
