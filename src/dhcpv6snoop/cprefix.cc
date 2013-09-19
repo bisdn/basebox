@@ -180,6 +180,8 @@ cprefix::execute(
 
 
 	execvpe(executable.c_str(), (char*const*)&vctargv[0], (char*const*)&vctenvp[0]);
+
+	exit(1); // just in case execvpe fails
 }
 
 
