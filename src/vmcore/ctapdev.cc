@@ -165,7 +165,7 @@ ctapdev::handle_revent(int fd)
 		} else {
 			pkt = cpacketpool::get_instance().acquire_pkt();
 
-			pkt->unpack(OFPP_CONTROLLER, mem.somem(), rc);
+			pkt->unpack(/*ignore port_no*/0, mem.somem(), rc);
 
 			netdev_owner->enqueue(this, pkt);
 		}

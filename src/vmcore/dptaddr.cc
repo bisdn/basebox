@@ -91,8 +91,16 @@ dptaddr::flow_mod_add()
 		fe.set_priority(0xfffe);
 		fe.set_table_id(0);			// FIXME: check for first table-id in data path
 
-		fe.instructions.next() = rofl::cofinst_apply_actions();
-		fe.instructions.back().actions.next() = rofl::cofaction_output(OFPP_CONTROLLER, 1518); // FIXME: check the mtu value
+		fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
+
+		uint32_t port_no = 0;
+		switch (dpt->get_version()) {
+		case OFP10_VERSION: port_no = OFPP10_CONTROLLER; break;
+		case OFP12_VERSION: port_no = OFPP12_CONTROLLER; break;
+		case OFP13_VERSION: port_no = OFPP13_CONTROLLER; break;
+		}
+
+		fe.instructions.back().actions.next() = rofl::cofaction_output(port_no, 1518); // FIXME: check the mtu value
 
 		switch (rta.get_family()) {
 		case AF_INET:  { fe.match.set_ipv4_dst(rta.get_local_addr()); } break;

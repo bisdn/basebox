@@ -120,10 +120,10 @@ dptnexthop::flow_mod_add()
 		rofl::cmacaddr eth_src(cnetlink::get_instance().get_link(ifindex).get_hwaddr());
 		rofl::cmacaddr eth_dst(cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex).get_lladdr());
 
-		fe.instructions.next() = rofl::cofinst_apply_actions();
-		fe.instructions.back().actions.next() = rofl::cofaction_set_field(rofl::coxmatch_ofb_eth_src(eth_src));
-		fe.instructions.back().actions.next() = rofl::cofaction_set_field(rofl::coxmatch_ofb_eth_dst(eth_dst));
-		fe.instructions.back().actions.next() = rofl::cofaction_output(of_port_no);
+		fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
+		fe.instructions.back().actions.next() = rofl::cofaction_set_field(dpt->get_version(), rofl::coxmatch_ofb_eth_src(eth_src));
+		fe.instructions.back().actions.next() = rofl::cofaction_set_field(dpt->get_version(), rofl::coxmatch_ofb_eth_dst(eth_dst));
+		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), of_port_no);
 
 		rofbase->send_flow_mod_message(dpt, fe);
 

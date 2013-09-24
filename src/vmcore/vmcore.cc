@@ -157,7 +157,7 @@ vmcore::handle_dpath_open(
 		fed.set_idle_timeout(0);
 		fed.set_hard_timeout(0);
 		fed.set_priority(0); // lowest priority
-		fed.instructions.next() = rofl::cofinst_goto_table(1);
+		fed.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), 1);
 
 		send_flow_mod_message(dpt, fed);
 
