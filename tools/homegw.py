@@ -156,7 +156,6 @@ class HomeGateway(object):
             if link.ifindex == ndmsg['index']:
                 try:
                     link.add_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
-                    print str(link)
                 except:
                     pass
         # check all LAN interfaces
@@ -164,7 +163,6 @@ class HomeGateway(object):
             if link.ifindex == ndmsg['index']:
                 try:
                     link.add_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
-                    print str(link)
                 except:
                     pass
 
@@ -184,7 +182,6 @@ class HomeGateway(object):
             if link.ifindex == ndmsg['index']:
                 try:
                     link.del_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
-                    print str(link)
                 except:
                     pass
         # check all LAN interfaces
@@ -192,7 +189,6 @@ class HomeGateway(object):
             if link.ifindex == ndmsg['index']:
                 try:
                     link.del_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
-                    print str(link)
                 except:
                     pass
 
@@ -225,19 +221,24 @@ class Link(object):
             if not addr in self.addresses:
                 self.addresses[addr] = { 'prefixlen': prefixlen }
                 self.attached = RA_ATTACHED
+                print str(self)
         else:
             if not addr in self.linklocal:
                 self.linklocal[addr] = { 'prefixlen': prefixlen }
+                print str(self)
 
     def del_addr(self, addr, prefixlen):
         if not re.match('fe80', addr):
             if addr in self.addresses:
-                self.addresses.remove(addr)
+                del self.addresses[addr]
+                print str(self)
             if not self.addresses:
                 self.attached = RA_DETACHED
+                print str(self)
         else:        
             if addr in self.linklocal:
-                self.linklocal.remove(addr)
+                self.linklocal[addr]
+                print str(self)
         
         
         
@@ -259,6 +260,16 @@ class RouterLanLink(Link):
 
     def __str__(self):
         return 'RouterLanLink('+super(RouterLanLink, self).__str__()+')' 
+
+
+
+class Dhclient(object):
+    """class controls a single dhclient instance"""
+    def __init__(self):
+        pass
+    
+    
+
 
 
 
