@@ -44,13 +44,11 @@ class Link(object):
         else:
             if not addr in self.linklocal:
                 self.linklocal[addr] = { 'prefixlen': prefixlen }
-                print str(self)
 
     def del_addr(self, addr, prefixlen):
         if not re.match('fe80', addr):
             if addr in self.addresses:
                 del self.addresses[addr]
-                print str(self)
             if not self.addresses:
                 if self.state != STATE_RA_DETACHED:
                     self.state = STATE_RA_DETACHED
@@ -58,7 +56,6 @@ class Link(object):
         else:        
             if addr in self.linklocal:
                 self.linklocal[addr]
-                print str(self)
                 
     def is_RA_attached(self):
         if self.state == STATE_RA_ATTACHED:
@@ -76,7 +73,6 @@ class RouterWanLink(Link):
     def __init__(self, parent, devname, ifindex, state=STATE_RA_DETACHED):
         super(RouterWanLink, self).__init__(parent, devname, ifindex, state)
         self.dhclient = dhcpclient.DhcpClient(parent, devname)
-        print str(self)
 
     def __str__(self):
         return '<RouterWanLink ' + super(RouterWanLink, self).__str__() + ' ' + str(self.dhclient) + ' >' 

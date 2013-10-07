@@ -192,7 +192,7 @@ class HomeGateway(object):
             print "not of type Link, ignoring"
             return
         s = "/sbin/ip -6 addr add " + address + "/" + str(prefixlen) + " dev " + link.devname
-        print s.split()
+        print 'adding address: ' + s
         subprocess.call(s.split())
 
     def del_address(self, link, address, prefixlen):
@@ -200,7 +200,7 @@ class HomeGateway(object):
             print "not of type Link, ignoring"
             return
         s = "/sbin/ip -6 addr del " + address + "/" + str(prefixlen) + " dev " + link.devname
-        print s.split()
+        print 'deleting address: ' + s
         subprocess.call(s.split())
 
     def __handle_event_iproute(self, ndmsg):
@@ -238,6 +238,7 @@ class HomeGateway(object):
                     link.add_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
                 except:
                     pass
+                print str(link)
         # check all LAN interfaces
         for link in self.lanLinks:
             if link.ifindex == ndmsg['index']:
@@ -245,6 +246,7 @@ class HomeGateway(object):
                     link.add_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
                 except:
                     pass
+                print str(link)
 
 
     def __handle_del_route(self, ndmsg):
@@ -264,6 +266,7 @@ class HomeGateway(object):
                     link.del_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
                 except:
                     pass
+                print str(link)
         # check all LAN interfaces
         for link in self.lanLinks:
             if link.ifindex == ndmsg['index']:
@@ -271,40 +274,43 @@ class HomeGateway(object):
                     link.del_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
                 except:
                     pass
+                print str(link)
 
 
     def __handle_event_ra_attached(self, link):
-        print "event RA-ATTACHED: " + str(link)
+        print "[S] event RA-ATTACHED: " + str(link)
         if isinstance(link, routerlink.RouterWanLink):
             link.dhcpGetPrefix()
         if isinstance(link, routerlink.RouterLanLink):
             link.startRAs()
+        print "[E] event RA-ATTACHED: " + str(link)
         
 
     def __handle_event_ra_detached(self, link):
-        print "event RA-DETACHED: " + str(link)
+        print "[S] event RA-DETACHED: " + str(link)
         if not isinstance(link, routerlink.Link):
             return
         if isinstance(link, routerlink.RouterLanLink):
             link.stopRAs()
+        print "[E] event RA-DETACHED: " + str(link)
         
 
     def __handle_event_prefix_attached(self, dhclient):
-        print "event PREFIX-ATTACHED"
+        print "[S] event PREFIX-ATTACHED"
         for lanLink in self.lanLinks:
             lanLink.radvd.add_prefix(radvd.IPv6Prefix(dhclient.new_prefix, 64))
             self.add_address(lanLink, dhclient.new_prefix+'1', 64)
-
+        print "[E] event PREFIX-ATTACHED"
     
     
     def __handle_event_prefix_detached(self, dhclient):
-        print "event PREFIX-DETACHED"
+        print "[S] event PREFIX-DETACHED"
         for lanLink in self.lanLinks:
             if lanLink.devname != dhclient.devname:
                 continue
             self.del_address(lanLink, dhclient.new_prefix+'1', 64)
             break
-
+        print "[E] event PREFIX-DETACHED"
 
 
 

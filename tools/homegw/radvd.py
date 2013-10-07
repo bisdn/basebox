@@ -28,7 +28,7 @@ class RAdvd(object):
         self.process = None
         self.conffiledir = conffiledir
         self.conffile = self.conffiledir + '/radvd.' + self.devname + '.conf'
-        self.pidfile = self.conffiledir + '/radvd.' + self.devname + '.pid'
+        self.pidfile = '/var/run/radvd/radvd.' + self.devname + '.pid'
     
     def __str__(self, *args, **kwargs):
         return '<RAdvd [' + self.devname + '] ' + '[state: ' + str(self.state) + '] ' + object.__str__(self, *args, **kwargs) + ' >'
@@ -51,17 +51,16 @@ class RAdvd(object):
             self.stop()
         self.state = self.STATE_ANNOUNCING
         self.__rebuild_config()
-        print "starting RAs on " + self.devname
         radvd_cmd = self.radvd_binary + ' -C ' + self.conffile + ' -p ' + self.pidfile
-        print radvd_cmd.split() 
+        print 'radvd start: executing command => ' + str(radvd_cmd)
         self.process = subprocess.Popen(radvd_cmd.split())
     
     def stop(self):
         self.state = self.STATE_STOPPED
         if self.process == None:
             return
-        print "stopping RAs on " + self.devname
         kill_cmd = 'kill -INT ' + str(self.process.pid)
+        print 'radvd stop: executing command => ' + str(kill_cmd)
         subprocess.call(kill_cmd.split())
         self.process = None
 
