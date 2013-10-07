@@ -3,6 +3,7 @@
 #from homegw import HomeGatewayEvent
 import homegw
 import dhcpclient
+import radvd
 import subprocess
 import select
 import sys
@@ -93,12 +94,17 @@ class RouterLanLink(Link):
     """abstraction for a downlink on the HG's router component"""
     def __init__(self, parent, devname, ifindex, state=STATE_RA_DETACHED):
         super(RouterLanLink, self).__init__(parent, devname, ifindex, state)
+        self.radvd = radvd.RAdvd(parent, devname)
         print str(self)
 
     def __str__(self):
-        return '<RouterLanLink ' + super(RouterLanLink, self).__str__() + ' >' 
+        return '<RouterLanLink ' + super(RouterLanLink, self).__str__() + ' ' + str(self.radvd) + ' >' 
     
+    def startRAs(self):
+        self.radvd.start()
 
+    def stopRAs(self):
+        self.radvd.stop()
 
 
 

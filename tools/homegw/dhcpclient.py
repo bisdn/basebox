@@ -46,10 +46,6 @@ class DhcpClient(object):
             self.new_prefixlen = new_prefix.split('=')[1].split('/')[1]
             self.new_prefix = new_prefix.split('=')[1].split('/')[0]
             
-            print self.reason
-            print self.new_prefix
-            print self.new_prefixlen
-            
             if self.reason == 'BOUND6':
                 self.state = self.STATE_PREFIX_ATTACHED
                 self.parent.add_event(homegw.HomeGatewayEvent(self, homegw.EVENT_PREFIX_ATTACHED, self))
@@ -81,7 +77,7 @@ class DhcpClient(object):
         """destroy any running dhclient process associated with this object"""
         f = open(self.pidfile)
         kill_cmd = 'kill -INT ' + f.readline()
-        print "kill-cmd: " + kill_cmd
+        #print "kill-cmd: " + kill_cmd
         subprocess.call(kill_cmd.split())
         #if os.path.exists(self.pidfile):
         #    os.unlink(self.pidfile)
