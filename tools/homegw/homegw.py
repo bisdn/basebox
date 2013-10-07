@@ -9,15 +9,37 @@ import select
 import sys
 import os
 import re
+import routerlink
 
-CB_IPR = 'CB_IPR'
-RA_DETACHED = 0
-RA_ATTACHED = 1
+EVENT_QUIT = 0
+EVENT_IPROUTE = 1
+EVENT_RA_ATTACHED = 2
+EVENT_RA_DETACHED = 3
+EVENT_PREFIX_ATTACHED = 4
+EVENT_PREFIX_DETACHED = 5
+#CB_IPR = 'CB_IPR'
+#CB_EVENT = 'CB_EVENT'
 
 
-def ipr_callback(msg, obj):
-    #print msg['event']
-    obj.notify(CB_IPR, msg)
+
+
+class HomeGatewayEvent(object):
+    """Base class for all events generated within class HomeGateway"""
+    def __init__(self, source, type, opaque=''):
+        self.source = source
+        self.type = type
+        self.opaque = opaque
+        #print self
+    
+    def __str__(self, *args, **kwargs):
+        return '<HomeGatewayEvent [type:' + str(self.type) + '] ' + object.__str__(self, *args, **kwargs) + ' >'
+
+
+def ipr_callback(ndmsg, homeGateway):
+    if not isinstance(homeGateway, HomeGateway):
+        print "invalid type"
+        return
+    homeGateway.add_event(HomeGatewayEvent("", EVENT_IPROUTE, ndmsg))
 
 
 class HomeGateway(object):
@@ -26,26 +48,31 @@ class HomeGateway(object):
     STATE_CONNECTED = "CONNECTED"
 
     
-    def __init__(self, ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['ge1', 'veth2']}):
-        self.cb_msg_queue = { CB_IPR: [] }
+    def __init__(self, ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['veth2']}):
+       # self.cb_msg_queue = { CB_IPR: [] }
         self.ipr = IPRoute() 
         self.ipr.register_callback(ipr_callback, lambda x: True, [self, ])
         (self.pipein, self.pipeout) = os.pipe()
         self.state = self.STATE_DISCONNECTED
         self.wanLinks = []
         self.lanLinks = []
+        self.events = []
         
         for ifname in ifaces['wan']:
             try:
                 i = self.ipr.link_lookup(ifname=ifname)[0]
-                self.wanLinks.append(RouterWanLink(ifname, i, "down", RA_DETACHED))
+                self.wanLinks.append(routerlink.RouterWanLink(self, ifname, i))
             except:
                 print "<error> WAN interface " + ifname + " not found"
+
+        if len(ifaces['lan']) != 1:
+            print "invalid number of LAN interfaces, must be 1"
+            assert(False)
 
         for ifname in ifaces['lan']:
             try:
                 i = self.ipr.link_lookup(ifname=ifname)[0]
-                self.lanLinks.append(RouterLanLink(ifname, i, "down", RA_DETACHED))
+                self.lanLinks.append(routerlink.RouterLanLink(self, ifname, i))
             except:
                 print "<error> LAN interface " + ifname + " not found"
 
@@ -70,60 +97,94 @@ class HomeGateway(object):
 
         self.set_interfaces(self.lanLinks, "up")        
                      
-            
-    def notify(self, cb_type, msg):
-        if cb_type == CB_IPR:
-            self.cb_msg_queue[CB_IPR].append(msg)
-        os.write(self.pipeout, cb_type)
+
+    def __cleanup(self):
+        print "HomeGateway()::destructor"
+        
+        # release addresses
+        for wanLink in self.wanLinks:
+            wanLink.dhcpReleasePrefix()
+        
+        # disable all WAN interfaces
+        self.set_interfaces(self.wanLinks, "down")
+        # disable all LAN interfaces
+        self.set_interfaces(self.lanLinks, "down")
+
+        # flush all addresses on WAN interfaces
+        self.flush_addresses(self.wanLinks)
+        # flush all addresses on LAN interfaces
+        self.flush_addresses(self.lanLinks)                        
     
-    
+
+    def add_event(self, event):
+        #if not isinstance(event, HomeGatewayEvent):
+        #    print "trying to add non-event, ignoring"
+        #    print str(event)
+        #    return
+        self.events.append(event)
+        os.write(self.pipeout, str(event.type))
+
     
     def run(self):
         self.ep = select.epoll()
         self.ep.register(self.pipein, select.EPOLLET | select.EPOLLIN)
         
+        
         while True:
-            if self.state == self.STATE_DISCONNECTED:
-                pass
-            elif self.state == self.STATE_CONNECTED:
-                pass
-            self.ep.poll(timeout=-1, maxevents=1)
-            msg = os.read(self.pipein, 256)
-            #print "epoll done: " + msg + "\n"
-            if msg == CB_IPR:
-                for ndmsg in self.cb_msg_queue[CB_IPR]:
-                    self.__handle_ndmsg(ndmsg)
-                self.cb_msg_queue[CB_IPR] = []
+            try :
+                self.ep.poll(timeout=-1, maxevents=1)
+                evType = os.read(self.pipein, 256)
+                #print "epoll done: " + evType + "\n"
                 
+                for event in self.events:
+                    if event.type == EVENT_QUIT:
+                        return
+                    if event.type == EVENT_IPROUTE:
+                        self.__handle_event_iproute(event.opaque)
+                    if event.type == EVENT_RA_ATTACHED:
+                        self.__handle_event_ra_attached(event.opaque)
+                    if event.type == EVENT_RA_DETACHED:
+                        self.__handle_event_ra_detached(event.opaque)
+                    if event.type == EVENT_PREFIX_ATTACHED:
+                        self.__handle_event_prefix_attached(event.opaque)
+                    if event.type == EVENT_PREFIX_DETACHED:
+                        self.__handle_event_prefix_detached(event.opaque)
+                else:
+                    self.events = []
+            except KeyboardInterrupt:
+                self.__cleanup()
+                self.add_event(HomeGatewayEvent(self, EVENT_QUIT))
+            
                 
     def set_interfaces(self, links, state="up"):
         for link in links:
             try:
                 dev = self.ipr.link_lookup(ifname=link.devname)[0]
-                print "link: " + link.devname + " dev: " + str(dev)
+                #print "link: " + link.devname + " dev: " + str(dev)
                 if state == "up":
                     self.ipr.link('set', index=dev, state='up')
                     # net.ipv6.conf.dummy0.accept_ra = 2
-                    sysctl_cmd = "sysctl -w net.ipv6.conf." + link.devname + ".accept_ra=2"
-                    print sysctl_cmd
+                    sysctl_cmd = "sysctl -q -w net.ipv6.conf." + link.devname + ".accept_ra=2"
+                    #print sysctl_cmd
                     subprocess.call(sysctl_cmd.split())
                 elif state == "down":
                     self.ipr.link('set', index=dev, state='down')
                     # net.ipv6.conf.dummy0.accept_ra = 2
-                    sysctl_cmd = "sysctl -w net.ipv6.conf." + link.devname + ".accept_ra=0"
-                    print sysctl_cmd
+                    sysctl_cmd = "sysctl -q -w net.ipv6.conf." + link.devname + ".accept_ra=0"
+                    #print sysctl_cmd
                     subprocess.call(sysctl_cmd.split())
 
             except IndexError:
                 print '<error> set_interfaces ' + link.devname
             
-            
+        
     def flush_addresses(self, links):
         for link in links:
             s = "/sbin/ip -6 addr flush dev " + link.devname
             subprocess.call(s.split())
 
-    def __handle_ndmsg(self, ndmsg):
+
+    def __handle_event_iproute(self, ndmsg):
         #print ndmsg['event']
         event = ndmsg['event']
         if   event == 'RTM_NEWROUTE':
@@ -193,82 +254,28 @@ class HomeGateway(object):
                     pass
 
 
-
-
-class Link(object):
-    """abstraction for a link"""
-    def __init__(self, devname, ifindex, state, attached = RA_DETACHED):
-        self.devname = devname
-        self.ifindex = ifindex
-        self.state = state
-        self.attached = attached
-        self.addresses = {}
-        self.linklocal = {}
+    def __handle_event_ra_attached(self, link):
+        print "event RA-ATTACHED: " + str(link)
+        if isinstance(link, routerlink.RouterWanLink):
+            link.dhcpGetPrefix()
         
-    def __str__(self):
-        laddr = '('
-        for addr in self.linklocal:
-            laddr += addr + ', '
-        laddr += ')'
-        saddr = '('
-        for addr in self.addresses:
-            saddr += addr + ', '
-        saddr += ')'
-        return 'Link(dev='+self.devname+', ifindex='+str(self.ifindex)+', attached='+str(self.attached)+', '+saddr+', '+laddr+')'
-    
-    def add_addr(self, addr, prefixlen):
-        if not re.match('fe80', addr):
-            if not addr in self.addresses:
-                self.addresses[addr] = { 'prefixlen': prefixlen }
-                self.attached = RA_ATTACHED
-                print str(self)
-        else:
-            if not addr in self.linklocal:
-                self.linklocal[addr] = { 'prefixlen': prefixlen }
-                print str(self)
 
-    def del_addr(self, addr, prefixlen):
-        if not re.match('fe80', addr):
-            if addr in self.addresses:
-                del self.addresses[addr]
-                print str(self)
-            if not self.addresses:
-                self.attached = RA_DETACHED
-                print str(self)
-        else:        
-            if addr in self.linklocal:
-                self.linklocal[addr]
-                print str(self)
-        
-        
-        
-class RouterWanLink(Link):
-    """abstraction for an uplink on the HG's router component"""
-    def __init__(self, devname, ifindex, state, attached):
-        super(RouterWanLink, self).__init__(devname, ifindex, state, attached)
-
-    def __str__(self):
-        return 'RouterWanLink('+super(RouterWanLink, self).__str__()+')' 
+    def __handle_event_ra_detached(self, link):
+        print "event RA-DETACHED: " + str(link)
+        if not isinstance(link, routerlink.Link):
+            return
+        pass 
 
 
-
-
-class RouterLanLink(Link):
-    """abstraction for a downlink on the HG's router component"""
-    def __init__(self, devname, ifindex, state, attached):
-        super(RouterLanLink, self).__init__(devname, ifindex, state, attached)
-
-    def __str__(self):
-        return 'RouterLanLink('+super(RouterLanLink, self).__str__()+')' 
-
-
-
-class Dhclient(object):
-    """class controls a single dhclient instance"""
-    def __init__(self):
+    def __handle_event_prefix_attached(self, dhclient):
+        print "event PREFIX-ATTACHED"
         pass
     
     
+    def __handle_event_prefix_detached(self, dhclient):
+        print "event PREFIX-DETACHED"
+        pass
+
 
 
 
@@ -277,5 +284,6 @@ class Dhclient(object):
 if __name__ == "__main__":
     HomeGateway().run()
 
+    
 
 
