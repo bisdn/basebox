@@ -34,7 +34,7 @@ class Link(object):
         saddr += ')'
         return 'Link(dev='+self.devname+', ifindex='+str(self.ifindex)+', state='+str(self.state)+', '+saddr+', '+laddr+')'
     
-    def add_addr(self, addr, prefixlen):
+    def nl_add_addr(self, addr, prefixlen):
         if not re.match('fe80', addr):
             if not addr in self.addresses:
                 self.addresses[addr] = { 'prefixlen': prefixlen }
@@ -45,7 +45,7 @@ class Link(object):
             if not addr in self.linklocal:
                 self.linklocal[addr] = { 'prefixlen': prefixlen }
 
-    def del_addr(self, addr, prefixlen):
+    def nl_del_addr(self, addr, prefixlen):
         if not re.match('fe80', addr):
             if addr in self.addresses:
                 del self.addresses[addr]
@@ -57,6 +57,21 @@ class Link(object):
             if addr in self.linklocal:
                 self.linklocal[addr]
                 
+    def ip_addr_flush(self):
+        s = "/sbin/ip -6 addr flush dev " + self.devname
+        subprocess.call(s.split())
+        
+    def ip_addr_add(self, address, prefixlen):
+        # once the address has been added, netlink will inform us and trigger self.add_addr()
+        s = "/sbin/ip -6 addr add " + address + "/" + str(prefixlen) + " dev " + self.devname
+        print 'adding address: ' + s
+        subprocess.call(s.split())
+
+    def ip_addr_del(self, address, prefixlen):
+        s = "/sbin/ip -6 addr del " + address + "/" + str(prefixlen) + " dev " + self.devname
+        print 'deleting address: ' + s
+        subprocess.call(s.split())
+
     def is_RA_attached(self):
         if self.state == STATE_RA_ATTACHED:
             return True
@@ -101,6 +116,20 @@ class RouterLanLink(Link):
 
     def stopRAs(self):
         self.radvd.stop()
+
+
+
+
+class RouterDmzLink(Link):
+    """abstraction for a downlink on the HG's router component"""
+    def __init__(self, parent, devname, ifindex, state=STATE_RA_DETACHED):
+        super(RouterDmzLink, self).__init__(parent, devname, ifindex, state)
+        print str(self)
+
+    def __str__(self):
+        return '<RouterDmzLink ' + super(RouterDmzLink, self).__str__() + ' >' 
+    
+
 
 
 

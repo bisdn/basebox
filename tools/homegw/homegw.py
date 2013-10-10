@@ -49,7 +49,7 @@ class HomeGateway(object):
     STATE_CONNECTED = "CONNECTED"
 
     
-    def __init__(self, ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['veth2']}):
+    def __init__(self, ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['veth2'], 'dmz': ['veth4']}):
        # self.cb_msg_queue = { CB_IPR: [] }
         self.ipr = IPRoute() 
         self.ipr.register_callback(ipr_callback, lambda x: True, [self, ])
@@ -57,6 +57,7 @@ class HomeGateway(object):
         self.state = self.STATE_DISCONNECTED
         self.wanLinks = []
         self.lanLinks = []
+        self.dmzLinks = []
         self.events = []
         
         for ifname in ifaces['wan']:
@@ -66,9 +67,9 @@ class HomeGateway(object):
             except:
                 print "<error> WAN interface " + ifname + " not found"
 
-        if len(ifaces['lan']) != 1:
-            print "invalid number of LAN interfaces, must be 1"
-            assert(False)
+        #if len(ifaces['lan']) != 1:
+        #    print "invalid number of LAN interfaces, must be 1"
+        #    assert(False)
 
         for ifname in ifaces['lan']:
             try:
@@ -76,6 +77,13 @@ class HomeGateway(object):
                 self.lanLinks.append(routerlink.RouterLanLink(self, ifname, i))
             except:
                 print "<error> LAN interface " + ifname + " not found"
+
+        for ifname in ifaces['dmz']:
+            try:
+                i = self.ipr.link_lookup(ifname=ifname)[0]
+                self.dmzLinks.append(routerlink.RouterDmzLink(self, ifname, i))
+            except:
+                print "<error> DMZ interface " + ifname + " not found"
 
         
         # precise starting point: bring all interfaces down
@@ -85,11 +93,15 @@ class HomeGateway(object):
         self.set_interfaces(self.wanLinks, "down")
         # disable all LAN interfaces
         self.set_interfaces(self.lanLinks, "down")
+        # disable all DMZ interfaces
+        self.set_interfaces(self.dmzLinks, "down")
         
         # flush all addresses on WAN interfaces
         self.flush_addresses(self.wanLinks)
         # flush all addresses on LAN interfaces
         self.flush_addresses(self.lanLinks)
+        # flush all addresses on DMZ interfaces
+        self.flush_addresses(self.dmzLinks)
         
         
         # bring up WAN interfaces and acquire IPv6 address via RA 
@@ -98,8 +110,14 @@ class HomeGateway(object):
 
         self.set_interfaces(self.lanLinks, "up")        
                      
+        self.set_interfaces(self.dmzLinks, "up")        
+                     
 
     def __cleanup(self):
+
+        # TODO: stop whatever ...            
+        for dmzLink in self.dmzLinks:
+            pass
 
         # stop announcement of obtained public prefixes            
         for lanLink in self.lanLinks:
@@ -113,11 +131,15 @@ class HomeGateway(object):
         self.set_interfaces(self.wanLinks, "down")
         # disable all LAN interfaces
         self.set_interfaces(self.lanLinks, "down")
+        # disable all LAN interfaces
+        self.set_interfaces(self.dmzLinks, "down")
 
         # flush all addresses on WAN interfaces
         self.flush_addresses(self.wanLinks)
         # flush all addresses on LAN interfaces
         self.flush_addresses(self.lanLinks)                        
+        # flush all addresses on LAN interfaces
+        self.flush_addresses(self.dmzLinks)                        
     
 
     def add_event(self, event):
@@ -187,21 +209,6 @@ class HomeGateway(object):
             s = "/sbin/ip -6 addr flush dev " + link.devname
             subprocess.call(s.split())
             
-    def add_address(self, link, address, prefixlen):
-        if not isinstance(link, routerlink.Link):
-            print "not of type Link, ignoring"
-            return
-        s = "/sbin/ip -6 addr add " + address + "/" + str(prefixlen) + " dev " + link.devname
-        print 'adding address: ' + s
-        subprocess.call(s.split())
-
-    def del_address(self, link, address, prefixlen):
-        if not isinstance(link, routerlink.Link):
-            print "not of type Link, ignoring"
-            return
-        s = "/sbin/ip -6 addr del " + address + "/" + str(prefixlen) + " dev " + link.devname
-        print 'deleting address: ' + s
-        subprocess.call(s.split())
 
     def __handle_event_iproute(self, ndmsg):
         #print ndmsg['event']
@@ -235,7 +242,7 @@ class HomeGateway(object):
         for link in self.wanLinks:
             if link.ifindex == ndmsg['index']:
                 try:
-                    link.add_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
+                    link.nl_add_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
                 except:
                     pass
                 print str(link)
@@ -243,7 +250,15 @@ class HomeGateway(object):
         for link in self.lanLinks:
             if link.ifindex == ndmsg['index']:
                 try:
-                    link.add_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
+                    link.nl_add_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
+                except:
+                    pass
+                print str(link)
+        # check all DMZ interfaces
+        for link in self.dmzLinks:
+            if link.ifindex == ndmsg['index']:
+                try:
+                    link.nl_add_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
                 except:
                     pass
                 print str(link)
@@ -263,7 +278,7 @@ class HomeGateway(object):
         for link in self.wanLinks:
             if link.ifindex == ndmsg['index']:
                 try:
-                    link.del_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
+                    link.nl_del_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
                 except:
                     pass
                 print str(link)
@@ -271,7 +286,15 @@ class HomeGateway(object):
         for link in self.lanLinks:
             if link.ifindex == ndmsg['index']:
                 try:
-                    link.del_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
+                    link.nl_del_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
+                except:
+                    pass
+                print str(link)
+        # check all LAN interfaces
+        for link in self.dmzLinks:
+            if link.ifindex == ndmsg['index']:
+                try:
+                    link.nl_del_addr(ndmsg['attrs'][0][1], ndmsg['prefixlen'])
                 except:
                     pass
                 print str(link)
@@ -283,6 +306,8 @@ class HomeGateway(object):
             link.dhcpGetPrefix()
         if isinstance(link, routerlink.RouterLanLink):
             link.startRAs()
+        if isinstance(link, routerlink.RouterDmzLink):
+            pass
         print "[E] event RA-ATTACHED: " + str(link)
         
 
@@ -292,14 +317,19 @@ class HomeGateway(object):
             return
         if isinstance(link, routerlink.RouterLanLink):
             link.stopRAs()
+        if isinstance(link, routerlink.RouterDmzLink):
+            pass
         print "[E] event RA-DETACHED: " + str(link)
         
 
     def __handle_event_prefix_attached(self, dhclient):
         print "[S] event PREFIX-ATTACHED"
         for lanLink in self.lanLinks:
-            lanLink.radvd.add_prefix(radvd.IPv6Prefix(dhclient.new_prefix, 64))
-            self.add_address(lanLink, dhclient.new_prefix+'1', 64)
+            for prefix in dhclient.new_prefixes:
+                lanLink.radvd.add_prefix(radvd.IPv6Prefix(prefix.prefix, 64))
+                #print prefix.get_subprefix(1, 8)
+            for prefix in dhclient.new_prefixes:
+                lanLink.ip_addr_add(prefix.prefix+'1', 64)
         print "[E] event PREFIX-ATTACHED"
     
     
@@ -308,7 +338,8 @@ class HomeGateway(object):
         for lanLink in self.lanLinks:
             if lanLink.devname != dhclient.devname:
                 continue
-            self.del_address(lanLink, dhclient.new_prefix+'1', 64)
+            for prefix in dhclient.new_prefixes:
+                lanLink.ip_addr_del(prefix.prefix+'1', 64)
             break
         print "[E] event PREFIX-DETACHED"
 
