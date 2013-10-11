@@ -91,11 +91,11 @@ class HomeGateway(object):
         #
         
         # disable all WAN interfaces
-        self.set_interfaces(self.wanLinks, "down")
+        self.set_interfaces(self.wanLinks, "down", 0)
         # disable all LAN interfaces
-        self.set_interfaces(self.lanLinks, "down")
+        self.set_interfaces(self.lanLinks, "down", 0)
         # disable all DMZ interfaces
-        self.set_interfaces(self.dmzLinks, "down")
+        self.set_interfaces(self.dmzLinks, "down", 0)
         
         # flush all addresses on WAN interfaces
         self.flush_addresses(self.wanLinks)
@@ -107,11 +107,11 @@ class HomeGateway(object):
         
         # bring up WAN interfaces and acquire IPv6 address via RA 
         #
-        self.set_interfaces(self.wanLinks, "up")
+        self.set_interfaces(self.wanLinks, "up", 2)
 
-        self.set_interfaces(self.lanLinks, "up")        
+        self.set_interfaces(self.lanLinks, "up", 0)        
                      
-        self.set_interfaces(self.dmzLinks, "up")        
+        self.set_interfaces(self.dmzLinks, "up", 0)        
                      
 
     def __cleanup(self):
@@ -183,7 +183,7 @@ class HomeGateway(object):
                 self.add_event(HomeGatewayEvent(self, EVENT_QUIT))
             
                 
-    def set_interfaces(self, links, state="up"):
+    def set_interfaces(self, links, state="up", accept_ra=2):
         for link in links:
             try:
                 dev = self.ipr.link_lookup(ifname=link.devname)[0]
@@ -191,13 +191,13 @@ class HomeGateway(object):
                 if state == "up":
                     self.ipr.link('set', index=dev, state='up')
                     # net.ipv6.conf.dummy0.accept_ra = 2
-                    sysctl_cmd = "sysctl -q -w net.ipv6.conf." + link.devname + ".accept_ra=2"
+                    sysctl_cmd = "sysctl -q -w net.ipv6.conf." + link.devname + ".accept_ra=" + str(accept_ra)
                     #print sysctl_cmd
                     subprocess.call(sysctl_cmd.split())
                 elif state == "down":
                     self.ipr.link('set', index=dev, state='down')
                     # net.ipv6.conf.dummy0.accept_ra = 2
-                    sysctl_cmd = "sysctl -q -w net.ipv6.conf." + link.devname + ".accept_ra=0"
+                    sysctl_cmd = "sysctl -q -w net.ipv6.conf." + link.devname + ".accept_ra=" + str(accept_ra)
                     #print sysctl_cmd
                     subprocess.call(sysctl_cmd.split())
 
@@ -355,7 +355,7 @@ class HomeGateway(object):
         
         for dmzLink in self.dmzLinks:
             for prefix in dhclient.new_prefixes:
-                p = prefix.get_subprefix(lanLink.ifindex).prefix
+                p = prefix.get_subprefix(dmzLink.ifindex).prefix
                 dmzLink.ip_addr_del(str(p)+'1', 64)
             
         print "[E] event PREFIX-DETACHED"
