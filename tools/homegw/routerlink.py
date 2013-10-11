@@ -124,10 +124,17 @@ class RouterDmzLink(Link):
     """abstraction for a downlink on the HG's router component"""
     def __init__(self, parent, devname, ifindex, state=STATE_RA_DETACHED):
         super(RouterDmzLink, self).__init__(parent, devname, ifindex, state)
+        self.radvd = radvd.RAdvd(parent, devname)
         print str(self)
 
     def __str__(self):
         return '<RouterDmzLink ' + super(RouterDmzLink, self).__str__() + ' >' 
+
+    def startRAs(self):
+        self.radvd.start()
+
+    def stopRAs(self):
+        self.radvd.stop()
     
 
 

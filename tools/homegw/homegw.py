@@ -5,6 +5,7 @@ from pyroute2 import IPRoute
 import dns
 from qmf.console import Session
 import subprocess
+import netaddr
 import select
 import sys
 import os
@@ -307,7 +308,7 @@ class HomeGateway(object):
         if isinstance(link, routerlink.RouterLanLink):
             link.startRAs()
         if isinstance(link, routerlink.RouterDmzLink):
-            pass
+            link.startRAs()
         print "[E] event RA-ATTACHED: " + str(link)
         
 
@@ -318,29 +319,45 @@ class HomeGateway(object):
         if isinstance(link, routerlink.RouterLanLink):
             link.stopRAs()
         if isinstance(link, routerlink.RouterDmzLink):
-            pass
+            link.stopRAs()
         print "[E] event RA-DETACHED: " + str(link)
         
 
     def __handle_event_prefix_attached(self, dhclient):
         print "[S] event PREFIX-ATTACHED"
+        
         for lanLink in self.lanLinks:
             for prefix in dhclient.new_prefixes:
-                lanLink.radvd.add_prefix(radvd.IPv6Prefix(prefix.prefix, 64))
-                #print prefix.get_subprefix(1, 8)
+                p = prefix.get_subprefix(lanLink.ifindex).prefix
+                lanLink.radvd.add_prefix(radvd.IPv6Prefix(str(p), 64))
             for prefix in dhclient.new_prefixes:
-                lanLink.ip_addr_add(prefix.prefix+'1', 64)
+                p = prefix.get_subprefix(lanLink.ifindex).prefix
+                lanLink.ip_addr_add(str(p)+'1', 64)
+                
+        for dmzLink in self.dmzLinks:
+            for prefix in dhclient.new_prefixes:
+                p = prefix.get_subprefix(dmzLink.ifindex).prefix
+                dmzLink.radvd.add_prefix(radvd.IPv6Prefix(str(p), 64))
+            for prefix in dhclient.new_prefixes:
+                p = prefix.get_subprefix(dmzLink.ifindex).prefix
+                dmzLink.ip_addr_add(str(p)+'1', 64)
+        
         print "[E] event PREFIX-ATTACHED"
     
     
     def __handle_event_prefix_detached(self, dhclient):
         print "[S] event PREFIX-DETACHED"
+        
         for lanLink in self.lanLinks:
-            if lanLink.devname != dhclient.devname:
-                continue
             for prefix in dhclient.new_prefixes:
-                lanLink.ip_addr_del(prefix.prefix+'1', 64)
-            break
+                p = prefix.get_subprefix(lanLink.ifindex).prefix
+                lanLink.ip_addr_del(str(p)+'1', 64)
+        
+        for dmzLink in self.dmzLinks:
+            for prefix in dhclient.new_prefixes:
+                p = prefix.get_subprefix(lanLink.ifindex).prefix
+                dmzLink.ip_addr_del(str(p)+'1', 64)
+            
         print "[E] event PREFIX-DETACHED"
 
 
