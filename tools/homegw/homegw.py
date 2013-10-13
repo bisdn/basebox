@@ -8,6 +8,7 @@ import subprocess
 import netaddr
 import select
 import sys
+import dns.resolver
 import os
 import re
 import radvd
@@ -325,6 +326,13 @@ class HomeGateway(object):
 
     def __handle_event_prefix_attached(self, dhclient):
         print "[S] event PREFIX-ATTACHED"
+        
+        try:
+            answers = dns.resolver.query('bisdn.de', 'MX')
+            for answer in answers:
+                print answer
+        except dns.resolver.NoAnswer:
+            pass
         
         for lanLink in self.lanLinks:
             for prefix in dhclient.new_prefixes:
