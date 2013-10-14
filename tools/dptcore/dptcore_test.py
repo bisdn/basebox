@@ -30,5 +30,5 @@ if len(dptcores) == 0:
 	exit(0)
 
 
-dptcore = dptcores[0]
-print dptcore.test("blub")
+for dptcore in dptcores:
+	print dptcore.test("blub")
