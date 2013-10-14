@@ -169,7 +169,7 @@ dptroute::route_created(
 		} break;
 		}
 
-		flowentry.instructions.next() = rofl::cofinst_goto_table(2);
+		flowentry.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), 2);
 
 		fprintf(stderr, "dptroute::route_created() => flowentry: %s\n", flowentry.c_str());
 
