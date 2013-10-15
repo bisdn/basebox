@@ -24,7 +24,8 @@ EVENT_PREFIX_DETACHED = 5
 #CB_IPR = 'CB_IPR'
 #CB_EVENT = 'CB_EVENT'
 
-
+my_ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['ge1', 'veth2'], 'dmz': ['veth4']}
+my_brokerUrl = "amqp://172.16.252.21:5672"
 
 
 class HomeGatewayEvent(object):
@@ -52,9 +53,12 @@ class HomeGateway(object):
     STATE_CONNECTED = "CONNECTED"
 
     
-    def __init__(self, ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['veth2'], 'dmz': ['veth4']}, broker_url = "amqp://127.0.0.1:5672"):
-        self.qmf_console = QmfConsole(broker_url)
-        self.__init_interfaces_(ifaces)
+    def __init__(self, **kwargs): 
+        if 'brokerUrl' in kwargs:   
+            self.qmf_console = QmfConsole(kwargs['brokerUrl'])
+            print self.qmf_console
+        if 'ifaces' in kwargs:
+            self.__init_interfaces_(kwargs['ifaces'])
 
         
     def __init_interfaces_(self, ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['veth2'], 'dmz': ['veth4']}):
@@ -379,7 +383,7 @@ class HomeGateway(object):
 
 
 if __name__ == "__main__":
-    HomeGateway().run()
+    HomeGateway(ifaces=my_ifaces, brokerUrl=my_brokerUrl).run()
 
     
 
