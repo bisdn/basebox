@@ -64,15 +64,31 @@ class HomeGateway(object):
         self.dmzDevnames = []
         self.events = []
 
+        # get a default brokerURL or the one specified
+        #
         brokerUrl = "amqp://127.0.0.1:5672"
         if 'brokerUrl' in kwargs:   
             brokerUrl = kwargs['brokerUrl'] 
-            
-        self.datapath = datapath.DataPath("xdpid=123, currently ignored", brokerUrl)    
-        self.datapath.lsiCreate(1000, "dp0", 3, 8, 2, "172.16.250.65", 6633, 5)
+         
+        # get access to datapath (xdpd) instance on bottom half of HGW
+        #   
+        self.datapath = datapath.DataPath("xdpid=123, currently ignored", brokerUrl)
+        
+        # create LSI for providing routing functionality
+        #    
+        self.datapath.lsiCreate(1000, "dp0", 3, 4, 2, "172.16.250.65", 6633, 5)
         self.datapath.portAttach(1000, "ge0")
-        self.datapath.portAttach(1000, "ge1")
+        self.datapath.portAttach(1000, "ve1")
+        
+        # create LSI for internal switching functionality
+        #
+        self.datapath.lsiCreate(2000, "dp1", 3, 4, 2, "172.16.250.65", 6644, 5)
+        self.datapath.portAttach(2000, "ve0")
+        self.datapath.portAttach(2000, "ge1")
                 
+                
+        # extract names for WAN, LAN, DMZ interfaces
+        #                 
         if 'ifaces' in kwargs:
             if 'wan' in kwargs['ifaces']: 
                 self.wanDevnames = kwargs['ifaces']['wan']
@@ -162,9 +178,10 @@ class HomeGateway(object):
         # flush all addresses on LAN interfaces
         self.flush_addresses(self.dmzLinks)                        
             
-        # remove data path
+        # remove data path elements
         # 
-        self.datapath.lsiDestroy(1000) 
+        self.datapath.lsiDestroy(1000)
+        self.datapath.lsiDestroy(2000)  
         
 
     def add_event(self, event):
@@ -259,16 +276,18 @@ class HomeGateway(object):
     def __handle_new_link(self, ndmsg):
         # + str(ndmsg)
         ifname = ndmsg['attrs'][0][1]
-        print "NEWLINK => " + ifname
         if ifname in self.wanDevnames:
+            print "NEWLINK (WAN) => " + ifname
             i = self.ipr.link_lookup(ifname=ifname)[0]
             self.wanLinks.append(routerlink.RouterWanLink(self, ifname, i))
             self.wanDevnames.remove(ifname)
         if ifname in self.lanDevnames:
+            print "NEWLINK (LAN) => " + ifname
             i = self.ipr.link_lookup(ifname=ifname)[0]
             self.lanLinks.append(routerlink.RouterLanLink(self, ifname, i))
             self.lanDevnames.remove(ifname)
         if ifname in self.dmzDevnames:
+            print "NEWLINK (DMZ) => " + ifname
             i = self.ipr.link_lookup(ifname=ifname)[0]
             self.dmzLinks.append(routerlink.RouterDmzLink(self, ifname, i))
             self.dmzDevnames.remove(ifname)
