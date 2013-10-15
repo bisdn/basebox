@@ -256,8 +256,9 @@ class HomeGateway(object):
         pass   
 
     def __handle_new_link(self, ndmsg):
-        print "NEWLINK " + str(ndmsg)
+        # + str(ndmsg)
         ifname = ndmsg['attrs'][0][1]
+        print "NEWLINK => " + ifname
         if ifname in self.wanDevnames:
             i = self.ipr.link_lookup(ifname=ifname)[0]
             self.wanLinks.append(routerlink.RouterWanLink(self, ifname, i))
@@ -307,8 +308,9 @@ class HomeGateway(object):
 
 
     def __handle_del_link(self, ndmsg):
-        print "DELLINK => " +  str(ndmsg)
+        # +  str(ndmsg)
         ifname = ndmsg['attrs'][0][1]
+        print "DELLINK => " + ifname 
         for wanLink in self.wanLinks:
             if ifname == wanLink.devname:
                 self.wanDevnames.append(ifname)
