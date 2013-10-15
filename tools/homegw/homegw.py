@@ -13,7 +13,7 @@ import os
 import re
 import radvd
 import routerlink
-from qmfconsole import QmfConsole
+import datapath
 
 EVENT_QUIT = 0
 EVENT_IPROUTE = 1
@@ -21,8 +21,6 @@ EVENT_RA_ATTACHED = 2
 EVENT_RA_DETACHED = 3
 EVENT_PREFIX_ATTACHED = 4
 EVENT_PREFIX_DETACHED = 5
-#CB_IPR = 'CB_IPR'
-#CB_EVENT = 'CB_EVENT'
 
 my_ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['ge1', 'veth2'], 'dmz': ['veth4']}
 my_brokerUrl = "amqp://172.16.252.21:5672"
@@ -54,15 +52,6 @@ class HomeGateway(object):
 
     
     def __init__(self, **kwargs): 
-        if 'brokerUrl' in kwargs:   
-            self.qmf_console = QmfConsole(kwargs['brokerUrl'])
-            print self.qmf_console
-        if 'ifaces' in kwargs:
-            self.__init_interfaces_(kwargs['ifaces'])
-
-        
-    def __init_interfaces_(self, ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['veth2'], 'dmz': ['veth4']}):
-       # self.cb_msg_queue = { CB_IPR: [] }
         self.ipr = IPRoute() 
         self.ipr.register_callback(ipr_callback, lambda x: True, [self, ])
         (self.pipein, self.pipeout) = os.pipe()
@@ -70,30 +59,49 @@ class HomeGateway(object):
         self.wanLinks = []
         self.lanLinks = []
         self.dmzLinks = []
+        self.wanDevnames = []
+        self.lanDevnames = []
+        self.dmzDevnames = []
         self.events = []
-        
-        for ifname in ifaces['wan']:
+
+        brokerUrl = "amqp://127.0.0.1:5672"
+        if 'brokerUrl' in kwargs:   
+            brokerUrl = kwargs['brokerUrl'] 
+            
+        self.datapath = datapath.DataPath("xdpid=123, currently ignored", brokerUrl)    
+        self.datapath.lsiCreate(1000, "dp0", 3, 8, 2, "172.16.250.65", 6633, 5)
+        self.datapath.portAttach(1000, "ge0")
+        self.datapath.portAttach(1000, "ge1")
+                
+        if 'ifaces' in kwargs:
+            if 'wan' in kwargs['ifaces']: 
+                self.wanDevnames = kwargs['ifaces']['wan']
+            if 'lan' in kwargs['ifaces']: 
+                self.lanDevnames = kwargs['ifaces']['lan']
+            if 'dmz' in kwargs['ifaces']: 
+                self.dmzDevnames = kwargs['ifaces']['dmz']
+
+        for ifname in self.wanDevnames[:]:
             try:
                 i = self.ipr.link_lookup(ifname=ifname)[0]
                 self.wanLinks.append(routerlink.RouterWanLink(self, ifname, i))
+                self.wanDevnames.remove(ifname)
             except:
                 print "<error> WAN interface " + ifname + " not found"
 
-        #if len(ifaces['lan']) != 1:
-        #    print "invalid number of LAN interfaces, must be 1"
-        #    assert(False)
-
-        for ifname in ifaces['lan']:
+        for ifname in self.lanDevnames[:]:
             try:
                 i = self.ipr.link_lookup(ifname=ifname)[0]
                 self.lanLinks.append(routerlink.RouterLanLink(self, ifname, i))
+                self.lanDevnames.remove(ifname)
             except:
                 print "<error> LAN interface " + ifname + " not found"
 
-        for ifname in ifaces['dmz']:
+        for ifname in self.dmzDevnames[:]:
             try:
                 i = self.ipr.link_lookup(ifname=ifname)[0]
                 self.dmzLinks.append(routerlink.RouterDmzLink(self, ifname, i))
+                self.dmzDevnames.remove(ifname)
             except:
                 print "<error> DMZ interface " + ifname + " not found"
 
@@ -244,8 +252,22 @@ class HomeGateway(object):
         pass   
 
     def __handle_new_link(self, ndmsg):
-        pass   
-
+        print "NEWLINK " + str(ndmsg)
+        ifname = ndmsg['attrs'][0][1]
+        if ifname in self.wanDevnames:
+            i = self.ipr.link_lookup(ifname=ifname)[0]
+            self.wanLinks.append(routerlink.RouterWanLink(self, ifname, i))
+            self.wanDevnames.remove(ifname)
+        if ifname in self.lanDevnames:
+            i = self.ipr.link_lookup(ifname=ifname)[0]
+            self.lanLinks.append(routerlink.RouterLanLink(self, ifname, i))
+            self.lanDevnames.remove(ifname)
+        if ifname in self.dmzDevnames:
+            i = self.ipr.link_lookup(ifname=ifname)[0]
+            self.dmzLinks.append(routerlink.RouterDmzLink(self, ifname, i))
+            self.dmzDevnames.remove(ifname)
+                
+                
     def __handle_new_addr(self, ndmsg):
         # must be an IPv6 address
         if ndmsg['family'] != 10:
@@ -279,8 +301,27 @@ class HomeGateway(object):
     def __handle_del_route(self, ndmsg):
         pass   
 
+
     def __handle_del_link(self, ndmsg):
-        pass   
+        print "DELLINK => " +  str(ndmsg)
+        ifname = ndmsg['attrs'][0][1]
+        for wanLink in self.wanLinks:
+            if ifname == wanLink.devname:
+                self.wanDevnames.append(ifname)
+                self.wanLinks.remove(wanLink)
+                break
+        for lanLink in self.lanLinks:
+            if ifname == lanLink.devname:
+                self.lanDevnames.append(ifname)
+                self.lanLinks.remove(lanLink)
+                break
+        for dmzLink in self.dmzLinks:
+            if ifname == dmzLink.devname:
+                self.dmzDevnames.append(ifname)
+                self.dmzLinks.remove(dmzLink)
+                break
+
+
 
     def __handle_del_addr(self, ndmsg):
         # ignore non IPv6

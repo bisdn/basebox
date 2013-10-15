@@ -20,10 +20,17 @@ class QmfConsole(object):
             self.broker = self.session.addBroker(broker_url)
         except:
             print "Connection failed"
+            raise
 
 
     def __del__(self):
         self.session.close()
+        
+        
+    def getObjects(self, **kwargs):
+        return self.session.getObjects(_class = kwargs['_class'], _package = kwargs['_package'])
+        
+        
         
         
         
