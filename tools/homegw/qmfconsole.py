@@ -17,7 +17,7 @@ class QmfConsole(object):
     def __init__(self, broker_url = "amqp://localhost:5672"):
         try:
             self.session = Session()
-            self.broker = sess.addBroker(broker_url)
+            self.broker = self.session.addBroker(broker_url)
         except:
             print "Connection failed"
 
