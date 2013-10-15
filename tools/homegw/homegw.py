@@ -131,10 +131,7 @@ class HomeGateway(object):
         self.set_interfaces(self.lanLinks, "up", 0)        
                      
         self.set_interfaces(self.dmzLinks, "up", 0)     
-        
-        # remove data path
-        # 
-        self.datapath.lsiDestroy(1000)   
+  
                      
 
     def __cleanup(self):
@@ -164,7 +161,11 @@ class HomeGateway(object):
         self.flush_addresses(self.lanLinks)                        
         # flush all addresses on LAN interfaces
         self.flush_addresses(self.dmzLinks)                        
-    
+            
+        # remove data path
+        # 
+        self.datapath.lsiDestroy(1000) 
+        
 
     def add_event(self, event):
         #if not isinstance(event, HomeGatewayEvent):
