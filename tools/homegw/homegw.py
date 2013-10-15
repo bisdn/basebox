@@ -13,6 +13,7 @@ import os
 import re
 import radvd
 import routerlink
+from qmfconsole import QmfConsole
 
 EVENT_QUIT = 0
 EVENT_IPROUTE = 1
@@ -51,7 +52,12 @@ class HomeGateway(object):
     STATE_CONNECTED = "CONNECTED"
 
     
-    def __init__(self, ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['veth2'], 'dmz': ['veth4']}):
+    def __init__(self, ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['veth2'], 'dmz': ['veth4']}, broker_url = "amqp://127.0.0.1:5672"):
+        self.qmf_console = QmfConsole(broker_url)
+        self.__init_interfaces_(ifaces)
+
+        
+    def __init_interfaces_(self, ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['veth2'], 'dmz': ['veth4']}):
        # self.cb_msg_queue = { CB_IPR: [] }
         self.ipr = IPRoute() 
         self.ipr.register_callback(ipr_callback, lambda x: True, [self, ])

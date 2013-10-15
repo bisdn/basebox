@@ -11,7 +11,7 @@ except:
         print "Connection failed"
         exit(1)
 
-dptcores = sess.getObjects(_class="dptcore", _package="de.bisdn.homegw")
+dptcores = sess.getObjects(_class="dptcore", _package="de.bisdn.dptcore")
 
 for dptcore in dptcores:
 	print dptcore
@@ -32,3 +32,5 @@ if len(dptcores) == 0:
 
 for dptcore in dptcores:
 	print dptcore.test("blub")
+
+sess.close()

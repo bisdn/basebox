@@ -22,7 +22,7 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
 
         
     def __set_schema(self):
-        self.sch_dptcore = qmf2.Schema(qmf2.SCHEMA_TYPE_DATA, "de.bisdn.homegw", "dptcore")
+        self.sch_dptcore = qmf2.Schema(qmf2.SCHEMA_TYPE_DATA, "de.bisdn.dptcore", "dptcore")
         #self.sch_dptcore.addProperty(qmf2.SchemaProperty("dptcoreid", qmf2.SCHEMA_DATA_INT))
         self.sch_dptcore_testMethod = qmf2.SchemaMethod("test", desc='testing method for QMF agent support in python')
         self.sch_dptcore_testMethod.addArgument(qmf2.SchemaProperty("subcmd", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
@@ -64,7 +64,7 @@ class DptCore(object):
             self.qmf['connection'].open()
             self.qmf['session'] = qmf2.AgentSession(self.qmf['connection'], "{interval:10, reconnect:True}")
             self.qmf['session'].setVendor('bisdn.de')
-            self.qmf['session'].setProduct('homegw')
+            self.qmf['session'].setProduct('dptcore')
             self.qmf['session'].open()
             self.qmf['handler'] = DptCoreQmfAgentHandler(self.qmf['session'])
         except:
