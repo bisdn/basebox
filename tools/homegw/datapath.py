@@ -3,6 +3,16 @@
 import homegw
 import qmfconsole
 
+
+
+class DataPathInvalError(BaseException):
+    def __init__(self, serror=""):
+        self.serror = serror
+    def __str__(self):
+        return "<DataPathInvalError: " + str(self.serror) + " >"
+
+
+
 class DataPath(object):
     """
     
@@ -60,4 +70,22 @@ class DataPath(object):
         self.getLsiInstance(self.xdpid, dpid).portDetach(dpid, devname)
 
 
+    def lsiCreateVirtualLink(self, **kwargs):
+        """
+        create a virtual link between two LSIs
+        kwargs['dpid1']
+        kwargs['dpid2']
+        returns list with devname1 and devname2: ['ge0', 'ge1']
+        """
+        print "lsiCreateVirtualLink "
+        if not 'dpid1' in kwargs:
+            raise DataPathInvalError("param dpid1 is missing")
+        if not 'dpid2' in kwargs:
+            raise DataPathInvalError("param dpid2 is missing") 
+        result = self.getXdpdInstance(self.xdpid).lsiCreateVirtualLink()
+        return [ result.outArgs['devname1'], result.outArgs['devname2']
+        
+        
+        
+        
         

@@ -22,8 +22,8 @@ EVENT_RA_DETACHED = 3
 EVENT_PREFIX_ATTACHED = 4
 EVENT_PREFIX_DETACHED = 5
 
-my_ifaces = {'wan': ['ge0', 'dummy0', 'veth0'], 'lan': ['ge1', 'veth2'], 'dmz': ['veth4']}
-my_brokerUrl = "amqp://172.16.252.21:5672"
+ifaces = {'wan': ['ge0'], 'lan': [], 'dmz': []}
+brokerUrl = "amqp://172.16.252.21:5672"
 
 
 class HomeGatewayEvent(object):
@@ -77,15 +77,30 @@ class HomeGateway(object):
         # create LSI for providing routing functionality
         #    
         self.datapath.lsiCreate(1000, "dp0", 3, 4, 2, "172.16.250.65", 6633, 5)
-        self.datapath.portAttach(1000, "ge0")
-        self.datapath.portAttach(1000, "ve1")
-        
+
         # create LSI for internal switching functionality
         #
         self.datapath.lsiCreate(2000, "dp1", 3, 4, 2, "172.16.250.65", 6644, 5)
-        self.datapath.portAttach(2000, "ve0")
+
+        # create virtual link between both LSI instances
+        #
+        (devname1, devname2) = self.datapath.lsiCreateVirtualLink(1000, 2000)
+        self.lanDevnames.append(devname1)
+
+        # attach all WAN, LAN, DMZ ports to routing LSI 
+        #
+        for devname in self.wanDevnames:
+            self.datapath.portAttach(1000, devname)
+        for devname in self.lanDevnames:
+            self.datapath.portAttach(1000, devname)
+        for devname in self.dmzDevnames:
+            self.datapath.portAttach(1000, devname)
+        
+        # attach ports to switching LSI
+        #
+        self.datapath.portAttach(2000, devname2)
         self.datapath.portAttach(2000, "ge1")
-                
+        
                 
         # extract names for WAN, LAN, DMZ interfaces
         #                 
@@ -279,20 +294,32 @@ class HomeGateway(object):
         if ifname in self.wanDevnames:
             print "NEWLINK (WAN) => " + ifname
             i = self.ipr.link_lookup(ifname=ifname)[0]
-            self.wanLinks.append(routerlink.RouterWanLink(self, ifname, i))
+            wanLink = routerlink.RouterWanLink(self, ifname, i)
+            self.wanLinks.append(wanLink)
             self.wanDevnames.remove(ifname)
+            self.set_interfaces([wanLink], "down", 0)
+            self.flush_addresses([wanLink])
+            self.set_interfaces([wanLink], "up", 2)
         if ifname in self.lanDevnames:
             print "NEWLINK (LAN) => " + ifname
             i = self.ipr.link_lookup(ifname=ifname)[0]
-            self.lanLinks.append(routerlink.RouterLanLink(self, ifname, i))
+            lanLink = routerlink.RouterLanLink(self, ifname, i)
+            self.lanLinks.append(lanLink)
             self.lanDevnames.remove(ifname)
+            self.set_interfaces([lanLink], "down", 0)
+            self.flush_addresses([lanLink])
+            self.set_interfaces([lanLink], "up", 0)
         if ifname in self.dmzDevnames:
             print "NEWLINK (DMZ) => " + ifname
             i = self.ipr.link_lookup(ifname=ifname)[0]
-            self.dmzLinks.append(routerlink.RouterDmzLink(self, ifname, i))
+            dmzLink = routerlink.RouterDmzLink(self, ifname, i)
+            self.dmzLinks.append()
             self.dmzDevnames.remove(ifname)
+            self.set_interfaces([dmzLink], "down", 0)
+            self.flush_addresses([dmzLink])
+            self.set_interfaces([dmzLink], "up", 0)
                 
-                
+                        
     def __handle_new_addr(self, ndmsg):
         # must be an IPv6 address
         if ndmsg['family'] != 10:
@@ -450,7 +477,7 @@ class HomeGateway(object):
 
 
 if __name__ == "__main__":
-    HomeGateway(ifaces=my_ifaces, brokerUrl=my_brokerUrl).run()
+    HomeGateway(ifaces=ifaces, brokerUrl=brokerUrl).run()
 
     
 
