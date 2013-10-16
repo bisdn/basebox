@@ -84,8 +84,3 @@ class DataPath(object):
             raise DataPathInvalError("param dpid2 is missing") 
         result = self.getXdpdInstance(self.xdpid).lsiCreateVirtualLink()
         return [ result.outArgs['devname1'], result.outArgs['devname2']
-        
-        
-        
-        
-        
