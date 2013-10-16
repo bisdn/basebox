@@ -95,29 +95,37 @@ class HomeGateway(object):
         #                 
         if 'ifaces' in kwargs:
             if 'wan' in kwargs['ifaces']: 
-                self.wanDevnames = kwargs['ifaces']['wan']
-            if 'lan' in kwargs['ifaces']: 
-                self.lanDevnames = kwargs['ifaces']['lan']
+                self.wanDevnames = kwargs['ifaces']['wan']    
             if 'dmz' in kwargs['ifaces']: 
                 self.dmzDevnames = kwargs['ifaces']['dmz']
+        self.lanDevnames = [devname1]
+
+
 
 
         # attach all WAN, LAN, DMZ ports to routing LSI 
         #
         for devname in self.wanDevnames:
             self.datapath.portAttach(1000, devname)
-        for devname in self.lanDevnames:
-            self.datapath.portAttach(1000, devname)
         for devname in self.dmzDevnames:
             self.datapath.portAttach(1000, devname)
+        # PLEASE NOTE:
+        # the virtual link LAN interface was already attached during creation to the routing LSI
+        
+        
         
         # attach ports to switching LSI
         #
-        self.datapath.portAttach(2000, "ge1")
-        
-        
-        
-        self.lanDevnames.append(devname2)
+        if 'ifaces' in kwargs:
+            if 'lan' in kwargs['ifaces']:
+                for devname in kwargs['ifaces']['lan']: 
+                    self.datapath.portAttach(2000, devname)
+        # PLEASE NOTE:
+        # the virtual link LAN interface was already attached during creation to the switching LSI
+
+
+
+
 
 
         for ifname in self.wanDevnames[:]:
