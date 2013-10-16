@@ -14,6 +14,7 @@ import re
 import radvd
 import routerlink
 import datapath
+import time
 
 EVENT_QUIT = 0
 EVENT_IPROUTE = 1
@@ -23,7 +24,7 @@ EVENT_PREFIX_ATTACHED = 4
 EVENT_PREFIX_DETACHED = 5
 
 ifaces = {'wan': ['ge0'], 'lan': [], 'dmz': []}
-brokerUrl = "amqp://172.16.252.21:5672"
+brokerUrl = "amqp://127.0.0.1:5672"
 
 
 class HomeGatewayEvent(object):
@@ -82,10 +83,24 @@ class HomeGateway(object):
         #
         self.datapath.lsiCreate(2000, "dp1", 3, 4, 2, "172.16.250.65", 6644, 5)
 
+        time.sleep(2)
+        
         # create virtual link between both LSI instances
         #
-        (devname1, devname2) = self.datapath.lsiCreateVirtualLink(1000, 2000)
-        self.lanDevnames.append(devname1)
+        # this is also auto-attaching the interfaces
+        (devname1, devname2) = self.datapath.lsiCreateVirtualLink(dpid1=1000, dpid2=2000)
+
+                
+        # extract names for WAN, LAN, DMZ interfaces
+        #                 
+        if 'ifaces' in kwargs:
+            if 'wan' in kwargs['ifaces']: 
+                self.wanDevnames = kwargs['ifaces']['wan']
+            if 'lan' in kwargs['ifaces']: 
+                self.lanDevnames = kwargs['ifaces']['lan']
+            if 'dmz' in kwargs['ifaces']: 
+                self.dmzDevnames = kwargs['ifaces']['dmz']
+
 
         # attach all WAN, LAN, DMZ ports to routing LSI 
         #
@@ -98,19 +113,12 @@ class HomeGateway(object):
         
         # attach ports to switching LSI
         #
-        self.datapath.portAttach(2000, devname2)
         self.datapath.portAttach(2000, "ge1")
         
-                
-        # extract names for WAN, LAN, DMZ interfaces
-        #                 
-        if 'ifaces' in kwargs:
-            if 'wan' in kwargs['ifaces']: 
-                self.wanDevnames = kwargs['ifaces']['wan']
-            if 'lan' in kwargs['ifaces']: 
-                self.lanDevnames = kwargs['ifaces']['lan']
-            if 'dmz' in kwargs['ifaces']: 
-                self.dmzDevnames = kwargs['ifaces']['dmz']
+        
+        
+        self.lanDevnames.append(devname2)
+
 
         for ifname in self.wanDevnames[:]:
             try:
