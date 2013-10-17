@@ -2,6 +2,7 @@
 
 from pyroute2.netlink.iproute import *
 from pyroute2 import IPRoute
+from pyroute2 import IPDB
 import dns
 from qmf.console import Session
 import subprocess
