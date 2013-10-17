@@ -272,6 +272,10 @@ class HomeGateway(object):
         self.datapath.lsiDestroy(1000)
         self.datapath.lsiDestroy(2000)  
         
+        # shutdown QMF agent session
+        self.qmfAgentSession.close()
+        self.qmfConnection.close()
+        
 
     def add_event(self, event):
         #if not isinstance(event, HomeGatewayEvent):
