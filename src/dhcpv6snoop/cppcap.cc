@@ -93,7 +93,7 @@ cppcap::do_capture()
 		return 0;
 	}
 
-	dir = new cdirectory(DEFAULT_DHCP_STATE_DIR);
+	//dir = new cdirectory(DEFAULT_DHCP_STATE_DIR);
 
 restart:
 	while (keep_going) {
@@ -126,7 +126,7 @@ restart:
 		}
 	}
 
-	delete dir; dir = 0;
+	//delete dir; dir = 0;
 
 	tid = 0;
 
