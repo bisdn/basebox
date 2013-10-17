@@ -57,9 +57,6 @@ class HomeGateway(object):
 
     
     def __init__(self, **kwargs): 
-        self.ipr = IPRoute() 
-        self.ipr.register_callback(ipr_callback, lambda x: True, [self, ])
-        self.ipdb = IPDB(self.ipr)
         (self.pipein, self.pipeout) = os.pipe()
         self.state = self.STATE_DISCONNECTED
         self.wanLinks = []
@@ -70,6 +67,10 @@ class HomeGateway(object):
         self.dmzDevnames = []
         self.events = []
 
+        self.ipr = IPRoute() 
+        self.ipr.register_callback(ipr_callback, lambda x: True, [self, ])
+        self.ipdb = IPDB(self.ipr)
+        
         # get a default brokerURL or the one specified
         #
         brokerUrl = "amqp://127.0.0.1:5672"
