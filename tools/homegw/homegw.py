@@ -55,6 +55,7 @@ class HomeGateway(object):
     def __init__(self, **kwargs): 
         self.ipr = IPRoute() 
         self.ipr.register_callback(ipr_callback, lambda x: True, [self, ])
+        self.ipdb = IPDB(self.ipr)
         (self.pipein, self.pipeout) = os.pipe()
         self.state = self.STATE_DISCONNECTED
         self.wanLinks = []

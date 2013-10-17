@@ -30,7 +30,17 @@ if len(dptcores) == 0:
 	exit(0)
 
 
-for dptcore in dptcores:
-	print dptcore.test("blub")
+#for dptcore in dptcores:
+#    print dptcore.test("blub")
+
+dptcore = dptcores[0]
+
+dptcore.vethLinkCreate('blab', 'blub')
+dptcore.linkAddIP('blub', '3000::1/64')
+
+time.sleep(8)
+
+dptcore.linkDelIP('blub', '3000::1/64')
+dptcore.vethLinkDestroy('blab')
 
 sess.close()
