@@ -16,9 +16,7 @@ import radvd
 import routerlink
 import datapath
 import time
-import qmf2
-import cqmf2
-import cqpid
+
 
 EVENT_QUIT = 0
 EVENT_IPROUTE = 1
@@ -77,24 +75,6 @@ class HomeGateway(object):
         if 'brokerUrl' in kwargs:   
             brokerUrl = kwargs['brokerUrl'] 
                  
-        # QMF agent related stuff
-        #
-        try:
-            self.qmf = {}
-            self.qmf['connection'] = cqpid.Connection(brokerUrl)
-            self.qmf['connection'].open()
-            self.qmf['agentSession'] = qmf2.AgentSession(self.qmf['connection'], "{interval:10, reconnect:True}")
-            self.qmf['agentSession'].setVendor('bisdn.de')
-            self.qmf['agentSession'].setProduct('qmf_dptcore')
-            self.qmf['agentSession'].open()
-            self.qmf['handler'] = DptCoreQmfAgentHandler(self, self.qmf['agentSession'])
-            qmf2.AgentHandler.__init__(self, self.qmf['agentSession'])
-            self.__set_schema()
-            self.qmfAgentHomeGateway = {}
-            self.qmfAgentHomeGateway['data'] = qmf2.Data(self.qmfSchemaHomeGateway)
-            self.qmfAgentHomeGateway['addr'] = self.agentSession.addData(self.qmfSchemaHomeGateway['data'], 'homegw')
-        except:
-            raise
 
 
         # get access to datapath (xdpd) instance on bottom half of HGW
@@ -511,30 +491,6 @@ class HomeGateway(object):
                 dmzLink.ip_addr_del(str(p)+'1', 64)
             
         print "[E] event PREFIX-DETACHED"
-
-
-
-    def __set_schema(self):
-        self.qmfSchemaHomeGateway = qmf2.Schema(qmf2.SCHEMA_TYPE_DATA, "de.bisdn.proact.homegw", "homegw")
-        #self.qmfSchemaHomeGateway.addProperty(qmf2.SchemaProperty("dptcoreid", qmf2.SCHEMA_DATA_INT))
-        
-        self.qmfSchemaHomeGateway_testMethod = qmf2.SchemaMethod("test", desc='testing method for QMF agent support in python')
-        self.qmfSchemaHomeGateway_testMethod.addArgument(qmf2.SchemaProperty("subcmd", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
-        self.qmfSchemaHomeGateway_testMethod.addArgument(qmf2.SchemaProperty("outstring", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_OUT))
-        self.qmfSchemaHomeGateway.addMethod(self.qmfSchemaHomeGateway_testMethod)
-
-        self.qmf['agentSession'].registerSchema(self.qmfSchemaHomeGateway)
-
-        
-        
-    def method(self, handle, methodName, args, subtypes, addr, userId):
-        try:
-            if methodName == "test":
-                handle.addReturnArgument("outstring", "an output string ...")
-                self.agentSession.methodSuccess(handle)
-        except:
-            self.agentSession.raiseException(handle, "something failed, but we do not know, what ...")
-  
 
 
 
