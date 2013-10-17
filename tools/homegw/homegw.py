@@ -80,7 +80,7 @@ class HomeGateway(object):
         # QMF agent related stuff
         #
         try:
-            self.qmf['connection'] = cqpid.Connection(broker_url)
+            self.qmf['connection'] = cqpid.Connection(brokerUrl)
             self.qmf['connection'].open()
             self.qmf['agentSession'] = qmf2.AgentSession(self.qmf['connection'], "{interval:10, reconnect:True}")
             self.qmf['agentSession'].setVendor('bisdn.de')
