@@ -24,6 +24,44 @@ class DataPath(object):
         """
         self.qmfConsole = qmfconsole.QmfConsole(brokerUrl)
         self.xdpid = xdpid
+
+
+    def getDptCoreInstance(self):
+        dptcores = self.qmfConsole.getObjects(_class="dptcore", _package="de.bisdn.dptcore")
+        # TODO: check for xdpid and return the right xdpd instance
+        return dptcores[0] 
+        
+        
+    def vethLinkCreate(self, devname1, devname2):
+        self.getDptCoreInstance().vethLinkCreate(devname1, devname2)
+        
+        
+    def vethLinkDestroy(self, devname):
+        self.getDptCoreInstance().vethLinkDestroy(devname)
+        
+        
+    def linkAddIP(self, devname, ipaddr):
+        self.getDptCoreInstance().linkAddIP(devname, ipaddr)
+        
+        
+    def linkDelIP(self, devname, ipaddr):
+        self.getDptCoreInstance().linkDelIP(devname, ipaddr)
+        
+        
+    def l2tpCreateTunnel(self, tunnel_id, peer_tunnel_id, remote, local, udp_sport, udp_dport):
+        self.getDptCoreInstance().l2tpCreateTunnel(tunnel_id, peer_tunnel_id, remote, local, udp_sport, udp_dport)
+
+
+    def l2tpDestroyTunnel(self, tunnel_id):
+        self.getDptCoreInstance().l2tpDestroyTunnel(tunnel_id)
+    
+    
+    def l2tpCreateSession(self, name, tunnel_id, session_id, peer_session_id):
+        self.getDptCoreInstance().l2tpCreateSession(name, tunnel_id, session_id, peer_session_id)
+        
+        
+    def l2tpDestroySession(self, tunnel_id, session_id):
+        self.getDptCoreInstance().l2tpDestroySession(tunnel_id, session_id)
         
         
     def getXdpdInstance(self, xdpid):
@@ -84,3 +122,6 @@ class DataPath(object):
             raise DataPathInvalError("param dpid2 is missing") 
         result = self.getXdpdInstance(self.xdpid).lsiCreateVirtualLink(kwargs['dpid1'], kwargs['dpid2'])
         return [ result.outArgs['devname1'], result.outArgs['devname2'] ]
+    
+    
+    

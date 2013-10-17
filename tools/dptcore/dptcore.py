@@ -47,6 +47,19 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
         self.sch_l2tpDestroyTunnelMethod.addArgument(qmf2.SchemaProperty("tunnel_id", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
         self.sch_dptcore.addMethod(self.sch_l2tpDestroyTunnelMethod)
 
+        self.sch_l2tpCreateSessionMethod = qmf2.SchemaMethod("l2tpCreateSession", desc='create L2TP session')
+        self.sch_l2tpCreateSessionMethod.addArgument(qmf2.SchemaProperty("name", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
+        self.sch_l2tpCreateSessionMethod.addArgument(qmf2.SchemaProperty("tunnel_id", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
+        self.sch_l2tpCreateSessionMethod.addArgument(qmf2.SchemaProperty("session_id", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
+        self.sch_l2tpCreateSessionMethod.addArgument(qmf2.SchemaProperty("peer_session_id", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
+        self.sch_dptcore.addMethod(self.sch_l2tpCreateSessionMethod)
+
+        self.sch_l2tpDestroySessionMethod = qmf2.SchemaMethod("l2tpDestroySession", desc='destroy L2TP session')
+        self.sch_l2tpDestroySessionMethod.addArgument(qmf2.SchemaProperty("name", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
+        self.sch_l2tpDestroySessionMethod.addArgument(qmf2.SchemaProperty("tunnel_id", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
+        self.sch_l2tpDestroySessionMethod.addArgument(qmf2.SchemaProperty("session_id", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
+        self.sch_dptcore.addMethod(self.sch_l2tpDestroySessionMethod)
+
         self.sch_dptcore_vethLinkCreateMethod = qmf2.SchemaMethod("vethLinkCreate", desc='create a veth pair with devname1 and devname2')
         self.sch_dptcore_vethLinkCreateMethod.addArgument(qmf2.SchemaProperty("devname1", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
         self.sch_dptcore_vethLinkCreateMethod.addArgument(qmf2.SchemaProperty("devname2", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
@@ -74,9 +87,6 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
         try:
             if methodName == "test":
                 handle.addReturnArgument("outstring", "an output string ...")
-                self.agentSession.methodSuccess(handle)
-                
-            elif methodName == "blub":
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "vethLinkCreate":
@@ -112,6 +122,18 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
                 
             elif methodName == "l2tpDestroyTunnel":
                 self.dptcore.l2tpDestroyTunnel(tunnel_id=handle.getArguments()['tunnel_id'])
+                self.agentSession.methodSuccess(handle)
+                
+            elif methodName == "l2tpCreateSession":
+                self.dptcore.l2tpCreateSession(name=handle.getArguments()['name'],
+                                               tunnel_id=handle.getArguments()['tunnel_id'],
+                                               session_id=handle.getArguments()['session_id'],
+                                               peer_session_id=handle.getArguments()['peer_session_id'])
+                self.agentSession.methodSuccess(handle)
+                
+            elif methodName == "l2tpDestroySession":
+                self.dptcore.l2tpDestroySession(tunnel_id=handle.getArguments()['tunnel_id'],
+                                               session_id=handle.getArguments()['session_id'])
                 self.agentSession.methodSuccess(handle)
                 
             else:
