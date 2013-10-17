@@ -16,6 +16,10 @@ import radvd
 import routerlink
 import datapath
 import time
+import qmf2
+import cqmf2
+import cqpid
+    
 
 
 EVENT_QUIT = 0
@@ -27,6 +31,45 @@ EVENT_PREFIX_DETACHED = 5
 
 ifaces = {'wan': ['ge0'], 'lan': ['ge1'], 'dmz': ['veth1']}
 brokerUrl = "amqp://127.0.0.1:5672"
+
+
+
+class HomeGatewayQmfAgentHandler(qmf2.AgentHandler):
+    """
+    QMF agent handler for class HomeGateway
+    """
+    def __init__(self, homegw, agentSession):
+        qmf2.AgentHandler.__init__(self, agentSession)
+        self.agentSession = agentSession
+        
+        self.qmfSchemaHomeGateway = qmf2.Schema(qmf2.SCHEMA_TYPE_DATA, "de.bisdn.proact.homegw", "homegw")
+        #self.qmfSchemaHomeGateway.addProperty(qmf2.SchemaProperty("dptcoreid", qmf2.SCHEMA_DATA_INT))
+        
+        self.qmfSchemaHomeGateway_testMethod = qmf2.SchemaMethod("test", desc='testing method for QMF agent support in python')
+        self.qmfSchemaHomeGateway_testMethod.addArgument(qmf2.SchemaProperty("subcmd", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
+        self.qmfSchemaHomeGateway_testMethod.addArgument(qmf2.SchemaProperty("outstring", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_OUT))
+        self.qmfSchemaHomeGateway.addMethod(self.qmfSchemaHomeGateway_testMethod)
+
+        # add further methods here ...
+
+        self.agentSession.registerSchema(self.qmfSchemaHomeGateway)
+
+        self.homegw = homegw
+        self.qmfDataHomeGateway = qmf2.Data(self.qmfSchemaHomeGateway)
+        self.qmfAddrHomeGateway = self.agentSession.addData(self.qmfDataHomeGateway, 'homegw')
+        
+        
+    def method(self, handle, methodName, args, subtypes, addr, userId):
+        try:
+            if methodName == "test":
+                handle.addReturnArgument("outstring", "an output string ...")
+                self.agentSession.methodSuccess(handle)
+        except:
+            self.agentSession.raiseException(handle, "something failed, but we do not know, what ...")
+  
+
+
+
 
 
 class HomeGatewayEvent(object):
@@ -64,6 +107,17 @@ class HomeGateway(object):
         self.lanDevnames = []
         self.dmzDevnames = []
         self.events = []
+
+        try:
+            self.qmfConnection = cqpid.Connection("127.0.0.1")
+            self.qmfConnection.open()
+            self.qmfAgentSession = qmf2.AgentSession(self.qmfConnection, "{interval:10, reconnect:True}")
+            self.qmfAgentSession.setVendor('bisdn.de')
+            self.qmfAgentSession.setProduct('homegw')
+            self.qmfAgentSession.open()
+            self.qmfAgentHandler = HomeGatewayQmfAgentHandler(self, self.qmfAgentSession)
+        except:
+            raise
 
         self.ipr = IPRoute() 
         self.ipr.register_callback(ipr_callback, lambda x: True, [self, ])
