@@ -184,6 +184,12 @@ class HomeGateway(object):
         # the virtual link LAN interface was already attached during creation to the switching LSI
 
 
+        # create veth pair via dptcore on data path
+        #
+        self.datapath.vethLinkCreate('veth0', 'veth1')
+        self.datapath.portAttach(1000, 'veth0')
+
+
 
 
 
@@ -240,6 +246,10 @@ class HomeGateway(object):
                      
 
     def __cleanup(self):
+        
+        # destroy veth pair via dptcore on data path
+        #
+        self.datapath.vethLinkDestroy('veth0')
 
         # TODO: stop whatever ...            
         for dmzLink in self.dmzLinks:
