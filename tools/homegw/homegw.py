@@ -29,7 +29,7 @@ EVENT_RA_DETACHED = 3
 EVENT_PREFIX_ATTACHED = 4
 EVENT_PREFIX_DETACHED = 5
 
-ifaces = {'wan': ['ge0'], 'lan': ['ge1'], 'dmz': ['veth1']}
+ifaces = {'wan': ['ge0'], 'lan': ['ge1'], 'dmz': []}
 brokerUrl = "amqp://127.0.0.1:5672"
 
 
@@ -189,7 +189,9 @@ class HomeGateway(object):
         self.datapath.vethLinkCreate('veth0', 'veth1')
         self.datapath.portAttach(1000, 'veth0')
 
-
+        time.sleep(2)
+        
+        self.dmzDevnames.append('veth0')
 
 
 
