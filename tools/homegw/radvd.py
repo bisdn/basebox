@@ -69,6 +69,7 @@ class RAdvd(object):
             f = open(self.conffile, 'w')
             f.write('interface ' + self.devname + ' {\n');
             f.write('    AdvSendAdvert on;\n')
+            f.write('    MaxRtrAdvInterval 15;\n')
             for prefix in self.prefixes:
                 f.write('    prefix ' + prefix.prefix + '/' + str(prefix.prefixlen) + '\n')
                 f.write('    {\n')
