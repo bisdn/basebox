@@ -70,13 +70,15 @@ class RAdvd(object):
             f.write('interface ' + self.devname + ' {\n');
             f.write('    AdvSendAdvert on;\n')
             f.write('    MaxRtrAdvInterval 15;\n')
-            f.write('    AdvValidLifetime 600;\n')
-            f.write('    AdvPreferredLifetime 300;\n')
+
             for prefix in self.prefixes:
                 f.write('    prefix ' + prefix.prefix + '/' + str(prefix.prefixlen) + '\n')
                 f.write('    {\n')
                 f.write('        AdvOnLink on;\n')
                 f.write('        AdvAutonomous on;\n')
+                f.write('        AdvValidLifetime 3600;\n')
+                f.write('        AdvPreferredLifetime 3600;\n')
+                f.write('        DeprecatePrefix on;\n')
                 f.write('    };\n')
                 f.write('\n')
             f.write('};\n')
