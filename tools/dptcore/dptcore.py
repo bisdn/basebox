@@ -338,8 +338,8 @@ class DptCore(object):
         if not 'peer_session_id' in kwargs:
             raise DptCoreException("parameter peer_session_id is missing")
 
-        if kwargs['tunnel_id'] in self.l2tpTunnels:
-            raise DptCoreException("tunnel exists")
+        if not kwargs['tunnel_id'] in self.l2tpTunnels:
+            raise DptCoreException("tunnel not found")
 
         sess = self.l2tpTunnels[kwargs['tunnel_id']].addSession(kwargs['name'], kwargs['session_id'], kwargs['peer_session_id'])
 	print "CREATING SESSION: " + str(sess)
