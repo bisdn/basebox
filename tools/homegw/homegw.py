@@ -601,7 +601,7 @@ class HomeGateway(object):
                         self.qmfbroker.vhsDetach('l2tp', tun.cpeTunnelID, tun.cpeSessionID)
                         self.qmfbroker.l2tpDestroySession(tun.cpeDevname, tun.cpeTunnelID, tun.cpeSessionID)
                         self.qmfbroker.l2tpDestroyTunnel(tun.cpeTunnelID)
-                        self.tuns.remove(tun)
+                        self.tunnels.remove(tun)
                         break
                         
         for lanLink in self.lanLinks:
