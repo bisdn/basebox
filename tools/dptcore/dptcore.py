@@ -134,18 +134,18 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "l2tpDestroyTunnel":
-                self.dptcore.l2tpDestroyTunnel(tunnel_id=args['tunnel_id'])
+                self.dptcore.l2tpTunnelDestroy(tunnel_id=args['tunnel_id'])
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "l2tpCreateSession":
-                self.dptcore.l2tpCreateSession(name=args['name'],
+                self.dptcore.l2tpSessionCreate(name=args['name'],
                                                tunnel_id=args['tunnel_id'],
                                                session_id=args['session_id'],
                                                peer_session_id=args['peer_session_id'])
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "l2tpDestroySession":
-                self.dptcore.l2tpDestroySession(tunnel_id=args['tunnel_id'],
+                self.dptcore.l2tpSessionDestroy(tunnel_id=args['tunnel_id'],
                                                session_id=args['session_id'])
                 self.agentSession.methodSuccess(handle)
                 
