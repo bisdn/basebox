@@ -34,6 +34,7 @@ class L2tpSession(object):
         """
         scmd = '/sbin/ip l2tp add session ' + \
                     'name ' + str(self.name) + ' ' + \
+                    'l2spec_type udp ' + \
                     'tunnel_id ' + str(self.tunnel_id) + ' ' + \
                     'session_id ' + str(self.session_id) + ' ' + \
                     'peer_session_id ' + str(self.peer_session_id) + ' '
