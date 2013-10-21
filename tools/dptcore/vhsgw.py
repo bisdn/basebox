@@ -183,7 +183,7 @@ class VhsGateway(object):
 
 
     def vhsAttach(self, type, cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort):
-        vhsTunnelID = cpeTunnelID
+        vhsTunnelID = int(cpeTunnelID) + 1
         vhsIP = self.vhsIP
         vhsUdpPort = int(cpeUdpPort) + 1
         for l2tpTunnel in self.l2tpTunnels:
@@ -195,7 +195,7 @@ class VhsGateway(object):
             
         print 'vhsAttach => ' + str(l2tpTunnel)
 
-        vhsSessionID = cpeSessionID        
+        vhsSessionID = int(cpeSessionID) + 1        
         for l2tpSession in l2tpTunnel.sessions:
             if l2tpSession.session_id == cpeSessionID:
                 break
