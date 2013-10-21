@@ -590,7 +590,7 @@ class HomeGateway(object):
                                                      tun.cpeSessionID,
                                                      tun.vhsSessionID) 
                 time.sleep(2)
-                self.datapath.portAttach(2000, cpeDevname)
+                self.qmfbroker.portAttach(2000, cpeDevname)
                                                      
         print "[E] event PREFIX-ATTACHED"
     
@@ -608,7 +608,7 @@ class HomeGateway(object):
                 self.qmfbroker.linkDelIP('veth1', cpeIP, 64)
                 for tun in self.tunnels:
                     if tun.cpeIP == cpeIP:
-                        self.datapath.portDetach(2000, tun.cpeDevname)
+                        self.qmfbroker.portDetach(2000, tun.cpeDevname)
                         print "DESTROYING TUNNEL => " + str(tun)
                         self.qmfbroker.vhsDetach('l2tp', tun.cpeTunnelID, tun.cpeSessionID)
                         self.qmfbroker.l2tpDestroySession(tun.cpeDevname, tun.cpeTunnelID, tun.cpeSessionID)
