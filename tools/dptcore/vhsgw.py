@@ -210,6 +210,7 @@ class VhsGateway(object):
                 for session_id, l2tpSession in l2tpTunnel.sessions.iteritems():
                     if l2tpSession.session_id == vhsSessionID:
                         l2tpTunnel.delSession(vhsSessionID)
+                        break
     
 
 if __name__ == "__main__":
