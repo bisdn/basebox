@@ -150,6 +150,16 @@ class HomeGateway(object):
         # this is also auto-attaching the interfaces
         (devname1, devname2) = self.datapath.lsiCreateVirtualLink(dpid1=1000, dpid2=2000)
 
+        # create veth pair via dptcore on data path
+        #
+        self.datapath.vethLinkCreate('veth0', 'veth1')
+        self.dmzDevnames.append('veth0')
+        
+        time.sleep(2)
+       
+
+
+
                 
         # extract names for WAN, LAN, DMZ interfaces
         #                 
@@ -182,16 +192,6 @@ class HomeGateway(object):
                     self.datapath.portAttach(2000, devname)
         # PLEASE NOTE:
         # the virtual link LAN interface was already attached during creation to the switching LSI
-
-
-        # create veth pair via dptcore on data path
-        #
-        self.datapath.vethLinkCreate('veth0', 'veth1')
-        self.datapath.portAttach(1000, 'veth0')
-
-        time.sleep(2)
-        
-        self.dmzDevnames.append('veth0')
 
 
 
@@ -543,6 +543,11 @@ class HomeGateway(object):
             for prefix in dhclient.new_prefixes:
                 p = prefix.get_subprefix(dmzLink.ifindex).prefix
                 dmzLink.ip_addr_add(str(p)+'1', 64)
+                
+        # for l2tp tunnel
+        for prefix in dhclient.new_prefixes:
+            p = prefix.get_subprefix(dmzLink.ifindex).prefix
+            self.datapath.linkAddIP('veth1', str(p)+'2', 64)
         
         print "[E] event PREFIX-ATTACHED"
     
@@ -559,6 +564,11 @@ class HomeGateway(object):
             for prefix in dhclient.new_prefixes:
                 p = prefix.get_subprefix(dmzLink.ifindex).prefix
                 dmzLink.ip_addr_del(str(p)+'1', 64)
+        
+        # for l2tp tunnel
+        for prefix in dhclient.new_prefixes:
+            p = prefix.get_subprefix(dmzLink.ifindex).prefix
+            self.datapath.linkDelIP('veth1', str(p)+'2', 64)
             
         print "[E] event PREFIX-DETACHED"
 

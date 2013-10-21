@@ -72,15 +72,17 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
         self.sch_dptcore_linkAddIPMethod = qmf2.SchemaMethod("linkAddIP", desc='assign an IP address to devname')
         self.sch_dptcore_linkAddIPMethod.addArgument(qmf2.SchemaProperty("devname", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
         self.sch_dptcore_linkAddIPMethod.addArgument(qmf2.SchemaProperty("ipaddr", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
+        self.sch_dptcore_linkAddIPMethod.addArgument(qmf2.SchemaProperty("prefixlen", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
         self.sch_dptcore.addMethod(self.sch_dptcore_linkAddIPMethod)
 
         self.sch_dptcore_linkDelIPMethod = qmf2.SchemaMethod("linkDelIP", desc='remove an IP address from devname')
         self.sch_dptcore_linkDelIPMethod.addArgument(qmf2.SchemaProperty("devname", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
         self.sch_dptcore_linkDelIPMethod.addArgument(qmf2.SchemaProperty("ipaddr", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
+        self.sch_dptcore_linkDelIPMethod.addArgument(qmf2.SchemaProperty("prefixlen", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
         self.sch_dptcore.addMethod(self.sch_dptcore_linkDelIPMethod)
 
         self.agentSession.registerSchema(self.sch_dptcore)
-
+        qmf2.AgentHandler.start(self)
         
         
     def method(self, handle, methodName, args, subtypes, addr, userId):
@@ -99,14 +101,14 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
                 
             elif methodName == "linkAddIP":
                 try:
-                    self.dptcore.addIP(handle.getArguments()['devname'], handle.getArguments()['ipaddr'])
+                    self.dptcore.addIP(args['devname'], args['ipaddr'], args['prefixlen'])
                     self.agentSession.methodSuccess(handle)
                 except KeyError:
                     self.agentSession.raiseException(handle, "device not found")
 
             elif methodName == "linkDelIP":
                 try:
-                    self.dptcore.delIP(handle.getArguments()['devname'], handle.getArguments()['ipaddr'])
+                    self.dptcore.delIP(args['devname'], args['ipaddr'], args['prefixlen'])
                     self.agentSession.methodSuccess(handle)
                 except KeyError:
                     self.agentSession.raiseException(handle, "device not found")
@@ -235,21 +237,21 @@ class DptCore(object):
         subprocess.call(scmd.split())
     
     
-    def addIP(self, devname, ipaddr):
+    def addIP(self, devname, ipaddr, prefixlen):
         """
         add an IP address to a link
         """
-        scmd = '/sbin/ip addr add ' + ipaddr + ' dev ' + devname
+        scmd = '/sbin/ip addr add ' + ipaddr + '/' + str(prefixlen) + ' dev ' + devname
         subprocess.call(scmd.split())
         #self.ipdb[devname].add_ip(ipaddr)
         #self.ipdb[devname].commit()
         
         
-    def delIP(self, devname, ipaddr):
+    def delIP(self, devname, ipaddr, prefixlen):
         """
         delete an IP address from a link
         """
-        scmd = '/sbin/ip addr del ' + ipaddr + ' dev ' + devname
+        scmd = '/sbin/ip addr del ' + ipaddr + '/' + str(prefixlen) + ' dev ' + devname
         subprocess.call(scmd.split())
         #self.ipdb[devname].del_ip(ipaddr)
         #self.ipdb[devname].commit()
