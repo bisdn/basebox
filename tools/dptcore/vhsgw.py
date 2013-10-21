@@ -213,6 +213,9 @@ class VhsGateway(object):
                     if l2tpSession.peer_session_id == cpeSessionID:
                         l2tpTunnel.delSession(cpeSessionID)
                         break
+                if len(l2tpTunnel.sessions) == 0:
+                    self.l2tpTunnels.remove(l2tpTunnel)
+                    break
     
 
 if __name__ == "__main__":

@@ -139,7 +139,7 @@ class HomeGateway(object):
         
         # cleanup in case of a previous crash: create known state on data path
         self.qmfbroker.l2tpReset()
-        self.qmfbroker.vethLinkDestroy('veth0')
+        self.qmfbroker.vethLinkDestroy('veth1')
         self.qmfbroker.lsiDestroy(1000)
         self.qmfbroker.lsiDestroy(2000)
         
