@@ -40,12 +40,12 @@ class DataPath(object):
         self.getDptCoreInstance().vethLinkDestroy(devname)
         
         
-    def linkAddIP(self, devname, ipaddr):
-        self.getDptCoreInstance().linkAddIP(devname, ipaddr)
+    def linkAddIP(self, devname, ipaddr, prefixlen):
+        self.getDptCoreInstance().linkAddIP(devname, ipaddr, prefixlen)
         
         
-    def linkDelIP(self, devname, ipaddr):
-        self.getDptCoreInstance().linkDelIP(devname, ipaddr)
+    def linkDelIP(self, devname, ipaddr, prefixlen):
+        self.getDptCoreInstance().linkDelIP(devname, ipaddr, prefixlen)
         
         
     def l2tpCreateTunnel(self, tunnel_id, peer_tunnel_id, remote, local, udp_sport, udp_dport):
