@@ -207,7 +207,7 @@ class VhsGateway(object):
     def vhsDetach(self, type, vhsTunnelID, vhsSessionID):
         for l2tpTunnel in self.l2tpTunnels:
             if l2tpTunnel.tunnel_id == vhsTunnelID:
-                for l2tpSession in l2tpTunnel.sessions:
+                for session_id, l2tpSession in l2tpTunnel.sessions.iteritems():
                     if l2tpSession.session_id == vhsSessionID:
                         l2tpTunnel.delSession(vhsSessionID)
     
