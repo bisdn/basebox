@@ -327,7 +327,7 @@ class DptCore(object):
 
     def l2tpSessionDestroy(self, **kwargs):
         """
-        create an L2TP session
+        destroy an L2TP session
         """
         if not 'tunnel_id' in kwargs:
             raise DptCoreException("parameter tunnel_id is missing")

@@ -5,15 +5,15 @@ import qmfconsole
 
 
 
-class DataPathInvalError(BaseException):
+class QmfBrokerInvalError(BaseException):
     def __init__(self, serror=""):
         self.serror = serror
     def __str__(self):
-        return "<DataPathInvalError: " + str(self.serror) + " >"
+        return "<QmfBrokerInvalError: " + str(self.serror) + " >"
 
 
 
-class DataPath(object):
+class QmfBroker(object):
     """
     
     """
@@ -117,9 +117,9 @@ class DataPath(object):
         """
         print "lsiCreateVirtualLink "
         if not 'dpid1' in kwargs:
-            raise DataPathInvalError("param dpid1 is missing")
+            raise QmfBrokerInvalError("param dpid1 is missing")
         if not 'dpid2' in kwargs:
-            raise DataPathInvalError("param dpid2 is missing") 
+            raise QmfBrokerInvalError("param dpid2 is missing") 
         result = self.getXdpdInstance(self.xdpid).lsiCreateVirtualLink(kwargs['dpid1'], kwargs['dpid2'])
         return [ result.outArgs['devname1'], result.outArgs['devname2'] ]
     

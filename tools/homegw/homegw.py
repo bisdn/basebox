@@ -14,7 +14,7 @@ import os
 import re
 import radvd
 import routerlink
-import datapath
+import qmfbroker
 import time
 import qmf2
 import cqmf2
@@ -551,6 +551,7 @@ class HomeGateway(object):
         for prefix in dhclient.new_prefixes:
             p = prefix.get_subprefix(dmzLink.ifindex).prefix
             self.datapath.linkAddIP('veth1', str(p)+'2', 64)
+            self.datapath
         
         print "[E] event PREFIX-ATTACHED"
     
