@@ -151,7 +151,9 @@ class VhsGateway(object):
         
 
     def __cleanup(self):
-        pass
+        for tun in self.l2tpTunnels:
+            tun.destroy()
+        self.l2tpTunnels = []
 
     
     def add_event(self, event):
