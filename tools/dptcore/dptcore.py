@@ -73,6 +73,7 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
         self.sch_dptcore_linkAddIPMethod.addArgument(qmf2.SchemaProperty("devname", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
         self.sch_dptcore_linkAddIPMethod.addArgument(qmf2.SchemaProperty("ipaddr", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
         self.sch_dptcore_linkAddIPMethod.addArgument(qmf2.SchemaProperty("prefixlen", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
+        self.sch_dptcore_linkAddIPMethod.addArgument(qmf2.SchemaProperty("defroute", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
         self.sch_dptcore.addMethod(self.sch_dptcore_linkAddIPMethod)
 
         self.sch_dptcore_linkDelIPMethod = qmf2.SchemaMethod("linkDelIP", desc='remove an IP address from devname')
@@ -101,7 +102,7 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
                 
             elif methodName == "linkAddIP":
                 try:
-                    self.dptcore.addIP(args['devname'], args['ipaddr'], args['prefixlen'])
+                    self.dptcore.addIP(args['devname'], args['ipaddr'], args['prefixlen'], args['defroute'])
                     self.agentSession.methodSuccess(handle)
                 except KeyError:
                     self.agentSession.raiseException(handle, "device not found")
@@ -237,11 +238,13 @@ class DptCore(object):
         subprocess.call(scmd.split())
     
     
-    def addIP(self, devname, ipaddr, prefixlen):
+    def addIP(self, devname, ipaddr, prefixlen, defroute):
         """
         add an IP address to a link
         """
         scmd = '/sbin/ip addr add ' + ipaddr + '/' + str(prefixlen) + ' dev ' + devname
+        subprocess.call(scmd.split())
+        scmd = '/sbin/ip route add default via ' + defroute + ' dev ' + devname
         subprocess.call(scmd.split())
         #self.ipdb[devname].add_ip(ipaddr)
         #self.ipdb[devname].commit()

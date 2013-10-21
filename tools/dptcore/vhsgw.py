@@ -204,12 +204,12 @@ class VhsGateway(object):
         return ('l2tp', vhsIP, vhsUdpPort, vhsTunnelID, vhsSessionID)
 
 
-    def vhsDetach(self, type, vhsTunnelID, vhsSessionID):
+    def vhsDetach(self, type, cpeTunnelID, cpeSessionID):
         for l2tpTunnel in self.l2tpTunnels:
-            if l2tpTunnel.tunnel_id == vhsTunnelID:
+            if l2tpTunnel.peer_tunnel_id == cpeTunnelID:
                 for session_id, l2tpSession in l2tpTunnel.sessions.iteritems():
-                    if l2tpSession.session_id == vhsSessionID:
-                        l2tpTunnel.delSession(vhsSessionID)
+                    if l2tpSession.peer_session_id == cpeSessionID:
+                        l2tpTunnel.delSession(cpeSessionID)
                         break
     
 

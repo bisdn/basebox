@@ -26,6 +26,21 @@ class QmfBroker(object):
         self.xdpid = xdpid
 
 
+    def getVhsGatewayInstance(self):
+        vhsgws = self.qmfConsole.getObjects(_class="gateway", _package="de.bisdn.vhsgw")
+        # TODO: check for xdpid and return the right xdpd instance
+        return vhsgws[0] 
+
+
+    def vhsAttach(self, type, cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort):
+        result = self.getVhsGatewayInstance().vhsAttach(type, cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort)
+        return (result['vhsTunnelID'], result['vhsSessionID'], result['vhsIP'], result['vhsUdpPort'])
+
+
+    def vhsDetach(self, cpeTunnelID, cpeSessionID):
+        self.getVhsGatewayInstance().vhsDetach(cpeTunnelID, cpeSessionID)
+        
+
     def getDptCoreInstance(self):
         dptcores = self.qmfConsole.getObjects(_class="dptcore", _package="de.bisdn.dptcore")
         # TODO: check for xdpid and return the right xdpd instance
@@ -40,8 +55,8 @@ class QmfBroker(object):
         self.getDptCoreInstance().vethLinkDestroy(devname)
         
         
-    def linkAddIP(self, devname, ipaddr, prefixlen):
-        self.getDptCoreInstance().linkAddIP(devname, ipaddr, prefixlen)
+    def linkAddIP(self, devname, ipaddr, prefixlen, defroute):
+        self.getDptCoreInstance().linkAddIP(devname, ipaddr, prefixlen, defroute)
         
         
     def linkDelIP(self, devname, ipaddr, prefixlen):

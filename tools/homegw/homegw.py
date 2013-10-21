@@ -19,6 +19,7 @@ import time
 import qmf2
 import cqmf2
 import cqpid
+import tunnel
     
 
 
@@ -107,6 +108,7 @@ class HomeGateway(object):
         self.lanDevnames = []
         self.dmzDevnames = []
         self.events = []
+        self.tunnels = []
 
         try:
             self.qmfConnection = cqpid.Connection("127.0.0.1")
@@ -523,7 +525,6 @@ class HomeGateway(object):
 
     def __handle_event_prefix_attached(self, dhclient):
         print "[S] event PREFIX-ATTACHED"
-        
         try:
             answers = dns.resolver.query('bisdn.de', 'MX')
             for answer in answers:
@@ -550,9 +551,32 @@ class HomeGateway(object):
         # for l2tp tunnel
         for prefix in dhclient.new_prefixes:
             p = prefix.get_subprefix(dmzLink.ifindex).prefix
-            self.qmfbroker.linkAddIP('veth1', str(p)+'2', 64)
-            self.qmfbroker
-        
+            cpeIP = str(p)+'2'
+            defrouter = str(p)+'1'
+            self.qmfbroker.linkAddIP('veth1', cpeIP, 64, defrouter)
+            for tunnel in self.tunnels:
+                if tunnel.cpeIP == cpeIP:
+                    break
+            else:
+                # TODO: get a unique tunnel ID
+                cpeTunnelID = 10
+                # TODO: get a unique session ID
+                cpeSessionID = 1
+                cpeUdpPort = 6000
+                (vhsTunnelID, vhsSessionID, vhsIP, vhsUdpPort) = self.qmfbroker.vhsAttach('l2tp', cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort)
+                tunnel = tunnel.Tunnel('veth1', cpeTunnelID, vhsTunnelID, cpeSessionID, vhsSessionID, cpeIP, vhsIP, cpeUdpPort, vhsUdpPort)
+                self.tunnels.append(tunnel)
+                self.qmfbroker.l2tpCreateTunnel(tunnel.cpeTunnelID, 
+                                                tunnel.vhsTunnelID,
+                                                tunnel.vhsIP,
+                                                tunnel.cpeIP,
+                                                tunnel.cpeUdpPort,
+                                                tunnel.vhsUdpPort)
+                self.qmfbroker.l2tpCreateSession(tunnel.cpeDevname,
+                                                 tunnel.cpeTunnelID,
+                                                 tunnel.cpeSessionID,
+                                                 tunnel.vhsSessionID) 
+                                                 
         print "[E] event PREFIX-ATTACHED"
     
     
@@ -572,7 +596,15 @@ class HomeGateway(object):
         # for l2tp tunnel
         for prefix in dhclient.new_prefixes:
             p = prefix.get_subprefix(dmzLink.ifindex).prefix
-            self.qmfbroker.linkDelIP('veth1', str(p)+'2', 64)
+            cpeIP = str(p)+'2'
+            self.qmfbroker.linkDelIP('veth1', cpeIP, 64)
+            for tunnel in self.tunnels:
+                if tunnel.cpeIP == cpeIP:
+                    self.qmfbroker.vhsDetach(tunnel.cpeTunnelID, tunnel.cpeSessionID)
+                    self.qmfbroker.l2tpDestroySession(tunnel.cpeTunnelID, tunnel.cpeSessionID)
+                    self.qmfbroker.l2tpDestroyTunnel(tunnel.cpeTunnelID)
+                    self.tunnels.remove(tunnel)
+                    break
             
         print "[E] event PREFIX-DETACHED"
 
