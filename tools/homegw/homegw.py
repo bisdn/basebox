@@ -271,7 +271,7 @@ class HomeGateway(object):
 
         # TODO: stop whatever ...            
         for dmzLink in self.dmzLinks:
-            pass
+            dmzLink.stopRAs()
 
         # stop announcement of obtained public prefixes            
         for lanLink in self.lanLinks:
