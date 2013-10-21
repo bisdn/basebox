@@ -8,9 +8,19 @@ import cqmf2
 import cqpid
 import sys
 import os
-from l2tp import L2tpSession, L2tpTunnel
+from l2tp import *
 
 EVENT_QUIT = 0
+
+
+
+
+class DptCoreException(BaseException):
+    def __init__(self, serror):
+        self.serror = serror
+    def __str__(self):
+        return "<DptCoreException => serror: " + self.serror + " >"
+
 
 
     
@@ -85,19 +95,19 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
         self.agentSession.registerSchema(self.sch_dptcore)
         
         
-        
     def method(self, handle, methodName, args, subtypes, addr, userId):
         try:
+	    print "method: " + str(methodName)
             if methodName == "test":
                 handle.addReturnArgument("outstring", "an output string ...")
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "vethLinkCreate":
-                self.dptcore.vethLinkCreate(devname1=handle.getArguments()['devname1'], devname2=handle.getArguments()['devname2'])
+                self.dptcore.vethLinkCreate(devname1=args['devname1'], devname2=args['devname2'])
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "vethLinkDestroy":
-                self.dptcore.vethLinkDestroy(handle.getArguments()['devname'])
+                self.dptcore.vethLinkDestroy(args['devname'])
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "linkAddIP":
@@ -115,42 +125,46 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
                     self.agentSession.raiseException(handle, "device not found")
                                 
             elif methodName == "l2tpCreateTunnel":
-                self.dptcore.l2tpCreateTunnel(tunnel_id=handle.getArguments()['tunnel_id'],
-                                              peer_tunnel_id=handle.getArguments()['peer_tunnel_id'], 
-                                              remote=handle.getArguments()['remote'],
-                                              local=handle.getArguments()['local'],
-                                              udp_sport=handle.getArguments()['udp_sport'],
-                                              udp_dport=handle.getArguments()['udp_dport'])
+                self.dptcore.l2tpTunnelCreate(tunnel_id=args['tunnel_id'],
+                                              peer_tunnel_id=args['peer_tunnel_id'], 
+                                              remote=args['remote'],
+                                              local=args['local'],
+                                              udp_sport=args['udp_sport'],
+                                              udp_dport=args['udp_dport'])
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "l2tpDestroyTunnel":
-                self.dptcore.l2tpDestroyTunnel(tunnel_id=handle.getArguments()['tunnel_id'])
+                self.dptcore.l2tpDestroyTunnel(tunnel_id=args['tunnel_id'])
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "l2tpCreateSession":
-                self.dptcore.l2tpCreateSession(name=handle.getArguments()['name'],
-                                               tunnel_id=handle.getArguments()['tunnel_id'],
-                                               session_id=handle.getArguments()['session_id'],
-                                               peer_session_id=handle.getArguments()['peer_session_id'])
+                self.dptcore.l2tpCreateSession(name=args['name'],
+                                               tunnel_id=args['tunnel_id'],
+                                               session_id=args['session_id'],
+                                               peer_session_id=args['peer_session_id'])
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "l2tpDestroySession":
-                self.dptcore.l2tpDestroySession(tunnel_id=handle.getArguments()['tunnel_id'],
-                                               session_id=handle.getArguments()['session_id'])
+                self.dptcore.l2tpDestroySession(tunnel_id=args['tunnel_id'],
+                                               session_id=args['session_id'])
                 self.agentSession.methodSuccess(handle)
                 
             else:
                 self.agentSession.raiseException(handle, "blubber")
+	except DptCoreException, e:
+	    print str(e)
+            self.agentSession.raiseException(handle, e.serror)
+	except L2tpTunnelException, e:
+	    print str(e)
+            self.agentSession.raiseException(handle, e.serror)
+	except L2tpSessionException, e:
+	    print str(e)
+            self.agentSession.raiseException(handle, e.serror)
         except:
+	    print "something failed, but we do not know, what ..."
             self.agentSession.raiseException(handle, "something failed, but we do not know, what ...")
+	    raise
 
-
-
-class DptCoreException(BaseException):
-    def __init__(self, serror):
-        self.serror = serror
-    def __str__(self):
-        return "<DptCoreException => serror: " + self.serror + " >"
 
 
 class DptCoreEvent(object):
@@ -244,7 +258,7 @@ class DptCore(object):
         """
         scmd = '/sbin/ip addr add ' + ipaddr + '/' + str(prefixlen) + ' dev ' + devname
         subprocess.call(scmd.split())
-        scmd = '/sbin/ip route replace default via ' + defroute + ' dev ' + devname
+        scmd = '/sbin/ip route add default via ' + defroute + ' dev ' + devname
         subprocess.call(scmd.split())
         #self.ipdb[devname].add_ip(ipaddr)
         #self.ipdb[devname].commit()
@@ -294,6 +308,7 @@ class DptCore(object):
                                                            kwargs['udp_sport'], 
                                                            kwargs['udp_dport'])
         self.l2tpTunnels[kwargs['tunnel_id']].create()
+	print "CREATING TUNNEL: " + str(self.l2tpTunnels[kwargs['tunnel_id']])
         return self.l2tpTunnels[kwargs['tunnel_id']]
 
 
@@ -313,6 +328,7 @@ class DptCore(object):
         """
         create an L2TP session
         """
+	print "A"
         if not 'name' in kwargs:
             raise DptCoreException("parameter name is missing")
         if not 'tunnel_id' in kwargs:
@@ -325,13 +341,16 @@ class DptCore(object):
         if kwargs['tunnel_id'] in self.l2tpTunnels:
             raise DptCoreException("tunnel exists")
 
-        return self.l2tpTunnels[kwargs['tunnel_id']].addSession(kwargs['name'], kwargs['session_id'], kwargs['peer_session_id'])
+        sess = self.l2tpTunnels[kwargs['tunnel_id']].addSession(kwargs['name'], kwargs['session_id'], kwargs['peer_session_id'])
+	print "CREATING SESSION: " + str(sess)
+	return sess
 
 
     def l2tpSessionDestroy(self, **kwargs):
         """
         destroy an L2TP session
         """
+	print "B"
         if not 'tunnel_id' in kwargs:
             raise DptCoreException("parameter tunnel_id is missing")
         if not 'session_id' in kwargs:
@@ -347,6 +366,6 @@ class DptCore(object):
 
 
 if __name__ == "__main__":
-    DptCore().run()
+    #DptCore().run()
+    DptCore("172.16.250.65").run() 
 
-    
