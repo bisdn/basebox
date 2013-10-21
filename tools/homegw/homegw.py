@@ -135,6 +135,9 @@ class HomeGateway(object):
         #   
         self.datapath = datapath.DataPath("xdpid=123, currently ignored", brokerUrl)
         
+        self.datapath.lsiDestroy(1000)
+        self.datapath.lsiDestroy(2000)
+        
         # create LSI for providing routing functionality
         #    
         self.datapath.lsiCreate(1000, "dp0", 3, 4, 2, "172.16.250.65", 6633, 5)
