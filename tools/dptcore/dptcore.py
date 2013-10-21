@@ -284,8 +284,8 @@ class DptCore(object):
             raise DptCoreException("tunnel exists")
         self.l2tpTunnels[kwargs['tunnel_id']] = L2tpTunnel(kwargs['tunnel_id'], 
                                                            kwargs['peer_tunnel_id'], 
-                                                           kwargs['remote'], 
-                                                           kwargs['local'], 
+                                                           kwargs['local'],
+                                                           kwargs['remote'],  
                                                            kwargs['udp_sport'], 
                                                            kwargs['udp_dport'])
         self.l2tpTunnels[kwargs['tunnel_id']].create()

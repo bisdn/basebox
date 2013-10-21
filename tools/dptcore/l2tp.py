@@ -63,7 +63,7 @@ class L2tpTunnelException(BaseException):
 class L2tpTunnel(object):
     """
     """
-    def __init__(self, tunnel_id, peer_tunnel_id, remote, local, udp_sport, udp_dport):
+    def __init__(self, tunnel_id, peer_tunnel_id, local, remote, udp_sport, udp_dport):
         self.sessions = {}
         self.created = False
         self.tunnel_id = tunnel_id
