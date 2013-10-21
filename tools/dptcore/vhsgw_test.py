@@ -37,7 +37,7 @@ vhsgw = vhsgws[0]
 print vhsgw
 
 #print vhsgw.test("blub")
-print vhsgw.vhsAttach('l2tp', 10, 20, '10.2.2.2', 6000)
+print vhsgw.vhsAttach('l2tp', 10, 20, '3000:1::1', 6000)
 
 time.sleep(4)
 
