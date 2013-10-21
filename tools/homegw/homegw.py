@@ -566,6 +566,7 @@ class HomeGateway(object):
                 (vhsTunnelID, vhsSessionID, vhsIP, vhsUdpPort) = self.qmfbroker.vhsAttach('l2tp', cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort)
                 tunnel = tunnel.Tunnel('veth1', cpeTunnelID, vhsTunnelID, cpeSessionID, vhsSessionID, cpeIP, vhsIP, cpeUdpPort, vhsUdpPort)
                 self.tunnels.append(tunnel)
+                print "CREATING TUNNEL => " + str(tunnel)
                 self.qmfbroker.l2tpCreateTunnel(tunnel.cpeTunnelID, 
                                                 tunnel.vhsTunnelID,
                                                 tunnel.vhsIP,
@@ -600,6 +601,7 @@ class HomeGateway(object):
             self.qmfbroker.linkDelIP('veth1', cpeIP, 64)
             for tunnel in self.tunnels:
                 if tunnel.cpeIP == cpeIP:
+                    print "DESTROYING TUNNEL => " + str(tunnel)
                     self.qmfbroker.vhsDetach(tunnel.cpeTunnelID, tunnel.cpeSessionID)
                     self.qmfbroker.l2tpDestroySession(tunnel.cpeTunnelID, tunnel.cpeSessionID)
                     self.qmfbroker.l2tpDestroyTunnel(tunnel.cpeTunnelID)

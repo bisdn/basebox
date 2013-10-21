@@ -34,7 +34,7 @@ class QmfBroker(object):
 
     def vhsAttach(self, type, cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort):
         result = self.getVhsGatewayInstance().vhsAttach(type, cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort)
-        return (result['vhsTunnelID'], result['vhsSessionID'], result['vhsIP'], result['vhsUdpPort'])
+        return (result.outArgs['vhsTunnelID'], result.outArgs['vhsSessionID'], result.outArgs['vhsIP'], result.outArgs['vhsUdpPort'])
 
 
     def vhsDetach(self, cpeTunnelID, cpeSessionID):
