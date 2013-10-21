@@ -254,6 +254,13 @@ class HomeGateway(object):
 
     def __cleanup(self):
         
+        for tun in self.tunnels:
+            print "DESTROYING TUNNEL => " + str(tun)
+            self.qmfbroker.vhsDetach('l2tp', tun.cpeTunnelID, tun.cpeSessionID)
+            self.qmfbroker.l2tpDestroySession(tun.cpeDevname, tun.cpeTunnelID, tun.cpeSessionID)
+            self.qmfbroker.l2tpDestroyTunnel(tun.cpeTunnelID)
+            self.tunnels.remove(tun)
+            
         # destroy veth pair via dptcore on data path
         #
         self.qmfbroker.vethLinkDestroy('veth0')
