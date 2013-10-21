@@ -37,8 +37,8 @@ class QmfBroker(object):
         return (result.outArgs['vhsTunnelID'], result.outArgs['vhsSessionID'], result.outArgs['vhsIP'], result.outArgs['vhsUdpPort'])
 
 
-    def vhsDetach(self, cpeTunnelID, cpeSessionID):
-        self.getVhsGatewayInstance().vhsDetach(cpeTunnelID, cpeSessionID)
+    def vhsDetach(self, type, cpeTunnelID, cpeSessionID):
+        self.getVhsGatewayInstance().vhsDetach(type, cpeTunnelID, cpeSessionID)
         
 
     def getDptCoreInstance(self):

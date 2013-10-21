@@ -583,7 +583,21 @@ class HomeGateway(object):
     
     def __handle_event_prefix_detached(self, dhclient):
         print "[S] event PREFIX-DETACHED"
-        
+
+        # for l2tp tunnel
+        for prefix in dhclient.new_prefixes:
+            p = prefix.get_subprefix(dmzLink.ifindex).prefix
+            cpeIP = str(p)+'2'
+            self.qmfbroker.linkDelIP('veth1', cpeIP, 64)
+            for tun in self.tunnels:
+                if tun.cpeIP == cpeIP:
+                    print "DESTROYING TUNNEL => " + str(tun)
+                    self.qmfbroker.vhsDetach('l2tp', tun.cpeTunnelID, tun.cpeSessionID)
+                    self.qmfbroker.l2tpDestroySession(tun.cpeTunnelID, tun.cpeSessionID)
+                    self.qmfbroker.l2tpDestroyTunnel(tun.cpeTunnelID)
+                    self.tuns.remove(tun)
+                    break
+                        
         for lanLink in self.lanLinks:
             for prefix in dhclient.new_prefixes:
                 p = prefix.get_subprefix(lanLink.ifindex).prefix
@@ -594,19 +608,6 @@ class HomeGateway(object):
                 p = prefix.get_subprefix(dmzLink.ifindex).prefix
                 dmzLink.ip_addr_del(str(p)+'1', 64)
         
-        # for l2tp tunnel
-        for prefix in dhclient.new_prefixes:
-            p = prefix.get_subprefix(dmzLink.ifindex).prefix
-            cpeIP = str(p)+'2'
-            self.qmfbroker.linkDelIP('veth1', cpeIP, 64)
-            for tun in self.tunnels:
-                if tun.cpeIP == cpeIP:
-                    print "DESTROYING TUNNEL => " + str(tun)
-                    self.qmfbroker.vhsDetach(tun.cpeTunnelID, tun.cpeSessionID)
-                    self.qmfbroker.l2tpDestroySession(tun.cpeTunnelID, tun.cpeSessionID)
-                    self.qmfbroker.l2tpDestroyTunnel(tun.cpeTunnelID)
-                    self.tuns.remove(tun)
-                    break
             
         print "[E] event PREFIX-DETACHED"
 
