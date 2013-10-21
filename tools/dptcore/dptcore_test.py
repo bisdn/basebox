@@ -66,7 +66,7 @@ dptcore.l2tpDestroyTunnel(cpeTunnelID)
 
 time.sleep(2)
 
-dptcore.linkDelIP('veth1', '3000::1/64')
+dptcore.linkDelIP('veth1', '3000::1', 64)
 dptcore.vethLinkDestroy('veth0')
 
 sess.close()
