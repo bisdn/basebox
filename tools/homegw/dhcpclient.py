@@ -40,7 +40,7 @@ class DhcpClient(object):
     def request(self):
         'call ISC dhclient with following parameters: /sbin/dhclient -v -6 -P -pf ${PIDFILE} ${IFACE}'
         try:
-            dhclient_cmd = self.dhclient_binary + ' -q -P -1 -timeout 30 -pf ' + self.pidfile + ' ' + self.devname
+            dhclient_cmd = self.dhclient_binary + ' -q -P -1 -timeout 10 -pf ' + self.pidfile + ' ' + self.devname
             print 'DHCP request: executing command => ' + str(dhclient_cmd.split())
             self.process = subprocess.Popen(dhclient_cmd.split(), shell=False, stdout=subprocess.PIPE)
             rc = self.process.communicate()
@@ -82,7 +82,7 @@ class DhcpClient(object):
     def release(self):
         print "sending DHCP release: " + str(self)
         try:
-            dhclient_cmd = self.dhclient_binary + ' -q -N -r -timeout 30 -pf ' + self.pidfile + ' ' + self.devname
+            dhclient_cmd = self.dhclient_binary + ' -q -N -r -timeout 10 -pf ' + self.pidfile + ' ' + self.devname
             print 'DHCP release: executing command => ' + str(dhclient_cmd.split())
             process = subprocess.Popen(dhclient_cmd.split(), shell=False, stdout=subprocess.PIPE)
             rc = process.communicate()
