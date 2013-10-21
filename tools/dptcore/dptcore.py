@@ -244,7 +244,7 @@ class DptCore(object):
         """
         scmd = '/sbin/ip addr add ' + ipaddr + '/' + str(prefixlen) + ' dev ' + devname
         subprocess.call(scmd.split())
-        scmd = '/sbin/ip route add default via ' + defroute + ' dev ' + devname
+        scmd = '/sbin/ip route replace default via ' + defroute + ' dev ' + devname
         subprocess.call(scmd.split())
         #self.ipdb[devname].add_ip(ipaddr)
         #self.ipdb[devname].commit()
