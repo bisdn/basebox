@@ -554,8 +554,8 @@ class HomeGateway(object):
             cpeIP = str(p)+'2'
             defrouter = str(p)+'1'
             self.qmfbroker.linkAddIP('veth1', cpeIP, 64, defrouter)
-            for tunnel in self.tunnels:
-                if tunnel.cpeIP == cpeIP:
+            for tun in self.tunnels:
+                if tun.cpeIP == cpeIP:
                     break
             else:
                 # TODO: get a unique tunnel ID
@@ -564,19 +564,19 @@ class HomeGateway(object):
                 cpeSessionID = 1
                 cpeUdpPort = 6000
                 (vhsTunnelID, vhsSessionID, vhsIP, vhsUdpPort) = self.qmfbroker.vhsAttach('l2tp', cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort)
-                tunnel = tunnel.Tunnel('veth1', cpeTunnelID, vhsTunnelID, cpeSessionID, vhsSessionID, cpeIP, vhsIP, cpeUdpPort, vhsUdpPort)
-                self.tunnels.append(tunnel)
-                print "CREATING TUNNEL => " + str(tunnel)
-                self.qmfbroker.l2tpCreateTunnel(tunnel.cpeTunnelID, 
-                                                tunnel.vhsTunnelID,
-                                                tunnel.vhsIP,
-                                                tunnel.cpeIP,
-                                                tunnel.cpeUdpPort,
-                                                tunnel.vhsUdpPort)
-                self.qmfbroker.l2tpCreateSession(tunnel.cpeDevname,
-                                                 tunnel.cpeTunnelID,
-                                                 tunnel.cpeSessionID,
-                                                 tunnel.vhsSessionID) 
+                tun = tunnel.Tunnel('veth1', cpeTunnelID, vhsTunnelID, cpeSessionID, vhsSessionID, cpeIP, vhsIP, cpeUdpPort, vhsUdpPort)
+                self.tunnels.append(tun)
+                print "CREATING TUNNEL => " + str(tun)
+                self.qmfbroker.l2tpCreateTunnel(tun.cpeTunnelID, 
+                                                tun.vhsTunnelID,
+                                                tun.vhsIP,
+                                                tun.cpeIP,
+                                                tun.cpeUdpPort,
+                                                tun.vhsUdpPort)
+                self.qmfbroker.l2tpCreateSession(tun.cpeDevname,
+                                                 tun.cpeTunnelID,
+                                                 tun.cpeSessionID,
+                                                 tun.vhsSessionID) 
                                                  
         print "[E] event PREFIX-ATTACHED"
     
@@ -599,13 +599,13 @@ class HomeGateway(object):
             p = prefix.get_subprefix(dmzLink.ifindex).prefix
             cpeIP = str(p)+'2'
             self.qmfbroker.linkDelIP('veth1', cpeIP, 64)
-            for tunnel in self.tunnels:
-                if tunnel.cpeIP == cpeIP:
-                    print "DESTROYING TUNNEL => " + str(tunnel)
-                    self.qmfbroker.vhsDetach(tunnel.cpeTunnelID, tunnel.cpeSessionID)
-                    self.qmfbroker.l2tpDestroySession(tunnel.cpeTunnelID, tunnel.cpeSessionID)
-                    self.qmfbroker.l2tpDestroyTunnel(tunnel.cpeTunnelID)
-                    self.tunnels.remove(tunnel)
+            for tun in self.tunnels:
+                if tun.cpeIP == cpeIP:
+                    print "DESTROYING TUNNEL => " + str(tun)
+                    self.qmfbroker.vhsDetach(tun.cpeTunnelID, tun.cpeSessionID)
+                    self.qmfbroker.l2tpDestroySession(tun.cpeTunnelID, tun.cpeSessionID)
+                    self.qmfbroker.l2tpDestroyTunnel(tun.cpeTunnelID)
+                    self.tuns.remove(tun)
                     break
             
         print "[E] event PREFIX-DETACHED"
