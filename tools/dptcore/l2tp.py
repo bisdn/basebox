@@ -40,6 +40,8 @@ class L2tpSession(object):
         print "session create: " + str(self) + " " + scmd
         subprocess.call(scmd.split())
         self.created = True
+        scmd = '/sbin/ip link set up dev ' + str(self.name)
+        subprocess.call(scmd.split())
     
     def destroy(self):
         """
