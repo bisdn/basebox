@@ -265,9 +265,7 @@ class HomeGateway(object):
             self.qmfbroker.l2tpDestroyTunnel(tun.cpeTunnelID)
             self.tunnels.remove(tun)
             
-        # destroy veth pair via dptcore on data path
-        #
-        self.qmfbroker.vethLinkDestroy('veth0')
+
 
         # TODO: stop whatever ...            
         for dmzLink in self.dmzLinks:
@@ -299,7 +297,11 @@ class HomeGateway(object):
         # 
         self.qmfbroker.lsiDestroy(1000)
         self.qmfbroker.lsiDestroy(2000)  
-        
+
+        # destroy veth pair via dptcore on data path
+        #
+        self.qmfbroker.vethLinkDestroy('veth0')
+                
         # shutdown QMF agent session
         self.qmfAgentSession.close()
         self.qmfConnection.close()
