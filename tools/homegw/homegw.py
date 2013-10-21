@@ -576,7 +576,8 @@ class HomeGateway(object):
                                                     tun.cpeIP,
                                                     tun.cpeUdpPort,
                                                     tun.vhsUdpPort)
-                    self.qmfbroker.l2tpCreateSession(tun.cpeDevname,
+                    self.qmfbroker.l2tpCreateSession('l2tp',
+                                                     tun.cpeDevname,
                                                      tun.cpeTunnelID,
                                                      tun.cpeSessionID,
                                                      tun.vhsSessionID) 
@@ -599,7 +600,7 @@ class HomeGateway(object):
                     if tun.cpeIP == cpeIP:
                         print "DESTROYING TUNNEL => " + str(tun)
                         self.qmfbroker.vhsDetach('l2tp', tun.cpeTunnelID, tun.cpeSessionID)
-                        self.qmfbroker.l2tpDestroySession(tun.cpeTunnelID, tun.cpeSessionID)
+                        self.qmfbroker.l2tpDestroySession('l2tp', tun.cpeTunnelID, tun.cpeSessionID)
                         self.qmfbroker.l2tpDestroyTunnel(tun.cpeTunnelID)
                         self.tuns.remove(tun)
                         break

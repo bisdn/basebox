@@ -75,8 +75,8 @@ class QmfBroker(object):
         self.getDptCoreInstance().l2tpCreateSession(name, tunnel_id, session_id, peer_session_id)
         
         
-    def l2tpDestroySession(self, tunnel_id, session_id):
-        self.getDptCoreInstance().l2tpDestroySession(tunnel_id, session_id)
+    def l2tpDestroySession(self, name, tunnel_id, session_id):
+        self.getDptCoreInstance().l2tpDestroySession(name, tunnel_id, session_id)
         
         
     def getXdpdInstance(self, xdpid):
