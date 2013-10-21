@@ -566,8 +566,9 @@ class HomeGateway(object):
                     # TODO: get a unique session ID
                     cpeSessionID = 1
                     cpeUdpPort = 6000
+                    cpeDevname = 'l2tpeth' + str(cpeTunnelID)
                     (vhsTunnelID, vhsSessionID, vhsIP, vhsUdpPort) = self.qmfbroker.vhsAttach('l2tp', cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort)
-                    tun = tunnel.Tunnel('veth1', cpeTunnelID, vhsTunnelID, cpeSessionID, vhsSessionID, cpeIP, vhsIP, cpeUdpPort, vhsUdpPort)
+                    tun = tunnel.Tunnel(cpeDevname, cpeTunnelID, vhsTunnelID, cpeSessionID, vhsSessionID, cpeIP, vhsIP, cpeUdpPort, vhsUdpPort)
                     self.tunnels.append(tun)
                     print "CREATING TUNNEL => " + str(tun)
                     self.qmfbroker.l2tpCreateTunnel(tun.cpeTunnelID, 
