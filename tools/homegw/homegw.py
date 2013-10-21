@@ -415,7 +415,7 @@ class HomeGateway(object):
             print "NEWLINK (DMZ) => " + ifname
             i = self.ipr.link_lookup(ifname=ifname)[0]
             dmzLink = routerlink.RouterDmzLink(self, ifname, i)
-            self.dmzLinks.append()
+            self.dmzLinks.append(dmzLink)
             self.dmzDevnames.remove(ifname)
             self.set_interfaces([dmzLink], "down", 0)
             self.flush_addresses([dmzLink])
