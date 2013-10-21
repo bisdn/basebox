@@ -44,7 +44,7 @@ cpeTunnelID=10
 vhsTunnelID=10
 cpeSessionID=1
 vhsSessionID=1
-cpeIP='3000::1'
+cpeIP='3000::10'
 vhsIP='3000::2'
 cpeUdpPort=6000
 vhsUdpPort=6001
@@ -66,7 +66,7 @@ dptcore.l2tpDestroyTunnel(cpeTunnelID)
 
 time.sleep(2)
 
-dptcore.linkDelIP('veth1', '3000::1', 64)
+dptcore.linkDelIP('veth1', '3000::10', 64)
 dptcore.vethLinkDestroy('veth0')
 
 sess.close()
