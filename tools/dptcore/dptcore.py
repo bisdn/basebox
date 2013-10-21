@@ -321,6 +321,7 @@ class DptCore(object):
             raise DptCoreException("parameter tunnel_id is missing")
         self.l2tpTunnels[kwargs['tunnel_id']].destroy()
         del self.l2tpTunnels[kwargs['tunnel_id']]
+        self.l2tpTunnels.remove(kwargs['tunnel_id'])
         
         
 
