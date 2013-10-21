@@ -131,31 +131,31 @@ class HomeGateway(object):
                  
 
 
-        # get access to datapath (xdpd) instance on bottom half of HGW
+        # get access to qmfbroker (xdpd) instance on bottom half of HGW
         #   
-        self.datapath = datapath.DataPath("xdpid=123, currently ignored", brokerUrl)
+        self.qmfbroker = qmfbroker.QmfBroker("xdpid=123, currently ignored", brokerUrl)
         
-        self.datapath.lsiDestroy(1000)
-        self.datapath.lsiDestroy(2000)
+        self.qmfbroker.lsiDestroy(1000)
+        self.qmfbroker.lsiDestroy(2000)
         
         # create LSI for providing routing functionality
         #    
-        self.datapath.lsiCreate(1000, "dp0", 3, 4, 2, "172.16.250.65", 6633, 5)
+        self.qmfbroker.lsiCreate(1000, "dp0", 3, 4, 2, "172.16.250.65", 6633, 5)
 
         # create LSI for internal switching functionality
         #
-        self.datapath.lsiCreate(2000, "dp1", 3, 4, 2, "172.16.250.65", 6644, 5)
+        self.qmfbroker.lsiCreate(2000, "dp1", 3, 4, 2, "172.16.250.65", 6644, 5)
 
         time.sleep(2)
         
         # create virtual link between both LSI instances
         #
         # this is also auto-attaching the interfaces
-        (devname1, devname2) = self.datapath.lsiCreateVirtualLink(dpid1=1000, dpid2=2000)
+        (devname1, devname2) = self.qmfbroker.lsiCreateVirtualLink(dpid1=1000, dpid2=2000)
 
         # create veth pair via dptcore on data path
         #
-        self.datapath.vethLinkCreate('veth0', 'veth1')
+        self.qmfbroker.vethLinkCreate('veth0', 'veth1')
         self.dmzDevnames.append('veth0')
         
         time.sleep(2)
@@ -179,9 +179,9 @@ class HomeGateway(object):
         # attach all WAN, LAN, DMZ ports to routing LSI 
         #
         for devname in self.wanDevnames:
-            self.datapath.portAttach(1000, devname)
+            self.qmfbroker.portAttach(1000, devname)
         for devname in self.dmzDevnames:
-            self.datapath.portAttach(1000, devname)
+            self.qmfbroker.portAttach(1000, devname)
         # PLEASE NOTE:
         # the virtual link LAN interface was already attached during creation to the routing LSI
         
@@ -192,7 +192,7 @@ class HomeGateway(object):
         if 'ifaces' in kwargs:
             if 'lan' in kwargs['ifaces']:
                 for devname in kwargs['ifaces']['lan']: 
-                    self.datapath.portAttach(2000, devname)
+                    self.qmfbroker.portAttach(2000, devname)
         # PLEASE NOTE:
         # the virtual link LAN interface was already attached during creation to the switching LSI
 
@@ -254,7 +254,7 @@ class HomeGateway(object):
         
         # destroy veth pair via dptcore on data path
         #
-        self.datapath.vethLinkDestroy('veth0')
+        self.qmfbroker.vethLinkDestroy('veth0')
 
         # TODO: stop whatever ...            
         for dmzLink in self.dmzLinks:
@@ -284,8 +284,8 @@ class HomeGateway(object):
             
         # remove data path elements
         # 
-        self.datapath.lsiDestroy(1000)
-        self.datapath.lsiDestroy(2000)  
+        self.qmfbroker.lsiDestroy(1000)
+        self.qmfbroker.lsiDestroy(2000)  
         
         # shutdown QMF agent session
         self.qmfAgentSession.close()
@@ -550,8 +550,8 @@ class HomeGateway(object):
         # for l2tp tunnel
         for prefix in dhclient.new_prefixes:
             p = prefix.get_subprefix(dmzLink.ifindex).prefix
-            self.datapath.linkAddIP('veth1', str(p)+'2', 64)
-            self.datapath
+            self.qmfbroker.linkAddIP('veth1', str(p)+'2', 64)
+            self.qmfbroker
         
         print "[E] event PREFIX-ATTACHED"
     
@@ -572,7 +572,7 @@ class HomeGateway(object):
         # for l2tp tunnel
         for prefix in dhclient.new_prefixes:
             p = prefix.get_subprefix(dmzLink.ifindex).prefix
-            self.datapath.linkDelIP('veth1', str(p)+'2', 64)
+            self.qmfbroker.linkDelIP('veth1', str(p)+'2', 64)
             
         print "[E] event PREFIX-DETACHED"
 
