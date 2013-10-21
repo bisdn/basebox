@@ -549,35 +549,38 @@ class HomeGateway(object):
                 dmzLink.ip_addr_add(str(p)+'1', 64)
                 
         # for l2tp tunnel
-        for prefix in dhclient.new_prefixes:
-            p = prefix.get_subprefix(dmzLink.ifindex).prefix
-            cpeIP = str(p)+'2'
-            defrouter = str(p)+'1'
-            self.qmfbroker.linkAddIP('veth1', cpeIP, 64, defrouter)
-            for tun in self.tunnels:
-                if tun.cpeIP == cpeIP:
-                    break
-            else:
-                # TODO: get a unique tunnel ID
-                cpeTunnelID = 10
-                # TODO: get a unique session ID
-                cpeSessionID = 1
-                cpeUdpPort = 6000
-                (vhsTunnelID, vhsSessionID, vhsIP, vhsUdpPort) = self.qmfbroker.vhsAttach('l2tp', cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort)
-                tun = tunnel.Tunnel('veth1', cpeTunnelID, vhsTunnelID, cpeSessionID, vhsSessionID, cpeIP, vhsIP, cpeUdpPort, vhsUdpPort)
-                self.tunnels.append(tun)
-                print "CREATING TUNNEL => " + str(tun)
-                self.qmfbroker.l2tpCreateTunnel(tun.cpeTunnelID, 
-                                                tun.vhsTunnelID,
-                                                tun.vhsIP,
-                                                tun.cpeIP,
-                                                tun.cpeUdpPort,
-                                                tun.vhsUdpPort)
-                self.qmfbroker.l2tpCreateSession(tun.cpeDevname,
-                                                 tun.cpeTunnelID,
-                                                 tun.cpeSessionID,
-                                                 tun.vhsSessionID) 
-                                                 
+        for dmzLink in self.dmzLinks:
+            if dmzLink.devname != 'veth0':
+                continue
+            for prefix in dhclient.new_prefixes:
+                p = prefix.get_subprefix(dmzLink.ifindex).prefix
+                cpeIP = str(p)+'2'
+                defrouter = str(p)+'1'
+                self.qmfbroker.linkAddIP('veth1', cpeIP, 64, defrouter)
+                for tun in self.tunnels:
+                    if tun.cpeIP == cpeIP:
+                        break
+                else:
+                    # TODO: get a unique tunnel ID
+                    cpeTunnelID = 10
+                    # TODO: get a unique session ID
+                    cpeSessionID = 1
+                    cpeUdpPort = 6000
+                    (vhsTunnelID, vhsSessionID, vhsIP, vhsUdpPort) = self.qmfbroker.vhsAttach('l2tp', cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort)
+                    tun = tunnel.Tunnel('veth1', cpeTunnelID, vhsTunnelID, cpeSessionID, vhsSessionID, cpeIP, vhsIP, cpeUdpPort, vhsUdpPort)
+                    self.tunnels.append(tun)
+                    print "CREATING TUNNEL => " + str(tun)
+                    self.qmfbroker.l2tpCreateTunnel(tun.cpeTunnelID, 
+                                                    tun.vhsTunnelID,
+                                                    tun.vhsIP,
+                                                    tun.cpeIP,
+                                                    tun.cpeUdpPort,
+                                                    tun.vhsUdpPort)
+                    self.qmfbroker.l2tpCreateSession(tun.cpeDevname,
+                                                     tun.cpeTunnelID,
+                                                     tun.cpeSessionID,
+                                                     tun.vhsSessionID) 
+                                                     
         print "[E] event PREFIX-ATTACHED"
     
     
@@ -585,18 +588,21 @@ class HomeGateway(object):
         print "[S] event PREFIX-DETACHED"
 
         # for l2tp tunnel
-        for prefix in dhclient.new_prefixes:
-            p = prefix.get_subprefix(dmzLink.ifindex).prefix
-            cpeIP = str(p)+'2'
-            self.qmfbroker.linkDelIP('veth1', cpeIP, 64)
-            for tun in self.tunnels:
-                if tun.cpeIP == cpeIP:
-                    print "DESTROYING TUNNEL => " + str(tun)
-                    self.qmfbroker.vhsDetach('l2tp', tun.cpeTunnelID, tun.cpeSessionID)
-                    self.qmfbroker.l2tpDestroySession(tun.cpeTunnelID, tun.cpeSessionID)
-                    self.qmfbroker.l2tpDestroyTunnel(tun.cpeTunnelID)
-                    self.tuns.remove(tun)
-                    break
+        for dmzLink in self.dmzLinks:
+            if dmzLink.devname != 'veth0':
+                continue    
+            for prefix in dhclient.new_prefixes:
+                p = prefix.get_subprefix(dmzLink.ifindex).prefix
+                cpeIP = str(p)+'2'
+                self.qmfbroker.linkDelIP('veth1', cpeIP, 64)
+                for tun in self.tunnels:
+                    if tun.cpeIP == cpeIP:
+                        print "DESTROYING TUNNEL => " + str(tun)
+                        self.qmfbroker.vhsDetach('l2tp', tun.cpeTunnelID, tun.cpeSessionID)
+                        self.qmfbroker.l2tpDestroySession(tun.cpeTunnelID, tun.cpeSessionID)
+                        self.qmfbroker.l2tpDestroyTunnel(tun.cpeTunnelID)
+                        self.tuns.remove(tun)
+                        break
                         
         for lanLink in self.lanLinks:
             for prefix in dhclient.new_prefixes:
