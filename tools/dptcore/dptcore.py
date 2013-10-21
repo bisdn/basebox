@@ -82,7 +82,7 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
         self.sch_dptcore.addMethod(self.sch_dptcore_linkDelIPMethod)
 
         self.agentSession.registerSchema(self.sch_dptcore)
-        qmf2.AgentHandler.start(self)
+        
         
         
     def method(self, handle, methodName, args, subtypes, addr, userId):
