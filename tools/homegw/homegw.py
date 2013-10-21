@@ -109,6 +109,7 @@ class HomeGateway(object):
         self.dmzDevnames = []
         self.events = []
         self.tunnels = []
+        self.uniquePrefix = int(0)
 
         try:
             self.qmfConnection = cqpid.Connection("127.0.0.1")
@@ -208,7 +209,8 @@ class HomeGateway(object):
         for ifname in self.wanDevnames[:]:
             try:
                 i = self.ipr.link_lookup(ifname=ifname)[0]
-                self.wanLinks.append(routerlink.RouterWanLink(self, ifname, i))
+                self.wanLinks.append(routerlink.RouterWanLink(self, self.uniquePrefix, ifname, i))
+                self.uniquePrefix = self.uniquePrefix + 1
                 self.wanDevnames.remove(ifname)
             except:
                 print "<error> WAN interface " + ifname + " not found"
@@ -216,7 +218,8 @@ class HomeGateway(object):
         for ifname in self.lanDevnames[:]:
             try:
                 i = self.ipr.link_lookup(ifname=ifname)[0]
-                self.lanLinks.append(routerlink.RouterLanLink(self, ifname, i))
+                self.lanLinks.append(routerlink.RouterLanLink(self, ifname, i, self.uniquePrefix))
+                self.uniquePrefix = self.uniquePrefix + 1
                 self.lanDevnames.remove(ifname)
             except:
                 print "<error> LAN interface " + ifname + " not found"
@@ -224,7 +227,8 @@ class HomeGateway(object):
         for ifname in self.dmzDevnames[:]:
             try:
                 i = self.ipr.link_lookup(ifname=ifname)[0]
-                self.dmzLinks.append(routerlink.RouterDmzLink(self, ifname, i))
+                self.dmzLinks.append(routerlink.RouterDmzLink(self, ifname, i, self.uniquePrefix))
+                self.uniquePrefix = self.uniquePrefix + 1
                 self.dmzDevnames.remove(ifname)
             except:
                 print "<error> DMZ interface " + ifname + " not found"
@@ -402,7 +406,8 @@ class HomeGateway(object):
         if ifname in self.wanDevnames:
             print "NEWLINK (WAN) => " + ifname
             i = self.ipr.link_lookup(ifname=ifname)[0]
-            wanLink = routerlink.RouterWanLink(self, ifname, i)
+            wanLink = routerlink.RouterWanLink(self, ifname, i, self.uniquePrefix)
+            self.uniquePrefix = self.uniquePrefix + 1
             self.wanLinks.append(wanLink)
             self.wanDevnames.remove(ifname)
             self.set_interfaces([wanLink], "down", 0)
@@ -411,7 +416,8 @@ class HomeGateway(object):
         if ifname in self.lanDevnames:
             print "NEWLINK (LAN) => " + ifname
             i = self.ipr.link_lookup(ifname=ifname)[0]
-            lanLink = routerlink.RouterLanLink(self, ifname, i)
+            lanLink = routerlink.RouterLanLink(self, ifname, i, self.uniquePrefix)
+            self.uniquePrefix = self.uniquePrefix + 1
             self.lanLinks.append(lanLink)
             self.lanDevnames.remove(ifname)
             self.set_interfaces([lanLink], "down", 0)
@@ -420,7 +426,8 @@ class HomeGateway(object):
         if ifname in self.dmzDevnames:
             print "NEWLINK (DMZ) => " + ifname
             i = self.ipr.link_lookup(ifname=ifname)[0]
-            dmzLink = routerlink.RouterDmzLink(self, ifname, i)
+            dmzLink = routerlink.RouterDmzLink(self, ifname, i, self.uniquePrefix)
+            self.uniquePrefix = self.uniquePrefix + 1
             self.dmzLinks.append(dmzLink)
             self.dmzDevnames.remove(ifname)
             self.set_interfaces([dmzLink], "down", 0)
@@ -547,18 +554,18 @@ class HomeGateway(object):
         
         for lanLink in self.lanLinks:
             for prefix in dhclient.new_prefixes:
-                p = prefix.get_subprefix(lanLink.ifindex).prefix
+                p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
                 lanLink.radvd.add_prefix(radvd.IPv6Prefix(str(p), 64))
             for prefix in dhclient.new_prefixes:
-                p = prefix.get_subprefix(lanLink.ifindex).prefix
+                p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
                 lanLink.ip_addr_add(str(p)+'1', 64)
                 
         for dmzLink in self.dmzLinks:
             for prefix in dhclient.new_prefixes:
-                p = prefix.get_subprefix(dmzLink.ifindex).prefix
+                p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
                 dmzLink.radvd.add_prefix(radvd.IPv6Prefix(str(p), 64))
             for prefix in dhclient.new_prefixes:
-                p = prefix.get_subprefix(dmzLink.ifindex).prefix
+                p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
                 dmzLink.ip_addr_add(str(p)+'1', 64)
                 
         # for l2tp tunnel
@@ -566,7 +573,7 @@ class HomeGateway(object):
             if dmzLink.devname != 'veth0':
                 continue
             for prefix in dhclient.new_prefixes:
-                p = prefix.get_subprefix(dmzLink.ifindex).prefix
+                p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
                 cpeIP = str(p)+'2'
                 defrouter = str(p)+'1'
                 self.qmfbroker.linkAddIP('veth1', cpeIP, 64, defrouter)
@@ -609,7 +616,7 @@ class HomeGateway(object):
             if dmzLink.devname != 'veth0':
                 continue    
             for prefix in dhclient.new_prefixes:
-                p = prefix.get_subprefix(dmzLink.ifindex).prefix
+                p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
                 cpeIP = str(p)+'2'
                 self.qmfbroker.linkDelIP('veth1', cpeIP, 64)
                 for tun in self.tunnels:
@@ -624,12 +631,12 @@ class HomeGateway(object):
                         
         for lanLink in self.lanLinks:
             for prefix in dhclient.new_prefixes:
-                p = prefix.get_subprefix(lanLink.ifindex).prefix
+                p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
                 lanLink.ip_addr_del(str(p)+'1', 64)
         
         for dmzLink in self.dmzLinks:
             for prefix in dhclient.new_prefixes:
-                p = prefix.get_subprefix(dmzLink.ifindex).prefix
+                p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
                 dmzLink.ip_addr_del(str(p)+'1', 64)
         
             

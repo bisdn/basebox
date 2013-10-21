@@ -15,9 +15,10 @@ STATE_RA_ATTACHED = 1
 
 class Link(object):
     """abstraction for a link"""
-    def __init__(self, parent, devname, ifindex, state = STATE_RA_DETACHED):
+    def __init__(self, parent, devname, ifindex, uniquePrefix, state = STATE_RA_DETACHED):
         self.parent = parent
         self.devname = devname
+        self.uniquePrefix = uniquePrefix
         self.ifindex = ifindex
         self.state = state
         self.addresses = {}
@@ -32,7 +33,7 @@ class Link(object):
         for addr in self.addresses:
             saddr += addr + ', '
         saddr += ')'
-        return 'Link(dev='+self.devname+', ifindex='+str(self.ifindex)+', state='+str(self.state)+', '+saddr+', '+laddr+')'
+        return 'Link(dev='+self.devname+', ifindex='+str(self.ifindex)+', uniquePrefix='+str(self.uniquePrefix)+', state='+str(self.state)+', '+saddr+', '+laddr+')'
     
     def nl_add_addr(self, addr, prefixlen):
         if not re.match('fe80', addr):
@@ -85,8 +86,8 @@ class Link(object):
         
 class RouterWanLink(Link):
     """abstraction for an uplink on the HG's router component"""
-    def __init__(self, parent, devname, ifindex, state=STATE_RA_DETACHED):
-        super(RouterWanLink, self).__init__(parent, devname, ifindex, state)
+    def __init__(self, parent, devname, ifindex, uniquePrefix, state=STATE_RA_DETACHED):
+        super(RouterWanLink, self).__init__(parent, devname, ifindex, uniquePrefix, state)
         self.dhclient = dhcpclient.DhcpClient(parent, devname)
 
     def __str__(self):
@@ -103,8 +104,8 @@ class RouterWanLink(Link):
 
 class RouterLanLink(Link):
     """abstraction for a downlink on the HG's router component"""
-    def __init__(self, parent, devname, ifindex, state=STATE_RA_DETACHED):
-        super(RouterLanLink, self).__init__(parent, devname, ifindex, state)
+    def __init__(self, parent, devname, ifindex, uniquePrefix, state=STATE_RA_DETACHED):
+        super(RouterLanLink, self).__init__(parent, devname, ifindex, uniquePrefix, state)
         self.radvd = radvd.RAdvd(parent, devname)
         print str(self)
 
@@ -122,8 +123,8 @@ class RouterLanLink(Link):
 
 class RouterDmzLink(Link):
     """abstraction for a downlink on the HG's router component"""
-    def __init__(self, parent, devname, ifindex, state=STATE_RA_DETACHED):
-        super(RouterDmzLink, self).__init__(parent, devname, ifindex, state)
+    def __init__(self, parent, devname, ifindex, uniquePrefix, state=STATE_RA_DETACHED):
+        super(RouterDmzLink, self).__init__(parent, devname, ifindex, uniquePrefix, state)
         self.radvd = radvd.RAdvd(parent, devname)
         print str(self)
 
