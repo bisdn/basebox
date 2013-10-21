@@ -63,6 +63,10 @@ class QmfBroker(object):
         self.getDptCoreInstance().linkDelIP(devname, ipaddr, prefixlen)
         
         
+    def l2tpReset(self):
+        self.getDptCoreInstance().l2tpReset()
+        
+        
     def l2tpCreateTunnel(self, tunnel_id, peer_tunnel_id, remote, local, udp_sport, udp_dport):
         self.getDptCoreInstance().l2tpCreateTunnel(tunnel_id, peer_tunnel_id, remote, local, udp_sport, udp_dport)
 

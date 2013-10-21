@@ -44,6 +44,9 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
         self.sch_dptcore_testMethod.addArgument(qmf2.SchemaProperty("outstring", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_OUT))
         self.sch_dptcore.addMethod(self.sch_dptcore_testMethod)
 
+        self.sch_l2tpResetMethod = qmf2.SchemaMethod("l2tpReset", desc='destroy all L2TP tunnels')
+        self.sch_dptcore.addMethod(self.sch_l2tpResetMethod)
+
         self.sch_l2tpCreateTunnelMethod = qmf2.SchemaMethod("l2tpCreateTunnel", desc='create L2TP tunnel')
         self.sch_l2tpCreateTunnelMethod.addArgument(qmf2.SchemaProperty("tunnel_id", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
         self.sch_l2tpCreateTunnelMethod.addArgument(qmf2.SchemaProperty("peer_tunnel_id", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
@@ -131,6 +134,10 @@ class DptCoreQmfAgentHandler(qmf2.AgentHandler):
                                               local=args['local'],
                                               udp_sport=args['udp_sport'],
                                               udp_dport=args['udp_dport'])
+                self.agentSession.methodSuccess(handle)
+                
+            elif methodName == "l2tpReset":
+                self.dptcore.l2tpReset()
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "l2tpDestroyTunnel":
@@ -272,6 +279,15 @@ class DptCore(object):
         subprocess.call(scmd.split())
         #self.ipdb[devname].del_ip(ipaddr)
         #self.ipdb[devname].commit()
+        
+        
+    def l2tpReset(self):
+        """
+        destroy all L2TP tunnels
+        """
+        for tunnel_id, tun in self.l2tpTunnels.iteritems():
+            tun.destroy()
+        self.l2tpTunnels = {}
         
 
     def l2tpTunnelCreate(self, **kwargs):

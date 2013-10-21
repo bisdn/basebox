@@ -138,6 +138,7 @@ class HomeGateway(object):
         self.qmfbroker = qmfbroker.QmfBroker("xdpid=123, currently ignored", brokerUrl)
         
         # cleanup in case of a previous crash: create known state on data path
+        self.qmfbroker.l2tpReset()
         self.qmfbroker.vethLinkDestroy('veth0')
         self.qmfbroker.lsiDestroy(1000)
         self.qmfbroker.lsiDestroy(2000)
