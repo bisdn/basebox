@@ -41,5 +41,5 @@ vmcore_LDADD = -lpthread \
 	-lrofl \
 	-lrt
 
-AM_CPPFLAGS = -I/home/andreas/local/include/libnl3
-AM_LDFLAGS = -static -L/home/andreas/local/lib -lnl-route-3 -lnl-3
+AM_CPPFLAGS = -I/usr/local/libnl-3.2.22/include/libnl3
+AM_LDFLAGS = -static -L/usr/local/libnl-3.2.22/lib -lnl-route-3 -lnl-3
