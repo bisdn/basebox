@@ -91,6 +91,12 @@ public:
 	/**
 	 *
 	 */
+	std::string get_state_s() const;
+
+
+	/**
+	 *
+	 */
 	unsigned int get_flags() const { return flags; };
 
 

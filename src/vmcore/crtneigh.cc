@@ -111,3 +111,23 @@ crtneigh::crtneigh(
 
 
 
+std::string
+crtneigh::get_state_s() const
+{
+	std::string str;
+
+	switch (state) {
+	case NUD_INCOMPLETE: 	str = std::string("INCOMPLETE"); 	break;
+	case NUD_REACHABLE: 	str = std::string("REACHABLE"); 	break;
+	case NUD_STALE:			str = std::string("STALE");			break;
+	case NUD_DELAY:			str = std::string("DELAY");			break;
+	case NUD_PROBE:			str = std::string("PROBE");			break;
+	case NUD_FAILED:		str = std::string("FAILED");		break;
+	default:				str = std::string("UNKNOWN");		break;
+	}
+
+	return str;
+}
+
+
+
