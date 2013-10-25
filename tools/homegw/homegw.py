@@ -113,8 +113,14 @@ class HomeGateway(object):
         self.tunnels = []
         self.uniquePrefix = int(0)
 
+        # get a default brokerURL or the one specified
+        #
+        brokerUrl = "amqp://127.0.0.1:5672"
+        if 'brokerUrl' in kwargs:   
+            brokerUrl = kwargs['brokerUrl'] 
+                 
         try:
-            self.qmfConnection = cqpid.Connection("127.0.0.1")
+            self.qmfConnection = cqpid.Connection(brokerUrl)
             self.qmfConnection.open()
             self.qmfAgentSession = qmf2.AgentSession(self.qmfConnection, "{interval:10, reconnect:True}")
             self.qmfAgentSession.setVendor('bisdn.de')
@@ -128,12 +134,6 @@ class HomeGateway(object):
         self.ipr.register_callback(ipr_callback, lambda x: True, [self, ])
         self.ipdb = IPDB(self.ipr)
         
-        # get a default brokerURL or the one specified
-        #
-        brokerUrl = "amqp://127.0.0.1:5672"
-        if 'brokerUrl' in kwargs:   
-            brokerUrl = kwargs['brokerUrl'] 
-                 
 
 
         # get access to qmfbroker (xdpd) instance on bottom half of HGW
