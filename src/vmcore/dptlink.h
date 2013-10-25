@@ -206,7 +206,7 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, dptlink const& link) {
-		os << "<link: ";
+		os << "<dptlink: ";
 			os << "ifindex: " << (int)link.ifindex << " ";
 			os << "devname: " << link.dpt->get_port(link.of_port_no).get_name() << " ";
 			os << "hwaddr: " << link.dpt->get_port(link.of_port_no).get_hwaddr() << " ";
