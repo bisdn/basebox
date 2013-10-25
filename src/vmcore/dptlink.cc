@@ -334,47 +334,54 @@ dptlink::neigh_created(unsigned int ifindex, uint16_t nbindex)
 void
 dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 {
-	// filter out any events not related to our port
-	if (ifindex != this->ifindex)
-		return;
+	try {
 
-	if (neighs.find(nbindex) == neighs.end()) {
-		neigh_created(ifindex, nbindex);
-	}
-
-	// TODO: check status changes and notify dptneigh instance
-
-	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
-
-	switch (rtn.get_state()) {
-	case NUD_INCOMPLETE:
-	case NUD_DELAY:
-	case NUD_PROBE:
-	case NUD_FAILED: {
-		/* go on and delete entry */
-		if (neighs.find(nbindex) == neighs.end())
+		// filter out any events not related to our port
+		if (ifindex != this->ifindex)
 			return;
-		std::cerr << "dptlink::neigh_updated() DELETE => " << neighs[nbindex] << std::endl;
-		neighs[nbindex].flow_mod_delete();
-		neighs.erase(nbindex);
-	} break;
 
-	case NUD_STALE:
-	case NUD_NOARP:
-	case NUD_REACHABLE:
-	case NUD_PERMANENT: {
-		if (neighs.find(nbindex) != neighs.end()) {
-			neighs[nbindex].flow_mod_delete();
-			neighs.erase(nbindex);
+		if (neighs.find(nbindex) == neighs.end()) {
+			neigh_created(ifindex, nbindex);
 		}
 
-		std::cerr << "dptlink::neigh_updated() ADD => " << neighs[nbindex] << std::endl;
+		// TODO: check status changes and notify dptneigh instance
 
-		neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, /*of_table_id=*/2, ifindex, nbindex);
+		crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
-		neighs[nbindex].flow_mod_add();
+		switch (rtn.get_state()) {
+		case NUD_INCOMPLETE:
+		case NUD_DELAY:
+		case NUD_PROBE:
+		case NUD_FAILED: {
+			/* go on and delete entry */
+			if (neighs.find(nbindex) == neighs.end())
+				return;
+			std::cerr << "dptlink::neigh_updated() DELETE => " << neighs[nbindex] << std::endl;
+			neighs[nbindex].flow_mod_delete();
+			neighs.erase(nbindex);
+		} break;
 
-	} break;
+		case NUD_STALE:
+		case NUD_NOARP:
+		case NUD_REACHABLE:
+		case NUD_PERMANENT: {
+			if (neighs.find(nbindex) != neighs.end()) {
+				neighs[nbindex].flow_mod_delete();
+				neighs.erase(nbindex);
+			}
+
+			std::cerr << "dptlink::neigh_updated() ADD => " << neighs[nbindex] << std::endl;
+
+			neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, /*of_table_id=*/2, ifindex, nbindex);
+
+			neighs[nbindex].flow_mod_add();
+
+		} break;
+		}
+
+	} catch (eNetLinkNotFound& e) {
+		std::cerr << "dptlink::neigh_created() crtlink object not found" << std::endl;
+
 	}
 }
 
