@@ -472,8 +472,6 @@ vmcore::dump_state()
 
 			uint8_t scope = jt->first;
 
-			std::cerr << "routes with scope <" << (int)scope << "> => " << std::endl;
-
 			for (std::map<unsigned int, dptroute*>::iterator
 					kt = dptroutes[scope].begin(); kt != dptroutes[scope].end(); ++kt) {
 

@@ -113,14 +113,14 @@ public:
 	friend std::ostream&
 	operator<< (
 			std::ostream& os, crtnexthop const& nxthop) {
-		os << "crtnexthop={";
-		os << "family=" << (int)nxthop.family << " ";
-		os << "weight=" << (int)nxthop.weight << " ";
-		os << "ifindex=" << (int)nxthop.ifindex << " ";
-		os << "gateway=" << nxthop.gateway << " ";
-		os << "flags=" << nxthop.flags << " ";
-		os << "realms=" << (unsigned int)nxthop.realms << " ";
-		os << "}";
+		os << "<crtnexthop: ";
+		os << "family: " 	<< (int)nxthop.family << " ";
+		os << "weight: " 	<< (int)nxthop.weight << " ";
+		os << "ifindex: " 	<< (int)nxthop.ifindex << " ";
+		os << "gateway: " 	<< nxthop.gateway << " ";
+		os << "flags: " 	<< nxthop.flags << " ";
+		os << "realms: " 	<< (unsigned int)nxthop.realms << " ";
+		os << ">";
 		return os;
 	};
 };

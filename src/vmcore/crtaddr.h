@@ -168,16 +168,16 @@ public:
 	operator<< (std::ostream& os, crtaddr const& rtaddr)
 	{
 		os << "<crtaddr "
-				<< "label=" << rtaddr.label << " "
-				<< "ifindex=" << rtaddr.ifindex << " "
-				<< "af=" << rtaddr.af << " "
-				<< "prefixlen=" << rtaddr.prefixlen << " "
-				<< "mask=" << rtaddr.mask << " "
-				<< "scope=" << rtaddr.scope << " "
-				<< "flags=" << rtaddr.flags << " "
-				<< "local=" << rtaddr.local << " "
-				<< "peer=" << rtaddr.peer << " "
-				<< "broadcast=" << rtaddr.bcast << " "
+				<< "label: " << rtaddr.label << " "
+				<< "ifindex: " << rtaddr.ifindex << " "
+				<< "af: " << rtaddr.get_family_s() << " "
+				<< "prefixlen: " << rtaddr.prefixlen << " "
+				<< "mask: " << rtaddr.mask << " "
+				<< "scope: " << rtaddr.scope << " "
+				<< "flags: " << rtaddr.flags << " "
+				<< "local: " << rtaddr.local << " "
+				<< "peer: " << rtaddr.peer << " "
+				<< "broadcast: " << rtaddr.bcast << " "
 				<< ">";
 		return os;
 	};

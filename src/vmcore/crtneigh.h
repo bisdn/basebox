@@ -139,15 +139,15 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, crtneigh const& neigh)
 	{
-		os << "crtneigh{";
-			os << "state=" << neigh.state << " ";
-			os << "flags=" << neigh.flags << " ";
-			os << "ifindex=" << neigh.ifindex << " ";
-			os << "lladdr=" << neigh.lladdr << " ";
-			os << "dst=" << neigh.dst << " ";
-			os << "family=" << neigh.family << " ";
-			os << "type=" << neigh.type << " ";
-		os << "}";
+		os << "<crtneigh: ";
+			os << "state: " 	<< neigh.state << " ";
+			os << "flags: " 	<< neigh.flags << " ";
+			os << "ifindex: " 	<< neigh.ifindex << " ";
+			os << "lladdr: " 	<< neigh.lladdr << " ";
+			os << "dst: " 		<< neigh.dst << " ";
+			os << "family: " 	<< neigh.family << " ";
+			os << "type: " 		<< neigh.type << " ";
+		os << ">";
 		return os;
 	};
 

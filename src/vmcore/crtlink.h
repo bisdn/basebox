@@ -239,21 +239,21 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, crtlink const& rtlink)
 	{
-		os << "crtlink{"
-				<< "devname=" << rtlink.devname << " "
-				<< "maddr=" << rtlink.maddr.c_str() << " "
-				<< "bcast=" << rtlink.bcast.c_str() << " "
-				<< "flags=" << rtlink.flags << " "
-				<< "af=" << rtlink.af << " "
-				<< "arptype=" << rtlink.arptype << " "
-				<< "ifindex=" << rtlink.ifindex << " "
-				<< "mtu=" << rtlink.mtu << " ";
+		os << "<crtlink: "
+				<< "devname: " 	<< rtlink.devname << " "
+				<< "maddr: " 	<< rtlink.maddr.c_str() << " "
+				<< "bcast: " 	<< rtlink.bcast.c_str() << " "
+				<< "flags: " 	<< rtlink.flags << " "
+				<< "af: " 		<< rtlink.af << " "
+				<< "arptype: " 	<< rtlink.arptype << " "
+				<< "ifindex: " 	<< rtlink.ifindex << " "
+				<< "mtu: " 		<< rtlink.mtu << " ";
+		os << ">";
 		for (std::map<uint16_t, crtaddr>::const_iterator
 				it = rtlink.addrs.begin(); it != rtlink.addrs.end(); ++it) {
-			os << it->second << " ";
+			os << "        " << it->second << " ";
 		}
 
-		os << "}";
 		return os;
 	};
 

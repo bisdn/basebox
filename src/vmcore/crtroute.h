@@ -225,29 +225,28 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, crtroute const& rtr)
 	{
-		os << "crtroute{"
-				<< "table_id=" 	<< (unsigned int)rtr.table_id << " "
-				<< "scope=" 	<< (unsigned int)rtr.scope << " "
-				<< "tos=" 		<< (unsigned int)rtr.tos << " "
-				<< "protocol=" 	<< (unsigned int)rtr.protocol << " "
-				<< "priority=" 	<< (unsigned int)rtr.priority << " "
-				<< "family=" 	<< (unsigned int)rtr.family << " "
-				<< "dst=" 		<< rtr.dst << " "
-				<< "prefixlen=" << rtr.prefixlen << " "
-				<< "mask=" 		<< rtr.mask << " "
-				<< "src=" 		<< rtr.src << " "
-				<< "type=" 		<< (unsigned int)rtr.type << " "
-				<< "flags=" 	<< (unsigned int)rtr.flags << " "
-				<< "metric=" 	<< (int)rtr.metric << " "
-				<< "pref_src=" 	<< rtr.pref_src << " "
-				<< "ifindex=" 	<< (unsigned int)rtr.iif << " "
-				<< "nexthops={";
+		os << "<crtroute: "
+				<< "table_id: " 	<< rtr.get_table_id_s() << " "
+				<< "scope: " 		<< rtr.get_scope_s() << " "
+				<< "tos: " 			<< (unsigned int)rtr.tos << " "
+				<< "protocol: " 	<< (unsigned int)rtr.protocol << " "
+				<< "priority: " 	<< (unsigned int)rtr.priority << " "
+				<< "family: " 		<< (unsigned int)rtr.family << " "
+				<< "dst: " 			<< rtr.dst << " "
+				<< "prefixlen: " 	<< rtr.prefixlen << " "
+				<< "mask: " 		<< rtr.mask << " "
+				<< "src: " 			<< rtr.src << " "
+				<< "type: " 		<< (unsigned int)rtr.type << " "
+				<< "flags: " 		<< (unsigned int)rtr.flags << " "
+				<< "metric: " 		<< (int)rtr.metric << " "
+				<< "pref_src: " 	<< rtr.pref_src << " "
+				<< "ifindex: " 		<< (unsigned int)rtr.iif << " ";
+		os << ">";
 		for (std::vector<crtnexthop>::const_iterator
 				it = rtr.nexthops.begin(); it != rtr.nexthops.end(); ++it) {
-			os << (*it) << " ";
+			os << "        " << (*it) << " ";
 		}
-		os << "} ";
-		os << "}";
+
 		return os;
 	};
 
