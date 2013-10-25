@@ -145,7 +145,7 @@ public:
 
 		os << "<dptneigh: ";
 			os << rtn.get_dst() << " dev " << cnetlink::get_instance().get_link(neigh.ifindex).get_devname();
-			os << " lladdr " << rtn.get_lladdr() << " state " << rtn.get_state() << " ";
+			os << " lladdr " << rtn.get_lladdr() << " state " << rtn.get_state_s() << " ";
 			//os << "ifindex=" << neigh.ifindex << " ";
 			os << "nbindex=" << (unsigned int)neigh.nbindex << " ";
 			//os << "ofportno=" << (unsigned int)neigh.of_port_no << " ";

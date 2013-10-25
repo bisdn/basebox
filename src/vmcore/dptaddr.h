@@ -130,9 +130,9 @@ public:
 
 		os << "<dptaddr: ";
 			//os << "ifindex=" << addr.ifindex << " ";
-			os << "adindex=" << (unsigned int)addr.adindex << " ";
 			os << rta.get_family() << " " << rta.get_local_addr() << "/" << rta.get_prefixlen() << " dev " << cnetlink::get_instance().get_link(addr.ifindex).get_devname();
-			os << "oftableid=" << (unsigned int)addr.of_table_id << " ";
+			os << "adindex: " << (unsigned int)addr.adindex << " ";
+			os << "oftableid: " << (unsigned int)addr.of_table_id << " ";
 			//os << "flowentry=" << s_fe << " ";
 		os << ">";
 		return os;
