@@ -1,12 +1,14 @@
 #!/usr/bin/python
 
+import sys
+sys.path.append('/usr/local/lib/python2.7/site-packages/')
+
 from pyroute2 import IPDB
 import subprocess
 import select
 import qmf2
 import cqmf2
 import cqpid
-import sys
 import os
 from l2tp import *
 
