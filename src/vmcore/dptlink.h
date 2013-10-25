@@ -214,7 +214,7 @@ public:
 		os << ">" << std::endl;
 		for (std::map<uint16_t, dptaddr>::const_iterator
 				it = link.addrs.begin(); it != link.addrs.end(); ++it) {
-			os << "    " << it->second << " ";
+			os << "    " << it->second << std::endl;
 		}
 		for (std::map<uint16_t, dptneigh>::const_iterator
 				it = link.neighs.begin(); it != link.neighs.end(); ++it) {
