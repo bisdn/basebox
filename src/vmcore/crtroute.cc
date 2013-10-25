@@ -188,3 +188,40 @@ crtroute::get_nexthop(unsigned int index)
 
 
 
+std::string
+crtroute::get_table_id_s() const
+{
+	std::string str;
+
+	switch (scope) {
+	/*255*/case RT_TABLE_LOCAL:		str = std::string("local");		break;
+	/*254*/case RT_TABLE_MAIN:		str = std::string("main");		break;
+	/*253*/case RT_TABLE_DEFAULT:	str = std::string("default");	break;
+	/*252*/case RT_TABLE_COMPAT:	str = std::string("compat");	break;
+	default:						str = std::string("unknown");	break;
+	}
+
+	return str;
+}
+
+
+
+std::string
+crtroute::get_scope_s() const
+{
+	std::string str;
+
+	switch (scope) {
+	/*255*/case RT_SCOPE_NOWHERE:	str = std::string("nowhere");	break;
+	/*254*/case RT_SCOPE_HOST:		str = std::string("host");		break;
+	/*253*/case RT_SCOPE_LINK:		str = std::string("link");		break;
+	/*200*/case RT_SCOPE_SITE:		str = std::string("site");		break;
+	/*000*/case RT_SCOPE_UNIVERSE:	str = std::string("universe");	break;
+	default:						str = std::string("unknown");	break;
+	}
+
+	return str;
+}
+
+
+

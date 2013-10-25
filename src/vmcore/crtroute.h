@@ -111,7 +111,19 @@ public:
 	/**
 	 *
 	 */
+	std::string get_table_id_s() const;
+
+
+	/**
+	 *
+	 */
 	uint8_t get_scope() const { return scope; };
+
+
+	/**
+	 *
+	 */
+	std::string get_scope_s() const;
 
 
 	/**
