@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+import sys
+sys.path.append('/usr/local/lib/python2.7/site-packages/')
+
 from pyroute2.netlink.iproute import *
 from pyroute2 import IPRoute
 from pyroute2 import IPDB
@@ -8,7 +11,6 @@ from qmf.console import Session
 import subprocess
 import netaddr
 import select
-import sys
 import dns.resolver
 import os
 import re
