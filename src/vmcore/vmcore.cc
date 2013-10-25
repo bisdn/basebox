@@ -8,9 +8,10 @@ std::string	vmcore::dpath_close_script_path(DEFAULT_DPATH_CLOSE_SCRIPT_PATH);
 
 
 vmcore::vmcore() :
-		dpt(0)
+		dpt(0),
+		dump_state_interval(15)
 {
-
+	register_timer(VMCORE_TIMER_DUMP, dump_state_interval);
 }
 
 
@@ -20,6 +21,20 @@ vmcore::~vmcore()
 		delete_all_routes();
 
 		delete_all_ports();
+	}
+}
+
+
+
+void
+vmcore::handle_timeout(int opaque)
+{
+	switch (opaque) {
+	case VMCORE_TIMER_DUMP: {
+		dump_state();
+	} break;
+	default:
+		crofbase::handle_timeout(opaque);
 	}
 }
 
@@ -430,5 +445,15 @@ vmcore::execute(
 	exit(1); // just in case execvpe fails
 }
 
+
+
+void
+vmcore::dump_state()
+{
+
+
+
+	register_timer(VMCORE_TIMER_DUMP, dump_state_interval);
+}
 
 

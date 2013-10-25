@@ -60,6 +60,12 @@ private:
 	std::map<rofl::cofdpt*, std::map<uint32_t, dptlink*> > 		 dptlinks;	// mapped ports per data path element
 	std::map<uint8_t, std::map<unsigned int, dptroute*> >		 dptroutes;	// active routes => key1:table_id, key2:routing index, value: dptroute instance
 
+	enum vmcore_timer_t {
+		VMCORE_TIMER_BASE = 0x6423beed,
+		VMCORE_TIMER_DUMP,
+	};
+
+	int dump_state_interval;
 
 public:
 
@@ -96,6 +102,9 @@ public:
 
 	virtual void
 	handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg);
+
+	virtual void
+	handle_timeout(int opaque);
 
 
 public:
@@ -136,6 +145,9 @@ private:
 
 	void
 	run_dpath_close_script();
+
+	void
+	dump_state();
 };
 
 }; // end of namespace vmcore
