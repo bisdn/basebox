@@ -15,6 +15,7 @@ using namespace dptmap;
 dptaddr::dptaddr() :
 		rofbase(0),
 		dpt(0),
+		of_table_id(0), // FIXME
 		ifindex(0),
 		adindex(0),
 		fe(OFP12_VERSION)
@@ -36,6 +37,7 @@ dptaddr::dptaddr(
 			dptaddr const& addr) :
 		rofbase(0),
 		dpt(0),
+		of_table_id(0),
 		ifindex(0),
 		adindex(0),
 		fe(OFP12_VERSION)
@@ -54,6 +56,7 @@ dptaddr::operator= (
 
 	rofbase		= addr.rofbase;
 	dpt			= addr.dpt;
+	of_table_id = addr.of_table_id;
 	ifindex		= addr.ifindex;
 	adindex		= addr.adindex;
 	fe			= addr.fe;
@@ -67,6 +70,7 @@ dptaddr::dptaddr(
 			rofl::crofbase* rofbase, rofl::cofdpt* dpt, int ifindex, uint16_t adindex) :
 		rofbase(rofbase),
 		dpt(dpt),
+		of_table_id(0),
 		ifindex(ifindex),
 		adindex(adindex),
 		fe(dpt->get_version())
@@ -89,7 +93,7 @@ dptaddr::flow_mod_add()
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(0);			// FIXME: check for first table-id in data path
+		fe.set_table_id(of_table_id);			// FIXME: check for first table-id in data path
 
 		fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
 
@@ -135,7 +139,7 @@ dptaddr::flow_mod_delete()
 		rofl::cflowentry fe = this->fe;
 
 		fe.set_command(OFPFC_DELETE_STRICT);
-		fe.set_table_id(0);			// FIXME: check for first table-id in data path
+		fe.set_table_id(of_table_id);			// FIXME: check for first table-id in data path
 
 		switch (rta.get_family()) {
 		case AF_INET:  { fe.match.set_ipv4_dst(rta.get_local_addr()); } break;

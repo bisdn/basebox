@@ -26,6 +26,7 @@ private:
 
 	rofl::crofbase*		rofbase;
 	rofl::cofdpt*		dpt;
+	uint8_t				of_table_id;
 	int					ifindex;
 	uint16_t			adindex;
 	rofl::cflowentry	fe;
@@ -127,10 +128,11 @@ public:
 #endif
 		crtaddr& rta = cnetlink::get_instance().get_link(addr.ifindex).get_addr(addr.adindex);
 
-		os << "<dptaddr ";
-			os << "ifindex=" << addr.ifindex << " ";
+		os << "<dptaddr: ";
+			//os << "ifindex=" << addr.ifindex << " ";
 			os << "adindex=" << (unsigned int)addr.adindex << " ";
 			os << rta.get_family() << " " << rta.get_local_addr() << "/" << rta.get_prefixlen() << " dev " << cnetlink::get_instance().get_link(addr.ifindex).get_devname();
+			os << "oftableid=" << (unsigned int)addr.of_table_id << " ";
 			//os << "flowentry=" << s_fe << " ";
 		os << ">";
 		return os;
