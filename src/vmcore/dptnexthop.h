@@ -157,11 +157,12 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, dptnexthop const& neigh)
 	{
+#if 0
 		rofl::cflowentry fe(neigh.fe);
 		char s_fe[1024];
 		memset(s_fe, 0, sizeof(s_fe));
 		snprintf(s_fe, sizeof(s_fe)-1, "%s", fe.c_str());
-
+#endif
 		os << "dptnexthop{";
 			os << "ifindex=" << neigh.ifindex << " ";
 			os << "nbindex=" << (unsigned int)neigh.nbindex << " ";
@@ -169,7 +170,7 @@ public:
 			os << "oftableid=" << (unsigned int)neigh.of_table_id << " ";
 			os << "dstaddr=" << neigh.dstaddr << " ";
 			os << "dstmask=" << neigh.dstmask << " ";
-			os << "flowentry=" << s_fe << " ";
+			//os << "flowentry=" << s_fe << " ";
 		os << "}";
 		return os;
 	};
