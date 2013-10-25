@@ -578,33 +578,37 @@ class HomeGateway(object):
                 defrouter = str(p)+'1'
                 self.qmfbroker.linkAddIP('veth1', cpeIP, 64, defrouter)
                 time.sleep(2)
-                for tun in self.tunnels:
-                    if tun.cpeIP == cpeIP:
-                        break
-                else:
-                    # TODO: get a unique tunnel ID
-                    cpeTunnelID = 10
-                    # TODO: get a unique session ID
-                    cpeSessionID = 1
-                    cpeUdpPort = 6000
-                    cpeDevname = 'l2tpeth' + str(cpeTunnelID)
-                    (vhsTunnelID, vhsSessionID, vhsIP, vhsUdpPort) = self.qmfbroker.vhsAttach('l2tp', cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort)
-                    tun = tunnel.Tunnel(cpeDevname, cpeTunnelID, vhsTunnelID, cpeSessionID, vhsSessionID, cpeIP, vhsIP, cpeUdpPort, vhsUdpPort)
-                    self.tunnels.append(tun)
-                    print "CREATING TUNNEL => " + str(tun)
-                    self.qmfbroker.l2tpCreateTunnel(tun.cpeTunnelID, 
-                                                    tun.vhsTunnelID,
-                                                    tun.vhsIP,
-                                                    tun.cpeIP,
-                                                    tun.cpeUdpPort,
-                                                    tun.vhsUdpPort)
-                    self.qmfbroker.l2tpCreateSession(tun.cpeDevname,
-                                                     tun.cpeTunnelID,
-                                                     tun.cpeSessionID,
-                                                     tun.vhsSessionID) 
-                time.sleep(2)
-                self.qmfbroker.portAttach(2000, cpeDevname)
-                                                     
+                try:
+                    for tun in self.tunnels:
+                        if tun.cpeIP == cpeIP:
+                            break
+                    else:
+                        # TODO: get a unique tunnel ID
+                        cpeTunnelID = 10
+                        # TODO: get a unique session ID
+                        cpeSessionID = 1
+                        cpeUdpPort = 6000
+                        cpeDevname = 'l2tpeth' + str(cpeTunnelID)
+                        (vhsTunnelID, vhsSessionID, vhsIP, vhsUdpPort) = self.qmfbroker.vhsAttach('l2tp', cpeTunnelID, cpeSessionID, cpeIP, cpeUdpPort)
+                        tun = tunnel.Tunnel(cpeDevname, cpeTunnelID, vhsTunnelID, cpeSessionID, vhsSessionID, cpeIP, vhsIP, cpeUdpPort, vhsUdpPort)
+                        self.tunnels.append(tun)
+                        print "CREATING TUNNEL => " + str(tun)
+                        self.qmfbroker.l2tpCreateTunnel(tun.cpeTunnelID, 
+                                                        tun.vhsTunnelID,
+                                                        tun.vhsIP,
+                                                        tun.cpeIP,
+                                                        tun.cpeUdpPort,
+                                                        tun.vhsUdpPort)
+                        self.qmfbroker.l2tpCreateSession(tun.cpeDevname,
+                                                         tun.cpeTunnelID,
+                                                         tun.cpeSessionID,
+                                                         tun.vhsSessionID)
+                         
+                    time.sleep(2)
+                    self.qmfbroker.portAttach(2000, cpeDevname)
+                except KeyError:
+                    print "TUNNEL CREATION FAILED!!!"
+                                                    
         print "[E] event PREFIX-ATTACHED"
     
     

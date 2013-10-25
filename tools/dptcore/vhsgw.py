@@ -196,7 +196,7 @@ class VhsGateway(object):
         print 'vhsAttach => ' + str(l2tpTunnel)
 
         vhsSessionID = int(cpeSessionID) + 1        
-        for l2tpSession in l2tpTunnel.sessions:
+        for sid, l2tpSession in l2tpTunnel.sessions.iteritems():
             if l2tpSession.session_id == cpeSessionID:
                 break
         else:
