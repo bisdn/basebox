@@ -171,7 +171,7 @@ dptroute::route_created(
 
 		flowentry.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), 2);
 
-		fprintf(stderr, "dptroute::route_created() => flowentry: %s\n", flowentry.c_str());
+		//fprintf(stderr, "dptroute::route_created() => flowentry: %s\n", flowentry.c_str());
 
 		rofbase->send_flow_mod_message(dpt, flowentry);
 
@@ -218,7 +218,7 @@ dptroute::route_deleted(
 
 	rofbase->send_flow_mod_message(dpt, flowentry);
 
-	fprintf(stderr, "\n\n\n FLOWENTRY => %s\n\n\n\n", flowentry.c_str());
+	//fprintf(stderr, "\n\n\n FLOWENTRY => %s\n\n\n\n", flowentry.c_str());
 
 	delete_all_nexthops();
 }
@@ -234,7 +234,7 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
 	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
-	std::cerr << "dptroute::neigh_created() => " << rtn << std::endl;
+	//std::cerr << "dptroute::neigh_created() => " << rtn << std::endl;
 
 	// do for all next hops defined in crtroute ...
 	std::vector<crtnexthop>::iterator it;
@@ -243,15 +243,15 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 
 		// nexthop and neighbour must be bound to same link
 		if (rtnh.get_ifindex() != rtn.get_ifindex()) {
-			fprintf(stderr, "rtnh.get_ifindex(%d) != rtn.get_ifindex(%d)\n",
-					rtnh.get_ifindex(), rtn.get_ifindex());
+			//fprintf(stderr, "rtnh.get_ifindex(%d) != rtn.get_ifindex(%d)\n",
+			//		rtnh.get_ifindex(), rtn.get_ifindex());
 			continue;
 		}
 
 		// gateway in nexthop must match dst address in neighbor instance
 		if (rtnh.get_gateway() != rtn.get_dst()) {
-			std::cerr << "rtnh.get_gateway(" << rtnh.get_gateway() << ")!="
-					<< "rtn.get_dst(" << rtn.get_dst() << ")" << std::endl;
+			//std::cerr << "rtnh.get_gateway(" << rtnh.get_gateway() << ")!="
+			//		<< "rtn.get_dst(" << rtn.get_dst() << ")" << std::endl;
 			continue;
 		}
 
@@ -377,8 +377,8 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 void
 dptroute::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
 {
-	std::cerr << "dptroute::neigh_deleted() => ifindex=" << ifindex
-			<< " nbindex=" << (unsigned int)nbindex << std::endl;
+	//std::cerr << "dptroute::neigh_deleted() => ifindex=" << ifindex
+	//		<< " nbindex=" << (unsigned int)nbindex << std::endl;
 
 	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
 	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);

@@ -122,7 +122,7 @@ dptneigh::flow_mod_add()
 
 		rofbase->send_flow_mod_message(dpt, fe);
 
-		std::cerr << "dptneigh::flow_mod_add() => " << *this << std::endl;
+		//std::cerr << "dptneigh::flow_mod_add() => " << *this << std::endl;
 
 	} catch (eRtLinkNotFound& e) {
 		fprintf(stderr, "dptneigh::flow_mod_add() unable to find link or neighbor\n");
@@ -161,7 +161,7 @@ dptneigh::flow_mod_delete()
 
 		rofbase->send_flow_mod_message(dpt, fe);
 
-		std::cerr << "dptneigh::flow_mod_delete() => " << *this << std::endl;
+		//std::cerr << "dptneigh::flow_mod_delete() => " << *this << std::endl;
 
 	} catch (eRtLinkNotFound& e) {
 		fprintf(stderr, "dptneigh::flow_mod_delete() unable to find link or neighbor\n");

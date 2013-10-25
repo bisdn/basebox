@@ -109,7 +109,7 @@ dptaddr::flow_mod_add()
 
 		rofbase->send_flow_mod_message(dpt, fe);
 
-		std::cerr << "dptaddr::flow_mod_add() => " << *this << std::endl;
+		//std::cerr << "dptaddr::flow_mod_add() => " << *this << std::endl;
 
 	} catch (eRtLinkNotFound& e) {
 		fprintf(stderr, "dptaddr::flow_mod_add() unable to find link or address\n");
@@ -144,7 +144,7 @@ dptaddr::flow_mod_delete()
 
 		rofbase->send_flow_mod_message(dpt, fe);
 
-		std::cerr << "dptaddr::flow_mod_delete() => " << *this << std::endl;
+		//std::cerr << "dptaddr::flow_mod_delete() => " << *this << std::endl;
 
 	} catch (eRtLinkNotFound& e) {
 		fprintf(stderr, "dptaddr::flow_mod_delete() unable to find link or address\n");
