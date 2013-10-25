@@ -168,7 +168,9 @@ public:
 			os << "TROOEEEEETTTT!!!!" << std::endl;
 
 		} break;
-		case RT_SCOPE_LINK: {
+		case RT_SCOPE_LINK:
+		case RT_SCOPE_SITE:
+		case RT_SCOPE_UNIVERSE: {
 
 			os << "<dptroute: ";
 				os << rtr.get_dst() << " ";
@@ -178,32 +180,13 @@ public:
 				os << "rtindex: " 	<< route.rtindex << " ";
 			os << "> ";
 
-		} break;
-		case RT_SCOPE_SITE:
-		case RT_SCOPE_UNIVERSE: {
-
 			for (std::map<uint16_t, dptnexthop>::const_iterator
 					it = route.dptnexthops.begin(); it != route.dptnexthops.end(); ++it) {
 
 				dptnexthop const& nhop = it->second;
+				os << "        " << nhop << std::endl;
 
-				os << "<dptroute: ";
-					os << rtr.get_dst() << " ";
-					switch (rtr.get_scope()) {
-					case RT_SCOPE_SITE:
-					case RT_SCOPE_UNIVERSE: {
-						os << "via " << nhop.get_gateway() << " ";
-					} break;
-					}
-					os << "dev " << cnetlink::get_instance().get_link(nhop.get_ifindex()).get_devname() << " ";
-					os << "scope " << rtr.get_scope_s() << " ";
-					os << "table " << rtr.get_table_id_s() << " ";
-					os << "rtindex: " 	<< route.rtindex << " ";
-					//os << rtr << " ";
-					//os << "flowentry=" 	<< s_buf << " ";
-				os << "> ";
 			}
-
 		} break;
 		}
 		return os;
