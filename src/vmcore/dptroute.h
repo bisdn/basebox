@@ -152,16 +152,25 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, dptroute const& route)
 	{
+#if 0
 		// FIXME: write cflowentry::operator<<()
 		rofl::cflowentry fe(route.flowentry);
 		char s_buf[1024];
 		memset(s_buf, 0, sizeof(s_buf));
 		snprintf(s_buf, sizeof(s_buf)-1, "%s", fe.c_str());
-		os << "dptroute{";
+#endif
+		crtroute& rtr = cnetlink::get_instance().get_route(route.table_id, route.rtindex);
+
+		os << "<dptroute ";
 			os << "table_id=" 	<< (unsigned int)route.table_id << " ";
 			os << "rtindex=" 	<< route.rtindex << " ";
-			os << "flowentry=" 	<< s_buf << " ";
-		os << "}";
+			os << rtr << " ";
+			//os << "flowentry=" 	<< s_buf << " ";
+		os << "> ";
+		for (std::map<uint16_t, dptnexthop>::const_iterator
+				it = route.dptnexthops.begin(); it != route.dptnexthops.end(); ++it) {
+			os << "    " << it->second << " " << std::endl;
+		}
 		return os;
 	};
 

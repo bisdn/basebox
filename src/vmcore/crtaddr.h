@@ -161,7 +161,7 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, crtaddr const& rtaddr)
 	{
-		os << "crtaddr{"
+		os << "<crtaddr "
 				<< "label=" << rtaddr.label << " "
 				<< "ifindex=" << rtaddr.ifindex << " "
 				<< "af=" << rtaddr.af << " "
@@ -172,7 +172,7 @@ public:
 				<< "local=" << rtaddr.local << " "
 				<< "peer=" << rtaddr.peer << " "
 				<< "broadcast=" << rtaddr.bcast << " "
-				<< "}";
+				<< ">";
 		return os;
 	};
 
