@@ -17,13 +17,13 @@ class DhcpClient(object):
         self.devname = devname
         self.pidfilebase = pidfilebase
         self.pidfile = self.pidfilebase + '/dhclient6.' + self.devname + '.pid'
+        self.old_prefixes = []
+        self.new_prefixes = []
         try:
             with open(self.pidfile):
                 self.killDhclientProcess() 
         except IOError:
             print 'Oh dear.'
-        self.old_prefixes = []
-        self.new_prefixes = []
 
 
     def __del__(self):
