@@ -161,6 +161,10 @@ public:
 #endif
 		crtroute& rtr = cnetlink::get_instance().get_route(route.table_id, route.rtindex);
 
+		if (route.dptnexthops.size() == 0) {
+			os << "TROOEEEEETTTT!!!!" << std::endl;
+			return os;
+		}
 
 		for (std::map<uint16_t, dptnexthop>::const_iterator
 				it = route.dptnexthops.begin(); it != route.dptnexthops.end(); ++it) {
