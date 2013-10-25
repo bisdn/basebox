@@ -218,7 +218,7 @@ public:
 		}
 		for (std::map<uint16_t, dptneigh>::const_iterator
 				it = link.neighs.begin(); it != link.neighs.end(); ++it) {
-			os << "    " << it->second << " ";
+			os << "    " << it->second << std::endl;
 		}
 		return os;
 	};

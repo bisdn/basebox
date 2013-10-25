@@ -169,7 +169,7 @@ public:
 		os << "> ";
 		for (std::map<uint16_t, dptnexthop>::const_iterator
 				it = route.dptnexthops.begin(); it != route.dptnexthops.end(); ++it) {
-			os << "    " << it->second << " " << std::endl;
+			os << "    " << it->second << std::endl;
 		}
 		return os;
 	};
