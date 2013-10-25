@@ -180,14 +180,11 @@ public:
 				os << "rtindex: " 	<< route.rtindex << " ";
 			os << "> ";
 
-			if (route.dptnexthops.size() > 0)
-				os << std::endl;
-
 			for (std::map<uint16_t, dptnexthop>::const_iterator
 					it = route.dptnexthops.begin(); it != route.dptnexthops.end(); ++it) {
 
 				dptnexthop const& nhop = it->second;
-				os << "        " << nhop << std::endl;
+				os << std::endl << "        " << nhop;
 
 			}
 		} break;
