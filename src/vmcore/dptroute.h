@@ -176,8 +176,8 @@ public:
 				} break;
 				}
 				os << "dev " << cnetlink::get_instance().get_link(nhop.get_ifindex()).get_devname() << " ";
-				os << "scope " << rtr.get_scope_s() << " " << (int)rtr.get_scope() << " ";
-				os << "table " << rtr.get_table_id_s() << " " << (int)rtr.get_table_id() << " ";
+				os << "scope " << rtr.get_scope_s() << " ";
+				os << "table " << rtr.get_table_id_s() << " ";
 				os << "rtindex: " 	<< route.rtindex << " ";
 				//os << rtr << " ";
 				//os << "flowentry=" 	<< s_buf << " ";

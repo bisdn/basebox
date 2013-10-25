@@ -193,7 +193,7 @@ crtroute::get_table_id_s() const
 {
 	std::string str;
 
-	switch (scope) {
+	switch (table_id) {
 	/*255*/case RT_TABLE_LOCAL:		str = std::string("local");		break;
 	/*254*/case RT_TABLE_MAIN:		str = std::string("main");		break;
 	/*253*/case RT_TABLE_DEFAULT:	str = std::string("default");	break;
