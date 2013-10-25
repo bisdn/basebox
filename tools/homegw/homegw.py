@@ -33,7 +33,8 @@ EVENT_PREFIX_ATTACHED = 4
 EVENT_PREFIX_DETACHED = 5
 
 ifaces = {'wan': ['ge0'], 'lan': ['ge1'], 'dmz': ['veth0']}
-brokerUrl = "amqp://127.0.0.1:5672"
+#brokerUrl = "amqp://127.0.0.1:5672"
+brokerUrl = "127.0.0.1"
 
 
 
