@@ -173,7 +173,7 @@ public:
 		case RT_SCOPE_UNIVERSE: {
 
 			os << "<dptroute: ";
-				os << rtr.get_dst() << " ";
+				os << rtr.get_dst() << "/" << rtr.get_prefixlen() << " ";
 				os << "src " << rtr.get_src() << " ";
 				os << "scope " << rtr.get_scope_s() << " ";
 				os << "table " << rtr.get_table_id_s() << " ";
