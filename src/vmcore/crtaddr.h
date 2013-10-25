@@ -113,6 +113,12 @@ public:
 	/**
 	 *
 	 */
+	std::string get_family_s() const;
+
+
+	/**
+	 *
+	 */
 	int get_prefixlen() const { return prefixlen; };
 
 

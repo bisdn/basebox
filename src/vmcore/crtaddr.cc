@@ -141,3 +141,19 @@ crtaddr::operator< (crtaddr const& rtaddr)
 }
 
 
+
+std::string
+crtaddr::get_family_s() const
+{
+	std::string str;
+
+	switch (af) {
+	case AF_INET:	str = std::string("inet"); 		break;
+	case AF_INET6:	str = std::string("inet6");		break;
+	default:		str = std::string("unknown"); 	break;
+	}
+
+	return str;
+}
+
+
