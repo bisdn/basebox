@@ -119,16 +119,18 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, dptaddr const& addr)
 	{
+#if 0
 		rofl::cflowentry fe(addr.fe);
 		char s_fe[1024];
 		memset(s_fe, 0, sizeof(s_fe));
 		snprintf(s_fe, sizeof(s_fe)-1, "%s", fe.c_str());
+#endif
 
-		os << "dptaddr{";
+		os << "<dptaddr ";
 			os << "ifindex=" << addr.ifindex << " ";
 			os << "adindex=" << (unsigned int)addr.adindex << " ";
-			os << "flowentry=" << s_fe << " ";
-		os << "}";
+			//os << "flowentry=" << s_fe << " ";
+		os << ">";
 		return os;
 	};
 };

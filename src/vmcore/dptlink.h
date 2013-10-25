@@ -196,6 +196,32 @@ private:
 	 */
 	void
 	delete_all_neighs();
+
+
+public:
+
+
+	/**
+	 *
+	 */
+	friend std::ostream&
+	operator<< (std::ostream& os, dptlink const& link) {
+		os << "<link: ";
+			os << "ifindex: " << (int)link.ifindex << " ";
+			os << "devname: " << link.dpt->get_port(link.of_port_no).get_name() << " ";
+			os << "hwaddr: " << link.dpt->get_port(link.of_port_no).get_hwaddr() << " ";
+			os << "portno: " << (int)link.of_port_no << " ";
+		os << ">" << std::endl;
+		for (std::map<uint16_t, dptaddr>::const_iterator
+				it = link.addrs.begin(); it != link.addrs.end(); ++it) {
+			os << "  " << it->second << " ";
+		}
+		for (std::map<uint16_t, dptneigh>::const_iterator
+				it = link.neighs.begin(); it != link.neighs.end(); ++it) {
+			os << "  " << it->second << " ";
+		}
+		return os;
+	};
 };
 
 }; // end of namespace

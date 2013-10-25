@@ -450,8 +450,39 @@ vmcore::execute(
 void
 vmcore::dump_state()
 {
+	for (std::map<rofl::cofdpt*, std::map<uint32_t, dptlink*> >::iterator
+			it = dptlinks.begin(); it != dptlinks.end(); ++it) {
 
+		rofl::cofdpt *dpt = it->first;
 
+		std::cerr << "data path <dpid: " << dpt->get_dpid_s() << "> => " << std::endl;
+
+		for (std::map<uint32_t, dptlink*>::iterator
+				jt = dptlinks[dpt].begin(); jt != dptlinks[dpt].end(); ++jt) {
+
+			std::cerr << "  " << *(jt->second) << std::endl;
+		}
+
+		std::cerr << std::endl;
+
+		// FIXME: routes should be handled by data path
+
+		for (std::map<uint8_t, std::map<unsigned int, dptroute*> >::iterator
+				jt = dptroutes.begin(); jt != dptroutes.end(); ++jt) {
+
+			uint8_t scope = jt->first;
+
+			std::cerr << "routes with scope <" << (int)scope << "> => " << std::endl;
+
+			for (std::map<unsigned int, dptroute*>::iterator
+					kt = dptroutes[scope].begin(); kt != dptroutes[scope].end(); ++kt) {
+
+				std::cerr << "  " << (*kt->second) << std::endl;
+			}
+		}
+
+		std::cerr << std::endl;
+	}
 
 	register_timer(VMCORE_TIMER_DUMP, dump_state_interval);
 }
