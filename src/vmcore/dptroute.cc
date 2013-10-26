@@ -369,6 +369,8 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 
 	} catch (eDptLinkNotFound& e) {
 		// this happens, when an update for a non-data path interface is received
+	} catch (eNetLinkNotFound& e) {
+		// ...
 	}
 }
 
