@@ -47,11 +47,11 @@ class QmfConsole(object):
         
         
     def getObjects(self, **kwargs):
-        if not 'class' in kwargs:
+        if not '_class' in kwargs:
             raise QmfConsoleException('class not found')
-        if not 'package' in kwargs:
+        if not '_package' in kwargs:
             raise QmfConsoleException('package not found')
-        return self.consoleSession.getObjects(_class = kwargs['class'], _package = kwargs['package'])
+        return self.consoleSession.getObjects(_class = kwargs['_class'], _package = kwargs['_package'])
         
         
         

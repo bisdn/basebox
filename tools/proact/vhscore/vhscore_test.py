@@ -36,6 +36,8 @@ vhsgw = vhsgws[0]
 
 print vhsgw
 
+print vhsgw.vhsCoreID
+
 print vhsgw.test("blub")
 
 print vhsgw.userSessionAdd('you@somewhere.com', '10.1.1.1', '86400')

@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+import sys
+sys.path.append('../..')
+
 from pyroute2.netlink.iproute import *
 from pyroute2 import IPRoute
 from pyroute2 import IPDB
@@ -16,7 +19,7 @@ import time
 from qmf2 import *
 import cqmf2
 import cqpid
-from l2tp import *
+from proact.common.l2tp import *
 from threading import Thread
 
 

@@ -15,10 +15,12 @@ class VhsCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
         self.vhsCore = vhsCore
         self.qmfVhsCore = {}
         self.qmfVhsCore['data'] = qmf2.Data(self.qmfSchemaVhsCore)
+        self.qmfVhsCore['data'].vhsCoreID = vhsCore.vhsCoreID
         self.qmfVhsCore['addr'] = self.agentSess.addData(self.qmfVhsCore['data'], 'vhscore')
         
     def setSchema(self):
         self.qmfSchemaVhsCore = qmf2.Schema(qmf2.SCHEMA_TYPE_DATA, "de.bisdn.proact", "vhscore")
+        self.qmfSchemaVhsCore.addProperty(qmf2.SchemaProperty("vhsCoreID", qmf2.SCHEMA_DATA_STRING))
 
         # test method
         #        
@@ -78,7 +80,8 @@ class VhsCore(proact.common.basecore.BaseCore):
     """
     a description would be useful here
     """
-    def __init__(self, brokerUrl="127.0.0.1", **kwargs):
+    def __init__(self, vhsCoreID='vhscore-0', brokerUrl="127.0.0.1", **kwargs):
+        self.vhsCoreID = vhsCoreID
         self.vendor = kwargs.get('vendor', 'bisdn.de')
         self.product = kwargs.get('product', 'vhscore')
         proact.common.basecore.BaseCore.__init__(self, vendor=self.vendor, product=self.product)
@@ -93,10 +96,40 @@ class VhsCore(proact.common.basecore.BaseCore):
     def userSessionDel(self, userIdentity, ipAddress):
         print 'deleting user session for user ' + userIdentity + ' on IP address ' + ipAddress 
 
+    def handleEvent(self, event):
+        pass
+    
+    def setupDatapath(self, xdpdID = 'vhs-xdpd-0'):
+        """
+        1. check for LSIs and create, if not found
+        2. create virtual link between both LSIs
+        """
+        try:
+            dptQmfHandles = self.qmfConsole.getObjects(_class='xdpd', _package='de.bisdn.xdpd')
+            for dptQmfHandle in dptQmfhandles:
+                if dptQmfHandle.xdpdID == xdpdID:
+                    break
+            else:
+                print 'no xdpd instance found'
+                return
+            
 
+            
+                lsiCreateMethod.addArgument(qmf::SchemaProperty("dpid",     qmf::SCHEMA_DATA_INT,         "{dir:INOUT}"));
+    lsiCreateMethod.addArgument(qmf::SchemaProperty("dpname",     qmf::SCHEMA_DATA_STRING,     "{dir:IN}"));
+    lsiCreateMethod.addArgument(qmf::SchemaProperty("ofversion",qmf::SCHEMA_DATA_INT,         "{dir:IN}"));
+    lsiCreateMethod.addArgument(qmf::SchemaProperty("ntables",     qmf::SCHEMA_DATA_INT,         "{dir:IN}"));
+    lsiCreateMethod.addArgument(qmf::SchemaProperty("ctlaf",    qmf::SCHEMA_DATA_INT,         "{dir:IN}"));
+    lsiCreateMethod.addArgument(qmf::SchemaProperty("ctladdr",     qmf::SCHEMA_DATA_STRING,     "{dir:IN}"));
+    lsiCreateMethod.addArgument(qmf::SchemaProperty("ctlport",     qmf::SCHEMA_DATA_INT,         "{dir:IN}"));
+    lsiCreateMethod.addArgument(qmf::SchemaProperty("reconnect",qmf::SCHEMA_DATA_INT,         "{dir:IN}")); 
+            
+        except ListError, e:
+            print 'no xdpd instance found'
+        
 
 
 if __name__ == "__main__":
-    VhsCore(brokerUrl="127.0.0.1").run() 
+    VhsCore('vhscore-0', '127.0.0.1').run() 
     
     
