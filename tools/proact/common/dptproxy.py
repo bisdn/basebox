@@ -2,7 +2,6 @@
 
 import sys
 sys.path.append('../..')
-print sys.path
 
 import proact.common.qmfhelper
 import time
@@ -47,7 +46,6 @@ class DptProxy(proact.common.qmfhelper.QmfConsole):
 
     def __getXdpdHandle(self):
         xdpdHandles = self.getObjects(_class='xdpd', _package='de.bisdn.xdpd')
-        print "AAA"
         for xdpdHandle in xdpdHandles:
             print xdpdHandle
             if xdpdHandle.xdpdID == self.xdpdID:
@@ -74,9 +72,7 @@ class DptProxy(proact.common.qmfhelper.QmfConsole):
             raise DptProxyException('cannot attach dpid: ' + str(dpid))
         try:
             dptlsi = self.dptLsiProxies[dpid]
-            print "BBB"
             xdpdHandle = self.__getXdpdHandle()
-            print "CCC"
             if dptlsi.state == DptLsiProxy.STATE_DETACHED:
                 xdpdHandle.lsiCreate(dptlsi.dpid, dptlsi.dpname, dptlsi.ofversion, dptlsi.ntables,
                                      dptlsi.ctlaf, dptlsi.ctladdr, dptlsi.ctlport, dptlsi.reconnect)

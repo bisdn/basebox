@@ -5,6 +5,7 @@ sys.path.append('../..')
 print sys.path
 
 import proact.common.basecore
+import proact.common.dptproxy
 import qmf2
 
 
@@ -80,15 +81,20 @@ class VhsCore(proact.common.basecore.BaseCore):
     """
     a description would be useful here
     """
-    def __init__(self, vhsCoreID='vhscore-0', brokerUrl="127.0.0.1", **kwargs):
+    def __init__(self, vhsCoreID='vhscore-0', brokerUrl="127.0.0.1", vhsXdpdID='vhs-xdpd-0', **kwargs):
+        self.brokerUrl = brokerUrl
+        self.vhsXdpdID = vhsXdpdID
         self.vhsCoreID = vhsCoreID
         self.vendor = kwargs.get('vendor', 'bisdn.de')
         self.product = kwargs.get('product', 'vhscore')
         proact.common.basecore.BaseCore.__init__(self, vendor=self.vendor, product=self.product)
         self.agentHandler = VhsCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
+        self.setupDatapath()
         
     def cleanUp(self):
         self.agentHandler.cancel()
+        self.dptProxy.destroyLsi(self.dpid1)
+        self.dptProxy.destroyLsi(self.dpid0)
         
     def userSessionAdd(self, userIdentity, ipAddress, validLifetime):
         print 'adding user session for user ' + userIdentity + ' on IP address ' + ipAddress + ' with lifetime ' + validLifetime 
@@ -99,34 +105,23 @@ class VhsCore(proact.common.basecore.BaseCore):
     def handleEvent(self, event):
         pass
     
-    def setupDatapath(self, xdpdID = 'vhs-xdpd-0'):
+    def setupDatapath(self):
         """
-        1. check for LSIs and create, if not found
+        1. check for LSIs and create them, if not found
         2. create virtual link between both LSIs
         """
+        self.dpid0 = 0
+        self.dpid1 = 1
         try:
-            dptQmfHandles = self.qmfConsole.getObjects(_class='xdpd', _package='de.bisdn.xdpd')
-            for dptQmfHandle in dptQmfhandles:
-                if dptQmfHandle.xdpdID == xdpdID:
-                    break
-            else:
-                print 'no xdpd instance found'
-                return
-            
-
-            
-                lsiCreateMethod.addArgument(qmf::SchemaProperty("dpid",     qmf::SCHEMA_DATA_INT,         "{dir:INOUT}"));
-    lsiCreateMethod.addArgument(qmf::SchemaProperty("dpname",     qmf::SCHEMA_DATA_STRING,     "{dir:IN}"));
-    lsiCreateMethod.addArgument(qmf::SchemaProperty("ofversion",qmf::SCHEMA_DATA_INT,         "{dir:IN}"));
-    lsiCreateMethod.addArgument(qmf::SchemaProperty("ntables",     qmf::SCHEMA_DATA_INT,         "{dir:IN}"));
-    lsiCreateMethod.addArgument(qmf::SchemaProperty("ctlaf",    qmf::SCHEMA_DATA_INT,         "{dir:IN}"));
-    lsiCreateMethod.addArgument(qmf::SchemaProperty("ctladdr",     qmf::SCHEMA_DATA_STRING,     "{dir:IN}"));
-    lsiCreateMethod.addArgument(qmf::SchemaProperty("ctlport",     qmf::SCHEMA_DATA_INT,         "{dir:IN}"));
-    lsiCreateMethod.addArgument(qmf::SchemaProperty("reconnect",qmf::SCHEMA_DATA_INT,         "{dir:IN}")); 
-            
-        except ListError, e:
-            print 'no xdpd instance found'
-        
+            self.dptProxy = proact.common.dptproxy.DptProxy(self.brokerUrl, self.vhsXdpdID)
+            self.dptProxy.createLsi('vhs-dp0', self.dpid0, 3, 4)
+            self.dptProxy.createLsi('vhs-dp1', self.dpid1, 3, 4)
+            [self.devname0, self.devname1] = self.dptProxy.createVirtualLink(self.dpid0, self.dpid1)
+            print self.devname0
+            print self.devname1
+        except proact.common.dptproxy.DptProxyException, e:
+            print str(e)
+            raise
 
 
 if __name__ == "__main__":
