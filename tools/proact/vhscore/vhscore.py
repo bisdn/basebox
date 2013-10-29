@@ -1,13 +1,17 @@
 #!/usr/bin/python
 
-import basecore
+import sys
+sys.path.append('../..')
+print sys.path
+
+import proact.common.basecore
 import qmf2
 
 
 
-class VhsCoreQmfAgentHandler(basecore.BaseCoreQmfAgentHandler):
+class VhsCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
     def __init__(self, vhsCore, agentSession):
-        basecore.BaseCoreQmfAgentHandler.__init__(self, agentSession)
+        proact.common.basecore.BaseCoreQmfAgentHandler.__init__(self, agentSession)
         self.vhsCore = vhsCore
         self.qmfVhsCore = {}
         self.qmfVhsCore['data'] = qmf2.Data(self.qmfSchemaVhsCore)
@@ -70,14 +74,14 @@ class VhsCoreQmfAgentHandler(basecore.BaseCoreQmfAgentHandler):
 
 
 
-class VhsCore(basecore.BaseCore):
+class VhsCore(proact.common.basecore.BaseCore):
     """
     a description would be useful here
     """
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
         self.vendor = kwargs.get('vendor', 'bisdn.de')
         self.product = kwargs.get('product', 'vhscore')
-        basecore.BaseCore.__init__(self, vendor=self.vendor, product=self.product)
+        proact.common.basecore.BaseCore.__init__(self, vendor=self.vendor, product=self.product)
         self.agentHandler = VhsCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
         
     def cleanUp(self):
