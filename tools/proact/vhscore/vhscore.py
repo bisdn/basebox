@@ -6,6 +6,7 @@ print sys.path
 
 import proact.common.basecore
 import proact.dptcore.dptcore
+import ConfigParser
 import qmf2
 
 
@@ -81,20 +82,21 @@ class VhsCore(proact.common.basecore.BaseCore):
     """
     a description would be useful here
     """
-    def __init__(self, vhsCoreID='vhscore-0', brokerUrl="127.0.0.1", vhsXdpdID='vhs-xdpd-0', **kwargs):
+    def __init__(self, **kwargs):
+        self.parseConfig()
         self.brokerUrl = brokerUrl
-        self.vhsXdpdID = vhsXdpdID
-        self.vhsCoreID = vhsCoreID
         self.vendor = kwargs.get('vendor', 'bisdn.de')
         self.product = kwargs.get('product', 'vhscore')
         proact.common.basecore.BaseCore.__init__(self, vendor=self.vendor, product=self.product)
         self.agentHandler = VhsCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
-        self.setupDatapath()
+        self.initVhsXdpd()
+        self.initVhsDptCore()
         
     def cleanUp(self):
         self.agentHandler.cancel()
-        self.xdpdProxy.destroyLsi(self.dpid1)
-        self.xdpdProxy.destroyLsi(self.dpid0)
+        self.xdpdVhsProxy.destroyLsi(self.dpid1)
+        self.xdpdVhsProxy.destroyLsi(self.dpid0)
+        self.dptCoreProxy.resetL2tpState()
         
     def userSessionAdd(self, userIdentity, ipAddress, validLifetime):
         print 'adding user session for user ' + userIdentity + ' on IP address ' + ipAddress + ' with lifetime ' + validLifetime 
@@ -105,26 +107,64 @@ class VhsCore(proact.common.basecore.BaseCore):
     def handleEvent(self, event):
         pass
     
-    def setupDatapath(self):
+    def parseConfig(self):
+        self.config = ConfigParser.ConfigParser()
+        self.config.read('vhscore.conf')
+        self.brokerUrl = self.config.get('vhscore', 'BROKERURL', '127.0.0.1')
+        self.vhsDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'vhs-dptcore-0')
+
+    
+    def initVhsXdpd(self):
         """
         1. check for LSIs and create them, if not found
         2. create virtual link between both LSIs
         """
-        self.dpid0 = 0
-        self.dpid1 = 1
-        try:
-            self.xdpdProxy = proact.common.xdpdproxy.XdpdProxy(self.brokerUrl, self.vhsXdpdID)
-            self.xdpdProxy.createLsi('vhs-dp0', self.dpid0, 3, 4)
-            self.xdpdProxy.createLsi('vhs-dp1', self.dpid1, 3, 4)
-            [self.devname0, self.devname1] = self.xdpdProxy.createVirtualLink(self.dpid0, self.dpid1)
-            print self.devname0
-            print self.devname1
-        except proact.common.xdpdproxy.XdpdProxyException, e:
-            print str(e)
-            raise
+        self.vhsDptXdpdID = self.config.get('xdpd', 'XDPDID', 'vhs-xdpd-0')
+        self.xdpdVhsProxy = proact.common.xdpdproxy.XdpdProxy(self.brokerUrl, self.vhsDptXdpdID)
+        lsiNames = self.config.get('xdpd', 'LSIS').split()
+        for lsiName in lsiNames:
+            try:
+                dpid        = self.config.get(lsiName, 'DPID')
+                dpname      = self.config.get(lsiName, 'DPNAME')
+                ofversion   = self.config.get(lsiName, 'OFVERSION')
+                ntables     = self.config.get(lsiName, 'NTABLES')
+                ctlaf       = self.config.get(lsiName, 'CTLAF')
+                ctladdr     = self.config.get(lsiName, 'CTLADDR')
+                ctlport     = self.config.get(lsiName, 'CTLPORT')
+                reconnect   = self.config.get(lsiName, 'RECONNECT')
+                self.xdpdVhsProxy.createLsi(dpname, dpid, ofversion, ntables, ctlaf, ctladdr, ctlport, reconnect)    
+            except ConfigParser.NoOptionError:
+                print 'option not found for LSI ' + str(lsiName) + ', continuing with next LSI'
+            except ConfigParser.NoSectionError:
+                print 'section not found for LSI ' + str(lsiName) +  ', continuing with next LSI'
+                
+        virtLinks = self.config.get('xdpd', 'VIRTLINKS').split()
+        for virtLink in virtLinks:
+            try:
+                dpid1       = self.config.get(virtLink, 'DPID1')
+                dpid2       = self.config.get(virtLink, 'DPID2')
+                [devname1, devname2] = self.xdpdVhsProxy.createVirtualLink(dpid1, dpid2)
+                print devname1
+                print devname2
+            except ConfigParser.NoOptionError:
+                print 'option not found for virtual link ' + str(virtLink) + ', continuing with next virtual link'
+            except ConfigParser.NoSectionError:
+                print 'section not found for virtual link ' + str(virtLink) + ', continuing with next virtual link'
 
+
+            
+        
+    def initVhsDptCore(self):
+        """
+        1. create virtual ethernet cable (veth pair)
+        
+        """
+        self.dptCoreProxy = proact.dptcore.dptcore.DptCoreProxy(self.brokerUrl, self.vhsDptCoreID)
+        self.dptCoreProxy.addVethLink('veth0', 'veth1')
+        
+    
 
 if __name__ == "__main__":
-    VhsCore('vhscore-0', '127.0.0.1').run() 
+    VhsCore().run() 
     
     
