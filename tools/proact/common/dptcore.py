@@ -5,6 +5,8 @@ sys.path.append('../..')
 print sys.path
 
 import proact.common.basecore
+import proact.common.l2tp
+import subprocess
 import qmf2
 
 
@@ -90,29 +92,29 @@ class DptCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
             print "method: " + str(methodName)
 
             if methodName == "vethLinkCreate":
-                self.dptcore.vethLinkCreate(devname1=args['devname1'], devname2=args['devname2'])
+                self.dptCore.vethLinkCreate(devname1=args['devname1'], devname2=args['devname2'])
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "vethLinkDestroy":
-                self.dptcore.vethLinkDestroy(args['devname'])
+                self.dptCore.vethLinkDestroy(args['devname'])
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "linkAddIP":
                 try:
-                    self.dptcore.addIP(args['devname'], args['ipaddr'], args['prefixlen'], args['defroute'])
+                    self.dptCore.addIP(args['devname'], args['ipaddr'], args['prefixlen'], args['defroute'])
                     self.agentSession.methodSuccess(handle)
                 except KeyError:
                     self.agentSession.raiseException(handle, "device not found")
 
             elif methodName == "linkDelIP":
                 try:
-                    self.dptcore.delIP(args['devname'], args['ipaddr'], args['prefixlen'])
+                    self.dptCore.delIP(args['devname'], args['ipaddr'], args['prefixlen'])
                     self.agentSession.methodSuccess(handle)
                 except KeyError:
                     self.agentSession.raiseException(handle, "device not found")
                                 
             elif methodName == "l2tpCreateTunnel":
-                self.dptcore.l2tpTunnelCreate(tunnel_id=args['tunnel_id'],
+                self.dptCore.l2tpTunnelCreate(tunnel_id=args['tunnel_id'],
                                               peer_tunnel_id=args['peer_tunnel_id'], 
                                               remote=args['remote'],
                                               local=args['local'],
@@ -121,22 +123,22 @@ class DptCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "l2tpReset":
-                self.dptcore.l2tpReset()
+                self.dptCore.l2tpReset()
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "l2tpDestroyTunnel":
-                self.dptcore.l2tpTunnelDestroy(tunnel_id=args['tunnel_id'])
+                self.dptCore.l2tpTunnelDestroy(tunnel_id=args['tunnel_id'])
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "l2tpCreateSession":
-                self.dptcore.l2tpSessionCreate(name=args['name'],
+                self.dptCore.l2tpSessionCreate(name=args['name'],
                                                tunnel_id=args['tunnel_id'],
                                                session_id=args['session_id'],
                                                peer_session_id=args['peer_session_id'])
                 self.agentSession.methodSuccess(handle)
                 
             elif methodName == "l2tpDestroySession":
-                self.dptcore.l2tpSessionDestroy(tunnel_id=args['tunnel_id'],
+                self.dptCore.l2tpSessionDestroy(tunnel_id=args['tunnel_id'],
                                                session_id=args['session_id'])
                 self.agentSession.methodSuccess(handle)
                 
@@ -145,10 +147,10 @@ class DptCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
         except DptCoreException, e:
             print str(e)
             self.agentSession.raiseException(handle, e.serror)
-        except L2tpTunnelException, e:
+        except proact.common.l2tp.L2tpTunnelException, e:
             print str(e)
             self.agentSession.raiseException(handle, e.serror)
-        except L2tpSessionException, e:
+        except proact.common.l2tp.L2tpSessionException, e:
             print str(e)
             self.agentSession.raiseException(handle, e.serror)
         except:
@@ -264,7 +266,7 @@ class DptCore(proact.common.basecore.BaseCore):
 
         if kwargs['tunnel_id'] in self.l2tpTunnels:
             raise DptCoreException("tunnel exists")
-        self.l2tpTunnels[kwargs['tunnel_id']] = L2tpTunnel(kwargs['tunnel_id'], 
+        self.l2tpTunnels[kwargs['tunnel_id']] = proact.common.l2tp.L2tpTunnel(kwargs['tunnel_id'], 
                                                            kwargs['peer_tunnel_id'], 
                                                            kwargs['local'],
                                                            kwargs['remote'],  

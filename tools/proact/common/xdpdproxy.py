@@ -28,7 +28,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
 
         # dictionary of LSI instances: key=dpid, value=XdpdLsiProxy instance
         #
-        self.dptLsiProxies = {}
+        self.xdpdLsiProxies = {}
         
         
     def __str__(self):
@@ -39,9 +39,9 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
 
 
     def cleanUp(self):
-        for dptHandle in self.dptLsiProxies:
+        for dptHandle in self.xdpdLsiProxies:
             self.__detach(dptHandle.dpid)
-        self.dptLsiProxies = {}
+        self.xdpdLsiProxies = {}
 
 
     def __getXdpdHandle(self):
@@ -68,25 +68,14 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         """
         attach to the specified remote LSI, create the instance, if necessary
         """
-        if not dpid in self.dptLsiProxies:
+        if not dpid in self.xdpdLsiProxies:
             raise XdpdProxyException('cannot attach dpid: ' + str(dpid))
         try:
-            dptlsi = self.dptLsiProxies[dpid]
+            dptlsi = self.xdpdLsiProxies[dpid]
             xdpdHandle = self.__getXdpdHandle()
             if dptlsi.state == XdpdLsiProxy.STATE_DETACHED:
-                print str(xdpdHandle) + ' ' + str(dptlsi)
-                props = xdpdHandle.getProperties()
-                for prop in props:
-                        print prop
-                stats = xdpdHandle.getStatistics()
-                for stat in stats:
-                        print stat
-                methods = xdpdHandle.getMethods()
-                for method in methods:
-                        print method
                 xdpdHandle.lsiCreate(dptlsi.dpid, dptlsi.dpname, dptlsi.ofversion, dptlsi.ntables,
                                      dptlsi.ctlaf, dptlsi.ctladdr, dptlsi.ctlport, dptlsi.reconnect)
-                print 'TTT'
                 dptlsi.state = XdpdLsiProxy.STATE_ATTACHED
         except Exception, e:
             print e
@@ -99,10 +88,10 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         """
         detach from specified LSI, destroy it on xdpd
         """
-        if not dpid in self.dptLsiProxies:
+        if not dpid in self.xdpdLsiProxies:
             raise XdpdProxyException('cannot detach dpid: ' + str(dpid))
         try:
-            dptlsi = self.dptLsiProxies[dpid]
+            dptlsi = self.xdpdLsiProxies[dpid]
             xdpdHandle = self.__getXdpdHandle()
             if dptlsi.state == XdpdLsiProxy.STATE_ATTACHED:
                 xdpdHandle.lsiDestroy(dptlsi.dpid)
@@ -115,8 +104,8 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         """
         create a new XdpdLsiProxy object and attach to the remote LSI instance
         """
-        if not dpid in self.dptLsiProxies:
-            self.dptLsiProxies[dpid] = XdpdLsiProxy(dpname=dpname, dpid=dpid, ofversion=ofversion,
+        if not dpid in self.xdpdLsiProxies:
+            self.xdpdLsiProxies[dpid] = XdpdLsiProxy(dpname=dpname, dpid=dpid, ofversion=ofversion,
                                           ntables=ntables, ctlaf=ctlaf, ctladdr=ctladdr,
                                           ctlport=ctlport, reconnect=reconnect)
         self.__attach(dpid)
@@ -126,24 +115,24 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         """
         destroy a XdpdLsiProxy object and detach from its associated remote LSI instance
         """
-        if not dpid in self.dptLsiProxies:
+        if not dpid in self.xdpdLsiProxies:
             return
         self.__detach(dpid)
-        self.dptLsiProxies.pop(dpid, None)
+        self.xdpdLsiProxies.pop(dpid, None)
 
 
     def createVirtualLink(self, dpid1, dpid2):
-        if not dpid1 in self.dptLsiProxies:
+        if not dpid1 in self.xdpdLsiProxies:
             raise XdpdProxyException('dpid1: ' + str(dpid1) + ' not found')
-        if not dpid2 in self.dptLsiProxies:
+        if not dpid2 in self.xdpdLsiProxies:
             raise XdpdProxyException('dpid2: ' + str(dpid2) + ' not found')
         try:
             xdpdHandle = self.__getXdpdHandle()
-            dptLsi1 = self.dptLsiProxies[dpid1]            
-            if dptLsi1.state == DptLsiProxy.STATE_DETACHED:
+            dptLsi1 = self.xdpdLsiProxies[dpid1]            
+            if dptLsi1.state == XdpdLsiProxy.STATE_DETACHED:
                 self.__attach(dpid1)
-            dptLsi2 = self.dptLsiProxies[dpid2]
-            if dptLsi2.state == DptLsiProxy.STATE_DETACHED:
+            dptLsi2 = self.xdpdLsiProxies[dpid2]
+            if dptLsi2.state == XdpdLsiProxy.STATE_DETACHED:
                 self.__attach(dpid2)
             result = xdpdHandle.lsiCreateVirtualLink(dpid1, dpid2)
             return [result.outArgs['devname1'], result.outArgs['devname2']]
@@ -155,9 +144,9 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         """
         attach port 'devname' to LSI referred to by 'dpid'
         """
-        if not dpid in self.dptLsiProxies:
+        if not dpid in self.xdpdLsiProxies:
             raise XdpdProxyException('XdpdLsiProxy for dpid: ' + str(dpid) + ' not found')
-        if not self.dptLsiProxies[dpid].state == DptLsiProxy.STATE_ATTACHED:
+        if not self.xdpdLsiProxies[dpid].state == DptLsiProxy.STATE_ATTACHED:
             self.__attach(dpid)
         try:
             lsiHandle = self.__getLsiHandle(dpid).portAttach(dpid, devname)
@@ -169,9 +158,9 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         """
         detach port 'devname' from LSI referred to by 'dpid'
         """
-        if not dpid in self.dptLsiProxies:
+        if not dpid in self.xdpdLsiProxies:
             raise XdpdProxyException('XdpdLsiProxy for dpid: ' + str(dpid) + ' not found')
-        if not self.dptLsiProxies[dpid].state == DptLsiProxy.STATE_ATTACHED:
+        if not self.xdpdLsiProxies[dpid].state == DptLsiProxy.STATE_ATTACHED:
             self.__attach(dpid)
         try:
             lsiHandle = self.__getLsiHandle(dpid).portDetach(dpid, devname)

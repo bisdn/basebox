@@ -6,12 +6,12 @@ import time
 sess = Session()
 
 try:
-        broker = sess.addBroker("amqp://172.16.250.65:5672")
+        broker = sess.addBroker("amqp://127.0.0.1:5672")
 except:
         print "Connection failed"
         exit(1)
 
-dptcores = sess.getObjects(_class="dptcore", _package="de.bisdn.dptcore")
+dptcores = sess.getObjects(_class="dptcore", _package="de.bisdn.proact.dptcore")
 
 for dptcore in dptcores:
 	print dptcore
