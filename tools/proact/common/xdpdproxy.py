@@ -47,8 +47,8 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
     def __getXdpdHandle(self):
         xdpdHandles = self.getObjects(_class='xdpd', _package='de.bisdn.xdpd')
         for xdpdHandle in xdpdHandles:
-            print xdpdHandle
             if xdpdHandle.xdpdID == self.xdpdID:
+                print xdpdHandle
                 return xdpdHandle
         else:
             raise XdpdProxyException('xdpd instance for xdpdID: ' + self.xdpdID + ' not found on QMF bus')
@@ -73,12 +73,25 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         try:
             dptlsi = self.dptLsiProxies[dpid]
             xdpdHandle = self.__getXdpdHandle()
-            if dptlsi.state == DptLsiProxy.STATE_DETACHED:
+            if dptlsi.state == XdpdLsiProxy.STATE_DETACHED:
+                print str(xdpdHandle) + ' ' + str(dptlsi)
+                props = xdpdHandle.getProperties()
+                for prop in props:
+                        print prop
+                stats = xdpdHandle.getStatistics()
+                for stat in stats:
+                        print stat
+                methods = xdpdHandle.getMethods()
+                for method in methods:
+                        print method
                 xdpdHandle.lsiCreate(dptlsi.dpid, dptlsi.dpname, dptlsi.ofversion, dptlsi.ntables,
                                      dptlsi.ctlaf, dptlsi.ctladdr, dptlsi.ctlport, dptlsi.reconnect)
-                dptlsi.state = DptLsiProxy.STATE_ATTACHED
-        except:
-            raise XdpdProxyException('unable to create remote dpid: ' + str(dpid) + ' on remote datapath with xdpdID: ' + self.xdpdID)
+                print 'TTT'
+                dptlsi.state = XdpdLsiProxy.STATE_ATTACHED
+        except Exception, e:
+            print e
+            raise
+            #raise XdpdProxyException('unable to create remote dpid: ' + str(dpid) + ' on remote datapath with xdpdID: ' + self.xdpdID)
             
     
         
@@ -91,9 +104,9 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         try:
             dptlsi = self.dptLsiProxies[dpid]
             xdpdHandle = self.__getXdpdHandle()
-            if dptlsi.state == DptLsiProxy.STATE_ATTACHED:
+            if dptlsi.state == XdpdLsiProxy.STATE_ATTACHED:
                 xdpdHandle.lsiDestroy(dptlsi.dpid)
-                dptlsi.state = DptLsiProxy.STATE_DETACHED
+                dptlsi.state = XdpdLsiProxy.STATE_DETACHED
         except:
             raise XdpdProxyException('unable to destroy remote dpid: ' + str(dpid) + ' on remote datapath with xdpdID: ' + self.xdpdID)
 
@@ -194,7 +207,17 @@ class XdpdLsiProxy(object):
         #sstr = ''
         #for attribute in dir(self):
         #    sstr += attribute + ':' + str(getattr(self, attribute)) + ' ' 
-        return '<XdpdLsiProxy dpname: ' + str(self.dpname) + ' dpid: ' + str(self.dpid) + ' state: ' + str(self.state) + '>'
+        return '<XdpdLsiProxy dpname: ' + str(self.dpname) + \
+                    ' dpid: '       + str(self.dpid) + \
+                    ' state: '      + str(self.state) + \
+                    ' dpname: '     + str(self.dpname) + \
+                    ' ofversion: '  + str(self.ofversion) + \
+                    ' ntables: '    + str(self.ntables) + \
+                    ' ctlaf: '      + str(self.ctlaf) + \
+                    ' ctladdr: '    + str(self.ctladdr) + \
+                    ' ctlport: '    + str(self.ctlport) + \
+                    ' reconnect: '  + str(self.reconnect) + \
+                    '>'
 
     
     

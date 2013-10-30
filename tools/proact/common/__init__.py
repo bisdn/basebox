@@ -1,1 +1,1 @@
-__all__ = ["l2tp", "basecore", "qmfhelper", "dptproxy"]
+__all__ = ["l2tp", "basecore", "qmfhelper", "xdpdproxy"]

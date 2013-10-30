@@ -5,8 +5,10 @@ sys.path.append('../..')
 print sys.path
 
 import proact.common.basecore
+import proact.common.xdpdproxy
 import proact.dptcore.dptcore
 import ConfigParser
+import time
 import qmf2
 
 
@@ -84,13 +86,12 @@ class VhsCore(proact.common.basecore.BaseCore):
     """
     def __init__(self, **kwargs):
         self.parseConfig()
-        self.brokerUrl = brokerUrl
         self.vendor = kwargs.get('vendor', 'bisdn.de')
         self.product = kwargs.get('product', 'vhscore')
         proact.common.basecore.BaseCore.__init__(self, vendor=self.vendor, product=self.product)
         self.agentHandler = VhsCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
         self.initVhsXdpd()
-        self.initVhsDptCore()
+        #self.initVhsDptCore()
         
     def cleanUp(self):
         self.agentHandler.cancel()
@@ -111,6 +112,7 @@ class VhsCore(proact.common.basecore.BaseCore):
         self.config = ConfigParser.ConfigParser()
         self.config.read('vhscore.conf')
         self.brokerUrl = self.config.get('vhscore', 'BROKERURL', '127.0.0.1')
+        self.vhsCoreID = self.config.get('vhscore', 'VHSCOREID', 'vhs-core-0')
         self.vhsDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'vhs-dptcore-0')
 
     
@@ -123,16 +125,26 @@ class VhsCore(proact.common.basecore.BaseCore):
         self.xdpdVhsProxy = proact.common.xdpdproxy.XdpdProxy(self.brokerUrl, self.vhsDptXdpdID)
         lsiNames = self.config.get('xdpd', 'LSIS').split()
         for lsiName in lsiNames:
+            print "lsiName: " + str(lsiName)
             try:
-                dpid        = self.config.get(lsiName, 'DPID')
+                dpid        = self.config.getint(lsiName, 'DPID')
                 dpname      = self.config.get(lsiName, 'DPNAME')
-                ofversion   = self.config.get(lsiName, 'OFVERSION')
-                ntables     = self.config.get(lsiName, 'NTABLES')
-                ctlaf       = self.config.get(lsiName, 'CTLAF')
+                ofversion   = self.config.getint(lsiName, 'OFVERSION')
+                ntables     = self.config.getint(lsiName, 'NTABLES')
+                ctlaf       = self.config.getint(lsiName, 'CTLAF')
                 ctladdr     = self.config.get(lsiName, 'CTLADDR')
-                ctlport     = self.config.get(lsiName, 'CTLPORT')
-                reconnect   = self.config.get(lsiName, 'RECONNECT')
-                self.xdpdVhsProxy.createLsi(dpname, dpid, ofversion, ntables, ctlaf, ctladdr, ctlport, reconnect)    
+                ctlport     = self.config.getint(lsiName, 'CTLPORT')
+                reconnect   = self.config.getint(lsiName, 'RECONNECT')
+                print type(dpid)
+                print type(dpname)
+                print type(ofversion)
+                print type(ntables)
+                print type(ctlaf)
+                print type(ctladdr)
+                print type(ctlport)
+                print type(reconnect)
+                self.xdpdVhsProxy.createLsi(dpname, dpid, ofversion, ntables, ctlaf, ctladdr, ctlport, reconnect)
+                time.sleep(2)    
             except ConfigParser.NoOptionError:
                 print 'option not found for LSI ' + str(lsiName) + ', continuing with next LSI'
             except ConfigParser.NoSectionError:
@@ -140,6 +152,7 @@ class VhsCore(proact.common.basecore.BaseCore):
                 
         virtLinks = self.config.get('xdpd', 'VIRTLINKS').split()
         for virtLink in virtLinks:
+            print 'virtual link: ' + str(virtLink)
             try:
                 dpid1       = self.config.get(virtLink, 'DPID1')
                 dpid2       = self.config.get(virtLink, 'DPID2')

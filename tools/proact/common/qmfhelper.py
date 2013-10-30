@@ -35,8 +35,11 @@ class QmfConsole(object):
     """
     def __init__(self, brokerUrl="amqp://localhost:5672", **kwargs):         
         try:
+            print 'QmfConsole ' + str(brokerUrl)
             self.consoleSession = Session()
+            print 'CCC'
             self.consoleBroker = self.consoleSession.addBroker(brokerUrl)
+            print 'DDD'
         except:
             print "Connection failed"
             raise QmfConsoleException('unable to connect to ' + brokerUrl)
