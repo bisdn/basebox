@@ -5,7 +5,7 @@ sys.path.append('../..')
 print sys.path
 
 import proact.common.basecore
-import proact.common.dptproxy
+import proact.dptcore.dptcore
 import qmf2
 
 
@@ -93,8 +93,8 @@ class VhsCore(proact.common.basecore.BaseCore):
         
     def cleanUp(self):
         self.agentHandler.cancel()
-        self.dptProxy.destroyLsi(self.dpid1)
-        self.dptProxy.destroyLsi(self.dpid0)
+        self.xdpdProxy.destroyLsi(self.dpid1)
+        self.xdpdProxy.destroyLsi(self.dpid0)
         
     def userSessionAdd(self, userIdentity, ipAddress, validLifetime):
         print 'adding user session for user ' + userIdentity + ' on IP address ' + ipAddress + ' with lifetime ' + validLifetime 
@@ -113,13 +113,13 @@ class VhsCore(proact.common.basecore.BaseCore):
         self.dpid0 = 0
         self.dpid1 = 1
         try:
-            self.dptProxy = proact.common.dptproxy.DptProxy(self.brokerUrl, self.vhsXdpdID)
-            self.dptProxy.createLsi('vhs-dp0', self.dpid0, 3, 4)
-            self.dptProxy.createLsi('vhs-dp1', self.dpid1, 3, 4)
-            [self.devname0, self.devname1] = self.dptProxy.createVirtualLink(self.dpid0, self.dpid1)
+            self.xdpdProxy = proact.common.xdpdproxy.XdpdProxy(self.brokerUrl, self.vhsXdpdID)
+            self.xdpdProxy.createLsi('vhs-dp0', self.dpid0, 3, 4)
+            self.xdpdProxy.createLsi('vhs-dp1', self.dpid1, 3, 4)
+            [self.devname0, self.devname1] = self.xdpdProxy.createVirtualLink(self.dpid0, self.dpid1)
             print self.devname0
             print self.devname1
-        except proact.common.dptproxy.DptProxyException, e:
+        except proact.common.xdpdproxy.XdpdProxyException, e:
             print str(e)
             raise
 
