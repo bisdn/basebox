@@ -2,7 +2,7 @@
 
 import sys
 sys.path.append('../..')
-print sys.path
+#print sys.path
 
 import proact.common.basecore
 import proact.common.xdpdproxy
@@ -21,6 +21,7 @@ class VhsCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
         self.qmfVhsCore['data'] = qmf2.Data(self.qmfSchemaVhsCore)
         self.qmfVhsCore['data'].vhsCoreID = vhsCore.vhsCoreID
         self.qmfVhsCore['addr'] = self.agentSess.addData(self.qmfVhsCore['data'], 'vhscore')
+        print 'registering on QMF with vhsCoreID ' + vhsCore.vhsCoreID
         
     def setSchema(self):
         self.qmfSchemaVhsCore = qmf2.Schema(qmf2.SCHEMA_TYPE_DATA, "de.bisdn.proact", "vhscore")
@@ -98,6 +99,7 @@ class VhsCore(proact.common.basecore.BaseCore):
             self.cleanUp()
         
     def cleanUp(self):
+        print 'clean-up started ...'
         try:
             self.agentHandler.cancel()
         except:
@@ -113,6 +115,13 @@ class VhsCore(proact.common.basecore.BaseCore):
             self.dptCoreProxy.resetL2tpState()
         except: 
             pass
+        try:
+            for vethPair in self.config.get('dptcore', 'VETHPAIR').split():
+                (devname1, devname2) = vethPair.split(':')
+                self.dptCoreProxy.delVethLink(devname1)
+        except:
+            pass
+                    
         
     def userSessionAdd(self, userIdentity, ipAddress, validLifetime):
         print 'adding user session for user ' + userIdentity + ' on IP address ' + ipAddress + ' with lifetime ' + validLifetime 
@@ -123,6 +132,24 @@ class VhsCore(proact.common.basecore.BaseCore):
     def handleEvent(self, event):
         pass
     
+    def handleNewLink(self, ifindex, devname, ndmsg):
+        print 'NewLink (' + str(ifindex) + ',' + str(devname) + ')'
+    
+    def handleDelLink(self, ifindex, devname, ndmsg):
+        print 'DelLink (' + str(ifindex) + ',' + str(devname) + ')'
+    
+    def handleNewAddr(self, ifindex, family, addr, prefixlen, scope, ndmsg):
+        print 'NewAddr (' + str(ifindex) + ',' + str(family) + ',' + str(addr) + ',' + str(prefixlen) + ',' + str(scope) + ')'
+        
+    def handleDelAddr(self, ifindex, family, addr, prefixlen, scope, ndmsg):
+        print 'DelAddr (' + str(ifindex) + ',' + str(family) + ',' + str(addr) + ',' + str(prefixlen) + ',' + str(scope) + ')'
+    
+    def handleNewRoute(self, family, dst, dstlen, table, type, scope, ndmsg):
+        print 'NewRoute (' + str(family) + ',' + str(dst) + ',' + str(dstlen) + ',' + str(table) + ',' + str(type) + ',' + str(scope) + ')'
+    
+    def handleDelRoute(self, family, dst, dstlen, table, type, scope, ndmsg):
+        print 'DelRoute (' + str(family) + ',' + str(dst) + ',' + str(dstlen) + ',' + str(table) + ',' + str(type) + ',' + str(scope) + ')'
+        
     def parseConfig(self):
         self.config = ConfigParser.ConfigParser()
         self.config.read('vhscore.conf')
@@ -141,7 +168,6 @@ class VhsCore(proact.common.basecore.BaseCore):
             self.xdpdVhsProxy = proact.common.xdpdproxy.XdpdProxy(self.brokerUrl, self.vhsDptXdpdID)
             lsiNames = self.config.get('xdpd', 'LSIS').split()
             for lsiName in lsiNames:
-                print "lsiName: " + str(lsiName)
                 try:
                     dpid        = self.config.getint(lsiName, 'DPID')
                     dpname      = self.config.get   (lsiName, 'DPNAME')
@@ -161,20 +187,19 @@ class VhsCore(proact.common.basecore.BaseCore):
                     
             virtLinks = self.config.get('xdpd', 'VIRTLINKS').split()
             for virtLink in virtLinks:
-                print 'virtual link: ' + str(virtLink)
                 try:
                     dpid1       = self.config.getint(virtLink, 'DPID1')
                     dpid2       = self.config.getint(virtLink, 'DPID2')
+                    sys.stdout.write('creating virtual link between LSI ' + str(dpid1) + ' and LSI ' + str(dpid2) + '...')
                     [devname1, devname2] = self.xdpdVhsProxy.createVirtualLink(dpid1, dpid2)
-                    print devname1
-                    print devname2
+                    print 'devname1: ' + devname1 + ' devname2: ' + devname2 
                 except ConfigParser.NoOptionError:
                     print 'option not found for virtual link ' + str(virtLink) + ', continuing with next virtual link'
                 except ConfigParser.NoSectionError:
                     print 'section not found for virtual link ' + str(virtLink) + ', continuing with next virtual link'
         except proact.common.xdpdproxy.XdpdProxyException, e:
             print 'VhsCore::initVhsXdpd() initializing xdpd failed ' +  str(e)
-            raise
+            self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
 
             
         
@@ -185,10 +210,21 @@ class VhsCore(proact.common.basecore.BaseCore):
         """
         try:
             self.dptCoreProxy = proact.common.dptcore.DptCoreProxy(self.brokerUrl, self.vhsDptCoreID)
-            self.dptCoreProxy.addVethLink('veth0', 'veth1')
+            self.dptCoreProxy.reset()
+
+            for vethPair in self.config.get('dptcore', 'VETHPAIR').split():
+                try:
+                    (devname1, devname2) = vethPair.split(':')
+                    print 'creating veth pair (' + devname1 + ',' + devname2 + ')'
+                    self.dptCoreProxy.addVethLink(devname1, devname2)
+                except ConfigParser.NoOptionError:
+                    print 'option not found for veth pair ' + str(vethPair) + ', continuing with next veth pair'
+                except ConfigParser.NoSectionError:
+                    print 'section not found for veth pair ' + str(vethPair) + ', continuing with next veth pair'
+            
         except proact.common.dptcore.DptCoreProxyException, e:
             print 'VhsCore::initVhsDptCore() initializing dptcore failed ' + str(e)
-            raise
+            self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
     
 
 if __name__ == "__main__":

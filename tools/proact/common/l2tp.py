@@ -37,10 +37,11 @@ class L2tpSession(object):
                     'tunnel_id ' + str(self.tunnel_id) + ' ' + \
                     'session_id ' + str(self.session_id) + ' ' + \
                     'peer_session_id ' + str(self.peer_session_id) + ' '
-        print "session create: " + str(self) + " " + scmd
+        print 'calling ' + scmd
         subprocess.call(scmd.split())
         self.created = True
         scmd = '/sbin/ip link set up dev ' + str(self.name)
+        print 'calling ' + scmd
         subprocess.call(scmd.split())
     
     def destroy(self):
@@ -49,7 +50,7 @@ class L2tpSession(object):
         scmd = '/sbin/ip l2tp del session ' + \
                     'tunnel_id ' + str(self.tunnel_id) + ' ' + \
                     'session_id ' + str(self.session_id) + ' '
-        print "session destroy: " + str(self) + " " + scmd
+        print 'calling ' + scmd
         subprocess.call(scmd.split())
         self.created = False
 
@@ -96,7 +97,7 @@ class L2tpTunnel(object):
                     'encap udp ' + \
                     'udp_sport ' + str(self.udp_sport) + ' ' + \
                     'udp_dport ' + str(self.udp_dport) + ' '
-        print "tunnel create: " + str(self) + " " + scmd 
+        print 'calling ' + scmd 
         subprocess.call(scmd.split())
         self.created = True
     
@@ -107,7 +108,7 @@ class L2tpTunnel(object):
             self.sessions[session_id].destroy()
         self.sessions = {}
         scmd = '/sbin/ip l2tp del tunnel tunnel_id ' + str(self.tunnel_id)
-        print "tunnel destroy: " + str(self) + " " + scmd
+        print 'calling ' + scmd
         subprocess.call(scmd.split())
         self.created = False
     

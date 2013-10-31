@@ -4,6 +4,9 @@ import qmfhelper
 import select
 import sys
 import os
+from pyroute2.netlink.iproute import *
+from pyroute2 import IPRoute
+from pyroute2 import IPDB
 
 
 class BaseCoreException(Exception):
@@ -37,11 +40,14 @@ class BaseCoreEvent(object):
         return '<BaseCoreEvent [type:' + str(self.type) + '] ' + object.__str__(self, *args, **kwargs) + ' >'
 
 
+
 class BaseCore(object):
     """
-    a description would be useful here
+    overwrite the following methods: cleanUp(), handleEvent(), 
+    handleNewRoute(), handleDelRoute(), handleNewLink(), handleDelLink(), handleNewAddr(), handleDelAddr()
     """
     EVENT_QUIT = 1
+    EVENT_IPROUTE = 2
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
         try:
             self.qmfConsole = qmfhelper.QmfConsole(brokerUrl)
@@ -54,9 +60,89 @@ class BaseCore(object):
             raise
         (self.pipein, self.pipeout) = os.pipe()
         self.events = []
+        self.ipr = IPRoute() 
+        self.ipr.register_callback(iprouteCallback, lambda x: True, [self, ])
+        self.ipdb = IPDB(self.ipr)
+        
         
     def cleanUp(self):
         raise BaseCoreException('BaseCore::cleanUp() method not implemented')
+                    
+    def handleEvent(self, event):
+        raise BaseCoreException('BaseCore::handleEvent() method not implemented')
+
+    def handleNewLink(self, ifindex, devname, ndmsg):
+        pass
+    
+    def handleDelLink(self, ifindex, devname, ndmsg):
+        pass
+    
+    def handleNewAddr(self, ifindex, family, addr, prefixlen, scope, ndmsg):
+        pass
+        
+    def handleDelAddr(self, ifindex, family, addr, prefixlen, scope, ndmsg):
+        pass
+    
+    def handleNewRoute(self, family, dst, dstlen, table, type, scope, ndmsg):
+        pass
+    
+    def handleDelRoute(self, family, dst, dstlen, table, type, scope, ndmsg):
+        pass
+    
+        
+    def __handleNewLink(self, ndmsg):
+        """
+        extracts ifname attribute and calls derived function 
+        """
+        for attr in ndmsg['attrs']:
+            if attr[0] == 'IFLA_IFNAME':
+                self.handleNewLink(ndmsg['index'], attr[1], ndmsg)
+                break
+    
+    def __handleDelLink(self, ndmsg):
+        """
+        extracts ifname attribute and calls derived function 
+        """
+        for attr in ndmsg['attrs']:
+            if attr[0] == 'IFLA_IFNAME':
+                self.handleDelLink(ndmsg['index'], attr[1], ndmsg)
+                break
+    
+    def __handleNewAddr(self, ndmsg):
+        """
+        extracts address attribute and calls derived function 
+        """
+        for attr in ndmsg['attrs']:
+            if attr[0] == 'IFA_ADDRESS':
+                self.handleNewAddr(ndmsg['index'], ndmsg['family'], attr[1], ndmsg['prefixlen'], ndmsg['scope'], ndmsg)
+                break
+        
+    def __handleDelAddr(self, ndmsg):
+        """
+        extracts address attribute and calls derived function 
+        """
+        for attr in ndmsg['attrs']:
+            if attr[0] == 'IFA_ADDRESS':
+                self.handleDelAddr(ndmsg['index'], ndmsg['family'], attr[1], ndmsg['prefixlen'], ndmsg['scope'], ndmsg)
+                break
+    
+    def __handleNewRoute(self, ndmsg):
+        """
+        extracts RTA_DST attribute and calls derived function 
+        """
+        for attr in ndmsg['attrs']:
+            if attr[0] == 'RTA_DST':
+                self.handleNewRoute(ndmsg['family'], attr[1], ndmsg['dst_len'], ndmsg['table'], ndmsg['type'], ndmsg['scope'], ndmsg)
+                break
+    
+    def __handleDelRoute(self, ndmsg):
+        """
+        extracts RTA_DST attribute and calls derived function 
+        """
+        for attr in ndmsg['attrs']:
+            if attr[0] == 'RTA_DST':
+                self.handleDelRoute(ndmsg['family'], attr[1], ndmsg['dst_len'], ndmsg['table'], ndmsg['type'], ndmsg['scope'], ndmsg)
+                break
             
     def addEvent(self, event):
         try:
@@ -66,10 +152,22 @@ class BaseCore(object):
             os.write(self.pipeout, str(event.type))
         except BaseCoreException, e:
             print 'ignoring event ' + str(e)
-            
-
-    def handleEvent(self, event):
-        raise BaseCoreException('BaseCore::handleEvent() method not implemented')
+    
+    def handleNetlinkEvent(self, event):
+        ndmsg = event.opaque
+        nevent = ndmsg['event']
+        if   nevent == 'RTM_NEWROUTE':
+            self.__handleNewRoute(ndmsg)
+        elif nevent == 'RTM_NEWLINK':
+            self.__handleNewLink(ndmsg)
+        elif nevent == 'RTM_NEWADDR':
+            self.__handleNewAddr(ndmsg)
+        elif nevent == 'RTM_DELROUTE':
+            self.__handleDelRoute(ndmsg)
+        elif nevent == 'RTM_DELLINK':
+            self.__handleDelLink(ndmsg)
+        elif nevent == 'RTM_DELADDR':
+            self.__handleDelAddr(ndmsg)
     
     def run(self):
         self.ep = select.epoll()
@@ -81,15 +179,25 @@ class BaseCore(object):
                 evType = os.read(self.pipein, 256)
                 for event in self.events:
                     if event.type == self.EVENT_QUIT:
-                        print "done."
+                        self.cleanUp()
                         return
-                    self.handleEvent(event)
+                    elif event.type == self.EVENT_IPROUTE:
+                        self.handleNetlinkEvent(event)
+                    else:
+                        self.handleEvent(event)
                 else:
                     self.events = []
             except KeyboardInterrupt:
                 sys.stdout.write("terminating...")
-                self.cleanUp()
                 self.addEvent(BaseCoreEvent(self, self.EVENT_QUIT))
+
+
+def iprouteCallback(ndmsg, baseCore):
+    if not isinstance(baseCore, BaseCore):
+        print "invalid type"
+        return
+    baseCore.addEvent(BaseCoreEvent("", BaseCore.EVENT_IPROUTE, ndmsg))
+
 
 
 

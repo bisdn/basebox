@@ -2,9 +2,10 @@
 
 import sys
 sys.path.append('../..')
-print sys.path
+#print sys.path
 
 import proact.common.basecore
+import proact.common.vethpair
 import proact.common.l2tp
 import subprocess
 import qmf2
@@ -28,13 +29,17 @@ class DptCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
         self.qmfDptCore['data'] = qmf2.Data(self.qmfSchemaDptCore)
         self.qmfDptCore['data'].dptCoreID = dptCore.dptCoreID
         self.qmfDptCore['addr'] = self.agentSess.addData(self.qmfDptCore['data'], 'dptcore')
+        print 'registering on QMF with dptCoreID ' + dptCore.dptCoreID
         
     def setSchema(self):  
         self.qmfSchemaDptCore = qmf2.Schema(qmf2.SCHEMA_TYPE_DATA, "de.bisdn.proact.dptcore", "dptcore")
         self.qmfSchemaDptCore.addProperty(qmf2.SchemaProperty("dptCoreID", qmf2.SCHEMA_DATA_STRING))
+
+        self.qmfSchemaMethodReset = qmf2.SchemaMethod("reset", desc='reset dptcore instance')
+        self.qmfSchemaDptCore.addMethod(self.qmfSchemaMethodReset)
         
-        self.sch_l2tpResetMethod = qmf2.SchemaMethod("l2tpReset", desc='destroy all L2TP tunnels')
-        self.qmfSchemaDptCore.addMethod(self.sch_l2tpResetMethod)
+        self.qmfSchemaMethodL2tpReset = qmf2.SchemaMethod("l2tpReset", desc='destroy all L2TP tunnels')
+        self.qmfSchemaDptCore.addMethod(self.qmfSchemaMethodL2tpReset)
 
         self.qmfSchemaMethodL2tpCreateTunnel = qmf2.SchemaMethod("l2tpCreateTunnel", desc='create L2TP tunnel')
         self.qmfSchemaMethodL2tpCreateTunnel.addArgument(qmf2.SchemaProperty("tunnel_id", qmf2.SCHEMA_DATA_INT, direction=qmf2.DIR_IN))
@@ -89,9 +94,13 @@ class DptCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
         
     def method(self, handle, methodName, args, subtypes, addr, userId):
         try:
-            print "method: " + str(methodName)
+            #print "method: " + str(methodName)
 
-            if methodName == "vethLinkCreate":
+            if methodName == 'reset':
+                self.dptCore.reset()
+                self.agentSession.methodSuccess(handle)
+            
+            elif methodName == "vethLinkCreate":
                 self.dptCore.vethLinkCreate(devname1=args['devname1'], devname2=args['devname2'])
                 self.agentSession.methodSuccess(handle)
                 
@@ -161,7 +170,6 @@ class DptCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
 
 
 
-
 class DptCore(proact.common.basecore.BaseCore):
     """
     a description would be useful here
@@ -174,12 +182,24 @@ class DptCore(proact.common.basecore.BaseCore):
         proact.common.basecore.BaseCore.__init__(self, vendor=self.vendor, product=self.product)
         self.agentHandler = DptCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
         self.l2tpTunnels = {}
+        self.vethPairs = {}
 
     def cleanUp(self):
         self.agentHandler.cancel()
+        self.reset()
         
     def handleEvent(self, event):
         pass
+    
+    
+    def reset(self):
+        print 'doing reset ...'
+        for sid, tun in self.l2tpTunnels.iteritems():
+            tun.destroy()
+        self.l2tpTunnels = {}
+        for devname, vethPair in self.vethPairs.iteritems():
+            vethPair.destroy()
+        self.vethPairs = {}
     
     
     def vethLinkCreate(self, **kwargs):
@@ -190,31 +210,30 @@ class DptCore(proact.common.basecore.BaseCore):
         devname1
         devname2
         """
-        scmd = '/sbin/ip link add ' + \
-                'name ' + kwargs['devname1'] + ' ' + \
-                'type veth peer ' + \
-                'name ' + kwargs['devname2'] 
-        subprocess.call(scmd.split())
-        for devname in ( kwargs ['devname1'], kwargs['devname2'] ):
-            scmd = '/sbin/ip link set up dev ' + devname
-            subprocess.call(scmd.split())
-    
+        devname1 = kwargs['devname1']
+        devname2 = kwargs['devname2']
+        if not devname1 in self.vethPairs:
+            self.vethPairs[devname1] = proact.common.vethpair.VethPair(devname1, devname2) 
+        
     
     def vethLinkDestroy(self, devname):
         """
         destroys an interface
         """
-        scmd = '/sbin/ip link del dev ' + devname
-        subprocess.call(scmd.split())
-    
+        if devname in self.vethPairs:
+            self.vethPairs[devname].destroy()
+            self.vethPairs.pop(devname, None) 
+        
     
     def addIP(self, devname, ipaddr, prefixlen, defroute):
         """
         add an IP address to a link
         """
         scmd = '/sbin/ip addr add ' + ipaddr + '/' + str(prefixlen) + ' dev ' + devname
+        print 'calling ' + scmd
         subprocess.call(scmd.split())
         scmd = '/sbin/ip route add default via ' + defroute + ' dev ' + devname
+        print 'calling ' + scmd
         subprocess.call(scmd.split())
         #self.ipdb[devname].add_ip(ipaddr)
         #self.ipdb[devname].commit()
@@ -225,6 +244,7 @@ class DptCore(proact.common.basecore.BaseCore):
         delete an IP address from a link
         """
         scmd = '/sbin/ip addr del ' + ipaddr + '/' + str(prefixlen) + ' dev ' + devname
+        print 'calling ' + scmd
         subprocess.call(scmd.split())
         #self.ipdb[devname].del_ip(ipaddr)
         #self.ipdb[devname].commit()
@@ -343,6 +363,11 @@ class DptCoreProxy(proact.common.qmfhelper.QmfConsole):
         # identifier of xdpd instance to be used
         #
         self.dptCoreID = dptCoreID
+        sys.stdout.write('creating DptCoreProxy for dptCoreID ' + self.dptCoreID + ' => ')
+        try:
+            print self.__getDptCoreHandle()
+        except:
+            raise DptCoreProxyException('unable to find dptCore instance with ID ' + self.dptCoreID)
         
         
     def __str__(self): 
@@ -356,11 +381,16 @@ class DptCoreProxy(proact.common.qmfhelper.QmfConsole):
     def __getDptCoreHandle(self):
         dptCoreHandles = self.getObjects(_class='dptcore', _package='de.bisdn.proact.dptcore')
         for dptCoreHandle in dptCoreHandles:
-            print dptCoreHandle
             if dptCoreHandle.dptCoreID == self.dptCoreID:
                 return dptCoreHandle
         else:
             raise DptCoreProxyException('DptCore instance for dptCoreID: ' + self.dptCoreID + ' not found on QMF bus')
+
+    def reset(self):
+        try:
+            self.__getDptCoreHandle().reset()
+        except:
+            raise DptCoreProxyException('unable to reset dptCore instance ' + self.dptCoreID)
 
     def addVethLink(self, devname1, devname2):
         try:
@@ -420,6 +450,6 @@ class DptCoreProxy(proact.common.qmfhelper.QmfConsole):
 
 
 if __name__ == "__main__":
-    DptCore('dptcore-0', '127.0.0.1').run() 
+    DptCore('vhs-dptcore-0', '127.0.0.1').run() 
     
     
