@@ -126,15 +126,19 @@ public:
 		memset(s_fe, 0, sizeof(s_fe));
 		snprintf(s_fe, sizeof(s_fe)-1, "%s", fe.c_str());
 #endif
-		crtaddr& rta = cnetlink::get_instance().get_link(addr.ifindex).get_addr(addr.adindex);
+		try {
+			crtaddr& rta = cnetlink::get_instance().get_link(addr.ifindex).get_addr(addr.adindex);
 
-		os << "<dptaddr: ";
-			//os << "ifindex=" << addr.ifindex << " ";
-			os << rta.get_family_s() << " " << rta.get_local_addr() << "/" << rta.get_prefixlen() << " dev " << cnetlink::get_instance().get_link(addr.ifindex).get_devname() << " ";
-			os << "adindex: " << (unsigned int)addr.adindex << " ";
-			os << "oftableid: " << (unsigned int)addr.of_table_id << " ";
-			//os << "flowentry=" << s_fe << " ";
-		os << ">";
+			os << "<dptaddr: ";
+				//os << "ifindex=" << addr.ifindex << " ";
+				os << rta.get_family_s() << " " << rta.get_local_addr() << "/" << rta.get_prefixlen() << " dev " << cnetlink::get_instance().get_link(addr.ifindex).get_devname() << " ";
+				os << "adindex: " << (unsigned int)addr.adindex << " ";
+				os << "oftableid: " << (unsigned int)addr.of_table_id << " ";
+				//os << "flowentry=" << s_fe << " ";
+			os << ">";
+		} catch (eRtLinkNotFound& e) {
+			// do nothing
+		}
 		return os;
 	};
 };
