@@ -134,10 +134,22 @@ public:
 				os << rta.get_family_s() << " " << rta.get_local_addr() << "/" << rta.get_prefixlen() << " dev " << cnetlink::get_instance().get_link(addr.ifindex).get_devname() << " ";
 				os << "adindex: " << (unsigned int)addr.adindex << " ";
 				os << "oftableid: " << (unsigned int)addr.of_table_id << " ";
-				//os << "flowentry=" << s_fe << " ";
+#if 0
+				os << "flowentry=" << s_fe << " ";
+#endif
 			os << ">";
 		} catch (eRtLinkNotFound& e) {
-			// do nothing
+			os << "<dptaddr: ";
+				os << "adindex: " << (unsigned int)addr.adindex << " ";
+				os << "oftableid: " << (unsigned int)addr.of_table_id << " ";
+				os << "associated crtaddr object not found";
+			os << ">";
+		} catch (eNetLinkNotFound& e) {
+			os << "<dptaddr: ";
+				os << "adindex: " << (unsigned int)addr.adindex << " ";
+				os << "oftableid: " << (unsigned int)addr.of_table_id << " ";
+				os << "associated crtlink object not found";
+			os << ">";
 		}
 		return os;
 	};

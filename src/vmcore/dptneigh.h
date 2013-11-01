@@ -155,7 +155,17 @@ public:
 				//os << "flowentry=" << s_fe << " ";
 			os << ">";
 		} catch (eRtLinkNotFound& e) {
-
+			os << "<dptneigh: ";
+				os << "nbindex: " << (unsigned int)neigh.nbindex << " ";
+				os << "oftableid: " << (unsigned int)neigh.of_table_id << " ";
+				os << "associated crtneigh object not found";
+			os << ">";
+		} catch (eNetLinkNotFound& e) {
+			os << "<dptneigh: ";
+				os << "nbindex: " << (unsigned int)neigh.nbindex << " ";
+				os << "oftableid: " << (unsigned int)neigh.of_table_id << " ";
+				os << "associated crtlink object not found";
+			os << ">";
 		}
 		return os;
 	};
