@@ -218,6 +218,8 @@ void
 dptlink::addr_created(unsigned int ifindex, uint16_t adindex)
 {
 	try {
+		std::cerr << "ADDR ADD? " << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+
 		// filter out any events not related to our port
 		if (ifindex != this->ifindex)
 			return;
@@ -249,20 +251,30 @@ dptlink::addr_created(unsigned int ifindex, uint16_t adindex)
 void
 dptlink::addr_updated(unsigned int ifindex, uint16_t adindex)
 {
-	// filter out any events not related to our port
-	if (ifindex != this->ifindex)
-		return;
+	try {
+		std::cerr << "ADDR UPDATE? " << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 
-	if (addrs.find(adindex) == addrs.end()) {
-		addr_created(ifindex, adindex);
+		// filter out any events not related to our port
+		if (ifindex != this->ifindex)
+			return;
+
+		if (addrs.find(adindex) == addrs.end()) {
+			addr_created(ifindex, adindex);
+		}
+
+		// TODO: check status changes and notify dptaddr instance
+
+		addrs[adindex].flow_mod_modify();
+
+		fprintf(stderr, "dptlink::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
+		std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+
+	} catch (eNetLinkNotFound& e) {
+		std::cerr << "dptlink::addr_updated() crtlink object not found" << std::endl;
+
+	} catch (eRtLinkNotFound& e) {
+		std::cerr << "dptlink::addr_updated() crtaddr object not found" << std::endl;
 	}
-
-	// TODO: check status changes and notify dptaddr instance
-
-	addrs[adindex].flow_mod_modify();
-
-	fprintf(stderr, "dptlink::addr_updated() ifindex=%d adindex=%d => ", ifindex, adindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 }
 
 
@@ -271,6 +283,8 @@ void
 dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 {
 	try {
+		std::cerr << "ADDR DELETE? " << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
+
 		// filter out any events not related to our port
 		if (ifindex != this->ifindex)
 			return;
