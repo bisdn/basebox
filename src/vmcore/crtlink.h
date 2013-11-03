@@ -243,7 +243,7 @@ public:
 				<< "devname: " 	<< rtlink.devname << " "
 				<< "maddr: " 	<< rtlink.maddr.c_str() << " "
 				<< "bcast: " 	<< rtlink.bcast.c_str() << " "
-				<< "flags: " 	<< rtlink.flags << " "
+				<< "flags: " 	<< (std::hex) << rtlink.flags << (std::dec) << " "
 				<< "af: " 		<< rtlink.af << " "
 				<< "arptype: " 	<< rtlink.arptype << " "
 				<< "ifindex: " 	<< rtlink.ifindex << " "
