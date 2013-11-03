@@ -218,11 +218,11 @@ void
 dptlink::addr_created(unsigned int ifindex, uint16_t adindex)
 {
 	try {
-		std::cerr << "ADDR ADD? " << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
-
 		// filter out any events not related to our port
 		if (ifindex != this->ifindex)
 			return;
+
+		std::cerr << "ADDR ADD? " << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 
 		if (addrs.find(adindex) != addrs.end()) {
 			// safe strategy: remove old FlowMod first
@@ -252,11 +252,11 @@ void
 dptlink::addr_updated(unsigned int ifindex, uint16_t adindex)
 {
 	try {
-		std::cerr << "ADDR UPDATE? " << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
-
 		// filter out any events not related to our port
 		if (ifindex != this->ifindex)
 			return;
+
+		std::cerr << "ADDR UPDATE? " << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 
 		if (addrs.find(adindex) == addrs.end()) {
 			addr_created(ifindex, adindex);
@@ -283,11 +283,11 @@ void
 dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 {
 	try {
-		std::cerr << "ADDR DELETE? " << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
-
 		// filter out any events not related to our port
 		if (ifindex != this->ifindex)
 			return;
+
+		std::cerr << "ADDR DELETE? " << cnetlink::get_instance().get_link(ifindex).get_addr(adindex) << std::endl;
 
 		if (addrs.find(adindex) == addrs.end()) {
 			// we have no dptaddr instance for the crtaddr instance scheduled for removal, so ignore it
