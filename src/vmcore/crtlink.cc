@@ -45,6 +45,7 @@ crtlink::operator= (crtlink const& rtlink)
 	if (this == &rtlink)
 		return *this;
 
+	std::cerr << "crtlink::operator=() " << *this << std::endl;
 	addrs.clear();
 
 	for (std::map<uint16_t, crtaddr>::const_iterator
@@ -147,7 +148,7 @@ uint16_t
 crtlink::del_addr(uint16_t index)
 {
 	if (crtaddr::CRTLINK_ADDR_ALL == index) {
-		std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << index << std::endl;
+		std::cerr << "crtlink::del_addr() " << *this << std::endl;
 		addrs.clear();
 	} else {
 		std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << index << std::endl;
