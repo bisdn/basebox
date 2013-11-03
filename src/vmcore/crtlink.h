@@ -249,6 +249,7 @@ public:
 				<< "ifindex: " 	<< rtlink.ifindex << " "
 				<< "mtu: " 		<< rtlink.mtu << " ";
 		os << ">";
+		if (rtlink.addrs.size() > 0) os << std::endl;
 		for (std::map<uint16_t, crtaddr>::const_iterator
 				it = rtlink.addrs.begin(); it != rtlink.addrs.end(); ++it) {
 			os << "        " << it->second << " ";
