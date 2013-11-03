@@ -72,10 +72,10 @@ class BaseCore(object):
         raise BaseCoreException('BaseCore::handleEvent() method not implemented')
 
     def handleNewLink(self, ifindex, devname, ndmsg):
-        pass
+        print ndmsg
     
     def handleDelLink(self, ifindex, devname, ndmsg):
-        pass
+        print ndmsg
     
     def handleNewAddr(self, ifindex, family, addr, prefixlen, scope, ndmsg):
         pass
