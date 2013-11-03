@@ -289,13 +289,13 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 void
 vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
-	std::cerr << "ROUTE ADD? " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-
 	// ignore local route table and unspecified table_id
 	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 		return;
 	}
+
+	std::cerr << "ROUTE ADD? " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 
 	//std::cerr << "vmcore::route_created() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 	if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
@@ -308,13 +308,13 @@ vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 {
-	std::cerr << "ROUTE UPDATE? " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-
 	// ignore local route table and unspecified table_id
 	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		std::cerr << "vmcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 		return;
 	}
+
+	std::cerr << "ROUTE UPDATE? " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 
 	//std::cerr << "vmcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 	if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
@@ -329,13 +329,13 @@ vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 {
-	std::cerr << "ROUTE DELETE? " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-
 	// ignore local route table and unspecified table_id
 	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		std::cerr << "vmcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 		return;
 	}
+
+	std::cerr << "ROUTE DELETE? " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 
 	//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 	if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
