@@ -240,9 +240,9 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 		}
 		}
 	} catch (eNetLinkNotFound& e) {
-		fprintf(stderr, "oops, route_addr_cb() was called with an invalid link [1]\n");
+		fprintf(stderr, "cnetlink::route_addr_cb() oops, route_addr_cb() was called with an invalid link [1]\n");
 	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "oops, route_addr_cb() was called with an invalid address [2]\n");
+		fprintf(stderr, "cnetlink::route_addr_cb() oops, route_addr_cb() was called with an invalid address [2]\n");
 	}
 
 	nl_object_put(obj); // release reference to object
@@ -300,8 +300,10 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 			fprintf(stderr, "route/addr: unknown NL action\n");
 		}
 		}
+	} catch (eNetLinkNotFound& e) {
+		fprintf(stderr, "cnetlink::route_route_cb() oops, route_route_cb() was called with an invalid link\n");
 	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "oops, route_addr_cb() was called with an invalid link\n");
+		fprintf(stderr, "cnetlink::route_route_cb() oops, route_route_cb() was called with an invalid route\n");
 	}
 
 	nl_object_put(obj); // release reference to object
@@ -358,8 +360,10 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 			fprintf(stderr, "route/addr: unknown NL action\n");
 		}
 		}
+	} catch (eNetLinkNotFound& e) {
+		fprintf(stderr, "cnetlink::route_neigh_cb() oops, route_neigh_cb() was called with an invalid link\n");
 	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "oops, route_addr_cb() was called with an invalid link\n");
+		fprintf(stderr, "cnetlink::route_neigh_cb() oops, route_neigh_cb() was called with an invalid neighbor\n");
 	}
 
 	nl_object_put(obj); // release reference to object
