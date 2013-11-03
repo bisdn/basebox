@@ -147,15 +147,15 @@ uint16_t
 crtlink::del_addr(uint16_t index)
 {
 	if (crtaddr::CRTLINK_ADDR_ALL == index) {
-		//std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << index << std::endl;
+		std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << index << std::endl;
 		addrs.clear();
 	} else {
-		//std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << index << std::endl;
+		std::cerr << "crtlink::del_addr() route/addr: NL-ACT-DEL => index=" << index << std::endl;
 		if (addrs.find(index) == addrs.end())
 			throw eRtLinkNotFound();
 		addrs.erase(index);
 	}
-	//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-DEL => " << *this << std::endl;
+	std::cerr << "crtlink::set_addr() route/addr: NL-ACT-DEL => " << *this << std::endl;
 	return index;
 }
 

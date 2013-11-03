@@ -242,7 +242,7 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 	} catch (eNetLinkNotFound& e) {
 		fprintf(stderr, "oops, route_addr_cb() was called with an invalid link [1]\n");
 	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "oops, route_addr_cb() was called with an invalid link [2]\n");
+		fprintf(stderr, "oops, route_addr_cb() was called with an invalid address [2]\n");
 	}
 
 	nl_object_put(obj); // release reference to object
