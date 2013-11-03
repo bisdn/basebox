@@ -23,14 +23,14 @@ crtaddr::crtaddr() :
 		peer(AF_INET),
 		bcast(AF_INET)
 {
-
+	std::cerr << "crtaddr::crtaddr() " << (std::hex) << (int*)this << (std::dec) << std::endl;
 }
 
 
 
 crtaddr::~crtaddr()
 {
-
+	std::cerr << "crtaddr::~crtaddr() " << (std::hex) << (int*)this << (std::dec) << std::endl;
 }
 
 
