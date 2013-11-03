@@ -138,6 +138,8 @@ public:
 				os << "flowentry=" << s_fe << " ";
 #endif
 			os << ">";
+			os << "    " << cnetlink::get_instance().get_link(addr.ifindex).get_addr(addr.adindex) << std::endl;
+
 		} catch (eRtLinkNotFound& e) {
 			os << "<dptaddr: ";
 				os << "adindex: " << (unsigned int)addr.adindex << " ";

@@ -212,6 +212,11 @@ public:
 			os << "hwaddr: " << link.dpt->get_port(link.of_port_no).get_hwaddr() << " ";
 			os << "portno: " << (int)link.of_port_no << " ";
 		os << ">" << std::endl;
+		try {
+			os << "    " << cnetlink::get_instance().get_link(link.ifindex) << std::endl;
+		} catch (eNetLinkNotFound& e) {
+			os << "    " << "no crtlink found" << std::endl;
+		}
 		for (std::map<uint16_t, dptaddr>::const_iterator
 				it = link.addrs.begin(); it != link.addrs.end(); ++it) {
 			os << "    " << it->second << std::endl;
