@@ -45,7 +45,7 @@ crtlink::operator= (crtlink const& rtlink)
 	if (this == &rtlink)
 		return *this;
 
-	std::cerr << "crtlink::operator=() " << *this << std::endl;
+	//std::cerr << "crtlink::operator=() " << *this << std::endl;
 	addrs.clear();
 
 	for (std::map<uint16_t, crtaddr>::const_iterator
