@@ -115,8 +115,10 @@ dptaddr::flow_mod_add()
 
 		//std::cerr << "dptaddr::flow_mod_add() => " << *this << std::endl;
 
+	} catch (eNetLinkNotFound& e) {
+		fprintf(stderr, "dptaddr::flow_mod_add() unable to find link\n");
 	} catch (eRtLinkNotFound& e) {
-		fprintf(stderr, "dptaddr::flow_mod_add() unable to find link or address\n");
+		fprintf(stderr, "dptaddr::flow_mod_add() unable to find address\n");
 	}
 }
 

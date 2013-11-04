@@ -158,6 +158,7 @@ dptroute::route_created(
 		flowentry.set_idle_timeout(0);
 		flowentry.set_hard_timeout(0);
 		flowentry.set_priority(0x8000 + (rtr.get_prefixlen() << 8));
+#if 0
 		switch (table_id) {
 		case RT_TABLE_LOCAL: {
 			flowentry.set_table_id(0);
@@ -165,10 +166,13 @@ dptroute::route_created(
 			flowentry.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP12_CONTROLLER);
 		} break;
 		default: {
+#endif
 			flowentry.set_table_id(1);
 			flowentry.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), 2);
+#if 0
 		} break;
 		}
+#endif
 		//flowentry.set_table_id(1);			// FIXME: check for first table-id in data path
 
 		switch (rtr.get_family()) {
