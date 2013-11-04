@@ -158,7 +158,11 @@ dptroute::route_created(
 		flowentry.set_idle_timeout(0);
 		flowentry.set_hard_timeout(0);
 		flowentry.set_priority(0x8000 + (rtr.get_prefixlen() << 8));
-		flowentry.set_table_id(1);			// FIXME: check for first table-id in data path
+		switch (table_id) {
+		case RT_TABLE_LOCAL: 	flowentry.set_table_id(0); break;
+		default:				flowentry.set_table_id(1); break;
+		}
+		//flowentry.set_table_id(1);			// FIXME: check for first table-id in data path
 
 		switch (rtr.get_family()) {
 		case AF_INET: {

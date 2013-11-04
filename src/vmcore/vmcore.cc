@@ -290,7 +290,8 @@ void
 vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
 	// ignore local route table and unspecified table_id
-	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+	//if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+	if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 		return;
 	}
@@ -309,7 +310,8 @@ void
 vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 {
 	// ignore local route table and unspecified table_id
-	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+	//if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+	if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		std::cerr << "vmcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 		return;
 	}
@@ -330,7 +332,8 @@ void
 vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 {
 	// ignore local route table and unspecified table_id
-	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+	//if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+	if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		std::cerr << "vmcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 		return;
 	}
