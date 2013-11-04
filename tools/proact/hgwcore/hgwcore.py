@@ -18,9 +18,9 @@ class HgwCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
         self.hgwCore = hgwCore
         self.qmfHgwCore = {}
         self.qmfHgwCore['data'] = qmf2.Data(self.qmfSchemaHgwCore)
-        self.qmfHgwCore['data'].hgwCoreID = HgwCore.hgwCoreID
+        self.qmfHgwCore['data'].hgwCoreID = hgwCore.hgwCoreID
         self.qmfHgwCore['addr'] = self.agentSess.addData(self.qmfHgwCore['data'], 'hgwcore')
-        print 'registering on QMF with hgwCoreID ' + HgwCore.hgwCoreID
+        print 'registering on QMF with hgwCoreID ' + hgwCore.hgwCoreID
         
     def setSchema(self):
         self.qmfSchemaHgwCore = qmf2.Schema(qmf2.SCHEMA_TYPE_DATA, "de.bisdn.proact", "hgwcore")
