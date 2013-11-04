@@ -104,7 +104,7 @@ dptaddr::flow_mod_add()
 		case OFP13_VERSION: port_no = OFPP13_CONTROLLER; break;
 		}
 
-		fe.instructions.back().actions.next() = rofl::cofaction_output(port_no, 1518); // FIXME: check the mtu value
+		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), port_no, 1518); // FIXME: check the mtu value
 
 		switch (rta.get_family()) {
 		case AF_INET:  { fe.match.set_ipv4_dst(rta.get_local_addr()); } break;
