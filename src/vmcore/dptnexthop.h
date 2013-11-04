@@ -163,19 +163,39 @@ public:
 		memset(s_fe, 0, sizeof(s_fe));
 		snprintf(s_fe, sizeof(s_fe)-1, "%s", fe.c_str());
 #endif
-		crtneigh& rtn = cnetlink::get_instance().get_link(neigh.ifindex).get_neigh(neigh.nbindex);
+		try {
+			crtneigh& rtn = cnetlink::get_instance().get_link(neigh.ifindex).get_neigh(neigh.nbindex);
 
-		os << "<dptnexthop: ";
-			os << rtn.get_dst() << " dev " << cnetlink::get_instance().get_link(neigh.ifindex).get_devname();
-			os << " lladdr " << rtn.get_lladdr() << " state " << rtn.get_state() << " ";
-			//os << "ifindex=" << neigh.ifindex << " ";
-			//os << "nbindex=" << (unsigned int)neigh.nbindex << " ";
-			//os << "ofportno=" << (unsigned int)neigh.of_port_no << " ";
-			os << "oftableid: " << (unsigned int)neigh.of_table_id << " ";
-			//os << "dstaddr=" << neigh.dstaddr << " ";
-			//os << "dstmask=" << neigh.dstmask << " ";
-			//os << "flowentry=" << s_fe << " ";
-		os << ">";
+			os << "<dptnexthop: ";
+				os << rtn.get_dst() << " dev " << cnetlink::get_instance().get_link(neigh.ifindex).get_devname();
+				os << " lladdr " << rtn.get_lladdr() << " state " << rtn.get_state() << " ";
+				//os << "ifindex=" << neigh.ifindex << " ";
+				//os << "nbindex=" << (unsigned int)neigh.nbindex << " ";
+				//os << "ofportno=" << (unsigned int)neigh.of_port_no << " ";
+				os << "oftableid: " << (unsigned int)neigh.of_table_id << " ";
+				//os << "dstaddr=" << neigh.dstaddr << " ";
+				//os << "dstmask=" << neigh.dstmask << " ";
+				//os << "flowentry=" << s_fe << " ";
+			os << ">";
+		} catch (eNetLinkNotFound& e) {
+			os << "<dptnexthop: ";
+				os << "ifindex:" << neigh.ifindex << " ";
+				os << "nbindex:" << (unsigned int)neigh.nbindex << " ";
+				os << "ofportno:" << (unsigned int)neigh.of_port_no << " ";
+				os << "oftableid: " << (unsigned int)neigh.of_table_id << " ";
+				os << "dstaddr:" << neigh.dstaddr << " ";
+				os << "dstmask:" << neigh.dstmask << " ";
+			os << ">";
+		} catch (eRtLinkNotFound& e) {
+			os << "<dptnexthop: ";
+				os << "ifindex:" << neigh.ifindex << " ";
+				os << "nbindex:" << (unsigned int)neigh.nbindex << " ";
+				os << "ofportno:" << (unsigned int)neigh.of_port_no << " ";
+				os << "oftableid: " << (unsigned int)neigh.of_table_id << " ";
+				os << "dstaddr:" << neigh.dstaddr << " ";
+				os << "dstmask:" << neigh.dstmask << " ";
+			os << ">";
+		}
 		return os;
 	};
 };
