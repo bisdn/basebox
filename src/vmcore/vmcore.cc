@@ -4,7 +4,8 @@ using namespace dptmap;
 
 std::string	vmcore::dpath_open_script_path(DEFAULT_DPATH_OPEN_SCRIPT_PATH);
 std::string	vmcore::dpath_close_script_path(DEFAULT_DPATH_CLOSE_SCRIPT_PATH);
-
+std::string	vmcore::port_up_script_path(DEFAULT_PORT_UP_SCRIPT_PATH);
+std::string	vmcore::port_down_script_path(DEFAULT_PORT_DOWN_SCRIPT_PATH);
 
 
 vmcore::vmcore() :
@@ -75,6 +76,7 @@ vmcore::delete_all_ports()
 			jt = dptlinks.begin(); jt != dptlinks.end(); ++jt) {
 		for (std::map<uint32_t, dptlink*>::iterator
 				it = dptlinks[jt->first].begin(); it != dptlinks[jt->first].end(); ++it) {
+			run_port_down_script(it->second->get_devname());
 			delete (it->second); // remove dptport instance from heap
 		}
 	}
@@ -146,6 +148,8 @@ vmcore::handle_dpath_open(
 				 * is not capable of handling a vast amount of new interfaces
 				 */
 				sleep(2);
+
+
 			}
 		}
 
@@ -220,17 +224,20 @@ vmcore::handle_port_status(
 		case OFPPR_ADD: {
 			if (dptlinks[dpt].find(port_no) == dptlinks[dpt].end()) {
 				dptlinks[dpt][port_no] = new dptlink(this, dpt, msg->get_port().get_port_no());
+				run_port_up_script(msg->get_port().get_name());
 			}
 		} break;
 		case OFPPR_MODIFY: {
 			if (dptlinks[dpt].find(port_no) != dptlinks[dpt].end()) {
 				dptlinks[dpt][port_no]->handle_port_status();
+				//run_port_up_script(msg->get_port().get_name()); // TODO: check flags
 			}
 		} break;
 		case OFPPR_DELETE: {
 			if (dptlinks[dpt].find(port_no) != dptlinks[dpt].end()) {
 				delete dptlinks[dpt][port_no];
 				dptlinks[dpt].erase(port_no);
+				run_port_down_script(msg->get_port().get_name());
 			}
 		} break;
 		default: {
@@ -409,6 +416,44 @@ vmcore::run_dpath_close_script()
 	envp.push_back(s_dpid.str());
 
 	vmcore::execute(vmcore::dpath_close_script_path, argv, envp);
+}
+
+
+
+void
+vmcore::run_port_up_script(std::string const& devname)
+{
+	std::vector<std::string> argv;
+	std::vector<std::string> envp;
+
+	std::stringstream s_dpid;
+	s_dpid << "DPID=" << dpt->get_dpid();
+	envp.push_back(s_dpid.str());
+
+	std::stringstream s_devname;
+	s_devname << "DEVNAME=" << devname;
+	envp.push_back(s_devname.str());
+
+	vmcore::execute(vmcore::port_up_script_path, argv, envp);
+}
+
+
+
+void
+vmcore::run_port_down_script(std::string const& devname)
+{
+	std::vector<std::string> argv;
+	std::vector<std::string> envp;
+
+	std::stringstream s_dpid;
+	s_dpid << "DPID=" << dpt->get_dpid();
+	envp.push_back(s_dpid.str());
+
+	std::stringstream s_devname;
+	s_devname << "DEVNAME=" << devname;
+	envp.push_back(s_devname.str());
+
+	vmcore::execute(vmcore::port_down_script_path, argv, envp);
 }
 
 
