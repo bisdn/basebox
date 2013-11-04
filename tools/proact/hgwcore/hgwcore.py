@@ -91,7 +91,7 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.parseConfig()
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'hgwcore')
-            self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
+            #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
             self.agentHandler = HgwCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
             self.initHgwXdpd()

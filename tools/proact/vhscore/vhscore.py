@@ -90,7 +90,7 @@ class VhsCore(proact.common.basecore.BaseCore):
             self.parseConfig()
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'vhscore')
-            self.brokerUrl = kwargs.get('brokerUrl', '127.0.0.1')
+            #self.brokerUrl = kwargs.get('brokerUrl', '127.0.0.1')
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
             self.agentHandler = VhsCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
             self.initVhsXdpd()
