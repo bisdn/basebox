@@ -92,6 +92,13 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'hgwcore')
             #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
+            
+            self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
+            
+            self.dmzLinks = {}
+            self.lanLinks = {}
+            self.wanLinks = {}
+                    
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
             self.agentHandler = HgwCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
             self.initHgwXdpd()
@@ -116,59 +123,46 @@ class HgwCore(proact.common.basecore.BaseCore):
         print 'deleting user session for user ' + userIdentity + ' on IP address ' + ipAddress 
 
     def handleEvent(self, event):
-        pass
-    
-    def handleNewLink(self, ifindex, devname, ndmsg):
-        print 'NewLink (' + str(ifindex) + ',' + str(devname) + ')'
-    
-    def handleDelLink(self, ifindex, devname, ndmsg):
-        print 'DelLink (' + str(ifindex) + ',' + str(devname) + ')'
-    
-    def handleNewAddr(self, ifindex, family, addr, prefixlen, scope, ndmsg):
-        print 'NewAddr (' + str(ifindex) + ',' + str(family) + ',' + str(addr) + ',' + str(prefixlen) + ',' + str(scope) + ')'
-        
-    def handleDelAddr(self, ifindex, family, addr, prefixlen, scope, ndmsg):
-        print 'DelAddr (' + str(ifindex) + ',' + str(family) + ',' + str(addr) + ',' + str(prefixlen) + ',' + str(scope) + ')'
-    
-    def handleNewRoute(self, family, dst, dstlen, table, type, scope, ndmsg):
-        print 'NewRoute (' + str(family) + ',' + str(dst) + ',' + str(dstlen) + ',' + str(table) + ',' + str(type) + ',' + str(scope) + ')'
-    
-    def handleDelRoute(self, family, dst, dstlen, table, type, scope, ndmsg):
-        print 'DelRoute (' + str(family) + ',' + str(dst) + ',' + str(dstlen) + ',' + str(table) + ',' + str(type) + ',' + str(scope) + ')'
-        
+        if event.type == proact.common.basecore.BaseCore.EVENT_NEW_LINK:
+            print 'NewLink (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_LINK:
+            print 'DelLink (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_NEW_ADDR:
+            print 'NewAddr (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_ADDR:
+            print 'DelAddr (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_NEW_ROUTE:
+            print 'NewRoute (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_ROUTE:
+            print 'DelRoute (' + str(event.source) + ')'
+            
     def parseConfig(self):
         self.config = ConfigParser.ConfigParser()
         self.config.read('hgwcore.conf')
         self.brokerUrl = self.config.get('hgwcore', 'BROKERURL', '127.0.0.1')
         self.hgwCoreID = self.config.get('hgwcore', 'HGWCOREID', 'hgw-core-0')
         self.hgwDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'hgw-dptcore-0')
+        self.hgwDptXdpdID = self.config.get('xdpd', 'XDPDID', 'hgw-xdpd-0')
 
     
     def initHgwXdpd(self):
-        """
-        1. check for LSIs and create them, if not found
-        2. create virtual link between both LSIs
-        """
+        """   """
         try:
-            self.hgwDptXdpdID = self.config.get('xdpd', 'XDPDID', 'hgw-xdpd-0')
             self.xdpdHgwProxy = proact.common.xdpdproxy.XdpdProxy(self.brokerUrl, self.hgwDptXdpdID)
         except proact.common.xdpdproxy.XdpdProxyException, e:
             print 'HgwCore::initHgwXdpd() initializing xdpd failed ' +  str(e)
-            self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
+            #self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
 
             
         
     def initHgwDptCore(self):
-        """
-        1. create virtual ethernet cable (veth pair)
-        
-        """
+        """   """
         try:
             self.dptCoreProxy = proact.common.dptcore.DptCoreProxy(self.brokerUrl, self.hgwDptCoreID)
             self.dptCoreProxy.reset()
         except proact.common.dptcore.DptCoreProxyException, e:
             print 'HgwCore::initHgwDptCore() initializing dptcore failed ' + str(e)
-            self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
+            #self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
     
 
 if __name__ == "__main__":

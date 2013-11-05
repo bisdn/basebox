@@ -9,6 +9,117 @@ from pyroute2 import IPRoute
 from pyroute2 import IPDB
 
 
+
+class Route(object):
+    """ abstraction for a route in a basecore instance """
+    def __init__(self, baseCore, family, dst, dstlen, table, type, scope):
+        self.baseCore   = baseCore
+        self.family     = family
+        self.dst        = dst
+        self.dstlen     = dstlen
+        self.table      = table
+        self.type       = type
+        self.scope      = scope
+
+    def __str__(self):
+        return '<Route: family:' + str(self.family) + \
+            ' dst:' + self.dst + ' dstlen:' + str(self.dstlen) + \
+            ' table:' + str(self.table) + ' type:' + str(self.type) + ' scope:' + str(self.scope) + ' >' 
+
+    def activated(self):
+        self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_NEW_ROUTE))
+    
+    def deactivated(self):
+        self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_DEL_ROUTE))
+
+
+class Address(object):
+    """ abstraction for an address in a basecore instance """
+    def __init__(self, baseCore, ifindex, family, addr, prefixlen, scope):
+        self.baseCore   = baseCore
+        self.ifindex    = ifindex
+        self.family     = family
+        self.addr       = addr
+        self.prefixlen  = prefixlen
+        self.scope      = scope
+    
+    def __str__(self):
+        return '<Address: ifindex:' + str(self.ifindex) + ' family:' + str(self.family) + \
+            ' addr:' + self.addr + ' prefixlen:' + str(self.prefixlen) + ' scope:' + str(self.scope) + ' >' 
+
+    def __eq__(self, addr):
+        if isinstance(addr, Address):
+            return ((self.ifindex == addr.ifindex) and \
+                    (self.family == addr.family) and \
+                    (self.addr == addr.addr) and \
+                    (self.prefixlen == addr.prefixlen) and \
+                    (self.scope == addr.scope))
+        raise NotImplementedError
+    
+    def activated(self):
+        self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_NEW_ADDR))
+    
+    def deactivated(self):
+        self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_DEL_ADDR))
+    
+
+class LinkException(Exception):
+    def __init__(self, serror):
+        self.serror = serror
+    def __str__(self):
+        return '<LinkException: ' + self.serror + '>' 
+    
+
+
+class Link(object):
+    """ abstraction for a link in a basecore instance """
+    def __init__(self, baseCore, ifindex, devname):
+        self.baseCore = baseCore
+        self.ifindex = ifindex
+        self.devname = devname
+        self.active = False
+        self.addrs = []
+    
+    def __str__(self):
+        s_addrs = ''
+        for addr in self.addrs:
+            s_addrs += str(addr) + ' '
+        return '<Link => devname:' + self.devname + ' active:' + str(self.active) + \
+            ' ifindex:' + str(self.ifindex) + ' addresses:' + s_addrs + ' >'
+            
+    def __eq__(self, link):
+        if isinstance(link, Link):
+            return ((self.devname == link.devname) and (self.ifindex == link.ifindex))
+        raise NotImplementedError
+    
+    def activated(self):
+        self.active = True
+        print 'link active: ' + str(self)
+        self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_NEW_LINK))
+        
+    def deactivated(self):
+        self.active = False
+        print 'link not active: ' + str(self)
+        self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_DEL_LINK))
+    
+    def handleNewAddr(self, addr, ndmsg):
+        for address in self.addrs:
+            if addr == address:
+                break;
+        else:
+            self.addrs.append(addr)
+            addr.activated()
+            print 'link new address: ' + str(self) + ' ' + str(addr)
+    
+    def handleDelAddr(self, addr, ndmsg):
+        for address in self.addrs:
+            if addr == address:
+                self.addrs.remove(addr)
+                addr.deactivated()
+                print 'link delete address: ' + str(self) + ' ' + str(addr)
+                break
+
+
 class BaseCoreException(Exception):
     def __init__(self, serror):
         self.serror = serror
@@ -48,6 +159,12 @@ class BaseCore(object):
     """
     EVENT_QUIT = 1
     EVENT_IPROUTE = 2
+    EVENT_NEW_LINK = 3
+    EVENT_DEL_LINK = 4
+    EVENT_NEW_ADDR = 5
+    EVENT_DEL_ADDR = 6
+    EVENT_NEW_ROUTE = 7
+    EVENT_DEL_ROUTE = 8
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
         try:
             self.qmfConsole = qmfhelper.QmfConsole(brokerUrl)
@@ -63,6 +180,8 @@ class BaseCore(object):
         self.ipr = IPRoute() 
         self.ipr.register_callback(iprouteCallback, lambda x: True, [self, ])
         self.ipdb = IPDB(self.ipr)
+        self.links = {}
+        self.routes = []
         
         
     def cleanUp(self):
@@ -70,24 +189,6 @@ class BaseCore(object):
                     
     def handleEvent(self, event):
         raise BaseCoreException('BaseCore::handleEvent() method not implemented')
-
-    def handleNewLink(self, ifindex, devname, ndmsg):
-        print ndmsg
-    
-    def handleDelLink(self, ifindex, devname, ndmsg):
-        print ndmsg
-    
-    def handleNewAddr(self, ifindex, family, addr, prefixlen, scope, ndmsg):
-        pass
-        
-    def handleDelAddr(self, ifindex, family, addr, prefixlen, scope, ndmsg):
-        pass
-    
-    def handleNewRoute(self, family, dst, dstlen, table, type, scope, ndmsg):
-        pass
-    
-    def handleDelRoute(self, family, dst, dstlen, table, type, scope, ndmsg):
-        pass
     
         
     def __handleNewLink(self, ndmsg):
@@ -96,7 +197,10 @@ class BaseCore(object):
         """
         for attr in ndmsg['attrs']:
             if attr[0] == 'IFLA_IFNAME':
-                self.handleNewLink(ndmsg['index'], attr[1], ndmsg)
+                (ifindex, devname) = (ndmsg['ifindex'], attr[1])
+                if not devname in self.links:
+                    self.links[devname] = Link(self, ifindex, devname)
+                    self.links[devname].activated()
                 break
     
     def __handleDelLink(self, ndmsg):
@@ -105,7 +209,9 @@ class BaseCore(object):
         """
         for attr in ndmsg['attrs']:
             if attr[0] == 'IFLA_IFNAME':
-                self.handleDelLink(ndmsg['index'], attr[1], ndmsg)
+                (ifindex, devname) = (ndmsg['ifindex'], attr[1])
+                if devname in self.links:
+                    self.links[devname].deactivated()
                 break
     
     def __handleNewAddr(self, ndmsg):
@@ -114,7 +220,10 @@ class BaseCore(object):
         """
         for attr in ndmsg['attrs']:
             if attr[0] == 'IFA_ADDRESS':
-                self.handleNewAddr(ndmsg['index'], ndmsg['family'], attr[1], ndmsg['prefixlen'], ndmsg['scope'], ndmsg)
+                (ifindex, family, addr, prefixlen, scope) = (ndmsg['index'], ndmsg['family'], attr[1], ndmsg['prefixlen'], ndmsg['scope'])
+                for link in self.links:
+                    if link.ifindex == ifindex:
+                        link.handleNewAddr(Address(self, ifindex, family, addr, prefixlen, scope), ndmsg)
                 break
         
     def __handleDelAddr(self, ndmsg):
@@ -123,7 +232,10 @@ class BaseCore(object):
         """
         for attr in ndmsg['attrs']:
             if attr[0] == 'IFA_ADDRESS':
-                self.handleDelAddr(ndmsg['index'], ndmsg['family'], attr[1], ndmsg['prefixlen'], ndmsg['scope'], ndmsg)
+                (ifindex, family, addr, prefixlen, scope) = (ndmsg['index'], ndmsg['family'], attr[1], ndmsg['prefixlen'], ndmsg['scope'])
+                for link in self.links:
+                    if link.ifindex == ifindex:
+                        link.handleDelAddr(Address(self, ifindex, family, addr, prefixlen, scope), ndmsg)
                 break
     
     def __handleNewRoute(self, ndmsg):
@@ -132,8 +244,13 @@ class BaseCore(object):
         """
         for attr in ndmsg['attrs']:
             if attr[0] == 'RTA_DST':
-                self.handleNewRoute(ndmsg['family'], attr[1], ndmsg['dst_len'], ndmsg['table'], ndmsg['type'], ndmsg['scope'], ndmsg)
-                break
+                (family, dst, dstlen, table, type, scope) = (ndmsg['family'], attr[1], ndmsg['dst_len'], ndmsg['table'], ndmsg['type'], ndmsg['scope'])
+                route = Route(family, dst, dstlen, table, type, scope)
+                if not route in self.routes:
+                    self.routes.append(route)
+                    route.activated() 
+                    break
+
     
     def __handleDelRoute(self, ndmsg):
         """
@@ -141,8 +258,12 @@ class BaseCore(object):
         """
         for attr in ndmsg['attrs']:
             if attr[0] == 'RTA_DST':
-                self.handleDelRoute(ndmsg['family'], attr[1], ndmsg['dst_len'], ndmsg['table'], ndmsg['type'], ndmsg['scope'], ndmsg)
-                break
+                (family, dst, dstlen, table, type, scope) = (ndmsg['family'], attr[1], ndmsg['dst_len'], ndmsg['table'], ndmsg['type'], ndmsg['scope'])
+                route = Route(family, dst, dstlen, table, type, scope)
+                if route in self.routes:
+                    route.deactived() 
+                    break
+
             
     def addEvent(self, event):
         try:
