@@ -5,6 +5,7 @@ import qmfhelper
 import select
 import sys
 import os
+import re
 from pyroute2.netlink.iproute import *
 from pyroute2 import IPRoute
 from pyroute2 import IPDB
@@ -97,13 +98,15 @@ class Link(object):
             self.linkstate = 'up'
         self.active = False
         self.addrs = []
+        self.raAttached = False
     
     def __str__(self):
         s_addrs = ''
         for addr in self.addrs:
             s_addrs += str(addr) + ' '
         return '<Link => devname:' + self.devname + ' active:' + str(self.active) + \
-            ' ifindex:' + str(self.ifindex) + ' linkstate:' + str(self.linkstate) + ' addresses:' + s_addrs + ' >'
+            ' ifindex:' + str(self.ifindex) + ' linkstate:' + str(self.linkstate) + \
+            ' RA-attached:' + str(self.raAttached) + ' addresses:' + s_addrs + ' >'
             
     def __eq__(self, link):
         if isinstance(link, Link):
@@ -141,12 +144,23 @@ class Link(object):
             self.addrs.append(addr)
             addr.activated()
             #print 'link new address: ' + str(self) + ' ' + str(addr)
+        if not self.raAttached:
+            if addr.family == 10 and not re.match('fe80', addr.addr) and addr.scope == 0:
+                self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_RA_ATTACHED))
+                self.raAttached = True
     
     def handleDelAddr(self, addr, ndmsg):
         if addr in self.addrs:
             self.addrs.remove(addr)
             addr.deactivated()
             #print 'link delete address: ' + str(self) + ' ' + str(addr)
+        for addr in self.addrs:
+            if addr.family == 10 and not re.match('fe80', addr.addr) and addr.scope == 0:
+                break
+        else:
+            self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_RA_DETACHED))
+            self.raAttached = False
+    
 
     def enable(self, accept_ra=0):
         ip_cmd = self.ip_binary + ' link set up dev ' + self.devname
@@ -209,6 +223,8 @@ class BaseCore(object):
     EVENT_DEL_ADDR = 8
     EVENT_NEW_ROUTE = 9
     EVENT_DEL_ROUTE = 10
+    EVENT_RA_ATTACHED = 11
+    EVENT_RA_DETACHED = 12
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
         try:
             self.qmfConsole = qmfhelper.QmfConsole(brokerUrl)

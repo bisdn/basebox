@@ -153,6 +153,14 @@ class HgwCore(proact.common.basecore.BaseCore):
                 
         elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_LINK:
             print 'DelLink (' + str(event.source) + ')'
+            link = event.source
+            if link.devname in self.dmzLinks:
+                self.dmzLinks.pop(link.devname, None)
+            if link.devname in self.lanLinks:
+                self.lanLinks.pop(link.devname, None)
+            if link.devname in self.wanLinks:
+                self.wanLinks.pop(link.devname, None)
+            
         elif event.type == proact.common.basecore.BaseCore.EVENT_NEW_ADDR:
             print 'NewAddr (' + str(event.source) + ')'
         elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_ADDR:
@@ -165,7 +173,11 @@ class HgwCore(proact.common.basecore.BaseCore):
             print 'LinkUp (' + str(event.source) + ')'
         elif event.type == proact.common.basecore.BaseCore.EVENT_LINK_DOWN:
             print 'LinkDown (' + str(event.source) + ')'
-                        
+        elif event.type == proact.common.basecore.BaseCore.EVENT_RA_ATTACHED:
+            print 'RA-Attached (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_RA_DETACHED:
+            print 'RA-Detached (' + str(event.source) + ')'
+            
     def parseConfig(self):
         self.config = ConfigParser.ConfigParser()
         self.config.read('hgwcore.conf')
