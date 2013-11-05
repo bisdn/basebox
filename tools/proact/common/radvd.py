@@ -10,9 +10,8 @@ class RAdvd(object):
     STATE_ANNOUNCING = 1
     radvd_binary = '/sbin/radvd'
     
-    def __init__(self, parent, devname, conffiledir='.'):
+    def __init__(self, devname, conffiledir='.'):
         self.state = self.STATE_STOPPED
-        self.parent = parent
         self.devname = devname
         self.prefixes = []
         self.process = None

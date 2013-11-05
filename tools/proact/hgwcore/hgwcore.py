@@ -95,6 +95,8 @@ class HgwCore(proact.common.basecore.BaseCore):
             
             self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
             
+            print self.linkNames
+            
             self.dmzLinks = {}
             self.lanLinks = {}
             self.wanLinks = {}
@@ -113,8 +115,15 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.agentHandler.cancel()
         except:
             pass
-
-                    
+        for devname in self.dmzLinks:
+            self.dmzLinks[devname].disable()
+        self.dmzLinks = {}
+        for devname in self.lanLinks:
+            self.lanLinks[devname].disable()
+        self.lanLinks = {}
+        for devname in self.wanLinks:
+            self.wanLinks[devname].disable()
+        self.wanLinks = {}
         
     def userSessionAdd(self, userIdentity, ipAddress, validLifetime):
         print 'adding user session for user ' + userIdentity + ' on IP address ' + ipAddress + ' with lifetime ' + validLifetime 
@@ -125,6 +134,23 @@ class HgwCore(proact.common.basecore.BaseCore):
     def handleEvent(self, event):
         if event.type == proact.common.basecore.BaseCore.EVENT_NEW_LINK:
             print 'NewLink (' + str(event.source) + ')'
+            link = event.source
+            if link.devname in self.linkNames['dmz']:
+                link.linkType = 'dmz'
+                link.disable()
+                link.enable(0)
+                self.dmzLinks[link.devname] = link
+            elif link.devname in self.linkNames['lan']:
+                link.linkType = 'lan'
+                link.disable()
+                link.enable(0)
+                self.lanLinks[link.devname] = link
+            elif link.devname in self.linkNames['wan']:
+                link.linkType = 'wan'
+                link.disable()
+                link.enable(2)                
+                self.wanLinks[link.devname] = link
+                
         elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_LINK:
             print 'DelLink (' + str(event.source) + ')'
         elif event.type == proact.common.basecore.BaseCore.EVENT_NEW_ADDR:
@@ -135,7 +161,11 @@ class HgwCore(proact.common.basecore.BaseCore):
             print 'NewRoute (' + str(event.source) + ')'
         elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_ROUTE:
             print 'DelRoute (' + str(event.source) + ')'
-            
+        elif event.type == proact.common.basecore.BaseCore.EVENT_LINK_UP:
+            print 'LinkUp (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_LINK_DOWN:
+            print 'LinkDown (' + str(event.source) + ')'
+                        
     def parseConfig(self):
         self.config = ConfigParser.ConfigParser()
         self.config.read('hgwcore.conf')
@@ -166,5 +196,5 @@ class HgwCore(proact.common.basecore.BaseCore):
     
 
 if __name__ == "__main__":
-    HgwCore().run() 
+    HgwCore(wanLinks=['dummy0'], lanLinks=['veth0'], dmzLinks=['veth2']).run() 
     

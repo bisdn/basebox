@@ -13,9 +13,9 @@ class DhcpClient(object):
     EVENT_DHCP_PREFIX_DETACHED = 0
     EVENT_DHCP_PREFIX_ATTACHED = 1
     
-    def __init__(self, owner, devname, pidfilebase='/var/run'):
+    def __init__(self, baseCore, devname, pidfilebase='/var/run'):
         self.state = self.STATE_PREFIX_DETACHED
-        self.owner = owner
+        self.baseCore = baseCore
         self.devname = devname
         self.pidfilebase = pidfilebase
         self.pidfile = self.pidfilebase + '/dhclient6.' + self.devname + '.pid'
@@ -71,7 +71,7 @@ class DhcpClient(object):
                         
             if do_bind:
                 self.state = self.STATE_PREFIX_ATTACHED
-                self.owner.addEvent(basecore.BaseCoreEvent(self, self.EVENT_DHCP_PREFIX_ATTACHED))
+                self.baseCore.addEvent(basecore.BaseCoreEvent(self, self.EVENT_DHCP_PREFIX_ATTACHED))
             
         except ValueError, e:
             print 'unable to acquire prefixes ' + str(self)
@@ -87,7 +87,7 @@ class DhcpClient(object):
             rc = process.communicate()
             if process.returncode == 0:
                 self.state = self.STATE_PREFIX_DETACHED
-                self.owner.addEvent(basecore.BaseCoreEvent(self, self.EVENT_DHCP_PREFIX_DETACHED))
+                self.baseCore.addEvent(basecore.BaseCoreEvent(self, self.EVENT_DHCP_PREFIX_DETACHED))
         except:
             print 'unable to release prefixes ' + str(self)
         
