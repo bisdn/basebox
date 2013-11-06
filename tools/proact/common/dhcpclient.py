@@ -21,7 +21,7 @@ class DhcpClient(object):
         self.new_prefixes = []
         try:
             with open(self.pidfile):
-                self.killDhclientProcess() 
+                self.killClient() 
         except IOError:
             pass
 
