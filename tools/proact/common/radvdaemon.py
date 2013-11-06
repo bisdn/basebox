@@ -75,7 +75,7 @@ class RAdvd(object):
             f.write('    MaxRtrAdvInterval 15;\n')
 
             for prefix in self.prefixes:
-                f.write('    prefix ' + prefix.prefix + '/' + str(prefix.prefixlen) + '\n')
+                f.write('    prefix ' + str(prefix.prefix) + '/' + str(prefix.prefixlen) + '\n')
                 f.write('    {\n')
                 f.write('        AdvOnLink on;\n')
                 f.write('        AdvAutonomous on;\n')
