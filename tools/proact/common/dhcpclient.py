@@ -93,14 +93,16 @@ class DhcpClient(object):
 
     def killClient(self):
         """destroy any running dhclient process associated with this object"""
-        f = open(self.pidfile)
-        kill_cmd = 'kill -INT ' + f.readline()
-        #print "kill-cmd: " + kill_cmd
-        subprocess.call(kill_cmd.split())
-        #if os.path.exists(self.pidfile):
-        #    os.unlink(self.pidfile)
-        return True
-        
+        try:
+            with open(self.pidfile) as f:
+                kill_cmd = 'kill -INT ' + f.readline()
+                #print "kill-cmd: " + kill_cmd
+                subprocess.call(kill_cmd.split())
+                #if os.path.exists(self.pidfile):
+                #    os.unlink(self.pidfile)
+                return True
+        except IOError:
+            return False
         
     def is_PREFIX_attached(self):
         if self.state == self.STATE_PREFIX_ATTACHED:
