@@ -189,43 +189,43 @@ class HgwCore(proact.common.basecore.BaseCore):
             
         elif event.type == proact.common.basecore.BaseCore.EVENT_PREFIX_ATTACHED:
             print 'Prefix-Attached (' + str(event.source) + ')'
-            wanLink = event.source
+            dhclient = event.source
             for devname, lanLink in self.lanLinks.iteritems():
-                for prefix in wanLink.dhclient.new_prefixes:
+                for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
                     lanLink.addIPv6Addr(str(p)+'1', 64)
-                for prefix in wanLink.dhclient.new_prefixes:
+                for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
                     lanLink.radvd.addPrefix(radvdaemon.IPv6Prefix(str(p), 64))
                 lanLink.radvd.restart()
                     
             for devname, dmzLink in self.dmzLinks.iteritems():
-                for prefix in wanLink.dhclient.new_prefixes:
+                for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
                     dmzLink.addIPv6Addr(str(p)+'1', 64)
-                for prefix in wanLink.dhclient.new_prefixes:
+                for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
                     dmzLink.radvd.addPrefix(radvdaemon.IPv6Prefix(str(p), 64))
                 dmzLink.radvd.restart()
         
         elif event.type == proact.common.basecore.BaseCore.EVENT_PREFIX_DETACHED:
             print 'Prefix-Detached (' + str(event.source) + ')'
-            wanLink = event.source
+            dhclient = event.source
             for devname, lanLink in self.lanLinks.iteritems():
-                for prefix in wanLink.dhclient.new_prefixes:
+                for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
                     lanLink.radvd.delPrefix(radvdaemon.IPv6Prefix(str(p), 64))
                 lanLink.radvd.restart()
-                for prefix in wanLink.dhclient.new_prefixes:
+                for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
                     lanLink.delIPv6Addr(str(p)+'1', 64)
             
             for devname, dmzLink in self.dmzLinks.iteritems():
-                for prefix in wanLink.dhclient.new_prefixes:
+                for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
                     dmzLink.radvd.delPrefix(radvdaemon.IPv6Prefix(str(p), 64))
                 dmzLink.radvd.restart()
-                for prefix in wanLink.dhclient.new_prefixes:
+                for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
                     dmzLink.delIPv6Addr(str(p)+'1', 64)
                     
