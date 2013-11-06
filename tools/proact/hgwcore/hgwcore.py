@@ -196,7 +196,7 @@ class HgwCore(proact.common.basecore.BaseCore):
                     lanLink.addIPv6Addr(str(p)+'1', 64)
                 for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
-                    lanLink.radvd.addPrefix(radvdaemon.IPv6Prefix(str(p), 64))
+                    lanLink.radvd.addPrefix(proact.common.radvdaemon.IPv6Prefix(str(p), 64))
                 lanLink.radvd.restart()
                     
             for devname, dmzLink in self.dmzLinks.iteritems():
@@ -205,7 +205,7 @@ class HgwCore(proact.common.basecore.BaseCore):
                     dmzLink.addIPv6Addr(str(p)+'1', 64)
                 for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
-                    dmzLink.radvd.addPrefix(radvdaemon.IPv6Prefix(str(p), 64))
+                    dmzLink.radvd.addPrefix(proact.common.radvdaemon.IPv6Prefix(str(p), 64))
                 dmzLink.radvd.restart()
         
         elif event.type == proact.common.basecore.BaseCore.EVENT_PREFIX_DETACHED:
@@ -214,7 +214,7 @@ class HgwCore(proact.common.basecore.BaseCore):
             for devname, lanLink in self.lanLinks.iteritems():
                 for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
-                    lanLink.radvd.delPrefix(radvdaemon.IPv6Prefix(str(p), 64))
+                    lanLink.radvd.delPrefix(proact.common.radvdaemon.IPv6Prefix(str(p), 64))
                 lanLink.radvd.restart()
                 for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
@@ -223,7 +223,7 @@ class HgwCore(proact.common.basecore.BaseCore):
             for devname, dmzLink in self.dmzLinks.iteritems():
                 for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
-                    dmzLink.radvd.delPrefix(radvdaemon.IPv6Prefix(str(p), 64))
+                    dmzLink.radvd.delPrefix(proact.common.radvdaemon.IPv6Prefix(str(p), 64))
                 dmzLink.radvd.restart()
                 for prefix in dhclient.new_prefixes:
                     p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
