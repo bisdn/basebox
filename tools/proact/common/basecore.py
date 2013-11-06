@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 import subprocess
+import radvdaemon
+import dhcpclient
 import qmfhelper
 import select
 import sys
@@ -88,10 +90,11 @@ class Link(object):
     ip_binary = '/sbin/ip'
     sysctl_binary = '/sbin/sysctl'
     
-    def __init__(self, baseCore, ifindex, devname, linkstate):
+    def __init__(self, baseCore, uniquePrefix, ifindex, devname, linkstate):
         self.baseCore = baseCore
         self.ifindex = ifindex
         self.devname = devname
+        self.uniquePrefix = uniquePrefix
         if linkstate == 'DOWN':
             self.linkstate = 'down'
         else:
@@ -99,6 +102,8 @@ class Link(object):
         self.active = False
         self.addrs = []
         self.raAttached = False
+        self.dhclient = dhcpclient.DhcpClient(baseCore, devname)
+        self.radvd = radvdaemon.RAdvd(baseCore, devname)
     
     def __str__(self):
         s_addrs = ''
@@ -175,6 +180,20 @@ class Link(object):
         print ip_cmd
         subprocess.call(ip_cmd.split()) 
 
+    def flushIPv6Addresses(self):
+        s = "/sbin/ip -6 addr flush dev " + self.devname
+        subprocess.call(s.split())
+        
+    def addIPv6Addr(self, address, prefixlen):
+        # once the address has been added, netlink will inform us and trigger self.add_addr()
+        s = "/sbin/ip -6 addr add " + address + "/" + str(prefixlen) + " dev " + self.devname
+        print 'adding address: ' + s
+        subprocess.call(s.split())
+
+    def delIPv6Addr(self, address, prefixlen):
+        s = "/sbin/ip -6 addr del " + address + "/" + str(prefixlen) + " dev " + self.devname
+        print 'deleting address: ' + s
+        subprocess.call(s.split())
 
 class BaseCoreException(Exception):
     def __init__(self, serror):
@@ -225,6 +244,10 @@ class BaseCore(object):
     EVENT_DEL_ROUTE = 10
     EVENT_RA_ATTACHED = 11
     EVENT_RA_DETACHED = 12
+    EVENT_PREFIX_ATTACHED = 13
+    EVENT_PREFIX_DETACHED = 14
+    EVENT_RADVD_START = 15
+    EVENT_RADVD_STOP = 16
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
         try:
             self.qmfConsole = qmfhelper.QmfConsole(brokerUrl)
@@ -242,6 +265,7 @@ class BaseCore(object):
         self.ipdb = IPDB(self.ipr)
         self.links = {}
         self.routes = []
+        self.uniquePrefix = 0
         
         
     def cleanUp(self):
@@ -264,7 +288,8 @@ class BaseCore(object):
                 (linkstate) = (attr[1])
                 
         if not devname in self.links:
-            self.links[devname] = Link(self, ifindex, devname, linkstate)
+            self.uniquePrefix = self.uniquePrefix + 1
+            self.links[devname] = Link(self, self.uniquePrefix, ifindex, devname, linkstate)
             self.links[devname].activated()
         else:
             self.links[devname].update(ndmsg)

@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import basecore
 import subprocess
 import ipv6prefix
 
@@ -10,8 +11,9 @@ class RAdvd(object):
     STATE_ANNOUNCING = 1
     radvd_binary = '/sbin/radvd'
     
-    def __init__(self, devname, conffiledir='.'):
+    def __init__(self, baseCore, devname, conffiledir='.'):
         self.state = self.STATE_STOPPED
+        self.baseCore = baseCore
         self.devname = devname
         self.prefixes = []
         self.process = None
@@ -22,13 +24,14 @@ class RAdvd(object):
     def __str__(self, *args, **kwargs):
         return '<RAdvd [' + self.devname + '] ' + '[state: ' + str(self.state) + '] ' + ' >'
     
-    def add_prefix(self, prefix):
+    def addPrefix(self, prefix):
         if not isinstance(prefix, ipv6prefix.IPv6Prefix):
             print "not of type IPv6Prefix, ignoring"
             return
-        self.prefixes.append(prefix)
+        if not prefix in self.prefixes:
+            self.prefixes.append(prefix)
         
-    def del_prefix(self, prefix):
+    def delPrefix(self, prefix):
         if not isinstance(prefix, ipv6prefix.IPv6Prefix):
             print "not of type IPv6Prefix, ignoring"
             return
@@ -38,11 +41,15 @@ class RAdvd(object):
     def start(self):
         if self.process != None:
             self.stop()
-        self.state = self.STATE_ANNOUNCING
         self.__rebuild_config()
+        if len(self.prefixes) == 0:
+            print 'no prefixes available for radvd, suppressing start ' + str(self)
+            return
+        self.state = self.STATE_ANNOUNCING
         radvd_cmd = self.radvd_binary + ' -C ' + self.conffile + ' -p ' + self.pidfile
         print 'radvd start: executing command => ' + str(radvd_cmd)
         self.process = subprocess.Popen(radvd_cmd.split())
+        self.baseCore.addEvent(basecore.BaseCoreEvent(self, basecore.BaseCore.EVENT_RADVD_START))
     
     def stop(self):
         self.state = self.STATE_STOPPED
@@ -52,6 +59,13 @@ class RAdvd(object):
         print 'radvd stop: executing command => ' + str(kill_cmd)
         subprocess.call(kill_cmd.split())
         self.process = None
+        self.baseCore.addEvent(basecore.BaseCoreEvent(self, basecore.BaseCore.EVENT_RADVD_STOP))
+
+    def restart(self):
+        if self.state == self.STATE_ANNOUNCING:
+            self.stop()
+        self.__rebuild_config()
+        self.start()
 
     def __rebuild_config(self):
         try:

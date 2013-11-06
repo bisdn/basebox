@@ -10,8 +10,6 @@ class DhcpClient(object):
     dhclient_binary = '/sbin/dhclient'
     STATE_PREFIX_DETACHED = 0
     STATE_PREFIX_ATTACHED = 1
-    EVENT_DHCP_PREFIX_DETACHED = 0
-    EVENT_DHCP_PREFIX_ATTACHED = 1
     
     def __init__(self, baseCore, devname, pidfilebase='/var/run'):
         self.state = self.STATE_PREFIX_DETACHED
@@ -29,7 +27,8 @@ class DhcpClient(object):
 
 
     def __del__(self):
-        self.release()
+        if self.state == self.STATE_PREFIX_ATTACHED:
+            self.sendRelease()
     
     
     def __str__(self, *args, **kwargs):
@@ -39,7 +38,7 @@ class DhcpClient(object):
         return '<DhcpClient [' + self.devname + '] [state: ' + str(self.state) + '] ' + s_prefixes + ' ' + '>'
 
 
-    def request(self):
+    def sendRequest(self):
         'call ISC dhclient with following parameters: /sbin/dhclient -v -6 -P -pf ${PIDFILE} ${IFACE}'
         try:
             dhclient_cmd = self.dhclient_binary + ' -q -P -1 -pf ' + self.pidfile + ' ' + self.devname
@@ -71,14 +70,14 @@ class DhcpClient(object):
                         
             if do_bind:
                 self.state = self.STATE_PREFIX_ATTACHED
-                self.baseCore.addEvent(basecore.BaseCoreEvent(self, self.EVENT_DHCP_PREFIX_ATTACHED))
+                self.baseCore.addEvent(basecore.BaseCoreEvent(self, basecore.BaseCore.EVENT_PREFIX_ATTACHED))
             
         except ValueError, e:
             print 'unable to acquire prefixes ' + str(self)
         
         
     
-    def release(self):
+    def sendRelease(self):
         print "sending DHCP release: " + str(self)
         try:
             dhclient_cmd = self.dhclient_binary + ' -q -N -r -pf ' + self.pidfile + ' ' + self.devname
@@ -87,12 +86,12 @@ class DhcpClient(object):
             rc = process.communicate()
             if process.returncode == 0:
                 self.state = self.STATE_PREFIX_DETACHED
-                self.baseCore.addEvent(basecore.BaseCoreEvent(self, self.EVENT_DHCP_PREFIX_DETACHED))
+                self.baseCore.addEvent(basecore.BaseCoreEvent(self, basecore.BaseCore.EVENT_PREFIX_DETACHED))
         except:
             print 'unable to release prefixes ' + str(self)
         
 
-    def killDhclientProcess(self):
+    def killClient(self):
         """destroy any running dhclient process associated with this object"""
         f = open(self.pidfile)
         kill_cmd = 'kill -INT ' + f.readline()
