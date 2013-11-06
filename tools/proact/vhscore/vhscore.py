@@ -81,6 +81,7 @@ class VhsCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
 
 
 
+
 class VhsCore(proact.common.basecore.BaseCore):
     """
     a description would be useful here
@@ -90,7 +91,16 @@ class VhsCore(proact.common.basecore.BaseCore):
             self.parseConfig()
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'vhscore')
-            #self.brokerUrl = kwargs.get('brokerUrl', '127.0.0.1')
+            #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
+            
+            self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
+            
+            print self.linkNames
+            
+            self.dmzLinks = {}
+            self.lanLinks = {}
+            self.wanLinks = {}
+                    
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
             self.agentHandler = VhsCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
             self.initVhsXdpd()
@@ -105,24 +115,15 @@ class VhsCore(proact.common.basecore.BaseCore):
             self.agentHandler.cancel()
         except:
             pass
-        try:
-            lsiNames = self.config.get('xdpd', 'LSIS').split()
-            for lsiName in lsiNames:
-                dpid = self.config.getint(lsiName, 'DPID')
-                self.xdpdVhsProxy.destroyLsi(dpid)
-        except:
-            pass
-        try:
-            self.dptCoreProxy.resetL2tpState()
-        except: 
-            pass
-        try:
-            for vethPair in self.config.get('dptcore', 'VETHPAIR').split():
-                (devname1, devname2) = vethPair.split(':')
-                self.dptCoreProxy.delVethLink(devname1)
-        except:
-            pass
-                    
+        for devname in self.dmzLinks:
+            self.dmzLinks[devname].disable()
+        self.dmzLinks = {}
+        for devname in self.lanLinks:
+            self.lanLinks[devname].disable()
+        self.lanLinks = {}
+        for devname in self.wanLinks:
+            self.wanLinks[devname].disable()
+        self.wanLinks = {}
         
     def userSessionAdd(self, userIdentity, ipAddress, validLifetime):
         print 'adding user session for user ' + userIdentity + ' on IP address ' + ipAddress + ' with lifetime ' + validLifetime 
@@ -131,104 +132,137 @@ class VhsCore(proact.common.basecore.BaseCore):
         print 'deleting user session for user ' + userIdentity + ' on IP address ' + ipAddress 
 
     def handleEvent(self, event):
-        pass
-    
-    def handleNewLink(self, ifindex, devname, ndmsg):
-        print 'NewLink (' + str(ifindex) + ',' + str(devname) + ')'
-    
-    def handleDelLink(self, ifindex, devname, ndmsg):
-        print 'DelLink (' + str(ifindex) + ',' + str(devname) + ')'
-    
-    def handleNewAddr(self, ifindex, family, addr, prefixlen, scope, ndmsg):
-        print 'NewAddr (' + str(ifindex) + ',' + str(family) + ',' + str(addr) + ',' + str(prefixlen) + ',' + str(scope) + ')'
+        if event.type == proact.common.basecore.BaseCore.EVENT_NEW_LINK:
+            print 'NewLink (' + str(event.source) + ')'
+            link = event.source
+            if link.devname in self.linkNames['dmz']:
+                link.linkType = 'dmz'
+                link.disable()
+                link.enable(0)
+                self.dmzLinks[link.devname] = link
+            elif link.devname in self.linkNames['lan']:
+                link.linkType = 'lan'
+                link.disable()
+                link.enable(0)
+                self.lanLinks[link.devname] = link
+            elif link.devname in self.linkNames['wan']:
+                link.linkType = 'wan'
+                link.disable()
+                link.enable(2)                
+                self.wanLinks[link.devname] = link
+                
+        elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_LINK:
+            print 'DelLink (' + str(event.source) + ')'
+            link = event.source
+            if link.devname in self.dmzLinks:
+                self.dmzLinks.pop(link.devname, None)
+            if link.devname in self.lanLinks:
+                self.lanLinks.pop(link.devname, None)
+            if link.devname in self.wanLinks:
+                self.wanLinks.pop(link.devname, None)
+            
+        elif event.type == proact.common.basecore.BaseCore.EVENT_NEW_ADDR:
+            print 'NewAddr (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_ADDR:
+            print 'DelAddr (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_NEW_ROUTE:
+            print 'NewRoute (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_ROUTE:
+            print 'DelRoute (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_LINK_UP:
+            print 'LinkUp (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_LINK_DOWN:
+            print 'LinkDown (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_RA_ATTACHED:
+            print 'RA-Attached (' + str(event.source) + ')'
+            link = event.source
+            if link.devname in self.wanLinks:
+                link.dhclient.sendRequest()
+            
+        elif event.type == proact.common.basecore.BaseCore.EVENT_RA_DETACHED:
+            print 'RA-Detached (' + str(event.source) + ')'
+            link = event.source
+            if link.devname in self.wanLinks:
+                link.dhclient.killClient()            
+            
+        elif event.type == proact.common.basecore.BaseCore.EVENT_PREFIX_ATTACHED:
+            print 'Prefix-Attached (' + str(event.source) + ')'
+            dhclient = event.source
+            for devname, lanLink in self.lanLinks.iteritems():
+                for prefix in dhclient.new_prefixes:
+                    p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
+                    lanLink.addIPv6Addr(str(p)+'1', 64)
+                for prefix in dhclient.new_prefixes:
+                    p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
+                    lanLink.radvd.addPrefix(proact.common.ipv6prefix.IPv6Prefix(str(p), 64))
+                lanLink.radvd.restart()
+                    
+            for devname, dmzLink in self.dmzLinks.iteritems():
+                for prefix in dhclient.new_prefixes:
+                    p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
+                    dmzLink.addIPv6Addr(str(p)+'1', 64)
+                for prefix in dhclient.new_prefixes:
+                    p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
+                    dmzLink.radvd.addPrefix(proact.common.ipv6prefix.IPv6Prefix(str(p), 64))
+                dmzLink.radvd.restart()
         
-    def handleDelAddr(self, ifindex, family, addr, prefixlen, scope, ndmsg):
-        print 'DelAddr (' + str(ifindex) + ',' + str(family) + ',' + str(addr) + ',' + str(prefixlen) + ',' + str(scope) + ')'
-    
-    def handleNewRoute(self, family, dst, dstlen, table, type, scope, ndmsg):
-        print 'NewRoute (' + str(family) + ',' + str(dst) + ',' + str(dstlen) + ',' + str(table) + ',' + str(type) + ',' + str(scope) + ')'
-    
-    def handleDelRoute(self, family, dst, dstlen, table, type, scope, ndmsg):
-        print 'DelRoute (' + str(family) + ',' + str(dst) + ',' + str(dstlen) + ',' + str(table) + ',' + str(type) + ',' + str(scope) + ')'
-        
+        elif event.type == proact.common.basecore.BaseCore.EVENT_PREFIX_DETACHED:
+            print 'Prefix-Detached (' + str(event.source) + ')'
+            dhclient = event.source
+            for devname, lanLink in self.lanLinks.iteritems():
+                for prefix in dhclient.new_prefixes:
+                    p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
+                    lanLink.radvd.delPrefix(proact.common.ipv6prefix.IPv6Prefix(str(p), 64))
+                lanLink.radvd.restart()
+                for prefix in dhclient.new_prefixes:
+                    p = prefix.get_subprefix(lanLink.uniquePrefix).prefix
+                    lanLink.delIPv6Addr(str(p)+'1', 64)
+            
+            for devname, dmzLink in self.dmzLinks.iteritems():
+                for prefix in dhclient.new_prefixes:
+                    p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
+                    dmzLink.radvd.delPrefix(proact.common.ipv6prefix.IPv6Prefix(str(p), 64))
+                dmzLink.radvd.restart()
+                for prefix in dhclient.new_prefixes:
+                    p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
+                    dmzLink.delIPv6Addr(str(p)+'1', 64)
+                    
+        elif event.type == proact.common.basecore.BaseCore.EVENT_RADVD_START:
+            print 'RADVD-Start (' + str(event.source) + ')'
+        elif event.type == proact.common.basecore.BaseCore.EVENT_RADVD_STOP:
+            print 'RADVD-Stop (' + str(event.source) + ')'
+                                    
     def parseConfig(self):
         self.config = ConfigParser.ConfigParser()
         self.config.read('vhscore.conf')
         self.brokerUrl = self.config.get('vhscore', 'BROKERURL', '127.0.0.1')
         self.vhsCoreID = self.config.get('vhscore', 'VHSCOREID', 'vhs-core-0')
         self.vhsDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'vhs-dptcore-0')
+        self.vhsDptXdpdID = self.config.get('xdpd', 'XDPDID', 'vhs-xdpd-0')
 
     
     def initVhsXdpd(self):
-        """
-        1. check for LSIs and create them, if not found
-        2. create virtual link between both LSIs
-        """
+        """   """
         try:
-            self.vhsDptXdpdID = self.config.get('xdpd', 'XDPDID', 'vhs-xdpd-0')
             self.xdpdVhsProxy = proact.common.xdpdproxy.XdpdProxy(self.brokerUrl, self.vhsDptXdpdID)
-            lsiNames = self.config.get('xdpd', 'LSIS').split()
-            for lsiName in lsiNames:
-                try:
-                    dpid        = self.config.getint(lsiName, 'DPID')
-                    dpname      = self.config.get   (lsiName, 'DPNAME')
-                    ofversion   = self.config.getint(lsiName, 'OFVERSION')
-                    ntables     = self.config.getint(lsiName, 'NTABLES')
-                    ctlaf       = self.config.getint(lsiName, 'CTLAF')
-                    ctladdr     = self.config.get   (lsiName, 'CTLADDR')
-                    ctlport     = self.config.getint(lsiName, 'CTLPORT')
-                    reconnect   = self.config.getint(lsiName, 'RECONNECT')
-                    
-                    self.xdpdVhsProxy.createLsi(dpname, dpid, ofversion, ntables, ctlaf, ctladdr, ctlport, reconnect)
-                    time.sleep(2)    
-                except ConfigParser.NoOptionError:
-                    print 'option not found for LSI ' + str(lsiName) + ', continuing with next LSI'
-                except ConfigParser.NoSectionError:
-                    print 'section not found for LSI ' + str(lsiName) +  ', continuing with next LSI'
-                    
-            virtLinks = self.config.get('xdpd', 'VIRTLINKS').split()
-            for virtLink in virtLinks:
-                try:
-                    dpid1       = self.config.getint(virtLink, 'DPID1')
-                    dpid2       = self.config.getint(virtLink, 'DPID2')
-                    sys.stdout.write('creating virtual link between LSI ' + str(dpid1) + ' and LSI ' + str(dpid2) + '...')
-                    [devname1, devname2] = self.xdpdVhsProxy.createVirtualLink(dpid1, dpid2)
-                    print 'devname1: ' + devname1 + ' devname2: ' + devname2 
-                except ConfigParser.NoOptionError:
-                    print 'option not found for virtual link ' + str(virtLink) + ', continuing with next virtual link'
-                except ConfigParser.NoSectionError:
-                    print 'section not found for virtual link ' + str(virtLink) + ', continuing with next virtual link'
         except proact.common.xdpdproxy.XdpdProxyException, e:
             print 'VhsCore::initVhsXdpd() initializing xdpd failed ' +  str(e)
-            self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
+            #self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
 
             
         
     def initVhsDptCore(self):
-        """
-        1. create virtual ethernet cable (veth pair)
-        
-        """
+        """   """
         try:
             self.dptCoreProxy = proact.common.dptcore.DptCoreProxy(self.brokerUrl, self.vhsDptCoreID)
             self.dptCoreProxy.reset()
-
-            for vethPair in self.config.get('dptcore', 'VETHPAIR').split():
-                try:
-                    (devname1, devname2) = vethPair.split(':')
-                    print 'creating veth pair (' + devname1 + ',' + devname2 + ')'
-                    self.dptCoreProxy.addVethLink(devname1, devname2)
-                except ConfigParser.NoOptionError:
-                    print 'option not found for veth pair ' + str(vethPair) + ', continuing with next veth pair'
-                except ConfigParser.NoSectionError:
-                    print 'section not found for veth pair ' + str(vethPair) + ', continuing with next veth pair'
-            
         except proact.common.dptcore.DptCoreProxyException, e:
             print 'VhsCore::initVhsDptCore() initializing dptcore failed ' + str(e)
-            self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
+            #self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
     
 
 if __name__ == "__main__":
-    VhsCore().run() 
+    VhsCore(wanLinks=['dummy0'], lanLinks=['veth0'], dmzLinks=['veth2']).run() 
     
+
     
