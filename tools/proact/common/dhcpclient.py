@@ -49,40 +49,43 @@ class DhcpClient(object):
             self.old_prefixes = []
             self.new_prefixes = []
           
-            for line in resultstring[0].split('\n'):
-                elems = {}
-                for token in line.split():
-                        (key, value) = token.split('=')
-                        elems[key] = value
-                        print str(key) + '=' + str(elems[key])
-
-                self.reason = elems.get('reason', None)
-
-                if self.reason == 'PREINIT6':
-                    pass
-                elif self.reason == 'BOUND6':
-                    self.bind(elems)
-                elif self.reason == 'RENEW6':
-                    self.bind(elems)
-                elif self.reason == 'REBIND6':
-                    self.bind(elems)
-                elif self.reason == 'REBOOT':
-                    self.bind(elems)
-                elif self.reason == 'EXPIRE':
-                    self.expire(elems)
-                elif self.reason == 'FAIL':
-                    self.fail(elems)
-                elif self.reason == 'STOP':
-                    self.stop(elems)
-                elif self.reason == 'RELEASE':
-                    self.unbind(elems)
-                elif self.reason == 'NBI':
-                    pass
-                elif self.reason == 'TIMEOUT':
-                    self.timeout(elems)
-                else:
-                    print 'unknown reason ' + str(self.reason) + ' detected from dhclient'
-                    return
+            try:
+                for line in resultstring[0].split('\n'):
+                    elems = {}
+                    for token in line.split():
+                            (key, value) = token.split('=')
+                            elems[key] = value
+                            print str(key) + '=' + str(elems[key])
+    
+                    self.reason = elems.get('reason', None)
+    
+                    if self.reason == 'PREINIT6':
+                        pass
+                    elif self.reason == 'BOUND6':
+                        self.bind(elems)
+                    elif self.reason == 'RENEW6':
+                        self.bind(elems)
+                    elif self.reason == 'REBIND6':
+                        self.bind(elems)
+                    elif self.reason == 'REBOOT':
+                        self.bind(elems)
+                    elif self.reason == 'EXPIRE':
+                        self.expire(elems)
+                    elif self.reason == 'FAIL':
+                        self.fail(elems)
+                    elif self.reason == 'STOP':
+                        self.stop(elems)
+                    elif self.reason == 'RELEASE':
+                        self.unbind(elems)
+                    elif self.reason == 'NBI':
+                        pass
+                    elif self.reason == 'TIMEOUT':
+                        self.timeout(elems)
+                    else:
+                        print 'unknown reason ' + str(self.reason) + ' detected from dhclient'
+                        return
+            except ValueError, e:
+                print 'ignoring line ' + str(line)
         except:
             print 'error executing dhclient'
         
