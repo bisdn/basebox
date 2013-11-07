@@ -33,6 +33,12 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         sys.stdout.write('creating XdpdProxy for xdpdID ' + self.xdpdID + ' => ')
         try:
             print self.__getXdpdHandle()
+            lsiHandles = self.getObjects(_class='lsi', _package='de.bisdn.xdpd')
+            for lsiHandle in lsiHandles:
+                if lsiHandle.xdpdID == self.xdpdID and lsiHandle.dpid == dpid:
+                    self.xdpdLsiProxies[dpid] = XdpdLsiProxy(dpname=lsiHandle.dpname, dpid=lsiHandle.dpid, ofversion=lsiHandle.ofversion,
+                                          ntables=lsiHandle.ntables, ctlaf=lsiHandle.ctlaf, ctladdr=lsiHandle.ctladdr,
+                                          ctlport=lsiHandle.ctlport, reconnect=lsiHandle.reconnect)
         except:
             raise XdpdProxyException('unable to find xdpd instance with ID ' + self.xdpdID)
         
@@ -62,7 +68,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
     def __getLsiHandle(self, dpid):
         lsiHandles = self.getObjects(_class='lsi', _package='de.bisdn.xdpd')
         for lsiHandle in lsiHandles:
-            if lsiHandle.dpid == dpid:
+            if lsiHandle.xdpdID == self.xdpdID and lsiHandle.dpid == dpid:
                 return lsiHandle
         else:
             raise XdpdProxyException('LSI instance dpid: ' + str(dpid) + 'for xdpdID: ' + self.xdpdID + ' not found on QMF bus')
