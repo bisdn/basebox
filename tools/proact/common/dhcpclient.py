@@ -79,7 +79,7 @@ class DhcpClient(object):
         
     
     def sendRelease(self):
-        if state == self.STATE_PREFIX_DETACHED:
+        if self.state == self.STATE_PREFIX_DETACHED:
             return
         print "sending DHCP release: " + str(self)
         try:
