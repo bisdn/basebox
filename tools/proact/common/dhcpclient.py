@@ -130,14 +130,14 @@ class DhcpClient(object):
             print 'binding DHCP reply: ' + str(self)
             
             reason = elems.get('reason', None)
-            new_prefix = elems.get('new_ip6_prefix', None)
-            old_prefix = elems.get('old_ip6_prefix', None)
-            s_old_prefix = IPv6Prefix(old_prefix.split('=')[1].split('/')[0], old_prefix.split('=')[1].split('/')[1])
-            s_new_prefix = IPv6Prefix(new_prefix.split('=')[1].split('/')[0], new_prefix.split('=')[1].split('/')[1])
-            if not s_old_prefix in self.old_prefixes:
-                self.old_prefixes.append(s_old_prefix)
-            if not s_new_prefix in self.new_prefixes:
-                self.new_prefixes.append(s_new_prefix)
+            s_new_prefix = elems.get('new_ip6_prefix', None)
+            s_old_prefix = elems.get('old_ip6_prefix', None)
+            old_prefix = IPv6Prefix(s_old_prefix.split('/')[0], s_old_prefix.split('/')[1])
+            new_prefix = IPv6Prefix(s_new_prefix.split('/')[0], s_new_prefix.split('/')[1])
+            if not old_prefix in self.old_prefixes:
+                self.old_prefixes.append(old_prefix)
+            if not new_prefix in self.new_prefixes:
+                self.new_prefixes.append(new_prefix)
             
             self.state = self.STATE_PREFIX_ATTACHED
             self.baseCore.addEvent(basecore.BaseCoreEvent(self, basecore.BaseCore.EVENT_PREFIX_ATTACHED))
