@@ -130,10 +130,10 @@ class DhcpClient(object):
             print 'binding DHCP reply: ' + str(self)
             
             reason = elems.get('reason', None)
-            s_new_prefix = elems.get('new_ip6_prefix', None)
-            s_old_prefix = elems.get('old_ip6_prefix', None)
-            old_prefix = IPv6Prefix(s_old_prefix.split('/')[0], s_old_prefix.split('/')[1])
-            new_prefix = IPv6Prefix(s_new_prefix.split('/')[0], s_new_prefix.split('/')[1])
+            (s_new_prefix, s_new_prefixlen) = elems.get('new_ip6_prefix', None).split('/')
+            (s_old_prefix, s_old_prefixlen) = elems.get('old_ip6_prefix', None).split('/')
+            old_prefix = IPv6Prefix(s_old_prefix, s_old_prefixlen)
+            new_prefix = IPv6Prefix(s_new_prefix, s_new_prefixlen)
             if not old_prefix in self.old_prefixes:
                 self.old_prefixes.append(old_prefix)
             if not new_prefix in self.new_prefixes:
