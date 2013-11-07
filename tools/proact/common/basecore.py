@@ -176,6 +176,7 @@ class Link(object):
         subprocess.call(sysctl_cmd.split())
 
     def disable(self):
+        self.dhclient.sendRelease()
         ip_cmd = self.ip_binary + ' link set down dev ' + self.devname
         print ip_cmd
         subprocess.call(ip_cmd.split()) 

@@ -52,7 +52,8 @@ class DhcpClient(object):
             do_bind = False
             
             for line in rc[0].split('\n'):
-                try:                    
+                try:      
+                    print 'REASON: ' + str(line.split()[0])              
                     (self.type, self.reason, old_prefix, new_prefix) = line.split()
                     s_old_prefix = IPv6Prefix(old_prefix.split('=')[1].split('/')[0], old_prefix.split('=')[1].split('/')[1])
                     s_new_prefix = IPv6Prefix(new_prefix.split('=')[1].split('/')[0], new_prefix.split('=')[1].split('/')[1])
@@ -78,6 +79,8 @@ class DhcpClient(object):
         
     
     def sendRelease(self):
+        if state == self.STATE_PREFIX_DETACHED:
+            return
         print "sending DHCP release: " + str(self)
         try:
             dhclient_cmd = self.dhclient_binary + ' -6 -q -N -r -pf ' + self.pidfile + ' ' + self.devname
