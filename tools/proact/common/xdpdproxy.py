@@ -151,7 +151,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         """
         if not dpid in self.xdpdLsiProxies:
             raise XdpdProxyException('XdpdLsiProxy for dpid: ' + str(dpid) + ' not found')
-        if not self.xdpdLsiProxies[dpid].state == DptLsiProxy.STATE_ATTACHED:
+        if not self.xdpdLsiProxies[dpid].state == XdpdLsiProxy.STATE_ATTACHED:
             self.__attach(dpid)
         try:
             lsiHandle = self.__getLsiHandle(dpid).portAttach(dpid, devname)
@@ -165,7 +165,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         """
         if not dpid in self.xdpdLsiProxies:
             raise XdpdProxyException('XdpdLsiProxy for dpid: ' + str(dpid) + ' not found')
-        if not self.xdpdLsiProxies[dpid].state == DptLsiProxy.STATE_ATTACHED:
+        if not self.xdpdLsiProxies[dpid].state == XdpdLsiProxy.STATE_ATTACHED:
             self.__attach(dpid)
         try:
             lsiHandle = self.__getLsiHandle(dpid).portDetach(dpid, devname)
