@@ -41,7 +41,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
                 if lsiHandle.xdpdID == self.xdpdID:
                     self.xdpdLsiProxies[lsiHandle.dpid] = XdpdLsiProxy(dpname=lsiHandle.dpname, dpid=lsiHandle.dpid, ofversion=lsiHandle.ofversion,
                                       ntables=lsiHandle.ntables, ctlaf=lsiHandle.ctlaf, ctladdr=lsiHandle.ctladdr,
-                                      ctlport=lsiHandle.ctlport, reconnect=lsiHandle.reconnect)
+                                      ctlport=lsiHandle.ctlport, reconnect=lsiHandle.reconnect, state=XdpdLsiProxy.STATE_ATTACHED)
                     print 'XdpdProxy: added LSI ' + str(self.xdpdLsiProxies[lsiHandle.dpid])
         except ValueError:
             pass
@@ -206,7 +206,7 @@ class XdpdLsiProxy(object):
         
         # internal state
         #
-        self.state      = self.STATE_DETACHED
+        self.state      = kwargs.get('state', self.STATE_DETACHED)
         print 'creating LSI with dpid ' + str(self.dpid)
     
     def __str__(self):
