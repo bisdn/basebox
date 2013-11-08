@@ -38,7 +38,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         try:
             lsiHandles = self.getObjects(_class='lsi', _package='de.bisdn.xdpd')
             for lsiHandle in lsiHandles:
-                if lsiHandle.xdpdID == self.xdpdID and lsiHandle.dpid == dpid:
+                if lsiHandle.xdpdID == self.xdpdID:
                     self.xdpdLsiProxies[dpid] = XdpdLsiProxy(dpname=lsiHandle.dpname, dpid=lsiHandle.dpid, ofversion=lsiHandle.ofversion,
                                       ntables=lsiHandle.ntables, ctlaf=lsiHandle.ctlaf, ctladdr=lsiHandle.ctladdr,
                                       ctlport=lsiHandle.ctlport, reconnect=lsiHandle.reconnect)
