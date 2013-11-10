@@ -44,9 +44,13 @@ class vmcore :
 {
 	#define DEFAULT_DPATH_OPEN_SCRIPT_PATH "/var/lib/vmcore/dpath-open.sh"
 	#define DEFAULT_DPATH_CLOSE_SCRIPT_PATH "/var/lib/vmcore/dpath-close.sh"
+	#define DEFAULT_PORT_UP_SCRIPT_PATH "/var/lib/vmcore/port-up.sh"
+	#define DEFAULT_PORT_DOWN_SCRIPT_PATH "/var/lib/vmcore/port-down.sh"
 
 	static std::string	dpath_open_script_path;
 	static std::string	dpath_close_script_path;
+	static std::string	port_up_script_path;
+	static std::string	port_down_script_path;
 
 	static void
 	execute(
@@ -145,6 +149,12 @@ private:
 
 	void
 	run_dpath_close_script();
+
+	void
+	run_port_up_script(std::string const& devname);
+
+	void
+	run_port_down_script(std::string const& devname);
 
 	void
 	dump_state();

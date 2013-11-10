@@ -179,7 +179,7 @@ class DptCore(proact.common.basecore.BaseCore):
         self.dptCoreID = dptCoreID
         self.vendor = kwargs.get('vendor', 'bisdn.de')
         self.product = kwargs.get('product', 'dptcore')
-        proact.common.basecore.BaseCore.__init__(self, vendor=self.vendor, product=self.product)
+        proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
         self.agentHandler = DptCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
         self.l2tpTunnels = {}
         self.vethPairs = {}

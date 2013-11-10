@@ -1,0 +1,14 @@
+#!/bin/bash
+
+echo -n "reason=${reason} "
+for var in ${!requested*}; do
+        echo -n ${var}="${!var} "
+done
+for var in ${!new*}; do
+        echo -n ${var}="${!var} "
+done
+for var in ${!old*}; do
+        echo -n ${var}="${!var} "
+done
+echo " "
+

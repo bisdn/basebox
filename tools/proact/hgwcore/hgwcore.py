@@ -2,37 +2,38 @@
 
 import sys
 sys.path.append('../..')
-#print sys.path
 
 import proact.common.basecore
 import proact.common.xdpdproxy
 import proact.common.dptcore
+import proact.common.radvdaemon
+import proact.common.dhcpclient
 import ConfigParser
 import time
 import qmf2
 
 
 
-class VhsCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
-    def __init__(self, vhsCore, agentSession):
+class HgwCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
+    def __init__(self, hgwCore, agentSession):
         proact.common.basecore.BaseCoreQmfAgentHandler.__init__(self, agentSession)
-        self.vhsCore = vhsCore
-        self.qmfVhsCore = {}
-        self.qmfVhsCore['data'] = qmf2.Data(self.qmfSchemaVhsCore)
-        self.qmfVhsCore['data'].vhsCoreID = vhsCore.vhsCoreID
-        self.qmfVhsCore['addr'] = self.agentSess.addData(self.qmfVhsCore['data'], 'vhscore')
-        print 'registering on QMF with vhsCoreID ' + vhsCore.vhsCoreID
+        self.hgwCore = hgwCore
+        self.qmfHgwCore = {}
+        self.qmfHgwCore['data'] = qmf2.Data(self.qmfSchemaHgwCore)
+        self.qmfHgwCore['data'].hgwCoreID = hgwCore.hgwCoreID
+        self.qmfHgwCore['addr'] = self.agentSess.addData(self.qmfHgwCore['data'], 'hgwcore')
+        print 'registering on QMF with hgwCoreID ' + hgwCore.hgwCoreID
         
     def setSchema(self):
-        self.qmfSchemaVhsCore = qmf2.Schema(qmf2.SCHEMA_TYPE_DATA, "de.bisdn.proact", "vhscore")
-        self.qmfSchemaVhsCore.addProperty(qmf2.SchemaProperty("vhsCoreID", qmf2.SCHEMA_DATA_STRING))
+        self.qmfSchemaHgwCore = qmf2.Schema(qmf2.SCHEMA_TYPE_DATA, "de.bisdn.proact", "hgwcore")
+        self.qmfSchemaHgwCore.addProperty(qmf2.SchemaProperty("hgwCoreID", qmf2.SCHEMA_DATA_STRING))
 
         # test method
         #        
         self.qmfSchemaMethodTest = qmf2.SchemaMethod("test", desc='testing method for QMF agent support in python')
         self.qmfSchemaMethodTest.addArgument(qmf2.SchemaProperty("instring", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
         self.qmfSchemaMethodTest.addArgument(qmf2.SchemaProperty("outstring", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_OUT))
-        self.qmfSchemaVhsCore.addMethod(self.qmfSchemaMethodTest)
+        self.qmfSchemaHgwCore.addMethod(self.qmfSchemaMethodTest)
 
         # UserSessionAdd method
         #
@@ -40,17 +41,17 @@ class VhsCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
         self.qmfSchemaMethodUserSessionAdd.addArgument(qmf2.SchemaProperty('userIdentity', qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
         self.qmfSchemaMethodUserSessionAdd.addArgument(qmf2.SchemaProperty('ipAddress', qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
         self.qmfSchemaMethodUserSessionAdd.addArgument(qmf2.SchemaProperty('validLifetime', qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
-        self.qmfSchemaVhsCore.addMethod(self.qmfSchemaMethodUserSessionAdd)
+        self.qmfSchemaHgwCore.addMethod(self.qmfSchemaMethodUserSessionAdd)
 
         # UserSessionDel method
         #
         self.qmfSchemaMethodUserSessionDel = qmf2.SchemaMethod("userSessionDel", desc='delete an authenticated user session')
         self.qmfSchemaMethodUserSessionDel.addArgument(qmf2.SchemaProperty('userIdentity', qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
         self.qmfSchemaMethodUserSessionDel.addArgument(qmf2.SchemaProperty('ipAddress', qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
-        self.qmfSchemaVhsCore.addMethod(self.qmfSchemaMethodUserSessionDel)
+        self.qmfSchemaHgwCore.addMethod(self.qmfSchemaMethodUserSessionDel)
 
 
-        self.agentSess.registerSchema(self.qmfSchemaVhsCore)
+        self.agentSess.registerSchema(self.qmfSchemaHgwCore)
            
         
     def method(self, handle, methodName, args, subtypes, addr, userId):
@@ -61,14 +62,14 @@ class VhsCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
                 self.agentSess.methodSuccess(handle)
             elif methodName == 'userSessionAdd':
                 try:
-                    self.vhsCore.userSessionAdd(args['userIdentity'], args['ipAddress'], args['validLifetime'])
+                    self.HgwCore.userSessionAdd(args['userIdentity'], args['ipAddress'], args['validLifetime'])
                     self.agentSess.methodSuccess(handle)
                 except:
                     self.agentSess.raiseException(handle, "call for userSessionAdd() failed for userID " + args['userIdentity'] + ' and ipAddress ' + args['ipAddress'])
                 
             elif methodName == 'userSessionDel':
                 try:
-                    self.vhsCore.userSessionDel(args['userIdentity'], args['ipAddress'])
+                    self.HgwCore.userSessionDel(args['userIdentity'], args['ipAddress'])
                     self.agentSess.methodSuccess(handle)
                 except:
                     self.agentSess.raiseException(handle, "call for userSessionDel() failed for userID " + args['userIdentity'])
@@ -82,7 +83,8 @@ class VhsCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
 
 
 
-class VhsCore(proact.common.basecore.BaseCore):
+
+class HgwCore(proact.common.basecore.BaseCore):
     """
     a description would be useful here
     """
@@ -90,7 +92,7 @@ class VhsCore(proact.common.basecore.BaseCore):
         try:
             self.parseConfig()
             self.vendor = kwargs.get('vendor', 'bisdn.de')
-            self.product = kwargs.get('product', 'vhscore')
+            self.product = kwargs.get('product', 'hgwcore')
             #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
             
             self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
@@ -102,11 +104,11 @@ class VhsCore(proact.common.basecore.BaseCore):
             self.wanLinks = {}
                     
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
-            self.agentHandler = VhsCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
-            self.initVhsXdpd()
-            self.initVhsDptCore()
+            self.agentHandler = HgwCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
+            self.initHgwXdpd()
+            self.initHgwDptCore()
         except Exception, e:
-            print 'VhsCore::init() failed ' + str(e)
+            print 'HgwCore::init() failed ' + str(e)
             self.cleanUp()
         
     def cleanUp(self):
@@ -234,35 +236,33 @@ class VhsCore(proact.common.basecore.BaseCore):
                                     
     def parseConfig(self):
         self.config = ConfigParser.ConfigParser()
-        self.config.read('vhscore.conf')
-        self.brokerUrl = self.config.get('vhscore', 'BROKERURL', '127.0.0.1')
-        self.vhsCoreID = self.config.get('vhscore', 'VHSCOREID', 'vhs-core-0')
-        self.vhsDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'vhs-dptcore-0')
-        self.vhsDptXdpdID = self.config.get('xdpd', 'XDPDID', 'vhs-xdpd-0')
+        self.config.read('hgwcore.conf')
+        self.brokerUrl = self.config.get('hgwcore', 'BROKERURL', '127.0.0.1')
+        self.hgwCoreID = self.config.get('hgwcore', 'HGWCOREID', 'hgw-core-0')
+        self.hgwDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'hgw-dptcore-0')
+        self.hgwDptXdpdID = self.config.get('xdpd', 'XDPDID', 'hgw-xdpd-0')
 
     
-    def initVhsXdpd(self):
+    def initHgwXdpd(self):
         """   """
         try:
-            self.xdpdVhsProxy = proact.common.xdpdproxy.XdpdProxy(self.brokerUrl, self.vhsDptXdpdID)
+            self.xdpdHgwProxy = proact.common.xdpdproxy.XdpdProxy(self.brokerUrl, self.hgwDptXdpdID)
         except proact.common.xdpdproxy.XdpdProxyException, e:
-            print 'VhsCore::initVhsXdpd() initializing xdpd failed ' +  str(e)
+            print 'HgwCore::initHgwXdpd() initializing xdpd failed ' +  str(e)
             #self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
 
             
         
-    def initVhsDptCore(self):
+    def initHgwDptCore(self):
         """   """
         try:
-            self.dptCoreProxy = proact.common.dptcore.DptCoreProxy(self.brokerUrl, self.vhsDptCoreID)
+            self.dptCoreProxy = proact.common.dptcore.DptCoreProxy(self.brokerUrl, self.hgwDptCoreID)
             self.dptCoreProxy.reset()
         except proact.common.dptcore.DptCoreProxyException, e:
-            print 'VhsCore::initVhsDptCore() initializing dptcore failed ' + str(e)
+            print 'HgwCore::initHgwDptCore() initializing dptcore failed ' + str(e)
             #self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
     
 
 if __name__ == "__main__":
-    VhsCore(wanLinks=['dummy0'], lanLinks=['veth0'], dmzLinks=['veth2']).run() 
-    
-
+    HgwCore(wanLinks=['dummy0'], lanLinks=['veth0'], dmzLinks=['veth2']).run() 
     

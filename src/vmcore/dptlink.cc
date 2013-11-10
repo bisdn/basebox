@@ -175,7 +175,7 @@ dptlink::link_created(unsigned int ifindex)
 		return;
 
 	//fprintf(stderr, "dptport::link_created() ifindex=%d => ", ifindex);
-	std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
+	std::cerr << "LINK ADD" << cnetlink::get_instance().get_link(ifindex) << std::endl;
 }
 
 
@@ -189,7 +189,7 @@ dptlink::link_updated(unsigned int ifindex)
 			return;
 
 		//fprintf(stderr, "dptport::link_updated() ifindex=%d => ", ifindex);
-		std::cerr << cnetlink::get_instance().get_link(ifindex) << std::endl;
+		std::cerr << "LINK UPDATE" << cnetlink::get_instance().get_link(ifindex) << std::endl;
 
 		if (0 == dpt) {
 			return;
@@ -209,6 +209,7 @@ dptlink::link_deleted(unsigned int ifindex)
 	if (ifindex != this->ifindex)
 		return;
 
+	std::cerr << "LINK DELETE" << cnetlink::get_instance().get_link(ifindex) << std::endl;
 	//fprintf(stderr, "dptport::link_deleted() ifindex=%d\n", ifindex);
 }
 
