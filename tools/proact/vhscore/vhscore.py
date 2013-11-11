@@ -88,6 +88,7 @@ class VhsCore(proact.common.basecore.BaseCore):
     """
     def __init__(self, **kwargs):
         try:
+            self.conffile = kwargs.get('conffile', 'vhscore.conf')
             self.parseConfig()
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'vhscore')
@@ -234,7 +235,7 @@ class VhsCore(proact.common.basecore.BaseCore):
                                     
     def parseConfig(self):
         self.config = ConfigParser.ConfigParser()
-        self.config.read('vhscore.conf')
+        self.config.read(self.conffile)
         self.brokerUrl = self.config.get('vhscore', 'BROKERURL', '127.0.0.1')
         self.vhsCoreID = self.config.get('vhscore', 'VHSCOREID', 'vhs-core-0')
         self.vhsDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'vhs-dptcore-0')
