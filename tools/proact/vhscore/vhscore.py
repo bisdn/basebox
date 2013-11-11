@@ -98,6 +98,7 @@ class VhsCore(proact.common.basecore.BaseCore):
             self.parseConfig()
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'vhscore')
+            logging.basicConfig(filename=self.logfile,level=self.loglevel)
             #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
             
             #self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
@@ -243,6 +244,21 @@ class VhsCore(proact.common.basecore.BaseCore):
         self.vhsCoreID = self.config.get('vhscore', 'VHSCOREID', 'vhs-core-0')
         self.vhsDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'vhs-dptcore-0')
         self.vhsDptXdpdID = self.config.get('xdpd', 'XDPDID', 'vhs-xdpd-0')
+        self.logfile = self.config.get('hgwcore', 'LOGFILE', 'hgwcore.log')
+        self.loglevel = self.config.get('hgwcore', 'LOGLEVEL', 'info')
+        if self.loglevel.lower() == 'debug':
+            self.loglevel = logging.DEBUG
+        elif self.loglevel.lower() == 'info':
+            self.loglevel = logging.INFO
+        elif self.loglevel.lower() == 'warning':
+            self.loglevel = logging.WARNING
+        elif self.loglevel.lower() == 'error':
+            self.loglevel = logging.ERROR
+        elif self.loglevel.lower() == 'critical':
+            self.loglevel = logging.CRITICAL
+        else:
+            self.loglevel = logging.INFO
+        
         for devname in self.config.get('vhscore', 'WANLINKS', '').split():
             self.linkNames['wan'].append(devname)
         for devname in self.config.get('vhscore', 'DMZLINKS', '').split():
