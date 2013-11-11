@@ -270,7 +270,6 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.loglevel = logging.INFO
         
         for devname in self.config.get('hgwcore', 'WANLINKS', '').split():
-            print 
             self.linkNames['wan'].append(devname)
         for devname in self.config.get('hgwcore', 'DMZLINKS', '').split():
             self.linkNames['dmz'].append(devname)
