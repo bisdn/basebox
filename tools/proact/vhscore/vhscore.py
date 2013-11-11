@@ -251,8 +251,8 @@ class VhsCore(proact.common.basecore.BaseCore):
         self.vhsCoreID = self.config.get('vhscore', 'VHSCOREID', 'vhs-core-0')
         self.vhsDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'vhs-dptcore-0')
         self.vhsDptXdpdID = self.config.get('xdpd', 'XDPDID', 'vhs-xdpd-0')
-        self.logfile = self.config.get('hgwcore', 'LOGFILE', 'hgwcore.log')
-        self.loglevel = self.config.get('hgwcore', 'LOGLEVEL', 'info')
+        self.logfile = self.config.get('vhscore', 'LOGFILE', 'hgwcore.log')
+        self.loglevel = self.config.get('vhscore', 'LOGLEVEL', 'info')
         if self.loglevel.lower() == 'debug':
             self.loglevel = logging.DEBUG
         elif self.loglevel.lower() == 'info':
