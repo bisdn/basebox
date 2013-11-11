@@ -90,6 +90,7 @@ class HgwCore(proact.common.basecore.BaseCore):
     """
     def __init__(self, **kwargs):
         try:
+            self.conffile = kwargs.get('conffile', 'hgwcore.conf')
             self.parseConfig()
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'hgwcore')
@@ -236,7 +237,7 @@ class HgwCore(proact.common.basecore.BaseCore):
                                     
     def parseConfig(self):
         self.config = ConfigParser.ConfigParser()
-        self.config.read('hgwcore.conf')
+        self.config.read(self.conffile)
         self.brokerUrl = self.config.get('hgwcore', 'BROKERURL', '127.0.0.1')
         self.hgwCoreID = self.config.get('hgwcore', 'HGWCOREID', 'hgw-core-0')
         self.hgwDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'hgw-dptcore-0')
