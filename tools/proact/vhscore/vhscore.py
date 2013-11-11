@@ -94,6 +94,13 @@ class VhsCore(proact.common.basecore.BaseCore):
             self.lanLinks = {}
             self.wanLinks = {}
             
+            for devname in kwargs.get('wanLinks', []).split():
+                self.linkNames['wan'].append(devname)
+            for devname in kwargs.get('dmzLinks', []).split():
+                self.linkNames['dmz'].append(devname)
+            for devname in kwargs.get('lanLinks', []).split():
+                self.linkNames['lan'].append(devname)
+
             self.conffile = kwargs.get('conffile', 'vhscore.conf')
             self.parseConfig()
             self.vendor = kwargs.get('vendor', 'bisdn.de')
