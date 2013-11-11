@@ -90,19 +90,20 @@ class HgwCore(proact.common.basecore.BaseCore):
     """
     def __init__(self, **kwargs):
         try:
+            self.linkNames = {'wan':[], 'dmz':[], 'lan':[] }
+            self.dmzLinks = {}
+            self.lanLinks = {}
+            self.wanLinks = {}
+
             self.conffile = kwargs.get('conffile', 'hgwcore.conf')
             self.parseConfig()
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'hgwcore')
             #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
             
-            self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
+            #self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
+            #print self.linkNames
             
-            print self.linkNames
-            
-            self.dmzLinks = {}
-            self.lanLinks = {}
-            self.wanLinks = {}
                     
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
             self.agentHandler = HgwCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
@@ -242,6 +243,12 @@ class HgwCore(proact.common.basecore.BaseCore):
         self.hgwCoreID = self.config.get('hgwcore', 'HGWCOREID', 'hgw-core-0')
         self.hgwDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'hgw-dptcore-0')
         self.hgwDptXdpdID = self.config.get('xdpd', 'XDPDID', 'hgw-xdpd-0')
+        for devname in self.config.get('hgwcore', 'WANLINKS', '').split():
+            self.linkNames['wan'].append(devname)
+        for devname in self.config.get('hgwcore', 'DMZLINKS', '').split():
+            self.linkNames['dmz'].append(devname)
+        for devname in self.config.get('hgwcore', 'LANLINKS', '').split():
+            self.linkNames['lan'].append(devname)
 
     
     def initHgwXdpd(self):
