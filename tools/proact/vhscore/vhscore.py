@@ -8,6 +8,7 @@ import proact.common.basecore
 import proact.common.xdpdproxy
 import proact.common.dptcore
 import ConfigParser
+import logging
 import time
 import qmf2
 
@@ -235,6 +236,7 @@ class VhsCore(proact.common.basecore.BaseCore):
             print 'RADVD-Stop (' + str(event.source) + ')'
                                     
     def parseConfig(self):
+        logging.info('reading config file ' + self.conffile)
         self.config = ConfigParser.ConfigParser()
         self.config.read(self.conffile)
         self.brokerUrl = self.config.get('vhscore', 'BROKERURL', '127.0.0.1')

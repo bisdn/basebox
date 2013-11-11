@@ -9,6 +9,7 @@ import proact.common.dptcore
 import proact.common.radvdaemon
 import proact.common.dhcpclient
 import ConfigParser
+import logging
 import time
 import qmf2
 
@@ -237,6 +238,7 @@ class HgwCore(proact.common.basecore.BaseCore):
             print 'RADVD-Stop (' + str(event.source) + ')'
                                     
     def parseConfig(self):
+        logging.info('reading config file ' + self.conffile)
         self.config = ConfigParser.ConfigParser()
         self.config.read(self.conffile)
         self.brokerUrl = self.config.get('hgwcore', 'BROKERURL', '127.0.0.1')
