@@ -65,6 +65,8 @@ class RAdvd(object):
     def restart(self):
         if self.state == self.STATE_ANNOUNCING:
             self.stop()
+        if len(self.prefixes) == 0:
+            return
         self.__rebuild_config()
         self.start()
 
