@@ -96,11 +96,11 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.lanLinks = {}
             self.wanLinks = {}
 
-            for devname in kwargs.get('wanLinks', []).split():
+            for devname in kwargs.get('wanLinks', []):
                 self.linkNames['wan'].append(devname)
-            for devname in kwargs.get('dmzLinks', []).split():
+            for devname in kwargs.get('dmzLinks', []):
                 self.linkNames['dmz'].append(devname)
-            for devname in kwargs.get('lanLinks', []).split():
+            for devname in kwargs.get('lanLinks', []):
                 self.linkNames['lan'].append(devname)
                 
 
