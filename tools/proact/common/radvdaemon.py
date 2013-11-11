@@ -60,6 +60,7 @@ class RAdvd(object):
         subprocess.call(kill_cmd.split())
         self.process = None
         self.baseCore.addEvent(basecore.BaseCoreEvent(self, basecore.BaseCore.EVENT_RADVD_STOP))
+        os.unlink(self.conffile)
 
     def restart(self):
         if self.state == self.STATE_ANNOUNCING:
