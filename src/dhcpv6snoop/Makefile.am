@@ -32,10 +32,7 @@ dhcpv6snoop_SOURCES = main.cc \
 		cprefix.h \
 		cprefix.cc
 		
-dhcpv6snoop_LDADD = -lpthread \
-	-lrofl \
-	-lrt \
-	-lpcap
+dhcpv6snoop_LDADD = -lpthread -lrt 
 
-AM_CPPFLAGS = 
-AM_LDFLAGS = 
+AM_CPPFLAGS = $(PCAP_CFLAGS)
+AM_LDFLAGS = $(PCAP_LIBS)
