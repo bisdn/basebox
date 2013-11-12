@@ -50,11 +50,17 @@ else
 	AC_MSG_RESULT(no)
 fi
 
-#PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.1, [have_libnl3=yes], [have_libnl3=no])
-#if (test "${have_libnl3}" = "yes"); then
-#        CPPFLAGS+="$LIBNL3_CFLAGS"
-#        LIBS+="$LIBNL3_LIBS"
-#fi
+PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.1 libnl-route-3.0 >= 3.1, [have_libnl3=yes], [have_libnl3=no])
+if (test "${have_libnl3}" = "yes"); then
+        CPPFLAGS+="$LIBNL3_CFLAGS"
+        LIBS+="$LIBNL3_LIBS"
+fi
+
+PKG_CHECK_MODULES([ROFL], rofl >= 0.3.0, [have_rofl=yes], [have_rofl=no])
+if (test "${have_rofl}" = "yes"); then
+        CPPFLAGS+="$ROFL_CFLAGS"
+        LIBS+="$ROFL_LIBS"
+fi
 
 #Check libs used
 #AC_CHECK_LIB(pthread, pthread_create)
