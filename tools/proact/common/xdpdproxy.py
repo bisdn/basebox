@@ -28,7 +28,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
 
         # dictionary of LSI instances: key=dpid, value=XdpdLsiProxy instance
         #
-        self.xdpdLsiProxies = {}
+        self.xdpdLsiProxies = {} 
         
         sys.stdout.write('creating XdpdProxy for xdpdID ' + self.xdpdID + ' => ')
         try:
