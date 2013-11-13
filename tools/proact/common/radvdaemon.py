@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 import basecore
 import subprocess
 import ipv6prefix
