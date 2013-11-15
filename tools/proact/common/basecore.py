@@ -18,7 +18,7 @@ from pyroute2 import IPDB
 class Route(object):
     """ abstraction for a route in a basecore instance """
     def __init__(self, baseCore, family, dst, dstlen, table, type, scope):
-        self.logger = logging.getLogger('proact.common.basecore.Route')
+        self.logger = logging.getLogger()
         self.baseCore   = baseCore
         self.family     = family
         self.dst        = dst
@@ -55,7 +55,7 @@ class Route(object):
 class Address(object):
     """ abstraction for an address in a basecore instance """
     def __init__(self, baseCore, ifindex, family, addr, prefixlen, scope):
-        self.logger = logging.getLogger('proact.common.basecore.Address')
+        self.logger = logging.getLogger()
         self.baseCore   = baseCore
         self.ifindex    = ifindex
         self.family     = family
@@ -100,7 +100,7 @@ class Link(object):
     sysctl_binary = '/sbin/sysctl'
     
     def __init__(self, baseCore, uniquePrefix, ifindex, devname, linkstate):
-        self.logger = logging.getLogger('proact.common.basecore.Link')
+        self.logger = logging.getLogger()
         self.baseCore = baseCore
         self.ifindex = ifindex
         self.devname = devname
