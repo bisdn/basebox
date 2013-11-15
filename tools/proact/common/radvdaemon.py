@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import logging
 import basecore
 import subprocess
 import ipv6prefix
@@ -13,6 +14,7 @@ class RAdvd(object):
     radvd_binary = '/sbin/radvd'
     
     def __init__(self, baseCore, devname, conffiledir='.'):
+        self.logger = logging.getLogger()
         self.state = self.STATE_STOPPED
         self.baseCore = baseCore
         self.devname = devname
