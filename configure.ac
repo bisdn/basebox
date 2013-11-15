@@ -50,11 +50,34 @@ else
 	AC_MSG_RESULT(no)
 fi
 
-#PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.1, [have_libnl3=yes], [have_libnl3=no])
-#if (test "${have_libnl3}" = "yes"); then
-#        CPPFLAGS+="$LIBNL3_CFLAGS"
-#        LIBS+="$LIBNL3_LIBS"
-#fi
+PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.1 libnl-route-3.0 >= 3.1, [have_libnl3=yes], [have_libnl3=no])
+if (test "${have_libnl3}" = "yes"); then
+        CPPFLAGS+="$LIBNL3_CFLAGS"
+        LIBS+="$LIBNL3_LIBS"
+fi
+
+PKG_CHECK_MODULES([ROFL], rofl >= 0.3.0, [have_rofl=yes], [have_rofl=no])
+if (test "${have_rofl}" = "yes"); then
+        CPPFLAGS+="$ROFL_CFLAGS"
+        LIBS+="$ROFL_LIBS"
+fi
+
+
+# libpcap include and libs
+AC_ARG_WITH([pcap-include],
+  [AS_HELP_STRING([--with-pcap-include],
+    [location of pcap header, defaults to /usr/include])],
+  [PCAP_CFLAGS="-I$withval"],
+  [PCAP_CFLAGS='-I/usr/include'])
+AC_SUBST([PCAP_CFLAGS])
+
+AC_ARG_WITH([pcap-lib],
+  [AS_HELP_STRING([--with-pcap-lib], [location of pcap library])],
+  [PCAP_LIBS="-L$withval -lpcap"],
+  [PCAP_LIBS='-lpcap'])
+AC_SUBST([PCAP_LIBS])
+
+
 
 #Check libs used
 #AC_CHECK_LIB(pthread, pthread_create)

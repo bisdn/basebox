@@ -9,6 +9,7 @@ import proact.common.dptcore
 import proact.common.radvdaemon
 import proact.common.dhcpclient
 import ConfigParser
+import logging
 import time
 import qmf2
 
@@ -90,18 +91,29 @@ class HgwCore(proact.common.basecore.BaseCore):
     """
     def __init__(self, **kwargs):
         try:
-            self.parseConfig()
-            self.vendor = kwargs.get('vendor', 'bisdn.de')
-            self.product = kwargs.get('product', 'hgwcore')
-            #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
-            
-            self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
-            
-            print self.linkNames
-            
+            self.linkNames = {'wan':[], 'dmz':[], 'lan':[] }
             self.dmzLinks = {}
             self.lanLinks = {}
             self.wanLinks = {}
+
+            for devname in kwargs.get('wanLinks', []):
+                self.linkNames['wan'].append(devname)
+            for devname in kwargs.get('dmzLinks', []):
+                self.linkNames['dmz'].append(devname)
+            for devname in kwargs.get('lanLinks', []):
+                self.linkNames['lan'].append(devname)
+                
+
+            self.conffile = kwargs.get('conffile', 'hgwcore.conf')
+            self.parseConfig()
+            self.vendor = kwargs.get('vendor', 'bisdn.de')
+            self.product = kwargs.get('product', 'hgwcore')
+            logging.basicConfig(filename=self.logfile,level=self.loglevel)
+            #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
+            
+            #self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
+            #print self.linkNames
+            
                     
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
             self.agentHandler = HgwCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
@@ -235,12 +247,34 @@ class HgwCore(proact.common.basecore.BaseCore):
             print 'RADVD-Stop (' + str(event.source) + ')'
                                     
     def parseConfig(self):
+        print 'reading config file ' + self.conffile
         self.config = ConfigParser.ConfigParser()
-        self.config.read('hgwcore.conf')
+        self.config.read(self.conffile)
         self.brokerUrl = self.config.get('hgwcore', 'BROKERURL', '127.0.0.1')
         self.hgwCoreID = self.config.get('hgwcore', 'HGWCOREID', 'hgw-core-0')
         self.hgwDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'hgw-dptcore-0')
         self.hgwDptXdpdID = self.config.get('xdpd', 'XDPDID', 'hgw-xdpd-0')
+        self.logfile = self.config.get('hgwcore', 'LOGFILE', 'hgwcore.log')
+        self.loglevel = self.config.get('hgwcore', 'LOGLEVEL', 'info')
+        if self.loglevel.lower() == 'debug':
+            self.loglevel = logging.DEBUG
+        elif self.loglevel.lower() == 'info':
+            self.loglevel = logging.INFO
+        elif self.loglevel.lower() == 'warning':
+            self.loglevel = logging.WARNING
+        elif self.loglevel.lower() == 'error':
+            self.loglevel = logging.ERROR
+        elif self.loglevel.lower() == 'critical':
+            self.loglevel = logging.CRITICAL
+        else:
+            self.loglevel = logging.INFO
+        
+        for devname in self.config.get('hgwcore', 'WANLINKS', '').split():
+            self.linkNames['wan'].append(devname)
+        for devname in self.config.get('hgwcore', 'DMZLINKS', '').split():
+            self.linkNames['dmz'].append(devname)
+        for devname in self.config.get('hgwcore', 'LANLINKS', '').split():
+            self.linkNames['lan'].append(devname)
 
     
     def initHgwXdpd(self):

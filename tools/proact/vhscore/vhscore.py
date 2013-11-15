@@ -8,6 +8,7 @@ import proact.common.basecore
 import proact.common.xdpdproxy
 import proact.common.dptcore
 import ConfigParser
+import logging
 import time
 import qmf2
 
@@ -88,18 +89,28 @@ class VhsCore(proact.common.basecore.BaseCore):
     """
     def __init__(self, **kwargs):
         try:
-            self.parseConfig()
-            self.vendor = kwargs.get('vendor', 'bisdn.de')
-            self.product = kwargs.get('product', 'vhscore')
-            #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
-            
-            self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
-            
-            print self.linkNames
-            
+            self.linkNames = {'wan':[], 'dmz':[], 'lan':[] }
             self.dmzLinks = {}
             self.lanLinks = {}
             self.wanLinks = {}
+            
+            for devname in kwargs.get('wanLinks', []):
+                self.linkNames['wan'].append(devname)
+            for devname in kwargs.get('dmzLinks', []):
+                self.linkNames['dmz'].append(devname)
+            for devname in kwargs.get('lanLinks', []):
+                self.linkNames['lan'].append(devname)
+
+            self.conffile = kwargs.get('conffile', 'vhscore.conf')
+            self.parseConfig()
+            self.vendor = kwargs.get('vendor', 'bisdn.de')
+            self.product = kwargs.get('product', 'vhscore')
+            logging.basicConfig(filename=self.logfile,level=self.loglevel)
+            #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
+            
+            #self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
+            #print self.linkNames
+            
                     
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
             self.agentHandler = VhsCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
@@ -233,13 +244,35 @@ class VhsCore(proact.common.basecore.BaseCore):
             print 'RADVD-Stop (' + str(event.source) + ')'
                                     
     def parseConfig(self):
+        logging.info('reading config file ' + self.conffile)
         self.config = ConfigParser.ConfigParser()
-        self.config.read('vhscore.conf')
+        self.config.read(self.conffile)
         self.brokerUrl = self.config.get('vhscore', 'BROKERURL', '127.0.0.1')
         self.vhsCoreID = self.config.get('vhscore', 'VHSCOREID', 'vhs-core-0')
         self.vhsDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'vhs-dptcore-0')
         self.vhsDptXdpdID = self.config.get('xdpd', 'XDPDID', 'vhs-xdpd-0')
-
+        self.logfile = self.config.get('vhscore', 'LOGFILE', 'hgwcore.log')
+        self.loglevel = self.config.get('vhscore', 'LOGLEVEL', 'info')
+        if self.loglevel.lower() == 'debug':
+            self.loglevel = logging.DEBUG
+        elif self.loglevel.lower() == 'info':
+            self.loglevel = logging.INFO
+        elif self.loglevel.lower() == 'warning':
+            self.loglevel = logging.WARNING
+        elif self.loglevel.lower() == 'error':
+            self.loglevel = logging.ERROR
+        elif self.loglevel.lower() == 'critical':
+            self.loglevel = logging.CRITICAL
+        else:
+            self.loglevel = logging.INFO
+        
+        for devname in self.config.get('vhscore', 'WANLINKS', '').split():
+            self.linkNames['wan'].append(devname)
+        for devname in self.config.get('vhscore', 'DMZLINKS', '').split():
+            self.linkNames['dmz'].append(devname)
+        for devname in self.config.get('vhscore', 'LANLINKS', '').split():
+            self.linkNames['lan'].append(devname)
+    
     
     def initVhsXdpd(self):
         """   """

@@ -28,7 +28,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
 
         # dictionary of LSI instances: key=dpid, value=XdpdLsiProxy instance
         #
-        self.xdpdLsiProxies = {}
+        self.xdpdLsiProxies = {} 
         
         sys.stdout.write('creating XdpdProxy for xdpdID ' + self.xdpdID + ' => ')
         try:
@@ -42,7 +42,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
                     self.xdpdLsiProxies[lsiHandle.dpid] = XdpdLsiProxy(dpname=lsiHandle.dpname, dpid=lsiHandle.dpid, ofversion=lsiHandle.ofversion,
                                       ntables=lsiHandle.ntables, ctlaf=lsiHandle.ctlaf, ctladdr=lsiHandle.ctladdr,
                                       ctlport=lsiHandle.ctlport, reconnect=lsiHandle.reconnect, state=XdpdLsiProxy.STATE_ATTACHED)
-                    print 'XdpdProxy: added LSI ' + str(self.xdpdLsiProxies[lsiHandle.dpid])
+                    print 'XdpdProxy: found LSI ' + str(self.xdpdLsiProxies[lsiHandle.dpid])
         except ValueError:
             pass
 
@@ -135,7 +135,13 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
             return
         self.__detach(dpid)
         self.xdpdLsiProxies.pop(dpid, None)
-
+        
+        
+    def getLsi(self, dpid):
+        if not dpid in self.xdpdLsiProxies:
+            raise XdpdProxyException('dpid: ' + str(dpid) + ' not found')
+        return self.xdpdLsiProxies[dpid]
+    
 
     def createVirtualLink(self, dpid1, dpid2):
         if not dpid1 in self.xdpdLsiProxies:
