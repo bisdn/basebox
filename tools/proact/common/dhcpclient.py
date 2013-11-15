@@ -13,7 +13,7 @@ class DhcpClient(object):
     STATE_PREFIX_ATTACHED = 1
     
     def __init__(self, baseCore, devname, pidfilebase='/var/run'):
-        module_logger = logging.getLogger('proact.common.dhcpclient.DhcpClient')
+        self.logger = logging.getLogger('proact.common.dhcpclient.DhcpClient')
         self.state = self.STATE_PREFIX_DETACHED
         self.baseCore = baseCore
         self.devname = devname
