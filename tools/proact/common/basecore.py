@@ -13,7 +13,7 @@ from pyroute2.netlink.iproute import *
 from pyroute2 import IPRoute
 from pyroute2 import IPDB
 
-
+mlogger = logging.getLogger('proact.common.basecore')
 
 class Route(object):
     """ abstraction for a route in a basecore instance """
