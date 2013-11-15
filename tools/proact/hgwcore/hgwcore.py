@@ -110,7 +110,7 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.product = kwargs.get('product', 'hgwcore')
                     
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
-            self.logger = logging.getLogger()
+            self.logger = logging.getLogger('proact')
             self.agentHandler = HgwCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
             
             self.initHgwXdpd()

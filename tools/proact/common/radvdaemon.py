@@ -14,7 +14,7 @@ class RAdvd(object):
     radvd_binary = '/sbin/radvd'
     
     def __init__(self, baseCore, devname, conffiledir='.'):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('proact')
         self.state = self.STATE_STOPPED
         self.baseCore = baseCore
         self.devname = devname

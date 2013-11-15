@@ -18,7 +18,7 @@ mlogger = logging.getLogger('proact.common.basecore')
 class Route(object):
     """ abstraction for a route in a basecore instance """
     def __init__(self, baseCore, family, dst, dstlen, table, type, scope):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('proact')
         self.baseCore   = baseCore
         self.family     = family
         self.dst        = dst
@@ -55,7 +55,7 @@ class Route(object):
 class Address(object):
     """ abstraction for an address in a basecore instance """
     def __init__(self, baseCore, ifindex, family, addr, prefixlen, scope):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('proact')
         self.baseCore   = baseCore
         self.ifindex    = ifindex
         self.family     = family
@@ -100,7 +100,7 @@ class Link(object):
     sysctl_binary = '/sbin/sysctl'
     
     def __init__(self, baseCore, uniquePrefix, ifindex, devname, linkstate):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('proact')
         self.baseCore = baseCore
         self.ifindex = ifindex
         self.devname = devname
@@ -280,11 +280,17 @@ class BaseCore(object):
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
         try:
             self.logger = logging.getLogger('proact')
+            self.logger.setLevel(logging.DEBUG)
+            fh = logging.FileHandler('proact.log')
+            fh.setLevel(logging.DEBUG)
             ch = logging.StreamHandler()
             ch.setLevel(logging.ERROR)
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            fh.setFormatter(formatter)
             ch.setFormatter(formatter)
+            self.logger.addHandler(fh)
             self.logger.addHandler(ch)
+
             self.qmfConsole = qmfhelper.QmfConsole(brokerUrl)
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'basecore')
