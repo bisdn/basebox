@@ -91,6 +91,7 @@ class HgwCore(proact.common.basecore.BaseCore):
     """
     def __init__(self, **kwargs):
         try:
+            self.logger = logging.getLogger('proact.common.hgwcore.HgwCore')
             self.linkNames = {'wan':[], 'dmz':[], 'lan':[] }
             self.dmzLinks = {}
             self.lanLinks = {}
@@ -120,11 +121,11 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.initHgwXdpd()
             self.initHgwDptCore()
         except Exception, e:
-            print 'HgwCore::init() failed ' + str(e)
+            self.logger.error('HgwCore::init() failed ' + str(e))
             self.cleanUp()
         
     def cleanUp(self):
-        print 'clean-up started ...'
+        self.logger.info('cleaning up ...')
         try:
             self.agentHandler.cancel()
         except:
@@ -154,53 +155,58 @@ class HgwCore(proact.common.basecore.BaseCore):
                 link.disable()
                 link.enable(0)
                 self.dmzLinks[link.devname] = link
+                self.logger.info('DMZ link found: ' + str(link))
             elif link.devname in self.linkNames['lan']:
                 link.linkType = 'lan'
                 link.disable()
                 link.enable(0)
                 self.lanLinks[link.devname] = link
+                self.logger.info('LAN link found: ' + str(link))
             elif link.devname in self.linkNames['wan']:
                 link.linkType = 'wan'
                 link.disable()
                 link.enable(2)                
                 self.wanLinks[link.devname] = link
+                self.logger.info('WAN link found: ' + str(link))
                 
         elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_LINK:
-            print 'DelLink (' + str(event.source) + ')'
             link = event.source
             if link.devname in self.dmzLinks:
                 self.dmzLinks.pop(link.devname, None)
+                self.logger.info('DMZ link lost: ' + str(link))
             if link.devname in self.lanLinks:
                 self.lanLinks.pop(link.devname, None)
+                self.logger.info('LAN link lost: ' + str(link))
             if link.devname in self.wanLinks:
                 self.wanLinks.pop(link.devname, None)
+                self.logger.info('WAN link lost: ' + str(link))
             
         elif event.type == proact.common.basecore.BaseCore.EVENT_NEW_ADDR:
-            print 'NewAddr (' + str(event.source) + ')'
+            self.logger.debug('NewAddr (' + str(event.source) + ')')
         elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_ADDR:
-            print 'DelAddr (' + str(event.source) + ')'
+            self.logger.debug('DelAddr (' + str(event.source) + ')')
         elif event.type == proact.common.basecore.BaseCore.EVENT_NEW_ROUTE:
-            print 'NewRoute (' + str(event.source) + ')'
+            self.logger.debug('NewRoute (' + str(event.source) + ')')
         elif event.type == proact.common.basecore.BaseCore.EVENT_DEL_ROUTE:
-            print 'DelRoute (' + str(event.source) + ')'
+            self.logger.debug('DelRoute (' + str(event.source) + ')')
         elif event.type == proact.common.basecore.BaseCore.EVENT_LINK_UP:
-            print 'LinkUp (' + str(event.source) + ')'
+            self.logger.debug('LinkUp (' + str(event.source) + ')')
         elif event.type == proact.common.basecore.BaseCore.EVENT_LINK_DOWN:
-            print 'LinkDown (' + str(event.source) + ')'
+            self.logger.debug('LinkDown (' + str(event.source) + ')')
         elif event.type == proact.common.basecore.BaseCore.EVENT_RA_ATTACHED:
-            print 'RA-Attached (' + str(event.source) + ')'
+            self.logger.debug('RA-Attached (' + str(event.source) + ')')
             link = event.source
             if link.devname in self.wanLinks:
                 link.dhclient.sendRequest()
             
         elif event.type == proact.common.basecore.BaseCore.EVENT_RA_DETACHED:
-            print 'RA-Detached (' + str(event.source) + ')'
+            self.logger.debug('RA-Detached (' + str(event.source) + ')')
             link = event.source
             if link.devname in self.wanLinks:
                 link.dhclient.killClient()            
             
         elif event.type == proact.common.basecore.BaseCore.EVENT_PREFIX_ATTACHED:
-            print 'Prefix-Attached (' + str(event.source) + ')'
+            self.logger.debug('Prefix-Attached (' + str(event.source) + ')')
             dhclient = event.source
             for devname, lanLink in self.lanLinks.iteritems():
                 for prefix in dhclient.new_prefixes:
@@ -221,7 +227,7 @@ class HgwCore(proact.common.basecore.BaseCore):
                 dmzLink.radvd.restart()
         
         elif event.type == proact.common.basecore.BaseCore.EVENT_PREFIX_DETACHED:
-            print 'Prefix-Detached (' + str(event.source) + ')'
+            self.logger.debug('Prefix-Detached (' + str(event.source) + ')')
             dhclient = event.source
             for devname, lanLink in self.lanLinks.iteritems():
                 for prefix in dhclient.new_prefixes:
@@ -242,12 +248,12 @@ class HgwCore(proact.common.basecore.BaseCore):
                     dmzLink.delIPv6Addr(str(p)+'1', 64)
                     
         elif event.type == proact.common.basecore.BaseCore.EVENT_RADVD_START:
-            print 'RADVD-Start (' + str(event.source) + ')'
+            self.logger.info('RA advertisement started: ' + str(event.source))
         elif event.type == proact.common.basecore.BaseCore.EVENT_RADVD_STOP:
-            print 'RADVD-Stop (' + str(event.source) + ')'
+            self.logger.info('RA advertisement stopped: ' + str(event.source))
                                     
     def parseConfig(self):
-        print 'reading config file ' + self.conffile
+        self.logger.info('reading config file ' + self.conffile)
         self.config = ConfigParser.ConfigParser()
         self.config.read(self.conffile)
         self.brokerUrl = self.config.get('hgwcore', 'BROKERURL', '127.0.0.1')
@@ -282,7 +288,7 @@ class HgwCore(proact.common.basecore.BaseCore):
         try:
             self.xdpdHgwProxy = proact.common.xdpdproxy.XdpdProxy(self.brokerUrl, self.hgwDptXdpdID)
         except proact.common.xdpdproxy.XdpdProxyException, e:
-            print 'HgwCore::initHgwXdpd() initializing xdpd failed ' +  str(e)
+            self.logger.error('HgwCore::initHgwXdpd() initializing xdpd failed ' +  str(e))
             #self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
 
             
@@ -293,7 +299,7 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.dptCoreProxy = proact.common.dptcore.DptCoreProxy(self.brokerUrl, self.hgwDptCoreID)
             self.dptCoreProxy.reset()
         except proact.common.dptcore.DptCoreProxyException, e:
-            print 'HgwCore::initHgwDptCore() initializing dptcore failed ' + str(e)
+            self.logger.error('HgwCore::initHgwDptCore() initializing dptcore failed ' + str(e))
             #self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
     
 
