@@ -2,6 +2,7 @@
 
 import subprocess
 import basecore
+import logging
 from ipv6prefix import IPv6Prefix
 
 
@@ -12,6 +13,7 @@ class DhcpClient(object):
     STATE_PREFIX_ATTACHED = 1
     
     def __init__(self, baseCore, devname, pidfilebase='/var/run'):
+        module_logger = logging.getLogger('proact.common.dhcpclient.DhcpClient')
         self.state = self.STATE_PREFIX_DETACHED
         self.baseCore = baseCore
         self.devname = devname
@@ -41,8 +43,9 @@ class DhcpClient(object):
     def sendRequest(self):
         'call ISC dhclient with following parameters: /sbin/dhclient -v -6 -P -pf ${PIDFILE} ${IFACE}'
         try:
+            self.logger.info('DHCP request: ' + str(self))
             dhclient_cmd = self.dhclient_binary + ' -6 -q -P -1 -pf ' + self.pidfile + ' ' + self.devname
-            print 'DHCP request: executing command => ' + str(dhclient_cmd.split())
+            self.logger.debug('executing: ' + str(dhclient_cmd.split()))
             self.process = subprocess.Popen(dhclient_cmd.split(), shell=False, stdout=subprocess.PIPE)
             resultstring = self.process.communicate()
             
@@ -51,11 +54,11 @@ class DhcpClient(object):
           
             try:
                 for line in resultstring[0].split('\n'):
+                    self.logger.debug('DHCP result: ' + line)
                     elems = {}
                     for token in line.split():
                             (key, value) = token.split('=')
                             elems[key] = value
-                            print str(key) + '=' + str(elems[key])
     
                     self.reason = elems.get('reason', None)
     
@@ -82,28 +85,28 @@ class DhcpClient(object):
                     elif self.reason == 'TIMEOUT':
                         self.timeout(elems)
                     else:
-                        print 'unknown reason ' + str(self.reason) + ' detected from dhclient'
+                        self.logger.error('unknown reason ' + str(self.reason) + ' detected from dhclient')
                         return
             except ValueError, e:
-                print 'ignoring line ' + str(line)
+                self.logger.debug('ignoring line ' + str(line))
         except:
-            print 'error executing dhclient'
+            self.logger.error('executing dhclient failed')
         
     
     def sendRelease(self):
         if self.state == self.STATE_PREFIX_DETACHED:
             return
-        print "sending DHCP release: " + str(self)
+        self.logger.info('DHCP release: ' + str(self))
         try:
             dhclient_cmd = self.dhclient_binary + ' -6 -q -N -r -pf ' + self.pidfile + ' ' + self.devname
-            print 'DHCP release: executing command => ' + str(dhclient_cmd.split())
+            self.logger.debug('executing: ' + str(dhclient_cmd.split()))
             process = subprocess.Popen(dhclient_cmd.split(), shell=False, stdout=subprocess.PIPE)
             rc = process.communicate()
             if process.returncode == 0:
                 self.state = self.STATE_PREFIX_DETACHED
                 self.baseCore.addEvent(basecore.BaseCoreEvent(self, basecore.BaseCore.EVENT_PREFIX_DETACHED))
         except:
-            print 'unable to release prefixes ' + str(self)
+            self.logger.error('releasing prefix(es) failed ' + str(self))
         
 
     def killClient(self):
@@ -127,7 +130,7 @@ class DhcpClient(object):
 
     def bind(self, elems):
         try:
-            print 'binding DHCP reply: ' + str(self)
+            self.logger.debug('binding DHCP reply: ' + str(self))
             
             reason = elems.get('reason', None)
             (s_new_prefix, s_new_prefixlen) = elems.get('new_ip6_prefix', None).split('/')
@@ -144,25 +147,25 @@ class DhcpClient(object):
         except IndexError:
             pass
         except ValueError, e:
-            print 'unable to acquire prefixes ' + str(self)
+            self.logger.error('unable to acquire prefixes ' + str(self))
 
     def expire(self, elems):
-        print 'DHCP session expired (renewal failed): ' + str(self)
+        self.logger.debug('DHCP session expired (renewal failed): ' + str(self))
         self.unbind(elems)
     
     def fail(self, elems):
-        print 'DHCP request failed (no servers found): ' + str(self)
+        self.logger.debug('DHCP request failed (no servers found): ' + str(self))
         self.unbind(elems)
 
     def stop(self, elems):
-        print 'DHCP session stop (dhclient graceful shutdown): ' + str(self)
+        self.logger.debug('DHCP session stop (dhclient graceful shutdown): ' + str(self))
     
     def unbind(self, elems):
         self.state = self.STATE_PREFIX_DETACHED
         self.baseCore.addEvent(basecore.BaseCoreEvent(self, basecore.BaseCore.EVENT_PREFIX_DETACHED))
     
     def timeout(self, elems):
-        print 'DHCP request failed (no servers found, but old lease available): ' + str(self)
+        self.logger.debug('DHCP request failed (no servers found, but old lease available): ' + str(self))
         self.bind(elems)
 
 
