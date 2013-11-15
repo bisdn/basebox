@@ -279,7 +279,7 @@ class BaseCore(object):
     EVENT_RADVD_STOP = 16
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
         try:
-            self.logger = logging.getLogger()
+            self.logger = logging.getLogger('proact')
             ch = logging.StreamHandler()
             ch.setLevel(logging.ERROR)
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
