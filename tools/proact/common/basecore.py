@@ -279,18 +279,7 @@ class BaseCore(object):
     EVENT_RADVD_STOP = 16
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
         try:
-            self.logger = logging.getLogger('proact.common.basecore.baseCore')
-            self.logger.setLevel(logging.DEBUG)
-            fh = logging.FileHandler('proact.log')
-            fh.setLevel(logging.DEBUG)
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.ERROR)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            fh.setFormatter(formatter)
-            ch.setFormatter(formatter)
-            self.logger.addHandler(fh)
-            self.logger.addHandler(ch)
-            
+            self.logger = logging.getLogger()
             self.qmfConsole = qmfhelper.QmfConsole(brokerUrl)
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'basecore')

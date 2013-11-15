@@ -110,19 +110,7 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.product = kwargs.get('product', 'hgwcore')
                     
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
-            
-            self.logger = logging.getLogger('proact.common.hgwcore.HgwCore')
-            self.logger.setLevel(logging.DEBUG)
-            fh = logging.FileHandler('homeVHS.log')
-            fh.setLevel(logging.DEBUG)
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.ERROR)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            fh.setFormatter(formatter)
-            ch.setFormatter(formatter)
-            self.logger.addHandler(fh)
-            self.logger.addHandler(ch)
-
+            self.logger = logging.getLogger()
             self.agentHandler = HgwCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
             
             self.initHgwXdpd()
