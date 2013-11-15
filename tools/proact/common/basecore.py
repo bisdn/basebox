@@ -18,7 +18,7 @@ from pyroute2 import IPDB
 class Route(object):
     """ abstraction for a route in a basecore instance """
     def __init__(self, baseCore, family, dst, dstlen, table, type, scope):
-        self.logger = logging.getLogger('baseCore.Route')
+        self.logger = logging.getLogger('proact.common.basecore.Route')
         self.baseCore   = baseCore
         self.family     = family
         self.dst        = dst
@@ -55,7 +55,7 @@ class Route(object):
 class Address(object):
     """ abstraction for an address in a basecore instance """
     def __init__(self, baseCore, ifindex, family, addr, prefixlen, scope):
-        self.logger = logging.getLogger('baseCore.Address')
+        self.logger = logging.getLogger('proact.common.basecore.Address')
         self.baseCore   = baseCore
         self.ifindex    = ifindex
         self.family     = family
@@ -100,7 +100,7 @@ class Link(object):
     sysctl_binary = '/sbin/sysctl'
     
     def __init__(self, baseCore, uniquePrefix, ifindex, devname, linkstate):
-        self.logger = logging.getLogger('baseCore.Link')
+        self.logger = logging.getLogger('proact.common.basecore.Link')
         self.baseCore = baseCore
         self.ifindex = ifindex
         self.devname = devname
@@ -198,7 +198,7 @@ class Link(object):
     def disable(self):
         self.dhclient.sendRelease()
         ip_cmd = self.ip_binary + ' link set down dev ' + self.devname
-        self.logger('executing: ' + ip_cmd)
+        self.logger.debug('executing: ' + ip_cmd)
         subprocess.call(ip_cmd.split()) 
         self.logger.debug('disable link: ' + str(self))
         
@@ -279,9 +279,9 @@ class BaseCore(object):
     EVENT_RADVD_STOP = 16
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
         try:
-            self.logger = logging.getLogger('baseCore')
+            self.logger = logging.getLogger('proact.common.basecore.baseCore')
             self.logger.setLevel(logging.DEBUG)
-            fh = logging.FileHandler('baseCore.log')
+            fh = logging.FileHandler('proact.log')
             fh.setLevel(logging.DEBUG)
             ch = logging.StreamHandler()
             ch.setLevel(logging.ERROR)
