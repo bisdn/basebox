@@ -91,6 +91,18 @@ class HgwCore(proact.common.basecore.BaseCore):
     """
     def __init__(self, **kwargs):
         try:
+            self.logger = logging.getLogger('proact.common.hgwcore.HgwCore')
+            self.logger.setLevel(logging.DEBUG)
+            fh = logging.FileHandler('homeVHS.log')
+            fh.setLevel(logging.DEBUG)
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.ERROR)
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            fh.setFormatter(formatter)
+            ch.setFormatter(formatter)
+            self.logger.addHandler(fh)
+            self.logger.addHandler(ch)
+            
             self.linkNames = {'wan':[], 'dmz':[], 'lan':[] }
             self.dmzLinks = {}
             self.lanLinks = {}
@@ -109,16 +121,10 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'hgwcore')
             logging.basicConfig(filename=self.logfile,level=self.loglevel)
-            #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
-            
-            #self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
-            #print self.linkNames
-            
                     
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
-            self.logger = logging.getLogger('proact.common.hgwcore.HgwCore')
-
             self.agentHandler = HgwCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
+            
             self.initHgwXdpd()
             self.initHgwDptCore()
         except Exception, e:
