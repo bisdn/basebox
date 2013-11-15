@@ -4,6 +4,7 @@ import subprocess
 import radvdaemon
 import dhcpclient
 import qmfhelper
+import logger
 import select
 import sys
 import os
@@ -17,6 +18,7 @@ from pyroute2 import IPDB
 class Route(object):
     """ abstraction for a route in a basecore instance """
     def __init__(self, baseCore, family, dst, dstlen, table, type, scope):
+        self.logger = logging.getLogger('baseCore.Route')
         self.baseCore   = baseCore
         self.family     = family
         self.dst        = dst
@@ -24,7 +26,8 @@ class Route(object):
         self.table      = table
         self.type       = type
         self.scope      = scope
-
+        self.logger.debug('new route: ' + str(self))
+    
     def __str__(self):
         return '<Route: family:' + str(self.family) + \
             ' dst:' + self.dst + ' dstlen:' + str(self.dstlen) + \
@@ -42,20 +45,24 @@ class Route(object):
     
     def activated(self):
         self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_NEW_ROUTE))
-    
+        self.logger.debug('NEWROUTE: ' + str(self))
+            
     def deactivated(self):
         self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_DEL_ROUTE))
-
+        self.logger.debug('DELROUTE: ' + str(self))
+        
 
 class Address(object):
     """ abstraction for an address in a basecore instance """
     def __init__(self, baseCore, ifindex, family, addr, prefixlen, scope):
+        self.logger = logging.getLogger('baseCore.Address')
         self.baseCore   = baseCore
         self.ifindex    = ifindex
         self.family     = family
         self.addr       = addr
         self.prefixlen  = prefixlen
         self.scope      = scope
+        self.logger.debug('new addr: ' + str(self))
     
     def __str__(self):
         return '<Address: ifindex:' + str(self.ifindex) + ' family:' + str(self.family) + \
@@ -72,10 +79,12 @@ class Address(object):
     
     def activated(self):
         self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_NEW_ADDR))
-    
+        self.logger.debug('NEWADDR: ' + str(self))
+        
     def deactivated(self):
         self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_DEL_ADDR))
-    
+        self.logger.debug('DELADDR: ' + str(self))
+
 
 class LinkException(Exception):
     def __init__(self, serror):
@@ -91,6 +100,7 @@ class Link(object):
     sysctl_binary = '/sbin/sysctl'
     
     def __init__(self, baseCore, uniquePrefix, ifindex, devname, linkstate):
+        self.logger = logging.getLogger('baseCore.Link')
         self.baseCore = baseCore
         self.ifindex = ifindex
         self.devname = devname
@@ -104,6 +114,7 @@ class Link(object):
         self.raAttached = False
         self.dhclient = dhcpclient.DhcpClient(baseCore, devname)
         self.radvd = radvdaemon.RAdvd(baseCore, devname)
+        self.logger.debug('new link: ' + str(self))
     
     def __str__(self):
         s_addrs = ''
@@ -133,16 +144,20 @@ class Link(object):
                         self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_LINK_UP))
                     self.linkstate = linkstate
                 break
+        self.logger.debug('updating link: ' + str(self))
+    
         
     def activated(self):
         self.active = True
-        #print 'link active: ' + str(self)
         self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_NEW_LINK))
+        self.logger.debug('NEWLINK: ' + str(self))
+    
         
     def deactivated(self):
         self.active = False
-        #print 'link not active: ' + str(self)
         self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_DEL_LINK))
+        self.logger.debug('DELLINK: ' + str(self))
+    
     
     def handleNewAddr(self, addr, ndmsg):
         if not addr in self.addrs:
@@ -153,6 +168,8 @@ class Link(object):
             if addr.family == 10 and not re.match('fe80', addr.addr) and addr.scope == 0:
                 self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_RA_ATTACHED))
                 self.raAttached = True
+        self.logger.debug('NEWADDR: ' + str(self))
+    
     
     def handleDelAddr(self, addr, ndmsg):
         if addr in self.addrs:
@@ -165,36 +182,47 @@ class Link(object):
         else:
             self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_RA_DETACHED))
             self.raAttached = False
+        self.logger.debug('DELADDR: ' + str(self))
     
 
     def enable(self, accept_ra=0):
         ip_cmd = self.ip_binary + ' link set up dev ' + self.devname
-        print ip_cmd
+        self.logger.debug('executing: ' + ip_cmd)
         subprocess.call(ip_cmd.split()) 
         sysctl_cmd = self.sysctl_binary + ' -q -w net.ipv6.conf.' + self.devname + '.accept_ra=' + str(accept_ra)
-        print sysctl_cmd
+        self.logger.debug('executing: ' + sysctl_cmd)
         subprocess.call(sysctl_cmd.split())
-
+        self.logger.debug('enable link: ' + str(self))
+    
+    
     def disable(self):
         self.dhclient.sendRelease()
         ip_cmd = self.ip_binary + ' link set down dev ' + self.devname
-        print ip_cmd
+        self.logger('executing: ' + ip_cmd)
         subprocess.call(ip_cmd.split()) 
-
+        self.logger.debug('disable link: ' + str(self))
+        
+        
     def flushIPv6Addresses(self):
         s = "/sbin/ip -6 addr flush dev " + self.devname
         subprocess.call(s.split())
+        self.logger.debug('flush ipv6 addrs: ' + str(self))
+        
         
     def addIPv6Addr(self, address, prefixlen):
         # once the address has been added, netlink will inform us and trigger self.add_addr()
         s = "/sbin/ip -6 addr add " + address + "/" + str(prefixlen) + " dev " + self.devname
-        print 'adding address: ' + s
+        self.logger.debug('executing: ' + s)
         subprocess.call(s.split())
+        self.logger.debug('add ipv6 addr: ' + str(self))
+        
 
     def delIPv6Addr(self, address, prefixlen):
         s = "/sbin/ip -6 addr del " + address + "/" + str(prefixlen) + " dev " + self.devname
-        print 'deleting address: ' + s
+        self.logger.debug('executing: ' + s)
         subprocess.call(s.split())
+        self.logger.debug('delete ipv6 addr: ' + str(self))
+
 
 class BaseCoreException(Exception):
     def __init__(self, serror):
@@ -251,6 +279,18 @@ class BaseCore(object):
     EVENT_RADVD_STOP = 16
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
         try:
+            self.logger = logging.getLogger('baseCore')
+            self.logger.setLevel(logging.DEBUG)
+            fh = logging.FileHandler('baseCore.log')
+            fh.setLevel(logging.DEBUG)
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.ERROR)
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            fh.setFormatter(formatter)
+            ch.setFormatter(formatter)
+            self.logger.addHandler(fh)
+            self.logger.addHandler(ch)
+            
             self.qmfConsole = qmfhelper.QmfConsole(brokerUrl)
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'basecore')
@@ -367,7 +407,7 @@ class BaseCore(object):
             self.events.append(event)
             os.write(self.pipeout, str(event.type))
         except BaseCoreException, e:
-            print 'ignoring event ' + str(e)
+            self.logger.error('ignoring event ' + str(e))
     
     def handleNetlinkEvent(self, event):
         ndmsg = event.opaque
@@ -388,7 +428,7 @@ class BaseCore(object):
     def run(self):
         self.ep = select.epoll()
         self.ep.register(self.pipein, select.EPOLLET | select.EPOLLIN)
-        print "waiting for work to be done..."
+        self.logger.info("waiting for work to be done...")
         while True:
             try :
                 self.ep.poll(timeout=-1, maxevents=1)
@@ -404,13 +444,13 @@ class BaseCore(object):
                 else:
                     self.events = []
             except KeyboardInterrupt:
-                sys.stdout.write("terminating...")
+                self.logger.info("terminating...")
                 self.addEvent(BaseCoreEvent(self, self.EVENT_QUIT))
 
 
 def iprouteCallback(ndmsg, baseCore):
     if not isinstance(baseCore, BaseCore):
-        print "invalid type"
+        logger.getLogger('iprouteCallback').error("invalid type in iprouteCallback()")
         return
     baseCore.addEvent(BaseCoreEvent("", BaseCore.EVENT_IPROUTE, ndmsg))
 
