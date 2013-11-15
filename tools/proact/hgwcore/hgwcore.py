@@ -112,16 +112,16 @@ class HgwCore(proact.common.basecore.BaseCore):
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
             
             self.logger = logging.getLogger('proact.common.hgwcore.HgwCore')
-            self.logger.setLevel(logging.DEBUG)
-            fh = logging.FileHandler('homeVHS.log')
-            fh.setLevel(logging.DEBUG)
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.ERROR)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            fh.setFormatter(formatter)
-            ch.setFormatter(formatter)
-            self.logger.addHandler(fh)
-            self.logger.addHandler(ch)
+            #self.logger.setLevel(logging.DEBUG)
+            #fh = logging.FileHandler('homeVHS.log')
+            #fh.setLevel(logging.DEBUG)
+            #ch = logging.StreamHandler()
+            #ch.setLevel(logging.ERROR)
+            #formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            #fh.setFormatter(formatter)
+            #ch.setFormatter(formatter)
+            #self.logger.addHandler(fh)
+            #self.logger.addHandler(ch)
 
             self.agentHandler = HgwCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
             
@@ -155,7 +155,6 @@ class HgwCore(proact.common.basecore.BaseCore):
 
     def handleEvent(self, event):
         if event.type == proact.common.basecore.BaseCore.EVENT_NEW_LINK:
-            print 'NewLink (' + str(event.source) + ')'
             link = event.source
             if link.devname in self.linkNames['dmz']:
                 link.linkType = 'dmz'
