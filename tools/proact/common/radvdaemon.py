@@ -23,7 +23,10 @@ class RAdvd(object):
         self.pidfile = '/var/run/radvd/radvd.' + self.devname + '.pid'
     
     def __str__(self, *args, **kwargs):
-        return '<RAdvd [' + self.devname + '] ' + '[state: ' + str(self.state) + '] ' + ' >'
+        s_prefixes = ''
+        for prefix in self.prefixes:
+            s_prefixes += str(prefix) + ' '
+        return '<RAdvd [' + self.devname + '] ' + '[state: ' + str(self.state) + '] ' + '[prefix(es): ' + s_prefixes + ' >'
     
     def addPrefix(self, prefix):
         if not isinstance(prefix, ipv6prefix.IPv6Prefix):
