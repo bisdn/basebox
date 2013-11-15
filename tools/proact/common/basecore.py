@@ -280,6 +280,11 @@ class BaseCore(object):
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
         try:
             self.logger = logging.getLogger()
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.ERROR)
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            ch.setFormatter(formatter)
+            self.logger.addHandler(ch)
             self.qmfConsole = qmfhelper.QmfConsole(brokerUrl)
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'basecore')
