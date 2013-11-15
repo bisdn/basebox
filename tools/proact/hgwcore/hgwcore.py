@@ -91,7 +91,6 @@ class HgwCore(proact.common.basecore.BaseCore):
     """
     def __init__(self, **kwargs):
         try:
-            self.logger = logging.getLogger('proact.common.hgwcore.HgwCore')
             self.linkNames = {'wan':[], 'dmz':[], 'lan':[] }
             self.dmzLinks = {}
             self.lanLinks = {}
@@ -117,6 +116,8 @@ class HgwCore(proact.common.basecore.BaseCore):
             
                     
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
+            self.logger = logging.getLogger('proact.common.hgwcore.HgwCore')
+
             self.agentHandler = HgwCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
             self.initHgwXdpd()
             self.initHgwDptCore()
@@ -253,7 +254,6 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.logger.info('RA advertisement stopped: ' + str(event.source))
                                     
     def parseConfig(self):
-        self.logger.info('reading config file ' + self.conffile)
         self.config = ConfigParser.ConfigParser()
         self.config.read(self.conffile)
         self.brokerUrl = self.config.get('hgwcore', 'BROKERURL', '127.0.0.1')
