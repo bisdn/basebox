@@ -4,7 +4,7 @@ import subprocess
 import radvdaemon
 import dhcpclient
 import qmfhelper
-import logger
+import logging
 import select
 import sys
 import os
