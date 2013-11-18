@@ -313,6 +313,9 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 void
 vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
+	if (0 == dpt)
+		return;
+
 	// ignore local route table and unspecified table_id
 	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 	//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
@@ -333,6 +336,9 @@ vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 {
+	if (0 == dpt)
+		return;
+
 	// ignore local route table and unspecified table_id
 	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 	//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
@@ -355,6 +361,9 @@ vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 {
+	if (0 == dpt)
+		return;
+
 	// ignore local route table and unspecified table_id
 	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 	//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
