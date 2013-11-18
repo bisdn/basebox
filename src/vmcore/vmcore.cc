@@ -282,6 +282,23 @@ vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
 
 		dptlinks[dpt][port_no]->handle_packet_in(msg->get_packet());
 
+		switch (dpt->get_version()) {
+		case OFP10_VERSION:
+			if (OFP10_NO_BUFFER == msg->get_buffer_id()) {
+				rofl::cofaclist actions(dpt->get_version());
+				send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_in_port(), actions);
+			} break;
+		case OFP12_VERSION:
+			if (OFP12_NO_BUFFER == msg->get_buffer_id()) {
+				rofl::cofaclist actions(dpt->get_version());
+				send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_in_port(), actions);
+			} break;
+		case OFP13_VERSION:
+			if (OFP13_NO_BUFFER == msg->get_buffer_id()) {
+				rofl::cofaclist actions(dpt->get_version());
+				send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_in_port(), actions);
+			} break;
+		}
 		delete msg;
 
 	} catch (ePacketPoolExhausted& e) {
