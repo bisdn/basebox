@@ -4,6 +4,7 @@ import sys
 sys.path.append('../..')
 
 import proact.common.qmfhelper
+import logging
 import time
 import qmf2
 
@@ -19,6 +20,8 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
     def __init__(self, brokerUrl = '127.0.0.1', xdpdID=''):
         proact.common.qmfhelper.QmfConsole.__init__(self, brokerUrl)
         
+        self.logger = logging.getLogger('proact')
+        
         #for k, v in kwargs.iteritems():
         #    setattr(self, k, v)
         
@@ -32,7 +35,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
         
         sys.stdout.write('creating XdpdProxy for xdpdID ' + self.xdpdID + ' => ')
         try:
-            print self.__getXdpdHandle()
+            self.__getXdpdHandle()
         except:
             raise XdpdProxyException('unable to find xdpd instance with ID ' + self.xdpdID)
         try:
@@ -42,7 +45,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
                     self.xdpdLsiProxies[lsiHandle.dpid] = XdpdLsiProxy(dpname=lsiHandle.dpname, dpid=lsiHandle.dpid, ofversion=lsiHandle.ofversion,
                                       ntables=lsiHandle.ntables, ctlaf=lsiHandle.ctlaf, ctladdr=lsiHandle.ctladdr,
                                       ctlport=lsiHandle.ctlport, reconnect=lsiHandle.reconnect, state=XdpdLsiProxy.STATE_ATTACHED)
-                    print 'XdpdProxy: found LSI ' + str(self.xdpdLsiProxies[lsiHandle.dpid])
+                    self.logger.debug('XdpdProxy: found LSI ' + str(self.xdpdLsiProxies[lsiHandle.dpid]))
         except ValueError:
             pass
 
@@ -94,7 +97,7 @@ class XdpdProxy(proact.common.qmfhelper.QmfConsole):
                                      dptlsi.ctlaf, dptlsi.ctladdr, dptlsi.ctlport, dptlsi.reconnect)
                 dptlsi.state = XdpdLsiProxy.STATE_ATTACHED
         except Exception, e:
-            print e
+            self.logger.warn('caught exception ' + str(e))
             raise
             #raise XdpdProxyException('unable to create remote dpid: ' + str(dpid) + ' on remote datapath with xdpdID: ' + self.xdpdID)
             
@@ -198,7 +201,8 @@ class XdpdLsiProxy(object):
     STATE_ATTACHED = 2
     
     def __init__(self, **kwargs):
-                
+              
+        self.logger = logging.getLogger('proact')  
         # get all parameters for creating a data path element remotely
         #
         self.dpid       = kwargs.get('dpid', 1000)
@@ -213,7 +217,7 @@ class XdpdLsiProxy(object):
         # internal state
         #
         self.state      = kwargs.get('state', self.STATE_DETACHED)
-        print 'creating LSI with dpid ' + str(self.dpid)
+        self.logger.debug('creating LSI with dpid ' + str(self.dpid))
     
     def __str__(self):
         #sstr = ''

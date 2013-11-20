@@ -7,7 +7,9 @@ import logging
 import proact.common.xdpdproxy
 import proact.hgwcore.hgwcore
 
-	
+CONFFILE='vhsHome.conf'
+QMFBROKER='172.16.250.65'
+XDPDID='hgw-xdpd-0'
 
 
 class Lsi(object):
@@ -25,30 +27,30 @@ class Lsi(object):
 if __name__ == "__main__":
 
 	logger = logging.getLogger('proact')
-        logger.setLevel(logging.DEBUG)
-        fh = logging.FileHandler('vhsHome.log')
-        fh.setLevel(logging.DEBUG)
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.ERROR)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        fh.setFormatter(formatter)
-        ch.setFormatter(formatter)
-        logger.addHandler(fh)
-        logger.addHandler(ch)
+	logger.setLevel(logging.DEBUG)
+	fh = logging.FileHandler('vhsHome.log')
+	fh.setLevel(logging.DEBUG)
+	ch = logging.StreamHandler()
+	ch.setLevel(logging.ERROR)
+	formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+	fh.setFormatter(formatter)
+	ch.setFormatter(formatter)
+	logger.addHandler(fh)
+	logger.addHandler(ch)
 
 	lsiList = {}
 
-	lsiList['router'] = Lsi('router', 1000, 3, 4, 2, '172.16.250.65', 6633)
+	lsiList['router'] = Lsi('router', 1000, 3, 4, 2, QMFBROKER, 6633)
 	lsiList['router'].ports.append('ge0')
 	lsiList['router'].ports.append('vethR00')
 	lsiList['router'].ports.append('vethR10')
 
-	lsiList['etherswitch'] = Lsi('etherswitch', 2000, 3, 4, 2, '172.16.250.65', 6644)
+	lsiList['etherswitch'] = Lsi('etherswitch', 2000, 3, 4, 2, QMFBROKER, 6644)
 	lsiList['etherswitch'].ports.append('ge1')
 	lsiList['etherswitch'].ports.append('vethS00')
 	lsiList['etherswitch'].ports.append('vethS10')
 	
-	xdpdProxy = proact.common.xdpdproxy.XdpdProxy('172.16.250.65', 'hgw-xdpd-0')
+	xdpdProxy = proact.common.xdpdproxy.XdpdProxy(QMFBROKER, XDPDID)
 	print xdpdProxy
 
 	createLink = False
@@ -64,7 +66,7 @@ if __name__ == "__main__":
 	if createLink:
 		(devname1, devname2) = xdpdProxy.createVirtualLink(lsiList['router'].dpid, lsiList['etherswitch'].dpid)
 
-        hgwCore = proact.hgwcore.hgwcore.HgwCore(conffile='vhsHome.conf', lanLinks=[devname1])
+        hgwCore = proact.hgwcore.hgwcore.HgwCore(conffile=CONFFILE, lanLinks=[devname1])
         hgwCore.run()
 
 	for dpname, lsi in lsiList.iteritems():
