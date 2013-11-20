@@ -91,6 +91,8 @@ class RAdvd(object):
                 f.write('        AdvValidLifetime 3600;\n')
                 f.write('        AdvPreferredLifetime 3600;\n')
                 f.write('        DeprecatePrefix on;\n')
+                f.write('        AdvValidLifetime 120;\n')
+                f.write('        AdvPreferredLifetime 120;\n')
                 f.write('    };\n')
                 f.write('\n')
             f.write('};\n')
