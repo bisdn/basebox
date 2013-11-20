@@ -22,6 +22,7 @@ class RAdvd(object):
         self.process = None
         self.conffiledir = conffiledir
         self.conffile = self.conffiledir + '/radvd.' + self.devname + '.conf'
+        self.logfile = self.conffiledir + '/radvd.' + self.devname + '.log'
         self.pidfile = '/var/run/radvd/radvd.' + self.devname + '.pid'
     
     def __str__(self, *args, **kwargs):
@@ -52,7 +53,7 @@ class RAdvd(object):
             self.baseCore.logger.warn('no prefixes available for radvd, suppressing start ' + str(self))
             return
         self.state = self.STATE_ANNOUNCING
-        radvd_cmd = self.radvd_binary + ' -C ' + self.conffile + ' -p ' + self.pidfile
+        radvd_cmd = self.radvd_binary + ' -C ' + self.conffile + ' -p ' + self.pidfile + ' -m ' + 'logfile' + ' -l ' + self.logfile 
         self.baseCore.logger.debug('radvd start: executing command => ' + str(radvd_cmd))
         self.process = subprocess.Popen(radvd_cmd.split())
         self.baseCore.addEvent(basecore.BaseCoreEvent(self, basecore.BaseCore.EVENT_RADVD_START))
