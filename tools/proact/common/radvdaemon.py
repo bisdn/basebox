@@ -80,8 +80,10 @@ class RAdvd(object):
         try:
             f = open(self.conffile, 'w')
             f.write('interface ' + self.devname + ' {\n');
+            f.write('    IgnoreIfMissing on;\n')
             f.write('    AdvSendAdvert on;\n')
-            f.write('    MaxRtrAdvInterval 15;\n')
+            f.write('    MaxRtrAdvInterval 4;\n')
+            f.write('    MinRtrAdvInterval 3;\n')
 
             for prefix in self.prefixes:
                 f.write('    prefix ' + str(prefix.prefix) + '/' + str(prefix.prefixlen) + '\n')
