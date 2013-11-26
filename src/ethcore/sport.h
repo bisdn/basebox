@@ -8,6 +8,7 @@
 #ifndef PORT_H_
 #define PORT_H_
 
+#include <map>
 #include <iostream>
 #include <exception>
 
@@ -15,17 +16,30 @@
 extern "C" {
 #endif
 #include <assert.h>
+#include <inttypes.h>
 #ifdef __cplusplus
 }
 #endif
 
 
 #include <rofl/common/logging.h>
+#include <rofl/common/crofbase.h>
+#include <rofl/common/openflow/cflowentry.h>
+#include <rofl/common/openflow/cofdpt.h>
 
 namespace ethercore
 {
-class eSportBase : public std::exception {};
-class eSportExists : public eSportBase {};
+class eSportBase 		: public std::exception {};
+class eSportExists 		: public eSportBase {};
+class eSportInval		: public eSportBase {};
+class eSportNotFound	: public eSportBase {};
+
+class sport_owner
+{
+public:
+	virtual ~sport_owner() {};
+	virtual rofl::crofbase* get_rofbase() = 0;
+};
 
 class sport
 {
@@ -35,23 +49,25 @@ private:
 		SPORT_DEFAULT_PVID = 1,
 	};
 
-	uint64_t dpid;
-	uint32_t portno;
-	uint16_t pvid; // (1<<12) untagged
+	sport_owner	   *spowner;
+	uint64_t 		dpid;
+	uint32_t 		portno;
+	uint16_t 		pvid;
 	std::map <uint16_t, bool> memberships;
+	uint8_t  		table_id;
+
 public:
 	/**
 	 * @brief	Returns or creates an sport instance
 	 *
 	 * @param dpid OF data path identifier
 	 * @param portno OF port number
-	 * @param pvid default VLAN identifier (VID)
 	 *
 	 * @return reference to the existing or new sport instance
 	 */
 	static
 	sport&
-	get_sport(uint64_t dpid, uint32_t portno, uint16_t pvid = SPORT_DEFAULT_PVID);
+	get_sport(uint64_t dpid, uint32_t portno);
 
 	/**
 	 * @brief	Constructor for switch-port, defining dpid, portno and pvid
@@ -60,10 +76,11 @@ public:
 	 * @param dpid data path identifier of OF data path instance the port is located on
 	 * @param portno OF port number assigned to corresponding node
 	 * @param pvid default port vid used when sending/receiving an untagged packet
+	 * @param table_id table_id for setting the ACLs for incoming packets
 	 *
 	 * @throw eSportExists when an sport instance for the specified [dpid,portno] pair already exists
 	 */
-	sport(uint64_t dpid, uint32_t portno, uint16_t pvid);
+	sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, uint16_t pvid, uint8_t table_id);
 
 	/**
 	 * @brief	Destructor for switch-port
@@ -110,6 +127,9 @@ public:
 
 public:
 
+	/**
+	 * @brief	Output operator
+	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, sport const& sp) {
 		os << "<sport ";
@@ -124,6 +144,20 @@ public:
 		os << ">";
 		return os;
 	};
+
+private:
+
+	/**
+	 *
+	 */
+	void
+	flow_mod_add(uint16_t vid, bool tagged);
+
+	/**
+	 *
+	 */
+	void
+	flow_mod_delete(uint16_t vid, bool tagged);
 };
 
 }; // end of namespace

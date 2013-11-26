@@ -13,20 +13,25 @@ std::map<uint64_t, std::map<uint32_t, sport*> > sport::sports;
 
 
 sport&
-sport::get_sport(uint64_t dpid, uint32_t portno, uint16_t pvid = SPORT_DEFAULT_PVID)
+sport::get_sport(uint64_t dpid, uint32_t portno)
 {
 	if (sport::sports[dpid].find(portno) == sport::sports[dpid].end()) {
-		new sport(dpid, portno, pvid);
+		throw eSportNotFound();
 	}
 	return *(sport::sports[dpid][portno]);
 }
 
 
-sport::sport(uint64_t dpid, uint32_t portno, uint16_t pvid) :
+sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, uint16_t pvid, uint8_t table_id) :
+		spowner(spowner),
 		dpid(dpid),
 		portno(portno),
-		pvid(pvid)
+		pvid(0xffff),
+		table_id(table_id)
 {
+	if (NULL == spowner) {
+		throw eSportInval();
+	}
 	if (sport::sports[dpid].find(portno) != sport::sports[dpid].end()) {
 		throw eSportExists();
 	}
@@ -47,19 +52,34 @@ sport::~sport()
 void
 sport::add_membership(uint16_t vid, bool tagged)
 {
-	// change our default pvid, drop the old default membership, add new one
-	if ((not tagged) && (pvid != vid)) {
-		drop_membership(pvid);
-		memberships.erase(pvid);
-		pvid = vid;
-		memberships[pvid] = false;
+	if (not tagged) {
+		if (pvid == vid) {
+			// already active pvid, do nothing
+			assert(memberships[vid] == false);
+		} else {
+			// pvid is changing, drop membership from old one
+			if (memberships.find(vid) != memberships.end()) {
+				memberships.erase(pvid);
+			}
+			pvid = vid;
+			memberships[pvid] = /*untagged=*/false;
+			flow_mod_add(pvid, false);
+		}
 	}
 	else if (tagged) {
-		if (memberships.find(vid) == memberships.end()) {
-			memberships[vid] = true;
-		} else {
-			rofl::logging::crit << "sport vid membership, critical inconsistency, aborting " << *this << std::endl;
-			assert(memberships[vid] == false);
+		if (pvid == vid) {
+			// invalid => pvid cannot be dropped in tagged mode
+			throw eSportInval();
+		}
+		else {
+			if (memberships.find(vid) == memberships.end()) {
+				// add vid to list of active memberships
+				memberships[vid] = /*tagged*/true;
+				flow_mod_add(vid, true);
+			} else {
+				// make sure that vid is still set to tagged mode
+				assert(memberships[vid] == true);
+			}
 		}
 	}
 }
@@ -68,7 +88,74 @@ sport::add_membership(uint16_t vid, bool tagged)
 void
 sport::drop_membership(uint16_t vid)
 {
+	if (pvid == vid) {
+		// invalid => pvid cannot be dropped
+		throw eSportInval();
+	}
 
+	if (memberships.find(vid) == memberships.end()) {
+		return;
+	}
+
+	flow_mod_delete(vid, memberships[vid]);
+
+	memberships.erase(vid);
+}
+
+
+void
+sport::flow_mod_add(uint16_t vid, bool tagged)
+{
+	try {
+		rofl::cofdpt *dpt = spowner->get_rofbase()->dpt_find(dpid);
+
+		rofl::cflowentry fe(dpt->get_version());
+
+		fe.set_command(OFPFC_ADD);
+		fe.set_idle_timeout(0);
+		fe.set_hard_timeout(0);
+		fe.set_table_id(table_id);
+		fe.set_priority(0x8000);
+
+		fe.match.set_in_port(portno);
+		if (tagged)
+			fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
+		else
+			fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_UNTAGGED, OFPVID_NONE);
+
+		fe.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), table_id + 1);
+
+	} catch (rofl::eRofBaseNotFound& e) {
+		rofl::logging::error << "unable to find crofbase instance " << *this << std::endl;
+	}
+}
+
+
+void
+sport::flow_mod_delete(uint16_t vid, bool tagged)
+{
+	try {
+		rofl::cofdpt *dpt = spowner->get_rofbase()->dpt_find(dpid);
+
+		rofl::cflowentry fe(dpt->get_version());
+
+		fe.set_command(OFPFC_DELETE_STRICT);
+		fe.set_idle_timeout(0);
+		fe.set_hard_timeout(0);
+		fe.set_table_id(table_id);
+		fe.set_priority(0x8000);
+
+		fe.match.set_in_port(portno);
+		if (tagged)
+			fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
+		else
+			fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_UNTAGGED, OFPVID_NONE);
+
+		fe.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), table_id + 1);
+
+	} catch (rofl::eRofBaseNotFound& e) {
+		rofl::logging::error << "unable to find crofbase instance " << *this << std::endl;
+	}
 }
 
 

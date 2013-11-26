@@ -103,9 +103,12 @@ cfib::fib_update(
 {
 	std::cerr << "UPDATE: src: " << src << std::endl;
 
+	uint8_t table_id = 0;
+	uint16_t vid = 0xffff;
+
 	// update cfibentry for src/inport
 	if (fibtable.find(src) == fibtable.end()) {
-		fibtable[src] = new cfibentry(this, rofbase, dpt, src, in_port);
+		fibtable[src] = new cfibentry(this, rofbase, dpt, table_id, src, vid, in_port, true);
 		fibtable[src]->flow_mod_add();
 
 		std::cerr << "UPDATE[2.1]: " << *this << std::endl;
@@ -144,7 +147,10 @@ cfib::fib_lookup(
 	// find out-port for dst
 	if (fibtable.find(dst) == fibtable.end()) {
 
-		fibtable[dst] = new cfibentry(this, rofbase, dpt, dst, OFPP12_FLOOD);
+		uint8_t table_id = 0;
+		uint16_t vid = 0xffff;
+
+		fibtable[dst] = new cfibentry(this, rofbase, dpt, table_id, dst, vid, OFPP12_FLOOD);
 		fibtable[dst]->flow_mod_add();
 
 		std::cerr << "LOOKUP[1]: " << *this << std::endl;
