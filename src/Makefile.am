@@ -1,4 +1,4 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-SUBDIRS = vmcore dhcpv6snoop
+SUBDIRS = vmcore ethcore dhcpv6snoop
 
