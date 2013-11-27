@@ -21,6 +21,7 @@ extern "C" {
 #include <rofl/common/ciosrv.h>
 #include <rofl/common/cmacaddr.h>
 #include <rofl/common/crofbase.h>
+#include <rofl/common/logging.h>
 #include <rofl/common/openflow/cofdpt.h>
 
 namespace ethercore
@@ -33,6 +34,8 @@ class cfibtable
 public:
 	virtual ~cfibtable() {};
 	virtual void fib_timer_expired(cfibentry *entry) = 0;
+	virtual rofl::crofbase* get_rofbase() = 0;
+	virtual uint32_t get_flood_group_id(uint16_t vid) = 0;
 };
 
 class cfibentry :
@@ -47,12 +50,11 @@ private:
 	};
 
 	cfibtable					*fib;
+	uint64_t					dpid;
 	uint16_t					vid;
 	uint32_t					out_port_no;
 	bool						tagged;
 	rofl::cmacaddr				dst;
-	rofl::crofbase				*rofbase;
-	rofl::cofdpt				*dpt;
 	uint8_t						table_id;
 	int							entry_timeout;
 
@@ -63,10 +65,9 @@ public:
 	 */
 	cfibentry(
 			cfibtable *fib,
-			rofl::crofbase *rofbase,
-			rofl::cofdpt *dpt,
 			uint8_t table_id,
 			rofl::cmacaddr dst,
+			uint64_t dpid,
 			uint16_t vid,
 			uint32_t out_port_no,
 			bool tagged = true);
