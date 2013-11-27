@@ -8,7 +8,8 @@
 #include "rofl/common/openflow/cofdpt.h"
 #include "rofl/common/logging.h"
 
-#include <cfib.h>
+#include "cfib.h"
+#include "sport.h"
 
 using namespace rofl;
 
@@ -16,9 +17,13 @@ namespace ethercore
 {
 
 class ethcore :
-		public crofbase
+		public crofbase,
+		public sport_owner
 {
 private:
+
+	uint8_t			table_id;
+	uint16_t		default_vid;
 
 #if 0
 	struct fibentry_t {
@@ -43,7 +48,7 @@ private:
 
 public:
 
-	ethcore();
+	ethcore(uint8_t table_id = 0, uint16_t default_vid = 1);
 
 	virtual
 	~ethcore();
@@ -67,6 +72,9 @@ private:
 
 	void
 	request_flow_stats();
+
+	virtual rofl::crofbase*
+	get_rofbase() { return this; };
 };
 
 }; // end of namespace

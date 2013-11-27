@@ -43,6 +43,36 @@ public:
 
 class sport
 {
+	struct vlan_membership_t {
+		uint16_t vid;
+		bool tagged;
+		uint32_t group_id;
+	public:
+		vlan_membership_t(uint16_t vid = 0, bool tagged = false, uint32_t group_id = 0) :
+			vid(vid), tagged(tagged), group_id(group_id) {};
+		vlan_membership_t(struct vlan_membership_t const& m) {
+			*this = m;
+		};
+		struct vlan_membership_t&
+		operator= (struct vlan_membership_t const& m) {
+			if (this == &m)
+				return *this;
+			vid 		= m.vid;
+			tagged 		= m.tagged;
+			group_id 	= m.group_id;
+			return *this;
+		};
+		friend std::ostream&
+		operator<< (std::ostream& os, struct vlan_membership_t const& membership) {
+			os << "<vlan_membership_t ";
+				os << "vid:" << (int)membership.vid << " ";
+				os << "tagged:" << (membership.tagged ? "(t)":"(u)") << " ";
+				os << "group-id:" << (int)membership.group_id << " ";
+			os << ">";
+			return os;
+		};
+	};
+
 	static std::map<uint64_t, std::map<uint32_t, sport*> > sports;
 private:
 	enum sport_pvid_t {
@@ -53,8 +83,13 @@ private:
 	uint64_t 		dpid;
 	uint32_t 		portno;
 	uint16_t 		pvid;
-	std::map <uint16_t, bool> memberships;
+	std::map <uint16_t, struct vlan_membership_t> memberships;
 	uint8_t  		table_id;
+
+	/**
+	 * @brief	Suppress copy operations on sport instances (make copy constructor private)
+	 */
+	sport(sport const& sp) : spowner(NULL), dpid(0), portno(0), pvid(0), table_id(0) {};
 
 public:
 	/**
@@ -69,6 +104,24 @@ public:
 	sport&
 	get_sport(uint64_t dpid, uint32_t portno);
 
+	/**
+	 * @brief	Destroys all sport instances associated with a specific dpid
+	 *
+	 * @param dpid
+	 */
+	static
+	void
+	destroy_sports(uint64_t dpid);
+
+	/**
+	 * @brief	Destroys all sport instances
+	 *
+	 */
+	static
+	void
+	destroy_sports();
+
+public:
 	/**
 	 * @brief	Constructor for switch-port, defining dpid, portno and pvid
 	 *
@@ -125,6 +178,14 @@ public:
 	void
 	drop_membership(uint16_t vid);
 
+	/**
+	 * @brief	Returns the group-table-entry-id used by this sport for a specific VLAN
+	 *
+	 * @param vid VID for which the group-id is sought for
+	 */
+	void
+	get_group_id(uint16_t vid) const;
+
 public:
 
 	/**
@@ -137,9 +198,9 @@ public:
 			os << "portno:" << (unsigned long)sp.portno << " ";
 			os << "pvid:" << (int)sp.pvid << " ";
 			os << "memberships: " << " ";
-			for (std::map<uint16_t, bool>::const_iterator
+			for (std::map<uint16_t, struct vlan_membership_t>::const_iterator
 					it = sp.memberships.begin(); it != sp.memberships.end(); ++it) {
-				os << (int)(it->first) << (it->second ? "(t)":"(u)") << " ";
+				os << it->second << " ";
 			}
 		os << ">";
 		return os;

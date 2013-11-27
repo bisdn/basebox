@@ -4,7 +4,9 @@
 
 using namespace ethercore;
 
-ethcore::ethcore()
+ethcore::ethcore(uint8_t table_id, uint16_t default_vid) :
+		table_id(table_id),
+		default_vid(default_vid)
 {
 
 }
@@ -123,6 +125,20 @@ ethcore::handle_dpath_open(
 	send_flow_mod_message(dpt, fe);
 
 	cfib::get_fib(dpt->get_dpid()).dpt_bind(this, dpt);
+
+	logging::info << "dpath attached" << std::endl;
+
+	for (std::map<uint32_t, rofl::cofport*>::iterator
+			it = dpt->get_ports().begin(); it != dpt->get_ports().end(); ++it) {
+
+		rofl::cofport* port = it->second;
+		try {
+			sport *sp = new sport(this, dpt->get_dpid(), port->get_port_no(), default_vid, table_id);
+			logging::info << "   adding port " << *sp << std::endl;
+		} catch (eSportExists& e) {
+			logging::warn << "unable to add port:" << port->get_name() << ", already exists " << std::endl;
+		}
+	}
 }
 
 
@@ -132,6 +148,9 @@ ethcore::handle_dpath_close(
 		cofdpt *dpt)
 {
 	cfib::get_fib(dpt->get_dpid()).dpt_release(this, dpt);
+
+	// destroy all sports associated with dpt
+	sport::destroy_sports(dpt->get_dpid());
 }
 
 
@@ -141,76 +160,86 @@ ethcore::handle_packet_in(
 		cofdpt *dpt,
 		cofmsg_packet_in *msg)
 {
-	cmacaddr eth_src = msg->get_packet().ether()->get_dl_src();
-	cmacaddr eth_dst = msg->get_packet().ether()->get_dl_dst();
+	try {
+		cmacaddr eth_src = msg->get_packet().ether()->get_dl_src();
+		cmacaddr eth_dst = msg->get_packet().ether()->get_dl_dst();
 
-	/*
-	 * sanity check: if source mac is multicast => invalid frame
-	 */
-	if (eth_src.is_multicast()) {
-		delete msg; return;
-	}
-
-	/*
-	 * block mac address 01:80:c2:00:00:00
-	 */
-	if (msg->get_packet().ether()->get_dl_dst() == cmacaddr("01:80:c2:00:00:00") ||
-		msg->get_packet().ether()->get_dl_dst() == cmacaddr("01:00:5e:00:00:fb")) {
-		cflowentry fe(dpt->get_version());
-
-		fe.set_command(OFPFC_ADD);
-		fe.set_buffer_id(msg->get_buffer_id());
-		fe.set_idle_timeout(15);
-		fe.set_table_id(msg->get_table_id());
-
-		fe.match.set_in_port(msg->get_match().get_in_port());
-		fe.match.set_eth_dst(msg->get_packet().ether()->get_dl_dst());
-		fe.instructions.next() = cofinst_apply_actions(dpt->get_version());
-
-		logging::info << "ethercore: installing FLOW-MOD with entry: " << fe << std::endl;
-
-		send_flow_mod_message(dpt, fe);
-
-		delete msg; return;
-	}
-
-	logging::info << "ethercore: PACKET-IN from dpid:" << (int)dpt->get_dpid() << " message: " << *msg << std::endl;
-
-	cofaclist actions;
-
-	cfib::get_fib(dpt->get_dpid()).fib_update(
-							this,
-							dpt,
-							msg->get_packet().ether()->get_dl_src(),
-							msg->get_match().get_in_port());
-
-	if (eth_dst.is_multicast()) {
-
-		actions.next() = cofaction_output(dpt->get_version(), OFPP12_FLOOD);
-
-	} else {
-
-		cfibentry& entry = cfib::get_fib(dpt->get_dpid()).fib_lookup(
-					this,
-					dpt,
-					msg->get_packet().ether()->get_dl_dst(),
-					msg->get_packet().ether()->get_dl_src(),
-					msg->get_match().get_in_port());
-
-		if (msg->get_match().get_in_port() == entry.get_out_port_no()) {
+		/*
+		 * sanity check: if source mac is multicast => invalid frame
+		 */
+		if (eth_src.is_multicast()) {
 			delete msg; return;
 		}
 
-		actions.next() = cofaction_output(dpt->get_version(), entry.get_out_port_no());
-	}
+		/*
+		 * get sport instance for in-port
+		 */
+		sport& port = sport::get_sport(dpt->get_dpid(), msg->get_match().get_in_port());
+
+		/*
+		 * block mac address 01:80:c2:00:00:00
+		 */
+		if (msg->get_packet().ether()->get_dl_dst() == cmacaddr("01:80:c2:00:00:00") ||
+			msg->get_packet().ether()->get_dl_dst() == cmacaddr("01:00:5e:00:00:fb")) {
+			cflowentry fe(dpt->get_version());
+
+			fe.set_command(OFPFC_ADD);
+			fe.set_buffer_id(msg->get_buffer_id());
+			fe.set_idle_timeout(15);
+			fe.set_table_id(msg->get_table_id());
+
+			fe.match.set_in_port(msg->get_match().get_in_port());
+			fe.match.set_eth_dst(msg->get_packet().ether()->get_dl_dst());
+			fe.instructions.next() = cofinst_apply_actions(dpt->get_version());
+
+			logging::info << "ethercore: installing FLOW-MOD with entry: " << fe << std::endl;
+
+			send_flow_mod_message(dpt, fe);
+
+			delete msg; return;
+		}
+
+		logging::info << "ethercore: PACKET-IN from dpid:" << (int)dpt->get_dpid() << " message: " << *msg << std::endl;
+
+		cofaclist actions;
+
+		cfib::get_fib(dpt->get_dpid()).fib_update(
+								this,
+								dpt,
+								msg->get_packet().ether()->get_dl_src(),
+								msg->get_match().get_in_port());
+
+		if (eth_dst.is_multicast()) {
+
+			actions.next() = cofaction_output(dpt->get_version(), OFPP12_FLOOD);
+
+		} else {
+
+			cfibentry& entry = cfib::get_fib(dpt->get_dpid()).fib_lookup(
+						this,
+						dpt,
+						msg->get_packet().ether()->get_dl_dst(),
+						msg->get_packet().ether()->get_dl_src(),
+						msg->get_match().get_in_port());
+
+			if (msg->get_match().get_in_port() == entry.get_out_port_no()) {
+				delete msg; return;
+			}
+
+			actions.next() = cofaction_output(dpt->get_version(), entry.get_out_port_no());
+		}
 
 
 
-	if (OFP_NO_BUFFER != msg->get_buffer_id()) {
-		send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_match().get_in_port(), actions);
-	} else {
-		send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_match().get_in_port(), actions,
-				msg->get_packet().soframe(), msg->get_packet().framelen());
+		if (OFP_NO_BUFFER != msg->get_buffer_id()) {
+			send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_match().get_in_port(), actions);
+		} else {
+			send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_match().get_in_port(), actions,
+					msg->get_packet().soframe(), msg->get_packet().framelen());
+		}
+
+	} catch (eOFmatchNotFound& e) {
+
 	}
 
 	delete msg; return;

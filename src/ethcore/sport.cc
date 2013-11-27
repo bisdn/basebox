@@ -22,6 +22,26 @@ sport::get_sport(uint64_t dpid, uint32_t portno)
 }
 
 
+void
+sport::destroy_sports(uint64_t dpid)
+{
+	for (std::map<uint32_t, sport*>::iterator
+			it = sport::sports[dpid].begin(); it != sport::sports[dpid].end(); ++it) {
+		delete (it->second);
+	}
+	sport::sports.erase(dpid);
+}
+
+
+void
+sport::destroy_sports()
+{
+	while (not sport::sports.empty()) {
+		sport::destroy_sports((sport::sports.begin())->first);
+	}
+}
+
+
 sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, uint16_t pvid, uint8_t table_id) :
 		spowner(spowner),
 		dpid(dpid),
@@ -55,14 +75,14 @@ sport::add_membership(uint16_t vid, bool tagged)
 	if (not tagged) {
 		if (pvid == vid) {
 			// already active pvid, do nothing
-			assert(memberships[vid] == false);
+			assert(memberships[vid].tagged == false);
 		} else {
 			// pvid is changing, drop membership from old one
 			if (memberships.find(vid) != memberships.end()) {
 				memberships.erase(pvid);
 			}
 			pvid = vid;
-			memberships[pvid] = /*untagged=*/false;
+			memberships[pvid].tagged = /*untagged=*/false;
 			flow_mod_add(pvid, false);
 		}
 	}
@@ -74,11 +94,11 @@ sport::add_membership(uint16_t vid, bool tagged)
 		else {
 			if (memberships.find(vid) == memberships.end()) {
 				// add vid to list of active memberships
-				memberships[vid] = /*tagged*/true;
+				memberships[vid].tagged = /*tagged*/true;
 				flow_mod_add(vid, true);
 			} else {
 				// make sure that vid is still set to tagged mode
-				assert(memberships[vid] == true);
+				assert(memberships[vid].tagged == true);
 			}
 		}
 	}
@@ -97,9 +117,16 @@ sport::drop_membership(uint16_t vid)
 		return;
 	}
 
-	flow_mod_delete(vid, memberships[vid]);
+	flow_mod_delete(vid, memberships[vid].vid);
 
 	memberships.erase(vid);
+}
+
+
+void
+sport::get_group_id(uint16_t vid) const
+{
+
 }
 
 
