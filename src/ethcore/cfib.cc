@@ -94,6 +94,14 @@ cfib::fib_timer_expired(cfibentry *entry)
 
 
 
+uint32_t
+cfib::get_flood_group_id(uint16_t vid)
+{
+	return 0;
+}
+
+
+
 void
 cfib::fib_update(
 		rofl::crofbase *rofbase,
@@ -106,9 +114,10 @@ cfib::fib_update(
 	uint8_t table_id = 0;
 	uint16_t vid = 0xffff;
 
+
 	// update cfibentry for src/inport
 	if (fibtable.find(src) == fibtable.end()) {
-		fibtable[src] = new cfibentry(this, rofbase, dpt, table_id, src, vid, in_port, true);
+		fibtable[src] = new cfibentry(this, table_id, src, dpt->get_dpid(), vid, in_port, /*tagged=*/true);
 		fibtable[src]->flow_mod_add();
 
 		std::cerr << "UPDATE[2.1]: " << *this << std::endl;
@@ -150,7 +159,7 @@ cfib::fib_lookup(
 		uint8_t table_id = 0;
 		uint16_t vid = 0xffff;
 
-		fibtable[dst] = new cfibentry(this, rofbase, dpt, table_id, dst, vid, OFPP12_FLOOD);
+		fibtable[dst] = new cfibentry(this, table_id, dst, dpt->get_dpid(), vid, in_port, OFPP12_FLOOD);
 		fibtable[dst]->flow_mod_add();
 
 		std::cerr << "LOOKUP[1]: " << *this << std::endl;

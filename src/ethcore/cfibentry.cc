@@ -83,7 +83,7 @@ cfibentry::flow_mod_add()
 			fe.set_table_id(table_id+1);
 			fe.set_hard_timeout(entry_timeout);
 			fe.match.set_eth_src(dst); // yes, indeed: set_eth_src for dst
-			fe.instructions.next() = rofl::cofinst_goto_table(table_id+2);
+			fe.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), table_id+2);
 
 			rofbase->send_flow_mod_message(dpt, fe);
 		}
@@ -129,6 +129,9 @@ cfibentry::flow_mod_add()
 void
 cfibentry::flow_mod_modify()
 {
+	rofl::crofbase *rofbase = fib->get_rofbase();
+	rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+
 	rofl::cflowentry fe(dpt->get_version());
 
 	fe.set_command(OFPFC_MODIFY_STRICT);
@@ -147,6 +150,9 @@ cfibentry::flow_mod_modify()
 void
 cfibentry::flow_mod_delete()
 {
+	rofl::crofbase *rofbase = fib->get_rofbase();
+	rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+
 	if (OFPP12_FLOOD != out_port_no) {
 
 		rofl::cflowentry fe(dpt->get_version());

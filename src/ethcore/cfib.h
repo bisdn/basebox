@@ -110,6 +110,18 @@ private:
 	virtual void
 	fib_timer_expired(cfibentry *entry);
 
+	/**
+	 *
+	 */
+	virtual rofl::crofbase*
+	get_rofbase() { return rofbase; };
+
+	/**
+	 *
+	 */
+	virtual uint32_t
+	get_flood_group_id(uint16_t vid);
+
 public:
 
 	/**

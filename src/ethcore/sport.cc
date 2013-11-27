@@ -149,7 +149,7 @@ sport::flow_mod_add(uint16_t vid, bool tagged)
 			if (not tagged) {
 				ge.buckets.back().actions.next() = rofl::cofaction_pop_vlan(dpt->get_version());
 			}
-			ge.buckets.back().actions.next() = rofl::cofaction_output(portno);
+			ge.buckets.back().actions.next() = rofl::cofaction_output(dpt->get_version(), portno);
 
 			spowner->get_rofbase()->send_group_mod_message(dpt, ge);
 		}
@@ -199,7 +199,7 @@ sport::flow_mod_delete(uint16_t vid, bool tagged)
 			if (not tagged) {
 				ge.buckets.back().actions.next() = rofl::cofaction_pop_vlan(dpt->get_version());
 			}
-			ge.buckets.back().actions.next() = rofl::cofaction_output(portno);
+			ge.buckets.back().actions.next() = rofl::cofaction_output(dpt->get_version(), portno);
 
 			spowner->get_rofbase()->send_group_mod_message(dpt, ge);
 		}
