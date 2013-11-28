@@ -126,10 +126,13 @@ ethcore::handle_dpath_open(
 	send_flow_mod_message(dpt, fe);
 #endif
 
-	/* we create a single default VLAN and add all ports in an untagged mode */
-	cfib *default_fib = new cfib(this, dpt->get_dpid(), default_vid, table_id+1);
 
 	logging::info << "dpath attaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
+
+	/* we create a single default VLAN and add all ports in an untagged mode */
+	add_vlan(dpt->get_dpid(), default_vid);
+
+
 
 	for (std::map<uint32_t, rofl::cofport*>::iterator
 			it = dpt->get_ports().begin(); it != dpt->get_ports().end(); ++it) {
@@ -139,7 +142,7 @@ ethcore::handle_dpath_open(
 			sport *sp = new sport(this, dpt->get_dpid(), port->get_port_no(), default_vid, table_id);
 			logging::info << "   adding port " << *sp << std::endl;
 
-			default_fib->add_port(port->get_port_no(), /*untagged=*/false);
+			cfib::get_fib(dpt->get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
 
 		} catch (eSportExists& e) {
 			logging::warn << "unable to add port:" << port->get_name() << ", already exists " << std::endl;
@@ -276,7 +279,8 @@ ethcore::add_vlan(
 		uint64_t dpid,
 		uint16_t vid)
 {
-
+	logging::info << "[ethcore] adding vid:" << (int)vid << " to dpid:" << (unsigned long long)dpid << std::endl;
+	new cfib(this, dpid, dpid, table_id+1);
 }
 
 
@@ -285,7 +289,11 @@ ethcore::drop_vlan(
 		uint64_t dpid,
 		uint16_t vid)
 {
-
+	try {
+		logging::info << "[ethcore] dropping vid:" << (int)vid << " from dpid:" << (unsigned long long)dpid << std::endl;
+		delete &(cfib::get_fib(dpid, vid));
+	} catch (eFibNotFound& e) {
+	}
 }
 
 
