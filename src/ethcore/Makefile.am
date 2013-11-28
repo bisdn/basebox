@@ -13,7 +13,9 @@ ethcore_SOURCES = \
 	cfibentry.h \
 	cfibentry.cc \
 	sport.h \
-	sport.cc
+	sport.cc \
+	logging.h \
+	logging.cc
 ethcore_LDADD = -lpthread -lrt 
 
 AM_LDFLAGS = -static

@@ -25,9 +25,8 @@ sport::get_sport(uint64_t dpid, uint32_t portno)
 void
 sport::destroy_sports(uint64_t dpid)
 {
-	for (std::map<uint32_t, sport*>::iterator
-			it = sport::sports[dpid].begin(); it != sport::sports[dpid].end(); ++it) {
-		delete (it->second);
+	while (not sport::sports[dpid].empty()) {
+		delete (sport::sports[dpid].begin()->second);
 	}
 	sport::sports.erase(dpid);
 }
@@ -72,35 +71,53 @@ sport::~sport()
 void
 sport::add_membership(uint16_t vid, bool tagged)
 {
-	if (not tagged) {
-		if (pvid == vid) {
-			// already active pvid, do nothing
-			assert(memberships[vid].tagged == false);
-		} else {
-			// pvid is changing, drop membership from old one
-			if (memberships.find(vid) != memberships.end()) {
-				memberships.erase(pvid);
-			}
-			pvid = vid;
-			memberships[pvid].tagged = /*untagged=*/false;
-			flow_mod_add(pvid, false);
-		}
-	}
-	else if (tagged) {
-		if (pvid == vid) {
-			// invalid => pvid cannot be dropped in tagged mode
-			throw eSportInval();
-		}
-		else {
-			if (memberships.find(vid) == memberships.end()) {
-				// add vid to list of active memberships
-				memberships[vid].tagged = /*tagged*/true;
-				flow_mod_add(vid, true);
+	try {
+		if (not tagged) {
+			if (pvid == vid) {
+				// already active pvid, do nothing
+				assert(memberships[vid].tagged == false);
 			} else {
-				// make sure that vid is still set to tagged mode
-				assert(memberships[vid].tagged == true);
+				// pvid is changing, drop membership from old one
+				if (memberships.find(vid) != memberships.end()) {
+					memberships.erase(pvid);
+				}
+				pvid = vid;
+				memberships[pvid].tagged = /*untagged=*/false;
+				if (0 == memberships[pvid].group_id) {
+					memberships[pvid].group_id = spowner->get_idle_group_id();
+				}
+				flow_mod_add(pvid, false);
 			}
 		}
+		else if (tagged) {
+			if (pvid == vid) {
+				// invalid => pvid cannot be dropped in tagged mode
+				throw eSportInval();
+			}
+			else {
+				if (memberships.find(vid) == memberships.end()) {
+					// add vid to list of active memberships
+					memberships[vid].tagged = /*tagged*/true;
+					if (0 == memberships[pvid].group_id) {
+						memberships[vid].group_id = spowner->get_idle_group_id();
+					}
+					flow_mod_add(vid, true);
+				} else {
+					// make sure that vid is still set to tagged mode
+					assert(memberships[vid].tagged == true);
+				}
+			}
+		}
+
+	} catch (eSportExhausted& e) {
+		memberships.erase(vid);
+		logging::error << "sport::add_membership() no idle group-id available, unable to add membership for VID:" << (int)vid << std::endl;
+		throw eSportFailed();
+
+	} catch (rofl::eRofBaseNotFound& e) {
+		memberships.erase(vid);
+		logging::error << "sport::add_membership() dpt handle for dpid:" << (unsigned long long)dpid << " not found" << std::endl;
+		throw eSportFailed();
 	}
 }
 
@@ -108,25 +125,24 @@ sport::add_membership(uint16_t vid, bool tagged)
 void
 sport::drop_membership(uint16_t vid)
 {
-	if (pvid == vid) {
-		// invalid => pvid cannot be dropped
-		throw eSportInval();
-	}
-
 	if (memberships.find(vid) == memberships.end()) {
 		return;
 	}
 
 	flow_mod_delete(vid, memberships[vid].vid);
 
+	spowner->release_group_id(memberships[vid].group_id);
+
 	memberships.erase(vid);
 }
 
 
-void
-sport::get_group_id(uint16_t vid) const
+uint32_t
+sport::get_groupid(uint16_t vid)
 {
-
+	if (memberships.find(vid) == memberships.end())
+		throw eSportInval();
+	return memberships[vid].group_id;
 }
 
 
@@ -169,7 +185,7 @@ sport::flow_mod_add(uint16_t vid, bool tagged)
 			rofl::cgroupentry ge(dpt->get_version());
 
 			ge.set_command(OFPGC_ADD);
-			ge.set_group_id(0); // TODO
+			ge.set_group_id(memberships[vid].group_id);
 			ge.set_type(OFPGT_ALL);
 
 			ge.buckets.next() = rofl::cofbucket(dpt->get_version(), 0, 0, 0);
@@ -182,7 +198,8 @@ sport::flow_mod_add(uint16_t vid, bool tagged)
 		}
 
 	} catch (rofl::eRofBaseNotFound& e) {
-		rofl::logging::error << "unable to find crofbase or cofdpt instance " << *this << std::endl;
+		logging::error << "sport::flow_mod_add() unable to find crofbase or cofdpt instance " << *this << std::endl;
+		throw;
 	}
 }
 
@@ -219,7 +236,7 @@ sport::flow_mod_delete(uint16_t vid, bool tagged)
 			rofl::cgroupentry ge(dpt->get_version());
 
 			ge.set_command(OFPGC_ADD);
-			ge.set_group_id(0); // TODO
+			ge.set_group_id(memberships[vid].group_id);
 			ge.set_type(OFPGT_ALL);
 
 			ge.buckets.next() = rofl::cofbucket(dpt->get_version(), 0, 0, 0);
@@ -232,7 +249,7 @@ sport::flow_mod_delete(uint16_t vid, bool tagged)
 		}
 
 	} catch (rofl::eRofBaseNotFound& e) {
-		rofl::logging::error << "unable to find crofbase instance " << *this << std::endl;
+		logging::error << "sport::flow_mod_delete() unable to find crofbase instance " << *this << std::endl;
 	}
 }
 

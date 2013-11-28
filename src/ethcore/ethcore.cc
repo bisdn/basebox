@@ -113,6 +113,7 @@ void
 ethcore::handle_dpath_open(
 		cofdpt *dpt)
 {
+#if 0
 	rofl::cflowentry fe(dpt->get_version());
 
 	fe.set_command(OFPFC_ADD);
@@ -123,10 +124,12 @@ ethcore::handle_dpath_open(
 
 	fe.match.set_eth_type(farpv4frame::ARPV4_ETHER);
 	send_flow_mod_message(dpt, fe);
+#endif
 
-	cfib::get_fib(dpt->get_dpid()).dpt_bind(this, dpt);
+	/* we create a single default VLAN and add all ports in an untagged mode */
+	cfib *default_fib = new cfib(this, dpt->get_dpid(), default_vid, table_id+1);
 
-	logging::info << "dpath attached" << std::endl;
+	logging::info << "dpath attaching: " << *dpt << std::endl;
 
 	for (std::map<uint32_t, rofl::cofport*>::iterator
 			it = dpt->get_ports().begin(); it != dpt->get_ports().end(); ++it) {
@@ -135,6 +138,9 @@ ethcore::handle_dpath_open(
 		try {
 			sport *sp = new sport(this, dpt->get_dpid(), port->get_port_no(), default_vid, table_id);
 			logging::info << "   adding port " << *sp << std::endl;
+
+			default_fib->add_port(port->get_port_no(), /*untagged=*/false);
+
 		} catch (eSportExists& e) {
 			logging::warn << "unable to add port:" << port->get_name() << ", already exists " << std::endl;
 		}
@@ -147,7 +153,9 @@ void
 ethcore::handle_dpath_close(
 		cofdpt *dpt)
 {
-	cfib::get_fib(dpt->get_dpid()).dpt_release(this, dpt);
+	logging::info << "dpath detaching: " << *dpt << std::endl;
+
+	delete cfib::get_fib(dpt->get_dpid());
 
 	// destroy all sports associated with dpt
 	sport::destroy_sports(dpt->get_dpid());
@@ -245,5 +253,64 @@ ethcore::handle_packet_in(
 	delete msg; return;
 }
 
+
+uint32_t
+ethcore::get_idle_group_id()
+{
+	uint32_t group_id = 0;
+	while (group_ids.find(group_id) != group_ids.end()) {
+		group_id++;
+	}
+	group_ids.insert(group_id);
+	return group_id;
+}
+
+
+void
+ethcore::release_group_id(uint32_t group_id)
+{
+	if (group_ids.find(group_id) != group_ids.end()) {
+		group_ids.erase(group_id);
+	}
+}
+
+
+void
+ethcore::add_vlan(
+		uint64_t dpid,
+		uint16_t vid)
+{
+
+}
+
+
+void
+ethcore::drop_vlan(
+		uint64_t dpid,
+		uint16_t vid)
+{
+
+}
+
+
+void
+ethcore::add_port_to_vlan(
+		uint64_t dpid,
+		uint32_t portno,
+		uint16_t vid,
+		bool tagged = true)
+{
+
+}
+
+
+void
+ethcore::drop_port_from_vlan(
+		uint64_t dpid,
+		uint32_t portno,
+		uint16_t vid)
+{
+
+}
 
 

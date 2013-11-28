@@ -1,15 +1,17 @@
 #ifndef ETHERSWITCH_H
 #define ETHERSWITCH_H 1
 
+#include <set>
 #include <map>
-#include "rofl/common/cmacaddr.h"
-#include "rofl/common/caddress.h"
-#include "rofl/common/crofbase.h"
-#include "rofl/common/openflow/cofdpt.h"
-#include "rofl/common/logging.h"
+
+#include <rofl/common/cmacaddr.h>
+#include <rofl/common/caddress.h>
+#include <rofl/common/crofbase.h>
+#include <rofl/common/openflow/cofdpt.h>
 
 #include "cfib.h"
 #include "sport.h"
+#include "logging.h"
 
 using namespace rofl;
 
@@ -18,26 +20,14 @@ namespace ethercore
 
 class ethcore :
 		public crofbase,
-		public sport_owner
+		public sport_owner,
+		public cfib_owner
 {
 private:
 
-	uint8_t			table_id;
-	uint16_t		default_vid;
-
-#if 0
-	struct fibentry_t {
-		uint32_t 		port_no;	// port where a certain is attached
-		time_t 			timeout;	// timeout event for this FIB entry
-	};
-
-	// a very simple forwarding information base
-	std::map<cofdpt*, std::map<uint16_t, std::map<cmacaddr, struct fibentry_t> > > fib;
-
-	unsigned int 		fib_check_timeout; 		// periodic timeout for removing expired FIB entries
-	unsigned int		flow_stats_timeout;		// periodic timeout for requesting flow stats
-	unsigned int		fm_delete_all_timeout;	// periodic purging of all FLOW-MODs
-#endif
+	uint8_t				table_id;
+	uint16_t			default_vid;
+	std::set<uint32_t>	group_ids;		// set of group-ids in use by this controller (assigned to sport instances and cfib instance)
 
 	enum ethercore_timer_t {
 		ETHSWITCH_TIMER_BASE 					= ((0x6271)),
@@ -48,10 +38,57 @@ private:
 
 public:
 
-	ethcore(uint8_t table_id = 0, uint16_t default_vid = 1);
+	/**
+	 *
+	 * @param table_id
+	 * @param default_vid
+	 */
+	ethcore(
+			uint8_t table_id = 0,
+			uint16_t default_vid = 1);
 
+	/**
+	 *
+	 */
 	virtual
 	~ethcore();
+
+	/**
+	 *
+	 */
+	void
+	add_vlan(
+			uint64_t dpid,
+			uint16_t vid);
+
+	/**
+	 *
+	 */
+	void
+	drop_vlan(
+			uint64_t dpid,
+			uint16_t vid);
+
+	/**
+	 *
+	 */
+	void
+	add_port_to_vlan(
+			uint64_t dpid,
+			uint32_t portno,
+			uint16_t vid,
+			bool tagged = true);
+
+	/**
+	 *
+	 */
+	void
+	drop_port_from_vlan(
+			uint64_t dpid,
+			uint32_t portno,
+			uint16_t vid);
+
+private:
 
 	virtual void
 	handle_timeout(int opaque);
@@ -68,13 +105,19 @@ public:
 	virtual void
 	handle_flow_stats_reply(cofdpt *dpt, cofmsg_flow_stats_reply *msg);
 
-private:
+public:
 
 	void
 	request_flow_stats();
 
 	virtual rofl::crofbase*
 	get_rofbase() { return this; };
+
+	virtual uint32_t
+	get_idle_group_id();
+
+	virtual void
+	release_group_id(uint32_t group_id);
 };
 
 }; // end of namespace

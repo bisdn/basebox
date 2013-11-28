@@ -22,10 +22,11 @@ extern "C" {
 #endif
 
 
-#include <rofl/common/logging.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cflowentry.h>
 #include <rofl/common/openflow/cofdpt.h>
+
+#include "logging.h"
 
 namespace ethercore
 {
@@ -33,12 +34,32 @@ class eSportBase 		: public std::exception {};
 class eSportExists 		: public eSportBase {};
 class eSportInval		: public eSportBase {};
 class eSportNotFound	: public eSportBase {};
+class eSportExhausted	: public eSportBase {};
+class eSportFailed		: public eSportBase {};
 
 class sport_owner
 {
 public:
+	/**
+	 * @brief	Destructor for vtable
+	 */
 	virtual ~sport_owner() {};
+	/**
+	 * @brief	Returns a handle to the underlying rofl::crofbase instance acting as OF endpoint
+	 * @return Pointer to rofl::crofbase instance
+	 */
 	virtual rofl::crofbase* get_rofbase() = 0;
+	/**
+	 * @brief	Returns an idle OpenFlow group-id for creating a group table entry
+	 * @return assigned OF group-id
+	 * @throw eSportExhausted when no idle group-ids are available
+	 */
+	virtual uint32_t get_idle_group_id() = 0;
+	/**
+	 * @brief	Release a previously assigned group-id for later reuse
+	 * @param group_id assigned OF group-id
+	 */
+	virtual void release_group_id(uint32_t group_id) = 0;
 };
 
 class sport
@@ -98,7 +119,8 @@ public:
 	 * @param dpid OF data path identifier
 	 * @param portno OF port number
 	 *
-	 * @return reference to the existing or new sport instance
+	 * @return reference to the existing
+	 * @throw eSportNotFound is thrown when no sport instance exists for the specified <dpid,portno> pair
 	 */
 	static
 	sport&
@@ -160,6 +182,14 @@ public:
 	 */
 	uint16_t
 	get_pvid() const { return pvid; };
+
+	/**
+	 * @brief	Returns the group-id assigned to this port for a specific VID for sending packets out
+	 * @param vid VLAN identifier this port is supposed to be member of
+	 * @throw eSportInval is thrown for an invalid VID (port is not member of this VLAN)
+	 */
+	uint32_t
+	get_groupid(uint16_t vid);
 
 	/**
 	 * @brief	Add a VLAN membership to this port.

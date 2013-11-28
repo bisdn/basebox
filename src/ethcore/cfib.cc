@@ -17,17 +17,17 @@ cfib&
 cfib::get_fib(uint64_t dpid, uint16_t vid)
 {
 	if (cfib::fibs[dpid].find(vid) == cfib::fibs[dpid].end()) {
-		new cfib(dpid, vid);
+		throw eFibNotFound();
 	}
 	return *(cfib::fibs[dpid][vid]);
 }
 
 
-cfib::cfib(uint64_t dpid, uint16_t vid) :
+cfib::cfib(cfib_owner *fibowner, uint64_t dpid, uint16_t vid, uint8_t table_id) :
+		fibowner(fibowner),
 		dpid(dpid),
 		vid(vid),
-		rofbase(0),
-		dpt(0)
+		table_id(table_id)
 {
 	if (cfib::fibs[dpid].find(vid) != cfib::fibs[dpid].end()) {
 		throw eFibExists();
@@ -43,30 +43,36 @@ cfib::~cfib()
 }
 
 
-
 void
-cfib::dpt_bind(rofl::crofbase *rofbase, rofl::cofdpt *dpt)
+cfib::add_port(
+		uint32_t portno,
+		bool tagged)
 {
-	if (((0 != this->rofbase) && (rofbase != this->rofbase)) ||
-			((0 != this->dpt) && (dpt != this->dpt))) {
-		throw eFibBusy();
+	try {
+		sport& port = sport::get_sport(dpid, portno);
+
+		/* notify sport about new VLAN membership => setup of associated FlowTable and GroupTable entries */
+		port.add_membership(vid, tagged);
+
+	} catch (eSportNotFound& e) {
+		logging::error << "cfib::add_port() sport instance for OF portno:" << (int)portno << " not found" << std::endl;
+	} catch (eSportFailed& e) {
+		logging::error << "cfib::add_port() adding membership to sport instance failed" << std::endl;
 	}
-	this->rofbase 	= rofbase;
-	this->dpt 		= dpt;
 }
 
 
+void
+cfib::drop_port(
+		uint32_t portno)
+{
+
+}
+
 
 void
-cfib::dpt_release(rofl::crofbase *rofbase, rofl::cofdpt *dpt)
+cfib::reset()
 {
-	if (((0 != this->rofbase) && (rofbase != this->rofbase)) ||
-			((0 != this->dpt) && (dpt != this->dpt))) {
-		throw eFibInval();
-	}
-	this->rofbase	= 0;
-	this->dpt		= 0;
-
 	for (std::map<rofl::cmacaddr, cfibentry*>::iterator
 			it = fibtable.begin(); it != fibtable.end(); ++it) {
 		delete (it->second);

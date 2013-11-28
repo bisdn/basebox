@@ -29,12 +29,12 @@ namespace ethercore
 
 class cfibentry; // forward declaration, see below
 
-class cfibtable
+class cfibentry_owner
 {
 public:
-	virtual ~cfibtable() {};
+	virtual ~cfibentry_owner() {};
 	virtual void fib_timer_expired(cfibentry *entry) = 0;
-	virtual rofl::crofbase* get_rofbase() = 0;
+	virtual rofl::crofbase* get_rofbase() const = 0;
 	virtual uint32_t get_flood_group_id(uint16_t vid) = 0;
 };
 
@@ -49,7 +49,7 @@ private:
 		CFIBENTRY_ENTRY_EXPIRED = 0x99ae,
 	};
 
-	cfibtable					*fib;
+	cfibentry_owner				*fib;
 	uint64_t					dpid;
 	uint16_t					vid;
 	uint32_t					out_port_no;
@@ -64,7 +64,7 @@ public:
 	 *
 	 */
 	cfibentry(
-			cfibtable *fib,
+			cfibentry_owner *fib,
 			uint8_t table_id,
 			rofl::cmacaddr dst,
 			uint64_t dpid,

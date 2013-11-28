@@ -10,7 +10,7 @@
 using namespace ethercore;
 
 cfibentry::cfibentry(
-		cfibtable *fib,
+		cfibentry_owner *fib,
 		uint8_t table_id,
 		rofl::cmacaddr dst,
 		uint64_t dpid,

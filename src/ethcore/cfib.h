@@ -25,7 +25,9 @@ extern "C" {
 #include <rofl/common/openflow/cofdpt.h>
 #include <rofl/common/cmacaddr.h>
 
-#include <cfibentry.h>
+#include "cfibentry.h"
+#include "logging.h"
+#include "sport.h"
 
 namespace ethercore
 {
@@ -36,56 +38,108 @@ class eFibInval			: public eFibBase {};
 class eFibExists		: public eFibBase {};
 class eFibNotFound		: public eFibBase {};
 
+class cfib_owner {
+public:
+	/**
+	 * @brief	Virtual destructor in vtable
+	 */
+	virtual ~cfib_owner() {};
+	/**
+	 * @brief	Returns handle to rofl::crofbase defining the OF endpoint
+	 */
+	virtual rofl::crofbase* get_rofbase() const = 0;
+};
+
+
 class cfib :
-		public cfibtable
+		public cfibentry_owner
 {
 	static std::map<uint64_t, std::map<uint16_t, cfib*> > fibs;
 
 public:
 
+	/**
+	 * @brief	Returns reference to cfib instance associated with the specified <dpid,vid> pair
+	 *
+	 * @param dpid data path identifier
+	 * @param vid VLAN identifier
+	 *
+	 * @return reference to cfib instance
+	 * @throw eFibNotFound is thrown when no cfib instance exists for the specified <dpid,vid> pair
+	 */
 	static cfib&
 	get_fib(uint64_t dpid, uint16_t vid = 0xffff);
 
 private:
 
-	uint64_t 								dpid;
-	uint16_t								vid;
-	rofl::crofbase							*rofbase;
-	rofl::cofdpt							*dpt;
-	std::map<rofl::cmacaddr, cfibentry*>	fibtable;
+	cfib_owner								*fibowner;
+	uint64_t 								dpid;		// OF data path identifier
+	uint16_t								vid;		// VLAN identifier
+	uint8_t									table_id;	// first OF table-id (we occupy tables (table-id) and (table-id+1)
+	std::map<rofl::cmacaddr, cfibentry*>	fibtable;	// map of mac-address <=> cfibentry mappings
+	std::set<uint32_t>						ports;		// set of ports that are members of this VLAN
 
 public:
 
 	/**
+	 * @brief	Constructor for a new cfib instance assigned to the specified <dpid,vid> pair
 	 *
+	 * Inserts this pointer of cfib instance to static map cfib::fibs
+	 *
+	 * @param fibowner surrounding environment for this cfib instance
+	 * @param dpid OF data path identifier
+	 * @param vid VLAN identifier
+	 * @throw eFibExists is thrown in case of an already existing cfib instance for the specified <dpid,vid> pair
 	 */
-	cfib(uint64_t dpid, uint16_t vid);
+	cfib(
+			cfib_owner *fibowner,
+			uint64_t dpid,
+			uint16_t vid,
+			uint8_t table_id);
 
 	/**
+	 * @brief	Destructor
 	 *
+	 * Removes this pointer of cfib instance from static map cfib::fibs
 	 */
 	virtual
 	~cfib();
 
 	/**
+	 * @brief	Add a port membership to this VLAN
 	 *
+	 * This notifies the associated sport instance of the new membership.
+	 * Updates the flooding-group managed by this cfib instance with the new member.
 	 */
 	void
-	dpt_bind(rofl::crofbase *rofbase, rofl::cofdpt *dpt);
+	add_port(
+			uint32_t portno,
+			bool tagged = true);
 
 	/**
+	 * @brief	Drops a port membership from this VLAN
 	 *
+	 * This notifies the associated sport instance of its changing membership.
+	 * Updates the flooding-group managed by this cfib instance accordingly.
 	 */
 	void
-	dpt_release(rofl::crofbase *rofbase = 0, rofl::cofdpt *dpt = 0);
+	drop_port(
+			uint32_t portno);
+
+	/**
+	 * @brief	Resets this cfib instance by removing all cfibentry instances.
+	 *
+	 * All sport memberships remain unaltered.
+	 */
+	void
+	reset();
+
 
 	/**
 	 *
 	 */
 	void
 	fib_update(
-			rofl::crofbase *rofbase,
-			rofl::cofdpt *dpt,
 			rofl::cmacaddr const& src,
 			uint32_t in_port);
 
@@ -94,13 +148,11 @@ public:
 	 */
 	cfibentry&
 	fib_lookup(
-			rofl::crofbase *rofbase,
-			rofl::cofdpt *dpt,
 			rofl::cmacaddr const& dst,
 			rofl::cmacaddr const& src,
 			uint32_t in_port);
 
-private:
+public:
 
 	friend class cfibentry;
 
@@ -114,7 +166,7 @@ private:
 	 *
 	 */
 	virtual rofl::crofbase*
-	get_rofbase() { return rofbase; };
+	get_rofbase() const { return fibowner->get_rofbase(); };
 
 	/**
 	 *
