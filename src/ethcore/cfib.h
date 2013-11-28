@@ -48,6 +48,17 @@ public:
 	 * @brief	Returns handle to rofl::crofbase defining the OF endpoint
 	 */
 	virtual rofl::crofbase* get_rofbase() = 0;
+	/**
+	 * @brief	Returns an idle OpenFlow group-id for creating a group table entry
+	 * @return assigned OF group-id
+	 * @throw eSportExhausted when no idle group-ids are available
+	 */
+	virtual uint32_t get_idle_group_id() = 0;
+	/**
+	 * @brief	Release a previously assigned group-id for later reuse
+	 * @param group_id assigned OF group-id
+	 */
+	virtual void release_group_id(uint32_t group_id) = 0;
 };
 
 
@@ -84,6 +95,7 @@ private:
 	uint8_t									table_id;	// first OF table-id (we occupy tables (table-id) and (table-id+1)
 	std::map<rofl::cmacaddr, cfibentry*>	fibtable;	// map of mac-address <=> cfibentry mappings
 	std::set<uint32_t>						ports;		// set of ports that are members of this VLAN
+	uint32_t								flood_group_id;	// group-id for flood group entry for this cfib instance
 
 public:
 
@@ -140,6 +152,16 @@ public:
 	void
 	reset();
 
+	/**
+	 *
+	 * @param dpt
+	 * @param msg
+	 */
+	void
+	handle_packet_in(
+			rofl::cofmsg_packet_in& msg);
+
+private:
 
 	/**
 	 *
@@ -158,9 +180,35 @@ public:
 			rofl::cmacaddr const& src,
 			uint32_t in_port);
 
-public:
+	/**
+	 *
+	 */
+	void
+	add_flow_mod_flood();
+
+	/**
+	 *
+	 */
+	void
+	drop_flow_mod_flood();
+
+	/**
+	 *
+	 */
+	void
+	add_group_entry_flood(
+			bool modify = false);
+
+	/**
+	 *
+	 */
+	void
+	drop_group_entry_flood();
+
+private:
 
 	friend class cfibentry;
+	friend class sport;
 
 	/**
 	 *
@@ -190,6 +238,7 @@ public:
 	{
 		os << "fib<";
 			os << "dpid: " << fib.dpid << " ";
+			os << "vid:" << fib.vid << " ";
 		os << ">";
 		if (not fib.fibtable.empty()) { os << std::endl; }
 		std::map<rofl::cmacaddr, cfibentry*>::const_iterator it;

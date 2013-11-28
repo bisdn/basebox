@@ -9,6 +9,7 @@
 #define PORT_H_
 
 #include <map>
+#include <bitset>
 #include <iostream>
 #include <exception>
 
@@ -36,6 +37,7 @@ class eSportInval		: public eSportBase {};
 class eSportNotFound	: public eSportBase {};
 class eSportExhausted	: public eSportBase {};
 class eSportFailed		: public eSportBase {};
+class eSportNoPvid		: public eSportBase {};
 
 class sport_owner
 {
@@ -100,9 +102,14 @@ private:
 		SPORT_DEFAULT_PVID = 1,
 	};
 
+	enum sport_flag_t {
+		SPORT_FLAG_PVID_VALID = (1 << 0),
+	};
+
 	sport_owner	   *spowner;
 	uint64_t 		dpid;
 	uint32_t 		portno;
+	std::bitset<64>	flags;
 	uint16_t 		pvid;
 	std::map <uint16_t, struct vlan_membership_t> memberships;
 	uint8_t  		table_id;
@@ -150,12 +157,11 @@ public:
 	 * Adds this sport instance to static map sport::sports.
 	 * @param dpid data path identifier of OF data path instance the port is located on
 	 * @param portno OF port number assigned to corresponding node
-	 * @param pvid default port vid used when sending/receiving an untagged packet
 	 * @param table_id table_id for setting the ACLs for incoming packets
 	 *
 	 * @throw eSportExists when an sport instance for the specified [dpid,portno] pair already exists
 	 */
-	sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, uint16_t pvid, uint8_t table_id);
+	sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, uint8_t table_id);
 
 	/**
 	 * @brief	Destructor for switch-port
@@ -181,7 +187,7 @@ public:
 	 * @brief	Returns the default VID assigned to this port (pvid)
 	 */
 	uint16_t
-	get_pvid() const { return pvid; };
+	get_pvid() const;
 
 	/**
 	 * @brief	Returns the group-id assigned to this port for a specific VID for sending packets out

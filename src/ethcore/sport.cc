@@ -41,7 +41,7 @@ sport::destroy_sports()
 }
 
 
-sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, uint16_t pvid, uint8_t table_id) :
+sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, uint8_t table_id) :
 		spowner(spowner),
 		dpid(dpid),
 		portno(portno),
@@ -55,8 +55,6 @@ sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, uint16_t pvid
 		throw eSportExists();
 	}
 	sport::sports[dpid][portno] = this;
-	// this is the default membership: on pvid in untagged mode
-	add_membership(pvid, /*tagged=*/false);
 }
 
 
@@ -68,55 +66,67 @@ sport::~sport()
 }
 
 
+uint16_t
+sport::get_pvid() const
+{
+	if (not flags.test(SPORT_FLAG_PVID_VALID)) {
+		throw eSportNoPvid();
+	}
+	return pvid;
+}
+
+
 void
 sport::add_membership(uint16_t vid, bool tagged)
 {
 	try {
-		if (not tagged) {
-			if (pvid == vid) {
-				// already active pvid, do nothing
-				assert(memberships[vid].tagged == false);
+		/* membership already exists in specified mode */
+		if (memberships.find(vid) != memberships.end()) {
+			if (memberships[vid].tagged == tagged) {
+				return;
 			} else {
-				// pvid is changing, drop membership from old one
-				if (memberships.find(vid) != memberships.end()) {
-					memberships.erase(pvid);
-				}
-				pvid = vid;
-				memberships[pvid].tagged = /*untagged=*/false;
-				if (0 == memberships[pvid].group_id) {
-					memberships[pvid].group_id = spowner->get_idle_group_id();
-				}
-				flow_mod_add(pvid, false);
+				logging::warn << "[ethcore - sport] unable to add membership for vid:" << (int)vid << ", already member, drop existing membership first" << std::endl;
+				throw eSportFailed();
 			}
 		}
-		else if (tagged) {
-			if (pvid == vid) {
-				// invalid => pvid cannot be dropped in tagged mode
-				throw eSportInval();
+
+		if (tagged) {
+			memberships[vid].vid 		= vid;
+			memberships[vid].tagged 	= tagged; // = true
+			memberships[vid].group_id 	= spowner->get_idle_group_id();
+
+			flow_mod_add(vid, memberships[vid].tagged);
+
+		} else {
+
+			// check for pvid collision
+			if (flags.test(SPORT_FLAG_PVID_VALID)) {
+
+				logging::warn << "[ethcore - sport] unable to set pvid:" << (int)vid << ", as there is a pvid already, drop existing membership first" << std::endl;
+				throw eSportFailed();
+
+			} else {
+
+				memberships[vid].vid 		= vid;
+				memberships[vid].tagged 	= tagged; // = false
+				memberships[vid].group_id 	= spowner->get_idle_group_id();
+
+				flow_mod_add(vid, memberships[vid].tagged);
+
+				flags.set(SPORT_FLAG_PVID_VALID);
+				pvid = vid;
 			}
-			else {
-				if (memberships.find(vid) == memberships.end()) {
-					// add vid to list of active memberships
-					memberships[vid].tagged = /*tagged*/true;
-					if (0 == memberships[pvid].group_id) {
-						memberships[vid].group_id = spowner->get_idle_group_id();
-					}
-					flow_mod_add(vid, true);
-				} else {
-					// make sure that vid is still set to tagged mode
-					assert(memberships[vid].tagged == true);
-				}
-			}
+
 		}
 
 	} catch (eSportExhausted& e) {
 		memberships.erase(vid);
-		logging::error << "sport::add_membership() no idle group-id available, unable to add membership for VID:" << (int)vid << std::endl;
+		logging::warn << "sport::add_membership() no idle group-id available, unable to add membership for VID:" << (int)vid << std::endl;
 		throw eSportFailed();
 
 	} catch (rofl::eRofBaseNotFound& e) {
 		memberships.erase(vid);
-		logging::error << "sport::add_membership() dpt handle for dpid:" << (unsigned long long)dpid << " not found" << std::endl;
+		logging::warn << "sport::add_membership() dpt handle for dpid:" << (unsigned long long)dpid << " not found" << std::endl;
 		throw eSportFailed();
 	}
 }
@@ -132,6 +142,11 @@ sport::drop_membership(uint16_t vid)
 	flow_mod_delete(vid, memberships[vid].vid);
 
 	spowner->release_group_id(memberships[vid].group_id);
+
+	if (pvid == vid) {
+		flags.reset(SPORT_FLAG_PVID_VALID);
+		pvid = 0xffff;
+	}
 
 	memberships.erase(vid);
 }

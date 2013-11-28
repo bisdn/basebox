@@ -139,7 +139,7 @@ ethcore::handle_dpath_open(
 
 		rofl::cofport* port = it->second;
 		try {
-			sport *sp = new sport(this, dpt->get_dpid(), port->get_port_no(), default_vid, table_id);
+			sport *sp = new sport(this, dpt->get_dpid(), port->get_port_no(), table_id);
 			logging::info << "   adding port " << *sp << std::endl;
 
 			cfib::get_fib(dpt->get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
@@ -172,84 +172,31 @@ ethcore::handle_packet_in(
 		cofmsg_packet_in *msg)
 {
 	try {
-		cmacaddr eth_src = msg->get_packet().ether()->get_dl_src();
-		cmacaddr eth_dst = msg->get_packet().ether()->get_dl_dst();
+		uint16_t vid = 0xffff;
 
-		/*
-		 * sanity check: if source mac is multicast => invalid frame
-		 */
-		if (eth_src.is_multicast()) {
-			delete msg; return;
+		try {
+			/* check for VLAN VID OXM TLV in Packet-In message */
+			vid = msg->get_match().get_vlan_vid();
+		} catch (eOFmatchNotFound& e) {
+			/* no VLAN VID OXM TLV => frame was most likely untagged */
+			vid = sport::get_sport(dpt->get_dpid(), msg->get_match().get_in_port()).get_pvid();
 		}
 
-		/*
-		 * get sport instance for in-port
-		 */
-		sport& port = sport::get_sport(dpt->get_dpid(), msg->get_match().get_in_port());
-
-		/*
-		 * block mac address 01:80:c2:00:00:00
-		 */
-		if (msg->get_packet().ether()->get_dl_dst() == cmacaddr("01:80:c2:00:00:00") ||
-			msg->get_packet().ether()->get_dl_dst() == cmacaddr("01:00:5e:00:00:fb")) {
-			cflowentry fe(dpt->get_version());
-
-			fe.set_command(OFPFC_ADD);
-			fe.set_buffer_id(msg->get_buffer_id());
-			fe.set_idle_timeout(15);
-			fe.set_table_id(msg->get_table_id());
-
-			fe.match.set_in_port(msg->get_match().get_in_port());
-			fe.match.set_eth_dst(msg->get_packet().ether()->get_dl_dst());
-			fe.instructions.next() = cofinst_apply_actions(dpt->get_version());
-
-			logging::info << "ethercore: installing FLOW-MOD with entry: " << fe << std::endl;
-
-			send_flow_mod_message(dpt, fe);
-
-			delete msg; return;
-		}
-
-		logging::info << "ethercore: PACKET-IN from dpid:" << (int)dpt->get_dpid() << " message: " << *msg << std::endl;
-
-		cofaclist actions;
-
-		cfib::get_fib(dpt->get_dpid()).fib_update(
-								msg->get_packet().ether()->get_dl_src(),
-								msg->get_match().get_in_port());
-
-		if (eth_dst.is_multicast()) {
-
-			actions.next() = cofaction_output(dpt->get_version(), OFPP12_FLOOD);
-
-		} else {
-
-			cfibentry& entry = cfib::get_fib(dpt->get_dpid()).fib_lookup(
-						msg->get_packet().ether()->get_dl_dst(),
-						msg->get_packet().ether()->get_dl_src(),
-						msg->get_match().get_in_port());
-
-			if (msg->get_match().get_in_port() == entry.get_out_port_no()) {
-				delete msg; return;
-			}
-
-			actions.next() = cofaction_output(dpt->get_version(), entry.get_out_port_no());
-		}
-
-
-
-		if (OFP_NO_BUFFER != msg->get_buffer_id()) {
-			send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_match().get_in_port(), actions);
-		} else {
-			send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_match().get_in_port(), actions,
-					msg->get_packet().soframe(), msg->get_packet().framelen());
-		}
+		cfib::get_fib(dpt->get_dpid(), vid).handle_packet_in(*msg);
 
 	} catch (eOFmatchNotFound& e) {
-
+		// OXM-TLV in-port not found
+		logging::warn << "[ethcore] no in-port found in Packet-In message" << *msg << std::endl;
+	} catch (eSportNotFound& e) {
+		// sport instance not found? critical error!
+		logging::crit << "[ethcore] no sport instance for in-port found in Packet-In message" << *msg << std::endl;
+	} catch (eSportNoPvid& e) {
+		// drop frame on data path
+		rofl::cofaclist actions(dpt->get_version());
+		send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_match().get_in_port(), actions);
 	}
 
-	delete msg; return;
+	delete msg;
 }
 
 
@@ -279,8 +226,12 @@ ethcore::add_vlan(
 		uint64_t dpid,
 		uint16_t vid)
 {
-	logging::info << "[ethcore] adding vid:" << (int)vid << " to dpid:" << (unsigned long long)dpid << std::endl;
-	new cfib(this, dpid, dpid, table_id+1);
+	try {
+		logging::info << "[ethcore] adding vid:" << (int)vid << " to dpid:" << (unsigned long long)dpid << std::endl;
+		new cfib(this, dpid, dpid, table_id+1);
+	} catch (eFibExists& e) {
+		logging::warn << "[ethcore] adding vid:" << (int)vid << " to dpid:" << (unsigned long long)dpid << " failed" << std::endl;
+	}
 }
 
 
@@ -293,6 +244,7 @@ ethcore::drop_vlan(
 		logging::info << "[ethcore] dropping vid:" << (int)vid << " from dpid:" << (unsigned long long)dpid << std::endl;
 		delete &(cfib::get_fib(dpid, vid));
 	} catch (eFibNotFound& e) {
+		logging::warn << "[ethcore] dropping vid:" << (int)vid << " from dpid:" << (unsigned long long)dpid << " failed" << std::endl;
 	}
 }
 
@@ -304,7 +256,12 @@ ethcore::add_port_to_vlan(
 		uint16_t vid,
 		bool tagged)
 {
-
+	try {
+		logging::info << "[ethcore] adding port:" << (int)portno << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << std::endl;
+		cfib::get_fib(dpid, vid).add_port(portno, tagged);
+	} catch (eFibNotFound& e) {
+		logging::warn << "[ethcore] adding port:" << (int)portno << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << " failed" << std::endl;
+	}
 }
 
 
@@ -314,7 +271,12 @@ ethcore::drop_port_from_vlan(
 		uint32_t portno,
 		uint16_t vid)
 {
-
+	try {
+		logging::info << "[ethcore] dropping port:" << (int)portno << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << std::endl;
+		cfib::get_fib(dpid, vid).drop_port(portno);
+	} catch (eFibNotFound& e) {
+		logging::warn << "[ethcore] dropping port:" << (int)portno << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << " failed" << std::endl;
+	}
 }
 
 
