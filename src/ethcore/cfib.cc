@@ -23,6 +23,16 @@ cfib::get_fib(uint64_t dpid, uint16_t vid)
 }
 
 
+/*static*/
+void
+cfib::destroy_fibs(uint64_t dpid)
+{
+	while (not cfib::fibs[dpid].empty()) {
+		delete (cfib::fibs[dpid].begin()->second);
+	}
+}
+
+
 cfib::cfib(cfib_owner *fibowner, uint64_t dpid, uint16_t vid, uint8_t table_id) :
 		fibowner(fibowner),
 		dpid(dpid),
@@ -110,8 +120,6 @@ cfib::get_flood_group_id(uint16_t vid)
 
 void
 cfib::fib_update(
-		rofl::crofbase *rofbase,
-		rofl::cofdpt *dpt,
 		rofl::cmacaddr const& src,
 		uint32_t in_port)
 {
@@ -123,7 +131,7 @@ cfib::fib_update(
 
 	// update cfibentry for src/inport
 	if (fibtable.find(src) == fibtable.end()) {
-		fibtable[src] = new cfibentry(this, table_id, src, dpt->get_dpid(), vid, in_port, /*tagged=*/true);
+		fibtable[src] = new cfibentry(this, table_id, src, dpid, vid, in_port, /*tagged=*/true);
 		fibtable[src]->flow_mod_add();
 
 		std::cerr << "UPDATE[2.1]: " << *this << std::endl;
@@ -140,8 +148,6 @@ cfib::fib_update(
 
 cfibentry&
 cfib::fib_lookup(
-		rofl::crofbase *rofbase,
-		rofl::cofdpt *dpt,
 		rofl::cmacaddr const& dst,
 		rofl::cmacaddr const& src,
 		uint32_t in_port)
@@ -153,7 +159,7 @@ cfib::fib_lookup(
 		throw eFibInval();
 	}
 
-	fib_update(rofbase, dpt, src, in_port);
+	fib_update(src, in_port);
 
 	if (dst.is_multicast()) {
 		throw eFibInval();
@@ -165,7 +171,7 @@ cfib::fib_lookup(
 		uint8_t table_id = 0;
 		uint16_t vid = 0xffff;
 
-		fibtable[dst] = new cfibentry(this, table_id, dst, dpt->get_dpid(), vid, in_port, OFPP12_FLOOD);
+		fibtable[dst] = new cfibentry(this, table_id, dst, dpid, vid, in_port, OFPP12_FLOOD);
 		fibtable[dst]->flow_mod_add();
 
 		std::cerr << "LOOKUP[1]: " << *this << std::endl;

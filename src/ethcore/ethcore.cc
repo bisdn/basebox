@@ -129,7 +129,7 @@ ethcore::handle_dpath_open(
 	/* we create a single default VLAN and add all ports in an untagged mode */
 	cfib *default_fib = new cfib(this, dpt->get_dpid(), default_vid, table_id+1);
 
-	logging::info << "dpath attaching: " << *dpt << std::endl;
+	logging::info << "dpath attaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
 
 	for (std::map<uint32_t, rofl::cofport*>::iterator
 			it = dpt->get_ports().begin(); it != dpt->get_ports().end(); ++it) {
@@ -153,9 +153,9 @@ void
 ethcore::handle_dpath_close(
 		cofdpt *dpt)
 {
-	logging::info << "dpath detaching: " << *dpt << std::endl;
+	logging::info << "dpath detaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
 
-	delete cfib::get_fib(dpt->get_dpid());
+	cfib::destroy_fibs(dpt->get_dpid());
 
 	// destroy all sports associated with dpt
 	sport::destroy_sports(dpt->get_dpid());
@@ -212,8 +212,6 @@ ethcore::handle_packet_in(
 		cofaclist actions;
 
 		cfib::get_fib(dpt->get_dpid()).fib_update(
-								this,
-								dpt,
 								msg->get_packet().ether()->get_dl_src(),
 								msg->get_match().get_in_port());
 
@@ -224,8 +222,6 @@ ethcore::handle_packet_in(
 		} else {
 
 			cfibentry& entry = cfib::get_fib(dpt->get_dpid()).fib_lookup(
-						this,
-						dpt,
 						msg->get_packet().ether()->get_dl_dst(),
 						msg->get_packet().ether()->get_dl_src(),
 						msg->get_match().get_in_port());
@@ -298,7 +294,7 @@ ethcore::add_port_to_vlan(
 		uint64_t dpid,
 		uint32_t portno,
 		uint16_t vid,
-		bool tagged = true)
+		bool tagged)
 {
 
 }

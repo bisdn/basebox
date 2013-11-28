@@ -105,7 +105,7 @@ private:
 	virtual void
 	handle_flow_stats_reply(cofdpt *dpt, cofmsg_flow_stats_reply *msg);
 
-public:
+private:
 
 	void
 	request_flow_stats();

@@ -47,7 +47,7 @@ public:
 	/**
 	 * @brief	Returns handle to rofl::crofbase defining the OF endpoint
 	 */
-	virtual rofl::crofbase* get_rofbase() const = 0;
+	virtual rofl::crofbase* get_rofbase() = 0;
 };
 
 
@@ -69,6 +69,12 @@ public:
 	 */
 	static cfib&
 	get_fib(uint64_t dpid, uint16_t vid = 0xffff);
+
+	/**
+	 * @brief	Destroy all cfib instances for a specific dpid
+	 */
+	static void
+	destroy_fibs(uint64_t dpid);
 
 private:
 
