@@ -21,8 +21,9 @@ extern "C" {
 #include <rofl/common/ciosrv.h>
 #include <rofl/common/cmacaddr.h>
 #include <rofl/common/crofbase.h>
-#include <rofl/common/logging.h>
 #include <rofl/common/openflow/cofdpt.h>
+
+#include "logging.h"
 
 namespace ethercore
 {
