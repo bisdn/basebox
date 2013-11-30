@@ -1,5 +1,6 @@
 #include <rofl/platform/unix/cunixenv.h>
 #include "ethcore.h"
+#include "qmfagent.h"
 
 int
 main(int argc, char** argv)
@@ -14,12 +15,15 @@ main(int argc, char** argv)
 	rofl::csyslog::set_debug_level("ciosrv", "emergency");
 	rofl::csyslog::set_debug_level("cthread", "emergency");
 
-	ethercore::ethcore sw(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2);
 
-	sw.rpc_listen_for_dpts(caddress(AF_INET, "0.0.0.0", 6633));
-	sw.rpc_listen_for_dpts(caddress(AF_INET, "0.0.0.0", 6632));
+	qmf::qmfagent::get_instance().init(argc, argv);
 
-	sw.run();
+	ethercore::ethcore& core = ethercore::ethcore::get_instance();
+	core.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
+	core.rpc_listen_for_dpts(caddress(AF_INET, "0.0.0.0", 6633));
+	core.rpc_listen_for_dpts(caddress(AF_INET, "0.0.0.0", 6632));
+
+	rofl::ciosrv::run();
 
 	return 0;
 }

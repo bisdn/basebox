@@ -4,17 +4,41 @@
 
 using namespace ethercore;
 
-ethcore::ethcore(
+ethcore* ethcore::sethcore = (ethcore*)0;
+
+
+ethcore&
+ethcore::get_instance()
+{
+	if (0 == ethcore::sethcore) {
+		ethcore::sethcore =
+				new ethcore();
+	}
+	return *(ethcore::sethcore);
+}
+
+
+ethcore::ethcore() :
+		port_stage_table_id(0),
+		fib_in_stage_table_id(0),
+		fib_out_stage_table_id(0),
+		default_vid(0)
+{
+
+}
+
+
+void
+ethcore::init(
 		uint8_t port_stage_table_id,
 		uint8_t fib_in_stage_table_id,
 		uint8_t fib_out_stage_table_id,
-		uint16_t default_vid) :
-		port_stage_table_id(port_stage_table_id),
-		fib_in_stage_table_id(fib_in_stage_table_id),
-		fib_out_stage_table_id(fib_out_stage_table_id),
-		default_vid(default_vid)
+		uint16_t default_vid)
 {
-
+	this->port_stage_table_id 		= port_stage_table_id;
+	this->fib_in_stage_table_id 	= fib_in_stage_table_id;
+	this->fib_out_stage_table_id 	= fib_out_stage_table_id;
+	this->default_vid 				= default_vid;
 }
 
 
@@ -145,7 +169,7 @@ ethcore::handle_dpath_open(
 
 		rofl::cofport* port = it->second;
 		try {
-			sport *sp = new sport(this, dpt->get_dpid(), port->get_port_no(), port_stage_table_id);
+			sport *sp = new sport(this, dpt->get_dpid(), port->get_port_no(), port->get_name(), port_stage_table_id);
 			logging::info << "   adding port " << *sp << std::endl;
 
 			cfib::get_fib(dpt->get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
@@ -281,15 +305,18 @@ ethcore::drop_vlan(
 void
 ethcore::add_port_to_vlan(
 		uint64_t dpid,
-		uint32_t portno,
+		std::string const& devname,
 		uint16_t vid,
 		bool tagged)
 {
 	try {
-		logging::info << "[ethcore] adding port:" << (int)portno << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << std::endl;
+		logging::info << "[ethcore] adding port:" << devname << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << std::endl;
+		uint32_t portno = sport::get_sport(dpid, devname).get_portno();
 		cfib::get_fib(dpid, vid).add_port(portno, tagged);
+	} catch (eSportNotFound& e) {
+		logging::warn << "[ethcore] adding port:" << devname << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << " failed (no such port)" << std::endl;
 	} catch (eFibNotFound& e) {
-		logging::warn << "[ethcore] adding port:" << (int)portno << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << " failed" << std::endl;
+		logging::warn << "[ethcore] adding port:" << devname << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << " failed (no such vlan)" << std::endl;
 	}
 }
 
@@ -297,14 +324,17 @@ ethcore::add_port_to_vlan(
 void
 ethcore::drop_port_from_vlan(
 		uint64_t dpid,
-		uint32_t portno,
+		std::string const& devname,
 		uint16_t vid)
 {
 	try {
-		logging::info << "[ethcore] dropping port:" << (int)portno << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << std::endl;
+		logging::info << "[ethcore] dropping port:" << devname << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << std::endl;
+		uint32_t portno = sport::get_sport(dpid, devname).get_portno();
 		cfib::get_fib(dpid, vid).drop_port(portno);
+	} catch (eSportNotFound& e) {
+		logging::warn << "[ethcore] dropping port:" << devname << " from vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << " failed (no such port)" << std::endl;
 	} catch (eFibNotFound& e) {
-		logging::warn << "[ethcore] dropping port:" << (int)portno << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << " failed" << std::endl;
+		logging::warn << "[ethcore] dropping port:" << devname << " from vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << " failed (no such vlan)" << std::endl;
 	}
 }
 

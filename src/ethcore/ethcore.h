@@ -38,24 +38,47 @@ private:
 		ETHSWITCH_TIMER_FLOW_MOD_DELETE_ALL 	= ((ETHSWITCH_TIMER_BASE) + 3),
 	};
 
-public:
+
+    static ethcore          *sethcore;
+
+    /**
+     * @brief	Make copy constructor private for singleton
+     */
+    ethcore(ethcore const& sethcore) {};
 
 	/**
 	 *
 	 * @param table_id
 	 * @param default_vid
 	 */
-	ethcore(
-			uint8_t port_stage_table_id,
-			uint8_t fib_in_stage_table_id,
-			uint8_t fib_out_stage_table_id,
-			uint16_t default_vid = 1);
+	ethcore();
 
 	/**
 	 *
 	 */
 	virtual
 	~ethcore();
+
+public:
+
+	/**
+	 *
+	 * @return
+	 */
+    static ethcore&
+    get_instance();
+
+
+    /**
+     *
+     */
+    void
+    init(
+    		uint8_t port_stage_table_id = 0,
+			uint8_t fib_in_stage_table_id = 1,
+			uint8_t fib_out_stage_table_id = 2,
+			uint16_t default_vid = 1);
+
 
 	/**
 	 *
@@ -79,7 +102,7 @@ public:
 	void
 	add_port_to_vlan(
 			uint64_t dpid,
-			uint32_t portno,
+			std::string const& devname,
 			uint16_t vid,
 			bool tagged = true);
 
@@ -89,7 +112,7 @@ public:
 	void
 	drop_port_from_vlan(
 			uint64_t dpid,
-			uint32_t portno,
+			std::string const& devname,
 			uint16_t vid);
 
 private:

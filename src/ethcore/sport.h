@@ -113,6 +113,7 @@ private:
 	sport_owner	   *spowner;
 	uint64_t 		dpid;
 	uint32_t 		portno;
+	std::string		devname;
 	std::bitset<64>	flags;
 	uint16_t 		pvid;
 	std::map <uint16_t, struct vlan_membership_t> memberships;
@@ -136,6 +137,19 @@ public:
 	static
 	sport&
 	get_sport(uint64_t dpid, uint32_t portno);
+
+	/**
+	 * @brief	Returns or creates an sport instance
+	 *
+	 * @param dpid OF data path identifier
+	 * @param devname port devname
+	 *
+	 * @return reference to the existing
+	 * @throw eSportNotFound is thrown when no sport instance exists for the specified <dpid,portno> pair
+	 */
+	static
+	sport&
+	get_sport(uint64_t dpid, std::string const& devname);
 
 	/**
 	 * @brief	Destroys all sport instances associated with a specific dpid
@@ -165,7 +179,7 @@ public:
 	 *
 	 * @throw eSportExists when an sport instance for the specified [dpid,portno] pair already exists
 	 */
-	sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, uint8_t table_id);
+	sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string const& devname, uint8_t table_id);
 
 	/**
 	 * @brief	Destructor for switch-port
@@ -186,6 +200,12 @@ public:
 	 */
 	uint32_t
 	get_portno() const { return portno; };
+
+	/**
+	 * @brief	Returns the port's number assigned by OpenFlow
+	 */
+	std::string const&
+	get_devname() const { return devname; };
 
 	/**
 	 * @brief	Returns the default VID assigned to this port (pvid)
@@ -268,6 +288,18 @@ private:
 	 */
 	void
 	flow_mod_delete(uint16_t vid, bool tagged);
+
+public:
+
+	class sport_find_by_devname {
+		std::string devname;
+	public:
+		sport_find_by_devname(std::string const& devname) :
+			devname(devname) {};
+		bool operator() (std::pair<uint32_t, sport*> const& p) {
+			return (p.second->get_devname() == devname);
+		};
+	};
 };
 
 }; // end of namespace

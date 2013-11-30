@@ -15,7 +15,9 @@ ethcore_SOURCES = \
 	sport.h \
 	sport.cc \
 	logging.h \
-	logging.cc
+	logging.cc \
+	qmfagent.h \
+	qmfagent.cc
 ethcore_LDADD = -lpthread -lrt 
 
 AM_LDFLAGS = -static

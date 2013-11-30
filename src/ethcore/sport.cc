@@ -22,6 +22,18 @@ sport::get_sport(uint64_t dpid, uint32_t portno)
 }
 
 
+sport&
+sport::get_sport(uint64_t dpid, std::string const& devname)
+{
+	std::map<uint32_t, sport*>::iterator it;
+	if ((it = find_if(sport::sports[dpid].begin(), sport::sports[dpid].end(),
+			sport_find_by_devname(devname))) == sport::sports[dpid].end()) {
+		throw eSportNotFound();
+	}
+	return *(it->second);
+}
+
+
 void
 sport::destroy_sports(uint64_t dpid)
 {
@@ -41,10 +53,11 @@ sport::destroy_sports()
 }
 
 
-sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, uint8_t table_id) :
+sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string const& devname, uint8_t table_id) :
 		spowner(spowner),
 		dpid(dpid),
 		portno(portno),
+		devname(devname),
 		pvid(0xffff),
 		table_id(table_id)
 {
