@@ -14,7 +14,7 @@ main(int argc, char** argv)
 	rofl::csyslog::set_debug_level("ciosrv", "emergency");
 	rofl::csyslog::set_debug_level("cthread", "emergency");
 
-	ethercore::ethcore sw;
+	ethercore::ethcore sw(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2);
 
 	sw.rpc_listen_for_dpts(caddress(AF_INET, "0.0.0.0", 6633));
 	sw.rpc_listen_for_dpts(caddress(AF_INET, "0.0.0.0", 6632));

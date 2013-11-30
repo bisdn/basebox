@@ -38,6 +38,7 @@ class eSportNotFound	: public eSportBase {};
 class eSportExhausted	: public eSportBase {};
 class eSportFailed		: public eSportBase {};
 class eSportNoPvid		: public eSportBase {};
+class eSportNotMember	: public eSportBase {};
 
 class sport_owner
 {
@@ -85,6 +86,9 @@ class sport
 			group_id 	= m.group_id;
 			return *this;
 		};
+		uint16_t get_vid() const { return vid; };
+		bool get_tagged() const { return tagged; };
+		uint32_t get_group_id() const { return group_id; };
 		friend std::ostream&
 		operator<< (std::ostream& os, struct vlan_membership_t const& membership) {
 			os << "<vlan_membership_t ";
@@ -221,6 +225,15 @@ public:
 	 */
 	void
 	get_group_id(uint16_t vid) const;
+
+	/**
+	 * @brief	Returns the tagged flag for the specified VLAN vid.
+	 *
+	 * @param vid VLAN identifier
+	 * @throw SportNotMember is thrown when this port is not member of the specified VLAN.
+	 */
+	bool
+	get_is_tagged(uint16_t vid);
 
 public:
 

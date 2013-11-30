@@ -4,8 +4,14 @@
 
 using namespace ethercore;
 
-ethcore::ethcore(uint8_t table_id, uint16_t default_vid) :
-		table_id(table_id),
+ethcore::ethcore(
+		uint8_t port_stage_table_id,
+		uint8_t fib_in_stage_table_id,
+		uint8_t fib_out_stage_table_id,
+		uint16_t default_vid) :
+		port_stage_table_id(port_stage_table_id),
+		fib_in_stage_table_id(fib_in_stage_table_id),
+		fib_out_stage_table_id(fib_out_stage_table_id),
 		default_vid(default_vid)
 {
 
@@ -139,7 +145,7 @@ ethcore::handle_dpath_open(
 
 		rofl::cofport* port = it->second;
 		try {
-			sport *sp = new sport(this, dpt->get_dpid(), port->get_port_no(), table_id);
+			sport *sp = new sport(this, dpt->get_dpid(), port->get_port_no(), port_stage_table_id);
 			logging::info << "   adding port " << *sp << std::endl;
 
 			cfib::get_fib(dpt->get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
@@ -171,8 +177,8 @@ ethcore::handle_packet_in(
 		cofdpt *dpt,
 		cofmsg_packet_in *msg)
 {
+	uint16_t vid = 0xffff;
 	try {
-		uint16_t vid = 0xffff;
 
 		try {
 			/* check for VLAN VID OXM TLV in Packet-In message */
@@ -184,6 +190,9 @@ ethcore::handle_packet_in(
 
 		cfib::get_fib(dpt->get_dpid(), vid).handle_packet_in(*msg);
 
+	} catch (eFibNotFound& e) {
+		// no FIB for specified VLAN found
+		logging::warn << "[ethcore] no VLAN vid:" << (int)vid << " configured on dpid:" << (unsigned long long)dpt->get_dpid() << std::endl;
 	} catch (eOFmatchNotFound& e) {
 		// OXM-TLV in-port not found
 		logging::warn << "[ethcore] no in-port found in Packet-In message" << *msg << std::endl;
@@ -196,6 +205,26 @@ ethcore::handle_packet_in(
 		send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_match().get_in_port(), actions);
 	}
 
+	delete msg;
+}
+
+
+void
+ethcore::handle_port_status(cofdpt *dpt, cofmsg_port_status *msg)
+{
+	// TODO
+
+	switch (msg->get_reason()) {
+	case OFPPR_ADD: {
+
+	} break;
+	case OFPPR_MODIFY: {
+
+	} break;
+	case OFPPR_DELETE: {
+
+	} break;
+	}
 	delete msg;
 }
 
@@ -228,7 +257,7 @@ ethcore::add_vlan(
 {
 	try {
 		logging::info << "[ethcore] adding vid:" << (int)vid << " to dpid:" << (unsigned long long)dpid << std::endl;
-		new cfib(this, dpid, dpid, table_id+1);
+		new cfib(this, dpid, vid, fib_in_stage_table_id, fib_out_stage_table_id);
 	} catch (eFibExists& e) {
 		logging::warn << "[ethcore] adding vid:" << (int)vid << " to dpid:" << (unsigned long long)dpid << " failed" << std::endl;
 	}

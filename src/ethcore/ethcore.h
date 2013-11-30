@@ -25,7 +25,9 @@ class ethcore :
 {
 private:
 
-	uint8_t				table_id;
+	uint8_t				port_stage_table_id;
+	uint8_t				fib_in_stage_table_id;
+	uint8_t				fib_out_stage_table_id;
 	uint16_t			default_vid;
 	std::set<uint32_t>	group_ids;		// set of group-ids in use by this controller (assigned to sport instances and cfib instance)
 
@@ -44,7 +46,9 @@ public:
 	 * @param default_vid
 	 */
 	ethcore(
-			uint8_t table_id = 0,
+			uint8_t port_stage_table_id,
+			uint8_t fib_in_stage_table_id,
+			uint8_t fib_out_stage_table_id,
 			uint16_t default_vid = 1);
 
 	/**
@@ -101,6 +105,9 @@ private:
 
 	virtual void
 	handle_packet_in(cofdpt *dpt, cofmsg_packet_in *msg);
+
+	virtual void
+	handle_port_status(cofdpt *dpt, cofmsg_port_status *msg);
 
 	virtual void
 	handle_flow_stats_reply(cofdpt *dpt, cofmsg_flow_stats_reply *msg);

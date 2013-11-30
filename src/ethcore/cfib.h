@@ -92,7 +92,8 @@ private:
 	cfib_owner								*fibowner;
 	uint64_t 								dpid;		// OF data path identifier
 	uint16_t								vid;		// VLAN identifier
-	uint8_t									table_id;	// first OF table-id (we occupy tables (table-id) and (table-id+1)
+	uint8_t									src_stage_table_id;
+	uint8_t									dst_stage_table_id;
 	std::map<rofl::cmacaddr, cfibentry*>	fibtable;	// map of mac-address <=> cfibentry mappings
 	std::set<uint32_t>						ports;		// set of ports that are members of this VLAN
 	uint32_t								flood_group_id;	// group-id for flood group entry for this cfib instance
@@ -113,7 +114,8 @@ public:
 			cfib_owner *fibowner,
 			uint64_t dpid,
 			uint16_t vid,
-			uint8_t table_id);
+			uint8_t src_stage_table_id,
+			uint8_t dst_stage_table_id);
 
 	/**
 	 * @brief	Destructor
@@ -162,23 +164,6 @@ public:
 			rofl::cofmsg_packet_in& msg);
 
 private:
-
-	/**
-	 *
-	 */
-	void
-	fib_update(
-			rofl::cmacaddr const& src,
-			uint32_t in_port);
-
-	/**
-	 *
-	 */
-	cfibentry&
-	fib_lookup(
-			rofl::cmacaddr const& dst,
-			rofl::cmacaddr const& src,
-			uint32_t in_port);
 
 	/**
 	 *

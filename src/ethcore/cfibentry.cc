@@ -11,8 +11,9 @@ using namespace ethercore;
 
 cfibentry::cfibentry(
 		cfibentry_owner *fib,
-		uint8_t table_id,
-		rofl::cmacaddr dst,
+		uint8_t src_stage_table_id,
+		uint8_t dst_stage_table_id,
+		rofl::cmacaddr lladdr,
 		uint64_t dpid,
 		uint16_t vid,
 		uint32_t out_port_no,
@@ -20,10 +21,11 @@ cfibentry::cfibentry(
 		fib(fib),
 		dpid(dpid),
 		vid(vid),
-		out_port_no(out_port_no),
+		portno(out_port_no),
 		tagged(tagged),
-		dst(dst),
-		table_id(table_id),
+		lladdr(lladdr),
+		src_stage_table_id(src_stage_table_id),
+		dst_stage_table_id(dst_stage_table_id),
 		entry_timeout(CFIBENTRY_DEFAULT_TIMEOUT)
 {
 	register_timer(CFIBENTRY_ENTRY_EXPIRED, entry_timeout);
@@ -32,7 +34,7 @@ cfibentry::cfibentry(
 
 cfibentry::~cfibentry()
 {
-
+	flow_mod_configure(FLOW_MOD_DELETE);
 }
 
 
@@ -42,6 +44,7 @@ cfibentry::handle_timeout(int opaque)
 {
 	switch (opaque) {
 	case CFIBENTRY_ENTRY_EXPIRED: {
+		flow_mod_configure(FLOW_MOD_DELETE);
 		fib->fib_timer_expired(this);
 	} break;
 	}
@@ -50,21 +53,21 @@ cfibentry::handle_timeout(int opaque)
 
 
 void
-cfibentry::set_out_port_no(uint32_t out_port_no)
+cfibentry::set_portno(uint32_t portno)
 {
-	flow_mod_delete();
+	flow_mod_configure(FLOW_MOD_DELETE);
 
-	this->out_port_no = out_port_no;
+	this->portno = portno;
 
 	reset_timer(CFIBENTRY_ENTRY_EXPIRED, entry_timeout);
 
-	flow_mod_add();
+	flow_mod_configure(FLOW_MOD_ADD);
 }
 
 
 
 void
-cfibentry::flow_mod_add()
+cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 {
 	try {
 		rofl::crofbase *rofbase = fib->get_rofbase();
@@ -72,109 +75,57 @@ cfibentry::flow_mod_add()
 
 		rofl::cflowentry fe(dpt->get_version());
 
-		/* table 1:
+		/* table 'src_stage_table_id':
 		 *
 		 * if src mac address is already known, move on to next table, otherwise, send packet to controller
 		 *
 		 * this allows the controller to learn yet unknown src macs when being received on a port
 		 */
 		if (true) {
-			fe.set_command(OFPFC_ADD);
-			fe.set_table_id(table_id+1);
+			fe.reset();
+			switch (flow_mod_cmd) {
+			case FLOW_MOD_ADD:		fe.set_command(OFPFC_ADD);				break;
+			case FLOW_MOD_MODIFY:	fe.set_command(OFPFC_MODIFY_STRICT); 	break;
+			case FLOW_MOD_DELETE:	fe.set_command(OFPFC_DELETE_STRICT);	break;
+			}
+			fe.set_table_id(src_stage_table_id);
+			fe.set_priority(0x8000);
 			fe.set_hard_timeout(entry_timeout);
-			fe.match.set_eth_src(dst); // yes, indeed: set_eth_src for dst
-			fe.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), table_id+2);
+			fe.match.set_in_port(portno);
+			fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
+			fe.match.set_eth_src(lladdr); // yes, indeed: set_eth_src for dst
+			fe.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), dst_stage_table_id);
 
 			rofbase->send_flow_mod_message(dpt, fe);
 		}
 
-		/* table 2:
+		/* table 'dst_stage_table_id':
 		 *
+		 * add a second rule to dst-stage: checks for destination
 		 */
-		if (OFPP12_FLOOD != out_port_no) {
-			rofl::cflowentry fe(dpt->get_version());
-
-			fe.set_command(OFPFC_ADD);
-			fe.set_table_id(table_id+2);
+		if (true) {
+			fe.reset();
+			switch (flow_mod_cmd) {
+			case FLOW_MOD_ADD:		fe.set_command(OFPFC_ADD);				break;
+			case FLOW_MOD_MODIFY:	fe.set_command(OFPFC_MODIFY_STRICT); 	break;
+			case FLOW_MOD_DELETE:	fe.set_command(OFPFC_DELETE_STRICT);	break;
+			}
+			fe.set_table_id(dst_stage_table_id);
+			fe.set_priority(0x8000);
 			fe.set_hard_timeout(entry_timeout);
-			fe.match.set_eth_dst(dst);
-
+			fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
+			fe.match.set_eth_dst(lladdr);
 			fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-			fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), out_port_no);
+			if (not tagged)
+				fe.instructions.back().actions.next() = rofl::cofaction_pop_vlan(dpt->get_version());
+			fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(),portno);
 
 			rofbase->send_flow_mod_message(dpt, fe);
-
-		} else {
-
-			rofl::cflowentry fe(dpt->get_version());
-
-			fe.set_command(OFPFC_ADD);
-			fe.set_table_id(table_id);
-			fe.set_hard_timeout(entry_timeout);
-			fe.match.set_eth_src(dst);
-
-			fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-			fe.instructions.back().actions.next() = rofl::cofaction_group(dpt->get_version(), fib->get_flood_group_id(vid));
-
-			rofbase->send_flow_mod_message(dpt, fe);
-
 		}
+
 	} catch (rofl::eRofBaseNotFound& e) {
 
 	}
 }
-
-
-
-void
-cfibentry::flow_mod_modify()
-{
-	rofl::crofbase *rofbase = fib->get_rofbase();
-	rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
-
-	rofl::cflowentry fe(dpt->get_version());
-
-	fe.set_command(OFPFC_MODIFY_STRICT);
-	fe.set_table_id(table_id);
-	fe.set_hard_timeout(entry_timeout);
-	fe.match.set_eth_dst(dst);
-
-	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-	fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), out_port_no);
-
-	rofbase->send_flow_mod_message(dpt, fe);
-}
-
-
-
-void
-cfibentry::flow_mod_delete()
-{
-	rofl::crofbase *rofbase = fib->get_rofbase();
-	rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
-
-	if (OFPP12_FLOOD != out_port_no) {
-
-		rofl::cflowentry fe(dpt->get_version());
-
-		fe.set_command(OFPFC_DELETE_STRICT);
-		fe.set_table_id(table_id);
-		fe.match.set_eth_dst(dst);
-
-		rofbase->send_flow_mod_message(dpt, fe);
-
-	} else {
-
-		rofl::cflowentry fe(dpt->get_version());
-
-		fe.set_command(OFPFC_DELETE_STRICT);
-		fe.set_table_id(table_id);
-		fe.match.set_eth_src(dst);
-
-		rofbase->send_flow_mod_message(dpt, fe);
-
-	}
-}
-
 
 

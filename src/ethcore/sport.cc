@@ -76,6 +76,16 @@ sport::get_pvid() const
 }
 
 
+bool
+sport::get_is_tagged(uint16_t vid)
+{
+	if (memberships.find(vid) == memberships.end()) {
+		throw eSportNotMember();
+	}
+	return memberships[vid].get_tagged();
+}
+
+
 void
 sport::add_membership(uint16_t vid, bool tagged)
 {

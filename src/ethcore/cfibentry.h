@@ -53,10 +53,11 @@ private:
 	cfibentry_owner				*fib;
 	uint64_t					dpid;
 	uint16_t					vid;
-	uint32_t					out_port_no;
+	uint32_t					portno;
 	bool						tagged;
-	rofl::cmacaddr				dst;
-	uint8_t						table_id;
+	rofl::cmacaddr				lladdr;
+	uint8_t						src_stage_table_id;
+	uint8_t						dst_stage_table_id;
 	int							entry_timeout;
 
 public:
@@ -66,8 +67,9 @@ public:
 	 */
 	cfibentry(
 			cfibentry_owner *fib,
-			uint8_t table_id,
-			rofl::cmacaddr dst,
+			uint8_t src_stage_table_id,
+			uint8_t dst_stage_table_id,
+			rofl::cmacaddr lladdr,
 			uint64_t dpid,
 			uint16_t vid,
 			uint32_t out_port_no,
@@ -83,37 +85,33 @@ public:
 	 *
 	 */
 	uint32_t
-	get_out_port_no() const { return out_port_no; };
+	get_portno() const { return portno; };
 
 	/**
 	 *
 	 */
 	void
-	set_out_port_no(uint32_t out_port_no);
+	set_portno(uint32_t out_port_no);
 
 	/**
 	 *
 	 */
 	rofl::cmacaddr const&
-	get_lladdr() const { return dst; };
+	get_lladdr() const { return lladdr; };
+
+	enum flow_mod_cmd_t {
+		FLOW_MOD_ADD 	= 1,
+		FLOW_MOD_MODIFY = 2,
+		FLOW_MOD_DELETE = 3,
+	};
 
 	/**
 	 *
 	 */
 	void
-	flow_mod_add();
+	flow_mod_configure(
+			enum flow_mod_cmd_t flow_mod_cmd);
 
-	/**
-	 *
-	 */
-	void
-	flow_mod_delete();
-
-	/**
-	 *
-	 */
-	void
-	flow_mod_modify();
 
 private:
 
@@ -132,10 +130,11 @@ public:
 	operator<< (std::ostream& os, cfibentry const& entry)
 	{
 		os << "<fibentry ";
-			os << "dst: " << entry.dst << " ";
-			os << "vid:" << entry.vid << " ";
-			os << "out-port: " << entry.out_port_no << " ";
-			os << "tagged:" << (entry.tagged ? "true":"false") << " ";
+			os << "dpid:" 		<< (unsigned long long)entry.dpid << " ";
+			os << "vid:" 		<< (int)entry.vid << " ";
+			os << "lladdr: " 	<< entry.lladdr << " ";
+			os << "portno: " 	<< entry.portno << " ";
+			os << "tagged:" 	<< (entry.tagged ? "true":"false") << " ";
 		os << ">";
 		return os;
 	};
