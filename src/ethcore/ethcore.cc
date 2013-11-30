@@ -20,9 +20,9 @@ ethcore::get_instance()
 
 ethcore::ethcore() :
 		port_stage_table_id(0),
-		fib_in_stage_table_id(0),
-		fib_out_stage_table_id(0),
-		default_vid(0)
+		fib_in_stage_table_id(1),
+		fib_out_stage_table_id(2),
+		default_vid(1)
 {
 
 }
@@ -217,12 +217,15 @@ ethcore::handle_packet_in(
 	} catch (eFibNotFound& e) {
 		// no FIB for specified VLAN found
 		logging::warn << "[ethcore] no VLAN vid:" << (int)vid << " configured on dpid:" << (unsigned long long)dpt->get_dpid() << std::endl;
+
 	} catch (eOFmatchNotFound& e) {
 		// OXM-TLV in-port not found
 		logging::warn << "[ethcore] no in-port found in Packet-In message" << *msg << std::endl;
+
 	} catch (eSportNotFound& e) {
 		// sport instance not found? critical error!
 		logging::crit << "[ethcore] no sport instance for in-port found in Packet-In message" << *msg << std::endl;
+
 	} catch (eSportNoPvid& e) {
 		// drop frame on data path
 		rofl::cofaclist actions(dpt->get_version());
