@@ -37,6 +37,12 @@ cfibentry::cfibentry(
 cfibentry::~cfibentry()
 {
 	flow_mod_configure(FLOW_MOD_DELETE);
+#if 0
+	rofl::crofbase *rofbase = fib->get_rofbase();
+	rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+
+	rofbase->send_barrier_request(dpt);
+#endif
 }
 
 
