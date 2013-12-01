@@ -217,7 +217,7 @@ sport::flow_mod_add(uint16_t vid, bool tagged)
 
 			spowner->get_rofbase()->send_flow_mod_message(dpt, fe);
 		}
-
+#if 0
 		// set group table entry for this outgoing switch port
 		if (true) {
 			rofl::cgroupentry ge(dpt->get_version());
@@ -234,7 +234,7 @@ sport::flow_mod_add(uint16_t vid, bool tagged)
 
 			spowner->get_rofbase()->send_group_mod_message(dpt, ge);
 		}
-
+#endif
 	} catch (rofl::eRofBaseNotFound& e) {
 		logging::error << "sport::flow_mod_add() unable to find crofbase or cofdpt instance " << *this << std::endl;
 		throw;
@@ -268,7 +268,7 @@ sport::flow_mod_delete(uint16_t vid, bool tagged)
 
 			spowner->get_rofbase()->send_flow_mod_message(dpt, fe);
 		}
-
+#if 0
 		// set group table entry for this outgoing switch port
 		if (true) {
 			rofl::cgroupentry ge(dpt->get_version());
@@ -285,7 +285,7 @@ sport::flow_mod_delete(uint16_t vid, bool tagged)
 
 			spowner->get_rofbase()->send_group_mod_message(dpt, ge);
 		}
-
+#endif
 	} catch (rofl::eRofBaseNotFound& e) {
 		logging::error << "sport::flow_mod_delete() unable to find crofbase instance " << *this << std::endl;
 	}

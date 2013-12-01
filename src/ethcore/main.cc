@@ -15,6 +15,7 @@ main(int argc, char** argv)
 	rofl::csyslog::set_debug_level("ciosrv", "emergency");
 	rofl::csyslog::set_debug_level("cthread", "emergency");
 
+	rofl::logging::set_logfile(rofl::logging::LOGGING_DEBUG, std::string("/dev/null"));
 
 	qmf::qmfagent::get_instance().init(argc, argv);
 

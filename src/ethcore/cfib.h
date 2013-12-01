@@ -21,6 +21,7 @@ extern "C" {
 }
 #endif
 
+#include <rofl/common/ciosrv.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cofdpt.h>
 #include <rofl/common/cmacaddr.h>
@@ -63,7 +64,8 @@ public:
 
 
 class cfib :
-		public cfibentry_owner
+		public cfibentry_owner,
+		public rofl::ciosrv
 {
 	static std::map<uint64_t, std::map<uint16_t, cfib*> > fibs;
 
@@ -97,6 +99,13 @@ private:
 	std::map<rofl::cmacaddr, cfibentry*>	fibtable;	// map of mac-address <=> cfibentry mappings
 	std::set<uint32_t>						ports;		// set of ports that are members of this VLAN
 	uint32_t								flood_group_id;	// group-id for flood group entry for this cfib instance
+	unsigned int							timer_dump_interval;
+
+#define DEFAULT_TIMER_DUMP_INTERVAL 10
+
+	enum cfib_timer_t {
+		CFIB_TIMER_DUMP = 1,
+	};
 
 public:
 
@@ -115,7 +124,8 @@ public:
 			uint64_t dpid,
 			uint16_t vid,
 			uint8_t src_stage_table_id,
-			uint8_t dst_stage_table_id);
+			uint8_t dst_stage_table_id,
+			unsigned int timer_dump_interval = DEFAULT_TIMER_DUMP_INTERVAL);
 
 	/**
 	 * @brief	Destructor
@@ -156,6 +166,14 @@ public:
 
 	/**
 	 *
+	 * @param msg
+	 */
+	virtual void
+	handle_timeout(
+			int opaque);
+
+	/**
+	 *
 	 * @param dpt
 	 * @param msg
 	 */
@@ -164,6 +182,24 @@ public:
 			rofl::cofmsg_packet_in& msg);
 
 private:
+
+	/**
+	 *
+	 */
+	void
+	block_stp();
+
+	/**
+	 *
+	 */
+	void
+	add_flow_mod_in_stage();
+
+	/**
+	 *
+	 */
+	void
+	drop_flow_mod_in_stage();
 
 	/**
 	 *

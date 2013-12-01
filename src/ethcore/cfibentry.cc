@@ -28,6 +28,8 @@ cfibentry::cfibentry(
 		dst_stage_table_id(dst_stage_table_id),
 		entry_timeout(CFIBENTRY_DEFAULT_TIMEOUT)
 {
+	flow_mod_configure(FLOW_MOD_ADD);
+
 	register_timer(CFIBENTRY_ENTRY_EXPIRED, entry_timeout);
 }
 
@@ -98,6 +100,8 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 
 			rofbase->send_flow_mod_message(dpt, fe);
 		}
+
+		//rofbase->send_barrier_request(dpt);
 
 		/* table 'dst_stage_table_id':
 		 *
