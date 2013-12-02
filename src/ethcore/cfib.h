@@ -257,7 +257,7 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, cfib const& fib)
 	{
-		os << "fib<";
+		os << "<fib ";
 			os << "dpid: " << fib.dpid << " ";
 			os << "vid:" << fib.vid << " ";
 		os << ">";
