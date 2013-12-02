@@ -1,5 +1,5 @@
 /*
- * port.h
+ 	 	 * port.h
  *
  *  Created on: 26.11.2013
  *      Author: andreas
@@ -280,12 +280,11 @@ public:
 			os << "dpid:" << (unsigned long long)sp.dpid << " ";
 			os << "portno:" << (unsigned long)sp.portno << " ";
 			os << "pvid:" << (int)sp.pvid << " ";
-			os << "memberships: " << " ";
-			for (std::map<uint16_t, struct vlan_membership_t>::const_iterator
-					it = sp.memberships.begin(); it != sp.memberships.end(); ++it) {
-				os << it->second << " ";
-			}
 		os << ">";
+		for (std::map<uint16_t, struct vlan_membership_t>::const_iterator
+				it = sp.memberships.begin(); it != sp.memberships.end(); ++it) {
+			os << std::endl << "\t" << it->second << " ";
+		}
 		return os;
 	};
 

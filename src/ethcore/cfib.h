@@ -261,10 +261,9 @@ public:
 			os << "dpid: " << fib.dpid << " ";
 			os << "vid:" << fib.vid << " ";
 		os << ">";
-		if (not fib.fibtable.empty()) { os << std::endl; }
 		std::map<rofl::cmacaddr, cfibentry*>::const_iterator it;
 		for (it = fib.fibtable.begin(); it != fib.fibtable.end(); ++it) {
-			os << "\t" << *(it->second) << std::endl;
+			os << std::endl << "\t" << *(it->second);
 		}
 		return os;
 	};

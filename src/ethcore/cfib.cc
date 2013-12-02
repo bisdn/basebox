@@ -378,17 +378,12 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 		rofl::cmacaddr eth_src = msg.get_packet().ether()->get_dl_src();
 		rofl::cmacaddr eth_dst = msg.get_packet().ether()->get_dl_dst();
 
-		logging::info << "eth-src:" << eth_src << std::endl;
-		logging::info << "eth-dst:" << eth_dst << std::endl;
+		logging::info << "[ethcore - fib] - frame seen: " << eth_src << " => " << eth_dst << " on vid:" << std::dec << (int)vid << std::endl;
 
 		/* sanity check: if source mac is multicast => invalid frame */
 		if (eth_src.is_multicast()) {
 			return;
 		}
-
-		logging::info << "table-id:" << (int)msg.get_table_id() << std::endl;
-		logging::info << *this << std::endl;
-
 
 		/* no FIB entry so far, create new one */
 		if (fibtable.find(eth_src) == fibtable.end()) {
@@ -462,7 +457,7 @@ cfib::block_stp()
 	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"));
 	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
 
-	logging::info << "ethercore: installing FLOW-MOD with entry: " << fe << std::endl;
+	//logging::info << "ethercore: installing FLOW-MOD with entry: " << fe << std::endl;
 
 	rofbase->send_flow_mod_message(dpt, fe);
 }

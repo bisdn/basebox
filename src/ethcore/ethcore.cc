@@ -218,9 +218,9 @@ ethcore::handle_packet_in(
 			vid = sport::get_sport(dpt->get_dpid(), msg->get_match().get_in_port()).get_pvid() & ~OFPVID_PRESENT;
 		}
 
-		logging::debug << "matching VID ===> " << (int)(msg->get_match().get_vlan_vid() & ~OFPVID_PRESENT) << std::endl;
-		logging::debug << "PVID ===> " << (int)(sport::get_sport(dpt->get_dpid(), msg->get_match().get_in_port()).get_pvid() & ~OFPVID_PRESENT) << std::endl;
-		logging::debug << "final VID ===> " << (int)vid << std::endl;
+		//logging::debug << "matching VID ===> " << (int)(msg->get_match().get_vlan_vid() & ~OFPVID_PRESENT) << std::endl;
+		//logging::debug << "PVID ===> " << (int)(sport::get_sport(dpt->get_dpid(), msg->get_match().get_in_port()).get_pvid() & ~OFPVID_PRESENT) << std::endl;
+		//logging::debug << "final VID ===> " << (int)vid << std::endl;
 
 		cfib::get_fib(dpt->get_dpid(), vid).handle_packet_in(*msg);
 
@@ -295,7 +295,7 @@ ethcore::add_vlan(
 		uint16_t vid)
 {
 	try {
-		logging::info << "[ethcore] adding vid:" << (int)vid << " to dpid:" << (unsigned long long)dpid << std::endl;
+		logging::info << "[ethcore] adding vid:" << std::dec << (int)vid << " to dpid:" << (unsigned long long)dpid << std::endl;
 		new cfib(this, dpid, vid, fib_in_stage_table_id, fib_out_stage_table_id);
 	} catch (eFibExists& e) {
 		logging::warn << "[ethcore] adding vid:" << (int)vid << " to dpid:" << (unsigned long long)dpid << " failed" << std::endl;
@@ -309,7 +309,7 @@ ethcore::drop_vlan(
 		uint16_t vid)
 {
 	try {
-		logging::info << "[ethcore] dropping vid:" << (int)vid << " from dpid:" << (unsigned long long)dpid << std::endl;
+		logging::info << "[ethcore] dropping vid:" << std::dec << (int)vid << " from dpid:" << (unsigned long long)dpid << std::endl;
 		delete &(cfib::get_fib(dpid, vid));
 	} catch (eFibNotFound& e) {
 		logging::warn << "[ethcore] dropping vid:" << (int)vid << " from dpid:" << (unsigned long long)dpid << " failed" << std::endl;
@@ -343,7 +343,7 @@ ethcore::drop_port_from_vlan(
 		uint16_t vid)
 {
 	try {
-		logging::info << "[ethcore] dropping port:" << devname << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << std::endl;
+		logging::info << "[ethcore] dropping port:" << devname << " from vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << std::endl;
 		uint32_t portno = sport::get_sport(dpid, devname).get_portno();
 		cfib::get_fib(dpid, vid).drop_port(portno);
 	} catch (eSportNotFound& e) {
