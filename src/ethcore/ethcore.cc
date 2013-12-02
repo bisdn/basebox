@@ -255,13 +255,29 @@ ethcore::handle_port_status(cofdpt *dpt, cofmsg_port_status *msg)
 
 	switch (msg->get_reason()) {
 	case OFPPR_ADD: {
+		try {
+			sport *sp = new sport(this, dpt->get_dpid(), msg->get_port().get_port_no(), msg->get_port().get_name(), port_stage_table_id);
+			logging::info << "[ethcore] adding port via Port-Status " << *sp << std::endl;
 
+			cfib::get_fib(dpt->get_dpid(), default_vid).add_port(msg->get_port().get_port_no(), /*untagged=*/false);
+		} catch (eSportExists& e) {
+			logging::warn << "[ethcore] unable to add port:" << msg->get_port().get_name() << ", already exists " << std::endl;
+		}
 	} break;
 	case OFPPR_MODIFY: {
-
+		logging::warn << "[ethcore] unhandled Port-Status MODIFY " << *msg << std::endl;
 	} break;
 	case OFPPR_DELETE: {
+		try {
+			sport& sp = sport::get_sport(dpt->get_dpid(), msg->get_port().get_port_no());
+			logging::info << "[ethcore] dropping port via Port-Status " << sp << std::endl;
 
+			cfib::get_fib(dpt->get_dpid(), default_vid).drop_port(msg->get_port().get_port_no());
+
+			delete &sp;
+		} catch (eSportNotFound& e) {
+			logging::warn << "[ethcore] unable to drop port:" << msg->get_port().get_name() << ", not found " << std::endl;
+		}
 	} break;
 	}
 	delete msg;
