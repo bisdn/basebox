@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 
+#include <rofl/common/ciosrv.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cflowentry.h>
 #include <rofl/common/openflow/cofdpt.h>
@@ -65,7 +66,8 @@ public:
 	virtual void release_group_id(uint32_t group_id) = 0;
 };
 
-class sport
+class sport :
+		public rofl::ciosrv
 {
 	struct vlan_membership_t {
 		uint16_t vid;
@@ -92,8 +94,7 @@ class sport
 		friend std::ostream&
 		operator<< (std::ostream& os, struct vlan_membership_t const& membership) {
 			os << "<vlan_membership_t ";
-				os << "vid:" << (int)membership.vid << " ";
-				os << "tagged:" << (membership.tagged ? "(t)":"(u)") << " ";
+				os << "vid:" << (int)membership.vid << (membership.tagged ? "(t)":"(u)") << " ";
 				os << "group-id:" << (int)membership.group_id << " ";
 			os << ">";
 			return os;
@@ -118,6 +119,13 @@ private:
 	uint16_t 		pvid;
 	std::map <uint16_t, struct vlan_membership_t> memberships;
 	uint8_t  		table_id;
+	unsigned int	timer_dump_interval;
+
+#define DEFAULT_SPORT_DUMP_INTERVAL 10
+
+	enum sport_timer_t {
+		SPORT_TIMER_DUMP = 1,
+	};
 
 	/**
 	 * @brief	Suppress copy operations on sport instances (make copy constructor private)
@@ -179,7 +187,13 @@ public:
 	 *
 	 * @throw eSportExists when an sport instance for the specified [dpid,portno] pair already exists
 	 */
-	sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string const& devname, uint8_t table_id);
+	sport(
+			sport_owner *spowner,
+			uint64_t dpid,
+			uint32_t portno,
+			std::string const& devname,
+			uint8_t table_id,
+			unsigned int timer_dump_interval = DEFAULT_SPORT_DUMP_INTERVAL);
 
 	/**
 	 * @brief	Destructor for switch-port
@@ -276,6 +290,12 @@ public:
 	};
 
 private:
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_timeout(int opaque);
 
 	/**
 	 *

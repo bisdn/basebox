@@ -107,7 +107,7 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 			rofbase->send_flow_mod_message(dpt, fe);
 		}
 
-		//rofbase->send_barrier_request(dpt);
+		rofbase->send_barrier_request(dpt);
 
 		/* table 'dst_stage_table_id':
 		 *
@@ -132,6 +132,8 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 
 			rofbase->send_flow_mod_message(dpt, fe);
 		}
+
+		rofbase->send_barrier_request(dpt);
 
 	} catch (rofl::eRofBaseNotFound& e) {
 

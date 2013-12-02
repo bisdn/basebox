@@ -22,9 +22,10 @@ ethcore::ethcore() :
 		port_stage_table_id(0),
 		fib_in_stage_table_id(1),
 		fib_out_stage_table_id(2),
-		default_vid(1)
+		default_vid(1),
+		timer_dump_interval(DEFAULT_TIMER_DUMP_INTERVAL)
 {
-
+	register_timer(ETHSWITCH_TIMER_DUMP, timer_dump_interval);
 }
 
 
@@ -53,7 +54,12 @@ ethcore::~ethcore()
 void
 ethcore::handle_timeout(int opaque)
 {
-
+	switch (opaque) {
+	case ETHSWITCH_TIMER_DUMP: {
+		logging::debug << *this << std::endl;
+		register_timer(ETHSWITCH_TIMER_DUMP, timer_dump_interval);
+	} break;
+	}
 }
 
 
@@ -143,25 +149,15 @@ void
 ethcore::handle_dpath_open(
 		cofdpt *dpt)
 {
-#if 0
-	rofl::cflowentry fe(dpt->get_version());
-
-	fe.set_command(OFPFC_ADD);
-	fe.set_table_id(0);
-
-	fe.instructions.next() = cofinst_apply_actions(dpt->get_version());
-	fe.instructions.back().actions.next() = cofaction_output(dpt->get_version(), OFPP12_CONTROLLER);
-
-	fe.match.set_eth_type(farpv4frame::ARPV4_ETHER);
-	send_flow_mod_message(dpt, fe);
-#endif
-
-
 	logging::info << "dpath attaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
 
 	/* we create a single default VLAN and add all ports in an untagged mode */
 	add_vlan(dpt->get_dpid(), default_vid);
 
+	// for testing
+#if 0
+	add_vlan(dpt->get_dpid(), 20);
+#endif
 
 
 	for (std::map<uint32_t, rofl::cofport*>::iterator
@@ -174,6 +170,16 @@ ethcore::handle_dpath_open(
 
 			cfib::get_fib(dpt->get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
 
+#if 0
+			// for testing
+			if (port->get_port_no() == 1) {
+				cfib::get_fib(dpt->get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
+				cfib::get_fib(dpt->get_dpid(), 20).add_port(port->get_port_no(), /*tagged=*/true);
+			}
+			if (port->get_port_no() == 2) {
+				cfib::get_fib(dpt->get_dpid(), 20).add_port(port->get_port_no(), /*untagged=*/false);
+			}
+#endif
 		} catch (eSportExists& e) {
 			logging::warn << "unable to add port:" << port->get_name() << ", already exists " << std::endl;
 		}
@@ -206,11 +212,15 @@ ethcore::handle_packet_in(
 
 		try {
 			/* check for VLAN VID OXM TLV in Packet-In message */
-			vid = msg->get_match().get_vlan_vid();
+			vid = msg->get_match().get_vlan_vid() & ~OFPVID_PRESENT;
 		} catch (eOFmatchNotFound& e) {
 			/* no VLAN VID OXM TLV => frame was most likely untagged */
-			vid = sport::get_sport(dpt->get_dpid(), msg->get_match().get_in_port()).get_pvid();
+			vid = sport::get_sport(dpt->get_dpid(), msg->get_match().get_in_port()).get_pvid() & ~OFPVID_PRESENT;
 		}
+
+		logging::debug << "matching VID ===> " << (int)(msg->get_match().get_vlan_vid() & ~OFPVID_PRESENT) << std::endl;
+		logging::debug << "PVID ===> " << (int)(sport::get_sport(dpt->get_dpid(), msg->get_match().get_in_port()).get_pvid() & ~OFPVID_PRESENT) << std::endl;
+		logging::debug << "final VID ===> " << (int)vid << std::endl;
 
 		cfib::get_fib(dpt->get_dpid(), vid).handle_packet_in(*msg);
 

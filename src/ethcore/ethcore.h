@@ -30,12 +30,16 @@ private:
 	uint8_t				fib_out_stage_table_id;
 	uint16_t			default_vid;
 	std::set<uint32_t>	group_ids;		// set of group-ids in use by this controller (assigned to sport instances and cfib instance)
+	unsigned int		timer_dump_interval;
+
+#define DEFAULT_TIMER_DUMP_INTERVAL 10
 
 	enum ethercore_timer_t {
 		ETHSWITCH_TIMER_BASE 					= ((0x6271)),
 		ETHSWITCH_TIMER_FIB 					= ((ETHSWITCH_TIMER_BASE) + 1),
 		ETHSWITCH_TIMER_FLOW_STATS 				= ((ETHSWITCH_TIMER_BASE) + 2),
 		ETHSWITCH_TIMER_FLOW_MOD_DELETE_ALL 	= ((ETHSWITCH_TIMER_BASE) + 3),
+		ETHSWITCH_TIMER_DUMP				 	= ((ETHSWITCH_TIMER_BASE) + 4),
 	};
 
 
@@ -148,6 +152,19 @@ private:
 
 	virtual void
 	release_group_id(uint32_t group_id);
+
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, ethcore const& ec) {
+		os << "<ethcore ";
+			os << "default-vid:" << (int)ec.default_vid << " ";
+			os << "port-stage-table-id:" << (int)ec.port_stage_table_id << " ";
+			os << "fib-in-stage-table-id:" << (int)ec.fib_in_stage_table_id << " ";
+			os << "fib-out-stage-table-id:" << (int)ec.fib_out_stage_table_id << " ";
+		os << ">";
+		return os;
+	};
 };
 
 }; // end of namespace

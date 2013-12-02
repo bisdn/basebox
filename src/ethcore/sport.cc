@@ -53,13 +53,14 @@ sport::destroy_sports()
 }
 
 
-sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string const& devname, uint8_t table_id) :
+sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string const& devname, uint8_t table_id, unsigned int timer_dump_interval) :
 		spowner(spowner),
 		dpid(dpid),
 		portno(portno),
 		devname(devname),
 		pvid(0xffff),
-		table_id(table_id)
+		table_id(table_id),
+		timer_dump_interval(timer_dump_interval)
 {
 	if (NULL == spowner) {
 		throw eSportInval();
@@ -68,6 +69,8 @@ sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string c
 		throw eSportExists();
 	}
 	sport::sports[dpid][portno] = this;
+
+	register_timer(SPORT_TIMER_DUMP, timer_dump_interval);
 }
 
 
@@ -75,6 +78,18 @@ sport::~sport()
 {
 	if (sport::sports[dpid].find(portno) != sport::sports[dpid].end()) {
 		sport::sports[dpid].erase(portno);
+	}
+}
+
+
+void
+sport::handle_timeout(int opaque)
+{
+	switch (opaque) {
+	case SPORT_TIMER_DUMP: {
+		logging::debug << *this << std::endl;
+		register_timer(SPORT_TIMER_DUMP, timer_dump_interval);
+	} break;
 	}
 }
 

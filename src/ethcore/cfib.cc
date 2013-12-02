@@ -28,7 +28,15 @@ void
 cfib::destroy_fibs(uint64_t dpid)
 {
 	while (not cfib::fibs[dpid].empty()) {
+		for (std::map<uint16_t, cfib*>::iterator
+				it = cfib::fibs[dpid].begin(); it != cfib::fibs[dpid].end(); ++it) {
+			logging::debug << "dumping FIB[1]: " << *(it->second) << std::endl;
+		}
 		delete (cfib::fibs[dpid].begin()->second);
+		for (std::map<uint16_t, cfib*>::iterator
+				it = cfib::fibs[dpid].begin(); it != cfib::fibs[dpid].end(); ++it) {
+			logging::debug << "dumping FIB[2]: " << *(it->second) << std::endl;
+		}
 	}
 	cfib::fibs[dpid].clear();
 }
@@ -75,6 +83,7 @@ cfib::~cfib()
 {
 	while (not fibtable.empty()) {
 		delete (fibtable.begin()->second);
+		fibtable.erase(fibtable.begin());
 	}
 	fibtable.clear();
 
@@ -196,6 +205,7 @@ cfib::add_flow_mod_in_stage()
 	fe.set_hard_timeout(0);
 
 	fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
+#if 1
 	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
 	switch (dpt->get_version()) {
 	case OFP12_VERSION: {
@@ -205,7 +215,9 @@ cfib::add_flow_mod_in_stage()
 		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP13_CONTROLLER);
 	} break;
 	}
+#endif
 	fe.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), dst_stage_table_id);
+
 
 	rofbase->send_flow_mod_message(dpt, fe);
 }
@@ -375,25 +387,27 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 		}
 
 		logging::info << "table-id:" << (int)msg.get_table_id() << std::endl;
-
+		logging::info << *this << std::endl;
 
 
 		/* no FIB entry so far, create new one */
 		if (fibtable.find(eth_src) == fibtable.end()) {
 
+#if 1
 			fibtable[eth_src] = new cfibentry(this,
 					src_stage_table_id,
 					dst_stage_table_id,
 					eth_src,
 					dpid,
 					vid, inport, port.get_is_tagged(vid));
+#endif
 
 			logging::info << "[ethcore - fib] - creating new FIB entry: " << *(fibtable[eth_src]) << std::endl;
 
 
 
 		/* either inport has changed or the FlowMod entry was removed => in either case, refresh entry */
-		} else if (inport != fibtable[eth_src]->get_portno()) {
+		} else /*if (inport != fibtable[eth_src]->get_portno())*/ {
 			fibtable[eth_src]->set_portno(inport);
 
 			logging::info << "[ethcore - fib] - updating FIB entry: " << (*fibtable[eth_src]) << std::endl;
