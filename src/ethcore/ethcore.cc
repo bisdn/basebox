@@ -149,7 +149,7 @@ void
 ethcore::handle_dpath_open(
 		cofdpt *dpt)
 {
-	logging::info << "dpath attaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
+	logging::info << "[ethcore] dpath attaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
 
 	/* we create a single default VLAN and add all ports in an untagged mode */
 	add_vlan(dpt->get_dpid(), default_vid);
@@ -166,7 +166,7 @@ ethcore::handle_dpath_open(
 		rofl::cofport* port = it->second;
 		try {
 			sport *sp = new sport(this, dpt->get_dpid(), port->get_port_no(), port->get_name(), port_stage_table_id);
-			logging::info << "   adding port " << *sp << std::endl;
+			logging::info << "[ethcore] adding port " << *sp << std::endl;
 
 			cfib::get_fib(dpt->get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
 
@@ -192,7 +192,7 @@ void
 ethcore::handle_dpath_close(
 		cofdpt *dpt)
 {
-	logging::info << "dpath detaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
+	logging::info << "[ethcore] dpath detaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
 
 	cfib::destroy_fibs(dpt->get_dpid());
 
