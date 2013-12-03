@@ -12,6 +12,7 @@ import re
 from pyroute2.netlink.iproute import *
 from pyroute2 import IPRoute
 from pyroute2 import IPDB
+from daemon import Daemon
 
 mlogger = logging.getLogger('proact.common.basecore')
 
