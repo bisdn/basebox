@@ -256,7 +256,7 @@ class BaseCoreEvent(object):
 
 
 
-class BaseCore(object):
+class BaseCore(Daemon):
     """
     overwrite the following methods: cleanUp(), handleEvent(), 
     handleNewRoute(), handleDelRoute(), handleNewLink(), handleDelLink(), handleNewAddr(), handleDelAddr()
@@ -309,7 +309,9 @@ class BaseCore(object):
         self.uniquePrefix = 0
         
         
+        
     def cleanUp(self):
+        self.logger.error('terminating')
         raise BaseCoreException('BaseCore::cleanUp() method not implemented')
                     
     def handleEvent(self, event):
