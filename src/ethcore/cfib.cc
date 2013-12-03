@@ -425,7 +425,7 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 			rofl::crofbase *rofbase = fibowner->get_rofbase();
 			rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
 
-			rofl::cofactions actions(dpt->get_version());
+			rofl::cofaclist actions(dpt->get_version());
 			actions.next() = rofl::cofaction_group(dpt->get_version(), flood_group_id);
 		}
 

@@ -240,7 +240,7 @@ ethcore::handle_packet_in(
 		// drop frame on data path
 		logging::crit << "[ethcore] no PVID for sport instance found for Packet-In message" << *msg << std::endl;
 
-		rofl::cofactions actions(dpt->get_version());
+		rofl::cofaclist actions(dpt->get_version());
 		send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_match().get_in_port(), actions);
 	}
 
