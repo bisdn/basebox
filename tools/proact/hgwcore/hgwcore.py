@@ -103,11 +103,12 @@ class HgwCore(proact.common.basecore.BaseCore):
             for devname in kwargs.get('lanLinks', []):
                 self.linkNames['lan'].append(devname)
                 
-
             self.conffile = kwargs.get('conffile', 'hgwcore.conf')
             self.parseConfig()
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'hgwcore')
+                    
+            logging.basicConfig(filename=self.logfile,level=self.loglevel)
                     
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
             self.logger = logging.getLogger('proact')

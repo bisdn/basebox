@@ -105,15 +105,13 @@ class VhsCore(proact.common.basecore.BaseCore):
             self.parseConfig()
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'vhscore')
+            
             logging.basicConfig(filename=self.logfile,level=self.loglevel)
-            #self.brokerUrl = kwargs('brokerUrl', '127.0.0.1')
-            
-            #self.linkNames = {'dmz':kwargs.get('dmzLinks', []), 'lan':kwargs.get('lanLinks', []), 'wan':kwargs.get('wanLinks', [])}
-            #print self.linkNames
-            
                     
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
+            self.logger = logging.getLogger('proact')
             self.agentHandler = VhsCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
+            
             self.initVhsXdpd()
             self.initVhsDptCore()
         except Exception, e:
