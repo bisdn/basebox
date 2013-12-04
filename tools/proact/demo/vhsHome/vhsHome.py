@@ -9,6 +9,7 @@ import proact.hgwcore.hgwcore
 
 CONFFILE='vhsHome.conf'
 QMFBROKER='172.16.250.65'
+CTLADDR='172.16.250.65'
 XDPDID='hgw-xdpd-0'
 
 
@@ -40,12 +41,12 @@ if __name__ == "__main__":
 
 	lsiList = {}
 
-	lsiList['router'] = Lsi('router', 1000, 3, 4, 2, QMFBROKER, 6633)
+	lsiList['router'] = Lsi('router', 1000, 3, 4, 2, CTLADDR, 6633)
 	lsiList['router'].ports.append('ge0')
 	lsiList['router'].ports.append('vethR00')
 	lsiList['router'].ports.append('vethR10')
 
-	lsiList['etherswitch'] = Lsi('etherswitch', 2000, 3, 4, 2, QMFBROKER, 6644)
+	lsiList['etherswitch'] = Lsi('etherswitch', 2000, 3, 4, 2, CTLADDR, 6644)
 	lsiList['etherswitch'].ports.append('ge1')
 	lsiList['etherswitch'].ports.append('vethS00')
 	lsiList['etherswitch'].ports.append('vethS10')
