@@ -130,6 +130,12 @@ vmcore::handle_dpath_open(
 		 */
 		block_stp_frames();
 
+		/*
+		 * default: redirect multicast traffic always to controller
+		 */
+		redirect_ipv4_multicast();
+		redirect_ipv6_multicast();
+
 		// TODO: how many data path elements are allowed to connect to ourselves? only one makes sense ...
 
 
@@ -410,6 +416,66 @@ vmcore::unblock_stp_frames()
 	fe.set_command(OFPFC_DELETE_STRICT);
 	fe.set_table_id(0);
 	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
+
+	send_flow_mod_message(dpt, fe);
+}
+
+
+
+void
+vmcore::redirect_ipv4_multicast()
+{
+	if (0 == dpt)
+		return;
+
+	rofl::cflowentry fe(dpt->get_version());
+
+	fe.set_command(OFPFC_ADD);
+	fe.set_table_id(0);
+	fe.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+	fe.match.set_ipv4_dst(rofl::caddress(AF_INET, "224.0.0.0"), rofl::caddress(AF_INET, "240.0.0.0"));
+	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
+	switch (dpt->get_version()) {
+	case OFP10_VERSION: {
+		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP10_CONTROLLER);
+	} break;
+	case OFP12_VERSION: {
+		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP12_CONTROLLER);
+	} break;
+	case OFP13_VERSION: {
+		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP13_CONTROLLER);
+	} break;
+	}
+
+	send_flow_mod_message(dpt, fe);
+}
+
+
+
+void
+vmcore::redirect_ipv6_multicast()
+{
+	if (0 == dpt)
+		return;
+
+	rofl::cflowentry fe(dpt->get_version());
+
+	fe.set_command(OFPFC_ADD);
+	fe.set_table_id(0);
+	fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+	fe.match.set_ipv4_dst(rofl::caddress(AF_INET6, "ff00::"), rofl::caddress(AF_INET, "ff00::"));
+	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
+	switch (dpt->get_version()) {
+	case OFP10_VERSION: {
+		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP10_CONTROLLER);
+	} break;
+	case OFP12_VERSION: {
+		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP12_CONTROLLER);
+	} break;
+	case OFP13_VERSION: {
+		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP13_CONTROLLER);
+	} break;
+	}
 
 	send_flow_mod_message(dpt, fe);
 }

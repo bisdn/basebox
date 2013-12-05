@@ -145,6 +145,12 @@ private:
 	unblock_stp_frames();
 
 	void
+	redirect_ipv4_multicast();
+
+	void
+	redirect_ipv6_multicast();
+
+	void
 	run_dpath_open_script();
 
 	void
