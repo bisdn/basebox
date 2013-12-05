@@ -280,6 +280,7 @@ public:
 			os << "dpid:" << (unsigned long long)sp.dpid << " ";
 			os << "portno:" << (unsigned long)sp.portno << " ";
 			os << "pvid:" << (int)sp.pvid << " ";
+			os << "devname:" << sp.get_devname() << " ";
 		os << ">";
 		for (std::map<uint16_t, struct vlan_membership_t>::const_iterator
 				it = sp.memberships.begin(); it != sp.memberships.end(); ++it) {
