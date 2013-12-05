@@ -463,7 +463,7 @@ vmcore::redirect_ipv6_multicast()
 	fe.set_command(OFPFC_ADD);
 	fe.set_table_id(0);
 	fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-	fe.match.set_ipv6_dst(rofl::caddress(AF_INET6, "ff00::"), rofl::caddress(AF_INET, "ff00::"));
+	fe.match.set_ipv6_dst(rofl::caddress(AF_INET6, "ff00::"), rofl::caddress(AF_INET6, "ff00::"));
 	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
 	switch (dpt->get_version()) {
 	case OFP10_VERSION: {
