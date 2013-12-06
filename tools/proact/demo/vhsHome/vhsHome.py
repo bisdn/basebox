@@ -46,11 +46,16 @@ if __name__ == "__main__":
 	lsiList['router'].ports.append('vethR00')
 	lsiList['router'].ports.append('vethR10')
 
-	lsiList['etherswitch'] = Lsi('etherswitch', 2000, 3, 4, 2, CTLADDR, 6644)
-	lsiList['etherswitch'].ports.append('ge1')
-	lsiList['etherswitch'].ports.append('vethS00')
-	lsiList['etherswitch'].ports.append('vethS10')
-	
+	lsiList['internal_LAN'] = Lsi('internal_LAN', 2000, 3, 4, 2, CTLADDR, 6644)
+	lsiList['internal_LAN'].ports.append('ge1')
+	lsiList['internal_LAN'].ports.append('vethS00')
+	lsiList['internal_LAN'].ports.append('vethS10')
+
+    lsiList['external_LAN'] = Lsi('external_LAN', 3000, 3, 4, 2, CTLADDR, 6644)
+    lsiList['external_LAN'].ports.append('ge0')
+    # add second physical port here
+    # lsiList['external_LAN'].ports.append('ge0')
+    	
 	xdpdProxy = proact.common.xdpdproxy.XdpdProxy(QMFBROKER, XDPDID)
 	print xdpdProxy
 
@@ -65,9 +70,11 @@ if __name__ == "__main__":
 				xdpdProxy.attachPort(lsi.dpid, devname)
 
 	if createLink:
-		(devname1, devname2) = xdpdProxy.createVirtualLink(lsiList['router'].dpid, lsiList['etherswitch'].dpid)
+		(devname1, devname2) = xdpdProxy.createVirtualLink(lsiList['router'].dpid, lsiList['internal_LAN'].dpid)
 
-        hgwCore = proact.hgwcore.hgwcore.HgwCore(conffile=CONFFILE, lanLinks=[devname1])
+        (devname3, devname4) = xdpdProxy.createVirtualLink(lsiList['router'].dpid, lsiList['external_LAN'].dpid)
+
+        hgwCore = proact.hgwcore.hgwcore.HgwCore(conffile=CONFFILE, lanLinks=[devname1], wanLinks=[devname3])
         hgwCore.run()
 
 	for dpname, lsi in lsiList.iteritems():
