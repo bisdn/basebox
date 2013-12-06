@@ -42,7 +42,7 @@ if __name__ == "__main__":
 	lsiList = {}
 
 	lsiList['router'] = Lsi('router', 1000, 3, 4, 2, CTLADDR, 6633)
-	lsiList['router'].ports.append('ge0')
+	#lsiList['router'].ports.append('ge0')
 	lsiList['router'].ports.append('vethR00')
 	lsiList['router'].ports.append('vethR10')
 
