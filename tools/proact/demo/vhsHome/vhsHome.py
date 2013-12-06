@@ -51,10 +51,10 @@ if __name__ == "__main__":
 	lsiList['internal_LAN'].ports.append('vethS00')
 	lsiList['internal_LAN'].ports.append('vethS10')
 
-    lsiList['external_LAN'] = Lsi('external_LAN', 3000, 3, 4, 2, CTLADDR, 6644)
-    lsiList['external_LAN'].ports.append('ge0')
-    # add second physical port here
-    # lsiList['external_LAN'].ports.append('ge0')
+        lsiList['external_LAN'] = Lsi('external_LAN', 3000, 3, 4, 2, CTLADDR, 6644)
+        lsiList['external_LAN'].ports.append('ge0')
+        # add second physical port here
+        # lsiList['external_LAN'].ports.append('ge0')
     	
 	xdpdProxy = proact.common.xdpdproxy.XdpdProxy(QMFBROKER, XDPDID)
 	print xdpdProxy
