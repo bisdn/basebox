@@ -133,8 +133,12 @@ class DhcpClient(object):
             self.logger.debug('binding DHCP reply: ' + str(self))
             
             reason = elems.get('reason', None)
+            
             (s_new_prefix, s_new_prefixlen) = elems.get('new_ip6_prefix', None).split('/')
-            (s_old_prefix, s_old_prefixlen) = elems.get('old_ip6_prefix', None).split('/')
+            if reason == 'REBIND6':
+                (s_old_prefix, s_old_prefixlen) = elems.get('old_ip6_prefix', None).split('/')
+            else:
+                (s_old_prefix, s_old_prefixlen) = (s_new_prefix, s_new_prefixlen)
             old_prefix = IPv6Prefix(s_old_prefix, s_old_prefixlen)
             new_prefix = IPv6Prefix(s_new_prefix, s_new_prefixlen)
             if not old_prefix in self.old_prefixes:
