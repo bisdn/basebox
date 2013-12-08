@@ -321,6 +321,7 @@ class HgwCore(proact.common.basecore.BaseCore):
     
     def startOpenVpn(self):
         """starts the openvpn process connecting this HGW instance with its cloud extension"""
+        return
         try:
             openvpn_cmd = self.systemctl_binary + ' start openvpn@home'
             self.logger.debug('executing: ' + str(openvpn_cmd))
@@ -332,6 +333,7 @@ class HgwCore(proact.common.basecore.BaseCore):
 
     def stopOpenVpn(self):
         """stops the openvpn process connecting this HGW instance with its cloud extension"""
+        return
         try:
             openvpn_cmd = self.systemctl_binary + ' stop openvpn@home'
             self.logger.debug('executing: ' + str(openvpn_cmd))
