@@ -338,7 +338,7 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.process = subprocess.Popen(openvpn_cmd.split(), shell=False, stdout=subprocess.PIPE)
             resultstring = self.process.communicate()
         except:
-            self.logger.error('HgwCore::startOpenVpn failed')
+            self.logger.error('HgwCore::stopOpenVpn failed')
 
 
 if __name__ == "__main__":
