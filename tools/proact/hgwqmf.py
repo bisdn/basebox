@@ -10,7 +10,7 @@ try:
 except:
 	raise
 
-hgwcores = sess.getObjects(_class="hgwcore", _package="de.bisdn.hgwcore")
+hgwcores = sess.getObjects(_class="hgwcore", _package="de.bisdn.proact")
 
 for hgwcore in hgwcores:
 	print hgwcore
@@ -19,13 +19,9 @@ for hgwcore in hgwcores:
 
 hgwcore = hgwcores[0]
 
-#if sys.argv[1] == 'start':
-#	print ethcore.vlanAdd(256, 20)
-#	print ethcore.portAdd(256, 20, 'vnet4', True)
-#	print ethcore.portAdd(256, 20, 'vnet6', True)
+if sys.argv[1] == 'start':
+	print hgwcore.startOpenVpn()
 
-#if sys.argv[1] == 'stop':
-#	print ethcore.portDrop(256, 20, 'vnet4')
-#	print ethcore.portDrop(256, 20, 'vnet6')
-#	print ethcore.vlanDrop(256, 20)
+if sys.argv[1] == 'stop':
+	print hgwcore.stopOpenVpn()
 
