@@ -73,23 +73,23 @@ class HgwCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
                 self.agentSess.methodSuccess(handle)
 
             elif methodName == "startOpenVpn":
-                self.HgwCore.startOpenVpn()
+                self.hgwCore.startOpenVpn()
                 self.agentSess.methodSuccess(handle)
 
             elif methodName == "stopOpenVpn":
-                self.HgwCore.stopOpenVpn()
+                self.hgwCore.stopOpenVpn()
                 self.agentSess.methodSuccess(handle)
 
             elif methodName == 'userSessionAdd':
                 try:
-                    self.HgwCore.userSessionAdd(args['userIdentity'], args['ipAddress'], args['validLifetime'])
+                    self.hgwCore.userSessionAdd(args['userIdentity'], args['ipAddress'], args['validLifetime'])
                     self.agentSess.methodSuccess(handle)
                 except:
                     self.agentSess.raiseException(handle, "call for userSessionAdd() failed for userID " + args['userIdentity'] + ' and ipAddress ' + args['ipAddress'])
                 
             elif methodName == 'userSessionDel':
                 try:
-                    self.HgwCore.userSessionDel(args['userIdentity'], args['ipAddress'])
+                    self.hgwCore.userSessionDel(args['userIdentity'], args['ipAddress'])
                     self.agentSess.methodSuccess(handle)
                 except:
                     self.agentSess.raiseException(handle, "call for userSessionDel() failed for userID " + args['userIdentity'])
