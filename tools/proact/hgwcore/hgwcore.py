@@ -36,6 +36,16 @@ class HgwCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
         self.qmfSchemaMethodTest.addArgument(qmf2.SchemaProperty("outstring", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_OUT))
         self.qmfSchemaHgwCore.addMethod(self.qmfSchemaMethodTest)
 
+        # startOpenVpn method
+        #        
+        self.qmfSchemaMethodStartOpenVpn = qmf2.SchemaMethod("startOpenVpn", desc='start OpenVPN connection HGW <=> cloud')
+        self.qmfSchemaHgwCore.addMethod(self.qmfSchemaMethodStartOpenVpn)
+
+        # stopOpenVpn method
+        #        
+        self.qmfSchemaMethodStopOpenVpn = qmf2.SchemaMethod("stopOpenVpn", desc='stop OpenVPN connection HGW <=> cloud')
+        self.qmfSchemaHgwCore.addMethod(self.qmfSchemaMethodStopOpenVpn)
+
         # UserSessionAdd method
         #
         self.qmfSchemaMethodUserSessionAdd = qmf2.SchemaMethod("userSessionAdd", desc='add a new authenticated user session')
@@ -61,6 +71,15 @@ class HgwCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
             if methodName == "test":
                 handle.addReturnArgument("outstring", 'you sent <' + args['instring'] + '>')
                 self.agentSess.methodSuccess(handle)
+
+            elif methodName == "startOpenVpn":
+                self.HgwCore.startOpenVpn()
+                self.agentSess.methodSuccess(handle)
+
+            elif methodName == "stopOpenVpn":
+                self.HgwCore.stopOpenVpn()
+                self.agentSess.methodSuccess(handle)
+
             elif methodName == 'userSessionAdd':
                 try:
                     self.HgwCore.userSessionAdd(args['userIdentity'], args['ipAddress'], args['validLifetime'])
@@ -89,6 +108,8 @@ class HgwCore(proact.common.basecore.BaseCore):
     """
     a description would be useful here
     """
+    systemctl_binary = '/usr/bin/systemctl'
+    
     def __init__(self, **kwargs):
         try:            
             self.linkNames = {'wan':[], 'dmz':[], 'lan':[] }
@@ -124,6 +145,7 @@ class HgwCore(proact.common.basecore.BaseCore):
         self.logger.info('cleaning up ...')
         try:
             self.agentHandler.cancel()
+            self.stopOpenVpn()
         except:
             pass
         for devname in self.dmzLinks:
@@ -296,6 +318,28 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.logger.error('HgwCore::initHgwDptCore() initializing dptcore failed ' + str(e))
             #self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
     
+    
+    def startOpenVpn(self):
+        """starts the openvpn process connecting this HGW instance with its cloud extension"""
+        try:
+            openvpn_cmd = self.systemctl_binary + ' start openvpn@home'
+            self.logger.debug('executing: ' + str(openvpn_cmd))
+            self.process = subprocess.Popen(openvpn_cmd.split(), shell=False, stdout=subprocess.PIPE)
+            resultstring = self.process.communicate()
+        except:
+            self.logger.error('HgwCore::startOpenVpn failed')
+
+
+    def stopOpenVpn(self):
+        """stops the openvpn process connecting this HGW instance with its cloud extension"""
+        try:
+            openvpn_cmd = self.systemctl_binary + ' stop openvpn@home'
+            self.logger.debug('executing: ' + str(openvpn_cmd))
+            self.process = subprocess.Popen(openvpn_cmd.split(), shell=False, stdout=subprocess.PIPE)
+            resultstring = self.process.communicate()
+        except:
+            self.logger.error('HgwCore::startOpenVpn failed')
+
 
 if __name__ == "__main__":
     HgwCore(wanLinks=['dummy0'], lanLinks=['veth0'], dmzLinks=['veth2']).run() 
