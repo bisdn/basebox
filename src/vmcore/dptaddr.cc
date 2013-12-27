@@ -67,7 +67,7 @@ dptaddr::operator= (
 
 
 dptaddr::dptaddr(
-			rofl::crofbase* rofbase, rofl::cofdpt* dpt, int ifindex, uint16_t adindex) :
+			rofl::crofbase* rofbase, rofl::crofdpt* dpt, int ifindex, uint16_t adindex) :
 		rofbase(rofbase),
 		dpt(dpt),
 		of_table_id(0),

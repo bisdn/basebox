@@ -203,7 +203,7 @@ void
 sport::flow_mod_add(uint16_t vid, bool tagged)
 {
 	try {
-		rofl::cofdpt *dpt = spowner->get_rofbase()->dpt_find(dpid);
+		rofl::crofdpt *dpt = spowner->get_rofbase()->dpt_find(dpid);
 
 		// set incoming rule for switch port
 		if (true) {
@@ -261,7 +261,7 @@ void
 sport::flow_mod_delete(uint16_t vid, bool tagged)
 {
 	try {
-		rofl::cofdpt *dpt = spowner->get_rofbase()->dpt_find(dpid);
+		rofl::crofdpt *dpt = spowner->get_rofbase()->dpt_find(dpid);
 
 		// set incoming rule for switch port
 		if (true) {

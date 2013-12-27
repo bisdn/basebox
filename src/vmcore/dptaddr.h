@@ -25,7 +25,7 @@ class dptaddr :
 private:
 
 	rofl::crofbase*		rofbase;
-	rofl::cofdpt*		dpt;
+	rofl::crofdpt*		dpt;
 	uint8_t				of_table_id;
 	int					ifindex;
 	uint16_t			adindex;
@@ -66,7 +66,7 @@ public:
 	 *
 	 */
 	dptaddr(
-			rofl::crofbase *rofbase, rofl::cofdpt *dpt, int ifindex, uint16_t adindex);
+			rofl::crofbase *rofbase, rofl::crofdpt *dpt, int ifindex, uint16_t adindex);
 
 
 public:

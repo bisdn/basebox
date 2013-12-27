@@ -125,19 +125,19 @@ private:
 	handle_timeout(int opaque);
 
 	virtual void
-	handle_dpath_open(cofdpt *dpt);
+	handle_dpath_open(crofdpt *dpt);
 
 	virtual void
-	handle_dpath_close(cofdpt *dpt);
+	handle_dpath_close(crofdpt *dpt);
 
 	virtual void
-	handle_packet_in(cofdpt *dpt, cofmsg_packet_in *msg);
+	handle_packet_in(crofdpt *dpt, cofmsg_packet_in *msg);
 
 	virtual void
-	handle_port_status(cofdpt *dpt, cofmsg_port_status *msg);
+	handle_port_status(crofdpt *dpt, cofmsg_port_status *msg);
 
 	virtual void
-	handle_flow_stats_reply(cofdpt *dpt, cofmsg_flow_stats_reply *msg);
+	handle_flow_stats_reply(crofdpt *dpt, cofmsg_flow_stats_reply *msg);
 
 private:
 

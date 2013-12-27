@@ -50,7 +50,7 @@ private:
 	static std::map<unsigned int, dptlink*>		dptlinks;
 
 	rofl::crofbase				*rofbase; 		// OpenFlow endpoint
-	rofl::cofdpt				*dpt;			// cofdpt handle for attached data path element
+	rofl::crofdpt				*dpt;			// cofdpt handle for attached data path element
 	uint32_t			 		 of_port_no;	// OpenFlow portno assigned to port on dpt mapped to this dptport instance
 	ctapdev						*tapdev;		// tap device emulating the mapped port on this system
 	unsigned int		 		 ifindex;		// ifindex for tapdevice
@@ -65,7 +65,7 @@ public:
 	 */
 	dptlink(
 			rofl::crofbase *rofbase,
-			rofl::cofdpt *dpt,
+			rofl::crofdpt *dpt,
 			uint32_t of_port_no);
 
 

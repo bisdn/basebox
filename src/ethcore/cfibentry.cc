@@ -39,7 +39,7 @@ cfibentry::~cfibentry()
 	flow_mod_configure(FLOW_MOD_DELETE);
 #if 0
 	rofl::crofbase *rofbase = fib->get_rofbase();
-	rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
 	rofbase->send_barrier_request(dpt);
 #endif
@@ -79,7 +79,7 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 {
 	try {
 		rofl::crofbase *rofbase = fib->get_rofbase();
-		rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+		rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
 		rofl::cflowentry fe(dpt->get_version());
 

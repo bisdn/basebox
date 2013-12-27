@@ -70,7 +70,7 @@ dptneigh::operator= (
 
 dptneigh::dptneigh(
 		rofl::crofbase *rofbase,
-		rofl::cofdpt* dpt,
+		rofl::crofdpt* dpt,
 		uint32_t of_port_no,
 		uint8_t of_table_id,
 		int ifindex,

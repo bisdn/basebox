@@ -69,10 +69,10 @@ void
 ethcore::request_flow_stats()
 {
 #if 0
-	std::map<cofdpt*, std::map<uint16_t, std::map<cmacaddr, struct fibentry_t> > >::iterator it;
+	std::map<crofdpt*, std::map<uint16_t, std::map<cmacaddr, struct fibentry_t> > >::iterator it;
 
 	for (it = fib.begin(); it != fib.end(); ++it) {
-		cofdpt *dpt = it->first;
+		crofdpt *dpt = it->first;
 
 		cofflow_stats_request req;
 
@@ -112,7 +112,7 @@ ethcore::request_flow_stats()
 
 
 void
-ethcore::handle_flow_stats_reply(cofdpt *dpt, cofmsg_flow_stats_reply *msg)
+ethcore::handle_flow_stats_reply(crofdpt *dpt, cofmsg_flow_stats_reply *msg)
 {
 #if 0
 	if (fib.find(dpt) == fib.end()) {
@@ -147,7 +147,7 @@ ethcore::handle_flow_stats_reply(cofdpt *dpt, cofmsg_flow_stats_reply *msg)
 
 void
 ethcore::handle_dpath_open(
-		cofdpt *dpt)
+		crofdpt *dpt)
 {
 	logging::info << "[ethcore] dpath attaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
 
@@ -190,7 +190,7 @@ ethcore::handle_dpath_open(
 
 void
 ethcore::handle_dpath_close(
-		cofdpt *dpt)
+		crofdpt *dpt)
 {
 	logging::info << "[ethcore] dpath detaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
 
@@ -204,7 +204,7 @@ ethcore::handle_dpath_close(
 
 void
 ethcore::handle_packet_in(
-		cofdpt *dpt,
+		crofdpt *dpt,
 		cofmsg_packet_in *msg)
 {
 	uint16_t vid = 0xffff;
@@ -249,7 +249,7 @@ ethcore::handle_packet_in(
 
 
 void
-ethcore::handle_port_status(cofdpt *dpt, cofmsg_port_status *msg)
+ethcore::handle_port_status(crofdpt *dpt, cofmsg_port_status *msg)
 {
 	// TODO
 

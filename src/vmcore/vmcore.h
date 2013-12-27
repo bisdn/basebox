@@ -60,8 +60,8 @@ class vmcore :
 private:
 
 
-	rofl::cofdpt 												*dpt;		// handle for cofdpt instance managed by this vmcore
-	std::map<rofl::cofdpt*, std::map<uint32_t, dptlink*> > 		 dptlinks;	// mapped ports per data path element
+	rofl::crofdpt 												*dpt;		// handle for cofdpt instance managed by this vmcore
+	std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> > 		 dptlinks;	// mapped ports per data path element
 	std::map<uint8_t, std::map<unsigned int, dptroute*> >		 dptroutes;	// active routes => key1:table_id, key2:routing index, value: dptroute instance
 
 	enum vmcore_timer_t {
@@ -91,21 +91,21 @@ public:
 
 
 	virtual void
-	handle_dpath_open(rofl::cofdpt *dpt);
+	handle_dpath_open(rofl::crofdpt *dpt);
 
 
 	virtual void
-	handle_dpath_close(rofl::cofdpt *dpt);
+	handle_dpath_close(rofl::crofdpt *dpt);
 
 
 	virtual void
-	handle_port_status(rofl::cofdpt *dpt, rofl::cofmsg_port_status *msg);
+	handle_port_status(rofl::crofdpt *dpt, rofl::cofmsg_port_status *msg);
 
 	virtual void
-	handle_packet_out(rofl::cofctl *ctl, rofl::cofmsg_packet_out *msg);
+	handle_packet_out(rofl::crofctl *ctl, rofl::cofmsg_packet_out *msg);
 
 	virtual void
-	handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg);
+	handle_packet_in(rofl::crofdpt *dpt, rofl::cofmsg_packet_in *msg);
 
 	virtual void
 	handle_timeout(int opaque);

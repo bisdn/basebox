@@ -194,7 +194,7 @@ void
 cfib::add_flow_mod_in_stage()
 {
 	rofl::crofbase *rofbase = fibowner->get_rofbase();
-	rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
 	rofl::cflowentry fe(dpt->get_version());
 
@@ -228,7 +228,7 @@ void
 cfib::drop_flow_mod_in_stage()
 {
 	rofl::crofbase *rofbase = fibowner->get_rofbase();
-	rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
 	rofl::cflowentry fe(dpt->get_version());
 
@@ -259,7 +259,7 @@ void
 cfib::add_flow_mod_flood()
 {
 	rofl::crofbase *rofbase = fibowner->get_rofbase();
-	rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
 	rofl::cflowentry fe(dpt->get_version());
 
@@ -282,7 +282,7 @@ void
 cfib::drop_flow_mod_flood()
 {
 	rofl::crofbase *rofbase = fibowner->get_rofbase();
-	rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
 	rofl::cflowentry fe(dpt->get_version());
 
@@ -307,7 +307,7 @@ cfib::add_group_entry_flood(
 {
 	try {
 		rofl::crofbase *rofbase = fibowner->get_rofbase();
-		rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+		rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
 		rofl::cgroupentry ge(dpt->get_version());
 
@@ -349,7 +349,7 @@ cfib::drop_group_entry_flood()
 {
 	try {
 		rofl::crofbase *rofbase = fibowner->get_rofbase();
-		rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+		rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
 		rofl::cgroupentry ge(dpt->get_version());
 
@@ -423,7 +423,7 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 			 */
 
 			rofl::crofbase *rofbase = fibowner->get_rofbase();
-			rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+			rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
 			rofl::cofaclist actions(dpt->get_version());
 			actions.next() = rofl::cofaction_group(dpt->get_version(), flood_group_id);
@@ -445,7 +445,7 @@ cfib::block_stp()
 	 * block mac address 01:80:c2:00:00:00
 	 */
 	rofl::crofbase *rofbase = fibowner->get_rofbase();
-	rofl::cofdpt *dpt = rofbase->dpt_find(dpid);
+	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 	rofl::cflowentry fe(dpt->get_version());
 
 	fe.set_command(OFPFC_ADD);

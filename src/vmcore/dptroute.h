@@ -37,7 +37,7 @@ private:
 
 
 	rofl::crofbase					*rofbase;
-	rofl::cofdpt					*dpt;
+	rofl::crofdpt					*dpt;
 	uint8_t					 		table_id;
 	unsigned int			 		rtindex;
 	rofl::cflowentry		 		flowentry;
@@ -56,7 +56,7 @@ public:
 	 */
 	dptroute(
 			rofl::crofbase* rofbase,
-			rofl::cofdpt* dpt,
+			rofl::crofdpt* dpt,
 			uint8_t table_id,
 			unsigned int rtindex);
 

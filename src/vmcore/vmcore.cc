@@ -72,7 +72,7 @@ vmcore::get_mapped_link_from_dpt(int ifindex)
 void
 vmcore::delete_all_ports()
 {
-	for (std::map<rofl::cofdpt*, std::map<uint32_t, dptlink*> >::iterator
+	for (std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> >::iterator
 			jt = dptlinks.begin(); jt != dptlinks.end(); ++jt) {
 		for (std::map<uint32_t, dptlink*>::iterator
 				it = dptlinks[jt->first].begin(); it != dptlinks[jt->first].end(); ++it) {
@@ -102,7 +102,7 @@ vmcore::delete_all_routes()
 
 void
 vmcore::handle_dpath_open(
-		rofl::cofdpt *dpt)
+		rofl::crofdpt *dpt)
 {
 	try {
 		this->dpt = dpt;
@@ -200,7 +200,7 @@ vmcore::handle_dpath_open(
 
 void
 vmcore::handle_dpath_close(
-		rofl::cofdpt *dpt)
+		rofl::crofdpt *dpt)
 {
 	run_dpath_close_script();
 
@@ -208,14 +208,14 @@ vmcore::handle_dpath_close(
 
 	delete_all_ports();
 
-	this->dpt = (rofl::cofdpt*)0;
+	this->dpt = (rofl::crofdpt*)0;
 }
 
 
 
 void
 vmcore::handle_port_status(
-		rofl::cofdpt *dpt,
+		rofl::crofdpt *dpt,
 		rofl::cofmsg_port_status *msg)
 {
 	if (this->dpt != dpt) {
@@ -266,7 +266,7 @@ vmcore::handle_port_status(
 
 
 void
-vmcore::handle_packet_out(rofl::cofctl *ctl, rofl::cofmsg_packet_out *msg)
+vmcore::handle_packet_out(rofl::crofctl *ctl, rofl::cofmsg_packet_out *msg)
 {
 	delete msg;
 }
@@ -275,7 +275,7 @@ vmcore::handle_packet_out(rofl::cofctl *ctl, rofl::cofmsg_packet_out *msg)
 
 
 void
-vmcore::handle_packet_in(rofl::cofdpt *dpt, rofl::cofmsg_packet_in *msg)
+vmcore::handle_packet_in(rofl::crofdpt *dpt, rofl::cofmsg_packet_in *msg)
 {
 	try {
 		uint32_t port_no = msg->get_match().get_in_port();
@@ -596,10 +596,10 @@ vmcore::execute(
 void
 vmcore::dump_state()
 {
-	for (std::map<rofl::cofdpt*, std::map<uint32_t, dptlink*> >::iterator
+	for (std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> >::iterator
 			it = dptlinks.begin(); it != dptlinks.end(); ++it) {
 
-		rofl::cofdpt *dpt = it->first;
+		rofl::crofdpt *dpt = it->first;
 
 		std::cerr << "data path <dpid: " << dpt->get_dpid_s() << "> => " << std::endl;
 

@@ -24,7 +24,7 @@ dptlink::get_dptlink(unsigned int ifindex)
 
 dptlink::dptlink(
 		rofl::crofbase *rofbase,
-		rofl::cofdpt *dpt,
+		rofl::crofdpt *dpt,
 		uint32_t of_port_no) :
 				rofbase(rofbase),
 				dpt(dpt),
