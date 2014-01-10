@@ -11,7 +11,7 @@ class RAdvd(object):
     """Class for controlling an radvd instance"""
     STATE_STOPPED = 0
     STATE_ANNOUNCING = 1
-    radvd_binary = '/sbin/radvd'
+    radvd_binary = '/usr/sbin/radvd'
     
     def __init__(self, baseCore, devname, conffiledir='.'):
         self.logger = logging.getLogger('proact')
