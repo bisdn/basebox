@@ -4,7 +4,6 @@ import sys
 sys.path.append('../..')
 
 import proact.common.basecore
-import proact.common.dptcore
 import ConfigParser
 import logging
 import time
