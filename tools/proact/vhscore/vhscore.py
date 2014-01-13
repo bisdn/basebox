@@ -30,6 +30,7 @@ class VhsCore(proact.common.basecore.BaseCore):
 
             self.conffile = kwargs.get('conffile', 'vhscore.conf')
             self.parseConfig()
+            self.brokerUrl = ""
             self.vendor = kwargs.get('vendor', 'bisdn.de')
             self.product = kwargs.get('product', 'vhscore')
             
