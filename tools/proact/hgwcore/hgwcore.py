@@ -147,10 +147,6 @@ class HgwCore(proact.common.basecore.BaseCore):
                     dmzLink.radvd.addPrefix(proact.common.ipv6prefix.IPv6Prefix(str(p), 64))
                 dmzLink.radvd.restart()
 
-            for devname, wanLink in self.wanLinks.iteritems():
-                for prefix in dhclient.new_prefixes:
-                    p = prefix.get_subprefix(wanLink.uniquePrefix).prefix
-                    wanLink.addIPv6Addr(str(p)+'1', 64)
                         
         elif event.type == proact.common.basecore.BaseCore.EVENT_PREFIX_DETACHED:
             self.logger.debug('Prefix-Detached (' + str(event.source) + ')')
