@@ -23,7 +23,7 @@ class RAdvd(object):
         self.conffiledir = conffiledir
         self.conffile = self.conffiledir + '/radvd.' + self.devname + '.conf'
         self.logfile = self.conffiledir + '/radvd.' + self.devname + '.log'
-        self.pidfile = '/var/run/radvd/radvd.' + self.devname + '.pid'
+        self.pidfile = self.conffiledir + '/radvd.' + self.devname + '.pid'
     
     def __str__(self, *args, **kwargs):
         s_prefixes = ''
