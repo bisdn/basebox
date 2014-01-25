@@ -3,7 +3,6 @@
 import subprocess
 import radvdaemon
 import dhcpclient
-import qmfhelper
 import logging
 import select
 import sys
@@ -230,19 +229,6 @@ class BaseCoreException(Exception):
         self.serror = serror
     def __str__(self):
         return '<BaseCoreException: ' + self.serror + ' >'
-
-
-class BaseCoreQmfAgentHandler(qmfhelper.QmfAgentHandler):
-    def __init__(self, agentSession):
-        self.agentSess = agentSession
-        qmfhelper.QmfAgentHandler.__init__(self, agentSession)
-        self.start()
-        
-    def setSchema(self):
-        raise BaseCoreException("BaseCoreQmfAgentHandler::setSchema() method not implemented")
-    
-    def method(self):
-        raise BaseCoreException("BaseCoreQmfAgentHandler::method() method not implemented")
     
 
 class BaseCoreEvent(object):
@@ -279,27 +265,18 @@ class BaseCore(Daemon):
     EVENT_RADVD_START = 15
     EVENT_RADVD_STOP = 16
     def __init__(self, brokerUrl="127.0.0.1", **kwargs):
-        try:
-            self.logger = logging.getLogger('proact')
-            self.logger.setLevel(logging.DEBUG)
-            fh = logging.FileHandler('proact.log')
-            fh.setLevel(logging.DEBUG)
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.ERROR)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            fh.setFormatter(formatter)
-            ch.setFormatter(formatter)
-            self.logger.addHandler(fh)
-            self.logger.addHandler(ch)
+        self.logger = logging.getLogger('proact')
+        self.logger.setLevel(logging.DEBUG)
+        fh = logging.FileHandler('proact.log')
+        fh.setLevel(logging.DEBUG)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.ERROR)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        fh.setFormatter(formatter)
+        ch.setFormatter(formatter)
+        self.logger.addHandler(fh)
+        self.logger.addHandler(ch)
 
-            self.qmfConsole = qmfhelper.QmfConsole(brokerUrl)
-            self.vendor = kwargs.get('vendor', 'bisdn.de')
-            self.product = kwargs.get('product', 'basecore')
-            self.qmfAgent = qmfhelper.QmfAgent(brokerUrl, vendor=self.vendor, product=self.product)
-        except qmfhelper.QmfConsoleException:
-            raise
-        except qmfhelper.QmfAgentException:
-            raise
         (self.pipein, self.pipeout) = os.pipe()
         self.events = []
         self.ipr = IPRoute() 

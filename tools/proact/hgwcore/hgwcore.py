@@ -4,104 +4,11 @@ import sys
 sys.path.append('../..')
 
 import proact.common.basecore
-import proact.common.xdpdproxy
-import proact.common.dptcore
 import proact.common.radvdaemon
 import proact.common.dhcpclient
 import ConfigParser
 import logging
 import time
-import qmf2
-
-
-
-class HgwCoreQmfAgentHandler(proact.common.basecore.BaseCoreQmfAgentHandler):
-    def __init__(self, hgwCore, agentSession):
-        proact.common.basecore.BaseCoreQmfAgentHandler.__init__(self, agentSession)
-        self.hgwCore = hgwCore
-        self.qmfHgwCore = {}
-        self.qmfHgwCore['data'] = qmf2.Data(self.qmfSchemaHgwCore)
-        self.qmfHgwCore['data'].hgwCoreID = hgwCore.hgwCoreID
-        self.qmfHgwCore['addr'] = self.agentSess.addData(self.qmfHgwCore['data'], 'hgwcore')
-        print 'registering on QMF with hgwCoreID ' + hgwCore.hgwCoreID
-        
-    def setSchema(self):
-        self.qmfSchemaHgwCore = qmf2.Schema(qmf2.SCHEMA_TYPE_DATA, "de.bisdn.proact", "hgwcore")
-        self.qmfSchemaHgwCore.addProperty(qmf2.SchemaProperty("hgwCoreID", qmf2.SCHEMA_DATA_STRING))
-
-        # test method
-        #        
-        self.qmfSchemaMethodTest = qmf2.SchemaMethod("test", desc='testing method for QMF agent support in python')
-        self.qmfSchemaMethodTest.addArgument(qmf2.SchemaProperty("instring", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
-        self.qmfSchemaMethodTest.addArgument(qmf2.SchemaProperty("outstring", qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_OUT))
-        self.qmfSchemaHgwCore.addMethod(self.qmfSchemaMethodTest)
-
-        # startOpenVpn method
-        #        
-        self.qmfSchemaMethodStartOpenVpn = qmf2.SchemaMethod("startOpenVpn", desc='start OpenVPN connection HGW <=> cloud')
-        self.qmfSchemaHgwCore.addMethod(self.qmfSchemaMethodStartOpenVpn)
-
-        # stopOpenVpn method
-        #        
-        self.qmfSchemaMethodStopOpenVpn = qmf2.SchemaMethod("stopOpenVpn", desc='stop OpenVPN connection HGW <=> cloud')
-        self.qmfSchemaHgwCore.addMethod(self.qmfSchemaMethodStopOpenVpn)
-
-        # UserSessionAdd method
-        #
-        self.qmfSchemaMethodUserSessionAdd = qmf2.SchemaMethod("userSessionAdd", desc='add a new authenticated user session')
-        self.qmfSchemaMethodUserSessionAdd.addArgument(qmf2.SchemaProperty('userIdentity', qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
-        self.qmfSchemaMethodUserSessionAdd.addArgument(qmf2.SchemaProperty('ipAddress', qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
-        self.qmfSchemaMethodUserSessionAdd.addArgument(qmf2.SchemaProperty('validLifetime', qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
-        self.qmfSchemaHgwCore.addMethod(self.qmfSchemaMethodUserSessionAdd)
-
-        # UserSessionDel method
-        #
-        self.qmfSchemaMethodUserSessionDel = qmf2.SchemaMethod("userSessionDel", desc='delete an authenticated user session')
-        self.qmfSchemaMethodUserSessionDel.addArgument(qmf2.SchemaProperty('userIdentity', qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
-        self.qmfSchemaMethodUserSessionDel.addArgument(qmf2.SchemaProperty('ipAddress', qmf2.SCHEMA_DATA_STRING, direction=qmf2.DIR_IN))
-        self.qmfSchemaHgwCore.addMethod(self.qmfSchemaMethodUserSessionDel)
-
-
-        self.agentSess.registerSchema(self.qmfSchemaHgwCore)
-           
-        
-    def method(self, handle, methodName, args, subtypes, addr, userId):
-        try:
-            print "method: " + str(methodName)
-            if methodName == "test":
-                handle.addReturnArgument("outstring", 'you sent <' + args['instring'] + '>')
-                self.agentSess.methodSuccess(handle)
-
-            elif methodName == "startOpenVpn":
-                self.hgwCore.startOpenVpn()
-                self.agentSess.methodSuccess(handle)
-
-            elif methodName == "stopOpenVpn":
-                self.hgwCore.stopOpenVpn()
-                self.agentSess.methodSuccess(handle)
-
-            elif methodName == 'userSessionAdd':
-                try:
-                    self.hgwCore.userSessionAdd(args['userIdentity'], args['ipAddress'], args['validLifetime'])
-                    self.agentSess.methodSuccess(handle)
-                except:
-                    self.agentSess.raiseException(handle, "call for userSessionAdd() failed for userID " + args['userIdentity'] + ' and ipAddress ' + args['ipAddress'])
-                
-            elif methodName == 'userSessionDel':
-                try:
-                    self.hgwCore.userSessionDel(args['userIdentity'], args['ipAddress'])
-                    self.agentSess.methodSuccess(handle)
-                except:
-                    self.agentSess.raiseException(handle, "call for userSessionDel() failed for userID " + args['userIdentity'])
-            
-            else:
-                self.agentSess.raiseException(handle, 'method ' + methodName + ' not found')
-        except:
-            print "something failed, but we do not know, what ..."
-            self.agentSess.raiseException(handle, "something failed, but we do not know, what ...")
-
-
-
 
 
 class HgwCore(proact.common.basecore.BaseCore):
@@ -133,10 +40,7 @@ class HgwCore(proact.common.basecore.BaseCore):
                     
             proact.common.basecore.BaseCore.__init__(self, self.brokerUrl, vendor=self.vendor, product=self.product)
             self.logger = logging.getLogger('proact')
-            self.agentHandler = HgwCoreQmfAgentHandler(self, self.qmfAgent.agentSess)
             
-            self.initHgwXdpd()
-            self.initHgwDptCore()
         except Exception, e:
             self.logger.error('HgwCore::init() failed ' + str(e))
             self.cleanUp()
@@ -242,7 +146,8 @@ class HgwCore(proact.common.basecore.BaseCore):
                     p = prefix.get_subprefix(dmzLink.uniquePrefix).prefix
                     dmzLink.radvd.addPrefix(proact.common.ipv6prefix.IPv6Prefix(str(p), 64))
                 dmzLink.radvd.restart()
-        
+
+                        
         elif event.type == proact.common.basecore.BaseCore.EVENT_PREFIX_DETACHED:
             self.logger.debug('Prefix-Detached (' + str(event.source) + ')')
             dhclient = event.source
@@ -274,8 +179,6 @@ class HgwCore(proact.common.basecore.BaseCore):
         self.config.read(self.conffile)
         self.brokerUrl = self.config.get('hgwcore', 'BROKERURL', '127.0.0.1')
         self.hgwCoreID = self.config.get('hgwcore', 'HGWCOREID', 'hgw-core-0')
-        self.hgwDptCoreID = self.config.get('dptcore', 'DPTCOREID', 'hgw-dptcore-0')
-        self.hgwDptXdpdID = self.config.get('xdpd', 'XDPDID', 'hgw-xdpd-0')
         self.logfile = self.config.get('hgwcore', 'LOGFILE', 'hgwcore.log')
         self.loglevel = self.config.get('hgwcore', 'LOGLEVEL', 'info')
         if self.loglevel.lower() == 'debug':
@@ -299,24 +202,6 @@ class HgwCore(proact.common.basecore.BaseCore):
             self.linkNames['lan'].append(devname)
 
     
-    def initHgwXdpd(self):
-        """   """
-        try:
-            self.xdpdHgwProxy = proact.common.xdpdproxy.XdpdProxy(self.brokerUrl, self.hgwDptXdpdID)
-        except proact.common.xdpdproxy.XdpdProxyException, e:
-            self.logger.error('HgwCore::initHgwXdpd() initializing xdpd failed ' +  str(e))
-            #self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
-
-            
-        
-    def initHgwDptCore(self):
-        """   """
-        try:
-            self.dptCoreProxy = proact.common.dptcore.DptCoreProxy(self.brokerUrl, self.hgwDptCoreID)
-            self.dptCoreProxy.reset()
-        except proact.common.dptcore.DptCoreProxyException, e:
-            self.logger.error('HgwCore::initHgwDptCore() initializing dptcore failed ' + str(e))
-            #self.addEvent(proact.common.basecore.BaseCoreEvent(self, self.EVENT_QUIT))
     
     
     def startOpenVpn(self):
