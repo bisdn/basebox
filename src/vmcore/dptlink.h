@@ -18,14 +18,14 @@ extern "C" {
 
 
 #include <rofl/common/crofbase.h>
-#include <rofl/common/openflow/cofdpt.h>
-#include <rofl/common/openflow/cflowentry.h>
+#include <rofl/common/crofdpt.h>
+#include <rofl/common/openflow/cofflowmod.h>
 
-#include <ctapdev.h>
-#include <cnetlink.h>
-#include <cpacketpool.h>
-#include <dptaddr.h>
-#include <dptneigh.h>
+#include "ctapdev.h"
+#include "cnetlink.h"
+#include "cpacketpool.h"
+#include "dptaddr.h"
+#include "dptneigh.h"
 
 namespace dptmap
 {
@@ -208,9 +208,9 @@ public:
 	operator<< (std::ostream& os, dptlink const& link) {
 		os << "<dptlink: ";
 			os << "ifindex: " << (int)link.ifindex << " ";
-			os << "devname: " << link.dpt->get_port(link.of_port_no).get_name() << " ";
-			os << "hwaddr: " << link.dpt->get_port(link.of_port_no).get_hwaddr() << " ";
-			os << "portno: " << (int)link.of_port_no << " ";
+			os << "devname: " << link.dpt->get_ports().get_port(link.of_port_no).get_name() << " ";
+			os << "hwaddr: "  << link.dpt->get_ports().get_port(link.of_port_no).get_hwaddr() << " ";
+			os << "portno: "  << (int)link.of_port_no << " ";
 		os << ">" << std::endl;
 		try {
 			os << "    " << cnetlink::get_instance().get_link(link.ifindex) << std::endl;

@@ -91,17 +91,15 @@ dptlink::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
 			throw eDptLinkTapDevNotFound();
 		}
 
-		rofl::cofaclist actions;
-		actions.next() = rofl::cofaction_output(dpt->get_version(), of_port_no);
+		rofl::cofactions actions(dpt->get_version());
+		actions.append_action_output(of_port_no);
 
-		uint32_t port_no = 0;
-		switch (dpt->get_version()) {
-		case OFP10_VERSION: port_no = OFPP10_CONTROLLER; break;
-		case OFP12_VERSION: port_no = OFPP12_CONTROLLER; break;
-		case OFP13_VERSION: port_no = OFPP13_CONTROLLER; break;
-		}
-
-		rofbase->send_packet_out_message(dpt, OFP_NO_BUFFER, port_no, actions, pkt->soframe(), pkt->framelen());
+		dpt->send_packet_out_message(
+				rofl::openflow::base::get_ofp_no_buffer(dpt->get_version()),
+				rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()),
+				actions,
+				pkt->soframe(),
+				pkt->framelen());
 
 	} catch (eDptLinkNoDptAttached& e) {
 
@@ -148,11 +146,11 @@ void
 dptlink::handle_port_status()
 {
 	try {
-		rofl::cofport& port = dpt->get_port(of_port_no);
+		rofl::cofport& port = dpt->get_ports().get_port(of_port_no);
 
-		uint32_t config = dpt->get_port(of_port_no).get_config();
+		uint32_t config = dpt->get_ports().get_port(of_port_no).get_config();
 
-		uint32_t state  = dpt->get_port(of_port_no).get_state();
+		uint32_t state  = dpt->get_ports().get_port(of_port_no).get_state();
 
 		if (port.link_state_is_link_down() || port.config_is_port_down()) {
 			tapdev->disable_interface();

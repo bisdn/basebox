@@ -5,7 +5,7 @@
  *      Author: andreas
  */
 
-#include <cfib.h>
+#include "cfib.h"
 
 using namespace ethercore;
 
@@ -201,25 +201,17 @@ cfib::add_flow_mod_in_stage()
 	fe.set_command(OFPFC_ADD);
 	fe.set_table_id(src_stage_table_id);
 	fe.set_priority(0x4000);
-	fe.set_idle_timeout(0);
-	fe.set_hard_timeout(0);
+	//fe.set_idle_timeout(0);
+	//fe.set_hard_timeout(0);
 
-	fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
+	fe.match.set_vlan_vid(vid);
 #if 1
-	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-	switch (dpt->get_version()) {
-	case OFP12_VERSION: {
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP12_CONTROLLER);
-	} break;
-	case OFP13_VERSION: {
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP13_CONTROLLER);
-	} break;
-	}
+	fe.instructions.add_inst_apply_actions().get_actions().append_action_output(
+			rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()));
 #endif
-	fe.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), dst_stage_table_id);
+	fe.instructions.add_inst_goto_table().set_table_id(dst_stage_table_id);
 
-
-	rofbase->send_flow_mod_message(dpt, fe);
+	dpt->send_flow_mod_message(fe);
 }
 
 
@@ -235,22 +227,12 @@ cfib::drop_flow_mod_in_stage()
 	fe.set_command(OFPFC_DELETE_STRICT);
 	fe.set_table_id(src_stage_table_id);
 	fe.set_priority(0x4000);
-	fe.set_idle_timeout(0);
-	fe.set_hard_timeout(0);
+	//fe.set_idle_timeout(0);
+	//fe.set_hard_timeout(0);
 
-	fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
-	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-	switch (dpt->get_version()) {
-	case OFP12_VERSION: {
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP12_CONTROLLER);
-	} break;
-	case OFP13_VERSION: {
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP13_CONTROLLER);
-	} break;
-	}
-	fe.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), dst_stage_table_id);
+	fe.match.set_vlan_vid(vid);
 
-	rofbase->send_flow_mod_message(dpt, fe);
+	dpt->send_flow_mod_message(fe);
 }
 
 
@@ -266,14 +248,14 @@ cfib::add_flow_mod_flood()
 	fe.set_command(OFPFC_ADD);
 	fe.set_table_id(dst_stage_table_id);
 	fe.set_priority(0x4000);
-	fe.set_idle_timeout(0);
-	fe.set_hard_timeout(0);
+	//fe.set_idle_timeout(0);
+	//fe.set_hard_timeout(0);
 
-	fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
-	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-	fe.instructions.back().actions.next() = rofl::cofaction_group(dpt->get_version(), flood_group_id);
+	fe.match.set_vlan_vid(vid);
 
-	rofbase->send_flow_mod_message(dpt, fe);
+	fe.instructions.add_inst_apply_actions().get_actions().append_action_group(flood_group_id);
+
+	dpt->send_flow_mod_message(fe);
 }
 
 
@@ -289,14 +271,12 @@ cfib::drop_flow_mod_flood()
 	fe.set_command(OFPFC_DELETE_STRICT);
 	fe.set_table_id(dst_stage_table_id);
 	fe.set_priority(0x4000);
-	fe.set_idle_timeout(0);
-	fe.set_hard_timeout(0);
+	//fe.set_idle_timeout(0);
+	//fe.set_hard_timeout(0);
 
-	fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
-	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-	fe.instructions.back().actions.next() = rofl::cofaction_group(dpt->get_version(), flood_group_id);
+	fe.match.set_vlan_vid(vid);
 
-	rofbase->send_flow_mod_message(dpt, fe);
+	dpt->send_flow_mod_message(fe);
 }
 
 
@@ -312,11 +292,11 @@ cfib::add_group_entry_flood(
 		rofl::cgroupentry ge(dpt->get_version());
 
 		if (modify)
-			ge.set_command(OFPGC_MODIFY);
+			ge.set_command(rofl::openflow::OFPGC_MODIFY);
 		else
-			ge.set_command(OFPGC_ADD);
+			ge.set_command(rofl::openflow::OFPGC_ADD);
 
-		ge.set_type(OFPGT_ALL);
+		ge.set_type(rofl::openflow::OFPGT_ALL);
 		ge.set_group_id(flood_group_id);
 
 		/* what about group chaining here? this would be useful ... */
@@ -324,18 +304,20 @@ cfib::add_group_entry_flood(
 				it = ports.begin(); it != ports.end(); ++it) {
 			sport& port = sport::get_sport(dpid, *it);
 
+			rofl::cofbucket bucket(dpt->get_version(), /*weight=*/0, /*watch-port=*/0, /*watch-group=*/0);
 
-			ge.buckets.next() = rofl::cofbucket(dpt->get_version(), 0, 0, 0);
 			// only pop vlan, when vid is used untagged on this port, i.e. vid == port.pvid
 			try {
 				if (port.get_pvid() == vid) {
-					ge.buckets.back().actions.next() = rofl::cofaction_pop_vlan(dpt->get_version());
+					bucket.get_actions().append_action_pop_vlan();
 				}
 			} catch (eSportNoPvid& e) {}
-			ge.buckets.back().actions.next() = rofl::cofaction_output(dpt->get_version(), port.get_portno());
+			bucket.get_actions().append_action_output(port.get_portno());
+
+			ge.get_buckets().append_bucket(bucket);
 		}
 
-		rofbase->send_group_mod_message(dpt, ge);
+		dpt->send_group_mod_message(ge);
 
 	} catch (...) {
 
@@ -353,11 +335,11 @@ cfib::drop_group_entry_flood()
 
 		rofl::cgroupentry ge(dpt->get_version());
 
-		ge.set_command(OFPGC_DELETE);
-		ge.set_type(OFPGT_ALL);	// necessary for OFPGC_DELETE?
+		ge.set_command(rofl::openflow::OFPGC_DELETE);
+		ge.set_type(rofl::openflow::OFPGT_ALL);	// necessary for OFPGC_DELETE?
 		ge.set_group_id(flood_group_id);
 
-		rofbase->send_group_mod_message(dpt, ge);
+		dpt->send_group_mod_message(ge);
 
 	} catch (...) {
 
@@ -425,8 +407,14 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 			rofl::crofbase *rofbase = fibowner->get_rofbase();
 			rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
-			rofl::cofaclist actions(dpt->get_version());
-			actions.next() = rofl::cofaction_group(dpt->get_version(), flood_group_id);
+			rofl::cofactions actions(dpt->get_version());
+			actions.append_action_group(flood_group_id);
+
+			if (rofl::openflow::OFP_NO_BUFFER == msg.get_buffer_id()) {
+				dpt->send_packet_out_message(msg.get_buffer_id(), msg.get_in_port(), actions, msg.get_packet().soframe(), msg.get_packet().framelen());
+			} else {
+				dpt->send_packet_out_message(msg.get_buffer_id(), msg.get_in_port(), actions);
+			}
 		}
 
 
@@ -455,11 +443,12 @@ cfib::block_stp()
 	fe.set_table_id(0);
 
 	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"));
-	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
+
+	fe.instructions.add_inst_apply_actions();
 
 	//logging::info << "ethercore: installing FLOW-MOD with entry: " << fe << std::endl;
 
-	rofbase->send_flow_mod_message(dpt, fe);
+	dpt->send_flow_mod_message(fe);
 }
 
 

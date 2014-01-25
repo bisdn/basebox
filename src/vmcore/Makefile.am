@@ -2,9 +2,9 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-sbin_PROGRAMS = vmcore
+sbin_PROGRAMS = vmcored
 
-vmcore_SOURCES = main.cc \
+vmcored_SOURCES = vmcored.cc \
 		vmcore.h \
 		vmcore.cc \
 		dptroute.h \
@@ -37,7 +37,7 @@ vmcore_SOURCES = main.cc \
 		crtneigh.cc \
 		flowmod.h
 		
-vmcore_LDADD = -lpthread \
+vmcored_LDADD = -lpthread \
 	-lrt
 
 #AM_CPPFLAGS = -I/usr/local/libnl-3.2.22/include/libnl3

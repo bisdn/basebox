@@ -89,29 +89,21 @@ dptaddr::flow_mod_add()
 		this->fe = rofl::cflowentry(dpt->get_version());
 
 		fe.set_command(OFPFC_ADD);
-		fe.set_buffer_id(OFP_NO_BUFFER);
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt->get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
 		fe.set_table_id(of_table_id);			// FIXME: check for first table-id in data path
 
-		fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-
-		uint32_t port_no = 0;
-		switch (dpt->get_version()) {
-		case OFP10_VERSION: port_no = OFPP10_CONTROLLER; break;
-		case OFP12_VERSION: port_no = OFPP12_CONTROLLER; break;
-		case OFP13_VERSION: port_no = OFPP13_CONTROLLER; break;
-		}
-
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), port_no, 1518); // FIXME: check the mtu value
+		fe.instructions.add_inst_apply_actions().get_actions().append_action_output(
+				rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()), 1518);
 
 		switch (rta.get_family()) {
 		case AF_INET:  { fe.match.set_ipv4_dst(rta.get_local_addr()); } break;
 		case AF_INET6: { fe.match.set_ipv6_dst(rta.get_local_addr()); } break;
 		}
 
-		rofbase->send_flow_mod_message(dpt, fe);
+		dpt->send_flow_mod_message(fe);
 
 		//std::cerr << "dptaddr::flow_mod_add() => " << *this << std::endl;
 
@@ -148,7 +140,7 @@ dptaddr::flow_mod_delete()
 		case AF_INET6: { fe.match.set_ipv6_dst(rta.get_local_addr()); } break;
 		}
 
-		rofbase->send_flow_mod_message(dpt, fe);
+		dpt->send_flow_mod_message(fe);
 
 		//std::cerr << "dptaddr::flow_mod_delete() => " << *this << std::endl;
 

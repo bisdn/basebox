@@ -106,7 +106,7 @@ dptnexthop::flow_mod_add()
 		this->fe = rofl::cflowentry(dpt->get_version());
 
 		fe.set_command(OFPFC_ADD);
-		fe.set_buffer_id(OFP_NO_BUFFER);
+		fe.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
@@ -120,12 +120,11 @@ dptnexthop::flow_mod_add()
 		rofl::cmacaddr eth_src(cnetlink::get_instance().get_link(ifindex).get_hwaddr());
 		rofl::cmacaddr eth_dst(cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex).get_lladdr());
 
-		fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-		fe.instructions.back().actions.next() = rofl::cofaction_set_field(dpt->get_version(), rofl::coxmatch_ofb_eth_src(eth_src));
-		fe.instructions.back().actions.next() = rofl::cofaction_set_field(dpt->get_version(), rofl::coxmatch_ofb_eth_dst(eth_dst));
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), of_port_no);
+		fe.instructions.add_inst_apply_actions().get_actions().append_action_set_field(rofl::coxmatch_ofb_eth_src(eth_src));
+		fe.instructions.set_inst_apply_actions().get_actions().append_action_set_field(rofl::coxmatch_ofb_eth_dst(eth_dst));
+		fe.instructions.set_inst_apply_actions().get_actions().append_action_output(of_port_no);
 
-		rofbase->send_flow_mod_message(dpt, fe);
+		dpt->send_flow_mod_message(fe);
 
 		//std::cerr << "dptnexthop::flow_mod_add() => " << *this << std::endl;
 
@@ -150,7 +149,7 @@ dptnexthop::flow_mod_delete()
 	this->fe = rofl::cflowentry(dpt->get_version());
 
 	fe.set_command(OFPFC_DELETE_STRICT);
-	fe.set_buffer_id(OFP_NO_BUFFER);
+	fe.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
 	fe.set_idle_timeout(0);
 	fe.set_hard_timeout(0);
 	fe.set_priority(0xfffe);
@@ -161,7 +160,7 @@ dptnexthop::flow_mod_delete()
 	case AF_INET6: { fe.match.set_ipv6_dst(dstaddr, dstmask); } break;
 	}
 
-	rofbase->send_flow_mod_message(dpt, fe);
+	dpt->send_flow_mod_message(fe);
 
 	//std::cerr << "dptnexthop::flow_mod_delete() => " << *this << std::endl;
 }

@@ -13,6 +13,8 @@ vmcore::vmcore() :
 		dump_state_interval(15)
 {
 	register_timer(VMCORE_TIMER_DUMP, dump_state_interval);
+	crofbase::get_versionbitmap().add_ofp_version(rofl::openflow12::OFP_VERSION);
+	crofbase::get_versionbitmap().add_ofp_version(rofl::openflow13::OFP_VERSION);
 }
 
 
@@ -102,10 +104,10 @@ vmcore::delete_all_routes()
 
 void
 vmcore::handle_dpath_open(
-		rofl::crofdpt *dpt)
+		rofl::crofdpt& dpt)
 {
 	try {
-		this->dpt = dpt;
+		this->dpt = &dpt;
 
 		/*
 		 * remove all routes
@@ -120,10 +122,10 @@ vmcore::handle_dpath_open(
 		/*
 		 * purge all entries from data path
 		 */
-		rofl::cflowentry fe(dpt->get_version());
+		rofl::cflowentry fe(dpt.get_version());
 		fe.set_command(OFPFC_DELETE);
-		fe.set_table_id(OFPTT_ALL);
-		send_flow_mod_message(dpt, fe);
+		fe.set_table_id(rofl::openflow::base::get_ofptt_all(dpt.get_version()));
+		dpt.send_flow_mod_message(fe);
 
 		/*
 		 * block all STP related frames for now
@@ -142,12 +144,12 @@ vmcore::handle_dpath_open(
 		/*
 		 * create new tap devices for (reconnecting?) data path
 		 */
-		std::map<uint32_t, rofl::cofport*> ports = dpt->get_ports();
+		std::map<uint32_t, rofl::cofport*> ports = dpt.get_ports();
 		for (std::map<uint32_t, rofl::cofport*>::iterator
 				it = ports.begin(); it != ports.end(); ++it) {
 			rofl::cofport *port = it->second;
-			if (dptlinks[dpt].find(port->get_port_no()) == dptlinks[dpt].end()) {
-				dptlinks[dpt][port->get_port_no()] = new dptlink(this, dpt, port->get_port_no());
+			if (dptlinks[&dpt].find(port->get_port_no()) == dptlinks[&dpt].end()) {
+				dptlinks[&dpt][port->get_port_no()] = new dptlink(this, &dpt, port->get_port_no());
 
 				/*
 				 * FIXME: on debian, creating another interface must be delayed, as /lib/udev/net.agent
@@ -160,7 +162,7 @@ vmcore::handle_dpath_open(
 		}
 
 		// get full-length packets (what is the ethernet max length on dpt?)
-		send_set_config_message(dpt, 0, 1518);
+		dpt.send_set_config_message(0, 1518);
 
 #if 0
 		/*
@@ -175,16 +177,16 @@ vmcore::handle_dpath_open(
 		/*
 		 * install default FlowMod entry for table 0 => GotoTable(1)
 		 */
-		rofl::cflowentry fed = rofl::cflowentry(dpt->get_version());
+		rofl::cflowentry fed = rofl::cflowentry(dpt.get_version());
 
 		fed.set_command(OFPFC_ADD);
 		fed.set_table_id(0);
 		fed.set_idle_timeout(0);
 		fed.set_hard_timeout(0);
 		fed.set_priority(0); // lowest priority
-		fed.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), 1);
+		fed.instructions.add_inst_goto_table().set_table_id(1);
 
-		send_flow_mod_message(dpt, fed);
+		dpt.send_flow_mod_message(fed);
 
 		run_dpath_open_script();
 
@@ -200,7 +202,7 @@ vmcore::handle_dpath_open(
 
 void
 vmcore::handle_dpath_close(
-		rofl::crofdpt *dpt)
+		rofl::crofdpt& dpt)
 {
 	run_dpath_close_script();
 
@@ -215,35 +217,36 @@ vmcore::handle_dpath_close(
 
 void
 vmcore::handle_port_status(
-		rofl::crofdpt *dpt,
-		rofl::cofmsg_port_status *msg)
+		rofl::crofdpt& dpt,
+		rofl::cofmsg_port_status& msg,
+		uint8_t aux_id)
 {
-	if (this->dpt != dpt) {
+	if (this->dpt != &dpt) {
 		fprintf(stderr, "vmcore::handle_port_stats() received PortStatus from invalid data path\n");
-		delete msg; return;
+		return;
 	}
 
-	uint32_t port_no = msg->get_port().get_port_no();
+	uint32_t port_no = msg.get_port().get_port_no();
 
 	try {
-		switch (msg->get_reason()) {
+		switch (msg.get_reason()) {
 		case OFPPR_ADD: {
-			if (dptlinks[dpt].find(port_no) == dptlinks[dpt].end()) {
-				dptlinks[dpt][port_no] = new dptlink(this, dpt, msg->get_port().get_port_no());
-				run_port_up_script(msg->get_port().get_name());
+			if (dptlinks[&dpt].find(port_no) == dptlinks[&dpt].end()) {
+				dptlinks[&dpt][port_no] = new dptlink(this, &dpt, msg.get_port().get_port_no());
+				run_port_up_script(msg.get_port().get_name());
 			}
 		} break;
 		case OFPPR_MODIFY: {
-			if (dptlinks[dpt].find(port_no) != dptlinks[dpt].end()) {
-				dptlinks[dpt][port_no]->handle_port_status();
+			if (dptlinks[&dpt].find(port_no) != dptlinks[&dpt].end()) {
+				dptlinks[&dpt][port_no]->handle_port_status();
 				//run_port_up_script(msg->get_port().get_name()); // TODO: check flags
 			}
 		} break;
 		case OFPPR_DELETE: {
-			if (dptlinks[dpt].find(port_no) != dptlinks[dpt].end()) {
-				delete dptlinks[dpt][port_no];
-				dptlinks[dpt].erase(port_no);
-				run_port_down_script(msg->get_port().get_name());
+			if (dptlinks[&dpt].find(port_no) != dptlinks[&dpt].end()) {
+				delete dptlinks[&dpt][port_no];
+				dptlinks[&dpt].erase(port_no);
+				run_port_down_script(msg.get_port().get_name());
 			}
 		} break;
 		default: {
@@ -259,53 +262,37 @@ vmcore::handle_port_status(
 		throw;
 
 	}
-
-	delete msg;
 }
 
 
 
 void
-vmcore::handle_packet_out(rofl::crofctl *ctl, rofl::cofmsg_packet_out *msg)
+vmcore::handle_packet_out(rofl::crofctl& ctl, rofl::cofmsg_packet_out& msg, uint8_t aux_id)
 {
-	delete msg;
+
 }
 
 
 
 
 void
-vmcore::handle_packet_in(rofl::crofdpt *dpt, rofl::cofmsg_packet_in *msg)
+vmcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_t aux_id)
 {
 	try {
-		uint32_t port_no = msg->get_match().get_in_port();
+		uint32_t port_no = msg.get_match().get_in_port();
 
-		if (dptlinks[dpt].find(port_no) == dptlinks[dpt].end()) {
+		if (dptlinks[&dpt].find(port_no) == dptlinks[&dpt].end()) {
 			fprintf(stderr, "vmcore::handle_packet_in() frame for port_no=%d received, but port not found\n", port_no);
 
-			delete msg; return;
+			return;
 		}
 
-		dptlinks[dpt][port_no]->handle_packet_in(msg->get_packet());
+		dptlinks[&dpt][port_no]->handle_packet_in(msg.get_packet());
 
-		switch (dpt->get_version()) {
-		case OFP10_VERSION:
-			if (OFP10_NO_BUFFER == msg->get_buffer_id()) {
-				rofl::cofaclist actions(dpt->get_version());
-				send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_in_port(), actions);
-			} break;
-		case OFP12_VERSION:
-			if (OFP12_NO_BUFFER == msg->get_buffer_id()) {
-				rofl::cofaclist actions(dpt->get_version());
-				send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_in_port(), actions);
-			} break;
-		case OFP13_VERSION:
-			if (OFP13_NO_BUFFER == msg->get_buffer_id()) {
-				rofl::cofaclist actions(dpt->get_version());
-				send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_in_port(), actions);
-			} break;
+		if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()) != msg.get_buffer_id()) {
+			rofl::cofactions actions(dpt.get_version());
+			dpt.send_packet_out_message(msg.get_buffer_id(), msg.get_in_port(), actions);
 		}
-		delete msg;
 
 	} catch (ePacketPoolExhausted& e) {
 
@@ -400,7 +387,7 @@ vmcore::block_stp_frames()
 	fe.set_table_id(0);
 	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
 
-	send_flow_mod_message(dpt, fe);
+	dpt->send_flow_mod_message(fe);
 }
 
 
@@ -417,7 +404,7 @@ vmcore::unblock_stp_frames()
 	fe.set_table_id(0);
 	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
 
-	send_flow_mod_message(dpt, fe);
+	dpt->send_flow_mod_message(fe);
 }
 
 
@@ -434,20 +421,10 @@ vmcore::redirect_ipv4_multicast()
 	fe.set_table_id(0);
 	fe.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 	fe.match.set_ipv4_dst(rofl::caddress(AF_INET, "224.0.0.0"), rofl::caddress(AF_INET, "240.0.0.0"));
-	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-	switch (dpt->get_version()) {
-	case OFP10_VERSION: {
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP10_CONTROLLER);
-	} break;
-	case OFP12_VERSION: {
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP12_CONTROLLER);
-	} break;
-	case OFP13_VERSION: {
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP13_CONTROLLER);
-	} break;
-	}
+	fe.instructions.add_inst_apply_actions().get_actions().append_action_output(
+			rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()));
 
-	send_flow_mod_message(dpt, fe);
+	dpt->send_flow_mod_message(fe);
 }
 
 
@@ -464,20 +441,10 @@ vmcore::redirect_ipv6_multicast()
 	fe.set_table_id(0);
 	fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 	fe.match.set_ipv6_dst(rofl::caddress(AF_INET6, "ff00::"), rofl::caddress(AF_INET6, "ff00::"));
-	fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-	switch (dpt->get_version()) {
-	case OFP10_VERSION: {
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP10_CONTROLLER);
-	} break;
-	case OFP12_VERSION: {
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP12_CONTROLLER);
-	} break;
-	case OFP13_VERSION: {
-		fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP13_CONTROLLER);
-	} break;
-	}
+	fe.instructions.add_inst_apply_actions().get_actions().append_action_output(
+			rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()));
 
-	send_flow_mod_message(dpt, fe);
+	dpt->send_flow_mod_message(fe);
 }
 
 

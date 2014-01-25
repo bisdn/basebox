@@ -100,14 +100,14 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 			fe.set_priority(0x8000);
 			fe.set_hard_timeout(entry_timeout);
 			fe.match.set_in_port(portno);
-			fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
+			fe.match.set_vlan_vid(vid);
 			fe.match.set_eth_src(lladdr); // yes, indeed: set_eth_src for dst
-			fe.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), dst_stage_table_id);
+			fe.instructions.add_inst_goto_table().set_table_id(dst_stage_table_id);
 
-			rofbase->send_flow_mod_message(dpt, fe);
+			dpt->send_flow_mod_message(fe);
 		}
 
-		rofbase->send_barrier_request(dpt);
+		dpt->send_barrier_request();
 
 		/* table 'dst_stage_table_id':
 		 *
@@ -123,17 +123,17 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 			fe.set_table_id(dst_stage_table_id);
 			fe.set_priority(0x8000);
 			fe.set_hard_timeout(entry_timeout);
-			fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
+			fe.match.set_vlan_vid(vid);
 			fe.match.set_eth_dst(lladdr);
-			fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
+			fe.instructions.add_inst_apply_actions();
 			if (not tagged)
-				fe.instructions.back().actions.next() = rofl::cofaction_pop_vlan(dpt->get_version());
-			fe.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(),portno);
+				fe.instructions.set_inst_apply_actions().get_actions().append_action_pop_vlan();
+			fe.instructions.set_inst_apply_actions().get_actions().append_action_output(portno);
 
-			rofbase->send_flow_mod_message(dpt, fe);
+			dpt->send_flow_mod_message(fe);
 		}
 
-		rofbase->send_barrier_request(dpt);
+		dpt->send_barrier_request();
 
 	} catch (rofl::eRofBaseNotFound& e) {
 

@@ -7,7 +7,7 @@
 #include <rofl/common/cmacaddr.h>
 #include <rofl/common/caddress.h>
 #include <rofl/common/crofbase.h>
-#include <rofl/common/openflow/cofdpt.h>
+#include <rofl/common/crofdpt.h>
 
 #include "cfib.h"
 #include "sport.h"
@@ -125,19 +125,19 @@ private:
 	handle_timeout(int opaque);
 
 	virtual void
-	handle_dpath_open(crofdpt *dpt);
+	handle_dpath_open(crofdpt& dpt);
 
 	virtual void
-	handle_dpath_close(crofdpt *dpt);
+	handle_dpath_close(crofdpt& dpt);
 
 	virtual void
-	handle_packet_in(crofdpt *dpt, cofmsg_packet_in *msg);
+	handle_packet_in(crofdpt& dpt, cofmsg_packet_in& msg, uint8_t aux_id = 0);
 
 	virtual void
-	handle_port_status(crofdpt *dpt, cofmsg_port_status *msg);
+	handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_id = 0);
 
 	virtual void
-	handle_flow_stats_reply(crofdpt *dpt, cofmsg_flow_stats_reply *msg);
+	handle_flow_stats_reply(crofdpt& dpt, cofmsg_flow_stats_reply& msg, uint8_t aux_id = 0);
 
 private:
 

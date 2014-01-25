@@ -20,12 +20,13 @@ extern "C" {
 #endif
 
 #include <rofl/common/crofbase.h>
-#include <rofl/common/openflow/cofdpt.h>
-#include <rofl/common/openflow/cflowentry.h>
-#include <cnetlink.h>
-#include <crtroute.h>
-#include <dptlink.h>
-#include <dptnexthop.h>
+#include <rofl/common/crofdpt.h>
+#include <rofl/common/openflow/cofflowmod.h>
+
+#include "cnetlink.h"
+#include "crtroute.h"
+#include "dptlink.h"
+#include "dptnexthop.h"
 
 namespace dptmap
 {

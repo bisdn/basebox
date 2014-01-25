@@ -21,7 +21,7 @@ extern "C" {
 #include <rofl/common/ciosrv.h>
 #include <rofl/common/cmacaddr.h>
 #include <rofl/common/crofbase.h>
-#include <rofl/common/openflow/cofdpt.h>
+#include <rofl/common/crofdpt.h>
 
 #include "logging.h"
 

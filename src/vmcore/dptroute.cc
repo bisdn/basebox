@@ -154,7 +154,7 @@ dptroute::route_created(
 		flowentry = rofl::cflowentry(dpt->get_version());
 
 		flowentry.set_command(OFPFC_ADD);
-		flowentry.set_buffer_id(OFP_NO_BUFFER);
+		flowentry.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt->get_version()));
 		flowentry.set_idle_timeout(0);
 		flowentry.set_hard_timeout(0);
 		flowentry.set_priority(0x8000 + (rtr.get_prefixlen() << 8));
@@ -168,7 +168,7 @@ dptroute::route_created(
 		default: {
 #endif
 			flowentry.set_table_id(1);
-			flowentry.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), 2);
+			flowentry.instructions.add_inst_goto_table().set_table_id(2);
 #if 0
 		} break;
 		}
@@ -187,7 +187,7 @@ dptroute::route_created(
 
 		//fprintf(stderr, "dptroute::route_created() => flowentry: %s\n", flowentry.c_str());
 
-		rofbase->send_flow_mod_message(dpt, flowentry);
+		dpt->send_flow_mod_message(flowentry);
 
 	} catch (eNetLinkNotFound& e) {
 		std::cerr << "dptroute::route_created() crtroute object not found" << std::endl;
@@ -230,7 +230,7 @@ dptroute::route_deleted(
 
 	flowentry.set_command(OFPFC_DELETE_STRICT);
 
-	rofbase->send_flow_mod_message(dpt, flowentry);
+	dpt->send_flow_mod_message(flowentry);
 
 	//fprintf(stderr, "\n\n\n FLOWENTRY => %s\n\n\n\n", flowentry.c_str());
 

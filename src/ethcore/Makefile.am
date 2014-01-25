@@ -2,10 +2,10 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-sbin_PROGRAMS = ethcore
+sbin_PROGRAMS = ethcored
 
-ethcore_SOURCES = \
-	main.cc \
+ethcored_SOURCES = \
+	ethcored.cc \
 	ethcore.cc \
 	ethcore.h \
 	cfib.cc \
@@ -18,6 +18,6 @@ ethcore_SOURCES = \
 	logging.cc \
 	qmfagent.h \
 	qmfagent.cc
-ethcore_LDADD = -lpthread -lrt 
+ethcored_LDADD = -lpthread -lrt 
 
 AM_LDFLAGS = -static

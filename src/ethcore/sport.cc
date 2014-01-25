@@ -217,20 +217,19 @@ sport::flow_mod_add(uint16_t vid, bool tagged)
 
 			fe.match.set_in_port(portno);
 			if (tagged)
-				fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
+				fe.match.set_vlan_vid(vid);
 			else
-				fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_UNTAGGED, OFPVID_NONE);
+				fe.match.set_vlan_untagged();
 
 			// push vlan tag, when packet was received untagged
 			if (not tagged) {
-				fe.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-				fe.instructions.back().actions.next() = rofl::cofaction_push_vlan(dpt->get_version(), rofl::fvlanframe::VLAN_CTAG_ETHER);
-				fe.instructions.back().actions.next() = rofl::cofaction_set_field(dpt->get_version(), rofl::coxmatch_ofb_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid));
+				fe.instructions.add_inst_apply_actions().get_actions().append_action_push_vlan(rofl::fvlanframe::VLAN_CTAG_ETHER);
+				fe.instructions.set_inst_apply_actions().get_actions().append_action_set_field(rofl::coxmatch_ofb_vlan_vid(vid));
 			}
 			// either tagged or untagged: move packet to next table
-			fe.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), table_id + 1);
+			fe.instructions.add_inst_goto_table().set_table_id(table_id + 1);
 
-			spowner->get_rofbase()->send_flow_mod_message(dpt, fe);
+			dpt->send_flow_mod_message(fe);
 		}
 #if 0
 		// set group table entry for this outgoing switch port
@@ -241,13 +240,15 @@ sport::flow_mod_add(uint16_t vid, bool tagged)
 			ge.set_group_id(memberships[vid].group_id);
 			ge.set_type(OFPGT_ALL);
 
-			ge.buckets.next() = rofl::cofbucket(dpt->get_version(), 0, 0, 0);
+			rofl::cofbucket bucket(dpt->get_version());
 			if (not tagged) {
-				ge.buckets.back().actions.next() = rofl::cofaction_pop_vlan(dpt->get_version());
+				bucket.get_actions().append_action_pop_vlan();
 			}
-			ge.buckets.back().actions.next() = rofl::cofaction_output(dpt->get_version(), portno);
+			bucket.get_actions().append_action_output(portno);
 
-			spowner->get_rofbase()->send_group_mod_message(dpt, ge);
+			ge.buckets.append_bucket(bucket);
+
+			dpt->send_group_mod_message(ge);
 		}
 #endif
 	} catch (rofl::eRofBaseNotFound& e) {
@@ -275,30 +276,22 @@ sport::flow_mod_delete(uint16_t vid, bool tagged)
 
 			fe.match.set_in_port(portno);
 			if (tagged)
-				fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_NORMAL, vid);
+				fe.match.set_vlan_vid(vid);
 			else
-				fe.match.set_vlan_vid(rofl::coxmatch_ofb_vlan_vid::VLAN_TAG_MODE_UNTAGGED, OFPVID_NONE);
+				fe.match.set_vlan_untagged();
 
-			fe.instructions.next() = rofl::cofinst_goto_table(dpt->get_version(), table_id + 1);
-
-			spowner->get_rofbase()->send_flow_mod_message(dpt, fe);
+			dpt->send_flow_mod_message(fe);
 		}
 #if 0
 		// set group table entry for this outgoing switch port
 		if (true) {
 			rofl::cgroupentry ge(dpt->get_version());
 
-			ge.set_command(OFPGC_ADD);
+			ge.set_command(OFPGC_ADD); // DELETE?
 			ge.set_group_id(memberships[vid].group_id);
 			ge.set_type(OFPGT_ALL);
 
-			ge.buckets.next() = rofl::cofbucket(dpt->get_version(), 0, 0, 0);
-			if (not tagged) {
-				ge.buckets.back().actions.next() = rofl::cofaction_pop_vlan(dpt->get_version());
-			}
-			ge.buckets.back().actions.next() = rofl::cofaction_output(dpt->get_version(), portno);
-
-			spowner->get_rofbase()->send_group_mod_message(dpt, ge);
+			dpt->send_group_mod_message(ge);
 		}
 #endif
 	} catch (rofl::eRofBaseNotFound& e) {

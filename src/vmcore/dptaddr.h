@@ -9,12 +9,12 @@
 #define DPTADDR_H_ 1
 
 #include <rofl/common/crofbase.h>
-#include <rofl/common/openflow/cofdpt.h>
-#include <rofl/common/openflow/cflowentry.h>
+#include <rofl/common/crofdpt.h>
+#include <rofl/common/openflow/cofflowmod.h>
 
-#include <crtaddr.h>
-#include <flowmod.h>
-#include <cnetlink.h>
+#include "crtaddr.h"
+#include "flowmod.h"
+#include "cnetlink.h"
 
 namespace dptmap
 {

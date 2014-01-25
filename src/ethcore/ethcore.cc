@@ -25,6 +25,8 @@ ethcore::ethcore() :
 		default_vid(1),
 		timer_dump_interval(DEFAULT_TIMER_DUMP_INTERVAL)
 {
+	crofbase::get_versionbitmap().add_ofp_version(rofl::openflow12::OFP_VERSION);
+	crofbase::get_versionbitmap().add_ofp_version(rofl::openflow13::OFP_VERSION);
 	register_timer(ETHSWITCH_TIMER_DUMP, timer_dump_interval);
 }
 
@@ -112,7 +114,7 @@ ethcore::request_flow_stats()
 
 
 void
-ethcore::handle_flow_stats_reply(crofdpt *dpt, cofmsg_flow_stats_reply *msg)
+ethcore::handle_flow_stats_reply(crofdpt& dpt, cofmsg_flow_stats_reply& msg, uint8_t aux_id)
 {
 #if 0
 	if (fib.find(dpt) == fib.end()) {
@@ -138,7 +140,6 @@ ethcore::handle_flow_stats_reply(crofdpt *dpt, cofmsg_flow_stats_reply *msg)
 		}
 	}
 #endif
-	delete msg;
 }
 
 
@@ -146,13 +147,12 @@ ethcore::handle_flow_stats_reply(crofdpt *dpt, cofmsg_flow_stats_reply *msg)
 
 
 void
-ethcore::handle_dpath_open(
-		crofdpt *dpt)
+ethcore::handle_dpath_open(crofdpt& dpt)
 {
-	logging::info << "[ethcore] dpath attaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
+	logging::info << "[ethcore] dpath attaching dpid: " << (unsigned long long)dpt.get_dpid() << std::endl;
 
 	/* we create a single default VLAN and add all ports in an untagged mode */
-	add_vlan(dpt->get_dpid(), default_vid);
+	add_vlan(dpt.get_dpid(), default_vid);
 
 	// for testing
 #if 0
@@ -161,23 +161,23 @@ ethcore::handle_dpath_open(
 
 
 	for (std::map<uint32_t, rofl::cofport*>::iterator
-			it = dpt->get_ports().begin(); it != dpt->get_ports().end(); ++it) {
+			it = dpt.get_ports().begin(); it != dpt.get_ports().end(); ++it) {
 
 		rofl::cofport* port = it->second;
 		try {
-			sport *sp = new sport(this, dpt->get_dpid(), port->get_port_no(), port->get_name(), port_stage_table_id);
+			sport *sp = new sport(this, dpt.get_dpid(), port->get_port_no(), port->get_name(), port_stage_table_id);
 			logging::info << "[ethcore] adding port " << *sp << std::endl;
 
-			cfib::get_fib(dpt->get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
+			cfib::get_fib(dpt.get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
 
 #if 0
 			// for testing
 			if (port->get_port_no() == 1) {
-				cfib::get_fib(dpt->get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
-				cfib::get_fib(dpt->get_dpid(), 20).add_port(port->get_port_no(), /*tagged=*/true);
+				cfib::get_fib(dpt.get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
+				cfib::get_fib(dpt.get_dpid(), 20).add_port(port->get_port_no(), /*tagged=*/true);
 			}
 			if (port->get_port_no() == 2) {
-				cfib::get_fib(dpt->get_dpid(), 20).add_port(port->get_port_no(), /*untagged=*/false);
+				cfib::get_fib(dpt.get_dpid(), 20).add_port(port->get_port_no(), /*untagged=*/false);
 			}
 #endif
 		} catch (eSportExists& e) {
@@ -189,98 +189,92 @@ ethcore::handle_dpath_open(
 
 
 void
-ethcore::handle_dpath_close(
-		crofdpt *dpt)
+ethcore::handle_dpath_close(crofdpt& dpt)
 {
-	logging::info << "[ethcore] dpath detaching dpid: " << (unsigned long long)dpt->get_dpid() << std::endl;
+	logging::info << "[ethcore] dpath detaching dpid: " << (unsigned long long)dpt.get_dpid() << std::endl;
 
-	cfib::destroy_fibs(dpt->get_dpid());
+	cfib::destroy_fibs(dpt.get_dpid());
 
 	// destroy all sports associated with dpt
-	sport::destroy_sports(dpt->get_dpid());
+	sport::destroy_sports(dpt.get_dpid());
 }
 
 
 
 void
-ethcore::handle_packet_in(
-		crofdpt *dpt,
-		cofmsg_packet_in *msg)
+ethcore::handle_packet_in(crofdpt& dpt, cofmsg_packet_in& msg, uint8_t aux_id)
 {
 	uint16_t vid = 0xffff;
 	try {
 
 		try {
 			/* check for VLAN VID OXM TLV in Packet-In message */
-			vid = msg->get_match().get_vlan_vid() & ~OFPVID_PRESENT;
+			vid = msg.get_match().get_vlan_vid() & ~OFPVID_PRESENT;
 		} catch (eOFmatchNotFound& e) {
 			/* no VLAN VID OXM TLV => frame was most likely untagged */
-			vid = sport::get_sport(dpt->get_dpid(), msg->get_match().get_in_port()).get_pvid() & ~OFPVID_PRESENT;
+			vid = sport::get_sport(dpt.get_dpid(), msg.get_match().get_in_port()).get_pvid() & ~OFPVID_PRESENT;
 		}
 
 		//logging::debug << "matching VID ===> " << (int)(msg->get_match().get_vlan_vid() & ~OFPVID_PRESENT) << std::endl;
 		//logging::debug << "PVID ===> " << (int)(sport::get_sport(dpt->get_dpid(), msg->get_match().get_in_port()).get_pvid() & ~OFPVID_PRESENT) << std::endl;
 		//logging::debug << "final VID ===> " << (int)vid << std::endl;
 
-		cfib::get_fib(dpt->get_dpid(), vid).handle_packet_in(*msg);
+		cfib::get_fib(dpt.get_dpid(), vid).handle_packet_in(msg);
 
 	} catch (eFibNotFound& e) {
 		// no FIB for specified VLAN found
-		logging::warn << "[ethcore] no VLAN vid:" << (int)vid << " configured on dpid:" << (unsigned long long)dpt->get_dpid() << std::endl;
+		logging::warn << "[ethcore] no VLAN vid:" << (int)vid << " configured on dpid:" << (unsigned long long)dpt.get_dpid() << std::endl;
 
 	} catch (eOFmatchNotFound& e) {
 		// OXM-TLV in-port not found
-		logging::warn << "[ethcore] no in-port found in Packet-In message" << *msg << std::endl;
+		logging::warn << "[ethcore] no in-port found in Packet-In message" << msg << std::endl;
 
 	} catch (eSportNotFound& e) {
 		// sport instance not found? critical error!
-		logging::crit << "[ethcore] no sport instance for in-port found in Packet-In message" << *msg << std::endl;
+		logging::crit << "[ethcore] no sport instance for in-port found in Packet-In message" << msg << std::endl;
 
 	} catch (eSportNoPvid& e) {
 		// drop frame on data path
-		logging::crit << "[ethcore] no PVID for sport instance found for Packet-In message" << *msg << std::endl;
+		logging::crit << "[ethcore] no PVID for sport instance found for Packet-In message" << msg << std::endl;
 
-		rofl::cofaclist actions(dpt->get_version());
-		send_packet_out_message(dpt, msg->get_buffer_id(), msg->get_match().get_in_port(), actions);
+		rofl::cofactions actions(dpt.get_version());
+		dpt.send_packet_out_message(msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
 	}
-
-	delete msg;
 }
 
 
 void
-ethcore::handle_port_status(crofdpt *dpt, cofmsg_port_status *msg)
+ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_id)
 {
 	// TODO
 
-	switch (msg->get_reason()) {
+	switch (msg.get_reason()) {
 	case OFPPR_ADD: {
 		try {
-			sport *sp = new sport(this, dpt->get_dpid(), msg->get_port().get_port_no(), msg->get_port().get_name(), port_stage_table_id);
+			sport *sp = new sport(this, dpt.get_dpid(), msg.get_port().get_port_no(), msg.get_port().get_name(), port_stage_table_id);
 			logging::info << "[ethcore] adding port via Port-Status " << *sp << std::endl;
 
-			cfib::get_fib(dpt->get_dpid(), default_vid).add_port(msg->get_port().get_port_no(), /*untagged=*/false);
+			cfib::get_fib(dpt.get_dpid(), default_vid).add_port(msg.get_port().get_port_no(), /*untagged=*/false);
 		} catch (eSportExists& e) {
-			logging::warn << "[ethcore] unable to add port:" << msg->get_port().get_name() << ", already exists " << std::endl;
+			logging::warn << "[ethcore] unable to add port:" << msg.get_port().get_name() << ", already exists " << std::endl;
 		}
 	} break;
 	case OFPPR_MODIFY: {
-		logging::warn << "[ethcore] unhandled Port-Status MODIFY " << *msg << std::endl;
+		logging::warn << "[ethcore] unhandled Port-Status MODIFY " << msg << std::endl;
 	} break;
 	case OFPPR_DELETE: {
 		try {
-			sport& sp = sport::get_sport(dpt->get_dpid(), msg->get_port().get_port_no());
+			sport& sp = sport::get_sport(dpt.get_dpid(), msg.get_port().get_port_no());
 			logging::info << "[ethcore] dropping port via Port-Status " << sp << std::endl;
 
-			cfib::get_fib(dpt->get_dpid(), default_vid).drop_port(msg->get_port().get_port_no());
+			cfib::get_fib(dpt.get_dpid(), default_vid).drop_port(msg.get_port().get_port_no());
 
 			delete &sp;
 		} catch (eSportNotFound& e) {
-			logging::warn << "[ethcore] unable to drop port:" << msg->get_port().get_name() << ", not found " << std::endl;
+			logging::warn << "[ethcore] unable to drop port:" << msg.get_port().get_name() << ", not found " << std::endl;
 		}
 	} break;
 	}
-	delete msg;
 }
 
 
