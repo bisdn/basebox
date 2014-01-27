@@ -70,7 +70,7 @@ sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string c
 	}
 	sport::sports[dpid][portno] = this;
 
-	register_timer(SPORT_TIMER_DUMP, timer_dump_interval);
+	//register_timer(SPORT_TIMER_DUMP, timer_dump_interval);
 }
 
 

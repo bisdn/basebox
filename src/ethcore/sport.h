@@ -27,6 +27,7 @@ extern "C" {
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cofflowmod.h>
 #include <rofl/common/crofdpt.h>
+#include <rofl/common/logging.h>
 
 #include "logging.h"
 
@@ -93,10 +94,10 @@ class sport :
 		uint32_t get_group_id() const { return group_id; };
 		friend std::ostream&
 		operator<< (std::ostream& os, struct vlan_membership_t const& membership) {
-			os << "<vlan_membership_t ";
+			os << rofl::indent(0) << "<vlan_membership_t ";
 				os << "vid:" << (int)membership.vid << (membership.tagged ? "(t)":"(u)") << " ";
 				os << "group-id:" << (int)membership.group_id << " ";
-			os << ">";
+			os << ">" << std::endl;
 			return os;
 		};
 	};
@@ -276,15 +277,16 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, sport const& sp) {
-		os << "<sport ";
+		os << rofl::indent(0) << "<sport ";
 			os << "dpid:" << (unsigned long long)sp.dpid << " ";
 			os << "portno:" << (unsigned long)sp.portno << " ";
 			os << "pvid:" << (int)sp.pvid << " ";
 			os << "devname:" << sp.get_devname() << " ";
-		os << ">";
+		os << ">" << std::endl;
+		rofl::indent i(2);
 		for (std::map<uint16_t, struct vlan_membership_t>::const_iterator
 				it = sp.memberships.begin(); it != sp.memberships.end(); ++it) {
-			os << std::endl << "\t" << it->second << " ";
+			os << it->second;
 		}
 		return os;
 	};

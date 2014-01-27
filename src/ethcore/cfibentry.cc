@@ -137,6 +137,8 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 
 	} catch (rofl::eRofBaseNotFound& e) {
 
+	} catch (rofl::eBadVersion& e) {
+		logging::error << "[ethcore][cfibentry] data path already disconnected, unable to remove our entries" << std::endl;
 	}
 }
 

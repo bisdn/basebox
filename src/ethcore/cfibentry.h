@@ -22,6 +22,7 @@ extern "C" {
 #include <rofl/common/cmacaddr.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
+#include <rofl/common/logging.h>
 
 #include "logging.h"
 
@@ -129,13 +130,13 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, cfibentry const& entry)
 	{
-		os << "<fibentry ";
+		os << rofl::indent(0) << "<fibentry ";
 			os << "dpid:" 		<< (unsigned long long)entry.dpid << " ";
 			os << "vid:" 		<< (int)entry.vid << " ";
 			os << "lladdr: " 	<< entry.lladdr << " ";
 			os << "portno: " 	<< entry.portno << " ";
 			os << "tagged:" 	<< (entry.tagged ? "true":"false") << " ";
-		os << ">";
+		os << ">" << std::endl;
 		return os;
 	};
 };

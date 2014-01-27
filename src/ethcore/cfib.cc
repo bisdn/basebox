@@ -74,7 +74,7 @@ cfib::cfib(
 
 	add_flow_mod_in_stage();
 
-	register_timer(CFIB_TIMER_DUMP, timer_dump_interval);
+	//register_timer(CFIB_TIMER_DUMP, timer_dump_interval);
 }
 
 
@@ -160,9 +160,15 @@ void
 cfib::handle_timeout(
 			int opaque)
 {
-	register_timer(CFIB_TIMER_DUMP, timer_dump_interval);
+	switch (opaque) {
+	case CFIB_TIMER_DUMP: {
+		register_timer(CFIB_TIMER_DUMP, timer_dump_interval);
+		logging::info << std::endl << *this;
+	} break;
+	default: {
 
-	logging::info << *this << std::endl;
+	};
+	}
 }
 
 
@@ -174,10 +180,15 @@ cfib::fib_timer_expired(cfibentry *entry)
 		return;
 	}
 
-	logging::info << "[ethcore - fib] - FIB entry expired: " << *entry << std::endl;
+	rofl::indent i(2);
+
+	logging::info << "[ethcore][fib] FIB entry expired:" << std::endl << *entry;
 
 	fibtable.erase(entry->get_lladdr());
+
 	delete entry;
+
+	logging::info << "[ethcore][fib] Forwarding Information Base:" << std::endl << *this;
 }
 
 
@@ -219,20 +230,25 @@ cfib::add_flow_mod_in_stage()
 void
 cfib::drop_flow_mod_in_stage()
 {
-	rofl::crofbase *rofbase = fibowner->get_rofbase();
-	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
+	try {
+		rofl::crofbase *rofbase = fibowner->get_rofbase();
+		rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
-	rofl::cflowentry fe(dpt->get_version());
+		rofl::cflowentry fe(dpt->get_version());
 
-	fe.set_command(OFPFC_DELETE_STRICT);
-	fe.set_table_id(src_stage_table_id);
-	fe.set_priority(0x4000);
-	//fe.set_idle_timeout(0);
-	//fe.set_hard_timeout(0);
+		fe.set_command(OFPFC_DELETE_STRICT);
+		fe.set_table_id(src_stage_table_id);
+		fe.set_priority(0x4000);
+		//fe.set_idle_timeout(0);
+		//fe.set_hard_timeout(0);
 
-	fe.match.set_vlan_vid(vid);
+		fe.match.set_vlan_vid(vid);
 
-	dpt->send_flow_mod_message(fe);
+		dpt->send_flow_mod_message(fe);
+
+	} catch (rofl::eBadVersion& e) {
+		logging::error << "[ethcore][cfib] data path already disconnected, unable to remove our entries" << std::endl;
+	}
 }
 
 
@@ -263,20 +279,25 @@ cfib::add_flow_mod_flood()
 void
 cfib::drop_flow_mod_flood()
 {
-	rofl::crofbase *rofbase = fibowner->get_rofbase();
-	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
+	try {
+		rofl::crofbase *rofbase = fibowner->get_rofbase();
+		rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
-	rofl::cflowentry fe(dpt->get_version());
+		rofl::cflowentry fe(dpt->get_version());
 
-	fe.set_command(OFPFC_DELETE_STRICT);
-	fe.set_table_id(dst_stage_table_id);
-	fe.set_priority(0x4000);
-	//fe.set_idle_timeout(0);
-	//fe.set_hard_timeout(0);
+		fe.set_command(OFPFC_DELETE_STRICT);
+		fe.set_table_id(dst_stage_table_id);
+		fe.set_priority(0x4000);
+		//fe.set_idle_timeout(0);
+		//fe.set_hard_timeout(0);
 
-	fe.match.set_vlan_vid(vid);
+		fe.match.set_vlan_vid(vid);
 
-	dpt->send_flow_mod_message(fe);
+		dpt->send_flow_mod_message(fe);
+
+	} catch (rofl::eBadVersion& e) {
+		logging::error << "[ethcore][cfib] data path already disconnected, unable to remove our entries" << std::endl;
+	}
 }
 
 
@@ -360,7 +381,7 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 		rofl::cmacaddr eth_src = msg.get_packet().ether()->get_dl_src();
 		rofl::cmacaddr eth_dst = msg.get_packet().ether()->get_dl_dst();
 
-		logging::info << "[ethcore - fib] - frame seen: " << eth_src << " => " << eth_dst << " on vid:" << std::dec << (int)vid << std::endl;
+		logging::info << "[ethcore][fib] frame seen: " << eth_src << " => " << eth_dst << " on vid:" << std::dec << (int)vid << std::endl;
 
 		/* sanity check: if source mac is multicast => invalid frame */
 		if (eth_src.is_multicast()) {
@@ -378,16 +399,18 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 					dpid,
 					vid, inport, port.get_is_tagged(vid));
 #endif
-
-			logging::info << "[ethcore - fib] - creating new FIB entry: " << *(fibtable[eth_src]) << std::endl;
-
+			rofl::indent i(2);
+			logging::debug << "[ethcore][fib] creating new FIB entry:" << std::endl << *(fibtable[eth_src]);
+			logging::info << "[ethcore][fib] state changed:" << std::endl << *this;
 
 
 		/* either inport has changed or the FlowMod entry was removed => in either case, refresh entry */
 		} else /*if (inport != fibtable[eth_src]->get_portno())*/ {
 			fibtable[eth_src]->set_portno(inport);
 
-			logging::info << "[ethcore - fib] - updating FIB entry: " << (*fibtable[eth_src]) << std::endl;
+			rofl::indent i(2);
+			logging::debug << "[ethcore][fib] updating FIB entry:" << std::endl << (*fibtable[eth_src]);
+			logging::info << "[ethcore][fib] state changed:" << std::endl << *this;
 		}
 
 

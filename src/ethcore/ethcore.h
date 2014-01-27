@@ -8,6 +8,7 @@
 #include <rofl/common/caddress.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
+#include <rofl/common/logging.h>
 
 #include "cfib.h"
 #include "sport.h"
@@ -157,12 +158,12 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, ethcore const& ec) {
-		os << "<ethcore ";
+		os << indent(0) << "<ethcore ";
 			os << "default-vid:" << (int)ec.default_vid << " ";
 			os << "port-stage-table-id:" << (int)ec.port_stage_table_id << " ";
 			os << "fib-in-stage-table-id:" << (int)ec.fib_in_stage_table_id << " ";
 			os << "fib-out-stage-table-id:" << (int)ec.fib_out_stage_table_id << " ";
-		os << ">";
+		os << ">" << std::endl;
 		return os;
 	};
 };
