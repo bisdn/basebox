@@ -112,7 +112,7 @@ public:
 	handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id = 0);
 
 	virtual void
-	handle_timeout(int opaque);
+	handle_timeout(int opaque, void *data = (void*)0);
 
 
 public:

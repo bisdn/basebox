@@ -30,7 +30,7 @@ vmcore::~vmcore()
 
 
 void
-vmcore::handle_timeout(int opaque)
+vmcore::handle_timeout(int opaque, void *data)
 {
 	switch (opaque) {
 	case VMCORE_TIMER_DUMP: {
