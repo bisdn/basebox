@@ -15,8 +15,6 @@ vmcore::vmcore(
 		crofbase(versionbitmap)
 {
 	register_timer(VMCORE_TIMER_DUMP, dump_state_interval);
-	crofbase::get_versionbitmap().add_ofp_version(rofl::openflow12::OFP_VERSION);
-	crofbase::get_versionbitmap().add_ofp_version(rofl::openflow13::OFP_VERSION);
 }
 
 
@@ -573,6 +571,8 @@ vmcore::execute(
 void
 vmcore::dump_state()
 {
+	register_timer(VMCORE_TIMER_DUMP, dump_state_interval);
+
 	for (std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> >::iterator
 			it = dptlinks.begin(); it != dptlinks.end(); ++it) {
 
@@ -604,8 +604,6 @@ vmcore::dump_state()
 
 		std::cerr << std::endl;
 	}
-
-	register_timer(VMCORE_TIMER_DUMP, dump_state_interval);
 }
 
 
