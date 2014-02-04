@@ -109,6 +109,9 @@ public:
 	handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_t aux_id = 0);
 
 	virtual void
+	handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id = 0);
+
+	virtual void
 	handle_timeout(int opaque);
 
 

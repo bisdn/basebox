@@ -306,6 +306,14 @@ vmcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_
 
 
 void
+vmcore::handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id)
+{
+	rofl::logging::warn << "[vmcore] error message rcvd:" << std::endl << msg;
+}
+
+
+
+void
 vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
 	if (0 == dpt)
