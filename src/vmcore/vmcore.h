@@ -77,7 +77,8 @@ public:
 	/**
 	 *
 	 */
-	vmcore();
+	vmcore(
+			cofhello_elem_versionbitmap const& versionbitmap);
 
 
 	/**

@@ -8,9 +8,11 @@ std::string	vmcore::port_up_script_path(DEFAULT_PORT_UP_SCRIPT_PATH);
 std::string	vmcore::port_down_script_path(DEFAULT_PORT_DOWN_SCRIPT_PATH);
 
 
-vmcore::vmcore() :
+vmcore::vmcore(
+		cofhello_elem_versionbitmap const& versionbitmap) :
 		dpt(0),
-		dump_state_interval(15)
+		dump_state_interval(15),
+		crofbase(versionbitmap)
 {
 	register_timer(VMCORE_TIMER_DUMP, dump_state_interval);
 	crofbase::get_versionbitmap().add_ofp_version(rofl::openflow12::OFP_VERSION);
