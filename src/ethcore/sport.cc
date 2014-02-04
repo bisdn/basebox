@@ -207,7 +207,7 @@ sport::flow_mod_add(uint16_t vid, bool tagged)
 
 		// set incoming rule for switch port
 		if (true) {
-			rofl::cflowentry fe(dpt->get_version());
+			rofl::cofflowmod fe(dpt->get_version());
 
 			fe.set_command(OFPFC_ADD);
 			fe.set_idle_timeout(0);
@@ -266,7 +266,7 @@ sport::flow_mod_delete(uint16_t vid, bool tagged)
 
 		// set incoming rule for switch port
 		if (true) {
-			rofl::cflowentry fe(dpt->get_version());
+			rofl::cofflowmod fe(dpt->get_version());
 
 			fe.set_command(OFPFC_DELETE_STRICT);
 			fe.set_idle_timeout(0);

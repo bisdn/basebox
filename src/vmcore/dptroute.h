@@ -41,7 +41,7 @@ private:
 	rofl::crofdpt					*dpt;
 	uint8_t					 		table_id;
 	unsigned int			 		rtindex;
-	rofl::cflowentry		 		flowentry;
+	rofl::cofflowmod		 		flowentry;
 
 	/* we make here one assumtpion: only one nexthop exists per neighbor and route
 	 * this should be valid under all circumstances
@@ -155,7 +155,7 @@ public:
 	{
 #if 0
 		// FIXME: write cflowentry::operator<<()
-		rofl::cflowentry fe(route.flowentry);
+		rofl::cofflowmod fe(route.flowentry);
 		char s_buf[1024];
 		memset(s_buf, 0, sizeof(s_buf));
 		snprintf(s_buf, sizeof(s_buf)-1, "%s", fe.c_str());

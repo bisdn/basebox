@@ -151,7 +151,7 @@ dptroute::route_created(
 
 		set_nexthops();
 
-		flowentry = rofl::cflowentry(dpt->get_version());
+		flowentry = rofl::cofflowmod(dpt->get_version());
 
 		flowentry.set_command(OFPFC_ADD);
 		flowentry.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt->get_version()));

@@ -26,11 +26,12 @@ cfibentry::cfibentry(
 		lladdr(lladdr),
 		src_stage_table_id(src_stage_table_id),
 		dst_stage_table_id(dst_stage_table_id),
-		entry_timeout(CFIBENTRY_DEFAULT_TIMEOUT)
+		entry_timeout(CFIBENTRY_DEFAULT_TIMEOUT),
+		expiration_timer_id(0)
 {
 	flow_mod_configure(FLOW_MOD_ADD);
 
-	register_timer(CFIBENTRY_ENTRY_EXPIRED, entry_timeout);
+	expiration_timer_id = register_timer(CFIBENTRY_ENTRY_EXPIRED, entry_timeout);
 }
 
 
@@ -48,7 +49,7 @@ cfibentry::~cfibentry()
 
 
 void
-cfibentry::handle_timeout(int opaque)
+cfibentry::handle_timeout(int opaque, void *data)
 {
 	switch (opaque) {
 	case CFIBENTRY_ENTRY_EXPIRED: {
@@ -60,6 +61,7 @@ cfibentry::handle_timeout(int opaque)
 
 
 
+
 void
 cfibentry::set_portno(uint32_t portno)
 {
@@ -67,7 +69,7 @@ cfibentry::set_portno(uint32_t portno)
 
 	this->portno = portno;
 
-	reset_timer(CFIBENTRY_ENTRY_EXPIRED, entry_timeout);
+	reset_timer(expiration_timer_id, entry_timeout);
 
 	flow_mod_configure(FLOW_MOD_ADD);
 }
@@ -81,7 +83,7 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 		rofl::crofbase *rofbase = fib->get_rofbase();
 		rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
-		rofl::cflowentry fe(dpt->get_version());
+		rofl::cofflowmod fe(dpt->get_version());
 
 		/* table 'src_stage_table_id':
 		 *

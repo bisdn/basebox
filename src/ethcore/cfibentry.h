@@ -60,6 +60,7 @@ private:
 	uint8_t						src_stage_table_id;
 	uint8_t						dst_stage_table_id;
 	int							entry_timeout;
+	uint32_t					expiration_timer_id;
 
 public:
 
@@ -120,7 +121,7 @@ private:
 	 *
 	 */
 	virtual void
-	handle_timeout(int opaque);
+	handle_timeout(int opaque, void *data = (void*)0);
 
 public:
 

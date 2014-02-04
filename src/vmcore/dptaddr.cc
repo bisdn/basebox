@@ -86,7 +86,7 @@ dptaddr::flow_mod_add()
 	try {
 		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
 
-		this->fe = rofl::cflowentry(dpt->get_version());
+		this->fe = rofl::cofflowmod(dpt->get_version());
 
 		fe.set_command(OFPFC_ADD);
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt->get_version()));
@@ -130,7 +130,7 @@ dptaddr::flow_mod_delete()
 	try {
 		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
 
-		rofl::cflowentry fe = this->fe;
+		rofl::cofflowmod fe = this->fe;
 
 		fe.set_command(OFPFC_DELETE_STRICT);
 		fe.set_table_id(of_table_id);			// FIXME: check for first table-id in data path

@@ -40,7 +40,7 @@ private:
 	uint8_t 					of_table_id;
 	int							ifindex;
 	uint16_t					nbindex;
-	rofl::cflowentry			fe;
+	rofl::cofflowmod			fe;
 
 public:
 
@@ -103,7 +103,7 @@ public:
 	/**
 	 *
 	 */
-	rofl::cflowentry get_flowentry() const { return fe; };
+	rofl::cofflowmod get_flowentry() const { return fe; };
 
 
 public:
@@ -136,7 +136,7 @@ public:
 	operator<< (std::ostream& os, dptneigh const& neigh)
 	{
 #if 0
-		rofl::cflowentry fe(neigh.fe);
+		rofl::cofflowmod fe(neigh.fe);
 		char s_fe[1024];
 		memset(s_fe, 0, sizeof(s_fe));
 		snprintf(s_fe, sizeof(s_fe)-1, "%s", fe.c_str());

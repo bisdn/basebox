@@ -103,7 +103,7 @@ dptnexthop::flow_mod_add()
 	try {
 		crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
-		this->fe = rofl::cflowentry(dpt->get_version());
+		this->fe = rofl::cofflowmod(dpt->get_version());
 
 		fe.set_command(OFPFC_ADD);
 		fe.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
@@ -146,7 +146,7 @@ dptnexthop::flow_mod_modify()
 void
 dptnexthop::flow_mod_delete()
 {
-	this->fe = rofl::cflowentry(dpt->get_version());
+	this->fe = rofl::cofflowmod(dpt->get_version());
 
 	fe.set_command(OFPFC_DELETE_STRICT);
 	fe.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);

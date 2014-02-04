@@ -122,7 +122,7 @@ vmcore::handle_dpath_open(
 		/*
 		 * purge all entries from data path
 		 */
-		rofl::cflowentry fe(dpt.get_version());
+		rofl::cofflowmod fe(dpt.get_version());
 		fe.set_command(OFPFC_DELETE);
 		fe.set_table_id(rofl::openflow::base::get_ofptt_all(dpt.get_version()));
 		dpt.send_flow_mod_message(fe);
@@ -177,7 +177,7 @@ vmcore::handle_dpath_open(
 		/*
 		 * install default FlowMod entry for table 0 => GotoTable(1)
 		 */
-		rofl::cflowentry fed = rofl::cflowentry(dpt.get_version());
+		rofl::cofflowmod fed = rofl::cofflowmod(dpt.get_version());
 
 		fed.set_command(OFPFC_ADD);
 		fed.set_table_id(0);
@@ -381,7 +381,7 @@ vmcore::block_stp_frames()
 	if (0 == dpt)
 		return;
 
-	rofl::cflowentry fe(dpt->get_version());
+	rofl::cofflowmod fe(dpt->get_version());
 
 	fe.set_command(OFPFC_ADD);
 	fe.set_table_id(0);
@@ -398,7 +398,7 @@ vmcore::unblock_stp_frames()
 	if (0 == dpt)
 		return;
 
-	rofl::cflowentry fe(dpt->get_version());
+	rofl::cofflowmod fe(dpt->get_version());
 
 	fe.set_command(OFPFC_DELETE_STRICT);
 	fe.set_table_id(0);
@@ -415,7 +415,7 @@ vmcore::redirect_ipv4_multicast()
 	if (0 == dpt)
 		return;
 
-	rofl::cflowentry fe(dpt->get_version());
+	rofl::cofflowmod fe(dpt->get_version());
 
 	fe.set_command(OFPFC_ADD);
 	fe.set_table_id(0);
@@ -435,7 +435,7 @@ vmcore::redirect_ipv6_multicast()
 	if (0 == dpt)
 		return;
 
-	rofl::cflowentry fe(dpt->get_version());
+	rofl::cofflowmod fe(dpt->get_version());
 
 	fe.set_command(OFPFC_ADD);
 	fe.set_table_id(0);
