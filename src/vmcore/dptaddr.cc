@@ -99,8 +99,14 @@ dptaddr::flow_mod_add()
 				rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()), 1518);
 
 		switch (rta.get_family()) {
-		case AF_INET:  { fe.match.set_ipv4_dst(rta.get_local_addr()); } break;
-		case AF_INET6: { fe.match.set_ipv6_dst(rta.get_local_addr()); } break;
+		case AF_INET:  {
+			fe.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+			fe.match.set_ipv4_dst(rta.get_local_addr());
+		} break;
+		case AF_INET6: {
+			fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+			fe.match.set_ipv6_dst(rta.get_local_addr());
+		} break;
 		}
 
 		dpt->send_flow_mod_message(fe);
@@ -136,8 +142,14 @@ dptaddr::flow_mod_delete()
 		fe.set_table_id(of_table_id);			// FIXME: check for first table-id in data path
 
 		switch (rta.get_family()) {
-		case AF_INET:  { fe.match.set_ipv4_dst(rta.get_local_addr()); } break;
-		case AF_INET6: { fe.match.set_ipv6_dst(rta.get_local_addr()); } break;
+		case AF_INET:  {
+			fe.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+			fe.match.set_ipv4_dst(rta.get_local_addr());
+		} break;
+		case AF_INET6: {
+			fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+			fe.match.set_ipv6_dst(rta.get_local_addr());
+		} break;
 		}
 
 		dpt->send_flow_mod_message(fe);

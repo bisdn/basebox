@@ -108,8 +108,14 @@ dptneigh::flow_mod_add()
 		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!
 		 */
 		switch (rtn.get_family()) {
-		case AF_INET:  { fe.match.set_ipv4_dst(rtn.get_dst()); } break;
-		case AF_INET6: { fe.match.set_ipv6_dst(rtn.get_dst()); } break;
+		case AF_INET:  {
+			fe.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+			fe.match.set_ipv4_dst(rtn.get_dst());
+		} break;
+		case AF_INET6: {
+			fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+			fe.match.set_ipv6_dst(rtn.get_dst());
+		} break;
 		}
 
 		rofl::cmacaddr eth_src(cnetlink::get_instance().get_link(ifindex).get_hwaddr());
@@ -154,8 +160,14 @@ dptneigh::flow_mod_delete()
 		fe.set_table_id(of_table_id);
 
 		switch (rtn.get_family()) {
-		case AF_INET:  { fe.match.set_ipv4_dst(rtn.get_dst()); } break;
-		case AF_INET6: { fe.match.set_ipv6_dst(rtn.get_dst()); } break;
+		case AF_INET:  {
+			fe.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+			fe.match.set_ipv4_dst(rtn.get_dst());
+		} break;
+		case AF_INET6: {
+			fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+			fe.match.set_ipv6_dst(rtn.get_dst());
+		} break;
 		}
 
 		dpt->send_flow_mod_message(fe);

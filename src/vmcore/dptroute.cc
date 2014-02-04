@@ -177,9 +177,11 @@ dptroute::route_created(
 
 		switch (rtr.get_family()) {
 		case AF_INET: {
+			flowentry.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 			flowentry.match.set_ipv4_dst(rtr.get_dst(), rtr.get_mask());
 		} break;
 		case AF_INET6: {
+			flowentry.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 			flowentry.match.set_ipv6_dst(rtr.get_dst(), rtr.get_mask());
 		} break;
 		}

@@ -113,8 +113,14 @@ dptnexthop::flow_mod_add()
 		fe.set_table_id(of_table_id);
 
 		switch (dstaddr.ca_saddr->sa_family) {
-		case AF_INET:  { fe.match.set_ipv4_dst(dstaddr, dstmask); } break;
-		case AF_INET6: { fe.match.set_ipv6_dst(dstaddr, dstmask); } break;
+		case AF_INET:  {
+			fe.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+			fe.match.set_ipv4_dst(dstaddr, dstmask);
+		} break;
+		case AF_INET6: {
+			fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+			fe.match.set_ipv6_dst(dstaddr, dstmask);
+		} break;
 		}
 
 		rofl::cmacaddr eth_src(cnetlink::get_instance().get_link(ifindex).get_hwaddr());
@@ -156,8 +162,14 @@ dptnexthop::flow_mod_delete()
 	fe.set_table_id(of_table_id);
 
 	switch (dstaddr.ca_saddr->sa_family) {
-	case AF_INET:  { fe.match.set_ipv4_dst(dstaddr, dstmask); } break;
-	case AF_INET6: { fe.match.set_ipv6_dst(dstaddr, dstmask); } break;
+	case AF_INET:  {
+		fe.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+		fe.match.set_ipv4_dst(dstaddr, dstmask);
+	} break;
+	case AF_INET6: {
+		fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+		fe.match.set_ipv6_dst(dstaddr, dstmask);
+	} break;
 	}
 
 	dpt->send_flow_mod_message(fe);
