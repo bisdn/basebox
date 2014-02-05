@@ -22,6 +22,7 @@ extern "C" {
 }
 #endif
 
+#include <rofl/common/logging.h>
 #include <rofl/common/caddress.h>
 
 #include <crtnexthop.h>
@@ -225,26 +226,27 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, crtroute const& rtr)
 	{
-		os << "<crtroute: "
-				<< "table_id: " 	<< rtr.get_table_id_s() << " "
-				<< "scope: " 		<< rtr.get_scope_s() << " "
-				<< "tos: " 			<< (unsigned int)rtr.tos << " "
-				<< "protocol: " 	<< (unsigned int)rtr.protocol << " "
-				<< "priority: " 	<< (unsigned int)rtr.priority << " "
-				<< "family: " 		<< (unsigned int)rtr.family << " "
-				<< "dst: " 			<< rtr.dst << " "
-				<< "prefixlen: " 	<< rtr.prefixlen << " "
-				<< "mask: " 		<< rtr.mask << " "
-				<< "src: " 			<< rtr.src << " "
-				<< "type: " 		<< (unsigned int)rtr.type << " "
-				<< "flags: " 		<< (unsigned int)rtr.flags << " "
-				<< "metric: " 		<< (int)rtr.metric << " "
-				<< "pref_src: " 	<< rtr.pref_src << " "
-				<< "ifindex: " 		<< (unsigned int)rtr.iif << " ";
-		os << ">";
+		os << rofl::indent(0) << "<crtroute: >" << std::endl;
+		os << rofl::indent(2) << "<table_id: " 	<< rtr.get_table_id_s() 		<< " >" << std::endl;
+		os << rofl::indent(2) << "<scope: " 	<< rtr.get_scope_s() 			<< " >" << std::endl;
+		os << rofl::indent(2) << "<tos: " 		<< (unsigned int)rtr.tos 		<< " >" << std::endl;
+		os << rofl::indent(2) << "<protocol: " 	<< (unsigned int)rtr.protocol 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<priority: " 	<< (unsigned int)rtr.priority 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<family: " 	<< (unsigned int)rtr.family 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<dst: " 		<< rtr.dst 						<< " >"	<< std::endl;
+		os << rofl::indent(2) << "<prefixlen: " << rtr.prefixlen 				<< " >" << std::endl;
+		os << rofl::indent(2) << "<mask: " 		<< rtr.mask 					<< " >" << std::endl;
+		os << rofl::indent(2) << "<src: " 		<< rtr.src 						<< " >" << std::endl;
+		os << rofl::indent(2) << "<type: " 		<< (unsigned int)rtr.type 		<< " >" << std::endl;
+		os << rofl::indent(2) << "<flags: " 	<< (unsigned int)rtr.flags 		<< " >" << std::endl;
+		os << rofl::indent(2) << "<metric: " 	<< (int)rtr.metric 				<< " >" << std::endl;
+		os << rofl::indent(2) << "<pref_src: " 	<< rtr.pref_src 				<< " >" << std::endl;
+		os << rofl::indent(2) << "<ifindex: " 	<< (unsigned int)rtr.iif 		<< " >" << std::endl;
+
+		rofl::indent i(2);
 		for (std::vector<crtnexthop>::const_iterator
 				it = rtr.nexthops.begin(); it != rtr.nexthops.end(); ++it) {
-			os << "        " << (*it) << " ";
+			os << (*it);
 		}
 
 		return os;

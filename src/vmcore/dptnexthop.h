@@ -18,6 +18,7 @@ extern "C" {
 }
 #endif
 
+#include <rofl/common/logging.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
@@ -155,28 +156,18 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (std::ostream& os, dptnexthop const& neigh)
-	{
-#if 0
-		rofl::cofflowmod fe(neigh.fe);
-		char s_fe[1024];
-		memset(s_fe, 0, sizeof(s_fe));
-		snprintf(s_fe, sizeof(s_fe)-1, "%s", fe.c_str());
-#endif
+	operator<< (std::ostream& os, dptnexthop const& neigh) {
 		try {
-			crtneigh& rtn = cnetlink::get_instance().get_link(neigh.ifindex).get_neigh(neigh.nbindex);
+			os << rofl::indent(0) << "<dptnexthop: >" 	<< std::endl;
 
-			os << "<dptnexthop: ";
-				os << rtn.get_dst() << " dev " << cnetlink::get_instance().get_link(neigh.ifindex).get_devname();
-				os << " lladdr " << rtn.get_lladdr() << " state " << rtn.get_state() << " ";
-				//os << "ifindex=" << neigh.ifindex << " ";
-				//os << "nbindex=" << (unsigned int)neigh.nbindex << " ";
-				//os << "ofportno=" << (unsigned int)neigh.of_port_no << " ";
-				os << "oftableid: " << (unsigned int)neigh.of_table_id << " ";
-				//os << "dstaddr=" << neigh.dstaddr << " ";
-				//os << "dstmask=" << neigh.dstmask << " ";
-				//os << "flowentry=" << s_fe << " ";
-			os << ">";
+			crtneigh& rtn = cnetlink::get_instance().get_link(neigh.ifindex).get_neigh(neigh.nbindex);
+			os << rofl::indent(0) << "<dptnexthop: >" 	<< std::endl;
+			os << rofl::indent(2) << "<destination: " 	<< rtn.get_dst() << " >" << std::endl;
+			os << rofl::indent(2) << "<device: " 		<< cnetlink::get_instance().get_link(neigh.ifindex).get_devname() << " >" << std::endl;
+			os << rofl::indent(2) << "<hwaddr: " 		<< rtn.get_lladdr() << " >" << std::endl;
+			os << rofl::indent(2) << "<state: " 		<< rtn.get_state() << " >" << std::endl;
+			os << rofl::indent(2) << "<table-id: " 		<< (unsigned int)neigh.of_table_id << " >" << std::endl;
+
 		} catch (eNetLinkNotFound& e) {
 			os << "<dptnexthop: ";
 				os << "ifindex:" << neigh.ifindex << " ";

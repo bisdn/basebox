@@ -133,39 +133,18 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (std::ostream& os, dptneigh const& neigh)
-	{
-#if 0
-		rofl::cofflowmod fe(neigh.fe);
-		char s_fe[1024];
-		memset(s_fe, 0, sizeof(s_fe));
-		snprintf(s_fe, sizeof(s_fe)-1, "%s", fe.c_str());
-#endif
+	operator<< (std::ostream& os, dptneigh const& neigh) {
+		os << "<dptneigh: nbindex: " << (unsigned int)neigh.nbindex << " table-id: " << (unsigned int)neigh.of_table_id << " >" << std::endl;
 		try {
 			crtneigh& rtn = cnetlink::get_instance().get_link(neigh.ifindex).get_neigh(neigh.nbindex);
+			os << rofl::indent(2) << "<dst:" << rtn.get_dst()
+					<< " devname:" << cnetlink::get_instance().get_link(neigh.ifindex).get_devname()
+					<< " lladdr:" << rtn.get_lladdr() << " state " << rtn.get_state_s() << " >" << std::endl;
 
-			os << "<dptneigh: ";
-				os << rtn.get_dst() << " dev " << cnetlink::get_instance().get_link(neigh.ifindex).get_devname();
-				os << " lladdr " << rtn.get_lladdr() << " state " << rtn.get_state_s() << " ";
-				//os << "ifindex=" << neigh.ifindex << " ";
-				os << "nbindex: " << (unsigned int)neigh.nbindex << " ";
-				//os << "ofportno=" << (unsigned int)neigh.of_port_no << " ";
-				os << "oftableid: " << (unsigned int)neigh.of_table_id << " ";
-				//os << rtn << " ";
-				//os << "flowentry=" << s_fe << " ";
-			os << ">";
 		} catch (eRtLinkNotFound& e) {
-			os << "<dptneigh: ";
-				os << "nbindex: " << (unsigned int)neigh.nbindex << " ";
-				os << "oftableid: " << (unsigned int)neigh.of_table_id << " ";
-				os << "associated crtneigh object not found";
-			os << ">";
+			os << rofl::indent(2) << "<associated crtneigh object not found >";
 		} catch (eNetLinkNotFound& e) {
-			os << "<dptneigh: ";
-				os << "nbindex: " << (unsigned int)neigh.nbindex << " ";
-				os << "oftableid: " << (unsigned int)neigh.of_table_id << " ";
-				os << "associated crtlink object not found";
-			os << ">";
+			os << rofl::indent(2) << "<associated crtlink object not found >";
 		}
 		return os;
 	};

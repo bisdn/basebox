@@ -19,6 +19,7 @@ extern "C" {
 }
 #endif
 
+#include <rofl/common/logging.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
@@ -151,42 +152,33 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (std::ostream& os, dptroute const& route)
-	{
-#if 0
-		// FIXME: write cflowentry::operator<<()
-		rofl::cofflowmod fe(route.flowentry);
-		char s_buf[1024];
-		memset(s_buf, 0, sizeof(s_buf));
-		snprintf(s_buf, sizeof(s_buf)-1, "%s", fe.c_str());
-#endif
+	operator<< (std::ostream& os, dptroute const& route) {
 		crtroute& rtr = cnetlink::get_instance().get_route(route.table_id, route.rtindex);
 
-
 		switch (rtr.get_scope()) {
+#if 0
 		case RT_SCOPE_HOST: {
 			// nothing to do
-			os << "TROOEEEEETTTT!!!!" << std::endl;
-
 		} break;
+#endif
+		case RT_SCOPE_HOST:
 		case RT_SCOPE_LINK:
 		case RT_SCOPE_SITE:
-		case RT_SCOPE_UNIVERSE: {
+		case RT_SCOPE_UNIVERSE:
+		default: {
+			os << rofl::indent(0) << "<dptroute: >" 	<< std::endl;
+			os << rofl::indent(2) << "<destination: " 	<< rtr.get_dst() 		<< " >" << std::endl;
+			os << rofl::indent(2) << "<prefix: " 		<< rtr.get_prefixlen() 	<< " >" << std::endl;
+			os << rofl::indent(2) << "<src " 			<< rtr.get_src() 		<< " >" << std::endl;
+			os << rofl::indent(2) << "<scope " 			<< rtr.get_scope_s() 	<< " >" << std::endl;
+			os << rofl::indent(2) << "<table " 			<< rtr.get_table_id_s() << " >" << std::endl;
+			os << rofl::indent(2) << "<rtindex: " 		<< route.rtindex 		<< " >" << std::endl;
 
-			os << "<dptroute: ";
-				os << rtr.get_dst() << "/" << rtr.get_prefixlen() << " ";
-				os << "src " << rtr.get_src() << " ";
-				os << "scope " << rtr.get_scope_s() << " ";
-				os << "table " << rtr.get_table_id_s() << " ";
-				os << "rtindex: " 	<< route.rtindex << " ";
-			os << "> ";
-
+			rofl::indent i(2);
 			for (std::map<uint16_t, dptnexthop>::const_iterator
 					it = route.dptnexthops.begin(); it != route.dptnexthops.end(); ++it) {
-
 				dptnexthop const& nhop = it->second;
-				os << std::endl << "        " << nhop;
-
+				os << nhop;
 			}
 		} break;
 		}

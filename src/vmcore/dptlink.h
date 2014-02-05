@@ -16,7 +16,7 @@ extern "C" {
 }
 #endif
 
-
+#include <rofl/common/logging.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
@@ -206,24 +206,23 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, dptlink const& link) {
-		os << "<dptlink: ";
-			os << "ifindex: " << (int)link.ifindex << " ";
-			os << "devname: " << link.dpt->get_ports().get_port(link.of_port_no).get_name() << " ";
-			os << "hwaddr: "  << link.dpt->get_ports().get_port(link.of_port_no).get_hwaddr() << " ";
-			os << "portno: "  << (int)link.of_port_no << " ";
-		os << ">" << std::endl;
+		os << rofl::indent(0) << "<dptlink: ifindex:" << (int)link.ifindex << " "
+				<< "devname:" << link.dpt->get_ports().get_port(link.of_port_no).get_name() << " >" << std::endl;
+		os << rofl::indent(2) << "<hwaddr:"  << link.dpt->get_ports().get_port(link.of_port_no).get_hwaddr() << " "
+				<< "portno:"  << (int)link.of_port_no << " >" << std::endl;
 		try {
-			os << "    " << cnetlink::get_instance().get_link(link.ifindex) << std::endl;
+			rofl::indent i(2);
+			os << cnetlink::get_instance().get_link(link.ifindex);
 		} catch (eNetLinkNotFound& e) {
-			os << "    " << "no crtlink found" << std::endl;
+			os << rofl::indent(2) << "<no crtlink found >" << std::endl;
 		}
 		for (std::map<uint16_t, dptaddr>::const_iterator
 				it = link.addrs.begin(); it != link.addrs.end(); ++it) {
-			os << "    " << it->second << std::endl;
+			rofl::indent i(2); os << it->second;
 		}
 		for (std::map<uint16_t, dptneigh>::const_iterator
 				it = link.neighs.begin(); it != link.neighs.end(); ++it) {
-			os << "    " << it->second << std::endl;
+			rofl::indent i(2); os << it->second << std::endl;
 		}
 		return os;
 	};

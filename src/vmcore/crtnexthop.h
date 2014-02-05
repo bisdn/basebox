@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 #include <rofl/common/caddress.h>
+#include <rofl/common/logging.h>
 
 namespace dptmap
 {
@@ -111,16 +112,14 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (
-			std::ostream& os, crtnexthop const& nxthop) {
-		os << "<crtnexthop: ";
-		os << "family: " 	<< (int)nxthop.family << " ";
-		os << "weight: " 	<< (int)nxthop.weight << " ";
-		os << "ifindex: " 	<< (int)nxthop.ifindex << " ";
-		os << "gateway: " 	<< nxthop.gateway << " ";
-		os << "flags: " 	<< nxthop.flags << " ";
-		os << "realms: " 	<< (unsigned int)nxthop.realms << " ";
-		os << ">";
+	operator<< (std::ostream& os, crtnexthop const& nxthop) {
+		os << rofl::indent(0) << "<crtnexthop: >" << std::endl;
+		os << rofl::indent(2) << "<family: " 	<< (int)nxthop.family 			<< " >" << std::endl;
+		os << rofl::indent(2) << "<weight: " 	<< (int)nxthop.weight 			<< " >" << std::endl;
+		os << rofl::indent(2) << "<ifindex: " 	<< (int)nxthop.ifindex 			<< " >" << std::endl;
+		os << rofl::indent(2) << "<gateway: " 	<< nxthop.gateway 				<< " >" << std::endl;
+		os << rofl::indent(2) << "<flags: " 	<< nxthop.flags 				<< " >" << std::endl;
+		os << rofl::indent(2) << "<realms: " 	<< (unsigned int)nxthop.realms 	<< " >" << std::endl;
 		return os;
 	};
 };
