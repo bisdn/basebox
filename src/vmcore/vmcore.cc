@@ -9,10 +9,10 @@ std::string	vmcore::port_down_script_path(DEFAULT_PORT_DOWN_SCRIPT_PATH);
 
 
 vmcore::vmcore(
-		cofhello_elem_versionbitmap const& versionbitmap) :
+		rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap) :
 		dpt(0),
 		dump_state_interval(15),
-		crofbase(versionbitmap)
+		rofl::crofbase(versionbitmap)
 {
 	register_timer(VMCORE_TIMER_DUMP, dump_state_interval);
 }

@@ -23,12 +23,12 @@ extern "C" {
 #include <vector>
 #include <exception>
 
-//#include "cnetlink.h"
 #include <rofl/common/crofbase.h>
+#include <rofl/common/openflow/cofhelloelemversionbitmap.h>
 
-#include <dptlink.h>
-#include <dptroute.h>
-#include <cnetlink.h>
+#include "dptlink.h"
+#include "dptroute.h"
+#include "cnetlink.h"
 
 namespace dptmap
 {
@@ -42,10 +42,10 @@ class vmcore :
 		public rofl::crofbase,
 		public cnetlink_subscriber
 {
-	#define DEFAULT_DPATH_OPEN_SCRIPT_PATH "/var/lib/vmcore/dpath-open.sh"
+	#define DEFAULT_DPATH_OPEN_SCRIPT_PATH 	"/var/lib/vmcore/dpath-open.sh"
 	#define DEFAULT_DPATH_CLOSE_SCRIPT_PATH "/var/lib/vmcore/dpath-close.sh"
-	#define DEFAULT_PORT_UP_SCRIPT_PATH "/var/lib/vmcore/port-up.sh"
-	#define DEFAULT_PORT_DOWN_SCRIPT_PATH "/var/lib/vmcore/port-down.sh"
+	#define DEFAULT_PORT_UP_SCRIPT_PATH 	"/var/lib/vmcore/port-up.sh"
+	#define DEFAULT_PORT_DOWN_SCRIPT_PATH 	"/var/lib/vmcore/port-down.sh"
 
 	static std::string	dpath_open_script_path;
 	static std::string	dpath_close_script_path;
@@ -61,7 +61,7 @@ private:
 
 
 	rofl::crofdpt 												*dpt;		// handle for cofdpt instance managed by this vmcore
-	std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> > 		 dptlinks;	// mapped ports per data path element
+	std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> > 	 dptlinks;	// mapped ports per data path element
 	std::map<uint8_t, std::map<unsigned int, dptroute*> >		 dptroutes;	// active routes => key1:table_id, key2:routing index, value: dptroute instance
 
 	enum vmcore_timer_t {
@@ -78,7 +78,7 @@ public:
 	 *
 	 */
 	vmcore(
-			cofhello_elem_versionbitmap const& versionbitmap);
+			rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap);
 
 
 	/**
