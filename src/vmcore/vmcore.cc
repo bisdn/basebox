@@ -314,21 +314,26 @@ vmcore::handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id
 void
 vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
-	if (0 == dpt)
-		return;
+	try {
+		if (0 == dpt)
+			return;
 
-	// ignore local route table and unspecified table_id
-	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
-	//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-		std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
-		return;
-	}
+		// ignore local route table and unspecified table_id
+		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
+			std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			return;
+		}
 
-	std::cerr << "ROUTE ADD? " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+		rofl::logging::info << "[vmcore] crtroute CREATE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
 
-	//std::cerr << "vmcore::route_created() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-	if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
-		dptroutes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
+		if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
+			dptroutes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
+		}
+
+	} catch (eNetLinkNotFound& e) {
+		rofl::logging::warn << "[vmcore] crtroute CREATE notification rcvd => "
+				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
 	}
 }
 
@@ -337,24 +342,30 @@ vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 {
-	if (0 == dpt)
-		return;
+	try {
+		if (0 == dpt)
+			return;
 
-	// ignore local route table and unspecified table_id
-	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
-	//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-		std::cerr << "vmcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
-		return;
+		// ignore local route table and unspecified table_id
+		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
+			std::cerr << "vmcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			return;
+		}
+
+		rofl::logging::info << "[vmcore] crtroute UPDATE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
+
+		//std::cerr << "vmcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+		if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
+			route_created(table_id, rtindex);
+		}
+
+		// do nothing here, this event is handled directly by dptroute instance
+
+	} catch (eNetLinkNotFound& e) {
+		rofl::logging::warn << "[vmcore] crtroute UPDATE notification rcvd => "
+				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
 	}
-
-	std::cerr << "ROUTE UPDATE? " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-
-	//std::cerr << "vmcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-	if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
-		route_created(table_id, rtindex);
-	}
-
-	// do nothing here, this event is handled directly by dptroute instance
 }
 
 
@@ -362,22 +373,28 @@ vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 void
 vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 {
-	if (0 == dpt)
-		return;
+	try {
+		if (0 == dpt)
+			return;
 
-	// ignore local route table and unspecified table_id
-	if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
-	//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-		std::cerr << "vmcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
-		return;
-	}
+		// ignore local route table and unspecified table_id
+		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
+			std::cerr << "vmcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			return;
+		}
 
-	std::cerr << "ROUTE DELETE? " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+		rofl::logging::info << "[vmcore] crtroute DELETE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
 
-	//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-	if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
-		delete dptroutes[table_id][rtindex];
-		dptroutes[table_id].erase(rtindex);
+		//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+		if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
+			delete dptroutes[table_id][rtindex];
+			dptroutes[table_id].erase(rtindex);
+		}
+
+	} catch (eNetLinkNotFound& e) {
+		rofl::logging::warn << "[vmcore] crtroute DELETE notification rcvd => "
+				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
 	}
 }
 
