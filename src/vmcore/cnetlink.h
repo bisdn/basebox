@@ -20,12 +20,20 @@ extern "C" {
 }
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <netlink/cache.h>
+#ifdef __cplusplus
+}
+#endif
+
 #include <exception>
 
 #include <rofl/common/ciosrv.h>
 
-#include <crtlink.h>
-#include <crtroute.h>
+#include "crtlink.h"
+#include "crtroute.h"
 
 namespace dptmap
 {
