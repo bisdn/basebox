@@ -241,14 +241,14 @@ public:
 	operator<< (std::ostream& os, crtlink const& rtlink)
 	{
 		os << rofl::indent(0) << "<crtlink: >" << std::endl;
-		os << rofl::indent(2) << "<devname: " << rtlink.devname << " " << std::endl;
-		os << rofl::indent(2) << "<maddr: " << rtlink.maddr.c_str() << " " << std::endl;
-		os << rofl::indent(2) << "<bcast: " << rtlink.bcast.c_str() << " " << std::endl;
-		os << rofl::indent(2) << "<flags: " << (std::hex) << rtlink.flags << (std::dec) << " " << std::endl;
-		os << rofl::indent(2) << "<af: " << rtlink.af << " " << std::endl;
-		os << rofl::indent(2) << "<arptype: " << rtlink.arptype << " " << std::endl;
-		os << rofl::indent(2) << "<ifindex: " << rtlink.ifindex << " " << std::endl;
-		os << rofl::indent(2) << "<mtu: " << rtlink.mtu << " >" << std::endl;
+		os << rofl::indent(2) << "<devname: " << rtlink.devname 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<maddr: " << rtlink.maddr.c_str() << " >" << std::endl;
+		os << rofl::indent(2) << "<bcast: " << rtlink.bcast.c_str() << " >" << std::endl;
+		os << rofl::indent(2) << "<flags: " << (std::hex) << rtlink.flags << (std::dec) << " >" << std::endl;
+		os << rofl::indent(2) << "<af: " << rtlink.af 				<< " >" << std::endl;
+		os << rofl::indent(2) << "<arptype: " << rtlink.arptype 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<ifindex: " << rtlink.ifindex 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<mtu: " << rtlink.mtu 			<< " >" << std::endl;
 		if (rtlink.addrs.size() > 0) {
 			for (std::map<uint16_t, crtaddr>::const_iterator
 					it = rtlink.addrs.begin(); it != rtlink.addrs.end(); ++it) {

@@ -130,10 +130,10 @@ public:
 					<< " prefix:" << rta.get_prefixlen() << " devname:"
 					<< cnetlink::get_instance().get_link(addr.ifindex).get_devname() << " >" << std::endl;
 
-			{ os << rofl::indent(2) << "<local address: >" << std::endl; rofl::indent i(2); os << rta.get_local_addr(); }
-			{ os << rofl::indent(2) << "<link address: >" << std::endl; rofl::indent i(2); os
+			{ os << rofl::indent(2) << "<local address: " << rta.get_local_addr() << " >" << std::endl; }
+			{ os << rofl::indent(2) << "<crtaddr: >" << std::endl; rofl::indent i(2); os
 											<< cnetlink::get_instance().get_link(addr.ifindex).get_addr(addr.adindex); }
-			{ os << rofl::indent(2) << "<flow-entry: >" << std::endl; rofl::indent(2); os << addr.fe; }
+			//{ os << rofl::indent(2) << "<flow-entry: >" << std::endl; rofl::indent(2); os << addr.fe; }
 
 		} catch (eRtLinkNotFound& e) {
 			os << rofl::indent(0) << "<dptaddr: adindex: " << (unsigned int)addr.adindex
