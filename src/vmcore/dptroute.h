@@ -177,8 +177,7 @@ public:
 			rofl::indent i(2);
 			for (std::map<uint16_t, dptnexthop>::const_iterator
 					it = route.dptnexthops.begin(); it != route.dptnexthops.end(); ++it) {
-				dptnexthop const& nhop = it->second;
-				os << nhop;
+				os << it->second;
 			}
 		} break;
 		}
