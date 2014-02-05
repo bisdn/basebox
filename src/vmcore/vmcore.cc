@@ -151,12 +151,13 @@ vmcore::handle_dpath_open(
 			if (dptlinks[&dpt].find(port->get_port_no()) == dptlinks[&dpt].end()) {
 				dptlinks[&dpt][port->get_port_no()] = new dptlink(this, &dpt, port->get_port_no());
 
+#if 0
 				/*
 				 * FIXME: on debian, creating another interface must be delayed, as /lib/udev/net.agent
 				 * is not capable of handling a vast amount of new interfaces
 				 */
 				sleep(2);
-
+#endif
 
 			}
 		}
