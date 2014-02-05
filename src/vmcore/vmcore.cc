@@ -228,6 +228,8 @@ vmcore::handle_port_status(
 
 	uint32_t port_no = msg.get_port().get_port_no();
 
+	rofl::logging::info << "[vmcore] Port-Status message rcvd:" << std::endl << msg;
+
 	try {
 		switch (msg.get_reason()) {
 		case OFPPR_ADD: {
