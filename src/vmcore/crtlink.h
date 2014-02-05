@@ -250,6 +250,7 @@ public:
 		os << rofl::indent(2) << "<ifindex: " << rtlink.ifindex 	<< " >" << std::endl;
 		os << rofl::indent(2) << "<mtu: " << rtlink.mtu 			<< " >" << std::endl;
 		if (rtlink.addrs.size() > 0) {
+			rofl::indent i(4);
 			for (std::map<uint16_t, crtaddr>::const_iterator
 					it = rtlink.addrs.begin(); it != rtlink.addrs.end(); ++it) {
 				os << it->second;
