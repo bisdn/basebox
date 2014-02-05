@@ -12,6 +12,7 @@
 #include <string>
 
 #include <rofl/common/caddress.h>
+#include <rofl/common/logging.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,20 +166,11 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (std::ostream& os, crtaddr const& rtaddr)
-	{
-		os << "<crtaddr "
-				<< "label: " << rtaddr.label << " "
-				<< "ifindex: " << rtaddr.ifindex << " "
-				<< "af: " << rtaddr.get_family_s() << " "
-				<< "prefixlen: " << rtaddr.prefixlen << " "
-				<< "mask: " << rtaddr.mask << " "
-				<< "scope: " << rtaddr.scope << " "
-				<< "flags: " << rtaddr.flags << " "
-				<< "local: " << rtaddr.local << " "
-				<< "peer: " << rtaddr.peer << " "
-				<< "broadcast: " << rtaddr.bcast << " "
-				<< ">";
+	operator<< (std::ostream& os, crtaddr const& rtaddr) {
+		os << rofl::indent(0) << "<crtaddr label: " << rtaddr.label << " ifindex: " << rtaddr.ifindex << " >" << std::endl;
+		os << rofl::indent(2) << "<af: " << rtaddr.get_family_s() << " prefixlen: " << rtaddr.prefixlen << " >" << std::endl;
+		os << rofl::indent(2) << "<mask: " << rtaddr.mask << " scope: " << rtaddr.scope << " flags: " << rtaddr.flags << " >" << std::endl;
+		os << rofl::indent(2) << "<local: " << rtaddr.local << " peer: " << rtaddr.peer << " broadcast: " << rtaddr.bcast << " >" << std::endl;
 		return os;
 	};
 

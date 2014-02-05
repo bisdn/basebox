@@ -9,6 +9,7 @@
 #define DPTADDR_H_ 1
 
 #include <rofl/common/crofbase.h>
+#include <rofl/common/logging.h>
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
 
@@ -118,40 +119,31 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (std::ostream& os, dptaddr const& addr)
-	{
-#if 0
-		rofl::cofflowmod fe(addr.fe);
-		char s_fe[1024];
-		memset(s_fe, 0, sizeof(s_fe));
-		snprintf(s_fe, sizeof(s_fe)-1, "%s", fe.c_str());
-#endif
+	operator<< (std::ostream& os, dptaddr const& addr) {
 		try {
 			crtaddr& rta = cnetlink::get_instance().get_link(addr.ifindex).get_addr(addr.adindex);
 
-			os << "<dptaddr: ";
-				//os << "ifindex=" << addr.ifindex << " ";
-				os << rta.get_family_s() << " " << rta.get_local_addr() << "/" << rta.get_prefixlen() << " dev " << cnetlink::get_instance().get_link(addr.ifindex).get_devname() << " ";
-				os << "adindex: " << (unsigned int)addr.adindex << " ";
-				os << "oftableid: " << (unsigned int)addr.of_table_id << " ";
-#if 0
-				os << "flowentry=" << s_fe << " ";
-#endif
-			os << ">" << std::endl;
-			os << "        " << cnetlink::get_instance().get_link(addr.ifindex).get_addr(addr.adindex) << std::endl;
+			os << rofl::indent(0) << "<dptaddr: adindex: " << (unsigned int)addr.adindex
+					<< " oftableid: " << (unsigned int)addr.of_table_id << " >" << std::endl;
+
+			os << rofl::indent(2) << "<family: " << rta.get_family_s() << " "
+					<< " prefix:" << rta.get_prefixlen() << " devname:"
+					<< cnetlink::get_instance().get_link(addr.ifindex).get_devname() << " >" << std::endl;
+
+			{ os << rofl::indent(2) << "<local address: >" << std::endl; rofl::indent i(2); os << rta.get_local_addr(); }
+			{ os << rofl::indent(2) << "<link address: >" << std::endl; rofl::indent i(2); os
+											<< cnetlink::get_instance().get_link(addr.ifindex).get_addr(addr.adindex); }
+			{ os << rofl::indent(2) << "<flow-entry: >" << std::endl; rofl::indent(2); os << addr.fe; }
 
 		} catch (eRtLinkNotFound& e) {
-			os << "<dptaddr: ";
-				os << "adindex: " << (unsigned int)addr.adindex << " ";
-				os << "oftableid: " << (unsigned int)addr.of_table_id << " ";
-				os << "associated crtaddr object not found";
-			os << ">";
+			os << rofl::indent(0) << "<dptaddr: adindex: " << (unsigned int)addr.adindex
+					<< " oftableid: " << (unsigned int)addr.of_table_id << " >" << std::endl;
+			os << rofl::indent(2) << "<associated crtaddr object not found >" << std::endl;
+
 		} catch (eNetLinkNotFound& e) {
-			os << "<dptaddr: ";
-				os << "adindex: " << (unsigned int)addr.adindex << " ";
-				os << "oftableid: " << (unsigned int)addr.of_table_id << " ";
-				os << "associated crtlink object not found";
-			os << ">";
+			os << rofl::indent(0) << "<dptaddr: adindex: " << (unsigned int)addr.adindex
+					<< " oftableid: " << (unsigned int)addr.of_table_id << " >" << std::endl;
+			os << rofl::indent(2) << "<associated crtlink object not found >";
 		}
 		return os;
 	};
