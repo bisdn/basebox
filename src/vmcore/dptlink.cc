@@ -169,7 +169,7 @@ dptlink::link_created(unsigned int ifindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	rofl::logging::info << "[vmcore][dptlink] link CREATE:" << std::endl << cnetlink::get_instance().get_link(ifindex);
+	rofl::logging::info << "[vmcore][dptlink] crtlink CREATE:" << std::endl << cnetlink::get_instance().get_link(ifindex);
 }
 
 
@@ -182,7 +182,7 @@ dptlink::link_updated(unsigned int ifindex)
 		if (ifindex != this->ifindex)
 			return;
 
-		rofl::logging::info << "[vmcore][dptlink] link UPDATE:" << std::endl << cnetlink::get_instance().get_link(ifindex);
+		rofl::logging::info << "[vmcore][dptlink] crtlink UPDATE:" << std::endl << cnetlink::get_instance().get_link(ifindex);
 
 		if (0 == dpt) {
 			return;

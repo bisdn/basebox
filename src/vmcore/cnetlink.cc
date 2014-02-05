@@ -266,6 +266,7 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 		switch (action) {
 		case NL_ACT_NEW: {
 			crtroute rtr((struct rtnl_route*)obj);
+			std::cerr << "NEW route_route_cb() => " << rtr << std::endl;
 			unsigned int rtindex = cnetlink::get_instance().set_route(rtr);
 
 			for (std::set<cnetlink_subscriber*>::iterator
@@ -276,6 +277,7 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 		} break;
 		case NL_ACT_CHANGE: {
 			crtroute rtr((struct rtnl_route*)obj);
+			std::cerr << "CHANGE route_route_cb() => " << rtr << std::endl;
 			unsigned int rtindex = cnetlink::get_instance().set_route(rtr);
 
 			for (std::set<cnetlink_subscriber*>::iterator
@@ -286,6 +288,7 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 		} break;
 		case NL_ACT_DEL: {
 			crtroute rtr((struct rtnl_route*)obj);
+			std::cerr << "DELETE route_route_cb() => " << rtr << std::endl;
 			unsigned int rtindex = cnetlink::get_instance().get_route(rtr);
 
 			for (std::set<cnetlink_subscriber*>::iterator
@@ -297,7 +300,7 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 
 		} break;
 		default: {
-			fprintf(stderr, "route/addr: unknown NL action\n");
+			fprintf(stderr, "route/route: unknown NL action\n");
 		}
 		}
 	} catch (eNetLinkNotFound& e) {
