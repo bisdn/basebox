@@ -230,9 +230,14 @@ dptroute::route_deleted(
 	fprintf(stderr, "dptroute::route_deleted() table_id=%d rtindex=%d\n", table_id, rtindex);
 #endif
 
-	flowentry.set_command(OFPFC_DELETE_STRICT);
+	try {
+		flowentry.set_command(OFPFC_DELETE_STRICT);
 
-	dpt->send_flow_mod_message(flowentry);
+		dpt->send_flow_mod_message(flowentry);
+
+	} catch (rofl::eNotConnected& e) {
+
+	}
 
 	//fprintf(stderr, "\n\n\n FLOWENTRY => %s\n\n\n\n", flowentry.c_str());
 

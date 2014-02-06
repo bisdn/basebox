@@ -23,6 +23,7 @@ extern "C" {
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
+#include <rofl/common/croflexception.h>
 
 #include "cnetlink.h"
 #include "crtroute.h"
