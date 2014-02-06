@@ -82,7 +82,7 @@ void
 dptlink::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
 {
 	try {
-		if (0 == dpt) {
+		if ((0 == dpt) || (not dpt->get_channel().is_established())) {
 			throw eDptLinkNoDptAttached();
 		}
 
