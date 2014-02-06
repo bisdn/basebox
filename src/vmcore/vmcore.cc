@@ -298,6 +298,14 @@ vmcore::handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id
 
 
 void
+vmcore::handle_flow_removed(rofl::crofdpt& dpt, rofl::cofmsg_flow_removed& msg, uint8_t aux_id)
+{
+	rofl::logging::info << "[vmcore] Flow-Removed message rcvd:" << std::endl << msg;
+}
+
+
+
+void
 vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
 	try {

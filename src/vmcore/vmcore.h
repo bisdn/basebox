@@ -112,6 +112,9 @@ public:
 	handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id = 0);
 
 	virtual void
+	handle_flow_removed(rofl::crofdpt& dpt, rofl::cofmsg_flow_removed& msg, uint8_t aux_id = 0);
+
+	virtual void
 	handle_timeout(int opaque, void *data = (void*)0);
 
 
