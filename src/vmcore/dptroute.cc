@@ -20,20 +20,35 @@ dptroute::dptroute(
 		dpt(dpt),
 		table_id(table_id),
 		rtindex(rtindex),
-		flowentry(OFP12_VERSION)
+		flowentry(dpt->get_version())
 {
-	route_created(table_id, rtindex);
+
 }
 
 
 
 dptroute::~dptroute()
 {
+
+}
+
+
+
+void
+dptroute::open()
+{
+	route_created(table_id, rtindex);
+}
+
+
+
+void
+dptroute::close()
+{
 	delete_all_nexthops();
 
 	route_deleted(table_id, rtindex);
 }
-
 
 
 
@@ -71,7 +86,7 @@ dptroute::set_nexthops()
 										rtr.get_mask());
 
 			// and activate its FlowMod (installs FlowMod on data path element)
-			dptnexthops[nbindex].flow_mod_add();
+			dptnexthops[nbindex].open();
 
 			std::cerr << "dptroute::set_nexthops() => " << dptnexthops[nbindex] << std::endl;
 
@@ -95,7 +110,7 @@ dptroute::delete_all_nexthops()
 {
 	std::map<uint16_t, dptnexthop>::iterator it;
 	for (it = dptnexthops.begin(); it != dptnexthops.end(); ++it) {
-		it->second.flow_mod_delete();
+		it->second.close();
 	}
 	dptnexthops.clear();
 }
@@ -120,7 +135,7 @@ restart:
 		dptnexthop& nhop = it->second;
 		if ((nhop.get_ifindex() == ifindex) &&
 				((nhop.get_gateway() & rta.get_mask()) == (rta.get_local_addr() & rta.get_mask()))) {
-			it->second.flow_mod_delete();
+			it->second.close();
 			dptnexthops.erase(it->first);
 			goto restart;
 		}
@@ -294,7 +309,7 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 		// lookup the dptlink instance mapped to crtlink
 		try {
 			if (dptnexthops.find(nbindex) != dptnexthops.end()) {
-				dptnexthops[nbindex].flow_mod_delete();
+				dptnexthops[nbindex].close();
 			}
 			dptnexthops[nbindex] = dptnexthop(
 										rofbase,
@@ -305,7 +320,7 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 										nbindex,
 										rtr.get_dst(),
 										rtr.get_mask());
-			dptnexthops[nbindex].flow_mod_add();
+			dptnexthops[nbindex].open();
 
 			std::cerr << "dptroute::neigh_created() => " << dptnexthops[nbindex] << std::endl;
 
@@ -359,7 +374,7 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 				if (dptnexthops.find(nbindex) == dptnexthops.end())
 					continue;
 				std::cerr << "dptroute::neigh_updated() DELETE => " << dptnexthops[nbindex] << std::endl;
-				dptnexthops[nbindex].flow_mod_delete();
+				dptnexthops[nbindex].close();
 				dptnexthops.erase(nbindex);
 			} break;
 
@@ -368,7 +383,7 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 			case NUD_REACHABLE:
 			case NUD_PERMANENT: {
 				if (dptnexthops.find(nbindex) != dptnexthops.end()) {
-					dptnexthops[nbindex].flow_mod_delete();
+					dptnexthops[nbindex].close();
 					dptnexthops.erase(nbindex);
 				}
 
@@ -382,7 +397,7 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 											nbindex,
 											rtr.get_dst(),
 											rtr.get_mask());
-				dptnexthops[nbindex].flow_mod_add();
+				dptnexthops[nbindex].open();
 
 			} break;
 			}
@@ -426,7 +441,7 @@ dptroute::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
 
 		std::cerr << "dptroute::neigh_deleted() => " << dptnexthops[nbindex] << std::endl;
 
-		dptnexthops[nbindex].flow_mod_delete();
+		dptnexthops[nbindex].close();
 		dptnexthops.erase(nbindex);
 	}
 }

@@ -81,6 +81,22 @@ dptaddr::dptaddr(
 
 
 void
+dptaddr::open()
+{
+	flow_mod_add();
+}
+
+
+
+void
+dptaddr::close()
+{
+	flow_mod_delete();
+}
+
+
+
+void
 dptaddr::flow_mod_add()
 {
 	try {

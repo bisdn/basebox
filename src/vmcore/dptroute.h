@@ -75,6 +75,20 @@ public:
 
 	/**
 	 *
+	 */
+	void
+	open();
+
+
+	/**
+	 *
+	 */
+	void
+	close();
+
+
+	/**
+	 *
 	 * @param ifindex
 	 * @param adindex
 	 */

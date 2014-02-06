@@ -64,6 +64,20 @@ public:
 	/**
 	 *
 	 */
+	void
+	open();
+
+
+	/**
+	 *
+	 */
+	void
+	close();
+
+
+	/**
+	 *
+	 */
 	dptnexthop(
 			dptnexthop const& neigh);
 
@@ -129,7 +143,7 @@ public:
 	rofl::caddress get_gateway() const;
 
 
-public:
+private:
 
 	/**
 	 *

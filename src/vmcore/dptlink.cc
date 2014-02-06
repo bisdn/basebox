@@ -45,11 +45,25 @@ dptlink::~dptlink()
 {
 	dptlink::dptlinks.erase(ifindex);
 
+	if (tapdev) delete tapdev;
+}
+
+
+
+void
+dptlink::open()
+{
+	// do nothing
+}
+
+
+
+void
+dptlink::close()
+{
 	delete_all_neighs();
 
 	delete_all_addrs();
-
-	if (tapdev) delete tapdev;
 }
 
 
@@ -59,7 +73,7 @@ dptlink::delete_all_addrs()
 {
 	for (std::map<uint16_t, dptaddr>::iterator
 			it = addrs.begin(); it != addrs.end(); ++it) {
-		it->second.flow_mod_delete();
+		it->second.close();
 	}
 	addrs.clear();
 }
@@ -71,7 +85,7 @@ dptlink::delete_all_neighs()
 {
 	for (std::map<uint16_t, dptneigh>::iterator
 			it = neighs.begin(); it != neighs.end(); ++it) {
-		it->second.flow_mod_delete();
+		it->second.close();
 	}
 	neighs.clear();
 }
@@ -218,14 +232,14 @@ dptlink::addr_created(unsigned int ifindex, uint16_t adindex)
 
 		if (addrs.find(adindex) != addrs.end()) {
 			// safe strategy: remove old FlowMod first
-			addrs[adindex].flow_mod_delete();
+			addrs[adindex].close();
 		}
 
 		rofl::logging::info << "[vmcore][dptlink] crtaddr CREATE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
 
 		addrs[adindex] = dptaddr(rofbase, dpt, ifindex, adindex);
 
-		addrs[adindex].flow_mod_add();
+		addrs[adindex].open();
 
 	} catch (eNetLinkNotFound& e) {
 		rofl::logging::warn << "[vmcore][dptlink] crtaddr CREATE notification rcvd => "
@@ -255,7 +269,8 @@ dptlink::addr_updated(unsigned int ifindex, uint16_t adindex)
 
 		rofl::logging::info << "[vmcore][dptlink] crtaddr UPDATE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
 
-		addrs[adindex].flow_mod_modify();
+		addrs[adindex].close();
+		addrs[adindex].open();
 
 	} catch (eNetLinkNotFound& e) {
 		rofl::logging::warn << "[vmcore][dptlink] crtaddr UPDATE notification rcvd => "
@@ -284,7 +299,7 @@ dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 			return;
 		}
 
-		addrs[adindex].flow_mod_delete();
+		addrs[adindex].close();
 
 		addrs.erase(adindex);
 
@@ -312,12 +327,12 @@ dptlink::neigh_created(unsigned int ifindex, uint16_t nbindex)
 
 		if (neighs.find(nbindex) != neighs.end()) {
 			// safe strategy: remove old FlowMod first
-			neighs[nbindex].flow_mod_delete();
+			neighs[nbindex].close();
 		}
 
 		neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, /*of_table_id=*/2, ifindex, nbindex);
 
-		neighs[nbindex].flow_mod_add();
+		neighs[nbindex].open();
 
 	} catch (eNetLinkNotFound& e) {
 		rofl::logging::warn << "[vmcore][dptlink] crtneigh CREATE notification rcvd => "
@@ -359,7 +374,7 @@ dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 
 			rofl::logging::info << "[vmcore][dptlink] crtneigh UPDATE (scheduled for removal):" << std::endl << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
-			neighs[nbindex].flow_mod_delete();
+			neighs[nbindex].close();
 			neighs.erase(nbindex);
 		} break;
 
@@ -368,7 +383,7 @@ dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 		case NUD_REACHABLE:
 		case NUD_PERMANENT: {
 			if (neighs.find(nbindex) != neighs.end()) {
-				neighs[nbindex].flow_mod_delete();
+				neighs[nbindex].close();
 				neighs.erase(nbindex);
 			}
 
@@ -376,7 +391,7 @@ dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 
 			neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, /*of_table_id=*/2, ifindex, nbindex);
 
-			neighs[nbindex].flow_mod_add();
+			neighs[nbindex].open();
 
 		} break;
 		}
@@ -404,7 +419,7 @@ dptlink::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
 
 		rofl::logging::info << "[vmcore][dptlink] crtneigh DELETE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
-		neighs[nbindex].flow_mod_delete();
+		neighs[nbindex].close();
 
 		neighs.erase(nbindex);
 

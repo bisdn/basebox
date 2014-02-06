@@ -94,6 +94,20 @@ public:
 	uint32_t get_of_port_no() const { return of_port_no; };
 
 
+	/**
+	 *
+	 */
+	void
+	open();
+
+
+	/**
+	 *
+	 */
+	void
+	close();
+
+
 public:
 
 

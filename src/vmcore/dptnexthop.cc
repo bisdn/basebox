@@ -98,6 +98,21 @@ dptnexthop::dptnexthop(
 
 
 void
+dptnexthop::open()
+{
+	flow_mod_add();
+}
+
+
+void
+dptnexthop::close()
+{
+	flow_mod_delete();
+}
+
+
+
+void
 dptnexthop::flow_mod_add()
 {
 	try {

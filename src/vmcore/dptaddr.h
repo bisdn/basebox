@@ -70,6 +70,20 @@ public:
 			rofl::crofbase *rofbase, rofl::crofdpt *dpt, int ifindex, uint16_t adindex);
 
 
+	/**
+	 *
+	 */
+	void
+	open();
+
+
+	/**
+	 *
+	 */
+	void
+	close();
+
+
 public:
 
 
@@ -91,7 +105,7 @@ public:
 	rofl::cofflowmod get_flowentry() const { return fe; };
 
 
-public:
+private:
 
 
 	/**

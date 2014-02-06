@@ -150,30 +150,11 @@ vmcore::handle_dpath_open(
 			rofl::cofport *port = it->second;
 			if (dptlinks[&dpt].find(port->get_port_no()) == dptlinks[&dpt].end()) {
 				dptlinks[&dpt][port->get_port_no()] = new dptlink(this, &dpt, port->get_port_no());
-
-#if 0
-				/*
-				 * FIXME: on debian, creating another interface must be delayed, as /lib/udev/net.agent
-				 * is not capable of handling a vast amount of new interfaces
-				 */
-				sleep(2);
-#endif
-
 			}
 		}
 
 		// get full-length packets (what is the ethernet max length on dpt?)
 		dpt.send_set_config_message(0, 1518);
-
-#if 0
-		/*
-		 * dump dpt tables for debugging
-		 */
-		for (std::map<uint8_t, rofl::coftable_stats_reply>::iterator
-				it = dpt->get_tables().begin(); it != dpt->get_tables().end(); ++it) {
-			std::cout << it->second << std::endl;
-		}
-#endif
 
 		/*
 		 * install default FlowMod entry for table 0 => GotoTable(1)
@@ -237,6 +218,7 @@ vmcore::handle_port_status(
 			if (dptlinks[&dpt].find(port_no) == dptlinks[&dpt].end()) {
 				dptlinks[&dpt][port_no] = new dptlink(this, &dpt, msg.get_port().get_port_no());
 				run_port_up_script(msg.get_port().get_name());
+				dptlinks[&dpt][port_no]->open();
 			}
 		} break;
 		case OFPPR_MODIFY: {
@@ -247,6 +229,7 @@ vmcore::handle_port_status(
 		} break;
 		case OFPPR_DELETE: {
 			if (dptlinks[&dpt].find(port_no) != dptlinks[&dpt].end()) {
+				dptlinks[&dpt][port_no]->close();
 				delete dptlinks[&dpt][port_no];
 				dptlinks[&dpt].erase(port_no);
 				run_port_down_script(msg.get_port().get_name());
@@ -332,6 +315,9 @@ vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 
 		if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
 			dptroutes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
+			if (dpt->get_channel().is_established()) {
+				dptroutes[table_id][rtindex]->open();
+			}
 		}
 
 	} catch (eNetLinkNotFound& e) {
@@ -391,6 +377,9 @@ vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 
 		//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 		if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
+			if (dpt->get_channel().is_established()) {
+				dptroutes[table_id][rtindex]->close();
+			}
 			delete dptroutes[table_id][rtindex];
 			dptroutes[table_id].erase(rtindex);
 		}

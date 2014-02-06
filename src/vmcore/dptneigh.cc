@@ -89,6 +89,22 @@ dptneigh::dptneigh(
 
 
 void
+dptneigh::open()
+{
+	flow_mod_add();
+}
+
+
+
+void
+dptneigh::close()
+{
+	flow_mod_delete();
+}
+
+
+
+void
 dptneigh::flow_mod_add()
 {
 	try {
