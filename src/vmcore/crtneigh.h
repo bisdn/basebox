@@ -140,13 +140,13 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, crtneigh const& neigh) {
 		os << rofl::indent(0) << "<crtneigh: >" << std::endl;
-		os << rofl::indent(0) << "<state: " 	<< neigh.state 		<< " >" << std::endl;
-		os << rofl::indent(0) << "<flags: " 	<< neigh.flags 		<< " >" << std::endl;
-		os << rofl::indent(0) << "<ifindex: " 	<< neigh.ifindex 	<< " >" << std::endl;
-		os << rofl::indent(0) << "<lladdr: " 	<< neigh.lladdr 	<< " >" << std::endl;
-		os << rofl::indent(0) << "<dst: " 		<< neigh.dst 		<< " >" << std::endl;
-		os << rofl::indent(0) << "<family: " 	<< neigh.family 	<< " >" << std::endl;
-		os << rofl::indent(0) << "<type: " 		<< neigh.type 		<< " >" << std::endl;
+		os << rofl::indent(2) << "<state: " 	<< neigh.state 		<< " >" << std::endl;
+		os << rofl::indent(2) << "<flags: " 	<< neigh.flags 		<< " >" << std::endl;
+		os << rofl::indent(2) << "<ifindex: " 	<< neigh.ifindex 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<lladdr: " 	<< neigh.lladdr 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<dst: " 		<< neigh.dst 		<< " >" << std::endl;
+		os << rofl::indent(2) << "<family: " 	<< neigh.family 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<type: " 		<< neigh.type 		<< " >" << std::endl;
 		return os;
 	};
 
