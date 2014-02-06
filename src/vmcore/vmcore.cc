@@ -294,7 +294,7 @@ vmcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_
 
 		if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()) != msg.get_buffer_id()) {
 			rofl::cofactions actions(dpt.get_version());
-			dpt.send_packet_out_message(msg.get_buffer_id(), msg.get_in_port(), actions);
+			dpt.send_packet_out_message(msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
 		}
 
 	} catch (ePacketPoolExhausted& e) {
