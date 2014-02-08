@@ -143,11 +143,13 @@ restart:
 				goto restart;
 			}
 		}
+#if 0
 		if (dptnexthops.empty()) {
 			std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex
 					<< "all next hops lost, deleting route" << std::endl;
 			route_deleted(table_id, rtindex);
 		}
+#endif
 
 	} catch (eNetLinkNotFound& e) {
 
