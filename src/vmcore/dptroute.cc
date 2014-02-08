@@ -123,7 +123,7 @@ dptroute::addr_deleted(
 			uint16_t adindex)
 {
 	try {
-		std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex << std::endl;
+		std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex << std::endl << *this;
 
 		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
 
