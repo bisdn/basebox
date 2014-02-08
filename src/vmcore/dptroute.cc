@@ -122,28 +122,37 @@ dptroute::addr_deleted(
 			unsigned int ifindex,
 			uint16_t adindex)
 {
-	std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex << std::endl;
+	try {
+		std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex << std::endl;
 
-	crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
+		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
 
-	rofl::caddress addr = rta.get_local_addr();
-	rofl::caddress mask = rta.get_mask();
+		std::cerr << "dptroute::addr_deleted() => ifindex:" << ifindex << std::endl << rta;
 
-	std::map<uint16_t, dptnexthop>::iterator it;
+		rofl::caddress addr = rta.get_local_addr();
+		rofl::caddress mask = rta.get_mask();
+
+		std::map<uint16_t, dptnexthop>::iterator it;
 restart:
-	for (it = dptnexthops.begin(); it != dptnexthops.end(); ++it) {
-		dptnexthop& nhop = it->second;
-		if ((nhop.get_ifindex() == ifindex) &&
-				((nhop.get_gateway() & rta.get_mask()) == (rta.get_local_addr() & rta.get_mask()))) {
-			it->second.close();
-			dptnexthops.erase(it->first);
-			goto restart;
+		for (it = dptnexthops.begin(); it != dptnexthops.end(); ++it) {
+			dptnexthop& nhop = it->second;
+			if ((nhop.get_ifindex() == ifindex) &&
+					((nhop.get_gateway() & rta.get_mask()) == (rta.get_local_addr() & rta.get_mask()))) {
+				it->second.close();
+				dptnexthops.erase(it->first);
+				goto restart;
+			}
 		}
-	}
-	if (dptnexthops.empty()) {
-		std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex
-				<< "all next hops lost, deleting route" << std::endl;
-		route_deleted(table_id, rtindex);
+		if (dptnexthops.empty()) {
+			std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex
+					<< "all next hops lost, deleting route" << std::endl;
+			route_deleted(table_id, rtindex);
+		}
+
+	} catch (eNetLinkNotFound& e) {
+
+	} catch (eRtLinkNotFound& e) {
+
 	}
 }
 

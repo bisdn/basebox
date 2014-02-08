@@ -158,7 +158,7 @@ cfib::reset()
 
 void
 cfib::handle_timeout(
-			int opaque)
+			int opaque, void *data)
 {
 	switch (opaque) {
 	case CFIB_TIMER_DUMP: {
