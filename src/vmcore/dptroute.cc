@@ -183,7 +183,7 @@ dptroute::route_created(
 		default: {
 #endif
 			flowentry.set_table_id(1);
-			//flowentry.set_flags(rofl::openflow12::OFPFF_SEND_FLOW_REM);
+			flowentry.set_flags(rofl::openflow12::OFPFF_SEND_FLOW_REM);
 			flowentry.instructions.add_inst_goto_table().set_table_id(2);
 #if 0
 		} break;
