@@ -118,7 +118,7 @@ dptneigh::flow_mod_add()
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
 		fe.set_table_id(of_table_id);
-		fe.set_flags(rofl::openflow12::OFPFF_SEND_FLOW_REM);
+		//fe.set_flags(rofl::openflow12::OFPFF_SEND_FLOW_REM);
 
 		/*
 		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!

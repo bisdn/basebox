@@ -110,7 +110,7 @@ dptaddr::flow_mod_add()
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
 		fe.set_table_id(of_table_id);			// FIXME: check for first table-id in data path
-		fe.set_flags(rofl::openflow12::OFPFF_SEND_FLOW_REM);
+		//fe.set_flags(rofl::openflow12::OFPFF_SEND_FLOW_REM);
 
 		fe.instructions.add_inst_apply_actions().get_actions().append_action_output(
 				rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()), 1518);
