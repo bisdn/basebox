@@ -20,6 +20,7 @@ ethcore::get_instance(cofhello_elem_versionbitmap const& versionbitmap)
 
 ethcore::ethcore(cofhello_elem_versionbitmap const& versionbitmap) :
 		rofl::crofbase(versionbitmap),
+		dpid(0),
 		port_stage_table_id(0),
 		fib_in_stage_table_id(1),
 		fib_out_stage_table_id(2),
@@ -56,12 +57,49 @@ void
 ethcore::link_created(unsigned int ifindex)
 {
 
+	try {
+		// ge0.100 => vid 100 assigned to ge0
+
+		std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
+		std::string devbase(devname);
+		uint16_t vid(0xffff);
+
+		if (devname.find_first_of(".") != std::string::npos) {
+			devbase = devname.substr(0, devname.find_first_of("."));
+			vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
+		};
+
+		rofl::logging::debug << "[ethcore][link-created] devname:" << devname << " vid:" << (int)vid << std::endl;
+
+#if 0
+		for (std::map<uint32_t, rofl::cofport*>::iterator
+				it = crofbase::get_dpt(dpid).get_ports().begin(); it != crofbase::get_dpt(dpid).get_ports().end(); ++it) {
+			if (it->second->get_name() == cnetlink::get_instance().get_link(ifindex).get_devname()) {
+				return;
+			}
+		}
+#endif
+	} catch (eNetLinkNotFound& e) {
+
+	}
 }
 
 
 void
 ethcore::link_updated(unsigned int ifindex)
 {
+	// ge0.100 => vid 100 assigned to ge0
+
+	std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
+	std::string devbase(devname);
+	uint16_t vid(0xffff);
+
+	if (devname.find_first_of(".") != std::string::npos) {
+		devbase = devname.substr(0, devname.find_first_of("."));
+		vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
+	};
+
+	rofl::logging::debug << "[ethcore][link-updated] devname:" << devname << " vid:" << (int)vid << std::endl;
 
 }
 
@@ -69,6 +107,18 @@ ethcore::link_updated(unsigned int ifindex)
 void
 ethcore::link_deleted(unsigned int ifindex)
 {
+	// ge0.100 => vid 100 assigned to ge0
+
+	std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
+	std::string devbase(devname);
+	uint16_t vid(0xffff);
+
+	if (devname.find_first_of(".") != std::string::npos) {
+		devbase = devname.substr(0, devname.find_first_of("."));
+		vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
+	};
+
+	rofl::logging::debug << "[ethcore][link-deleted] devname:" << devname << " vid:" << (int)vid << std::endl;
 
 }
 
@@ -173,6 +223,8 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 
 	/* we create a single default VLAN and add all ports in an untagged mode */
 	add_vlan(dpt.get_dpid(), default_vid);
+
+	dpid = dpt.get_dpid();
 
 	// for testing
 #if 0

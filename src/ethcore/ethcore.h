@@ -29,6 +29,7 @@ class ethcore :
 {
 private:
 
+	uint64_t			dpid;
 	uint8_t				port_stage_table_id;
 	uint8_t				fib_in_stage_table_id;
 	uint8_t				fib_out_stage_table_id;
