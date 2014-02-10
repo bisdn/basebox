@@ -71,7 +71,7 @@ void
 ethcore::link_created(unsigned int ifindex)
 {
 	std::string devbase;
-	uint16_t vid(0xffff);
+	uint16_t vid(default_vid);
 
 	try {
 		// ge0.100 => vid 100 assigned to ge0
@@ -111,7 +111,7 @@ ethcore::link_updated(unsigned int ifindex)
 
 		std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
 		std::string devbase(devname);
-		uint16_t vid(0xffff);
+		uint16_t vid(default_vid);
 
 		if (devname.find_first_of(".") != std::string::npos) {
 			devbase = devname.substr(0, devname.find_first_of("."));
@@ -130,7 +130,7 @@ void
 ethcore::link_deleted(unsigned int ifindex)
 {
 	std::string devbase;
-	uint16_t vid(0xffff);
+	uint16_t vid(default_vid);
 
 	try {
 		// ge0.100 => vid 100 removed from ge0
