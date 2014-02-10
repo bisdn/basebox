@@ -81,14 +81,14 @@ ethcore::link_created(unsigned int ifindex)
 			return;
 		}
 
+		devbase = devname.substr(0, devname.find_first_of("."));
+		vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
+
 		try {
 			cfib::get_fib(dpid, vid);
 		} catch (eFibNotFound& e) {
 			add_vlan(dpid, vid);
 		}
-
-		devbase = devname.substr(0, devname.find_first_of("."));
-		vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
 
 		rofl::logging::debug << "[ethcore][link-created] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
