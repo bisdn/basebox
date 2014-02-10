@@ -28,12 +28,9 @@ ethcored_SOURCES = \
 	crtnexthop.h \
 	crtroute.cc \
 	crtroute.h
-
-#if WITH_QMF2_024
-#ethcored_SOURCES += \
 #	qmfagent.h \
 #	qmfagent.cc
-#endif
+
 
 	
 ethcored_LDADD = -lpthread -lrt 
