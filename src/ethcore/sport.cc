@@ -190,6 +190,16 @@ sport::drop_membership(uint16_t vid)
 }
 
 
+struct sport::vlan_membership_t&
+sport::get_membership(uint16_t vid)
+{
+	if (memberships.find(vid) == memberships.end()) {
+		throw eSportNotMember();
+	}
+	return memberships[vid];
+}
+
+
 uint32_t
 sport::get_groupid(uint16_t vid)
 {

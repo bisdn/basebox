@@ -254,6 +254,13 @@ public:
 	drop_membership(uint16_t vid);
 
 	/**
+	 *
+	 * @param vid
+	 */
+	struct vlan_membership_t&
+	get_membership(uint16_t vid);
+
+	/**
 	 * @brief	Returns the group-table-entry-id used by this sport for a specific VLAN
 	 *
 	 * @param vid VID for which the group-id is sought for

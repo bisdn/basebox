@@ -56,13 +56,13 @@ ethcore::~ethcore()
 void
 ethcore::link_created(unsigned int ifindex)
 {
+	std::string devbase;
+	uint16_t vid(0xffff);
 
 	try {
 		// ge0.100 => vid 100 assigned to ge0
-
 		std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
-		std::string devbase(devname);
-		uint16_t vid(0xffff);
+		devbase = devname;
 
 		if (devname.find_first_of(".") != std::string::npos) {
 			devbase = devname.substr(0, devname.find_first_of("."));
@@ -71,16 +71,20 @@ ethcore::link_created(unsigned int ifindex)
 
 		rofl::logging::debug << "[ethcore][link-created] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
-#if 0
-		for (std::map<uint32_t, rofl::cofport*>::iterator
-				it = crofbase::get_dpt(dpid).get_ports().begin(); it != crofbase::get_dpt(dpid).get_ports().end(); ++it) {
-			if (it->second->get_name() == cnetlink::get_instance().get_link(ifindex).get_devname()) {
-				return;
-			}
-		}
-#endif
+		sport::get_sport(dpid, devbase).get_membership(vid);
+
 	} catch (eNetLinkNotFound& e) {
 
+		/* interface index ifindex not found, skip this event */
+
+	} catch (eSportNotFound& e) {
+
+		/* device is not member of this data path, so skip this event */
+
+	} catch (eSportNotMember& e) {
+
+		/* device exists, but is not member yet of the new VLAN, add membership in mode tagged */
+		sport::get_sport(dpid, devbase).add_membership(vid, true);
 	}
 }
 
@@ -100,7 +104,7 @@ ethcore::link_updated(unsigned int ifindex)
 			vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
 		};
 
-		rofl::logging::debug << "[ethcore][link-created] devbase:" << devbase << " vid:" << (int)vid << std::endl;
+		rofl::logging::debug << "[ethcore][link-updated] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
 	} catch (eNetLinkNotFound& e) {
 
@@ -111,21 +115,34 @@ ethcore::link_updated(unsigned int ifindex)
 void
 ethcore::link_deleted(unsigned int ifindex)
 {
-	try {
-		// ge0.100 => vid 100 assigned to ge0
+	std::string devbase;
+	uint16_t vid(0xffff);
 
+	try {
+		// ge0.100 => vid 100 removed from ge0
 		std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
-		std::string devbase(devname);
-		uint16_t vid(0xffff);
+		devbase = devname;
 
 		if (devname.find_first_of(".") != std::string::npos) {
 			devbase = devname.substr(0, devname.find_first_of("."));
 			vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
 		};
 
-		rofl::logging::debug << "[ethcore][link-created] devbase:" << devbase << " vid:" << (int)vid << std::endl;
+		rofl::logging::debug << "[ethcore][link-deleted] devbase:" << devbase << " vid:" << (int)vid << std::endl;
+
+		sport::get_sport(dpid, devbase).get_membership(vid);
 
 	} catch (eNetLinkNotFound& e) {
+
+		/* interface index ifindex was not found, skip event */
+
+	} catch (eSportNotFound& e) {
+
+		/* device was not found, skip event */
+
+	} catch (eSportNotMember& e) {
+
+		/* device is not member of VLAN vid, skip event */
 
 	}
 }
