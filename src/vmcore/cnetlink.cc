@@ -5,7 +5,7 @@
  *      Author: andreas
  */
 
-#include <cnetlink.h>
+#include "cnetlink.h"
 
 using namespace dptmap;
 
