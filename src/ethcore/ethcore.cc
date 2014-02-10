@@ -270,6 +270,10 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 {
 	logging::info << "[ethcore] dpath attaching dpid:" << (unsigned long long)dpt.get_dpid() << std::endl;
 
+	dpt.flow_mod_reset();
+
+	dpt.group_mod_reset();
+
 	/* we create a single default VLAN and add all ports in an untagged mode */
 	add_vlan(dpt.get_dpid(), default_vid);
 
