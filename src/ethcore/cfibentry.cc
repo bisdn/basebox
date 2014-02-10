@@ -100,7 +100,7 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 			}
 			fe.set_table_id(src_stage_table_id);
 			fe.set_priority(0x8000);
-			fe.set_hard_timeout(entry_timeout);
+			fe.set_idle_timeout(entry_timeout);
 			fe.match.set_in_port(portno);
 			fe.match.set_vlan_vid(vid);
 			fe.match.set_eth_src(lladdr); // yes, indeed: set_eth_src for dst
@@ -124,7 +124,7 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 			}
 			fe.set_table_id(dst_stage_table_id);
 			fe.set_priority(0x8000);
-			fe.set_hard_timeout(entry_timeout);
+			fe.set_idle_timeout(entry_timeout);
 			fe.match.set_vlan_vid(vid);
 			fe.match.set_eth_dst(lladdr);
 			fe.instructions.add_inst_apply_actions();
