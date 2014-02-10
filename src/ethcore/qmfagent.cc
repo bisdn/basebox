@@ -203,7 +203,9 @@ qmfagent::methodVlanAdd(qmf::AgentEvent& event)
 		event.addReturnArgument("dpid", dpid);
 		event.addReturnArgument("vid", vid);
 
-		ethercore::ethcore::get_instance().add_vlan(dpid, vid);
+		rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
+		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+		ethercore::ethcore::get_instance(versionbitmap).add_vlan(dpid, vid);
 
 		session.methodSuccess(event);
 
@@ -228,7 +230,9 @@ qmfagent::methodVlanDrop(qmf::AgentEvent& event)
 		event.addReturnArgument("dpid", dpid);
 		event.addReturnArgument("vid", vid);
 
-		ethercore::ethcore::get_instance().drop_vlan(dpid, vid);
+		rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
+		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+		ethercore::ethcore::get_instance(versionbitmap).drop_vlan(dpid, vid);
 
 		session.methodSuccess(event);
 
@@ -258,7 +262,9 @@ qmfagent::methodPortAdd(qmf::AgentEvent& event)
 		event.addReturnArgument("devname", 	devname);
 		event.addReturnArgument("tagged", 	tagged);
 
-		ethercore::ethcore::get_instance().add_port_to_vlan(dpid, devname, vid, tagged);
+		rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
+		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+		ethercore::ethcore::get_instance(versionbitmap).add_port_to_vlan(dpid, devname, vid, tagged);
 
 		session.methodSuccess(event);
 
@@ -285,7 +291,9 @@ qmfagent::methodPortDrop(qmf::AgentEvent& event)
 		event.addReturnArgument("vid", 		vid);
 		event.addReturnArgument("devname", 	devname);
 
-		ethercore::ethcore::get_instance().drop_port_from_vlan(dpid, devname, vid);
+		rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
+		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+		ethercore::ethcore::get_instance(versionbitmap).drop_port_from_vlan(dpid, devname, vid);
 
 		session.methodSuccess(event);
 

@@ -15,6 +15,7 @@
 #include "logging.h"
 
 using namespace rofl;
+using namespace rofl::openflow;
 
 namespace ethercore
 {
@@ -56,7 +57,7 @@ private:
 	 * @param table_id
 	 * @param default_vid
 	 */
-	ethcore();
+	ethcore(cofhello_elem_versionbitmap const& versionbitmap);
 
 	/**
 	 *
@@ -71,7 +72,7 @@ public:
 	 * @return
 	 */
     static ethcore&
-    get_instance();
+    get_instance(cofhello_elem_versionbitmap const& versionbitmap);
 
 
     /**

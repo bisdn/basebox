@@ -8,25 +8,24 @@ ethcore* ethcore::sethcore = (ethcore*)0;
 
 
 ethcore&
-ethcore::get_instance()
+ethcore::get_instance(cofhello_elem_versionbitmap const& versionbitmap)
 {
 	if (0 == ethcore::sethcore) {
 		ethcore::sethcore =
-				new ethcore();
+				new ethcore(versionbitmap);
 	}
 	return *(ethcore::sethcore);
 }
 
 
-ethcore::ethcore() :
+ethcore::ethcore(cofhello_elem_versionbitmap const& versionbitmap) :
+		rofl::crofbase(versionbitmap),
 		port_stage_table_id(0),
 		fib_in_stage_table_id(1),
 		fib_out_stage_table_id(2),
 		default_vid(1),
 		timer_dump_interval(DEFAULT_TIMER_DUMP_INTERVAL)
 {
-	crofbase::get_versionbitmap().add_ofp_version(rofl::openflow12::OFP_VERSION);
-	crofbase::get_versionbitmap().add_ofp_version(rofl::openflow13::OFP_VERSION);
 	//register_timer(ETHSWITCH_TIMER_DUMP, timer_dump_interval);
 }
 

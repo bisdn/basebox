@@ -29,6 +29,7 @@
 
 #include <rofl/common/ciosrv.h>
 #include <rofl/platform/unix/cunixenv.h>
+#include <rofl/common/openflow/cofhelloelemversionbitmap.h>
 
 #include "ethcore.h"
 
