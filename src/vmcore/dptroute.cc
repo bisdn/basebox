@@ -129,27 +129,27 @@ dptroute::addr_deleted(
 
 		std::cerr << "dptroute::addr_deleted() => ifindex:" << ifindex << std::endl << rta;
 
-		rofl::caddress addr = rta.get_local_addr();
-		rofl::caddress mask = rta.get_mask();
+		if ((RT_SCOPE_LINK != cnetlink::get_instance().get_route(table_id, rtindex).get_scope()) &&
+				(RT_SCOPE_HOST != cnetlink::get_instance().get_route(table_id, rtindex).get_scope())) {
 
-		std::map<uint16_t, dptnexthop>::iterator it;
+			std::map<uint16_t, dptnexthop>::iterator it;
 restart:
-		for (it = dptnexthops.begin(); it != dptnexthops.end(); ++it) {
-			dptnexthop& nhop = it->second;
-			if ((nhop.get_ifindex() == ifindex) &&
-					((nhop.get_gateway() & rta.get_mask()) == (rta.get_local_addr() & rta.get_mask()))) {
-				it->second.close();
-				dptnexthops.erase(it->first);
-				goto restart;
+			for (it = dptnexthops.begin(); it != dptnexthops.end(); ++it) {
+				dptnexthop& nhop = it->second;
+				if ((nhop.get_ifindex() == ifindex) &&
+						((nhop.get_gateway() & rta.get_mask()) == (rta.get_local_addr() & rta.get_mask()))) {
+					it->second.close();
+					dptnexthops.erase(it->first);
+					goto restart;
+				}
+			}
+
+			if (dptnexthops.empty()) {
+				std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex
+						<< "all next hops lost, deleting route" << std::endl;
+				route_deleted(table_id, rtindex);
 			}
 		}
-#if 0
-		if (dptnexthops.empty()) {
-			std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex
-					<< "all next hops lost, deleting route" << std::endl;
-			route_deleted(table_id, rtindex);
-		}
-#endif
 
 	} catch (eNetLinkNotFound& e) {
 
