@@ -27,7 +27,15 @@ ethcored_SOURCES = \
 	crtnexthop.cc \
 	crtnexthop.h \
 	crtroute.cc \
-	crtroute.h
+	crtroute.h \
+	cnetdev.cc \
+	cnetdev.h \
+	ctapdev.cc \
+	ctapdev.h \
+	cpacketpool.cc \
+	cpacketpool.h \
+	dptlink.cc \
+	dptlink.h
 #	qmfagent.h \
 #	qmfagent.cc
 
