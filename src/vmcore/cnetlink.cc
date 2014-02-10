@@ -174,12 +174,12 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 	} break;
 	case NL_ACT_DEL: {
-		cnetlink::get_instance().del_link(ifindex);
-
 		for (std::set<cnetlink_subscriber*>::iterator
 				it = cnetlink::get_instance().subscribers.begin(); it != cnetlink::get_instance().subscribers.end(); ++it) {
 			(*it)->link_deleted(ifindex);
 		}
+
+		cnetlink::get_instance().del_link(ifindex);
 
 	} break;
 	default: {
