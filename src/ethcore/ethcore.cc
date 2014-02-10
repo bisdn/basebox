@@ -88,19 +88,23 @@ ethcore::link_created(unsigned int ifindex)
 void
 ethcore::link_updated(unsigned int ifindex)
 {
-	// ge0.100 => vid 100 assigned to ge0
+	try {
+		// ge0.100 => vid 100 assigned to ge0
 
-	std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
-	std::string devbase(devname);
-	uint16_t vid(0xffff);
+		std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
+		std::string devbase(devname);
+		uint16_t vid(0xffff);
 
-	if (devname.find_first_of(".") != std::string::npos) {
-		devbase = devname.substr(0, devname.find_first_of("."));
-		vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
-	};
+		if (devname.find_first_of(".") != std::string::npos) {
+			devbase = devname.substr(0, devname.find_first_of("."));
+			vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
+		};
 
-	rofl::logging::debug << "[ethcore][link-created] devbase:" << devbase << " vid:" << (int)vid << std::endl;
+		rofl::logging::debug << "[ethcore][link-created] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
+	} catch (eNetLinkNotFound& e) {
+
+	}
 }
 
 
