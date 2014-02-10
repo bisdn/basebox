@@ -105,7 +105,7 @@ ethcore::link_created(unsigned int ifindex)
 	} catch (eSportNotMember& e) {
 
 		/* device exists, but is not member yet of the new VLAN, add membership in mode tagged */
-		sport::get_sport(dpid, devbase).add_membership(vid, true);
+		add_port_to_vlan(dpid, devbase, vid, true);
 	}
 }
 
@@ -154,7 +154,7 @@ ethcore::link_deleted(unsigned int ifindex)
 
 		rofl::logging::debug << "[ethcore][link-deleted] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
-		sport::get_sport(dpid, devbase).get_membership(vid);
+		drop_port_from_vlan(dpid, devbase, vid);
 
 	} catch (eNetLinkNotFound& e) {
 
