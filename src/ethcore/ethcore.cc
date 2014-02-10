@@ -76,12 +76,13 @@ ethcore::link_created(unsigned int ifindex)
 	try {
 		// ge0.100 => vid 100 assigned to ge0
 		std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
-		devbase = devname;
 
-		if (devname.find_first_of(".") != std::string::npos) {
-			devbase = devname.substr(0, devname.find_first_of("."));
-			vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
-		};
+		if (devname.find_first_of(".") == std::string::npos) {
+			return;
+		}
+
+		devbase = devname.substr(0, devname.find_first_of("."));
+		vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
 
 		rofl::logging::debug << "[ethcore][link-created] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
@@ -106,17 +107,19 @@ ethcore::link_created(unsigned int ifindex)
 void
 ethcore::link_updated(unsigned int ifindex)
 {
+	std::string devbase;
+	uint16_t vid(default_vid);
+
 	try {
 		// ge0.100 => vid 100 assigned to ge0
-
 		std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
-		std::string devbase(devname);
-		uint16_t vid(default_vid);
 
-		if (devname.find_first_of(".") != std::string::npos) {
-			devbase = devname.substr(0, devname.find_first_of("."));
-			vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
-		};
+		if (devname.find_first_of(".") == std::string::npos) {
+			return;
+		}
+
+		devbase = devname.substr(0, devname.find_first_of("."));
+		vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
 
 		rofl::logging::debug << "[ethcore][link-updated] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
@@ -135,12 +138,13 @@ ethcore::link_deleted(unsigned int ifindex)
 	try {
 		// ge0.100 => vid 100 removed from ge0
 		std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
-		devbase = devname;
 
-		if (devname.find_first_of(".") != std::string::npos) {
-			devbase = devname.substr(0, devname.find_first_of("."));
-			vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
-		};
+		if (devname.find_first_of(".") == std::string::npos) {
+			return;
+		}
+
+		devbase = devname.substr(0, devname.find_first_of("."));
+		vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
 
 		rofl::logging::debug << "[ethcore][link-deleted] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
