@@ -69,7 +69,7 @@ ethcore::link_created(unsigned int ifindex)
 			vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
 		};
 
-		rofl::logging::debug << "[ethcore][link-created] devname:" << devname << " vid:" << (int)vid << std::endl;
+		rofl::logging::debug << "[ethcore][link-created] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
 #if 0
 		for (std::map<uint32_t, rofl::cofport*>::iterator
@@ -99,7 +99,7 @@ ethcore::link_updated(unsigned int ifindex)
 		vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
 	};
 
-	rofl::logging::debug << "[ethcore][link-updated] devname:" << devname << " vid:" << (int)vid << std::endl;
+	rofl::logging::debug << "[ethcore][link-created] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
 }
 
@@ -118,7 +118,7 @@ ethcore::link_deleted(unsigned int ifindex)
 		vid = atoi(devname.substr(devname.find_first_of(".") + 1).c_str());
 	};
 
-	rofl::logging::debug << "[ethcore][link-deleted] devname:" << devname << " vid:" << (int)vid << std::endl;
+	rofl::logging::debug << "[ethcore][link-created] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
 }
 
