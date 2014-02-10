@@ -4,7 +4,9 @@
 #include <rofl/platform/unix/cunixenv.h>
 
 #include "ethcore.h"
+#ifdef AMQP_QMF_SUPPORT
 #include "qmfagent.h"
+#endif
 
 #define ETHCORE_LOG_FILE "/var/log/ethcored.log"
 #define ETHCORE_PID_FILE "/var/run/ethcored.pid"
@@ -33,7 +35,9 @@ main(int argc, char** argv)
 		rofl::logging::notice << "[ethcore][main] daemonizing successful" << std::endl;
 	}
 
+#ifdef AMQP_QMF_SUPPORT
 	qmf::qmfagent::get_instance().init(argc, argv);
+#endif
 
 	cofhello_elem_versionbitmap versionbitmap;
 	versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
