@@ -335,7 +335,8 @@ ethcore::handle_dpath_close(crofdpt& dpt)
 void
 ethcore::handle_packet_in(crofdpt& dpt, cofmsg_packet_in& msg, uint8_t aux_id)
 {
-	uint16_t vid = 0xffff;
+	//uint16_t vid = 0xffff;
+	uint16_t vid = default_vid;
 	try {
 
 		try {
