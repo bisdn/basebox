@@ -5,7 +5,7 @@
 
 #include "ethcore.h"
 #ifdef AMQP_QMF_SUPPORT
-#include "qmfagent.h"
+//#include "qmfagent.h"
 #endif
 
 #define ETHCORE_LOG_FILE "/var/log/ethcored.log"
