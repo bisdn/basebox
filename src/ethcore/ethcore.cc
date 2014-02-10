@@ -53,6 +53,27 @@ ethcore::~ethcore()
 
 
 void
+ethcore::link_created(unsigned int ifindex)
+{
+
+}
+
+
+void
+ethcore::link_updated(unsigned int ifindex)
+{
+
+}
+
+
+void
+ethcore::link_deleted(unsigned int ifindex)
+{
+
+}
+
+
+void
 ethcore::handle_timeout(int opaque)
 {
 	switch (opaque) {

@@ -13,6 +13,7 @@
 #include "cfib.h"
 #include "sport.h"
 #include "logging.h"
+#include "cnetlink.h"
 
 using namespace rofl;
 using namespace rofl::openflow;
@@ -23,7 +24,8 @@ namespace ethercore
 class ethcore :
 		public crofbase,
 		public sport_owner,
-		public cfib_owner
+		public cfib_owner,
+		public cnetlink_subscriber
 {
 private:
 
@@ -120,6 +122,17 @@ public:
 			uint64_t dpid,
 			std::string const& devname,
 			uint16_t vid);
+
+private:
+
+	virtual void
+	link_created(unsigned int ifindex);
+
+	virtual void
+	link_updated(unsigned int ifindex);
+
+	virtual void
+	link_deleted(unsigned int ifindex);
 
 private:
 
