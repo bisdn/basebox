@@ -54,6 +54,20 @@ ethcore::~ethcore()
 
 
 void
+ethcore::delete_all_ports()
+{
+	for (std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> >::iterator
+			jt = dptlinks.begin(); jt != dptlinks.end(); ++jt) {
+		for (std::map<uint32_t, dptlink*>::iterator
+				it = dptlinks[jt->first].begin(); it != dptlinks[jt->first].end(); ++it) {
+			delete (it->second); // remove dptport instance from heap
+		}
+	}
+	dptlinks.clear();
+}
+
+
+void
 ethcore::link_created(unsigned int ifindex)
 {
 	std::string devbase;
@@ -277,6 +291,20 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 				cfib::get_fib(dpt.get_dpid(), 20).add_port(port->get_port_no(), /*untagged=*/false);
 			}
 #endif
+
+
+			/*
+			 * create new tap devices for (reconnecting?) data path
+			 */
+			std::map<uint32_t, rofl::cofport*> ports = dpt.get_ports();
+			for (std::map<uint32_t, rofl::cofport*>::iterator
+					it = ports.begin(); it != ports.end(); ++it) {
+				rofl::cofport *port = it->second;
+				if (dptlinks[&dpt].find(port->get_port_no()) == dptlinks[&dpt].end()) {
+					dptlinks[&dpt][port->get_port_no()] = new dptlink(this, &dpt, port->get_port_no());
+				}
+			}
+
 		} catch (eSportExists& e) {
 			logging::warn << "unable to add port:" << port->get_name() << ", already exists " << std::endl;
 		}
@@ -294,6 +322,8 @@ ethcore::handle_dpath_close(crofdpt& dpt)
 
 	// destroy all sports associated with dpt
 	sport::destroy_sports(dpt.get_dpid());
+
+	delete_all_ports();
 }
 
 
