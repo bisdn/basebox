@@ -289,9 +289,9 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 	dpt.group_mod_reset();
 
 	try {
-		default_vid = (int)cconfig::get_instance().lookup("ethcored."+dpt.get_dpid_s()+".default_vid");
+		default_vid = (int)cconfig::get_instance().lookup("ethcored.dpid_"+dpt.get_dpid_s()+".default_vid");
 	} catch (SettingNotFoundException& e) {
-		logging::warn << "[ethcore] unable to find config file entry for " << std::string("ethcored."+dpt.get_dpid_s()+".default_vid") << std::endl;
+		logging::warn << "[ethcore] unable to find config file entry for " << std::string("ethcored.dpid_"+dpt.get_dpid_s()+".default_vid") << std::endl;
 	}
 
 	/* we create a single default VLAN and add all ports in an untagged mode */
@@ -300,9 +300,9 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 	dpid = dpt.get_dpid();
 
 	/* create all VIDs defined for this datapath element */
-	if (cconfig::get_instance().exists("ethcored."+dpt.get_dpid_s()+".vids")) {
-		for (unsigned int i = 0; i < cconfig::get_instance().lookup("ethcored."+dpt.get_dpid_s()+".vids").getLength(); i++) {
-			add_vlan(dpt.get_dpid(), (int)cconfig::get_instance().lookup("ethcored."+dpt.get_dpid_s()+".vids")[i]);
+	if (cconfig::get_instance().exists("ethcored.dpid_"+dpt.get_dpid_s()+".vids")) {
+		for (unsigned int i = 0; i < cconfig::get_instance().lookup("ethcored.dpid_"+dpt.get_dpid_s()+".vids").getLength(); i++) {
+			add_vlan(dpt.get_dpid(), (int)cconfig::get_instance().lookup("ethcored.dpid_"+dpt.get_dpid_s()+".vids")[i]);
 		}
 	}
 
@@ -319,16 +319,16 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 			logging::info << "[ethcore] adding port:" << std::endl << *sp;
 
 			/* get VID memberships for port, if none exist, add port to default-vid */
-			if (cconfig::get_instance().exists("ethcored."+dpt.get_dpid_s()+"."+port->get_name())) {
+			if (cconfig::get_instance().exists("ethcored.dpid_"+dpt.get_dpid_s()+"."+port->get_name())) {
 
 				/* add untagged PVID for port */
-				std::string port_pvid("ethcored."+dpt.get_dpid_s()+"."+port->get_name()+".pvid");
+				std::string port_pvid("ethcored.dpid_"+dpt.get_dpid_s()+"."+port->get_name()+".pvid");
 				if (cconfig::get_instance().exists(port_pvid)) {
 					add_port_to_vlan(dpt.get_dpid(), port->get_name(), (int)cconfig::get_instance().lookup(port_pvid), false);
 				}
 
 				/* add tagged memberships */
-				std::string tagged_vids("ethcored."+dpt.get_dpid_s()+"."+port->get_name()+".tagged");
+				std::string tagged_vids("ethcored.dpid_"+dpt.get_dpid_s()+"."+port->get_name()+".tagged");
 				if (cconfig::get_instance().exists(tagged_vids)) {
 					for (unsigned int i = 0; i < cconfig::get_instance().lookup(tagged_vids).getLength(); i++) {
 						add_port_to_vlan(dpt.get_dpid(), port->get_name(), (int)cconfig::get_instance().lookup(tagged_vids)[i], true);
