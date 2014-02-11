@@ -25,7 +25,8 @@ ethcore::ethcore(cofhello_elem_versionbitmap const& versionbitmap) :
 		fib_in_stage_table_id(1),
 		fib_out_stage_table_id(2),
 		default_vid(1),
-		timer_dump_interval(DEFAULT_TIMER_DUMP_INTERVAL)
+		timer_dump_interval(DEFAULT_TIMER_DUMP_INTERVAL),
+		netlink_enabled(false)
 {
 	//register_timer(ETHSWITCH_TIMER_DUMP, timer_dump_interval);
 }
@@ -70,6 +71,9 @@ ethcore::delete_all_ports()
 void
 ethcore::link_created(unsigned int ifindex)
 {
+	if (not netlink_enabled)
+		return;
+
 	std::string devbase;
 	uint16_t vid(default_vid);
 
@@ -113,6 +117,9 @@ ethcore::link_created(unsigned int ifindex)
 void
 ethcore::link_updated(unsigned int ifindex)
 {
+	if (not netlink_enabled)
+		return;
+
 	std::string devbase;
 	uint16_t vid(default_vid);
 
@@ -138,6 +145,9 @@ ethcore::link_updated(unsigned int ifindex)
 void
 ethcore::link_deleted(unsigned int ifindex)
 {
+	if (not netlink_enabled)
+		return;
+
 	std::string devbase;
 	uint16_t vid(default_vid);
 
@@ -268,23 +278,38 @@ ethcore::handle_flow_stats_reply(crofdpt& dpt, cofmsg_flow_stats_reply& msg, uin
 void
 ethcore::handle_dpath_open(crofdpt& dpt)
 {
+	try {
+		netlink_enabled = (bool)cconfig::get_instance().lookup("ethcored.enable_netlink");
+	} catch (...) {}
+
 	logging::info << "[ethcore] dpath attaching dpid:" << (unsigned long long)dpt.get_dpid() << std::endl;
 
 	dpt.flow_mod_reset();
 
 	dpt.group_mod_reset();
 
+	try {
+		default_vid = (int)cconfig::get_instance().lookup("ethcored."+dpt.get_dpid_s()+".default_vid");
+	} catch (SettingNotFoundException& e) {
+		logging::warn << "[ethcore] unable to find config file entry for " << std::string("ethcored."+dpt.get_dpid_s()+".default_vid") << std::endl;
+	}
+
 	/* we create a single default VLAN and add all ports in an untagged mode */
 	add_vlan(dpt.get_dpid(), default_vid);
 
 	dpid = dpt.get_dpid();
 
-	// for testing
-#if 0
-	add_vlan(dpt->get_dpid(), 20);
-#endif
+	/* create all VIDs defined for this datapath element */
+	if (cconfig::get_instance().exists("ethcored."+dpt.get_dpid_s()+".vids")) {
+		for (unsigned int i = 0; i < cconfig::get_instance().lookup("ethcored."+dpt.get_dpid_s()+".vids").getLength(); i++) {
+			add_vlan(dpt.get_dpid(), (int)cconfig::get_instance().lookup("ethcored."+dpt.get_dpid_s()+".vids")[i]);
+		}
+	}
 
 
+	/*
+	 * iterate over all ports announced by data path, create sport instances and set VID memberships
+	 */
 	for (std::map<uint32_t, rofl::cofport*>::iterator
 			it = dpt.get_ports().begin(); it != dpt.get_ports().end(); ++it) {
 
@@ -293,27 +318,35 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 			sport *sp = new sport(this, dpt.get_dpid(), port->get_port_no(), port->get_name(), port_stage_table_id);
 			logging::info << "[ethcore] adding port:" << std::endl << *sp;
 
-			cfib::get_fib(dpt.get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
+			/* get VID memberships for port, if none exist, add port to default-vid */
+			if (cconfig::get_instance().exists("ethcored."+dpt.get_dpid_s()+"."+port->get_name())) {
 
-#if 0
-			// for testing
-			if (port->get_port_no() == 1) {
+				/* add untagged PVID for port */
+				std::string port_pvid("ethcored."+dpt.get_dpid_s()+"."+port->get_name()+".pvid");
+				if (cconfig::get_instance().exists(port_pvid)) {
+					add_port_to_vlan(dpt.get_dpid(), port->get_name(), (int)cconfig::get_instance().lookup(port_pvid), false);
+				}
+
+				/* add tagged memberships */
+				std::string tagged_vids("ethcored."+dpt.get_dpid_s()+"."+port->get_name()+".tagged");
+				if (cconfig::get_instance().exists(tagged_vids)) {
+					for (unsigned int i = 0; i < cconfig::get_instance().lookup(tagged_vids).getLength(); i++) {
+						add_port_to_vlan(dpt.get_dpid(), port->get_name(), (int)cconfig::get_instance().lookup(tagged_vids)[i], true);
+					}
+				}
+
+
+			} else {
+				/* add port to default VID */
 				cfib::get_fib(dpt.get_dpid(), default_vid).add_port(port->get_port_no(), /*untagged=*/false);
-				cfib::get_fib(dpt.get_dpid(), 20).add_port(port->get_port_no(), /*tagged=*/true);
 			}
-			if (port->get_port_no() == 2) {
-				cfib::get_fib(dpt.get_dpid(), 20).add_port(port->get_port_no(), /*untagged=*/false);
-			}
-#endif
+
 
 
 			/*
-			 * create new tap devices for (reconnecting?) data path
+			 * create new tap device for port announced by (reconnecting?) data path
 			 */
-			std::map<uint32_t, rofl::cofport*> ports = dpt.get_ports();
-			for (std::map<uint32_t, rofl::cofport*>::iterator
-					it = ports.begin(); it != ports.end(); ++it) {
-				rofl::cofport *port = it->second;
+			if (netlink_enabled) {
 				if (dptlinks[&dpt].find(port->get_port_no()) == dptlinks[&dpt].end()) {
 					dptlinks[&dpt][port->get_port_no()] = new dptlink(this, &dpt, port->get_port_no());
 				}

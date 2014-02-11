@@ -15,6 +15,7 @@
 #include "logging.h"
 #include "cnetlink.h"
 #include "dptlink.h"
+#include "cconfig.h"
 
 using namespace rofl;
 using namespace rofl::openflow;
@@ -38,6 +39,7 @@ private:
 	std::set<uint32_t>	group_ids;		// set of group-ids in use by this controller (assigned to sport instances and cfib instance)
 	unsigned int		timer_dump_interval;
 	std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> > 	 dptlinks;	// mapped ports per data path element
+	bool				netlink_enabled;
 
 #define DEFAULT_TIMER_DUMP_INTERVAL 10
 
