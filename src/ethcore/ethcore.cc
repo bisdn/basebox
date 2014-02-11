@@ -428,6 +428,42 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 
 	switch (msg.get_reason()) {
 	case OFPPR_ADD: {
+
+		/* get VID memberships for port, if none exist, add port to default-vid */
+		if (cconfig::get_instance().exists("ethcored.dpid_"+dpt.get_dpid_s()+"."+msg.get_port().get_name())) {
+
+			/* add untagged PVID for port */
+			std::string port_pvid("ethcored.dpid_"+dpt.get_dpid_s()+"."+msg.get_port().get_name()+".pvid");
+			if (cconfig::get_instance().exists(port_pvid)) {
+				add_port_to_vlan(dpt.get_dpid(), msg.get_port().get_name(), (int)cconfig::get_instance().lookup(port_pvid), false);
+			}
+
+			/* add tagged memberships */
+			std::string tagged_vids("ethcored.dpid_"+dpt.get_dpid_s()+"."+msg.get_port().get_name()+".tagged");
+			if (cconfig::get_instance().exists(tagged_vids)) {
+				for (unsigned int i = 0; i < cconfig::get_instance().lookup(tagged_vids).getLength(); i++) {
+					add_port_to_vlan(dpt.get_dpid(), msg.get_port().get_name(), (int)cconfig::get_instance().lookup(tagged_vids)[i], true);
+				}
+			}
+
+
+		} else {
+			/* add port to default VID */
+			cfib::get_fib(dpt.get_dpid(), default_vid).add_port(msg.get_port().get_port_no(), /*untagged=*/false);
+		}
+
+
+
+		/*
+		 * create new tap device for port announced by (reconnecting?) data path
+		 */
+		if (netlink_enabled) {
+			if (dptlinks[&dpt].find(msg.get_port().get_port_no()) == dptlinks[&dpt].end()) {
+				dptlinks[&dpt][msg.get_port().get_port_no()] = new dptlink(this, &dpt, msg.get_port().get_port_no());
+			}
+		}
+
+#if 0
 		try {
 			sport *sp = new sport(this, dpt.get_dpid(), msg.get_port().get_port_no(), msg.get_port().get_name(), port_stage_table_id);
 			logging::info << "[ethcore] adding port via Port-Status:" << std::endl << *sp;
@@ -436,11 +472,50 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 		} catch (eSportExists& e) {
 			logging::warn << "[ethcore] unable to add port:" << msg.get_port().get_name() << ", already exists " << std::endl;
 		}
+#endif
 	} break;
 	case OFPPR_MODIFY: {
 		logging::warn << "[ethcore] unhandled Port-Status MODIFY:" << std::endl << msg;
 	} break;
 	case OFPPR_DELETE: {
+
+		/* get VID memberships for port, if none exist, add port to default-vid */
+		if (cconfig::get_instance().exists("ethcored.dpid_"+dpt.get_dpid_s()+"."+msg.get_port().get_name())) {
+
+			/* add untagged PVID for port */
+			std::string port_pvid("ethcored.dpid_"+dpt.get_dpid_s()+"."+msg.get_port().get_name()+".pvid");
+			if (cconfig::get_instance().exists(port_pvid)) {
+				drop_port_from_vlan(dpt.get_dpid(), msg.get_port().get_name(), (int)cconfig::get_instance().lookup(port_pvid));
+			}
+
+			/* add tagged memberships */
+			std::string tagged_vids("ethcored.dpid_"+dpt.get_dpid_s()+"."+msg.get_port().get_name()+".tagged");
+			if (cconfig::get_instance().exists(tagged_vids)) {
+				for (unsigned int i = 0; i < cconfig::get_instance().lookup(tagged_vids).getLength(); i++) {
+					drop_port_from_vlan(dpt.get_dpid(), msg.get_port().get_name(), (int)cconfig::get_instance().lookup(tagged_vids)[i]);
+				}
+			}
+
+
+		} else {
+			/* add port to default VID */
+			cfib::get_fib(dpt.get_dpid(), default_vid).drop_port(msg.get_port().get_port_no());
+		}
+
+
+
+		/*
+		 * create new tap device for port announced by (reconnecting?) data path
+		 */
+		if (netlink_enabled) {
+			if (dptlinks[&dpt].find(msg.get_port().get_port_no()) != dptlinks[&dpt].end()) {
+				delete dptlinks[&dpt][msg.get_port().get_port_no()];
+				dptlinks[&dpt].erase(msg.get_port().get_port_no());
+			}
+		}
+
+
+#if 0
 		try {
 			sport& sp = sport::get_sport(dpt.get_dpid(), msg.get_port().get_port_no());
 			logging::info << "[ethcore] dropping port via Port-Status:" << std::endl << sp;
@@ -451,6 +526,7 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 		} catch (eSportNotFound& e) {
 			logging::warn << "[ethcore] unable to drop port:" << msg.get_port().get_name() << ", not found " << std::endl;
 		}
+#endif
 	} break;
 	}
 }
