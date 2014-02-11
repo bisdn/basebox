@@ -35,9 +35,13 @@ ethcored_SOURCES = \
 	cpacketpool.cc \
 	cpacketpool.h \
 	dptlink.cc \
-	dptlink.h
-#	qmfagent.h \
-#	qmfagent.cc
+	dptlink.h \
+	cconfig.cc \
+	cconfig.h
+
+if AMQP_QMF_SUPPORT
+ethcored_SOURCES += qmfagent.h qmfagent.cc
+endif
 
 
 	
