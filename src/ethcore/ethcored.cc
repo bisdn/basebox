@@ -7,9 +7,11 @@
 #ifdef AMQP_QMF_SUPPORT
 #include "qmfagent.h"
 #endif
+#include "cconfig.h"
 
 #define ETHCORE_LOG_FILE "/var/log/ethcored.log"
 #define ETHCORE_PID_FILE "/var/run/ethcored.pid"
+#define ETHCORE_CONFIG_FILE "/usr/local/etc/ethcored.conf"
 
 int
 main(int argc, char** argv)
@@ -18,6 +20,7 @@ main(int argc, char** argv)
 
 	/* update defaults */
 	env_parser.update_default_option("logfile", ETHCORE_LOG_FILE);
+	env_parser.update_default_option("config-file", ETHCORE_CONFIG_FILE);
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(ETHCORE_PID_FILE)));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'p', "port", "set port", ""+6653));
 
@@ -34,6 +37,8 @@ main(int argc, char** argv)
 		rofl::logging::set_debug_level(atoi(env_parser.get_arg("debug").c_str()));
 		rofl::logging::notice << "[ethcore][main] daemonizing successful" << std::endl;
 	}
+
+	ethercore::cconfig::get_instance().open(env_parser.get_arg("config-file"));
 
 #ifdef AMQP_QMF_SUPPORT
 	qmf::qmfagent::get_instance().init(argc, argv);
