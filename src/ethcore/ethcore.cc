@@ -498,8 +498,6 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 	} break;
 	case OFPPR_DELETE: try {
 
-		sport *sp = &(sport::get_sport(dpt.get_dpid(), msg.get_port().get_name()));
-
 		sport *sp = (sport*)0;
 		try {
 			sp = &(sport::get_sport(dpt.get_dpid(), msg.get_port().get_port_no()));
