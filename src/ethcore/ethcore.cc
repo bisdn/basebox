@@ -429,6 +429,14 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 	switch (msg.get_reason()) {
 	case OFPPR_ADD: {
 
+		sport *sp = (sport*)0;
+		try {
+			sp = &(sport::get_sport(dpt.get_dpid(), msg.get_port().get_port_no()));
+		} catch (eSportNotFound& e) {
+			sp = new sport(this, dpt.get_dpid(), msg.get_port().get_port_no(), msg.get_port().get_name(), port_stage_table_id);
+			logging::info << "[ethcore] adding port:" << std::endl << *sp;
+		}
+
 		/* get VID memberships for port, if none exist, add port to default-vid */
 		if (cconfig::get_instance().exists("ethcored.dpid_"+dpt.get_dpid_s()+"."+msg.get_port().get_name())) {
 
@@ -476,8 +484,24 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 	} break;
 	case OFPPR_MODIFY: {
 		logging::warn << "[ethcore] unhandled Port-Status MODIFY:" << std::endl << msg;
+
+		sport *sp = (sport*)0;
+		try {
+			sp = &(sport::get_sport(dpt.get_dpid(), msg.get_port().get_port_no()));
+		} catch (eSportNotFound& e) {
+			sp = new sport(this, dpt.get_dpid(), msg.get_port().get_port_no(), msg.get_port().get_name(), port_stage_table_id);
+			logging::info << "[ethcore] adding port:" << std::endl << *sp;
+		}
+
 	} break;
 	case OFPPR_DELETE: {
+
+		sport *sp = (sport*)0;
+		try {
+			sp = &(sport::get_sport(dpt.get_dpid(), msg.get_port().get_port_no()));
+		} catch (eSportNotFound& e) {
+			return;
+		}
 
 		/* get VID memberships for port, if none exist, add port to default-vid */
 		if (cconfig::get_instance().exists("ethcored.dpid_"+dpt.get_dpid_s()+"."+msg.get_port().get_name())) {
