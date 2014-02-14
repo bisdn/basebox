@@ -315,7 +315,7 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 
 		rofl::cofport* port = it->second;
 		try {
-			sport *sp = new sport(this, dpt.get_dpid(), port->get_port_no(), port->get_name(), port_stage_table_id);
+			sport *sp = new sport(this, dpt.get_dpid(), port->get_port_no(), port->get_name(), port_stage_table_id, default_vid);
 			logging::info << "[ethcore] adding port:" << std::endl << *sp;
 
 			/* get VID memberships for port, if none exist, add port to default-vid */
@@ -324,6 +324,7 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 				/* add untagged PVID for port */
 				std::string port_pvid("ethcored.dpid_"+dpt.get_dpid_s()+"."+port->get_name()+".pvid");
 				if (cconfig::get_instance().exists(port_pvid)) {
+					sp->set_pvid((int)cconfig::get_instance().lookup(port_pvid));
 					add_port_to_vlan(dpt.get_dpid(), port->get_name(), (int)cconfig::get_instance().lookup(port_pvid), false);
 				}
 
@@ -431,9 +432,9 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 
 		sport *sp = (sport*)0;
 		try {
-			sp = &(sport::get_sport(dpt.get_dpid(), msg.get_port().get_port_no()));
+			sp = &(sport::get_sport(dpt.get_dpid(), msg.get_port().get_name()));
 		} catch (eSportNotFound& e) {
-			sp = new sport(this, dpt.get_dpid(), msg.get_port().get_port_no(), msg.get_port().get_name(), port_stage_table_id);
+			sp = new sport(this, dpt.get_dpid(), msg.get_port().get_port_no(), msg.get_port().get_name(), port_stage_table_id, default_vid);
 			logging::info << "[ethcore] adding port:" << std::endl << *sp;
 		}
 
@@ -443,6 +444,7 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 			/* add untagged PVID for port */
 			std::string port_pvid("ethcored.dpid_"+dpt.get_dpid_s()+"."+msg.get_port().get_name()+".pvid");
 			if (cconfig::get_instance().exists(port_pvid)) {
+				sp->set_pvid((int)cconfig::get_instance().lookup(port_pvid));
 				add_port_to_vlan(dpt.get_dpid(), msg.get_port().get_name(), (int)cconfig::get_instance().lookup(port_pvid), false);
 			}
 
@@ -494,7 +496,9 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 		}
 
 	} break;
-	case OFPPR_DELETE: {
+	case OFPPR_DELETE: try {
+
+		sport *sp = &(sport::get_sport(dpt.get_dpid(), msg.get_port().get_name()));
 
 		sport *sp = (sport*)0;
 		try {
@@ -538,6 +542,7 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 			}
 		}
 
+		delete sp;
 
 #if 0
 		try {
@@ -551,6 +556,9 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 			logging::warn << "[ethcore] unable to drop port:" << msg.get_port().get_name() << ", not found " << std::endl;
 		}
 #endif
+
+	} catch (eSportNotFound& e) {
+		// do nothing
 	} break;
 	}
 }

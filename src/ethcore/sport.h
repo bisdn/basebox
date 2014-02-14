@@ -194,6 +194,7 @@ public:
 			uint32_t portno,
 			std::string const& devname,
 			uint8_t table_id,
+			uint16_t pvid = 0xffff,
 			unsigned int timer_dump_interval = DEFAULT_SPORT_DUMP_INTERVAL);
 
 	/**
@@ -227,6 +228,12 @@ public:
 	 */
 	uint16_t
 	get_pvid() const;
+
+	/**
+	 * @brief	Set the sport's pvid.
+	 */
+	void
+	set_pvid(uint16_t pvid);
 
 	/**
 	 * @brief	Returns the group-id assigned to this port for a specific VID for sending packets out

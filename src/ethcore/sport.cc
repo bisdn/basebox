@@ -53,12 +53,12 @@ sport::destroy_sports()
 }
 
 
-sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string const& devname, uint8_t table_id, unsigned int timer_dump_interval) :
+sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string const& devname, uint8_t table_id, uint16_t pvid, unsigned int timer_dump_interval) :
 		spowner(spowner),
 		dpid(dpid),
 		portno(portno),
 		devname(devname),
-		pvid(0xffff),
+		pvid(pvid),
 		table_id(table_id),
 		timer_dump_interval(timer_dump_interval)
 {
@@ -101,6 +101,20 @@ sport::get_pvid() const
 		throw eSportNoPvid();
 	}
 	return pvid;
+}
+
+
+void
+sport::set_pvid(uint16_t pvid)
+{
+	if (pvid == this->pvid)
+		return;
+
+	drop_membership(this->pvid);
+
+	this->pvid = pvid;
+
+	add_membership(this->pvid, false);
 }
 
 
