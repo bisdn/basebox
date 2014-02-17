@@ -70,6 +70,8 @@ sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string c
 	}
 	sport::sports[dpid][portno] = this;
 
+	set_pvid(pvid);
+
 	logging::info << "[ethcore][sport] created sport:" << std::endl << *this;
 	//register_timer(SPORT_TIMER_DUMP, timer_dump_interval);
 }
