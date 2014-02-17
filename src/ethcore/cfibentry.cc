@@ -83,6 +83,10 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 		rofl::crofbase *rofbase = fib->get_rofbase();
 		rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
+		if ((NULL == dpt) || (rofl::openflow::OFP_VERSION_UNKNOWN == dpt->get_version())) {
+			return;
+		}
+
 		rofl::cofflowmod fe(dpt->get_version());
 
 		/* table 'src_stage_table_id':

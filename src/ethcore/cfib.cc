@@ -234,6 +234,10 @@ cfib::drop_flow_mod_in_stage()
 		rofl::crofbase *rofbase = fibowner->get_rofbase();
 		rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
+		if ((NULL == dpt) || (rofl::openflow::OFP_VERSION_UNKNOWN == dpt->get_version())) {
+			return;
+		}
+
 		rofl::cofflowmod fe(dpt->get_version());
 
 		fe.set_command(OFPFC_DELETE_STRICT);
@@ -282,6 +286,10 @@ cfib::drop_flow_mod_flood()
 	try {
 		rofl::crofbase *rofbase = fibowner->get_rofbase();
 		rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
+
+		if ((NULL == dpt) || (rofl::openflow::OFP_VERSION_UNKNOWN == dpt->get_version())) {
+			return;
+		}
 
 		rofl::cofflowmod fe(dpt->get_version());
 
@@ -353,6 +361,10 @@ cfib::drop_group_entry_flood()
 	try {
 		rofl::crofbase *rofbase = fibowner->get_rofbase();
 		rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
+
+		if ((NULL == dpt) || (rofl::openflow::OFP_VERSION_UNKNOWN == dpt->get_version())) {
+			return;
+		}
 
 		rofl::cofgroupmod ge(dpt->get_version());
 
