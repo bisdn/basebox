@@ -141,6 +141,8 @@ sport::get_is_tagged(uint16_t vid)
 void
 sport::add_membership(uint16_t vid, bool tagged)
 {
+	logging::info << "[ethcore][sport] adding membership for vid:" << (int)vid << "(" << tagged << ")" << std::endl << *this;
+
 	try {
 		/* membership already exists in specified mode */
 		if (memberships.find(vid) != memberships.end()) {
@@ -197,6 +199,8 @@ sport::add_membership(uint16_t vid, bool tagged)
 void
 sport::drop_membership(uint16_t vid)
 {
+	logging::info << "[ethcore][sport] dropping membership for vid:" << (int)vid << std::endl << *this;
+
 	if (memberships.find(vid) == memberships.end()) {
 		return;
 	}
