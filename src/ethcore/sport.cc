@@ -318,7 +318,7 @@ sport::flow_mod_delete(uint16_t vid, bool tagged)
 			fe.set_idle_timeout(0);
 			fe.set_hard_timeout(0);
 			fe.set_table_id(table_id);
-			fe.set_priority(0x8000);
+			fe.set_priority(0xa000);
 
 			fe.match.set_in_port(portno);
 			if (tagged)
