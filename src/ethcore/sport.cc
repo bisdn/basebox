@@ -76,6 +76,11 @@ sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string c
 
 sport::~sport()
 {
+	while (not memberships.empty()) {
+		std::map<uint16_t, struct vlan_membership_t>::iterator it = memberships.begin();
+		drop_membership(it->first);
+	}
+
 	if (sport::sports[dpid].find(portno) != sport::sports[dpid].end()) {
 		sport::sports[dpid].erase(portno);
 	}
@@ -229,6 +234,10 @@ sport::flow_mod_add(uint16_t vid, bool tagged)
 	try {
 		rofl::crofdpt *dpt = spowner->get_rofbase()->dpt_find(dpid);
 
+		if ((0 == dpt) || (rofl::openflow::OFP_VERSION_UNKNOWN == dpt->get_version())) {
+			return;
+		}
+
 		// set incoming rule for switch port
 		if (true) {
 			rofl::cofflowmod fe(dpt->get_version());
@@ -287,6 +296,10 @@ sport::flow_mod_delete(uint16_t vid, bool tagged)
 {
 	try {
 		rofl::crofdpt *dpt = spowner->get_rofbase()->dpt_find(dpid);
+
+		if ((0 == dpt) || (rofl::openflow::OFP_VERSION_UNKNOWN == dpt->get_version())) {
+			return;
+		}
 
 		// set incoming rule for switch port
 		if (true) {
