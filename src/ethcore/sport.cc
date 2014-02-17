@@ -58,7 +58,7 @@ sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string c
 		dpid(dpid),
 		portno(portno),
 		devname(devname),
-		pvid(pvid),
+		pvid(0xffff),
 		table_id(table_id),
 		timer_dump_interval(timer_dump_interval)
 {
