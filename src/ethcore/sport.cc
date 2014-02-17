@@ -205,7 +205,7 @@ sport::drop_membership(uint16_t vid)
 		return;
 	}
 
-	flow_mod_delete(vid, memberships[vid].vid);
+	flow_mod_delete(vid, memberships[vid].tagged);
 
 	spowner->release_group_id(memberships[vid].group_id);
 
