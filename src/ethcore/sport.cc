@@ -70,12 +70,15 @@ sport::sport(sport_owner *spowner, uint64_t dpid, uint32_t portno, std::string c
 	}
 	sport::sports[dpid][portno] = this;
 
+	logging::info << "[ethcore][sport] created sport:" << std::endl << *this;
 	//register_timer(SPORT_TIMER_DUMP, timer_dump_interval);
 }
 
 
 sport::~sport()
 {
+	logging::info << "[ethcore][sport] deleting sport:" << std::endl << *this;
+
 	while (not memberships.empty()) {
 		std::map<uint16_t, struct vlan_membership_t>::iterator it = memberships.begin();
 		drop_membership(it->first);
