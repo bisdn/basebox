@@ -288,7 +288,11 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 
 	dpt.group_mod_reset();
 
-	cfib::get_fib(dpt.get_dpid()).reset();
+	try {
+		cfib::get_fib(dpt.get_dpid()).reset();
+	} catch (eFibNotFound&e ) {
+		// do nothing
+	}
 
 	try {
 		default_vid = (int)cconfig::get_instance().lookup("ethcored.dpid_"+dpt.get_dpid_s()+".default_vid");
