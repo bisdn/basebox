@@ -458,6 +458,8 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 		logging::info << "[ethcore][fib] dropping frame, unable to find portno in packet-in" << std::endl;
 	} catch (eSportNotFound& e) {
 		logging::info << "[ethcore][fib] dropping frame, unable to find sport instance for packet-in" << std::endl;
+	} catch (eSportNotMember& e) {
+		logging::info << "[ethcore][fib] dropping frame, missing port membership" << std::endl;
 	}
 }
 
