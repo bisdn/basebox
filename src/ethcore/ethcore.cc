@@ -294,6 +294,8 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 		// do nothing
 	}
 
+	sport::destroy_sports(dpt.get_dpid());
+
 	try {
 		default_vid = (int)cconfig::get_instance().lookup("ethcored.dpid_"+dpt.get_dpid_s()+".default_vid");
 	} catch (SettingNotFoundException& e) {
