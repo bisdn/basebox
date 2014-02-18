@@ -484,6 +484,40 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 
 
 void
+cfib::handle_flow_removed(
+		rofl::cofmsg_flow_removed& msg)
+{
+	try {
+		/* get sport instance for in-port */
+		uint32_t inport = msg.get_match().get_in_port();
+		sport& port = sport::get_sport(dpid, inport);
+
+		/* get eth-src and eth-dst */
+		rofl::cmacaddr eth_src = msg.get_match().get_eth_src();
+
+		if (fibtable.find(eth_src) == fibtable.end()) {
+			logging::warn << "[ethcore][fib][flow-removed] inactivity indication received for unknown station, eth-src:" << eth_src << std::endl;
+			return;
+		}
+
+		logging::debug << "[ethcore][fib][flow-removed] inactivity idle-timeout seen, eth-src:" << eth_src << std::endl;
+
+		delete fibtable[eth_src];
+
+		fibtable.erase(eth_src);
+
+	} catch (rofl::eOFmatchNotFound& e) {
+		logging::info << "[ethcore][fib] dropping frame, unable to find portno in packet-in" << std::endl;
+	} catch (eSportNotFound& e) {
+		logging::info << "[ethcore][fib] dropping frame, unable to find sport instance for packet-in" << std::endl;
+	} catch (eSportNotMember& e) {
+		logging::info << "[ethcore][fib] dropping frame, missing port membership" << std::endl;
+	}
+}
+
+
+
+void
 cfib::block_stp()
 {
 	/*

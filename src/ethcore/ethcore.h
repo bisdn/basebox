@@ -159,6 +159,9 @@ private:
 	virtual void
 	handle_flow_stats_reply(crofdpt& dpt, cofmsg_flow_stats_reply& msg, uint8_t aux_id = 0);
 
+	virtual void
+	handle_flow_removed(crofdpt& dpt, cofmsg_flow_removed& msg, uint8_t aux_id = 0);
+
 private:
 
 	void

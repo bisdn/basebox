@@ -189,6 +189,15 @@ public:
 	handle_packet_in(
 			rofl::cofmsg_packet_in& msg);
 
+	/**
+	 *
+	 * @param dpt
+	 * @param msg
+	 */
+	void
+	handle_flow_removed(
+			rofl::cofmsg_flow_removed& msg);
+
 private:
 
 	/**

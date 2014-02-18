@@ -568,6 +568,38 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 }
 
 
+void
+ethcore::handle_flow_removed(crofdpt& dpt, cofmsg_flow_removed& msg, uint8_t aux_id)
+{
+	uint16_t vid = default_vid;
+	try {
+
+		try {
+			/* check for VLAN VID OXM TLV in Packet-In message */
+			vid = msg.get_match().get_vlan_vid() & ~OFPVID_PRESENT;
+		} catch (eOFmatchNotFound& e) {
+			/* no VLAN VID OXM TLV => frame was most likely untagged */
+			vid = sport::get_sport(dpt.get_dpid(), msg.get_match().get_in_port()).get_pvid() & ~OFPVID_PRESENT;
+		}
+
+		cfib::get_fib(dpt.get_dpid(), vid).handle_flow_removed(msg);
+
+	} catch (eFibNotFound& e) {
+		// no FIB for specified VLAN found
+		logging::warn << "[ethcore][flow-removed] no VLAN vid:" << (int)vid << " configured on dpid:" << (unsigned long long)dpt.get_dpid() << std::endl;
+
+	} catch (eSportNotFound& e) {
+		// sport instance not found? critical error!
+		logging::crit << "[ethcore][flow-removed] no sport instance for in-port found in Flow-Removed message" << msg << std::endl;
+
+	} catch (eSportNoPvid& e) {
+		// drop frame on data path
+		logging::crit << "[ethcore][flow-removed] no PVID for sport instance found for Flow-Removed message" << msg << std::endl;
+
+	}
+}
+
+
 uint32_t
 ethcore::get_idle_group_id()
 {

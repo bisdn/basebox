@@ -31,7 +31,7 @@ cfibentry::cfibentry(
 {
 	flow_mod_configure(FLOW_MOD_ADD);
 
-	expiration_timer_id = register_timer(CFIBENTRY_ENTRY_EXPIRED, entry_timeout);
+	//expiration_timer_id = register_timer(CFIBENTRY_ENTRY_EXPIRED, entry_timeout);
 }
 
 
@@ -52,10 +52,13 @@ void
 cfibentry::handle_timeout(int opaque, void *data)
 {
 	switch (opaque) {
+	// intentionally disabled
+#if 0
 	case CFIBENTRY_ENTRY_EXPIRED: {
 		flow_mod_configure(FLOW_MOD_DELETE);
 		fib->fib_timer_expired(this);
 	} break;
+#endif
 	}
 }
 
@@ -69,7 +72,10 @@ cfibentry::set_portno(uint32_t portno)
 
 	this->portno = portno;
 
+#if 0
+	// intentionally disabled
 	reset_timer(expiration_timer_id, entry_timeout);
+#endif
 
 	flow_mod_configure(FLOW_MOD_ADD);
 }
@@ -105,6 +111,7 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 			fe.set_table_id(src_stage_table_id);
 			fe.set_priority(0x8000);
 			fe.set_idle_timeout(entry_timeout);
+			fe.set_flags(rofl::openflow12::OFPFF_SEND_FLOW_REM);
 			fe.match.set_in_port(portno);
 			fe.match.set_vlan_vid(vid);
 			fe.match.set_eth_src(lladdr); // yes, indeed: set_eth_src for dst
