@@ -490,6 +490,11 @@ cfib::block_stp()
 	 */
 	rofl::crofbase *rofbase = fibowner->get_rofbase();
 	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
+
+	if ((NULL == dpt) || (rofl::openflow::OFP_VERSION_UNKNOWN == dpt->get_version())) {
+		return;
+	}
+
 	rofl::cofflowmod fe(dpt->get_version());
 
 	fe.set_command(OFPFC_ADD);
