@@ -434,7 +434,7 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 
 
 		/* either inport has changed or the FlowMod entry was removed => in either case, refresh entry */
-		} else /*if (inport != fibtable[eth_src]->get_portno())*/ {
+		} else if (inport != fibtable[eth_src]->get_portno()) {
 			fibtable[eth_src]->set_portno(inport);
 
 			rofl::indent i(2);
