@@ -91,6 +91,12 @@ public:
 	static void
 	destroy_fibs(uint64_t dpid);
 
+	/**
+	 * @brief	Dump all FIBs
+	 */
+	static void
+	dump_fibs();
+
 private:
 
 	cfib_owner								*fibowner;

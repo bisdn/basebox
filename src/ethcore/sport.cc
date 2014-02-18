@@ -45,6 +45,22 @@ sport::destroy_sports(uint64_t dpid)
 
 
 void
+sport::dump_sports()
+{
+	for (std::map<uint64_t, std::map<uint32_t, sport*> >::iterator
+			it = sport::sports.begin(); it != sport::sports.end(); ++it) {
+		rofl::logging::info << "[sport][dump] dpid:" << (unsigned long long)it->first << std::endl;
+		for (std::map<uint32_t, sport*>::iterator
+				jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			sport& sp = *(jt->second);
+			rofl::indent i(2);
+			std::cout << sp;
+		}
+	}
+}
+
+
+void
 sport::destroy_sports()
 {
 	while (not sport::sports.empty()) {

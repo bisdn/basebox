@@ -357,6 +357,10 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 			logging::warn << "unable to add port:" << port->get_name() << ", already exists " << std::endl;
 		}
 	}
+
+	sport::dump_sports();
+
+	cfib::dump_fibs();
 }
 
 
@@ -559,6 +563,8 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 		// do nothing
 	} break;
 	}
+
+	sport::dump_sports();
 }
 
 
@@ -594,6 +600,8 @@ ethcore::add_vlan(
 	} catch (eFibExists& e) {
 		logging::warn << "[ethcore] adding vid:" << (int)vid << " to dpid:" << (unsigned long long)dpid << " failed" << std::endl;
 	}
+
+	cfib::dump_fibs();
 }
 
 
@@ -608,6 +616,8 @@ ethcore::drop_vlan(
 	} catch (eFibNotFound& e) {
 		logging::warn << "[ethcore] dropping vid:" << (int)vid << " from dpid:" << (unsigned long long)dpid << " failed" << std::endl;
 	}
+
+	cfib::dump_fibs();
 }
 
 
@@ -627,6 +637,8 @@ ethcore::add_port_to_vlan(
 	} catch (eFibNotFound& e) {
 		logging::warn << "[ethcore] adding port:" << devname << " to vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << " failed (no such vlan)" << std::endl;
 	}
+
+	sport::dump_sports();
 }
 
 
@@ -645,6 +657,8 @@ ethcore::drop_port_from_vlan(
 	} catch (eFibNotFound& e) {
 		logging::warn << "[ethcore] dropping port:" << devname << " from vid:" << (int)vid << " on dpid:" << (unsigned long long)dpid << " failed (no such vlan)" << std::endl;
 	}
+
+	sport::dump_sports();
 }
 
 

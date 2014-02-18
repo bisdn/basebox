@@ -42,6 +42,23 @@ cfib::destroy_fibs(uint64_t dpid)
 }
 
 
+/*static*/
+void
+cfib::dump_fibs()
+{
+	for (std::map<uint64_t, std::map<uint16_t, cfib*> >::iterator
+			it = cfib::fibs.begin(); it != cfib::fibs.end(); ++it) {
+		rofl::logging::info << "[cfib][dump] dpid:" << (unsigned long long)it->first << std::endl;
+		for (std::map<uint16_t, cfib*>::iterator
+				jt = it->second.begin(); jt != it->second.end(); ++jt) {
+			cfib& fib = *(jt->second);
+			rofl::indent i(2);
+			std::cout << fib;
+		}
+	}
+}
+
+
 cfib::cfib(
 		cfib_owner *fibowner,
 		uint64_t dpid,

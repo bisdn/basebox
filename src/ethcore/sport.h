@@ -177,6 +177,13 @@ public:
 	void
 	destroy_sports();
 
+	/**
+	 * @brief	Dump state of all ports
+	 */
+	static
+	void
+	dump_sports();
+
 public:
 	/**
 	 * @brief	Constructor for switch-port, defining dpid, portno and pvid
