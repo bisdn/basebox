@@ -42,7 +42,7 @@ cfibentry::~cfibentry()
 	rofl::crofbase *rofbase = fib->get_rofbase();
 	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
-	rofbase->send_barrier_request(dpt);
+	//rofbase->send_barrier_request(dpt);
 #endif
 }
 
@@ -120,7 +120,7 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 			dpt->send_flow_mod_message(fe);
 		}
 
-		dpt->send_barrier_request();
+		//dpt->send_barrier_request();
 
 		/* table 'dst_stage_table_id':
 		 *
@@ -146,7 +146,7 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 			dpt->send_flow_mod_message(fe);
 		}
 
-		dpt->send_barrier_request();
+		//dpt->send_barrier_request();
 
 	} catch (rofl::eRofBaseNotFound& e) {
 
