@@ -318,7 +318,7 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 	/*
 	 * iterate over all ports announced by data path, create sport instances and set VID memberships
 	 */
-	for (std::map<uint32_t, rofl::cofport*>::iterator
+	for (std::map<uint32_t, rofl::cofport*>::const_iterator
 			it = dpt.get_ports().begin(); it != dpt.get_ports().end(); ++it) {
 
 		rofl::cofport* port = it->second;

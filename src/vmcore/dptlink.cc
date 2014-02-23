@@ -32,7 +32,7 @@ dptlink::dptlink(
 				tapdev(0),
 				ifindex(0)
 {
-	tapdev = new ctapdev(this, dpt->get_ports()[of_port_no]->get_name(), dpt->get_ports()[of_port_no]->get_hwaddr());
+	tapdev = new ctapdev(this, dpt->get_ports().get_port(of_port_no).get_name(), dpt->get_ports().get_port(of_port_no).get_hwaddr());
 
 	ifindex = tapdev->get_ifindex();
 
@@ -157,7 +157,7 @@ void
 dptlink::handle_port_status()
 {
 	try {
-		rofl::cofport& port = dpt->get_ports().get_port(of_port_no);
+		rofl::cofport& port = dpt->set_ports().set_port(of_port_no);
 
 		uint32_t config = dpt->get_ports().get_port(of_port_no).get_config();
 

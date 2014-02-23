@@ -79,7 +79,7 @@ public:
 	/**
 	 *
 	 */
-	std::string get_devname() const { return dpt->get_ports()[of_port_no]->get_name(); };
+	std::string get_devname() const { return dpt->get_ports().get_port(of_port_no).get_name(); };
 
 
 	/**
