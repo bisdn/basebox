@@ -1,4 +1,3 @@
-
 #include <rofl/common/ciosrv.h>
 #include <rofl/platform/unix/cdaemon.h>
 #include <rofl/platform/unix/cunixenv.h>
@@ -45,7 +44,14 @@ main(int argc, char** argv)
 #endif
 
 	cofhello_elem_versionbitmap versionbitmap;
-	versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+	if (ethercore::cconfig::get_instance().exists("ethcored.ofp_version")) {
+		versionbitmap.add_ofp_version((int)ethercore::cconfig::get_instance().lookup("ethcored.ofp_version"));
+	} else {
+		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+	}
+
+	rofl::logging::notice << "[ethcore][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
+
 	ethercore::ethcore& core = ethercore::ethcore::get_instance(versionbitmap);
 
 	core.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
