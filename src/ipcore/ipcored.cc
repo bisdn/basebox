@@ -6,8 +6,8 @@
 #include <rofl/platform/unix/cdaemon.h>
 #include <rofl/platform/unix/cunixenv.h>
 
-#define VMCORE_LOG_FILE "/var/log/ipcored.log"
-#define VMCORE_PID_FILE "/var/run/ipcored.pid"
+#define IPCORE_LOG_FILE "/var/log/ipcored.log"
+#define IPCORE_PID_FILE "/var/run/ipcored.pid"
 
 int
 main(int argc, char** argv)
@@ -15,8 +15,8 @@ main(int argc, char** argv)
 	rofl::cunixenv env_parser(argc, argv);
 
 	/* update defaults */
-	env_parser.update_default_option("logfile", VMCORE_LOG_FILE);
-	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(VMCORE_PID_FILE)));
+	env_parser.update_default_option("logfile", IPCORE_LOG_FILE);
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(IPCORE_PID_FILE)));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'p', "port", "set port", ""+6653));
 
 	//Parse
