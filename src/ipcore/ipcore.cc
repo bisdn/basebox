@@ -1,4 +1,4 @@
-#include "vmcore.h"
+#include "ipcore.h"
 
 using namespace dptmap;
 

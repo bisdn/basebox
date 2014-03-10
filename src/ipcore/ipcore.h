@@ -1,12 +1,12 @@
 /*
- * vmcore.h
+ * ipcore.h
  *
  *  Created on: 29.05.2013
  *      Author: andi
  */
 
-#ifndef VMCORE_H_
-#define VMCORE_H_ 1
+#ifndef IPCORE_H_
+#define IPCORE_H_ 1
 
 #ifdef __cplusplus
 extern "C" {

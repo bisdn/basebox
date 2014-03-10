@@ -1,5 +1,5 @@
 //#include "cnetlink.h"
-#include "vmcore.h"
+#include "ipcore.h"
 
 #include <rofl/common/ciosrv.h>
 #include <rofl/platform/unix/cdaemon.h>

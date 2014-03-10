@@ -4,9 +4,9 @@ SUBDIRS =
 
 sbin_PROGRAMS = vmcored
 
-vmcored_SOURCES = vmcored.cc \
-		vmcore.h \
-		vmcore.cc \
+vmcored_SOURCES = ipcored.cc \
+		ipcore.h \
+		ipcore.cc \
 		dptroute.h \
 		dptroute.cc \
 		dptlink.h \
