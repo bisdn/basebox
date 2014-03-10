@@ -23,21 +23,76 @@ main(int argc, char** argv)
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(ETHCORE_PID_FILE)));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'p', "port", "set port", ""+6653));
 
-	//Parse
+	// command line arguments
 	env_parser.parse_args();
 
-	if (not env_parser.is_arg_set("daemonize")) {
+	// configuration file
+	ethercore::cconfig::get_instance().open(env_parser.get_arg("config-file"));
 
-		rofl::logging::set_debug_level(atoi(env_parser.get_arg("debug").c_str()));
 
+	/*
+	 * extract debug level
+	 */
+	int debug;
+	if (env_parser.is_arg_set("debug")) {
+		debug = atoi(env_parser.get_arg("debug").c_str());
+	} else if (ethercore::cconfig::get_instance().exists("ethcored.daemon.debug")) {
+		debug = (int)ethercore::cconfig::get_instance().lookup("ethcored.daemon.debug");
 	} else {
+		debug = 0; // default
+	}
 
+	/*
+	 * extract log-file
+	 */
+	std::string logfile;
+	if (env_parser.is_arg_set("logfile")) {
+		logfile = env_parser.get_arg("logfile");
+	} else if (ethercore::cconfig::get_instance().exists("ethcored.daemon.logfile")) {
+		logfile = (const char*)ethercore::cconfig::get_instance().lookup("ethcored.daemon.logfile");
+	} else {
+		logfile = std::string(ETHCORE_LOG_FILE); // default
+	}
+
+	/*
+	 * extract pid-file
+	 */
+	std::string pidfile;
+	if (env_parser.is_arg_set("pidfile")) {
+		pidfile = env_parser.get_arg("pidfile");
+	} else if (ethercore::cconfig::get_instance().exists("ethcored.daemon.pidfile")) {
+		pidfile = (const char*)ethercore::cconfig::get_instance().lookup("ethcored.daemon.pidfile");
+	} else {
+		pidfile = std::string(ETHCORE_PID_FILE); // default
+	}
+
+	/*
+	 * extract daemonize flag
+	 */
+	bool daemonize;
+	if (env_parser.is_arg_set("daemonize")) {
+		daemonize = atoi(env_parser.get_arg("pidfile").c_str());
+	} else if (ethercore::cconfig::get_instance().exists("ethcored.daemon.daemonize")) {
+		daemonize = (bool)ethercore::cconfig::get_instance().lookup("ethcored.daemon.daemonize");
+	} else {
+		daemonize = true; // default
+	}
+
+
+
+	/*
+	 * daemonize
+	 */
+	if (daemonize) {
 		rofl::cdaemon::daemonize(env_parser.get_arg("pidfile"), env_parser.get_arg("logfile"));
-		rofl::logging::set_debug_level(atoi(env_parser.get_arg("debug").c_str()));
+	}
+	rofl::logging::set_debug_level(debug);
+	if (daemonize) {
 		rofl::logging::notice << "[ethcore][main] daemonizing successful" << std::endl;
 	}
 
-	ethercore::cconfig::get_instance().open(env_parser.get_arg("config-file"));
+
+
 
 #ifdef AMQP_QMF_SUPPORT
 	qmf::qmfagent::get_instance().init(argc, argv);
@@ -56,7 +111,12 @@ main(int argc, char** argv)
 
 	core.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
 
-	core.rpc_listen_for_dpts(rofl::caddress(AF_INET, "0.0.0.0", atoi(env_parser.get_arg("port").c_str())));
+	uint16_t portno = 6633;
+	if (ethercore::cconfig::get_instance().exists("ethcored.openflow.port")) {
+		portno = (int)ethercore::cconfig::get_instance().lookup("ethcored.openflow.port");
+	}
+
+	core.rpc_listen_for_dpts(rofl::caddress(AF_INET, "0.0.0.0", portno));
 
 	rofl::cioloop::run();
 
