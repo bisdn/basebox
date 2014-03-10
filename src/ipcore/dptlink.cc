@@ -116,10 +116,10 @@ dptlink::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
 				pkt->framelen());
 
 	} catch (eDptLinkNoDptAttached& e) {
-		rofl::logging::warn << "[vmcore][dptlink][enqueue] no data path attached, dropping outgoing packet" << std::endl;
+		rofl::logging::warn << "[ipcore][dptlink][enqueue] no data path attached, dropping outgoing packet" << std::endl;
 
 	} catch (eDptLinkTapDevNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink][enqueue] unable to find tap device" << std::endl;
+		rofl::logging::warn << "[ipcore][dptlink][enqueue] unable to find tap device" << std::endl;
 	}
 
 	cpacketpool::get_instance().release_pkt(pkt);
@@ -183,7 +183,7 @@ dptlink::link_created(unsigned int ifindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	rofl::logging::info << "[vmcore][dptlink] crtlink CREATE:" << std::endl << cnetlink::get_instance().get_link(ifindex);
+	rofl::logging::info << "[ipcore][dptlink] crtlink CREATE:" << std::endl << cnetlink::get_instance().get_link(ifindex);
 }
 
 
@@ -196,14 +196,14 @@ dptlink::link_updated(unsigned int ifindex)
 		if (ifindex != this->ifindex)
 			return;
 
-		rofl::logging::info << "[vmcore][dptlink] crtlink UPDATE:" << std::endl << cnetlink::get_instance().get_link(ifindex);
+		rofl::logging::info << "[ipcore][dptlink] crtlink UPDATE:" << std::endl << cnetlink::get_instance().get_link(ifindex);
 
 		if (0 == dpt) {
 			return;
 		}
 
 	} catch (eNetLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtlink UPDATE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtlink UPDATE notification rcvd => "
 				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
 	}
 }
@@ -217,7 +217,7 @@ dptlink::link_deleted(unsigned int ifindex)
 	if (ifindex != this->ifindex)
 		return;
 
-	rofl::logging::info << "[vmcore][dptlink] crtlink DELETE:" << std::endl << cnetlink::get_instance().get_link(ifindex);
+	rofl::logging::info << "[ipcore][dptlink] crtlink DELETE:" << std::endl << cnetlink::get_instance().get_link(ifindex);
 }
 
 
@@ -235,18 +235,18 @@ dptlink::addr_created(unsigned int ifindex, uint16_t adindex)
 			addrs[adindex].close();
 		}
 
-		rofl::logging::info << "[vmcore][dptlink] crtaddr CREATE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
+		rofl::logging::info << "[ipcore][dptlink] crtaddr CREATE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
 
 		addrs[adindex] = dptaddr(rofbase, dpt, ifindex, adindex);
 
 		addrs[adindex].open();
 
 	} catch (eNetLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtaddr CREATE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtaddr CREATE notification rcvd => "
 				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
 
 	} catch (eRtLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtaddr CREATE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtaddr CREATE notification rcvd => "
 				<< "unable to find crtaddr for adindex:" << adindex << std::endl;
 	}
 }
@@ -267,17 +267,17 @@ dptlink::addr_updated(unsigned int ifindex, uint16_t adindex)
 
 		// TODO: check status changes and notify dptaddr instance
 
-		rofl::logging::info << "[vmcore][dptlink] crtaddr UPDATE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
+		rofl::logging::info << "[ipcore][dptlink] crtaddr UPDATE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
 
 		addrs[adindex].close();
 		addrs[adindex].open();
 
 	} catch (eNetLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtaddr UPDATE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtaddr UPDATE notification rcvd => "
 				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
 
 	} catch (eRtLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtaddr UPDATE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtaddr UPDATE notification rcvd => "
 				<< "unable to find crtaddr for adindex:" << adindex << std::endl;
 	}
 }
@@ -292,7 +292,7 @@ dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 		if (ifindex != this->ifindex)
 			return;
 
-		rofl::logging::info << "[vmcore][dptlink] crtaddr DELETE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
+		rofl::logging::info << "[ipcore][dptlink] crtaddr DELETE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
 
 		if (addrs.find(adindex) == addrs.end()) {
 			// we have no dptaddr instance for the crtaddr instance scheduled for removal, so ignore it
@@ -304,11 +304,11 @@ dptlink::addr_deleted(unsigned int ifindex, uint16_t adindex)
 		addrs.erase(adindex);
 
 	} catch (eNetLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtaddr DELETE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtaddr DELETE notification rcvd => "
 				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
 
 	} catch (eRtLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtaddr DELETE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtaddr DELETE notification rcvd => "
 				<< "unable to find crtaddr for adindex:" << adindex << std::endl;
 	}
 }
@@ -323,7 +323,7 @@ dptlink::neigh_created(unsigned int ifindex, uint16_t nbindex)
 		if (ifindex != this->ifindex)
 			return;
 
-		rofl::logging::info << "[vmcore][dptlink] crtneigh CREATE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
+		rofl::logging::info << "[ipcore][dptlink] crtneigh CREATE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
 		if (neighs.find(nbindex) != neighs.end()) {
 			// safe strategy: remove old FlowMod first
@@ -335,11 +335,11 @@ dptlink::neigh_created(unsigned int ifindex, uint16_t nbindex)
 		neighs[nbindex].open();
 
 	} catch (eNetLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtneigh CREATE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtneigh CREATE notification rcvd => "
 				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
 
 	} catch (eRtLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtneigh CREATE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtneigh CREATE notification rcvd => "
 				<< "unable to find crtneigh for nbindex:" << nbindex << std::endl;
 	}
 }
@@ -372,7 +372,7 @@ dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 			if (neighs.find(nbindex) == neighs.end())
 				return;
 
-			rofl::logging::info << "[vmcore][dptlink] crtneigh UPDATE (scheduled for removal):" << std::endl << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
+			rofl::logging::info << "[ipcore][dptlink] crtneigh UPDATE (scheduled for removal):" << std::endl << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
 			neighs[nbindex].close();
 			neighs.erase(nbindex);
@@ -387,7 +387,7 @@ dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 				neighs.erase(nbindex);
 			}
 
-			rofl::logging::info << "[vmcore][dptlink] crtneigh UPDATE (refresh):" << std::endl << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
+			rofl::logging::info << "[ipcore][dptlink] crtneigh UPDATE (refresh):" << std::endl << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
 			neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, /*of_table_id=*/2, ifindex, nbindex);
 
@@ -397,7 +397,7 @@ dptlink::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 		}
 
 	} catch (eNetLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtneigh UPDATE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtneigh UPDATE notification rcvd => "
 				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
 	}
 }
@@ -417,18 +417,18 @@ dptlink::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
 			return;
 		}
 
-		rofl::logging::info << "[vmcore][dptlink] crtneigh DELETE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
+		rofl::logging::info << "[ipcore][dptlink] crtneigh DELETE:" << std::endl << cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
 		neighs[nbindex].close();
 
 		neighs.erase(nbindex);
 
 	} catch (eNetLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtneigh DELETE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtneigh DELETE notification rcvd => "
 				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
 
 	} catch (eRtLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore][dptlink] crtneigh DELETE notification rcvd => "
+		rofl::logging::warn << "[ipcore][dptlink] crtneigh DELETE notification rcvd => "
 				<< "unable to find crtneigh for nbindex:" << nbindex << std::endl;
 	}
 }

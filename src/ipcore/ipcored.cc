@@ -30,7 +30,7 @@ main(int argc, char** argv)
 
 		rofl::cdaemon::daemonize(env_parser.get_arg("pidfile"), env_parser.get_arg("logfile"));
 		rofl::logging::set_debug_level(atoi(env_parser.get_arg("debug").c_str()));
-		rofl::logging::notice << "[vmcore][main] daemonizing successful" << std::endl;
+		rofl::logging::notice << "[ipcore][main] daemonizing successful" << std::endl;
 	}
 
 	cofhello_elem_versionbitmap versionbitmap;

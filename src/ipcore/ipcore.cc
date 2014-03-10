@@ -174,7 +174,7 @@ ipcore::handle_dpath_open(
 
 	} catch (eNetDevCritical& e) {
 
-		fprintf(stderr, "vmcore::handle_dpath_open() unable to create tap device\n");
+		fprintf(stderr, "ipcore::handle_dpath_open() unable to create tap device\n");
 		throw;
 
 	}
@@ -204,13 +204,13 @@ ipcore::handle_port_status(
 		uint8_t aux_id)
 {
 	if (this->dpt != &dpt) {
-		fprintf(stderr, "vmcore::handle_port_stats() received PortStatus from invalid data path\n");
+		fprintf(stderr, "ipcore::handle_port_stats() received PortStatus from invalid data path\n");
 		return;
 	}
 
 	uint32_t port_no = msg.get_port().get_port_no();
 
-	rofl::logging::info << "[vmcore] Port-Status message rcvd:" << std::endl << msg;
+	rofl::logging::info << "[ipcore] Port-Status message rcvd:" << std::endl << msg;
 
 	try {
 		switch (msg.get_reason()) {
@@ -237,7 +237,7 @@ ipcore::handle_port_status(
 		} break;
 		default: {
 
-			fprintf(stderr, "vmcore::handle_port_status() message with invalid reason code received, ignoring\n");
+			fprintf(stderr, "ipcore::handle_port_status() message with invalid reason code received, ignoring\n");
 
 		} break;
 		}
@@ -268,7 +268,7 @@ ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_
 		uint32_t port_no = msg.get_match().get_in_port();
 
 		if (dptlinks[&dpt].find(port_no) == dptlinks[&dpt].end()) {
-			fprintf(stderr, "vmcore::handle_packet_in() frame for port_no=%d received, but port not found\n", port_no);
+			fprintf(stderr, "ipcore::handle_packet_in() frame for port_no=%d received, but port not found\n", port_no);
 
 			return;
 		}
@@ -282,7 +282,7 @@ ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_
 
 	} catch (ePacketPoolExhausted& e) {
 
-		fprintf(stderr, "vmcore::handle_packet_in() packetpool exhausted\n");
+		fprintf(stderr, "ipcore::handle_packet_in() packetpool exhausted\n");
 
 	}
 }
@@ -292,7 +292,7 @@ ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_
 void
 ipcore::handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id)
 {
-	rofl::logging::warn << "[vmcore] error message rcvd:" << std::endl << msg;
+	rofl::logging::warn << "[ipcore] error message rcvd:" << std::endl << msg;
 }
 
 
@@ -300,7 +300,7 @@ ipcore::handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id
 void
 ipcore::handle_flow_removed(rofl::crofdpt& dpt, rofl::cofmsg_flow_removed& msg, uint8_t aux_id)
 {
-	rofl::logging::info << "[vmcore] Flow-Removed message rcvd:" << std::endl << msg;
+	rofl::logging::info << "[ipcore] Flow-Removed message rcvd:" << std::endl << msg;
 }
 
 
@@ -315,11 +315,11 @@ ipcore::route_created(uint8_t table_id, unsigned int rtindex)
 		// ignore local route table and unspecified table_id
 		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-			std::cerr << "vmcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			std::cerr << "ipcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 			return;
 		}
 
-		rofl::logging::info << "[vmcore] crtroute CREATE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
+		rofl::logging::info << "[ipcore] crtroute CREATE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
 
 		if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
 			dptroutes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
@@ -329,7 +329,7 @@ ipcore::route_created(uint8_t table_id, unsigned int rtindex)
 		}
 
 	} catch (eNetLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore] crtroute CREATE notification rcvd => "
+		rofl::logging::warn << "[ipcore] crtroute CREATE notification rcvd => "
 				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
 	}
 }
@@ -346,13 +346,13 @@ ipcore::route_updated(uint8_t table_id, unsigned int rtindex)
 		// ignore local route table and unspecified table_id
 		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-			std::cerr << "vmcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			std::cerr << "ipcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 			return;
 		}
 
-		rofl::logging::info << "[vmcore] crtroute UPDATE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
+		rofl::logging::info << "[ipcore] crtroute UPDATE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
 
-		//std::cerr << "vmcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+		//std::cerr << "ipcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 		if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
 			route_created(table_id, rtindex);
 		}
@@ -360,7 +360,7 @@ ipcore::route_updated(uint8_t table_id, unsigned int rtindex)
 		// do nothing here, this event is handled directly by dptroute instance
 
 	} catch (eNetLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore] crtroute UPDATE notification rcvd => "
+		rofl::logging::warn << "[ipcore] crtroute UPDATE notification rcvd => "
 				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
 	}
 }
@@ -377,13 +377,13 @@ ipcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 		// ignore local route table and unspecified table_id
 		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-			std::cerr << "vmcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			std::cerr << "ipcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 			return;
 		}
 
-		rofl::logging::info << "[vmcore] crtroute DELETE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
+		rofl::logging::info << "[ipcore] crtroute DELETE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
 
-		//std::cerr << "vmcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+		//std::cerr << "ipcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
 		if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
 			if (dpt->get_channel().is_established()) {
 				dptroutes[table_id][rtindex]->close();
@@ -393,7 +393,7 @@ ipcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 		}
 
 	} catch (eNetLinkNotFound& e) {
-		rofl::logging::warn << "[vmcore] crtroute DELETE notification rcvd => "
+		rofl::logging::warn << "[ipcore] crtroute DELETE notification rcvd => "
 				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
 	}
 }
