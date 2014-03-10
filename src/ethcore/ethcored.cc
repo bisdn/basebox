@@ -44,8 +44,8 @@ main(int argc, char** argv)
 #endif
 
 	cofhello_elem_versionbitmap versionbitmap;
-	if (ethercore::cconfig::get_instance().exists("ethcored.ofp_version")) {
-		versionbitmap.add_ofp_version((int)ethercore::cconfig::get_instance().lookup("ethcored.ofp_version"));
+	if (ethercore::cconfig::get_instance().exists("ethcored.openflow.version")) {
+		versionbitmap.add_ofp_version((int)ethercore::cconfig::get_instance().lookup("ethcored.openflow.version"));
 	} else {
 		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
 	}
