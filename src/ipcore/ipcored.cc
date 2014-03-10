@@ -1,5 +1,6 @@
 //#include "cnetlink.h"
 #include "ipcore.h"
+#include "cconfig.h"
 
 #include <rofl/common/ciosrv.h>
 #include <rofl/platform/unix/cdaemon.h>
@@ -33,8 +34,12 @@ main(int argc, char** argv)
 	}
 
 	cofhello_elem_versionbitmap versionbitmap;
-	versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
-	dptmap::vmcore core(versionbitmap);
+	if (iprotcore::cconfig::get_instance().exists("ipcored.openflow.version")) {
+		versionbitmap.add_ofp_version((int)iprotcore::cconfig::get_instance().lookup("ipcored.openflow.version"));
+	} else {
+		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+	}
+	dptmap::ipcore core(versionbitmap);
 
 	core.rpc_listen_for_dpts(rofl::caddress(AF_INET, "0.0.0.0", atoi(env_parser.get_arg("port").c_str())));
 

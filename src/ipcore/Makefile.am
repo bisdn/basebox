@@ -2,11 +2,13 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-sbin_PROGRAMS = vmcored
+sbin_PROGRAMS = ipcored
 
-vmcored_SOURCES = ipcored.cc \
+ipcored_SOURCES = ipcored.cc \
 		ipcore.h \
 		ipcore.cc \
+		cconfig.h \
+		cconfig.cc \
 		dptroute.h \
 		dptroute.cc \
 		dptlink.h \
@@ -37,7 +39,7 @@ vmcored_SOURCES = ipcored.cc \
 		crtneigh.cc \
 		flowmod.h
 		
-vmcored_LDADD = -lpthread \
+ipcored_LDADD = -lpthread \
 	-lrt
 
 #AM_CPPFLAGS = -I/usr/local/libnl-3.2.22/include/libnl3

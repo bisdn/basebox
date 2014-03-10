@@ -38,14 +38,14 @@ class eVmCoreCritical 		: public eVmCoreBase {};
 class eVmCoreNoDptAttached	: public eVmCoreBase {};
 class eVmCoreNotFound		: public eVmCoreBase {};
 
-class vmcore :
+class ipcore :
 		public rofl::crofbase,
 		public cnetlink_subscriber
 {
-	#define DEFAULT_DPATH_OPEN_SCRIPT_PATH 	"/var/lib/vmcore/dpath-open.sh"
-	#define DEFAULT_DPATH_CLOSE_SCRIPT_PATH "/var/lib/vmcore/dpath-close.sh"
-	#define DEFAULT_PORT_UP_SCRIPT_PATH 	"/var/lib/vmcore/port-up.sh"
-	#define DEFAULT_PORT_DOWN_SCRIPT_PATH 	"/var/lib/vmcore/port-down.sh"
+	#define DEFAULT_DPATH_OPEN_SCRIPT_PATH 	"/var/lib/ipcore/dpath-open.sh"
+	#define DEFAULT_DPATH_CLOSE_SCRIPT_PATH "/var/lib/ipcore/dpath-close.sh"
+	#define DEFAULT_PORT_UP_SCRIPT_PATH 	"/var/lib/ipcore/port-up.sh"
+	#define DEFAULT_PORT_DOWN_SCRIPT_PATH 	"/var/lib/ipcore/port-down.sh"
 
 	static std::string	dpath_open_script_path;
 	static std::string	dpath_close_script_path;
@@ -64,9 +64,9 @@ private:
 	std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> > 	 dptlinks;	// mapped ports per data path element
 	std::map<uint8_t, std::map<unsigned int, dptroute*> >		 dptroutes;	// active routes => key1:table_id, key2:routing index, value: dptroute instance
 
-	enum vmcore_timer_t {
-		VMCORE_TIMER_BASE = 0x6423beed,
-		VMCORE_TIMER_DUMP,
+	enum ipcore_timer_t {
+		IPCORE_TIMER_BASE = 0x6423beed,
+		IPCORE_TIMER_DUMP,
 	};
 
 	int dump_state_interval;
@@ -77,7 +77,7 @@ public:
 	/**
 	 *
 	 */
-	vmcore(
+	ipcore(
 			rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap);
 
 
@@ -85,7 +85,7 @@ public:
 	 *
 	 */
 	virtual
-	~vmcore();
+	~ipcore();
 
 
 public:

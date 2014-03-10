@@ -2,23 +2,23 @@
 
 using namespace dptmap;
 
-std::string	vmcore::dpath_open_script_path(DEFAULT_DPATH_OPEN_SCRIPT_PATH);
-std::string	vmcore::dpath_close_script_path(DEFAULT_DPATH_CLOSE_SCRIPT_PATH);
-std::string	vmcore::port_up_script_path(DEFAULT_PORT_UP_SCRIPT_PATH);
-std::string	vmcore::port_down_script_path(DEFAULT_PORT_DOWN_SCRIPT_PATH);
+std::string	ipcore::dpath_open_script_path(DEFAULT_DPATH_OPEN_SCRIPT_PATH);
+std::string	ipcore::dpath_close_script_path(DEFAULT_DPATH_CLOSE_SCRIPT_PATH);
+std::string	ipcore::port_up_script_path(DEFAULT_PORT_UP_SCRIPT_PATH);
+std::string	ipcore::port_down_script_path(DEFAULT_PORT_DOWN_SCRIPT_PATH);
 
 
-vmcore::vmcore(
+ipcore::ipcore(
 		rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap) :
 		dpt(0),
 		dump_state_interval(15),
 		rofl::crofbase(versionbitmap)
 {
-	register_timer(VMCORE_TIMER_DUMP, dump_state_interval);
+	register_timer(IPCORE_TIMER_DUMP, dump_state_interval);
 }
 
 
-vmcore::~vmcore()
+ipcore::~ipcore()
 {
 	if (0 != dpt) {
 		delete_all_routes();
@@ -30,10 +30,10 @@ vmcore::~vmcore()
 
 
 void
-vmcore::handle_timeout(int opaque, void *data)
+ipcore::handle_timeout(int opaque, void *data)
 {
 	switch (opaque) {
-	case VMCORE_TIMER_DUMP: {
+	case IPCORE_TIMER_DUMP: {
 		dump_state();
 	} break;
 	default:
@@ -44,7 +44,7 @@ vmcore::handle_timeout(int opaque, void *data)
 
 
 bool
-vmcore::link_is_mapped_from_dpt(int ifindex)
+ipcore::link_is_mapped_from_dpt(int ifindex)
 {
 	std::map<uint32_t, dptlink*>::const_iterator it;
 	for (it = dptlinks[dpt].begin(); it != dptlinks[dpt].end(); ++it) {
@@ -58,7 +58,7 @@ vmcore::link_is_mapped_from_dpt(int ifindex)
 
 
 dptlink&
-vmcore::get_mapped_link_from_dpt(int ifindex)
+ipcore::get_mapped_link_from_dpt(int ifindex)
 {
 	std::map<uint32_t, dptlink*>::const_iterator it;
 	for (it = dptlinks[dpt].begin(); it != dptlinks[dpt].end(); ++it) {
@@ -72,7 +72,7 @@ vmcore::get_mapped_link_from_dpt(int ifindex)
 
 
 void
-vmcore::delete_all_ports()
+ipcore::delete_all_ports()
 {
 	for (std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> >::iterator
 			jt = dptlinks.begin(); jt != dptlinks.end(); ++jt) {
@@ -88,7 +88,7 @@ vmcore::delete_all_ports()
 
 
 void
-vmcore::delete_all_routes()
+ipcore::delete_all_routes()
 {
 	for (std::map<uint8_t, std::map<unsigned int, dptroute*> >::iterator
 			it = dptroutes.begin(); it != dptroutes.end(); ++it) {
@@ -103,7 +103,7 @@ vmcore::delete_all_routes()
 
 
 void
-vmcore::handle_dpath_open(
+ipcore::handle_dpath_open(
 		rofl::crofdpt& dpt)
 {
 	try {
@@ -183,7 +183,7 @@ vmcore::handle_dpath_open(
 
 
 void
-vmcore::handle_dpath_close(
+ipcore::handle_dpath_close(
 		rofl::crofdpt& dpt)
 {
 	run_dpath_close_script();
@@ -198,7 +198,7 @@ vmcore::handle_dpath_close(
 
 
 void
-vmcore::handle_port_status(
+ipcore::handle_port_status(
 		rofl::crofdpt& dpt,
 		rofl::cofmsg_port_status& msg,
 		uint8_t aux_id)
@@ -253,7 +253,7 @@ vmcore::handle_port_status(
 
 
 void
-vmcore::handle_packet_out(rofl::crofctl& ctl, rofl::cofmsg_packet_out& msg, uint8_t aux_id)
+ipcore::handle_packet_out(rofl::crofctl& ctl, rofl::cofmsg_packet_out& msg, uint8_t aux_id)
 {
 
 }
@@ -262,7 +262,7 @@ vmcore::handle_packet_out(rofl::crofctl& ctl, rofl::cofmsg_packet_out& msg, uint
 
 
 void
-vmcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_t aux_id)
+ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_t aux_id)
 {
 	try {
 		uint32_t port_no = msg.get_match().get_in_port();
@@ -290,7 +290,7 @@ vmcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_
 
 
 void
-vmcore::handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id)
+ipcore::handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id)
 {
 	rofl::logging::warn << "[vmcore] error message rcvd:" << std::endl << msg;
 }
@@ -298,7 +298,7 @@ vmcore::handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id
 
 
 void
-vmcore::handle_flow_removed(rofl::crofdpt& dpt, rofl::cofmsg_flow_removed& msg, uint8_t aux_id)
+ipcore::handle_flow_removed(rofl::crofdpt& dpt, rofl::cofmsg_flow_removed& msg, uint8_t aux_id)
 {
 	rofl::logging::info << "[vmcore] Flow-Removed message rcvd:" << std::endl << msg;
 }
@@ -306,7 +306,7 @@ vmcore::handle_flow_removed(rofl::crofdpt& dpt, rofl::cofmsg_flow_removed& msg, 
 
 
 void
-vmcore::route_created(uint8_t table_id, unsigned int rtindex)
+ipcore::route_created(uint8_t table_id, unsigned int rtindex)
 {
 	try {
 		if (0 == dpt)
@@ -337,7 +337,7 @@ vmcore::route_created(uint8_t table_id, unsigned int rtindex)
 
 
 void
-vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
+ipcore::route_updated(uint8_t table_id, unsigned int rtindex)
 {
 	try {
 		if (0 == dpt)
@@ -368,7 +368,7 @@ vmcore::route_updated(uint8_t table_id, unsigned int rtindex)
 
 
 void
-vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
+ipcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 {
 	try {
 		if (0 == dpt)
@@ -401,7 +401,7 @@ vmcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 
 
 void
-vmcore::block_stp_frames()
+ipcore::block_stp_frames()
 {
 	if (0 == dpt)
 		return;
@@ -418,7 +418,7 @@ vmcore::block_stp_frames()
 
 
 void
-vmcore::unblock_stp_frames()
+ipcore::unblock_stp_frames()
 {
 	if (0 == dpt)
 		return;
@@ -435,7 +435,7 @@ vmcore::unblock_stp_frames()
 
 
 void
-vmcore::redirect_ipv4_multicast()
+ipcore::redirect_ipv4_multicast()
 {
 	if (0 == dpt)
 		return;
@@ -455,7 +455,7 @@ vmcore::redirect_ipv4_multicast()
 
 
 void
-vmcore::redirect_ipv6_multicast()
+ipcore::redirect_ipv6_multicast()
 {
 	if (0 == dpt)
 		return;
@@ -475,7 +475,7 @@ vmcore::redirect_ipv6_multicast()
 
 
 void
-vmcore::run_dpath_open_script()
+ipcore::run_dpath_open_script()
 {
 	std::vector<std::string> argv;
 	std::vector<std::string> envp;
@@ -484,13 +484,13 @@ vmcore::run_dpath_open_script()
 	s_dpid << "DPID=" << dpt->get_dpid();
 	envp.push_back(s_dpid.str());
 
-	vmcore::execute(vmcore::dpath_open_script_path, argv, envp);
+	ipcore::execute(ipcore::dpath_open_script_path, argv, envp);
 }
 
 
 
 void
-vmcore::run_dpath_close_script()
+ipcore::run_dpath_close_script()
 {
 	std::vector<std::string> argv;
 	std::vector<std::string> envp;
@@ -499,32 +499,13 @@ vmcore::run_dpath_close_script()
 	s_dpid << "DPID=" << dpt->get_dpid();
 	envp.push_back(s_dpid.str());
 
-	vmcore::execute(vmcore::dpath_close_script_path, argv, envp);
+	ipcore::execute(ipcore::dpath_close_script_path, argv, envp);
 }
 
 
 
 void
-vmcore::run_port_up_script(std::string const& devname)
-{
-	std::vector<std::string> argv;
-	std::vector<std::string> envp;
-
-	std::stringstream s_dpid;
-	s_dpid << "DPID=" << dpt->get_dpid();
-	envp.push_back(s_dpid.str());
-
-	std::stringstream s_devname;
-	s_devname << "DEVNAME=" << devname;
-	envp.push_back(s_devname.str());
-
-	vmcore::execute(vmcore::port_up_script_path, argv, envp);
-}
-
-
-
-void
-vmcore::run_port_down_script(std::string const& devname)
+ipcore::run_port_up_script(std::string const& devname)
 {
 	std::vector<std::string> argv;
 	std::vector<std::string> envp;
@@ -537,13 +518,32 @@ vmcore::run_port_down_script(std::string const& devname)
 	s_devname << "DEVNAME=" << devname;
 	envp.push_back(s_devname.str());
 
-	vmcore::execute(vmcore::port_down_script_path, argv, envp);
+	ipcore::execute(ipcore::port_up_script_path, argv, envp);
 }
 
 
 
 void
-vmcore::execute(
+ipcore::run_port_down_script(std::string const& devname)
+{
+	std::vector<std::string> argv;
+	std::vector<std::string> envp;
+
+	std::stringstream s_dpid;
+	s_dpid << "DPID=" << dpt->get_dpid();
+	envp.push_back(s_dpid.str());
+
+	std::stringstream s_devname;
+	s_devname << "DEVNAME=" << devname;
+	envp.push_back(s_devname.str());
+
+	ipcore::execute(ipcore::port_down_script_path, argv, envp);
+}
+
+
+
+void
+ipcore::execute(
 		std::string const& executable,
 		std::vector<std::string> argv,
 		std::vector<std::string> envp)
@@ -586,9 +586,9 @@ vmcore::execute(
 
 
 void
-vmcore::dump_state()
+ipcore::dump_state()
 {
-	register_timer(VMCORE_TIMER_DUMP, dump_state_interval);
+	register_timer(IPCORE_TIMER_DUMP, dump_state_interval);
 
 	for (std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> >::iterator
 			it = dptlinks.begin(); it != dptlinks.end(); ++it) {
