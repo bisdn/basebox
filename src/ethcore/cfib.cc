@@ -335,7 +335,7 @@ cfib::add_group_entry_flood(
 		rofl::crofbase *rofbase = fibowner->get_rofbase();
 		rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
-		rofl::cofgroupmod ge(dpt->get_version());
+		rofl::openflow::cofgroupmod ge(dpt->get_version());
 
 		if (modify)
 			ge.set_command(rofl::openflow::OFPGC_MODIFY);
@@ -350,17 +350,17 @@ cfib::add_group_entry_flood(
 				it = ports.begin(); it != ports.end(); ++it) {
 			sport& port = sport::get_sport(dpid, *it);
 
-			rofl::cofbucket bucket(dpt->get_version(), /*weight=*/0, /*watch-port=*/0, /*watch-group=*/0);
+			ge.set_buckets().set_bucket(0).set_watch_group(0);
+			ge.set_buckets().set_bucket(0).set_watch_port(0);
+			ge.set_buckets().set_bucket(0).set_weight(0);
 
 			// only pop vlan, when vid is used untagged on this port, i.e. vid == port.pvid
 			try {
 				if (port.get_pvid() == vid) {
-					bucket.get_actions().append_action_pop_vlan();
+					ge.set_buckets().set_bucket(0).set_actions().append_action_pop_vlan();
 				}
 			} catch (eSportNoPvid& e) {}
-			bucket.get_actions().append_action_output(port.get_portno());
-
-			ge.get_buckets().append_bucket(bucket);
+			ge.set_buckets().set_bucket(0).set_actions().append_action_output(port.get_portno());
 		}
 
 		dpt->send_group_mod_message(ge);
@@ -383,7 +383,7 @@ cfib::drop_group_entry_flood()
 			return;
 		}
 
-		rofl::cofgroupmod ge(dpt->get_version());
+		rofl::openflow::cofgroupmod ge(dpt->get_version());
 
 		ge.set_command(rofl::openflow::OFPGC_DELETE);
 		ge.set_type(rofl::openflow::OFPGT_ALL);	// necessary for OFPGC_DELETE?
