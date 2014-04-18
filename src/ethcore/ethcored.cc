@@ -116,7 +116,11 @@ main(int argc, char** argv)
 		portno = (int)ethercore::cconfig::get_instance().lookup("ethcored.openflow.port");
 	}
 
-	core.rpc_listen_for_dpts(rofl::caddress(AF_INET, "0.0.0.0", portno));
+	enum rofl::csocket::socket_type_t socket_type = rofl::csocket::SOCKET_TYPE_PLAIN;
+	rofl::cparams socket_params = rofl::csocket::get_default_params(socket_type);
+	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string("6653");
+
+	core.rpc_listen_for_dpts(socket_type, socket_params);
 
 	rofl::cioloop::run();
 

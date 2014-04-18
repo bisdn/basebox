@@ -93,7 +93,7 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 			return;
 		}
 
-		rofl::cofflowmod fe(dpt->get_version());
+		rofl::openflow::cofflowmod fe(dpt->get_version());
 
 		/* table 'src_stage_table_id':
 		 *
@@ -104,9 +104,9 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 		if (true) {
 			fe.reset();
 			switch (flow_mod_cmd) {
-			case FLOW_MOD_ADD:		fe.set_command(OFPFC_ADD);				break;
-			case FLOW_MOD_MODIFY:	fe.set_command(OFPFC_MODIFY_STRICT); 	break;
-			case FLOW_MOD_DELETE:	fe.set_command(OFPFC_DELETE_STRICT);	break;
+			case FLOW_MOD_ADD:		fe.set_command(rofl::openflow::OFPFC_ADD);				break;
+			case FLOW_MOD_MODIFY:	fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT); 	break;
+			case FLOW_MOD_DELETE:	fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);	break;
 			}
 			fe.set_table_id(src_stage_table_id);
 			fe.set_priority(0x8000);
@@ -129,9 +129,9 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 		if (true) {
 			fe.reset();
 			switch (flow_mod_cmd) {
-			case FLOW_MOD_ADD:		fe.set_command(OFPFC_ADD);				break;
-			case FLOW_MOD_MODIFY:	fe.set_command(OFPFC_MODIFY_STRICT); 	break;
-			case FLOW_MOD_DELETE:	fe.set_command(OFPFC_DELETE_STRICT);	break;
+			case FLOW_MOD_ADD:		fe.set_command(rofl::openflow::OFPFC_ADD);				break;
+			case FLOW_MOD_MODIFY:	fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT); 	break;
+			case FLOW_MOD_DELETE:	fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);	break;
 			}
 			fe.set_table_id(dst_stage_table_id);
 			fe.set_priority(0x8000);

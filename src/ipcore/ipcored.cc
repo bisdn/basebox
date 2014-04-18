@@ -33,7 +33,7 @@ main(int argc, char** argv)
 		rofl::logging::notice << "[ipcore][main] daemonizing successful" << std::endl;
 	}
 
-	cofhello_elem_versionbitmap versionbitmap;
+	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
 	if (iprotcore::cconfig::get_instance().exists("ipcored.openflow.version")) {
 		versionbitmap.add_ofp_version((int)iprotcore::cconfig::get_instance().lookup("ipcored.openflow.version"));
 	} else {
@@ -41,7 +41,11 @@ main(int argc, char** argv)
 	}
 	dptmap::ipcore core(versionbitmap);
 
-	core.rpc_listen_for_dpts(rofl::caddress(AF_INET, "0.0.0.0", atoi(env_parser.get_arg("port").c_str())));
+	enum rofl::csocket::socket_type_t socket_type = rofl::csocket::SOCKET_TYPE_PLAIN;
+	rofl::cparams socket_params = rofl::csocket::get_default_params(socket_type);
+	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string() = env_parser.get_arg("port");
+
+	core.rpc_listen_for_dpts(socket_type, socket_params);
 
 	rofl::cioloop::run();
 

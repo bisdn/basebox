@@ -110,9 +110,9 @@ dptneigh::flow_mod_add()
 	try {
 		crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
-		this->fe = rofl::cofflowmod(dpt->get_version());
+		this->fe = rofl::openflow::cofflowmod(dpt->get_version());
 
-		fe.set_command(OFPFC_ADD);
+		fe.set_command(rofl::openflow::OFPFC_ADD);
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt->get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
@@ -137,8 +137,8 @@ dptneigh::flow_mod_add()
 		rofl::cmacaddr eth_src(cnetlink::get_instance().get_link(ifindex).get_hwaddr());
 		rofl::cmacaddr eth_dst(cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex).get_lladdr());
 
-		fe.instructions.add_inst_apply_actions().get_actions().append_action_set_field(rofl::coxmatch_ofb_eth_src(eth_src));
-		fe.instructions.set_inst_apply_actions().get_actions().append_action_set_field(rofl::coxmatch_ofb_eth_dst(eth_dst));
+		fe.instructions.add_inst_apply_actions().get_actions().append_action_set_field(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
+		fe.instructions.set_inst_apply_actions().get_actions().append_action_set_field(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
 		fe.instructions.set_inst_apply_actions().get_actions().append_action_output(of_port_no);
 
 		dpt->send_flow_mod_message(fe);
@@ -166,9 +166,9 @@ dptneigh::flow_mod_delete()
 	try {
 		crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
 
-		this->fe = rofl::cofflowmod(dpt->get_version());
+		this->fe = rofl::openflow::cofflowmod(dpt->get_version());
 
-		fe.set_command(OFPFC_DELETE_STRICT);
+		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt->get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);

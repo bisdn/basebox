@@ -105,7 +105,7 @@ dptlink::enqueue(cnetdev *netdev, rofl::cpacket* pkt)
 			throw eDptLinkTapDevNotFound();
 		}
 
-		rofl::cofactions actions(dpt->get_version());
+		rofl::openflow::cofactions actions(dpt->get_version());
 		actions.append_action_output(of_port_no);
 
 		dpt->send_packet_out_message(
@@ -157,7 +157,7 @@ void
 dptlink::handle_port_status()
 {
 	try {
-		rofl::cofport& port = dpt->set_ports().set_port(of_port_no);
+		rofl::openflow::cofport& port = dpt->set_ports().set_port(of_port_no);
 
 		uint32_t config = dpt->get_ports().get_port(of_port_no).get_config();
 

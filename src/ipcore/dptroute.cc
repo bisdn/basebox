@@ -177,9 +177,9 @@ dptroute::route_created(
 
 		set_nexthops();
 
-		flowentry = rofl::cofflowmod(dpt->get_version());
+		flowentry = rofl::openflow::cofflowmod(dpt->get_version());
 
-		flowentry.set_command(OFPFC_ADD);
+		flowentry.set_command(rofl::openflow::OFPFC_ADD);
 		flowentry.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt->get_version()));
 		flowentry.set_idle_timeout(0);
 		flowentry.set_hard_timeout(0);
@@ -258,7 +258,7 @@ dptroute::route_deleted(
 #endif
 
 	try {
-		flowentry.set_command(OFPFC_DELETE_STRICT);
+		flowentry.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 
 		dpt->send_flow_mod_message(flowentry);
 

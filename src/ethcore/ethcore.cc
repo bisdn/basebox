@@ -318,10 +318,10 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 	/*
 	 * iterate over all ports announced by data path, create sport instances and set VID memberships
 	 */
-	for (std::map<uint32_t, rofl::cofport*>::const_iterator
-			it = dpt.get_ports().begin(); it != dpt.get_ports().end(); ++it) {
+	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
+			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
 
-		rofl::cofport* port = it->second;
+		rofl::openflow::cofport* port = it->second;
 		try {
 			sport *sp = new sport(this, dpt.get_dpid(), port->get_port_no(), port->get_name(), port_stage_table_id, default_vid);
 			logging::info << "[ethcore] adding port:" << std::endl << *sp;
@@ -428,7 +428,7 @@ ethcore::handle_packet_in(crofdpt& dpt, cofmsg_packet_in& msg, uint8_t aux_id)
 		// drop frame on data path
 		logging::crit << "[ethcore] no PVID for sport instance found for Packet-In message" << msg << std::endl;
 
-		rofl::cofactions actions(dpt.get_version());
+		rofl::openflow::cofactions actions(dpt.get_version());
 		dpt.send_packet_out_message(msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
 	}
 }

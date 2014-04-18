@@ -100,19 +100,19 @@ public:
 
 
 	virtual void
-	handle_port_status(rofl::crofdpt& dpt, rofl::cofmsg_port_status& msg, uint8_t aux_id = 0);
+	handle_port_status(rofl::crofdpt& dpt, rofl::openflow::cofmsg_port_status& msg, uint8_t aux_id = 0);
 
 	virtual void
-	handle_packet_out(rofl::crofctl& ctl, rofl::cofmsg_packet_out& msg, uint8_t aux_id = 0);
+	handle_packet_out(rofl::crofctl& ctl, rofl::openflow::cofmsg_packet_out& msg, uint8_t aux_id = 0);
 
 	virtual void
-	handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_t aux_id = 0);
+	handle_packet_in(rofl::crofdpt& dpt, rofl::openflow::cofmsg_packet_in& msg, uint8_t aux_id = 0);
 
 	virtual void
-	handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id = 0);
+	handle_error(rofl::crofdpt& dpt, rofl::openflow::cofmsg_error& msg, uint8_t aux_id = 0);
 
 	virtual void
-	handle_flow_removed(rofl::crofdpt& dpt, rofl::cofmsg_flow_removed& msg, uint8_t aux_id = 0);
+	handle_flow_removed(rofl::crofdpt& dpt, rofl::openflow::cofmsg_flow_removed& msg, uint8_t aux_id = 0);
 
 	virtual void
 	handle_timeout(int opaque, void *data = (void*)0);

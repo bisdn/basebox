@@ -187,7 +187,7 @@ public:
 	 */
 	void
 	handle_packet_in(
-			rofl::cofmsg_packet_in& msg);
+			rofl::openflow::cofmsg_packet_in& msg);
 
 	/**
 	 *
@@ -196,7 +196,7 @@ public:
 	 */
 	void
 	handle_flow_removed(
-			rofl::cofmsg_flow_removed& msg);
+			rofl::openflow::cofmsg_flow_removed& msg);
 
 private:
 

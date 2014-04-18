@@ -224,9 +224,9 @@ cfib::add_flow_mod_in_stage()
 	rofl::crofbase *rofbase = fibowner->get_rofbase();
 	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
-	rofl::cofflowmod fe(dpt->get_version());
+	rofl::openflow::cofflowmod fe(dpt->get_version());
 
-	fe.set_command(OFPFC_ADD);
+	fe.set_command(rofl::openflow::OFPFC_ADD);
 	fe.set_table_id(src_stage_table_id);
 	fe.set_priority(0x4000);
 	//fe.set_idle_timeout(0);
@@ -255,9 +255,9 @@ cfib::drop_flow_mod_in_stage()
 			return;
 		}
 
-		rofl::cofflowmod fe(dpt->get_version());
+		rofl::openflow::cofflowmod fe(dpt->get_version());
 
-		fe.set_command(OFPFC_DELETE_STRICT);
+		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_table_id(src_stage_table_id);
 		fe.set_priority(0x4000);
 		//fe.set_idle_timeout(0);
@@ -280,9 +280,9 @@ cfib::add_flow_mod_flood()
 	rofl::crofbase *rofbase = fibowner->get_rofbase();
 	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
-	rofl::cofflowmod fe(dpt->get_version());
+	rofl::openflow::cofflowmod fe(dpt->get_version());
 
-	fe.set_command(OFPFC_ADD);
+	fe.set_command(rofl::openflow::OFPFC_ADD);
 	fe.set_table_id(dst_stage_table_id);
 	fe.set_priority(0x4000);
 	//fe.set_idle_timeout(0);
@@ -308,9 +308,9 @@ cfib::drop_flow_mod_flood()
 			return;
 		}
 
-		rofl::cofflowmod fe(dpt->get_version());
+		rofl::openflow::cofflowmod fe(dpt->get_version());
 
-		fe.set_command(OFPFC_DELETE_STRICT);
+		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_table_id(dst_stage_table_id);
 		fe.set_priority(0x4000);
 		//fe.set_idle_timeout(0);
@@ -399,7 +399,7 @@ cfib::drop_group_entry_flood()
 
 
 void
-cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
+cfib::handle_packet_in(rofl::openflow::cofmsg_packet_in& msg)
 {
 	try {
 		/* get sport instance for in-port */
@@ -407,8 +407,8 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 		sport& port = sport::get_sport(dpid, inport);
 
 		/* get eth-src and eth-dst */
-		rofl::cmacaddr eth_src = msg.get_packet().ether()->get_dl_src();
-		rofl::cmacaddr eth_dst = msg.get_packet().ether()->get_dl_dst();
+		rofl::cmacaddr eth_src = msg.set_packet().ether()->get_dl_src();
+		rofl::cmacaddr eth_dst = msg.set_packet().ether()->get_dl_dst();
 
 		logging::info << "[ethcore][fib] frame seen: " << eth_src << " => " << eth_dst << " on vid:" << std::dec << (int)vid << std::endl;
 
@@ -460,7 +460,7 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 			rofl::crofbase *rofbase = fibowner->get_rofbase();
 			rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
 
-			rofl::cofactions actions(dpt->get_version());
+			rofl::openflow::cofactions actions(dpt->get_version());
 			actions.append_action_group(flood_group_id);
 
 			if (rofl::openflow::OFP_NO_BUFFER == msg.get_buffer_id()) {
@@ -472,7 +472,7 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 
 
 
-	} catch (rofl::eOFmatchNotFound& e) {
+	} catch (rofl::openflow::eOFmatchNotFound& e) {
 		logging::info << "[ethcore][fib] dropping frame, unable to find portno in packet-in" << std::endl;
 	} catch (eSportNotFound& e) {
 		logging::info << "[ethcore][fib] dropping frame, unable to find sport instance for packet-in" << std::endl;
@@ -485,7 +485,7 @@ cfib::handle_packet_in(rofl::cofmsg_packet_in& msg)
 
 void
 cfib::handle_flow_removed(
-		rofl::cofmsg_flow_removed& msg)
+		rofl::openflow::cofmsg_flow_removed& msg)
 {
 	try {
 		/* get sport instance for in-port */
@@ -506,7 +506,7 @@ cfib::handle_flow_removed(
 
 		fibtable.erase(eth_src);
 
-	} catch (rofl::eOFmatchNotFound& e) {
+	} catch (rofl::openflow::eOFmatchNotFound& e) {
 		logging::info << "[ethcore][fib] dropping frame, unable to find portno in packet-in" << std::endl;
 	} catch (eSportNotFound& e) {
 		logging::info << "[ethcore][fib] dropping frame, unable to find sport instance for packet-in" << std::endl;
@@ -530,9 +530,9 @@ cfib::block_stp()
 		return;
 	}
 
-	rofl::cofflowmod fe(dpt->get_version());
+	rofl::openflow::cofflowmod fe(dpt->get_version());
 
-	fe.set_command(OFPFC_ADD);
+	fe.set_command(rofl::openflow::OFPFC_ADD);
 	fe.set_priority(0xffff);
 	fe.set_idle_timeout(0);
 	fe.set_hard_timeout(0);

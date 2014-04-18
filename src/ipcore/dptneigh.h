@@ -40,7 +40,7 @@ private:
 	uint8_t 					of_table_id;
 	int							ifindex;
 	uint16_t					nbindex;
-	rofl::cofflowmod			fe;
+	rofl::openflow::cofflowmod	fe;
 
 public:
 
@@ -117,7 +117,7 @@ public:
 	/**
 	 *
 	 */
-	rofl::cofflowmod get_flowentry() const { return fe; };
+	rofl::openflow::cofflowmod get_flowentry() const { return fe; };
 
 
 private:

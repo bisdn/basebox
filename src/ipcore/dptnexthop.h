@@ -41,7 +41,7 @@ private:
 	uint8_t						of_table_id;
 	int							ifindex;
 	uint16_t					nbindex;
-	rofl::cofflowmod			fe;
+	rofl::openflow::cofflowmod	fe;
 	rofl::caddress				dstaddr; // destination address when acting as a gateway
 	rofl::caddress				dstmask; // destination mask when acting as a gateway
 
@@ -122,7 +122,7 @@ public:
 	/**
 	 *
 	 */
-	rofl::cofflowmod get_flowentry() const { return fe; };
+	rofl::openflow::cofflowmod get_flowentry() const { return fe; };
 
 
 	/**

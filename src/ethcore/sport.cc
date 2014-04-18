@@ -265,9 +265,9 @@ sport::flow_mod_add(uint16_t vid, bool tagged)
 
 		// set incoming rule for switch port
 		if (true) {
-			rofl::cofflowmod fe(dpt->get_version());
+			rofl::openflow::cofflowmod fe(dpt->get_version());
 
-			fe.set_command(OFPFC_ADD);
+			fe.set_command(rofl::openflow::OFPFC_ADD);
 			fe.set_idle_timeout(0);
 			fe.set_hard_timeout(0);
 			fe.set_table_id(table_id);
@@ -282,7 +282,7 @@ sport::flow_mod_add(uint16_t vid, bool tagged)
 			// push vlan tag, when packet was received untagged
 			if (not tagged) {
 				fe.instructions.add_inst_apply_actions().get_actions().append_action_push_vlan(rofl::fvlanframe::VLAN_CTAG_ETHER);
-				fe.instructions.set_inst_apply_actions().get_actions().append_action_set_field(rofl::coxmatch_ofb_vlan_vid(vid));
+				fe.instructions.set_inst_apply_actions().get_actions().append_action_set_field(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
 			}
 			// either tagged or untagged: move packet to next table
 			fe.instructions.add_inst_goto_table().set_table_id(table_id + 1);
@@ -328,9 +328,9 @@ sport::flow_mod_delete(uint16_t vid, bool tagged)
 
 		// set incoming rule for switch port
 		if (true) {
-			rofl::cofflowmod fe(dpt->get_version());
+			rofl::openflow::cofflowmod fe(dpt->get_version());
 
-			fe.set_command(OFPFC_DELETE_STRICT);
+			fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 			fe.set_idle_timeout(0);
 			fe.set_hard_timeout(0);
 			fe.set_table_id(table_id);

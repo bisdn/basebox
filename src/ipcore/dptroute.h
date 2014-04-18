@@ -43,7 +43,7 @@ private:
 	rofl::crofdpt					*dpt;
 	uint8_t					 		table_id;
 	unsigned int			 		rtindex;
-	rofl::cofflowmod		 		flowentry;
+	rofl::openflow::cofflowmod			flowentry;
 
 	/* we make here one assumtpion: only one nexthop exists per neighbor and route
 	 * this should be valid under all circumstances

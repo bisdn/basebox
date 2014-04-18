@@ -122,8 +122,8 @@ ipcore::handle_dpath_open(
 		/*
 		 * purge all entries from data path
 		 */
-		rofl::cofflowmod fe(dpt.get_version());
-		fe.set_command(OFPFC_DELETE);
+		rofl::openflow::cofflowmod fe(dpt.get_version());
+		fe.set_command(rofl::openflow::OFPFC_DELETE);
 		fe.set_table_id(rofl::openflow::base::get_ofptt_all(dpt.get_version()));
 		dpt.send_flow_mod_message(fe);
 
@@ -144,10 +144,10 @@ ipcore::handle_dpath_open(
 		/*
 		 * create new tap devices for (reconnecting?) data path
 		 */
-		std::map<uint32_t, rofl::cofport*> ports = dpt.get_ports();
-		for (std::map<uint32_t, rofl::cofport*>::iterator
+		std::map<uint32_t, rofl::openflow::cofport*> ports = dpt.get_ports().get_ports();
+		for (std::map<uint32_t, rofl::openflow::cofport*>::iterator
 				it = ports.begin(); it != ports.end(); ++it) {
-			rofl::cofport *port = it->second;
+			rofl::openflow::cofport *port = it->second;
 			if (dptlinks[&dpt].find(port->get_port_no()) == dptlinks[&dpt].end()) {
 				dptlinks[&dpt][port->get_port_no()] = new dptlink(this, &dpt, port->get_port_no());
 			}
@@ -159,9 +159,9 @@ ipcore::handle_dpath_open(
 		/*
 		 * install default FlowMod entry for table 0 => GotoTable(1)
 		 */
-		rofl::cofflowmod fed = rofl::cofflowmod(dpt.get_version());
+		rofl::openflow::cofflowmod fed = rofl::openflow::cofflowmod(dpt.get_version());
 
-		fed.set_command(OFPFC_ADD);
+		fed.set_command(rofl::openflow::OFPFC_ADD);
 		fed.set_table_id(0);
 		fed.set_idle_timeout(0);
 		fed.set_hard_timeout(0);
@@ -200,7 +200,7 @@ ipcore::handle_dpath_close(
 void
 ipcore::handle_port_status(
 		rofl::crofdpt& dpt,
-		rofl::cofmsg_port_status& msg,
+		rofl::openflow::cofmsg_port_status& msg,
 		uint8_t aux_id)
 {
 	if (this->dpt != &dpt) {
@@ -214,20 +214,20 @@ ipcore::handle_port_status(
 
 	try {
 		switch (msg.get_reason()) {
-		case OFPPR_ADD: {
+		case rofl::openflow::OFPPR_ADD: {
 			if (dptlinks[&dpt].find(port_no) == dptlinks[&dpt].end()) {
 				dptlinks[&dpt][port_no] = new dptlink(this, &dpt, msg.get_port().get_port_no());
 				run_port_up_script(msg.get_port().get_name());
 				dptlinks[&dpt][port_no]->open();
 			}
 		} break;
-		case OFPPR_MODIFY: {
+		case rofl::openflow::OFPPR_MODIFY: {
 			if (dptlinks[&dpt].find(port_no) != dptlinks[&dpt].end()) {
 				dptlinks[&dpt][port_no]->handle_port_status();
 				//run_port_up_script(msg->get_port().get_name()); // TODO: check flags
 			}
 		} break;
-		case OFPPR_DELETE: {
+		case rofl::openflow::OFPPR_DELETE: {
 			if (dptlinks[&dpt].find(port_no) != dptlinks[&dpt].end()) {
 				dptlinks[&dpt][port_no]->close();
 				delete dptlinks[&dpt][port_no];
@@ -253,7 +253,7 @@ ipcore::handle_port_status(
 
 
 void
-ipcore::handle_packet_out(rofl::crofctl& ctl, rofl::cofmsg_packet_out& msg, uint8_t aux_id)
+ipcore::handle_packet_out(rofl::crofctl& ctl, rofl::openflow::cofmsg_packet_out& msg, uint8_t aux_id)
 {
 
 }
@@ -262,7 +262,7 @@ ipcore::handle_packet_out(rofl::crofctl& ctl, rofl::cofmsg_packet_out& msg, uint
 
 
 void
-ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_t aux_id)
+ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::openflow::cofmsg_packet_in& msg, uint8_t aux_id)
 {
 	try {
 		uint32_t port_no = msg.get_match().get_in_port();
@@ -276,7 +276,7 @@ ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_
 		dptlinks[&dpt][port_no]->handle_packet_in(msg.get_packet());
 
 		if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()) != msg.get_buffer_id()) {
-			rofl::cofactions actions(dpt.get_version());
+			rofl::openflow::cofactions actions(dpt.get_version());
 			dpt.send_packet_out_message(msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
 		}
 
@@ -290,7 +290,7 @@ ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::cofmsg_packet_in& msg, uint8_
 
 
 void
-ipcore::handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id)
+ipcore::handle_error(rofl::crofdpt& dpt, rofl::openflow::cofmsg_error& msg, uint8_t aux_id)
 {
 	rofl::logging::warn << "[ipcore] error message rcvd:" << std::endl << msg;
 }
@@ -298,7 +298,7 @@ ipcore::handle_error(rofl::crofdpt& dpt, rofl::cofmsg_error& msg, uint8_t aux_id
 
 
 void
-ipcore::handle_flow_removed(rofl::crofdpt& dpt, rofl::cofmsg_flow_removed& msg, uint8_t aux_id)
+ipcore::handle_flow_removed(rofl::crofdpt& dpt, rofl::openflow::cofmsg_flow_removed& msg, uint8_t aux_id)
 {
 	rofl::logging::info << "[ipcore] Flow-Removed message rcvd:" << std::endl << msg;
 }
@@ -406,9 +406,9 @@ ipcore::block_stp_frames()
 	if (0 == dpt)
 		return;
 
-	rofl::cofflowmod fe(dpt->get_version());
+	rofl::openflow::cofflowmod fe(dpt->get_version());
 
-	fe.set_command(OFPFC_ADD);
+	fe.set_command(rofl::openflow::OFPFC_ADD);
 	fe.set_table_id(0);
 	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
 
@@ -423,9 +423,9 @@ ipcore::unblock_stp_frames()
 	if (0 == dpt)
 		return;
 
-	rofl::cofflowmod fe(dpt->get_version());
+	rofl::openflow::cofflowmod fe(dpt->get_version());
 
-	fe.set_command(OFPFC_DELETE_STRICT);
+	fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 	fe.set_table_id(0);
 	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
 
@@ -440,9 +440,9 @@ ipcore::redirect_ipv4_multicast()
 	if (0 == dpt)
 		return;
 
-	rofl::cofflowmod fe(dpt->get_version());
+	rofl::openflow::cofflowmod fe(dpt->get_version());
 
-	fe.set_command(OFPFC_ADD);
+	fe.set_command(rofl::openflow::OFPFC_ADD);
 	fe.set_table_id(0);
 	fe.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 	fe.match.set_ipv4_dst(rofl::caddress(AF_INET, "224.0.0.0"), rofl::caddress(AF_INET, "240.0.0.0"));
@@ -460,9 +460,9 @@ ipcore::redirect_ipv6_multicast()
 	if (0 == dpt)
 		return;
 
-	rofl::cofflowmod fe(dpt->get_version());
+	rofl::openflow::cofflowmod fe(dpt->get_version());
 
-	fe.set_command(OFPFC_ADD);
+	fe.set_command(rofl::openflow::OFPFC_ADD);
 	fe.set_table_id(0);
 	fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 	fe.match.set_ipv6_dst(rofl::caddress(AF_INET6, "ff00::"), rofl::caddress(AF_INET6, "ff00::"));
