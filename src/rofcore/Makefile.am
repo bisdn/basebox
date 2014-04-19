@@ -5,8 +5,14 @@ SUBDIRS =
 sbin_PROGRAMS = rofcored
 
 rofcored_SOURCES = rofcored.cpp \
-		rofconf.h \
-		rofconf.cpp
+		croflog.hpp \
+		croflog.cpp \
+		crofconf.hpp \
+		crofconf.cpp \
+		crofproxies.hpp \
+		crofproxies.cpp \
+		crofproxy.hpp \
+		crofproxy.cpp
 		
 rofcored_LDADD = -lpthread \
 	-lrt

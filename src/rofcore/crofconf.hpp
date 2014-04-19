@@ -1,12 +1,12 @@
 /*
- * cconfig.h
+ * crofconf.h
  *
  *  Created on: 17.12.2013
  *      Author: andreas
  */
 
-#ifndef CCONFIG_H_
-#define CCONFIG_H_
+#ifndef CROFCONF_H_
+#define CROFCONF_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,10 +24,10 @@ extern "C" {
 
 using namespace libconfig;
 
-namespace iprotcore
+namespace rofcore
 {
 
-class cconfig : public Config {
+class crofconf : public Config {
 private:
 	static std::string const CONFPATH;
 
@@ -35,37 +35,37 @@ private:
 
 private:
 
-    static cconfig *scconfig;
+    static crofconf *scrofconf;
 
     /**
      * @brief	Make copy constructor private for singleton
      */
-    cconfig(cconfig const& conf) {};
+    crofconf(crofconf const& conf) {};
 
 	/**
 	 *
 	 */
-	cconfig() {};
+	crofconf() {};
 
 	/**
 	 *
 	 */
 	virtual
-	~cconfig() {};
+	~crofconf() {};
 
 public:
 
 	/**
 	 *
 	 */
-    static cconfig&
+    static crofconf&
     get_instance();
 
     /**
      *
      */
     void
-    open(std::string const& confpath = cconfig::CONFPATH);
+    open(std::string const& confpath = crofconf::CONFPATH);
 
 
 public:
@@ -74,4 +74,4 @@ public:
 
 }; // end of namespace
 
-#endif /* CCONFIG_H_ */
+#endif /* CROFCONF_H_ */

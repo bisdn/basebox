@@ -1,4 +1,5 @@
-#include "rofconf.h"
+#include "crofconf.hpp"
+#include "croflog.hpp"
 
 #include <rofl/common/ciosrv.h>
 #include <rofl/common/csocket.h>
@@ -34,8 +35,8 @@ main(int argc, char** argv)
 	}
 
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-	if (iprotcore::cconfig::get_instance().exists("ipcored.openflow.version")) {
-		versionbitmap.add_ofp_version((int)iprotcore::cconfig::get_instance().lookup("ipcored.openflow.version"));
+	if (rofcore::crofconf::get_instance().exists("ipcored.openflow.version")) {
+		versionbitmap.add_ofp_version((int)rofcore::crofconf::get_instance().lookup("ipcored.openflow.version"));
 	} else {
 		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
 	}
