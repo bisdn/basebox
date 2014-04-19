@@ -120,6 +120,7 @@ AC_CONFIG_FILES([
 	src/ipcore/Makefile
 	src/ethcore/Makefile
 	src/dhcpv6snoop/Makefile
+	src/rofcore/Makefile
 	
 	test/Makefile
 	test/ipcore/Makefile
