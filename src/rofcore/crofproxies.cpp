@@ -210,13 +210,13 @@ void
 crofproxies::handle_dpath_open(
 		rofl::crofdpt& dpt)
 {
-	rofl::logging::info << "[crofproxies] dpt attached with dpid: " << dpt.get_dpid_s() << std::endl;
+	rofcore::logging::info << "[crofproxies] dpt attached with dpid: " << dpt.get_dpid_s() << std::endl;
 
 	try {
 		add_proxy(cdptid(dpt.get_dpid())).handle_dpath_open(dpt);
 	} catch (eRofProxyBusy& e) {
 
-		rofl::logging::error << "[crofproxies] unable to create node instance" << std::endl;
+		rofcore::logging::error << "[crofproxies] unable to create node instance" << std::endl;
 		throw;
 
 	}
@@ -228,7 +228,7 @@ void
 crofproxies::handle_dpath_close(
 		rofl::crofdpt& dpt)
 {
-	rofl::logging::info << "[crofproxies] dpt detached with dpid: " << dpt.get_dpid_s() << std::endl;
+	rofcore::logging::info << "[crofproxies] dpt detached with dpid: " << dpt.get_dpid_s() << std::endl;
 
 	if (has_proxy(cdptid(dpt.get_dpid()))) {
 		set_proxy(cdptid(dpt.get_dpid())).handle_dpath_close(dpt);
@@ -245,7 +245,7 @@ crofproxies::handle_features_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_features_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -258,7 +258,7 @@ crofproxies::handle_features_reply(
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_features_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -270,7 +270,7 @@ crofproxies::handle_features_reply_timeout(rofl::crofdpt& dpt, uint32_t xid)
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_features_reply_timeout(dpt, xid);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -283,7 +283,7 @@ crofproxies::handle_get_config_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_get_config_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -295,7 +295,7 @@ crofproxies::handle_get_config_reply(rofl::crofdpt& dpt, rofl::openflow::cofmsg_
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_get_config_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -307,7 +307,7 @@ crofproxies::handle_get_config_reply_timeout(rofl::crofdpt& dpt, uint32_t xid)
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_get_config_reply_timeout(dpt, xid);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -320,7 +320,7 @@ crofproxies::handle_desc_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_desc_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -332,7 +332,7 @@ crofproxies::handle_desc_stats_reply(rofl::crofdpt& dpt, rofl::openflow::cofmsg_
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_desc_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -345,7 +345,7 @@ crofproxies::handle_table_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_table_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -357,7 +357,7 @@ crofproxies::handle_table_stats_reply(rofl::crofdpt& dpt, rofl::openflow::cofmsg
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_table_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -370,7 +370,7 @@ crofproxies::handle_port_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_port_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -382,7 +382,7 @@ crofproxies::handle_port_stats_reply(rofl::crofdpt& dpt, rofl::openflow::cofmsg_
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_port_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -395,7 +395,7 @@ crofproxies::handle_flow_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_flow_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -407,7 +407,7 @@ crofproxies::handle_flow_stats_reply(rofl::crofdpt& dpt, rofl::openflow::cofmsg_
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_flow_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -420,7 +420,7 @@ crofproxies::handle_aggregate_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_aggregate_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -432,7 +432,7 @@ crofproxies::handle_aggregate_stats_reply(rofl::crofdpt& dpt, rofl::openflow::co
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_aggregate_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -445,7 +445,7 @@ crofproxies::handle_queue_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_queue_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -457,7 +457,7 @@ crofproxies::handle_queue_stats_reply(rofl::crofdpt& dpt, rofl::openflow::cofmsg
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_queue_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -470,7 +470,7 @@ crofproxies::handle_group_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_group_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -482,7 +482,7 @@ crofproxies::handle_group_stats_reply(rofl::crofdpt& dpt, rofl::openflow::cofmsg
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_group_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -495,7 +495,7 @@ crofproxies::handle_group_desc_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_group_desc_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -507,7 +507,7 @@ crofproxies::handle_group_desc_stats_reply(rofl::crofdpt& dpt, rofl::openflow::c
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_group_desc_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -520,7 +520,7 @@ crofproxies::handle_group_features_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_group_features_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -532,7 +532,7 @@ crofproxies::handle_group_features_stats_reply(rofl::crofdpt& dpt, rofl::openflo
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_group_features_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -545,7 +545,7 @@ crofproxies::handle_table_features_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_table_features_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -557,7 +557,7 @@ crofproxies::handle_table_features_stats_reply(rofl::crofdpt& dpt, rofl::openflo
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_table_features_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -570,7 +570,7 @@ crofproxies::handle_port_desc_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_port_desc_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -582,7 +582,7 @@ crofproxies::handle_port_desc_stats_reply(rofl::crofdpt& dpt, rofl::openflow::co
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_port_desc_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -595,7 +595,7 @@ crofproxies::handle_experimenter_stats_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_experimenter_stats_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -608,7 +608,7 @@ crofproxies::handle_experimenter_stats_reply(
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_experimenter_stats_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -621,7 +621,7 @@ crofproxies::handle_packet_out(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_packet_out(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -633,7 +633,7 @@ crofproxies::handle_packet_in(rofl::crofdpt& dpt, rofl::openflow::cofmsg_packet_
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_packet_in(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -646,7 +646,7 @@ crofproxies::handle_barrier_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_barrier_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -658,7 +658,7 @@ crofproxies::handle_barrier_reply(rofl::crofdpt& dpt, rofl::openflow::cofmsg_bar
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_barrier_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -670,7 +670,7 @@ crofproxies::handle_barrier_reply_timeout(rofl::crofdpt& dpt, uint32_t xid)
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_barrier_reply_timeout(dpt, xid);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -683,7 +683,7 @@ crofproxies::handle_error_message(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_error_message(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -695,7 +695,7 @@ crofproxies::handle_error_message(rofl::crofdpt& dpt, rofl::openflow::cofmsg_err
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_error_message(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -708,7 +708,7 @@ crofproxies::handle_flow_mod(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_flow_mod(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -721,7 +721,7 @@ crofproxies::handle_group_mod(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_group_mod(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -734,7 +734,7 @@ crofproxies::handle_table_mod(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_table_mod(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -747,7 +747,7 @@ crofproxies::handle_port_mod(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_port_mod(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -759,7 +759,7 @@ crofproxies::handle_flow_removed(rofl::crofdpt& dpt, rofl::openflow::cofmsg_flow
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_flow_removed(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -771,7 +771,7 @@ crofproxies::handle_port_status(rofl::crofdpt& dpt, rofl::openflow::cofmsg_port_
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_port_status(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -784,7 +784,7 @@ crofproxies::handle_queue_get_config_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_queue_get_config_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -796,7 +796,7 @@ crofproxies::handle_queue_get_config_reply(rofl::crofdpt& dpt, rofl::openflow::c
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_queue_get_config_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -808,7 +808,7 @@ crofproxies::handle_queue_get_config_reply_timeout(rofl::crofdpt& dpt, uint32_t 
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_queue_get_config_reply_timeout(dpt, xid);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -821,7 +821,7 @@ crofproxies::handle_set_config(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_set_config(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -834,7 +834,7 @@ crofproxies::handle_experimenter_message(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_experimenter_message(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -846,7 +846,7 @@ crofproxies::handle_experimenter_message(rofl::crofdpt& dpt, rofl::openflow::cof
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_experimenter_message(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -858,7 +858,7 @@ crofproxies::handle_experimenter_timeout(rofl::crofdpt& dpt, uint32_t xid)
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_experimenter_timeout(dpt, xid);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -872,7 +872,7 @@ crofproxies::handle_role_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_role_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -884,7 +884,7 @@ crofproxies::handle_role_reply(rofl::crofdpt& dpt, rofl::openflow::cofmsg_role_r
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_role_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -896,7 +896,7 @@ crofproxies::handle_role_reply_timeout(rofl::crofdpt& dpt, uint32_t xid)
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_role_reply_timeout(dpt, xid);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -909,7 +909,7 @@ crofproxies::handle_get_async_config_request(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_get_async_config_request(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
@@ -921,7 +921,7 @@ crofproxies::handle_get_async_config_reply(rofl::crofdpt& dpt, rofl::openflow::c
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_get_async_config_reply(dpt, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
 }
 
@@ -933,9 +933,8 @@ crofproxies::handle_get_async_config_reply_timeout(rofl::crofdpt& dpt, uint32_t 
 	try {
 		set_proxy(cdptid(dpt.get_dpid())).handle_get_async_config_reply_timeout(dpt, xid);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for dpid:" << dpt.get_dpid() << " not found" << std::endl;
 	}
-
 }
 
 
@@ -947,7 +946,7 @@ crofproxies::handle_set_async_config(
 	try {
 		set_proxy(cctlid(ctl.get_ctlid())).handle_set_async_config(ctl, msg, aux_id);
 	} catch (eRofProxyNotFound& e) {
-		rofl::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
+		rofcore::logging::error << "[crofproxies] crofproxy instance for ctlid:" << ctl.get_ctlid() << " not found" << std::endl;
 	}
 }
 
