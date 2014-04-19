@@ -9,7 +9,9 @@
 
 using namespace rofcore;
 
-crofproxy::crofproxy()
+crofproxy::crofproxy(
+		crofproxy_env* rofproxy_env) :
+				rofproxy_env(rofproxy_env)
 {
 
 }

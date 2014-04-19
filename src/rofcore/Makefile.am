@@ -12,7 +12,11 @@ rofcored_SOURCES = rofcored.cpp \
 		crofproxies.hpp \
 		crofproxies.cpp \
 		crofproxy.hpp \
-		crofproxy.cpp
+		crofproxy.cpp \
+		cdptid.hpp \
+		cdptid.cpp \
+		cctlid.hpp \
+		cctlid.cpp
 		
 rofcored_LDADD = -lpthread \
 	-lrt
