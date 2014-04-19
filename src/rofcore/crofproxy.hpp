@@ -65,6 +65,13 @@ public:
 
 public:
 
+	/**
+	 *
+	 */
+	virtual void
+	signal_handler(
+			int signum);
+
 	// TODO
 
 public:

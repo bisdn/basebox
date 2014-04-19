@@ -107,6 +107,9 @@ if (test "${have_libconfig}" = "yes"); then
 fi
 
 
+# version
+m4_include([config/versioning.m4])
+
 
 #Check libs used
 #AC_CHECK_LIB(pthread, pthread_create)

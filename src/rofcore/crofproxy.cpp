@@ -45,6 +45,15 @@ crofproxy::operator= (
 
 
 
+void
+crofproxy::signal_handler(
+		int signum)
+{
+
+}
+
+
+
 crofproxy*
 crofproxy::crofproxy_factory(
 		enum rofproxy_type_t proxy_type)
@@ -57,6 +66,7 @@ crofproxy::crofproxy_factory(
 		// return new cipcore();
 	} break;
 	}
+	throw eRofProxyNotFound();
 }
 
 

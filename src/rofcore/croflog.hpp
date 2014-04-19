@@ -12,7 +12,7 @@
 
 namespace rofcore {
 
-class croflog {
+class logging {
 public:
 
 	static std::filebuf devnull;

@@ -24,6 +24,7 @@ namespace rofcore {
 
 class crofproxies : public rofl::crofbase {
 
+	static std::set<crofproxies*>			rofproxies;
 	enum crofproxy::rofproxy_type_t			proxy_type;
 	std::map<uint64_t, crofproxy*>			proxies;
 
@@ -31,9 +32,20 @@ public:
 
 	/**
 	 *
+	 * @param signum
+	 */
+	static void
+	crofproxies_sa_handler(
+			int signum);
+
+public:
+
+	/**
+	 *
 	 */
 	crofproxies(
-			enum crofproxy::rofproxy_type_t proxy_type);
+			enum crofproxy::rofproxy_type_t proxy_type,
+			rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap);
 
 	/**
 	 *
@@ -55,6 +67,13 @@ public:
 			crofproxies const& rofproxies);
 
 public:
+
+	/**
+	 *
+	 */
+	virtual void
+	signal_handler(
+			int signum);
 
 	/**
 	 *

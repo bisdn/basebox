@@ -14,107 +14,107 @@
 
 using namespace rofcore;
 
-std::filebuf croflog::devnull;
-std::ostream croflog::emerg	 (&croflog::devnull);
-std::ostream croflog::alert  (&croflog::devnull);
-std::ostream croflog::crit   (&croflog::devnull);
-std::ostream croflog::error  (&croflog::devnull);
-std::ostream croflog::warn   (&croflog::devnull);
-std::ostream croflog::notice (&croflog::devnull);
-std::ostream croflog::info   (&croflog::devnull);
-std::ostream croflog::debug  (&croflog::devnull);
-std::ostream croflog::trace  (&croflog::devnull);
+std::filebuf logging::devnull;
+std::ostream logging::emerg	 (&logging::devnull);
+std::ostream logging::alert  (&logging::devnull);
+std::ostream logging::crit   (&logging::devnull);
+std::ostream logging::error  (&logging::devnull);
+std::ostream logging::warn   (&logging::devnull);
+std::ostream logging::notice (&logging::devnull);
+std::ostream logging::info   (&logging::devnull);
+std::ostream logging::debug  (&logging::devnull);
+std::ostream logging::trace  (&logging::devnull);
 
-std::streamsize croflog::width(70);
+std::streamsize logging::width(70);
 unsigned int indent::width(0);
 
 
 void
-croflog::init()
+logging::init()
 {
-	if (not croflog::devnull.is_open()) {
-		croflog::devnull.open("/dev/null", std::ios::out);
+	if (not logging::devnull.is_open()) {
+		logging::devnull.open("/dev/null", std::ios::out);
 	}
 }
 
 
 void
-croflog::close()
+logging::close()
 {
-	if (croflog::devnull.is_open()) {
-		croflog::devnull.close();
+	if (logging::devnull.is_open()) {
+		logging::devnull.close();
 	}
 }
 
 
 
 void
-croflog::set_debug_level(
+logging::set_debug_level(
 			unsigned int debug_level)
 {
-	croflog::init();
+	logging::init();
 
 	// EMERG
 	if (debug_level >= EMERG) {
-		croflog::emerg .rdbuf(std::cerr.rdbuf());
+		logging::emerg .rdbuf(std::cerr.rdbuf());
 	} else {
-		croflog::emerg .rdbuf(&croflog::devnull);
+		logging::emerg .rdbuf(&logging::devnull);
 	}
 
 	// ALERT
 	if (debug_level >= ALERT) {
-		croflog::alert .rdbuf(std::cerr.rdbuf());
+		logging::alert .rdbuf(std::cerr.rdbuf());
 	} else {
-		croflog::alert .rdbuf(&croflog::devnull);
+		logging::alert .rdbuf(&logging::devnull);
 	}
 
 	// CRIT
 	if (debug_level >= CRIT) {
-		croflog::crit  .rdbuf(std::cerr.rdbuf());
+		logging::crit  .rdbuf(std::cerr.rdbuf());
 	} else {
-		croflog::crit  .rdbuf(&croflog::devnull);
+		logging::crit  .rdbuf(&logging::devnull);
 	}
 
 	// ERROR
 	if (debug_level >= ERROR) {
-		croflog::error .rdbuf(std::cerr.rdbuf());
+		logging::error .rdbuf(std::cerr.rdbuf());
 	} else {
-		croflog::error .rdbuf(&croflog::devnull);
+		logging::error .rdbuf(&logging::devnull);
 	}
 
 	// WARN
 	if (debug_level >= WARN) {
-		croflog::warn  .rdbuf(std::cerr.rdbuf());
+		logging::warn  .rdbuf(std::cerr.rdbuf());
 	} else {
-		croflog::warn  .rdbuf(&croflog::devnull);
+		logging::warn  .rdbuf(&logging::devnull);
 	}
 
 	// NOTICE
 	if (debug_level >= NOTICE) {
-		croflog::notice.rdbuf(std::cerr.rdbuf());
+		logging::notice.rdbuf(std::cerr.rdbuf());
 	} else {
-		croflog::notice.rdbuf(&croflog::devnull);
+		logging::notice.rdbuf(&logging::devnull);
 	}
 
 	// INFO
 	if (debug_level >= INFO) {
-		croflog::info  .rdbuf(std::cerr.rdbuf());
+		logging::info  .rdbuf(std::cerr.rdbuf());
 	} else {
-		croflog::info  .rdbuf(&croflog::devnull);
+		logging::info  .rdbuf(&logging::devnull);
 	}
 
 	// DEBUG
 	if (debug_level >= DBG) {
-		croflog::debug .rdbuf(std::cerr.rdbuf());
+		logging::debug .rdbuf(std::cerr.rdbuf());
 	} else {
-		croflog::debug .rdbuf(&croflog::devnull);
+		logging::debug .rdbuf(&logging::devnull);
 	}
 
 	// TRACE 
 	if (debug_level >= TRACE) {
-		croflog::trace .rdbuf(std::cerr.rdbuf());
+		logging::trace .rdbuf(std::cerr.rdbuf());
 	} else {
-		croflog::trace .rdbuf(&croflog::devnull);
+		logging::trace .rdbuf(&logging::devnull);
 	}
 }
 

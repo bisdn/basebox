@@ -9,17 +9,33 @@
 
 using namespace rofcore;
 
+/*static*/std::set<crofproxies*> crofproxies::rofproxies;
+
+/*static*/void
+crofproxies::crofproxies_sa_handler(
+		int signum)
+{
+	for (std::set<crofproxies*>::iterator
+			it = crofproxies::rofproxies.begin(); it != crofproxies::rofproxies.end(); ++it) {
+		(*(*it)).signal_handler(signum);
+	}
+}
+
+
 crofproxies::crofproxies(
-		enum crofproxy::rofproxy_type_t proxy_type) :
+		enum crofproxy::rofproxy_type_t proxy_type,
+		rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap) :
+				rofl::crofbase(versionbitmap),
 				proxy_type(proxy_type)
 {
-
+	crofproxies::rofproxies.insert(this);
 }
 
 
 
 crofproxies::~crofproxies()
 {
+	crofproxies::rofproxies.erase(this);
 	clear();
 }
 
@@ -44,6 +60,18 @@ crofproxies::operator= (
 	// TODO
 
 	return *this;
+}
+
+
+
+void
+crofproxies::signal_handler(
+		int signum)
+{
+	for (std::map<uint64_t, crofproxy*>::iterator
+			it = proxies.begin(); it != proxies.end(); ++it) {
+		it->second->signal_handler(signum);
+	}
 }
 
 
