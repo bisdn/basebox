@@ -115,7 +115,7 @@ main(int argc, char** argv)
 	rofl::csocket::socket_type_t socket_type;
 	std::string s_bind("0.0.0.0");
 	std::string s_port("6653");
-	std::string s_domain("inet");
+	std::string s_domain("inet-any");
 	std::string s_type("stream");
 	std::string s_protocol("tcp");
 	std::string s_cafile("./ca.pem");

@@ -215,10 +215,7 @@ crofproxies::handle_dpath_open(
 	try {
 		add_proxy(cdptid(dpt.get_dpid())).handle_dpath_open(dpt);
 	} catch (eRofProxyBusy& e) {
-
-		rofcore::logging::error << "[crofproxies] unable to create node instance" << std::endl;
-		throw;
-
+		rofcore::logging::error << "[crofproxies] unable to create crofproxy instance" << std::endl;
 	}
 }
 
