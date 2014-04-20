@@ -16,7 +16,9 @@ rofcored_SOURCES = rofcored.cpp \
 		cdptid.hpp \
 		cdptid.cpp \
 		cctlid.hpp \
-		cctlid.cpp
+		cctlid.cpp \
+		crofmodel.hpp \
+		crofmodel.cpp
 		
 rofcored_LDADD = -lpthread \
 	-lrt
