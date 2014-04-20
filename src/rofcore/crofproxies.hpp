@@ -8,6 +8,7 @@
 #ifndef CROFPROXIES_HPP_
 #define CROFPROXIES_HPP_
 
+#include <assert.h>
 #include <inttypes.h>
 
 #include <map>
@@ -162,24 +163,26 @@ public:
 		return os;
 	};
 
-private:
+public:
 
 	/**
 	 *
 	 */
-	virtual rofl::crofctl&
+	virtual cctlid const
 	rpc_connect_to_ctl(
+			crofproxy const* rofproxy,
 			rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap,
 			int reconnect_start_timeout,
 			enum rofl::csocket::socket_type_t socket_type,
-			rofl::cparams const& socket_param) { throw eRofProxyNotFound(); };
+			rofl::cparams const& socket_param);
 
 	/**
 	 *
 	 */
 	virtual void
 	rpc_disconnect_from_ctl(
-			uint64_t ctlid) {};
+			crofproxy const* rofproxy,
+			cctlid const& ctlid);
 
 
 	/**
@@ -187,7 +190,8 @@ private:
 	 */
 	virtual void
 	rpc_disconnect_from_dpt(
-			uint64_t dpid) {};
+			crofproxy const* rofproxy,
+			cdptid const& dpid);
 
 private:
 

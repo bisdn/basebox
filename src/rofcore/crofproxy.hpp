@@ -8,9 +8,8 @@
 #ifndef CROFPROXY_HPP_
 #define CROFPROXY_HPP_
 
+#include <set>
 #include <string>
-
-#include "erofcorexcp.hpp"
 
 #include <rofl/common/ciosrv.h>
 #include <rofl/common/crofctl.h>
@@ -47,11 +46,19 @@
 #include <rofl/common/openflow/messages/cofmsg_experimenter.h>
 #include <rofl/common/openflow/messages/cofmsg_async_config.h>
 
+
+#include "erofcorexcp.hpp"
+#include "cctlid.hpp"
+#include "cdptid.hpp"
+
+
 namespace rofcore {
 
 class eRofProxyBase			: public eRofCoreXcp {};
 class eRofProxyBusy			: public eRofCoreXcp {};
 class eRofProxyNotFound		: public eRofProxyBase {};
+
+class crofproxy;
 
 class crofproxy_env {
 public:
@@ -64,8 +71,9 @@ public:
 	/**
 	 *
 	 */
-	virtual rofl::crofctl&
+	virtual cctlid const
 	rpc_connect_to_ctl(
+			crofproxy const* rofproxy,
 			rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap,
 			int reconnect_start_timeout,
 			enum rofl::csocket::socket_type_t socket_type,
@@ -76,7 +84,8 @@ public:
 	 */
 	virtual void
 	rpc_disconnect_from_ctl(
-			uint64_t ctlid) = 0;
+			crofproxy const* rofproxy,
+			cctlid const& ctlid) = 0;
 
 
 	/**
@@ -84,13 +93,15 @@ public:
 	 */
 	virtual void
 	rpc_disconnect_from_dpt(
-			uint64_t dpid) = 0;
+			crofproxy const* rofproxy,
+			cdptid const& dpid) = 0;
 };
 
 
 class crofproxy {
 
 	crofproxy_env			*rofproxy_env;
+	std::set<cctlid>		ctlids;
 
 public:
 
@@ -148,14 +159,6 @@ public:
 			int signum);
 
 	// TODO
-
-protected:
-
-	/**
-	 *
-	 */
-	crofproxy_env&
-	get_env() { return *rofproxy_env; };
 
 public:
 
@@ -958,6 +961,61 @@ public:
 			rofl::crofctl& ctl, rofl::openflow::cofmsg_set_async_config& msg, uint8_t aux_id = 0) = 0;
 
 	/**@}*/
+
+
+protected:
+
+	/**
+	 *
+	 */
+	crofproxy_env&
+	get_env() {
+		return *rofproxy_env;
+	};
+
+	/**
+	 *
+	 */
+	rofl::crofctl&
+	get_ctl(cctlid const& ctlid) {
+		if (ctlids.find(ctlid) == ctlids.end()) {
+			throw eRofProxyNotFound();
+		}
+		return rofl::crofctl::get_ctl(ctlid.get_ctlid());
+	};
+
+	/**
+	 *
+	 */
+	virtual cctlid const
+	rpc_connect_to_ctl(
+			rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap,
+			int reconnect_start_timeout,
+			enum rofl::csocket::socket_type_t socket_type,
+			rofl::cparams const& socket_params) {
+		cctlid ctlid(get_env().rpc_connect_to_ctl(
+				this, versionbitmap, reconnect_start_timeout, socket_type, socket_params));
+		ctlids.insert(ctlid);
+		return ctlid;
+	};
+
+	/**
+	 *
+	 */
+	virtual void
+	rpc_disconnect_from_ctl(
+			cctlid const& ctlid) {
+		get_env().rpc_disconnect_from_ctl(this, ctlid);
+	};
+
+	/**
+	 *
+	 */
+	virtual void
+	rpc_disconnect_from_dpt(
+			cdptid const& dptid) {
+		get_env().rpc_disconnect_from_dpt(this, dptid);
+	};
 };
 
 }; // end of namespace rofcore

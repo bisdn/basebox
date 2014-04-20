@@ -206,6 +206,49 @@ crofproxies::has_proxy(
 
 
 
+cctlid const
+crofproxies::rpc_connect_to_ctl(
+		crofproxy const* rofproxy,
+		rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap,
+		int reconnect_start_timeout,
+		enum rofl::csocket::socket_type_t socket_type,
+		rofl::cparams const& socket_param)
+{
+	rofl::crofctl& ctl = rofl::crofbase::rpc_connect_to_ctl(versionbitmap, reconnect_start_timeout, socket_type, socket_param);
+	assert(not has_proxy(cctlid(ctl.get_ctlid())));
+	cctlid ctlid(ctl.get_ctlid());
+	cproxies[ctlid] = const_cast<crofproxy*>( rofproxy );
+	return ctlid;
+}
+
+
+
+void
+crofproxies::rpc_disconnect_from_ctl(
+		crofproxy const* rofproxy,
+		cctlid const& ctlid)
+{
+	if (not has_proxy(ctlid)) {
+		return;
+	}
+	cproxies.erase(ctlid);
+}
+
+
+
+void
+crofproxies::rpc_disconnect_from_dpt(
+		crofproxy const* rofproxy,
+		cdptid const& dptid)
+{
+	if (not has_proxy(dptid)) {
+		return;
+	}
+	drop_proxy(dptid);
+}
+
+
+
 void
 crofproxies::handle_dpath_open(
 		rofl::crofdpt& dpt)
