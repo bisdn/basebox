@@ -53,7 +53,7 @@
 #include "crofconf.hpp"
 #include "cctlid.hpp"
 #include "cdptid.hpp"
-
+#include "croftransactions.hpp"
 
 namespace rofcore {
 
@@ -148,6 +148,7 @@ class crofproxy {
 	std::deque<enum crofproxy_event_t> 	events;
 	std::bitset<64>						flags;
 	rofl::openflow::cofrole				role;
+	croftransactions					tas;
 
 public:
 
@@ -1311,7 +1312,11 @@ public:
 	 */
 	virtual void
 	handle_features_request(
-			rofl::crofctl& ctl, rofl::openflow::cofmsg_features_request& msg, uint8_t aux_id = 0);
+			rofl::crofctl& ctl, rofl::openflow::cofmsg_features_request& msg, uint8_t aux_id = 0) {
+		ctl.send_features_reply(msg.get_xid(), did.get_dpid(), cmodel.get_n_buffers(),
+				cmodel.get_n_tables(),	cmodel.get_capabilities(),	cmodel.get_auxiliary_id(),
+					0, cmodel.get_ports());
+	};
 
 
 	/**
@@ -1324,7 +1329,9 @@ public:
 	 */
 	virtual void
 	handle_features_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_features_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_features_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1336,7 +1343,7 @@ public:
 	 */
 	virtual void
 	handle_features_reply_timeout(
-			rofl::crofdpt& dpt, uint32_t xid) = 0;
+			rofl::crofdpt& dpt, uint32_t xid) {};
 
 
 	/**
@@ -1349,7 +1356,9 @@ public:
 	 */
 	virtual void
 	handle_get_config_request(
-			rofl::crofctl& ctl, rofl::openflow::cofmsg_get_config_request& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofctl& ctl, rofl::openflow::cofmsg_get_config_request& msg, uint8_t aux_id = 0) {
+		ctl.send_get_config_reply(msg.get_xid(), cmodel.get_flags(), cmodel.get_miss_send_len());
+	};
 
 
 	/**
@@ -1362,8 +1371,9 @@ public:
 	 */
 	virtual void
 	handle_get_config_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_get_config_reply& msg, uint8_t aux_id = 0) = 0;
-
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_get_config_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1375,7 +1385,7 @@ public:
 	 */
 	virtual void
 	handle_get_config_reply_timeout(
-			rofl::crofdpt& dpt, uint32_t xid) = 0;
+			rofl::crofdpt& dpt, uint32_t xid) {};
 
 
 	/**
@@ -1388,7 +1398,10 @@ public:
 	 */
 	virtual void
 	handle_set_config(
-			rofl::crofctl& ctl, rofl::openflow::cofmsg_set_config& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofctl& ctl, rofl::openflow::cofmsg_set_config& msg, uint8_t aux_id = 0) {
+		cmodel.set_flags(msg.get_flags());
+		cmodel.set_miss_send_len(msg.get_miss_send_len());
+	};
 
 
 	/**
@@ -1402,7 +1415,10 @@ public:
 	 */
 	virtual void
 	handle_desc_stats_request(
-			rofl::crofctl& ctl, rofl::openflow::cofmsg_desc_stats_request& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofctl& ctl, rofl::openflow::cofmsg_desc_stats_request& msg, uint8_t aux_id = 0) {
+		uint32_t dptxid = get_dpt().send_desc_stats_request(0);
+		tas.add_ta(cctlxid(msg.get_xid())) = croftransaction(msg.get_type(), cctlxid(msg.get_xid()), cdptxid(dptxid));
+	};
 
 
 	/**
@@ -1415,7 +1431,15 @@ public:
 	 */
 	virtual void
 	handle_desc_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_desc_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_desc_stats_reply& msg, uint8_t aux_id = 0) {
+		if (not tas.has_ta(cdptxid(msg.get_xid()))) {
+			rofcore::logging::error << "[crofproxy] unable to find transaction" << std::endl;
+			return;
+		}
+		uint32_t ctlxid = tas.get_ta(cdptxid(msg.get_xid())).get_ctlxid().get_xid();
+		tas.drop_ta(cdptxid(msg.get_xid()));
+		get_ctl().send_desc_stats_reply(ctlxid, msg.get_desc_stats(), msg.get_stats_flags());
+	};
 
 
 	/**
@@ -1429,7 +1453,9 @@ public:
 	 */
 	virtual void
 	handle_table_stats_request(
-			rofl::crofctl& ctl, rofl::openflow::cofmsg_table_stats_request& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofctl& ctl, rofl::openflow::cofmsg_table_stats_request& msg, uint8_t aux_id = 0) {
+		// TODO: send table-stats-request down the chain
+	};
 
 
 	/**
@@ -1442,7 +1468,9 @@ public:
 	 */
 	virtual void
 	handle_table_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_table_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_table_stats_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1469,7 +1497,9 @@ public:
 	 */
 	virtual void
 	handle_port_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_port_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_port_stats_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1496,7 +1526,9 @@ public:
 	 */
 	virtual void
 	handle_flow_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_flow_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_flow_stats_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1523,7 +1555,9 @@ public:
 	 */
 	virtual void
 	handle_aggregate_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_aggr_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_aggr_stats_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1550,7 +1584,9 @@ public:
 	 */
 	virtual void
 	handle_queue_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_queue_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_queue_stats_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1577,7 +1613,9 @@ public:
 	 */
 	virtual void
 	handle_group_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_group_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_group_stats_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1604,7 +1642,9 @@ public:
 	 */
 	virtual void
 	handle_group_desc_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_group_desc_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_group_desc_stats_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1631,7 +1671,9 @@ public:
 	 */
 	virtual void
 	handle_group_features_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_group_features_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_group_features_stats_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1658,7 +1700,9 @@ public:
 	 */
 	virtual void
 	handle_table_features_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_table_features_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_table_features_stats_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1685,7 +1729,9 @@ public:
 	 */
 	virtual void
 	handle_port_desc_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_port_desc_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_port_desc_stats_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1712,7 +1758,9 @@ public:
 	 */
 	virtual void
 	handle_experimenter_stats_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_experimenter_stats_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_experimenter_stats_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -1764,7 +1812,10 @@ public:
 	 */
 	virtual void
 	handle_barrier_request(
-			rofl::crofctl& ctl, rofl::openflow::cofmsg_barrier_request& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofctl& ctl, rofl::openflow::cofmsg_barrier_request& msg, uint8_t aux_id = 0) {
+		uint32_t dptxid = get_dpt().send_barrier_request();
+		tas.add_ta(cctlxid(msg.get_xid())) = croftransaction(msg.get_type(), cctlxid(msg.get_xid()), cdptxid(dptxid));
+	};
 
 
 	/**
@@ -1777,7 +1828,15 @@ public:
 	 */
 	virtual void
 	handle_barrier_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_barrier_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_barrier_reply& msg, uint8_t aux_id = 0) {
+		if (not tas.has_ta(cdptxid(msg.get_xid()))) {
+			rofcore::logging::error << "[crofproxy] unable to find transaction" << std::endl;
+			return;
+		}
+		uint32_t ctlxid = tas.get_ta(cdptxid(msg.get_xid())).get_ctlxid().get_xid();
+		tas.drop_ta(cdptxid(msg.get_xid()));
+		get_ctl().send_barrier_reply(ctlxid);
+	};
 
 
 
@@ -1791,7 +1850,9 @@ public:
 	 */
 	virtual void
 	handle_barrier_reply_timeout(
-			rofl::crofdpt& dpt, uint32_t xid) = 0;
+			rofl::crofdpt& dpt, uint32_t xid) {
+		tas.drop_ta(cdptxid(xid));
+	}
 
 
 	/**
@@ -1924,7 +1985,9 @@ public:
 	 */
 	virtual void
 	handle_queue_get_config_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_queue_get_config_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_queue_get_config_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -2000,7 +2063,9 @@ public:
 	 */
 	virtual void
 	handle_role_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_role_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_role_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 
@@ -2040,7 +2105,9 @@ public:
 	 */
 	virtual void
 	handle_get_async_config_reply(
-			rofl::crofdpt& dpt, rofl::openflow::cofmsg_get_async_config_reply& msg, uint8_t aux_id = 0) = 0;
+			rofl::crofdpt& dpt, rofl::openflow::cofmsg_get_async_config_reply& msg, uint8_t aux_id = 0) {
+		// handled by derived proxy class
+	};
 
 
 	/**
@@ -2068,6 +2135,14 @@ public:
 			rofl::crofctl& ctl, rofl::openflow::cofmsg_set_async_config& msg, uint8_t aux_id = 0) = 0;
 
 	/**@}*/
+
+protected:
+
+	/**
+	 * @brief	Define data model exposed towards controller entity. Default: model received from data path.
+	 */
+	virtual void
+	set_data_model();
 
 private:
 

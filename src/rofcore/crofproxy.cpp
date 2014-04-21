@@ -310,9 +310,7 @@ void
 crofproxy::event_table_stats_reply_rcvd()
 {
 	try {
-#if 0
-		check_and_reserve_resources();
-#endif
+		set_data_model();
 
 		// direct jump to next stage for OF12, ports already rcvd in features-reply
 
@@ -352,9 +350,7 @@ void
 crofproxy::event_table_features_stats_reply_rcvd()
 {
 	try {
-#if 0
-		check_and_reserve_resources();
-#endif
+		set_data_model();
 
 		rofcore::logging::debug << "[crofproxy] dpid:" << did
 				<< " sending port-desc-stats-request" << std::endl;
@@ -889,20 +885,10 @@ crofproxy::recv_role_reply_timeout(rofl::crofdpt& dpt, uint32_t xid)
 
 
 void
-crofproxy::handle_features_request(
-		rofl::crofctl& ctl, rofl::openflow::cofmsg_features_request& msg, uint8_t aux_id)
+crofproxy::set_data_model()
 {
-	ctl.send_features_reply(
-			msg.get_xid(),
-			did.get_dpid(),
-			cmodel.get_n_buffers(),
-			cmodel.get_n_tables(),
-			cmodel.get_capabilities(),
-			cmodel.get_auxiliary_id(),
-			0,
-			cmodel.get_ports());
+	cmodel = dmodel;
 }
-
 
 
 
