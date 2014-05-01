@@ -637,7 +637,6 @@ crofproxy::recv_features_reply(
 	}
 
 	run_engine(EVENT_FEATURES_REPLY_RCVD);
-
 	if (flags.test(FLAG_ESTABLISHED)) {
 		handle_features_reply(dpt, msg, aux_id);
 	}
@@ -680,6 +679,9 @@ crofproxy::recv_get_config_reply(
 	}
 
 	run_engine(EVENT_GET_CONFIG_REPLY_RCVD);
+	if (flags.test(FLAG_ESTABLISHED)) {
+		handle_get_config_reply(dpt, msg, aux_id);
+	}
 }
 
 
@@ -690,10 +692,6 @@ crofproxy::recv_get_config_reply_timeout(
 {
 	rofcore::logging::debug << "[crofproxy] get-config-reply timeout for dpid:" << did << std::endl;
 	run_engine(EVENT_GET_CONFIG_REQUEST_EXPIRED);
-	if (flags.test(FLAG_ESTABLISHED)) {
-		handle_get_config_reply_timeout(dpt, xid);
-	}
-
 	if (flags.test(FLAG_ESTABLISHED)) {
 		handle_get_config_reply_timeout(dpt, xid);
 	}
@@ -734,7 +732,6 @@ crofproxy::recv_table_stats_reply(
 	}
 
 	run_engine(EVENT_TABLE_STATS_REPLY_RCVD);
-
 	if (flags.test(FLAG_ESTABLISHED)) {
 		handle_table_stats_reply(dpt, msg, aux_id);
 	}
@@ -760,7 +757,6 @@ crofproxy::recv_table_features_stats_reply(
 	}
 
 	run_engine(EVENT_TABLE_FEATURES_STATS_REPLY_RCVD);
-
 	if (flags.test(FLAG_ESTABLISHED)) {
 		handle_table_features_stats_reply(dpt, msg, aux_id);
 	}
@@ -786,7 +782,6 @@ crofproxy::recv_port_desc_stats_reply(
 	}
 
 	run_engine(EVENT_PORT_DESC_STATS_REPLY_RCVD);
-
 	if (flags.test(FLAG_ESTABLISHED)) {
 		handle_port_desc_stats_reply(dpt, msg, aux_id);
 	}
@@ -863,7 +858,6 @@ crofproxy::recv_role_reply(rofl::crofdpt& dpt, rofl::openflow::cofmsg_role_reply
 	}
 
 	run_engine(EVENT_ROLE_REPLY_RCVD);
-
 	if (flags.test(FLAG_ESTABLISHED)) {
 		handle_role_reply(dpt, msg, aux_id);
 	}
