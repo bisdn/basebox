@@ -18,14 +18,10 @@ crtroute::crtroute() :
 		protocol(0),
 		priority(0),
 		family(0),
-		dst(rofl::caddress(AF_INET)),
 		prefixlen(0),
-		mask(rofl::caddress(AF_INET)),
-		src(rofl::caddress(AF_INET)),
 		type(0),
 		flags(0),
 		metric(0),
-		pref_src(rofl::caddress(AF_INET)),
 		iif(0)
 {
 
@@ -47,14 +43,10 @@ crtroute::crtroute(crtroute const& rtr) :
 		protocol(0),
 		priority(0),
 		family(0),
-		dst(rofl::caddress(AF_INET)),
 		prefixlen(0),
-		mask(rofl::caddress(AF_INET)),
-		src(rofl::caddress(AF_INET)),
 		type(0),
 		flags(0),
 		metric(0),
-		pref_src(rofl::caddress(AF_INET)),
 		iif(0){
 	*this = rtr;
 }
@@ -96,14 +88,10 @@ crtroute::crtroute(struct rtnl_route *route) :
 		protocol(0),
 		priority(0),
 		family(0),
-		dst(rofl::caddress(AF_INET)),
 		prefixlen(0),
-		mask(rofl::caddress(AF_INET)),
-		src(rofl::caddress(AF_INET)),
 		type(0),
 		flags(0),
 		metric(0),
-		pref_src(rofl::caddress(AF_INET)),
 		iif(0)
 {
 	char s_buf[128];
@@ -126,11 +114,12 @@ crtroute::crtroute(struct rtnl_route *route) :
 
 	switch (family) {
 	case AF_INET: {
-		mask = rofl::caddress(AF_INET);
-		mask.ca_s4addr->sin_addr.s_addr = htobe32(~((1 << (32 - prefixlen)) - 1));
+		rofl::caddress_in4 mask;
+		mask.set_addr_hbo((~((1 << (32 - prefixlen)) - 1)));
+		this->mask = mask;
 	} break;
 	case AF_INET6: {
-		mask = rofl::caddress(AF_INET6);
+		mask = rofl::caddress_in4(AF_INET6);
 		int segment 	= prefixlen / 32;
 		int t_prefixlen = prefixlen % 32;
 		for (int i = 0; i < 4; i++) {
@@ -153,9 +142,9 @@ crtroute::crtroute(struct rtnl_route *route) :
 	s_src  		= s_src.substr(0,  s_src.find_first_of("/", 0));
 	s_pref_src 	= s_pref_src.substr(0, s_pref_src.find_first_of("/", 0));
 
-	dst 		= rofl::caddress(family, s_dst.c_str());
-	src 		= rofl::caddress(family, s_src.c_str());
-	pref_src	= rofl::caddress(family, s_pref_src.c_str());
+	dst 		= rofl::caddress_in4(family, s_dst.c_str());
+	src 		= rofl::caddress_in4(family, s_src.c_str());
+	pref_src	= rofl::caddress_in4(family, s_pref_src.c_str());
 
 	for (int i = 0; i < rtnl_route_get_nnexthops(route); i++) {
 		nexthops.push_back(crtnexthop(route, rtnl_route_nexthop_n(route, i)));

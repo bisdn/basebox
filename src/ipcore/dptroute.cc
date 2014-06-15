@@ -195,7 +195,7 @@ dptroute::route_created(
 #endif
 			flowentry.set_table_id(1);
 			flowentry.set_flags(rofl::openflow12::OFPFF_SEND_FLOW_REM);
-			flowentry.instructions.add_inst_goto_table().set_table_id(2);
+			flowentry.set_instructions().add_inst_goto_table().set_table_id(2);
 #if 0
 		} break;
 		}
@@ -204,19 +204,19 @@ dptroute::route_created(
 
 		switch (rtr.get_family()) {
 		case AF_INET: {
-			flowentry.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-			flowentry.match.set_ipv4_dst(rtr.get_dst(), rtr.get_mask());
+			flowentry.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+			flowentry.set_match().set_ipv4_dst(rtr.get_dst(), rtr.get_mask());
 		} break;
 		case AF_INET6: {
-			flowentry.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-			flowentry.match.set_ipv6_dst(rtr.get_dst(), rtr.get_mask());
+			flowentry.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+			flowentry.set_match().set_ipv6_dst(rtr.get_dst(), rtr.get_mask());
 		} break;
 		}
 
 
 		//fprintf(stderr, "dptroute::route_created() => flowentry: %s\n", flowentry.c_str());
 
-		dpt->send_flow_mod_message(flowentry);
+		dpt->send_flow_mod_message(rofl::cauxid(0), flowentry);
 
 	} catch (eNetLinkNotFound& e) {
 		std::cerr << "dptroute::route_created() crtroute object not found" << std::endl;
@@ -260,9 +260,9 @@ dptroute::route_deleted(
 	try {
 		flowentry.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 
-		dpt->send_flow_mod_message(flowentry);
+		dpt->send_flow_mod_message(rofl::cauxid(0), flowentry);
 
-	} catch (rofl::eNotConnected& e) {
+	} catch (rofl::eRofBaseNotConnected& e) {
 
 	}
 

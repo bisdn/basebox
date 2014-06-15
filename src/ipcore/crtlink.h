@@ -15,7 +15,7 @@
 #include <map>
 #include <set>
 
-#include <rofl/common/cmacaddr.h>
+#include <rofl/common/caddress.h>
 #include <rofl/common/logging.h>
 #include <rofl/common/cmemory.h>
 
@@ -242,8 +242,8 @@ public:
 	{
 		os << rofl::indent(0) << "<crtlink: >" << std::endl;
 		os << rofl::indent(2) << "<devname: " << rtlink.devname 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<maddr: " << rtlink.maddr.c_str() << " >" << std::endl;
-		os << rofl::indent(2) << "<bcast: " << rtlink.bcast.c_str() << " >" << std::endl;
+		os << rofl::indent(2) << "<maddr: " << rtlink.maddr 		<< " >" << std::endl;
+		os << rofl::indent(2) << "<bcast: " << rtlink.bcast 		<< " >" << std::endl;
 		os << rofl::indent(2) << "<flags: " << (std::hex) << rtlink.flags << (std::dec) << " >" << std::endl;
 		os << rofl::indent(2) << "<af: " << rtlink.af 				<< " >" << std::endl;
 		os << rofl::indent(2) << "<arptype: " << rtlink.arptype 	<< " >" << std::endl;

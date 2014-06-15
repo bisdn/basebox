@@ -125,7 +125,7 @@ ipcore::handle_dpath_open(
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 		fe.set_command(rofl::openflow::OFPFC_DELETE);
 		fe.set_table_id(rofl::openflow::base::get_ofptt_all(dpt.get_version()));
-		dpt.send_flow_mod_message(fe);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		/*
 		 * block all STP related frames for now
@@ -154,7 +154,7 @@ ipcore::handle_dpath_open(
 		}
 
 		// get full-length packets (what is the ethernet max length on dpt?)
-		dpt.send_set_config_message(0, 1518);
+		dpt.send_set_config_message(rofl::cauxid(0), 0, 1518);
 
 		/*
 		 * install default FlowMod entry for table 0 => GotoTable(1)
@@ -166,9 +166,9 @@ ipcore::handle_dpath_open(
 		fed.set_idle_timeout(0);
 		fed.set_hard_timeout(0);
 		fed.set_priority(0); // lowest priority
-		fed.instructions.add_inst_goto_table().set_table_id(1);
+		fed.set_instructions().add_inst_goto_table().set_table_id(1);
 
-		dpt.send_flow_mod_message(fed);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fed);
 
 		run_dpath_open_script();
 
@@ -277,7 +277,7 @@ ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::openflow::cofmsg_packet_in& m
 
 		if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()) != msg.get_buffer_id()) {
 			rofl::openflow::cofactions actions(dpt.get_version());
-			dpt.send_packet_out_message(msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
+			dpt.send_packet_out_message(rofl::cauxid(0), msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
 		}
 
 	} catch (ePacketPoolExhausted& e) {
@@ -410,9 +410,9 @@ ipcore::block_stp_frames()
 
 	fe.set_command(rofl::openflow::OFPFC_ADD);
 	fe.set_table_id(0);
-	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
+	fe.set_match().set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
 
-	dpt->send_flow_mod_message(fe);
+	dpt->send_flow_mod_message(rofl::cauxid(0), fe);
 }
 
 
@@ -427,9 +427,9 @@ ipcore::unblock_stp_frames()
 
 	fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 	fe.set_table_id(0);
-	fe.match.set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
+	fe.set_match().set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
 
-	dpt->send_flow_mod_message(fe);
+	dpt->send_flow_mod_message(rofl::cauxid(0), fe);
 }
 
 
@@ -444,12 +444,12 @@ ipcore::redirect_ipv4_multicast()
 
 	fe.set_command(rofl::openflow::OFPFC_ADD);
 	fe.set_table_id(0);
-	fe.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-	fe.match.set_ipv4_dst(rofl::caddress(AF_INET, "224.0.0.0"), rofl::caddress(AF_INET, "240.0.0.0"));
-	fe.instructions.add_inst_apply_actions().get_actions().append_action_output(
+	fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+	fe.set_match().set_ipv4_dst(rofl::caddress_in4("224.0.0.0"), rofl::caddress_in4("240.0.0.0"));
+	fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(0).set_port_no(
 			rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()));
 
-	dpt->send_flow_mod_message(fe);
+	dpt->send_flow_mod_message(rofl::cauxid(0), fe);
 }
 
 
@@ -464,12 +464,12 @@ ipcore::redirect_ipv6_multicast()
 
 	fe.set_command(rofl::openflow::OFPFC_ADD);
 	fe.set_table_id(0);
-	fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-	fe.match.set_ipv6_dst(rofl::caddress(AF_INET6, "ff00::"), rofl::caddress(AF_INET6, "ff00::"));
-	fe.instructions.add_inst_apply_actions().get_actions().append_action_output(
+	fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+	fe.set_match().set_ipv6_dst(rofl::caddress_in6("ff00::"), rofl::caddress_in6("ff00::"));
+	fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(0).set_port_no(
 			rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()));
 
-	dpt->send_flow_mod_message(fe);
+	dpt->send_flow_mod_message(rofl::cauxid(0), fe);
 }
 
 

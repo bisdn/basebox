@@ -47,14 +47,14 @@ private:
 	uint8_t					protocol;
 	uint32_t				priority;
 	uint8_t					family;
-	rofl::caddress			dst;
+	rofl::caddress_in		dst;
 	unsigned int			prefixlen;
-	rofl::caddress			mask;
-	rofl::caddress			src;
+	rofl::caddress_in		mask;
+	rofl::caddress_in		src;
 	uint8_t					type;
 	uint32_t				flags;
 	int						metric;
-	rofl::caddress			pref_src;
+	rofl::caddress_in		pref_src;
 	unsigned int			iif;
 	std::vector<crtnexthop>	nexthops;
 
@@ -154,7 +154,7 @@ public:
 	/**
 	 *
 	 */
-	rofl::caddress get_dst() const { return dst; };
+	rofl::caddress_in get_dst() const { return dst; };
 
 
 	/**
@@ -166,13 +166,13 @@ public:
 	/**
 	 *
 	 */
-	rofl::caddress get_mask() const { return mask; };
+	rofl::caddress_in get_mask() const { return mask; };
 
 
 	/**
 	 *
 	 */
-	rofl::caddress get_src() const { return src; };
+	rofl::caddress_in get_src() const { return src; };
 
 
 	/**
@@ -196,7 +196,7 @@ public:
 	/**
 	 *
 	 */
-	rofl::caddress get_pref_src() const { return pref_src; };
+	rofl::caddress_in get_pref_src() const { return pref_src; };
 
 
 	/**
@@ -260,9 +260,9 @@ public:
 		uint32_t table_id;
 		uint8_t scope;
 		unsigned int ifindex;
-		rofl::caddress dst;
+		rofl::caddress_in dst;
 	public:
-		crtroute_find(uint32_t table_id, uint8_t scope, unsigned int ifindex, rofl::caddress const& dst) :
+		crtroute_find(uint32_t table_id, uint8_t scope, unsigned int ifindex, rofl::caddress_in const& dst) :
 			table_id(table_id), scope(scope), ifindex(ifindex), dst(dst) {};
 		bool operator() (std::pair<unsigned int, crtroute> const& p) {
 			return ((table_id 		== p.second.table_id) &&

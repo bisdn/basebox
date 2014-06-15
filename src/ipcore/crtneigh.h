@@ -20,7 +20,6 @@ extern "C" {
 #endif
 
 #include <rofl/common/logging.h>
-#include <rofl/common/cmacaddr.h>
 #include <rofl/common/caddress.h>
 
 namespace dptmap
