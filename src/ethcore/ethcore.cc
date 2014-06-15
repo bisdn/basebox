@@ -276,7 +276,7 @@ ethcore::handle_flow_stats_reply(crofdpt& dpt, cofmsg_flow_stats_reply& msg, uin
 
 
 void
-ethcore::handle_dpath_open(crofdpt& dpt)
+ethcore::handle_dpt_attached(crofdpt& dpt)
 {
 	try {
 		netlink_enabled = (bool)cconfig::get_instance().lookup("ethcored.enable_netlink");
@@ -374,7 +374,7 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 
 
 void
-ethcore::handle_dpath_close(crofdpt& dpt)
+ethcore::handle_dpt_detached(crofdpt& dpt)
 {
 	logging::info << "[ethcore] dpath detaching dpid:" << (unsigned long long)dpt.get_dpid() << std::endl;
 

@@ -456,7 +456,11 @@ crofproxy::event_established()
 	try {
 		flags.set(FLAG_ESTABLISHED);
 
+		rofcore::logging::debug << "[crofproxy] connection from data path fully established: " << cid << std::endl;
 
+		handle_dpath_open(get_dpt());
+
+#if 0
 		rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
 		versionbitmap.add_ofp_version(get_dpt().get_version());
 
@@ -566,7 +570,7 @@ crofproxy::event_established()
 		cid = rpc_connect_to_ctl(versionbitmap, 2, socket_type, socket_params);
 
 		rofcore::logging::debug << "[crofproxy] connecting to controller ctlid:" << cid << std::endl << socket_params;
-
+#endif
 
 
 	} catch (rofl::eRofBaseNotFound& e) {
