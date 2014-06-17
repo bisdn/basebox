@@ -32,8 +32,7 @@ extern "C" {
 #include <crtaddr.h>
 #include <crtneigh.h>
 
-namespace dptmap
-{
+namespace rofcore {
 
 class eRtLinkBase		: public std::exception {};
 class eRtLinkNotFound	: public eRtLinkBase {};
@@ -42,9 +41,10 @@ class crtlink
 {
 private:
 
-	std::map<uint16_t, crtaddr>  addrs;	// key: index, value: address, index remains constant, as long as addrs endures
-	std::map<uint16_t, crtneigh> neighs; // key: index, valie: neigh, index remains constant throughout lifetime of neighbor entry
-
+	std::map<uint16_t, crtaddr_in4>  addrs_in4;	// key: index, value: address, index remains constant, as long as addrs endures
+	std::map<uint16_t, crtaddr_in6>  addrs_in6;	// key: index, value: address, index remains constant, as long as addrs endures
+	std::map<uint16_t, crtneigh_in4> neighs_in4; // key: index, valie: neigh, index remains constant throughout lifetime of neighbor entry
+	std::map<uint16_t, crtneigh_in6> neighs_in6; // key: index, valie: neigh, index remains constant throughout lifetime of neighbor entry
 
 public:
 
@@ -99,85 +99,184 @@ public:
 	/**
 	 *
 	 */
-	crtaddr&
-	get_addr(uint16_t index);
+	crtaddr_in4&
+	get_addr_in4(
+			uint16_t index);
 
 
 	/**
 	 *
 	 */
 	uint16_t
-	get_addr(crtaddr const& rta);
+	get_addr_in4(
+			const crtaddr_in4& rta);
 
 
 	/**
 	 *
 	 */
 	uint16_t
-	set_addr(crtaddr const& rta);
+	set_addr_in4(
+			const crtaddr_in4& rta);
 
 
 	/**
 	 *
 	 */
 	uint16_t
-	del_addr(uint16_t index = crtaddr::CRTLINK_ADDR_ALL);
+	del_addr_in4(
+			uint16_t index = crtaddr::CRTLINK_ADDR_ALL);
 
 
 	/**
 	 *
 	 */
 	uint16_t
-	del_addr(crtaddr const& rta);
+	del_addr_in4(
+			const crtaddr_in4& rta);
 
-
-	/**
-	 *
-	 */
-	crtneigh&
-	get_neigh(uint16_t index);
 
 
 	/**
 	 *
 	 */
-	crtneigh&
-	get_neigh(rofl::caddress const& dst);
+	crtaddr_in6&
+	get_addr_in6(
+			uint16_t index);
 
 
 	/**
 	 *
 	 */
 	uint16_t
-	get_neigh_index(crtneigh const& rtn);
+	get_addr_in6(
+			const crtaddr_in6& rta);
 
 
 	/**
 	 *
 	 */
 	uint16_t
-	get_neigh_index(rofl::caddress const& dst);
+	set_addr_in6(
+			const crtaddr_in6& rta);
 
 
 	/**
 	 *
 	 */
 	uint16_t
-	set_neigh(crtneigh const& rtn);
+	del_addr_in6(
+			uint16_t index = crtaddr::CRTLINK_ADDR_ALL);
 
 
 	/**
 	 *
 	 */
 	uint16_t
-	del_neigh(uint16_t index = crtneigh::CRTNEIGH_ADDR_ALL);
+	del_addr_in6(
+			const crtaddr_in6& rta);
+
 
 
 	/**
 	 *
 	 */
+	crtneigh_in4&
+	get_neigh_in4(
+			uint16_t index);
+
+	/**
+	 *
+	 */
+	crtneigh_in4&
+	get_neigh_in4(
+			const rofl::caddress_in4& dst);
+
+	/**
+	 *
+	 */
 	uint16_t
-	del_neigh(crtneigh const& rtn);
+	get_neigh_in4_index(
+			const crtneigh_in4& neigh);
+
+	/**
+	 *
+	 */
+	uint16_t
+	get_neigh_in4_index(
+			const rofl::caddress_in4& dst);
+
+	/**
+	 *
+	 */
+	uint16_t
+	set_neigh_in4(
+			const crtneigh_in4& neigh);
+
+	/**
+	 *
+	 */
+	uint16_t
+	del_neigh_in4(
+			uint16_t index = crtneigh::CRTNEIGH_ADDR_ALL);
+
+	/**
+	 *
+	 */
+	uint16_t
+	del_neigh_in4(
+			const crtneigh_in4& neigh);
+
+
+	/**
+	 *
+	 */
+	crtneigh_in6&
+	get_neigh_in6(
+			uint16_t index);
+
+	/**
+	 *
+	 */
+	crtneigh_in6&
+	get_neigh_in6(
+			const rofl::caddress_in6& dst);
+
+	/**
+	 *
+	 */
+	uint16_t
+	get_neigh_in6_index(
+			const crtneigh_in6& neigh);
+
+	/**
+	 *
+	 */
+	uint16_t
+	get_neigh_in6_index(
+			const rofl::caddress_in6& dst);
+
+	/**
+	 *
+	 */
+	uint16_t
+	set_neigh_in6(
+			const crtneigh_in6& neigh);
+
+	/**
+	 *
+	 */
+	uint16_t
+	del_neigh_in6(
+			uint16_t index = crtneigh::CRTNEIGH_ADDR_ALL);
+
+	/**
+	 *
+	 */
+	uint16_t
+	del_neigh_in6(
+			const crtneigh_in6& neigh);
+
 
 
 public:
@@ -242,17 +341,26 @@ public:
 	{
 		os << rofl::indent(0) << "<crtlink: >" << std::endl;
 		os << rofl::indent(2) << "<devname: " << rtlink.devname 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<maddr: " << rtlink.maddr 		<< " >" << std::endl;
-		os << rofl::indent(2) << "<bcast: " << rtlink.bcast 		<< " >" << std::endl;
+		os << rofl::indent(2) << "<maddr: >" << std::endl;
+		{ rofl::indent i(4); os << rtlink.maddr; };
+		os << rofl::indent(2) << "<bcast: >" << std::endl;
+		{ rofl::indent i(4); os << rtlink.bcast; };
 		os << rofl::indent(2) << "<flags: " << (std::hex) << rtlink.flags << (std::dec) << " >" << std::endl;
 		os << rofl::indent(2) << "<af: " << rtlink.af 				<< " >" << std::endl;
 		os << rofl::indent(2) << "<arptype: " << rtlink.arptype 	<< " >" << std::endl;
 		os << rofl::indent(2) << "<ifindex: " << rtlink.ifindex 	<< " >" << std::endl;
 		os << rofl::indent(2) << "<mtu: " << rtlink.mtu 			<< " >" << std::endl;
-		if (rtlink.addrs.size() > 0) {
+		if (rtlink.addrs_in4.size() > 0) {
 			rofl::indent i(4);
-			for (std::map<uint16_t, crtaddr>::const_iterator
-					it = rtlink.addrs.begin(); it != rtlink.addrs.end(); ++it) {
+			for (std::map<uint16_t, crtaddr_in4>::const_iterator
+					it = rtlink.addrs_in4.begin(); it != rtlink.addrs_in4.end(); ++it) {
+				os << it->second;
+			}
+		}
+		if (rtlink.addrs_in6.size() > 0) {
+			rofl::indent i(4);
+			for (std::map<uint16_t, crtaddr_in6>::const_iterator
+					it = rtlink.addrs_in6.begin(); it != rtlink.addrs_in6.end(); ++it) {
 				os << it->second;
 			}
 		}

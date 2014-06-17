@@ -27,20 +27,9 @@ ipcored_SOURCES = ipcored.cc \
 		ctapdev.cc \
 		cnetlink.h \
 		cnetlink.cc \
-		crtlink.h \
-		crtlink.cc \
-		crtaddr.h \
-		crtaddr.cc \
-		crtroute.h \
-		crtroute.cc \
-		crtnexthop.cc \
-		crtnexthop.h \
-		crtneigh.h \
-		crtneigh.cc \
 		flowmod.h
 		
-ipcored_LDADD = -lpthread \
-	-lrt
+ipcored_LDADD = -lpthread -lrt -l../librofcore.la
 
 #AM_CPPFLAGS = -I/usr/local/libnl-3.2.22/include/libnl3
 #AM_LDFLAGS = -static -L/usr/local/libnl-3.2.22/lib -lnl-route-3 -lnl-3

@@ -6,10 +6,9 @@
  */
 
 
-#include <crtroute.h>
+#include "crtroute.h"
 
-using namespace dptmap;
-
+using namespace rofcore;
 
 crtroute::crtroute() :
 		table_id(0),
@@ -65,15 +64,11 @@ crtroute::operator= (crtroute const& rtr)
 	protocol	= rtr.protocol;
 	priority	= rtr.priority;
 	family		= rtr.family;
-	dst			= rtr.dst;
 	prefixlen	= rtr.prefixlen;
-	mask		= rtr.mask;
-	src			= rtr.src;
 	type		= rtr.type;
 	flags		= rtr.flags;
 	metric		= rtr.metric;
-	pref_src	= rtr.pref_src;
-	iif		= rtr.iif;
+	iif			= rtr.iif;
 	nexthops	= rtr.nexthops;
 
 	return *this;
@@ -109,42 +104,7 @@ crtroute::crtroute(struct rtnl_route *route) :
 	flags		= rtnl_route_get_flags(route);
 	metric		= rtnl_route_get_metric(route, 0, NULL); // FIXME: check the integer value
 	iif		= rtnl_route_get_iif(route);
-
 	prefixlen	= nl_addr_get_prefixlen(rtnl_route_get_dst(route));
-
-	switch (family) {
-	case AF_INET: {
-		rofl::caddress_in4 mask;
-		mask.set_addr_hbo((~((1 << (32 - prefixlen)) - 1)));
-		this->mask = mask;
-	} break;
-	case AF_INET6: {
-		mask = rofl::caddress_in4(AF_INET6);
-		int segment 	= prefixlen / 32;
-		int t_prefixlen = prefixlen % 32;
-		for (int i = 0; i < 4; i++) {
-			if (segment == i) {
-				((uint32_t*)(mask.ca_s6addr->sin6_addr.s6_addr))[i] = htobe32(~((1 << (32 - t_prefixlen)) - 1));
-			} else if (i > segment) {
-				((uint32_t*)(mask.ca_s6addr->sin6_addr.s6_addr))[i] = htobe32(0x00000000);
-			} else if (i < segment) {
-				((uint32_t*)(mask.ca_s6addr->sin6_addr.s6_addr))[i] = htobe32(0xffffffff);
-			}
-		}
-	} break;
-	}
-
-	std::string s_dst(nl_addr2str(rtnl_route_get_dst(route), 			s_buf, sizeof(s_buf)));
-	std::string s_src(nl_addr2str(rtnl_route_get_src(route), 			s_buf, sizeof(s_buf)));
-	std::string s_pref_src(nl_addr2str(rtnl_route_get_pref_src(route), 	s_buf, sizeof(s_buf)));
-
-	s_dst 		= s_dst.substr(0, s_dst.find_first_of("/", 0));
-	s_src  		= s_src.substr(0,  s_src.find_first_of("/", 0));
-	s_pref_src 	= s_pref_src.substr(0, s_pref_src.find_first_of("/", 0));
-
-	dst 		= rofl::caddress_in4(family, s_dst.c_str());
-	src 		= rofl::caddress_in4(family, s_src.c_str());
-	pref_src	= rofl::caddress_in4(family, s_pref_src.c_str());
 
 	for (int i = 0; i < rtnl_route_get_nnexthops(route); i++) {
 		nexthops.push_back(crtnexthop(route, rtnl_route_nexthop_n(route, i)));
@@ -161,8 +121,7 @@ crtroute::operator== (crtroute const& rtr)
 	// FIXME: anything else beyond this?
 	return ((table_id 		== rtr.table_id) &&
 			(scope 			== rtr.scope) &&
-			(iif		== rtr.iif) &&
-			(dst			== rtr.dst));
+			(iif		== rtr.iif));
 }
 
 

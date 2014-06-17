@@ -6,9 +6,9 @@
  */
 
 
-#include <crtneigh.h>
+#include "crtneigh.h"
 
-using namespace dptmap;
+using namespace rofcore;
 
 
 crtneigh::crtneigh() :
@@ -16,7 +16,6 @@ crtneigh::crtneigh() :
 		flags(0),
 		ifindex(0),
 		lladdr(rofl::cmacaddr("00:00:00:00:00:00")),
-		dst(rofl::caddress(AF_INET)),
 		family(0),
 		type(0)
 {
@@ -38,7 +37,6 @@ crtneigh::crtneigh(
 		flags(0),
 		ifindex(0),
 		lladdr(rofl::cmacaddr("00:00:00:00:00:00")),
-		dst(rofl::caddress(AF_INET)),
 		family(0),
 		type(0)
 {
@@ -58,7 +56,6 @@ crtneigh::operator= (
 	flags		= neigh.flags;
 	ifindex		= neigh.ifindex;
 	lladdr		= neigh.lladdr;
-	dst			= neigh.dst;
 	family 		= neigh.family;
 	type		= neigh.type;
 
@@ -73,7 +70,6 @@ crtneigh::crtneigh(
 		flags(0),
 		ifindex(0),
 		lladdr(rofl::cmacaddr("00:00:00:00:00:00")),
-		dst(rofl::caddress(AF_INET)),
 		family(0),
 		type(0)
 {
@@ -93,18 +89,6 @@ crtneigh::crtneigh(
 		lladdr 	= rofl::cmacaddr(nl_addr2str(rtnl_neigh_get_lladdr(neigh), s_buf, sizeof(s_buf)));
 	else
 		lladdr 	= rofl::cmacaddr("00:00:00:00:00:00");
-
-
-	std::string s_dst;
-	memset(s_buf, 0, sizeof(s_buf));
-	nl_addr2str(rtnl_neigh_get_dst(neigh), s_buf, sizeof(s_buf));
-	if (std::string(s_buf) != std::string("none"))
-		s_dst.assign(nl_addr2str(rtnl_neigh_get_dst(neigh), s_buf, sizeof(s_buf)));
-	else
-		s_dst.assign("0.0.0.0/0");
-	s_dst 	= s_dst.substr(0, s_dst.find_first_of("/", 0));
-	dst 	= rofl::caddress(family, s_dst.c_str());
-
 
 	nl_object_put((struct nl_object*)neigh); // decrement reference counter by one
 }

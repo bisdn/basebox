@@ -35,8 +35,7 @@ extern "C" {
 #include "crtlink.h"
 #include "crtroute.h"
 
-namespace ethercore
-{
+namespace rofcore {
 
 class eNetLinkBase 			: public std::exception {};
 class eNetLinkCritical		: public eNetLinkBase {};
@@ -59,7 +58,8 @@ class cnetlink :
 	std::set<cnetlink_subscriber*> subscribers;
 
 	std::map<unsigned int, crtlink>		links;	// all links in system => key:ifindex, value:crtlink instance
-	std::map<uint8_t, std::map<unsigned int, crtroute> >	routes;	// all routes in system => key1:table_id, key2:routeindex, value:crtroute instance
+	std::map<uint8_t, std::map<unsigned int, crtroute_in4> >	routes_in4;	// all routes in system => key1:table_id, key2:routeindex, value:crtroute instance
+	std::map<uint8_t, std::map<unsigned int, crtroute_in6> >	routes_in6;	// all routes in system => key1:table_id, key2:routeindex, value:crtroute instance
 
 public:
 
@@ -150,8 +150,8 @@ public:
 	/**
 	 *
 	 */
-	crtroute&
-	get_route(
+	crtroute_in4&
+	get_route_in4(
 			uint8_t table_id,
 			unsigned int rtindex);
 
@@ -162,23 +162,60 @@ public:
 	 * @return
 	 */
 	unsigned int
-	get_route(
-			crtroute const& rtr);
+	get_route_in4(
+			crtroute_in4 const& rtr);
 
 
 	/**
 	 *
 	 */
 	unsigned int
-	set_route(
-			crtroute const& rtr);
+	set_route_in4(
+			crtroute_in4 const& rtr);
 
 
 	/**
 	 *
 	 */
 	void
-	del_route(
+	del_route_in4(
+			uint8_t table_id,
+			unsigned int rtindex);
+
+
+
+	/**
+	 *
+	 */
+	crtroute_in6&
+	get_route_in6(
+			uint8_t table_id,
+			unsigned int rtindex);
+
+
+	/**
+	 *
+	 * @param rtr
+	 * @return
+	 */
+	unsigned int
+	get_route_in6(
+			crtroute_in6 const& rtr);
+
+
+	/**
+	 *
+	 */
+	unsigned int
+	set_route_in6(
+			crtroute_in6 const& rtr);
+
+
+	/**
+	 *
+	 */
+	void
+	del_route_in6(
 			uint8_t table_id,
 			unsigned int rtindex);
 
@@ -288,63 +325,110 @@ public:
 	 *
 	 * @param rtl
 	 */
-	virtual void addr_created(unsigned int ifindex, uint16_t adindex) {};
-
+	virtual void addr_in4_created(unsigned int ifindex, uint16_t adindex) {};
 
 	/**
 	 *
 	 * @param rtl
 	 */
-	virtual void addr_updated(unsigned int ifindex, uint16_t adindex) {};
+	virtual void addr_in4_updated(unsigned int ifindex, uint16_t adindex) {};
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	virtual void addr_in4_deleted(unsigned int ifindex, uint16_t adindex) {};
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void addr_in6_created(unsigned int ifindex, uint16_t adindex) {};
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void addr_in6_updated(unsigned int ifindex, uint16_t adindex) {};
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	virtual void addr_in6_deleted(unsigned int ifindex, uint16_t adindex) {};
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void route_in4_created(uint8_t table_id, unsigned int rtindex) {};
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void route_in4_updated(uint8_t table_id, unsigned int rtindex) {};
 
 
 	/**
 	 *
 	 * @param ifindex
 	 */
-	virtual void addr_deleted(unsigned int ifindex, uint16_t adindex) {};
-
-
-	/**
-	 *
-	 * @param rtl
-	 */
-	virtual void route_created(uint8_t table_id, unsigned int rtindex) {};
-
+	virtual void route_in4_deleted(uint8_t table_id, unsigned int rtindex) {};
 
 	/**
 	 *
 	 * @param rtl
 	 */
-	virtual void route_updated(uint8_t table_id, unsigned int rtindex) {};
+	virtual void route_in6_created(uint8_t table_id, unsigned int rtindex) {};
 
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void route_in6_updated(uint8_t table_id, unsigned int rtindex) {};
 
 	/**
 	 *
 	 * @param ifindex
 	 */
-	virtual void route_deleted(uint8_t table_id, unsigned int rtindex) {};
-
-
-	/**
-	 *
-	 * @param rtl
-	 */
-	virtual void neigh_created(unsigned int ifindex, uint16_t nbindex) {};
-
+	virtual void route_in6_deleted(uint8_t table_id, unsigned int rtindex) {};
 
 	/**
 	 *
 	 * @param rtl
 	 */
-	virtual void neigh_updated(unsigned int ifindex, uint16_t nbindex) {};
+	virtual void neigh_in4_created(unsigned int ifindex, uint16_t nbindex) {};
 
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void neigh_in4_updated(unsigned int ifindex, uint16_t nbindex) {};
 
 	/**
 	 *
 	 * @param ifindex
 	 */
-	virtual void neigh_deleted(unsigned int ifindex, uint16_t nbindex) {};
+	virtual void neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex) {};
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void neigh_in6_created(unsigned int ifindex, uint16_t nbindex) {};
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void neigh_in6_updated(unsigned int ifindex, uint16_t nbindex) {};
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	virtual void neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex) {};
 };
 
 

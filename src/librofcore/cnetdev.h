@@ -22,6 +22,8 @@ extern "C" {
 #include <endian.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <linux/if.h>
+#include <linux/if_arp.h>
 
 #ifdef __cplusplus
 }
@@ -32,7 +34,7 @@ extern "C" {
 
 #include <cpacketpool.h>
 
-namespace dptmap
+namespace ethercore
 {
 
 class cnetdev; // forward declaration, see below

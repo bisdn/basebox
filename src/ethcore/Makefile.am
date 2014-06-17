@@ -18,16 +18,6 @@ ethcored_SOURCES = \
 	logging.cc \
 	cnetlink.cc \
 	cnetlink.h \
-	crtaddr.cc \
-	crtaddr.h \
-	crtlink.cc \
-	crtlink.h \
-	crtneigh.cc \
-	crtneigh.h \
-	crtnexthop.cc \
-	crtnexthop.h \
-	crtroute.cc \
-	crtroute.h \
 	cnetdev.cc \
 	cnetdev.h \
 	ctapdev.cc \
@@ -45,6 +35,6 @@ endif
 
 
 	
-ethcored_LDADD = -lpthread -lrt 
+ethcored_LDADD = -lpthread -lrt -l ../librofcore.la
 
 AM_LDFLAGS = -static
