@@ -10,24 +10,34 @@
 
 #define ETHCORE_LOG_FILE "/var/log/ethcored.log"
 #define ETHCORE_PID_FILE "/var/run/ethcored.pid"
-#define ETHCORE_CONFIG_FILE "/usr/local/etc/ethcored.conf"
+#define ETHCORE_CONF_FILE "/usr/local/etc/ethcored.conf"
 
 int
 main(int argc, char** argv)
 {
 	rofl::cunixenv env_parser(argc, argv);
 
+#if 0
 	/* update defaults */
 	env_parser.update_default_option("logfile", ETHCORE_LOG_FILE);
 	env_parser.update_default_option("config-file", ETHCORE_CONFIG_FILE);
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(ETHCORE_PID_FILE)));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'p', "port", "set port", ""+6653));
+#endif
+
+	/* update defaults */
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'l', "logfile", "set log-file", std::string(ETHCORE_LOG_FILE)));
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'p', "pidfile", "set pid-file", std::string(ETHCORE_PID_FILE)));
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'c', "conffile", "set conf-file", std::string(ETHCORE_CONF_FILE)));
+	env_parser.add_option(rofl::coption(true, NO_ARGUMENT, 'D', "daemon", "daemonize", ""));
+	env_parser.add_option(rofl::coption(true, NO_ARGUMENT, 'V', "version", "show version and build number", ""));
+
 
 	// command line arguments
 	env_parser.parse_args();
 
 	// configuration file
-	ethercore::cconfig::get_instance().open(env_parser.get_arg("config-file"));
+	ethercore::cconfig::get_instance().open(env_parser.get_arg("conffile"));
 
 
 	/*
@@ -115,10 +125,11 @@ main(int argc, char** argv)
 	if (ethercore::cconfig::get_instance().exists("ethcored.openflow.port")) {
 		portno = (int)ethercore::cconfig::get_instance().lookup("ethcored.openflow.port");
 	}
+	std::stringstream s_portno; s_portno << portno;
 
 	enum rofl::csocket::socket_type_t socket_type = rofl::csocket::SOCKET_TYPE_PLAIN;
 	rofl::cparams socket_params = rofl::csocket::get_default_params(socket_type);
-	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string("6653");
+	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string(s_portno.str());
 
 	core.rpc_listen_for_dpts(socket_type, socket_params);
 

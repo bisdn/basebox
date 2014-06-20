@@ -8,19 +8,33 @@
 
 #define IPCORE_LOG_FILE "/var/log/ipcored.log"
 #define IPCORE_PID_FILE "/var/run/ipcored.pid"
+#define IPCORE_CONF_FILE "/usr/local/etc/ipcored.conf"
 
 int
 main(int argc, char** argv)
 {
 	rofl::cunixenv env_parser(argc, argv);
 
+#if 0
 	/* update defaults */
 	env_parser.update_default_option("logfile", IPCORE_LOG_FILE);
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(IPCORE_PID_FILE)));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'p', "port", "set port", ""+6653));
+#endif
+
+	/* update defaults */
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'l', "logfile", "set log-file", std::string(IPCORE_LOG_FILE)));
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'p', "pidfile", "set pid-file", std::string(IPCORE_PID_FILE)));
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'c', "conffile", "set conf-file", std::string(IPCORE_CONF_FILE)));
+	env_parser.add_option(rofl::coption(true, NO_ARGUMENT, 'D', "daemon", "daemonize", ""));
+	env_parser.add_option(rofl::coption(true, NO_ARGUMENT, 'V', "version", "show version and build number", ""));
 
 	//Parse
 	env_parser.parse_args();
+
+	// configuration file
+	iprotcore::cconfig::get_instance().open(env_parser.get_arg("conffile"));
+
 
 	if (not env_parser.is_arg_set("daemonize")) {
 
@@ -41,9 +55,15 @@ main(int argc, char** argv)
 	}
 	dptmap::ipcore core(versionbitmap);
 
+	uint16_t portno = 6633;
+	if (iprotcore::cconfig::get_instance().exists("ipcored.openflow.port")) {
+		portno = (int)iprotcore::cconfig::get_instance().lookup("ipcored.openflow.port");
+	}
+	std::stringstream s_portno; s_portno << portno;
+
 	enum rofl::csocket::socket_type_t socket_type = rofl::csocket::SOCKET_TYPE_PLAIN;
 	rofl::cparams socket_params = rofl::csocket::get_default_params(socket_type);
-	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string() = env_parser.get_arg("port");
+	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string(s_portno.str());
 
 	core.rpc_listen_for_dpts(socket_type, socket_params);
 
