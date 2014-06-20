@@ -142,13 +142,13 @@ private:
 private:
 
 	virtual void
-	handle_timeout(int opaque);
+	handle_timeout(int opaque, void *data = (void*)0);
 
 	virtual void
-	handle_dpt_attached(crofdpt& dpt);
+	handle_dpath_open(crofdpt& dpt);
 
 	virtual void
-	handle_dpt_detached(crofdpt& dpt);
+	handle_dpath_close(crofdpt& dpt);
 
 	virtual void
 	handle_packet_in(crofdpt& dpt, cofmsg_packet_in& msg, uint8_t aux_id = 0);

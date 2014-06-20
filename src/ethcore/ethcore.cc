@@ -183,7 +183,7 @@ ethcore::link_deleted(unsigned int ifindex)
 
 
 void
-ethcore::handle_timeout(int opaque)
+ethcore::handle_timeout(int opaque, void *data)
 {
 	switch (opaque) {
 	case ETHSWITCH_TIMER_DUMP: {
@@ -276,7 +276,7 @@ ethcore::handle_flow_stats_reply(crofdpt& dpt, cofmsg_flow_stats_reply& msg, uin
 
 
 void
-ethcore::handle_dpt_attached(crofdpt& dpt)
+ethcore::handle_dpath_open(crofdpt& dpt)
 {
 	try {
 		netlink_enabled = (bool)cconfig::get_instance().lookup("ethcored.enable_netlink");
@@ -374,7 +374,7 @@ ethcore::handle_dpt_attached(crofdpt& dpt)
 
 
 void
-ethcore::handle_dpt_detached(crofdpt& dpt)
+ethcore::handle_dpath_close(crofdpt& dpt)
 {
 	logging::info << "[ethcore] dpath detaching dpid:" << (unsigned long long)dpt.get_dpid() << std::endl;
 
