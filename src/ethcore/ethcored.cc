@@ -76,6 +76,7 @@ main(int argc, char** argv)
 		pidfile = std::string(ETHCORE_PID_FILE); // default
 	}
 
+#if 0
 	/*
 	 * extract daemonize flag
 	 */
@@ -100,6 +101,46 @@ main(int argc, char** argv)
 	if (daemonize) {
 		rofl::logging::notice << "[ethcore][main] daemonizing successful" << std::endl;
 	}
+#endif
+
+	/* extract verbosity */
+	unsigned int rofl_verbosity = 0;
+	if (env_parser.is_arg_set("debug")) {
+		rofl_verbosity = atoi(env_parser.get_arg("debug").c_str());
+	} else
+	/* read from configuration file */{
+		if (ethercore::cconfig::get_instance().exists("ethcored.daemon.verbosity.rofl")) {
+			rofl_verbosity = ethercore::cconfig::get_instance().lookup("ethcored.daemon.verbosity.rofl");
+		}
+	}
+
+
+	if (not env_parser.is_arg_set("daemon")) {
+
+		rofl::logging::set_debug_level(rofl_verbosity);
+
+	} else {
+
+		std::string pidfile(ETHCORE_PID_FILE);
+		if (env_parser.is_arg_set("pidfile")) {
+			pidfile = env_parser.get_arg("pidfile");
+		} else
+		if (ethercore::cconfig::get_instance().exists("ethcored.daemon.pidfile")) {
+			pidfile = (const char*)ethercore::cconfig::get_instance().lookup("sgwuctld.daemon.pidfile");
+		}
+
+		std::string logfile(ETHCORE_LOG_FILE);
+		if (env_parser.is_arg_set("logfile")) {
+			logfile = env_parser.get_arg("logfile");
+		} else
+		if (ethercore::cconfig::get_instance().exists("ethcored.daemon.logfile")) {
+			logfile = (const char*)ethercore::cconfig::get_instance().lookup("ethcored.daemon.logfile");
+		}
+
+		rofl::cdaemon::daemonize(pidfile, logfile);
+		rofl::logging::set_debug_level(rofl_verbosity);
+	}
+
 
 
 
