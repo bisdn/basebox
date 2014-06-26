@@ -150,6 +150,7 @@ ipcore::handle_dpath_open(
 			rofl::openflow::cofport *port = it->second;
 			if (dptlinks[&dpt].find(port->get_port_no()) == dptlinks[&dpt].end()) {
 				dptlinks[&dpt][port->get_port_no()] = new dptlink(this, &dpt, port->get_port_no());
+				run_port_up_script(port->get_name());
 			}
 		}
 
