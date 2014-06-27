@@ -18,6 +18,8 @@ class RAdvd(object):
         self.state = self.STATE_STOPPED
         self.baseCore = baseCore
         self.devname = devname
+	self.dnssl = 'proact.'
+	self.rdnss = '3000:1::1'
         self.prefixes = []
         self.process = None
         self.conffiledir = conffiledir
@@ -85,6 +87,10 @@ class RAdvd(object):
             f.write('    AdvSendAdvert on;\n')
             f.write('    MaxRtrAdvInterval 4;\n')
             f.write('    MinRtrAdvInterval 3;\n')
+            f.write('    RDNSS ' + str(self.rdnss) + ' {\n')
+            f.write('    };\n')
+            f.write('    DNSSL ' + str(self.dnssl) + ' {\n')
+            f.write('    };\n')
 
             for prefix in self.prefixes:
                 f.write('    prefix ' + str(prefix.prefix) + '/' + str(prefix.prefixlen) + '\n')
