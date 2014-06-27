@@ -448,7 +448,7 @@ ipcore::redirect_ipv4_multicast()
 	fe.match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 	fe.match.set_ipv4_dst(rofl::caddress(AF_INET, "224.0.0.0"), rofl::caddress(AF_INET, "240.0.0.0"));
 	fe.instructions.add_inst_apply_actions().get_actions().append_action_output(
-			rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()));
+			rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()), 1518);
 
 	dpt->send_flow_mod_message(fe);
 }
@@ -468,7 +468,7 @@ ipcore::redirect_ipv6_multicast()
 	fe.match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 	fe.match.set_ipv6_dst(rofl::caddress(AF_INET6, "ff00::"), rofl::caddress(AF_INET6, "ff00::"));
 	fe.instructions.add_inst_apply_actions().get_actions().append_action_output(
-			rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()));
+			rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()), 1518);
 
 	dpt->send_flow_mod_message(fe);
 }
