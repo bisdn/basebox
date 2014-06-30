@@ -7,7 +7,7 @@
 
 #include <dptnexthop.h>
 
-using namespace dptmap;
+using namespace ipcore;
 
 
 dptnexthop::dptnexthop() :

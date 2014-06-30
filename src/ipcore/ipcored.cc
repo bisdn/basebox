@@ -1,5 +1,5 @@
 //#include "cnetlink.h"
-#include "ipcore.h"
+#include "cipcore.h"
 #include "cconfig.h"
 
 #include <rofl/common/ciosrv.h>
@@ -22,6 +22,8 @@ main(int argc, char** argv)
 	//Parse
 	env_parser.parse_args();
 
+
+	// daemonize or stay on console
 	if (not env_parser.is_arg_set("daemonize")) {
 
 		rofl::logging::set_debug_level(atoi(env_parser.get_arg("debug").c_str()));
@@ -33,22 +35,28 @@ main(int argc, char** argv)
 		rofl::logging::notice << "[ipcore][main] daemonizing successful" << std::endl;
 	}
 
+
+	// create cipcore instance with defined OpenFlow version
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
 	if (iprotcore::cconfig::get_instance().exists("ipcored.openflow.version")) {
 		versionbitmap.add_ofp_version((int)iprotcore::cconfig::get_instance().lookup("ipcored.openflow.version"));
 	} else {
 		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
 	}
-	dptmap::ipcore core(versionbitmap);
+	ipcore::cipcore core(versionbitmap);
 
+
+	// prepare control socket and listen for incoming control connections
 	enum rofl::csocket::socket_type_t socket_type = rofl::csocket::SOCKET_TYPE_PLAIN;
 	rofl::cparams socket_params = rofl::csocket::get_default_params(socket_type);
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string() = env_parser.get_arg("port");
-
 	core.rpc_listen_for_dpts(socket_type, socket_params);
 
+
+	// enter main loop
 	rofl::cioloop::run();
 
+	// clean-up and terminate
 	rofl::cioloop::shutdown();
 
 	return 0;

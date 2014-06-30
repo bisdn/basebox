@@ -7,7 +7,7 @@
 
 #include <cnetdev.h>
 
-using namespace ethercore;
+using namespace rofcore;
 
 void
 cnetdev_owner::netdev_created(cnetdev* netdev)

@@ -1,14 +1,14 @@
-#include "ipcore.h"
+#include "cipcore.h"
 
-using namespace dptmap;
+using namespace ipcore;
 
-std::string	ipcore::dpath_open_script_path(DEFAULT_DPATH_OPEN_SCRIPT_PATH);
-std::string	ipcore::dpath_close_script_path(DEFAULT_DPATH_CLOSE_SCRIPT_PATH);
-std::string	ipcore::port_up_script_path(DEFAULT_PORT_UP_SCRIPT_PATH);
-std::string	ipcore::port_down_script_path(DEFAULT_PORT_DOWN_SCRIPT_PATH);
+std::string	cipcore::dpath_open_script_path(DEFAULT_DPATH_OPEN_SCRIPT_PATH);
+std::string	cipcore::dpath_close_script_path(DEFAULT_DPATH_CLOSE_SCRIPT_PATH);
+std::string	cipcore::port_up_script_path(DEFAULT_PORT_UP_SCRIPT_PATH);
+std::string	cipcore::port_down_script_path(DEFAULT_PORT_DOWN_SCRIPT_PATH);
 
 
-ipcore::ipcore(
+cipcore::cipcore(
 		rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap) :
 		dpt(0),
 		dump_state_interval(15),
@@ -18,7 +18,7 @@ ipcore::ipcore(
 }
 
 
-ipcore::~ipcore()
+cipcore::~cipcore()
 {
 	if (0 != dpt) {
 		delete_all_routes();
@@ -30,7 +30,7 @@ ipcore::~ipcore()
 
 
 void
-ipcore::handle_timeout(int opaque, void *data)
+cipcore::handle_timeout(int opaque, void *data)
 {
 	switch (opaque) {
 	case IPCORE_TIMER_DUMP: {
@@ -44,9 +44,9 @@ ipcore::handle_timeout(int opaque, void *data)
 
 
 bool
-ipcore::link_is_mapped_from_dpt(int ifindex)
+cipcore::link_is_mapped_from_dpt(int ifindex)
 {
-	std::map<uint32_t, dptlink*>::const_iterator it;
+	std::map<uint32_t, cdptlink*>::const_iterator it;
 	for (it = dptlinks[dpt].begin(); it != dptlinks[dpt].end(); ++it) {
 		if (it->second->get_ifindex() == ifindex) {
 			return true;
@@ -57,10 +57,10 @@ ipcore::link_is_mapped_from_dpt(int ifindex)
 
 
 
-dptlink&
-ipcore::get_mapped_link_from_dpt(int ifindex)
+cdptlink&
+cipcore::get_mapped_link_from_dpt(int ifindex)
 {
-	std::map<uint32_t, dptlink*>::const_iterator it;
+	std::map<uint32_t, cdptlink*>::const_iterator it;
 	for (it = dptlinks[dpt].begin(); it != dptlinks[dpt].end(); ++it) {
 		if (it->second->get_ifindex() == ifindex) {
 			return *(it->second);
@@ -72,13 +72,13 @@ ipcore::get_mapped_link_from_dpt(int ifindex)
 
 
 void
-ipcore::delete_all_ports()
+cipcore::delete_all_ports()
 {
-	for (std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> >::iterator
+	for (std::map<rofl::crofdpt*, std::map<uint32_t, cdptlink*> >::iterator
 			jt = dptlinks.begin(); jt != dptlinks.end(); ++jt) {
-		for (std::map<uint32_t, dptlink*>::iterator
+		for (std::map<uint32_t, cdptlink*>::iterator
 				it = dptlinks[jt->first].begin(); it != dptlinks[jt->first].end(); ++it) {
-			run_port_down_script(it->second->get_devname());
+			hook_port_down(it->second->get_devname());
 			delete (it->second); // remove dptport instance from heap
 		}
 	}
@@ -88,7 +88,7 @@ ipcore::delete_all_ports()
 
 
 void
-ipcore::delete_all_routes()
+cipcore::delete_all_routes()
 {
 	for (std::map<uint8_t, std::map<unsigned int, dptroute*> >::iterator
 			it = dptroutes.begin(); it != dptroutes.end(); ++it) {
@@ -103,7 +103,7 @@ ipcore::delete_all_routes()
 
 
 void
-ipcore::handle_dpath_open(
+cipcore::handle_dpath_open(
 		rofl::crofdpt& dpt)
 {
 	try {
@@ -149,7 +149,7 @@ ipcore::handle_dpath_open(
 				it = ports.begin(); it != ports.end(); ++it) {
 			rofl::openflow::cofport *port = it->second;
 			if (dptlinks[&dpt].find(port->get_port_no()) == dptlinks[&dpt].end()) {
-				dptlinks[&dpt][port->get_port_no()] = new dptlink(this, &dpt, port->get_port_no());
+				dptlinks[&dpt][port->get_port_no()] = new cdptlink(this, &dpt, port->get_port_no());
 			}
 		}
 
@@ -170,9 +170,9 @@ ipcore::handle_dpath_open(
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fed);
 
-		run_dpath_open_script();
+		hook_dpt_attach();
 
-	} catch (eNetDevCritical& e) {
+	} catch (rofcore::eNetDevCritical& e) {
 
 		fprintf(stderr, "ipcore::handle_dpath_open() unable to create tap device\n");
 		throw;
@@ -183,10 +183,10 @@ ipcore::handle_dpath_open(
 
 
 void
-ipcore::handle_dpath_close(
+cipcore::handle_dpath_close(
 		rofl::crofdpt& dpt)
 {
-	run_dpath_close_script();
+	hook_dpt_detach();
 
 	delete_all_routes();
 
@@ -198,7 +198,7 @@ ipcore::handle_dpath_close(
 
 
 void
-ipcore::handle_port_status(
+cipcore::handle_port_status(
 		rofl::crofdpt& dpt,
 		rofl::openflow::cofmsg_port_status& msg,
 		uint8_t aux_id)
@@ -216,8 +216,8 @@ ipcore::handle_port_status(
 		switch (msg.get_reason()) {
 		case rofl::openflow::OFPPR_ADD: {
 			if (dptlinks[&dpt].find(port_no) == dptlinks[&dpt].end()) {
-				dptlinks[&dpt][port_no] = new dptlink(this, &dpt, msg.get_port().get_port_no());
-				run_port_up_script(msg.get_port().get_name());
+				dptlinks[&dpt][port_no] = new cdptlink(this, &dpt, msg.get_port().get_port_no());
+				hook_port_up(msg.get_port().get_name());
 				dptlinks[&dpt][port_no]->open();
 			}
 		} break;
@@ -232,7 +232,7 @@ ipcore::handle_port_status(
 				dptlinks[&dpt][port_no]->close();
 				delete dptlinks[&dpt][port_no];
 				dptlinks[&dpt].erase(port_no);
-				run_port_down_script(msg.get_port().get_name());
+				hook_port_down(msg.get_port().get_name());
 			}
 		} break;
 		default: {
@@ -242,7 +242,7 @@ ipcore::handle_port_status(
 		} break;
 		}
 
-	} catch (eNetDevCritical& e) {
+	} catch (rofcore::eNetDevCritical& e) {
 
 		// TODO: handle error condition appropriately, for now: rethrow
 		throw;
@@ -253,7 +253,7 @@ ipcore::handle_port_status(
 
 
 void
-ipcore::handle_packet_out(rofl::crofctl& ctl, rofl::openflow::cofmsg_packet_out& msg, uint8_t aux_id)
+cipcore::handle_packet_out(rofl::crofctl& ctl, rofl::openflow::cofmsg_packet_out& msg, uint8_t aux_id)
 {
 
 }
@@ -262,7 +262,7 @@ ipcore::handle_packet_out(rofl::crofctl& ctl, rofl::openflow::cofmsg_packet_out&
 
 
 void
-ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::openflow::cofmsg_packet_in& msg, uint8_t aux_id)
+cipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::openflow::cofmsg_packet_in& msg, uint8_t aux_id)
 {
 	try {
 		uint32_t port_no = msg.get_match().get_in_port();
@@ -280,7 +280,7 @@ ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::openflow::cofmsg_packet_in& m
 			dpt.send_packet_out_message(rofl::cauxid(0), msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
 		}
 
-	} catch (ePacketPoolExhausted& e) {
+	} catch (rofcore::ePacketPoolExhausted& e) {
 
 		fprintf(stderr, "ipcore::handle_packet_in() packetpool exhausted\n");
 
@@ -290,7 +290,7 @@ ipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::openflow::cofmsg_packet_in& m
 
 
 void
-ipcore::handle_error(rofl::crofdpt& dpt, rofl::openflow::cofmsg_error& msg, uint8_t aux_id)
+cipcore::handle_error(rofl::crofdpt& dpt, rofl::openflow::cofmsg_error& msg, uint8_t aux_id)
 {
 	rofl::logging::warn << "[ipcore] error message rcvd:" << std::endl << msg;
 }
@@ -298,7 +298,7 @@ ipcore::handle_error(rofl::crofdpt& dpt, rofl::openflow::cofmsg_error& msg, uint
 
 
 void
-ipcore::handle_flow_removed(rofl::crofdpt& dpt, rofl::openflow::cofmsg_flow_removed& msg, uint8_t aux_id)
+cipcore::handle_flow_removed(rofl::crofdpt& dpt, rofl::openflow::cofmsg_flow_removed& msg, uint8_t aux_id)
 {
 	rofl::logging::info << "[ipcore] Flow-Removed message rcvd:" << std::endl << msg;
 }
@@ -306,10 +306,10 @@ ipcore::handle_flow_removed(rofl::crofdpt& dpt, rofl::openflow::cofmsg_flow_remo
 
 
 void
-ipcore::route_created(uint8_t table_id, unsigned int rtindex)
+cipcore::route_in4_created(uint8_t table_id, unsigned int rtindex)
 {
 	try {
-		if (0 == dpt)
+		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt4route
 			return;
 
 		// ignore local route table and unspecified table_id
@@ -319,16 +319,16 @@ ipcore::route_created(uint8_t table_id, unsigned int rtindex)
 			return;
 		}
 
-		rofl::logging::info << "[ipcore] crtroute CREATE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
+		rofl::logging::info << "[ipcore] crtroute CREATE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in4(table_id, rtindex);
 
-		if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
-			dptroutes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
+		if (dpt4routes[table_id].find(rtindex) == dpt4routes[table_id].end()) {
+			dpt4routes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
 			if (dpt->get_channel().is_established()) {
-				dptroutes[table_id][rtindex]->open();
+				dpt4routes[table_id][rtindex]->open();
 			}
 		}
 
-	} catch (eNetLinkNotFound& e) {
+	} catch (rofcore::eNetLinkNotFound& e) {
 		rofl::logging::warn << "[ipcore] crtroute CREATE notification rcvd => "
 				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
 	}
@@ -337,10 +337,10 @@ ipcore::route_created(uint8_t table_id, unsigned int rtindex)
 
 
 void
-ipcore::route_updated(uint8_t table_id, unsigned int rtindex)
+cipcore::route_in4_updated(uint8_t table_id, unsigned int rtindex)
 {
 	try {
-		if (0 == dpt)
+		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt4route
 			return;
 
 		// ignore local route table and unspecified table_id
@@ -350,16 +350,16 @@ ipcore::route_updated(uint8_t table_id, unsigned int rtindex)
 			return;
 		}
 
-		rofl::logging::info << "[ipcore] crtroute UPDATE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
+		rofl::logging::info << "[ipcore] crtroute UPDATE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in4(table_id, rtindex);
 
 		//std::cerr << "ipcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-		if (dptroutes[table_id].find(rtindex) == dptroutes[table_id].end()) {
-			route_created(table_id, rtindex);
+		if (dpt4routes[table_id].find(rtindex) == dpt4routes[table_id].end()) {
+			route_in4_created(table_id, rtindex);
 		}
 
 		// do nothing here, this event is handled directly by dptroute instance
 
-	} catch (eNetLinkNotFound& e) {
+	} catch (rofcore::eNetLinkNotFound& e) {
 		rofl::logging::warn << "[ipcore] crtroute UPDATE notification rcvd => "
 				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
 	}
@@ -368,10 +368,10 @@ ipcore::route_updated(uint8_t table_id, unsigned int rtindex)
 
 
 void
-ipcore::route_deleted(uint8_t table_id, unsigned int rtindex)
+cipcore::route_in4_deleted(uint8_t table_id, unsigned int rtindex)
 {
 	try {
-		if (0 == dpt)
+		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt4route
 			return;
 
 		// ignore local route table and unspecified table_id
@@ -381,18 +381,18 @@ ipcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 			return;
 		}
 
-		rofl::logging::info << "[ipcore] crtroute DELETE:" << std::endl << cnetlink::get_instance().get_route(table_id, rtindex);
+		rofl::logging::info << "[ipcore] crtroute DELETE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in4(table_id, rtindex);
 
 		//std::cerr << "ipcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-		if (dptroutes[table_id].find(rtindex) != dptroutes[table_id].end()) {
+		if (dpt4routes[table_id].find(rtindex) != dpt4routes[table_id].end()) {
 			if (dpt->get_channel().is_established()) {
-				dptroutes[table_id][rtindex]->close();
+				dpt4routes[table_id][rtindex]->close();
 			}
-			delete dptroutes[table_id][rtindex];
-			dptroutes[table_id].erase(rtindex);
+			delete dpt4routes[table_id][rtindex];
+			dpt4routes[table_id].erase(rtindex);
 		}
 
-	} catch (eNetLinkNotFound& e) {
+	} catch (rofcore::eNetLinkNotFound& e) {
 		rofl::logging::warn << "[ipcore] crtroute DELETE notification rcvd => "
 				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
 	}
@@ -401,7 +401,102 @@ ipcore::route_deleted(uint8_t table_id, unsigned int rtindex)
 
 
 void
-ipcore::block_stp_frames()
+cipcore::route_in6_created(uint8_t table_id, unsigned int rtindex)
+{
+	try {
+		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt6route
+			return;
+
+		// ignore local route table and unspecified table_id
+		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
+			std::cerr << "ipcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			return;
+		}
+
+		rofl::logging::info << "[ipcore] crtroute CREATE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in6(table_id, rtindex);
+
+		if (dpt6routes[table_id].find(rtindex) == dpt6routes[table_id].end()) {
+			dpt6routes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
+			if (dpt->get_channel().is_established()) {
+				dpt6routes[table_id][rtindex]->open();
+			}
+		}
+
+	} catch (rofcore::eNetLinkNotFound& e) {
+		rofl::logging::warn << "[ipcore] crtroute CREATE notification rcvd => "
+				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
+	}
+}
+
+
+
+void
+cipcore::route_in6_updated(uint8_t table_id, unsigned int rtindex)
+{
+	try {
+		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt6route
+			return;
+
+		// ignore local route table and unspecified table_id
+		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
+			std::cerr << "ipcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			return;
+		}
+
+		rofl::logging::info << "[ipcore] crtroute UPDATE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in6(table_id, rtindex);
+
+		//std::cerr << "ipcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+		if (dpt6routes[table_id].find(rtindex) == dpt6routes[table_id].end()) {
+			route_in6_created(table_id, rtindex);
+		}
+
+		// do nothing here, this event is handled directly by dptroute instance
+
+	} catch (rofcore::eNetLinkNotFound& e) {
+		rofl::logging::warn << "[ipcore] crtroute UPDATE notification rcvd => "
+				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
+	}
+}
+
+
+
+void
+cipcore::route_in6_deleted(uint8_t table_id, unsigned int rtindex)
+{
+	try {
+		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt6route
+			return;
+
+		// ignore local route table and unspecified table_id
+		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
+		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
+			std::cerr << "ipcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			return;
+		}
+
+		rofl::logging::info << "[ipcore] crtroute DELETE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in6(table_id, rtindex);
+
+		//std::cerr << "ipcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
+		if (dpt6routes[table_id].find(rtindex) != dpt6routes[table_id].end()) {
+			if (dpt->get_channel().is_established()) {
+				dpt6routes[table_id][rtindex]->close();
+			}
+			delete dpt6routes[table_id][rtindex];
+			dpt6routes[table_id].erase(rtindex);
+		}
+
+	} catch (rofcore::eNetLinkNotFound& e) {
+		rofl::logging::warn << "[ipcore] crtroute DELETE notification rcvd => "
+				<< "unable to find crtroute for table-id:" << table_id << " rtindex:" << rtindex << std::endl;
+	}
+}
+
+
+
+void
+cipcore::block_stp_frames()
 {
 	if (0 == dpt)
 		return;
@@ -418,7 +513,7 @@ ipcore::block_stp_frames()
 
 
 void
-ipcore::unblock_stp_frames()
+cipcore::unblock_stp_frames()
 {
 	if (0 == dpt)
 		return;
@@ -435,7 +530,7 @@ ipcore::unblock_stp_frames()
 
 
 void
-ipcore::redirect_ipv4_multicast()
+cipcore::redirect_ipv4_multicast()
 {
 	if (0 == dpt)
 		return;
@@ -455,7 +550,7 @@ ipcore::redirect_ipv4_multicast()
 
 
 void
-ipcore::redirect_ipv6_multicast()
+cipcore::redirect_ipv6_multicast()
 {
 	if (0 == dpt)
 		return;
@@ -475,7 +570,7 @@ ipcore::redirect_ipv6_multicast()
 
 
 void
-ipcore::run_dpath_open_script()
+cipcore::hook_dpt_attach()
 {
 	std::vector<std::string> argv;
 	std::vector<std::string> envp;
@@ -484,13 +579,13 @@ ipcore::run_dpath_open_script()
 	s_dpid << "DPID=" << dpt->get_dpid();
 	envp.push_back(s_dpid.str());
 
-	ipcore::execute(ipcore::dpath_open_script_path, argv, envp);
+	cipcore::execute(cipcore::dpath_open_script_path, argv, envp);
 }
 
 
 
 void
-ipcore::run_dpath_close_script()
+cipcore::hook_dpt_detach()
 {
 	std::vector<std::string> argv;
 	std::vector<std::string> envp;
@@ -499,32 +594,13 @@ ipcore::run_dpath_close_script()
 	s_dpid << "DPID=" << dpt->get_dpid();
 	envp.push_back(s_dpid.str());
 
-	ipcore::execute(ipcore::dpath_close_script_path, argv, envp);
+	cipcore::execute(cipcore::dpath_close_script_path, argv, envp);
 }
 
 
 
 void
-ipcore::run_port_up_script(std::string const& devname)
-{
-	std::vector<std::string> argv;
-	std::vector<std::string> envp;
-
-	std::stringstream s_dpid;
-	s_dpid << "DPID=" << dpt->get_dpid();
-	envp.push_back(s_dpid.str());
-
-	std::stringstream s_devname;
-	s_devname << "DEVNAME=" << devname;
-	envp.push_back(s_devname.str());
-
-	ipcore::execute(ipcore::port_up_script_path, argv, envp);
-}
-
-
-
-void
-ipcore::run_port_down_script(std::string const& devname)
+cipcore::hook_port_up(std::string const& devname)
 {
 	std::vector<std::string> argv;
 	std::vector<std::string> envp;
@@ -537,13 +613,32 @@ ipcore::run_port_down_script(std::string const& devname)
 	s_devname << "DEVNAME=" << devname;
 	envp.push_back(s_devname.str());
 
-	ipcore::execute(ipcore::port_down_script_path, argv, envp);
+	cipcore::execute(cipcore::port_up_script_path, argv, envp);
 }
 
 
 
 void
-ipcore::execute(
+cipcore::hook_port_down(std::string const& devname)
+{
+	std::vector<std::string> argv;
+	std::vector<std::string> envp;
+
+	std::stringstream s_dpid;
+	s_dpid << "DPID=" << dpt->get_dpid();
+	envp.push_back(s_dpid.str());
+
+	std::stringstream s_devname;
+	s_devname << "DEVNAME=" << devname;
+	envp.push_back(s_devname.str());
+
+	cipcore::execute(cipcore::port_down_script_path, argv, envp);
+}
+
+
+
+void
+cipcore::execute(
 		std::string const& executable,
 		std::vector<std::string> argv,
 		std::vector<std::string> envp)
@@ -586,18 +681,18 @@ ipcore::execute(
 
 
 void
-ipcore::dump_state()
+cipcore::dump_state()
 {
 	register_timer(IPCORE_TIMER_DUMP, dump_state_interval);
 
-	for (std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> >::iterator
+	for (std::map<rofl::crofdpt*, std::map<uint32_t, cdptlink*> >::iterator
 			it = dptlinks.begin(); it != dptlinks.end(); ++it) {
 
 		rofl::crofdpt *dpt = it->first;
 
 		std::cerr << "data path <dpid: " << dpt->get_dpid_s() << "> => " << std::endl;
 
-		for (std::map<uint32_t, dptlink*>::iterator
+		for (std::map<uint32_t, cdptlink*>::iterator
 				jt = dptlinks[dpt].begin(); jt != dptlinks[dpt].end(); ++jt) {
 
 			std::cerr << "  " << *(jt->second) << std::endl;

@@ -30,11 +30,11 @@ extern "C" {
 #include "dptlink.h"
 #include "dptnexthop.h"
 
-namespace dptmap
+namespace ipcore
 {
 
 class dptroute :
-		public cnetlink_subscriber
+		public rofcore::cnetlink_subscriber
 {
 private:
 
@@ -168,7 +168,7 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, dptroute const& route) {
-		crtroute& rtr = cnetlink::get_instance().get_route(route.table_id, route.rtindex);
+		rofcore::crtroute& rtr = rofcore::cnetlink::get_instance().get_route_in4(route.table_id, route.rtindex);
 
 		switch (rtr.get_scope()) {
 #if 0

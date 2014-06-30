@@ -14,7 +14,7 @@
 
 #include <rofl/common/cpacket.h>
 
-namespace ethercore
+namespace rofcore
 {
 
 class ePacketPoolBase 			: public std::exception {};

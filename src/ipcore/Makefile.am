@@ -5,18 +5,18 @@ SUBDIRS =
 sbin_PROGRAMS = ipcored
 
 ipcored_SOURCES = ipcored.cc \
-		ipcore.h \
-		ipcore.cc \
+		cipcore.h \
+		cipcore.cc \
 		cconfig.h \
 		cconfig.cc \
 		dptroute.h \
 		dptroute.cc \
-		dptlink.h \
-		dptlink.cc \
-		dptaddr.h \
-		dptaddr.cc \
-		dptneigh.h \
-		dptneigh.cc \
+		cdptlink.h \
+		cdptlink.cc \
+		cdptaddr.h \
+		cdptaddr.cc \
+		cdptneigh.h \
+		cdptneigh.cc \
 		dptnexthop.h \
 		dptnexthop.cc \
 		cpacketpool.h \

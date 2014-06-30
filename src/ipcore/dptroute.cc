@@ -8,7 +8,7 @@
 #include <dptroute.h>
 
 
-using namespace dptmap;
+using namespace ipcore;
 
 
 dptroute::dptroute(
@@ -78,7 +78,7 @@ dptroute::set_nexthops()
 			dptnexthops[nbindex] = dptnexthop(
 										rofbase,
 										dpt,
-										dptlink::get_dptlink(rtnh.get_ifindex()).get_of_port_no(),
+										cdptlink::get_link(rtnh.get_ifindex()).get_of_port_no(),
 										/*of_table_id=*/2,
 										rtnh.get_ifindex(),
 										nbindex,
@@ -326,7 +326,7 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 			dptnexthops[nbindex] = dptnexthop(
 										rofbase,
 										dpt,
-										dptlink::get_dptlink(rtnh.get_ifindex()).get_of_port_no(),
+										cdptlink::get_link(rtnh.get_ifindex()).get_of_port_no(),
 										/*of_table_id=*/2,
 										ifindex,
 										nbindex,
@@ -348,7 +348,7 @@ void
 dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 {
 	try {
-		dptlink::get_dptlink(ifindex);
+		cdptlink::get_link(ifindex);
 
 		crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
 		crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
@@ -403,7 +403,7 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 				dptnexthops[nbindex] = dptnexthop(
 											rofbase,
 											dpt,
-											dptlink::get_dptlink(rtnh.get_ifindex()).get_of_port_no(),
+											cdptlink::get_link(rtnh.get_ifindex()).get_of_port_no(),
 											/*of_table_id=*/2,
 											ifindex,
 											nbindex,

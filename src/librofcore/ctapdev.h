@@ -32,7 +32,7 @@ extern "C" {
 
 
 
-namespace ethercore
+namespace rofcore
 {
 
 class eTapDevBase 			: public eNetDevBase {};

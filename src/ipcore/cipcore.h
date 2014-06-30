@@ -1,12 +1,12 @@
 /*
- * ipcore.h
+ * cipcore.h
  *
  *  Created on: 29.05.2013
  *      Author: andi
  */
 
-#ifndef IPCORE_H_
-#define IPCORE_H_ 1
+#ifndef CIPCORE_H_
+#define CIPCORE_H_ 1
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,6 +21,8 @@ extern "C" {
 
 #include <map>
 #include <vector>
+#include <string>
+#include <iostream>
 #include <exception>
 
 #include <rofl/common/crofbase.h>
@@ -30,7 +32,7 @@ extern "C" {
 #include "dptroute.h"
 #include "cnetlink.h"
 
-namespace dptmap
+namespace ipcore
 {
 
 class eVmCoreBase 			: public std::exception {};
@@ -38,9 +40,9 @@ class eVmCoreCritical 		: public eVmCoreBase {};
 class eVmCoreNoDptAttached	: public eVmCoreBase {};
 class eVmCoreNotFound		: public eVmCoreBase {};
 
-class ipcore :
+class cipcore :
 		public rofl::crofbase,
-		public cnetlink_subscriber
+		public rofcore::cnetlink_subscriber
 {
 	#define DEFAULT_DPATH_OPEN_SCRIPT_PATH 	"/var/lib/ipcore/dpath-open.sh"
 	#define DEFAULT_DPATH_CLOSE_SCRIPT_PATH "/var/lib/ipcore/dpath-close.sh"
@@ -60,9 +62,10 @@ class ipcore :
 private:
 
 
-	rofl::crofdpt 												*dpt;		// handle for cofdpt instance managed by this vmcore
-	std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> > 	 dptlinks;	// mapped ports per data path element
-	std::map<uint8_t, std::map<unsigned int, dptroute*> >		 dptroutes;	// active routes => key1:table_id, key2:routing index, value: dptroute instance
+	rofl::crofdpt 												*dpt;			// handle for cofdpt instance managed by this vmcore
+	std::map<rofl::crofdpt*, std::map<uint32_t, cdptlink*> > 	 dptlinks;		// mapped ports per data path element
+	std::map<uint8_t, std::map<unsigned int, dptroute*> >		 dpt4routes;	// active routes => key1:table_id, key2:routing index, value: dptroute instance
+	std::map<uint8_t, std::map<unsigned int, dptroute*> >		 dpt6routes;	// active routes => key1:table_id, key2:routing index, value: dptroute instance
 
 	enum ipcore_timer_t {
 		IPCORE_TIMER_BASE = 0x6423beed,
@@ -77,7 +80,7 @@ public:
 	/**
 	 *
 	 */
-	ipcore(
+	cipcore(
 			rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap);
 
 
@@ -85,7 +88,7 @@ public:
 	 *
 	 */
 	virtual
-	~ipcore();
+	~cipcore();
 
 
 public:
@@ -120,15 +123,26 @@ public:
 
 public:
 
+	// IPv4 routes
+	virtual void
+	route_in4_created(uint8_t table_id, unsigned int rtindex);
 
 	virtual void
-	route_created(uint8_t table_id, unsigned int rtindex);
+	route_in4_updated(uint8_t table_id, unsigned int rtindex);
 
 	virtual void
-	route_updated(uint8_t table_id, unsigned int rtindex);
+	route_in4_deleted(uint8_t table_id, unsigned int rtindex);
+
+	// IPv6 routes
+	virtual void
+	route_in6_created(uint8_t table_id, unsigned int rtindex);
 
 	virtual void
-	route_deleted(uint8_t table_id, unsigned int rtindex);
+	route_in6_updated(uint8_t table_id, unsigned int rtindex);
+
+	virtual void
+	route_in6_deleted(uint8_t table_id, unsigned int rtindex);
+
 
 
 private:
@@ -136,7 +150,7 @@ private:
 	bool
 	link_is_mapped_from_dpt(int ifindex);
 
-	dptlink&
+	cdptlink&
 	get_mapped_link_from_dpt(int ifindex);
 
 	void
@@ -157,18 +171,26 @@ private:
 	void
 	redirect_ipv6_multicast();
 
+
+	/*
+	 * event specific hooks
+	 */
 	void
-	run_dpath_open_script();
+	hook_dpt_attach();
 
 	void
-	run_dpath_close_script();
+	hook_dpt_detach();
 
 	void
-	run_port_up_script(std::string const& devname);
+	hook_port_up(std::string const& devname);
 
 	void
-	run_port_down_script(std::string const& devname);
+	hook_port_down(std::string const& devname);
 
+
+	/*
+	 * dump state periodically
+	 */
 	void
 	dump_state();
 };

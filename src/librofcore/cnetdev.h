@@ -34,7 +34,7 @@ extern "C" {
 
 #include <cpacketpool.h>
 
-namespace ethercore
+namespace rofcore
 {
 
 class cnetdev; // forward declaration, see below

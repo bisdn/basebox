@@ -8,7 +8,7 @@
 #ifndef FLOWMOD_H_
 #define FLOWMOD_H_ 1
 
-namespace dptmap
+namespace ipcore
 {
 
 class flowmod

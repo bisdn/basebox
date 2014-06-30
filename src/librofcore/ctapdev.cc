@@ -7,7 +7,7 @@
 
 #include <ctapdev.h>
 
-using namespace ethercore;
+using namespace rofcore;
 
 extern int errno;
 

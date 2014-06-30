@@ -7,7 +7,7 @@
 
 #include <cpacketpool.h>
 
-using namespace ethercore;
+using namespace rofcore;
 
 cpacketpool* cpacketpool::packetpool = (cpacketpool*)0;
 

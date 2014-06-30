@@ -27,7 +27,7 @@ extern "C" {
 #include "flowmod.h"
 #include "cnetlink.h"
 
-namespace dptmap
+namespace ipcore
 {
 
 class dptnexthop :
