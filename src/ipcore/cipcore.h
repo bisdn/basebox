@@ -28,7 +28,7 @@ extern "C" {
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cofhelloelemversionbitmap.h>
 
-#include "dptlink.h"
+#include "cdptlink.h"
 #include "dptroute.h"
 #include "cnetlink.h"
 

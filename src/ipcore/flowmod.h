@@ -24,13 +24,8 @@ public:
 	/**
 	 *
 	 */
-	virtual void flow_mod_add() = 0;
+	virtual void flow_mod_add(uint8_t command = rofl::openflow::OFPFC_ADD) = 0;
 
-
-	/**
-	 *
-	 */
-	virtual void flow_mod_modify() = 0;
 
 
 	/**

@@ -25,7 +25,7 @@ extern "C" {
 #include "cnetlink.h"
 #include "cpacketpool.h"
 #include "cdptaddr.h"
-#include "dptneigh.h"
+#include "cdptneigh.h"
 
 namespace ipcore
 {
@@ -365,12 +365,20 @@ public:
 		} catch (rofcore::eNetLinkNotFound& e) {
 			os << rofl::indent(2) << "<no crtlink found >" << std::endl;
 		}
-		for (std::map<uint16_t, cdptaddr>::const_iterator
+		for (std::map<uint16_t, cdptaddr_in4>::const_iterator
 				it = link.dpt4addrs.begin(); it != link.dpt4addrs.end(); ++it) {
 			rofl::indent i(2); os << it->second;
 		}
-		for (std::map<uint16_t, cdptneigh>::const_iterator
+		for (std::map<uint16_t, cdptneigh_in4>::const_iterator
 				it = link.dpt4neighs.begin(); it != link.dpt4neighs.end(); ++it) {
+			rofl::indent i(2); os << it->second << std::endl;
+		}
+		for (std::map<uint16_t, cdptaddr_in6>::const_iterator
+				it = link.dpt6addrs.begin(); it != link.dpt6addrs.end(); ++it) {
+			rofl::indent i(2); os << it->second;
+		}
+		for (std::map<uint16_t, cdptneigh_in6>::const_iterator
+				it = link.dpt6neighs.begin(); it != link.dpt6neighs.end(); ++it) {
 			rofl::indent i(2); os << it->second << std::endl;
 		}
 		return os;

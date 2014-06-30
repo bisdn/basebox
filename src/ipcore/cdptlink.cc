@@ -600,77 +600,48 @@ cdptlink::neigh_in4_updated(unsigned int ifindex, uint16_t nbindex)
 		if (ifindex != this->ifindex)
 			return;
 
-		if (not has_neigh_in4(nbindex)) {
-			return;
-		}
-
-		// check status changes and notify dptneigh instance
-		set_neigh_in4(nbindex).update();
-		set_neigh_in4(nbindex).reinstall();
-
-	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::warn << "[ipcore][dptlink][neigh_in4_updated] link not found, "
-				"ifindex:" << ifindex << std::endl
-
-	} catch (rofcore::eRtLinkNotFound& e) {
-		rofcore::logging::warn << "[ipcore][dptlink][neigh_in4_updated] neighess not found, "
-				"nbindex:" << nbindex << std::endl
-
-	}
-
-
-	try {
-
-		// filter out any events not related to our port
-		if (ifindex != this->ifindex)
-			return;
-
-		if (dpt4neighs.find(nbindex) == dpt4neighs.end()) {
-			neigh_in4_created(ifindex, nbindex);
-		}
-
-		// TODO: check status changes and notify dptneigh instance
-
 		rofcore::crtneigh_in4& rtn = rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in4(nbindex);
-
+		// check status changes and notify dptneigh instance
 		switch (rtn.get_state()) {
 		case NUD_INCOMPLETE:
 		case NUD_DELAY:
 		case NUD_PROBE:
 		case NUD_FAILED: {
-			/* go on and delete entry */
-			if (dpt4neighs.find(nbindex) == dpt4neighs.end())
+
+			if (not has_neigh_in4(nbindex)) {
 				return;
+			}
 
 			rofl::logging::info << "[ipcore][dptlink] crtneigh UPDATE (scheduled for removal):" << std::endl
 					<< rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in4(nbindex);
 
-			dpt4neighs[nbindex].close();
-			dpt4neighs.erase(nbindex);
+			set_neigh_in4(nbindex).uninstall();
+			drop_neigh_in4(nbindex);
+
 		} break;
 
 		case NUD_STALE:
 		case NUD_NOARP:
 		case NUD_REACHABLE:
 		case NUD_PERMANENT: {
-			if (dpt4neighs.find(nbindex) != dpt4neighs.end()) {
-				dpt4neighs[nbindex].close();
-				dpt4neighs.erase(nbindex);
-			}
 
 			rofl::logging::info << "[ipcore][dptlink] crtneigh UPDATE (refresh):" << std::endl
 					<< rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in4(nbindex);
 
-			dpt4neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, /*of_table_id=*/2, ifindex, nbindex);
-
-			dpt4neighs[nbindex].open();
+			set_neigh_in4(nbindex).update();
+			set_neigh_in4(nbindex).reinstall();
 
 		} break;
 		}
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofl::logging::warn << "[ipcore][dptlink] crtneigh UPDATE notification rcvd => "
-				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
+		rofcore::logging::warn << "[ipcore][dptlink][neigh_in4_updated] link not found, "
+				"ifindex:" << ifindex << std::endl
+
+	} catch (rofcore::eRtLinkNotFound& e) {
+		rofcore::logging::warn << "[ipcore][dptlink][neigh_in4_updated] neigh address not found, "
+				"nbindex:" << nbindex << std::endl
+
 	}
 }
 
@@ -684,25 +655,21 @@ cdptlink::neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex)
 		if (ifindex != this->ifindex)
 			return;
 
-		if (dpt4neighs.find(nbindex) == dpt4neighs.end()) {
-			// we have no dptaddr instance for the crtaddr instance scheduled for removal, so ignore it
+		if (not has_neigh_in4(nbindex)) {
 			return;
 		}
 
-		rofl::logging::info << "[ipcore][dptlink] crtneigh DELETE:" << std::endl
-				<< rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in4(nbindex);
-
-		dpt4neighs[nbindex].close();
-
-		dpt4neighs.erase(nbindex);
+		set_neigh_in4(nbindex).uninstall();
+		drop_neigh_in4(nbindex);
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofl::logging::warn << "[ipcore][dptlink] crtneigh DELETE notification rcvd => "
-				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
+		rofcore::logging::warn << "[ipcore][dptlink][neigh_in4_deleted] link not found, "
+				"ifindex:" << ifindex << std::endl
 
 	} catch (rofcore::eRtLinkNotFound& e) {
-		rofl::logging::warn << "[ipcore][dptlink] crtneigh DELETE notification rcvd => "
-				<< "unable to find crtneigh for nbindex:" << nbindex << std::endl;
+		rofcore::logging::warn << "[ipcore][dptlink][neigh_in4_deleted] address not found, "
+				"nbindex:" << nbindex << std::endl
+
 	}
 }
 
@@ -715,28 +682,25 @@ cdptlink::neigh_in6_created(unsigned int ifindex, uint16_t nbindex)
 {
 	try {
 		// filter out any events not related to our port
-		if (ifindex != this->ifindex)
+		if (ifindex != this->ifindex) {
 			return;
-
-		rofl::logging::info << "[ipcore][dptlink] crtneigh CREATE:" << std::endl
-				<< rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in6(nbindex);
-
-		if (dpt6neighs.find(nbindex) != dpt6neighs.end()) {
-			// safe strategy: remove old FlowMod first
-			dpt6neighs[nbindex].close();
 		}
 
-		dpt6neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, /*of_table_id=*/2, ifindex, nbindex);
-
-		dpt6neighs[nbindex].open();
+		add_neigh_in6(nbindex).set_dptid(dptid);	// reset any existing instance
+		set_neigh_in6(nbindex).set_ofp_port_no(of_port_no);
+		set_neigh_in6(nbindex).set_ifindex(ifindex);
+		set_neigh_in6(nbindex).set_nbindex(nbindex);
+		set_neigh_in6(nbindex).set_table_id(2); // table-id: 2
+		set_neigh_in6(nbindex).install();
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofl::logging::warn << "[ipcore][dptlink] crtneigh CREATE notification rcvd => "
-				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
+		rofcore::logging::warn << "[ipcore][dptlink][neigh_in6_created] link not found, "
+				"ifindex:" << ifindex << std::endl
 
 	} catch (rofcore::eRtLinkNotFound& e) {
-		rofl::logging::warn << "[ipcore][dptlink] crtneigh CREATE notification rcvd => "
-				<< "unable to find crtneigh for nbindex:" << nbindex << std::endl;
+		rofcore::logging::warn << "[ipcore][dptlink][neigh_in6_created] address not found, "
+				"nbindex:" << nbindex << std::endl
+
 	}
 }
 
@@ -746,57 +710,52 @@ void
 cdptlink::neigh_in6_updated(unsigned int ifindex, uint16_t nbindex)
 {
 	try {
-
 		// filter out any events not related to our port
 		if (ifindex != this->ifindex)
 			return;
 
-		if (dpt6neighs.find(nbindex) == dpt6neighs.end()) {
-			neigh_in6_created(ifindex, nbindex);
-		}
-
-		// TODO: check status changes and notify dptneigh instance
-
 		rofcore::crtneigh_in6& rtn = rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in6(nbindex);
-
+		// check status changes and notify dptneigh instance
 		switch (rtn.get_state()) {
 		case NUD_INCOMPLETE:
 		case NUD_DELAY:
 		case NUD_PROBE:
 		case NUD_FAILED: {
-			/* go on and delete entry */
-			if (dpt6neighs.find(nbindex) == dpt6neighs.end())
+
+			if (not has_neigh_in6(nbindex)) {
 				return;
+			}
 
 			rofl::logging::info << "[ipcore][dptlink] crtneigh UPDATE (scheduled for removal):" << std::endl
 					<< rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in6(nbindex);
 
-			dpt6neighs[nbindex].close();
-			dpt6neighs.erase(nbindex);
+			set_neigh_in6(nbindex).uninstall();
+			drop_neigh_in6(nbindex);
+
 		} break;
 
 		case NUD_STALE:
 		case NUD_NOARP:
 		case NUD_REACHABLE:
 		case NUD_PERMANENT: {
-			if (dpt6neighs.find(nbindex) != dpt6neighs.end()) {
-				dpt6neighs[nbindex].close();
-				dpt6neighs.erase(nbindex);
-			}
 
 			rofl::logging::info << "[ipcore][dptlink] crtneigh UPDATE (refresh):" << std::endl
 					<< rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in6(nbindex);
 
-			dpt6neighs[nbindex] = dptneigh(rofbase, dpt, of_port_no, /*of_table_id=*/2, ifindex, nbindex);
-
-			dpt6neighs[nbindex].open();
+			set_neigh_in6(nbindex).update();
+			set_neigh_in6(nbindex).reinstall();
 
 		} break;
 		}
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofl::logging::warn << "[ipcore][dptlink] crtneigh UPDATE notification rcvd => "
-				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
+		rofcore::logging::warn << "[ipcore][dptlink][neigh_in6_updated] link not found, "
+				"ifindex:" << ifindex << std::endl
+
+	} catch (rofcore::eRtLinkNotFound& e) {
+		rofcore::logging::warn << "[ipcore][dptlink][neigh_in6_updated] neigh address not found, "
+				"nbindex:" << nbindex << std::endl
+
 	}
 }
 
@@ -810,26 +769,23 @@ cdptlink::neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex)
 		if (ifindex != this->ifindex)
 			return;
 
-		if (dpt6neighs.find(nbindex) == dpt6neighs.end()) {
-			// we have no dptaddr instance for the crtaddr instance scheduled for removal, so ignore it
+		if (not has_neigh_in6(nbindex)) {
 			return;
 		}
 
-		rofl::logging::info << "[ipcore][dptlink] crtneigh DELETE:" << std::endl
-				<< rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in6(nbindex);
-
-		dpt6neighs[nbindex].close();
-
-		dpt6neighs.erase(nbindex);
+		set_neigh_in6(nbindex).uninstall();
+		drop_neigh_in6(nbindex);
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofl::logging::warn << "[ipcore][dptlink] crtneigh DELETE notification rcvd => "
-				<< "unable to find crtlink for ifindex:" << ifindex << std::endl;
+		rofcore::logging::warn << "[ipcore][dptlink][neigh_in6_deleted] link not found, "
+				"ifindex:" << ifindex << std::endl
 
 	} catch (rofcore::eRtLinkNotFound& e) {
-		rofl::logging::warn << "[ipcore][dptlink] crtneigh DELETE notification rcvd => "
-				<< "unable to find crtneigh for nbindex:" << nbindex << std::endl;
+		rofcore::logging::warn << "[ipcore][dptlink][neigh_in6_deleted] address not found, "
+				"nbindex:" << nbindex << std::endl
+
 	}
 }
+
 
 
