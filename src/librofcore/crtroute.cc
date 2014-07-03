@@ -69,7 +69,6 @@ crtroute::operator= (crtroute const& rtr)
 	flags		= rtr.flags;
 	metric		= rtr.metric;
 	iif			= rtr.iif;
-	nexthops	= rtr.nexthops;
 
 	return *this;
 }
@@ -106,10 +105,6 @@ crtroute::crtroute(struct rtnl_route *route) :
 	iif		= rtnl_route_get_iif(route);
 	prefixlen	= nl_addr_get_prefixlen(rtnl_route_get_dst(route));
 
-	for (int i = 0; i < rtnl_route_get_nnexthops(route); i++) {
-		nexthops.push_back(crtnexthop(route, rtnl_route_nexthop_n(route, i)));
-	}
-
 	rtnl_route_put(route); // decrement reference count by one
 }
 
@@ -122,16 +117,6 @@ crtroute::operator== (crtroute const& rtr)
 	return ((table_id 		== rtr.table_id) &&
 			(scope 			== rtr.scope) &&
 			(iif		== rtr.iif));
-}
-
-
-
-crtnexthop&
-crtroute::get_nexthop(unsigned int index)
-{
-	if (index >= nexthops.size())
-		throw eRtRouteNotFound();
-	return nexthops[index];
 }
 
 
@@ -169,6 +154,120 @@ crtroute::get_scope_s() const
 	}
 
 	return str;
+}
+
+
+
+crtnexthop_in4&
+crtroute_in4::add_nexthop_in4(
+		unsigned int nhindex)
+{
+	if (nexthops.find(nhindex) != nexthops.end()) {
+		nexthops.erase(nhindex);
+	}
+	return nexthops[nhindex];
+}
+
+
+
+crtnexthop_in4&
+crtroute_in4::set_nexthop_in4(
+		unsigned int nhindex)
+{
+	if (nexthops.find(nhindex) == nexthops.end()) {
+		(void)nexthops[nhindex];
+	}
+	return nexthops[nhindex];
+}
+
+
+
+const crtnexthop_in4&
+crtroute_in4::get_nexthop_in4(
+		unsigned int nhindex) const
+{
+	if (nexthops.find(nhindex) == nexthops.end()) {
+		throw eRtRouteNotFound();
+	}
+	return nexthops.at(nhindex);
+}
+
+
+
+void
+crtroute_in4::drop_nexthop_in4(
+		unsigned int nhindex)
+{
+	if (nexthops.find(nhindex) == nexthops.end()) {
+		return;
+	}
+	nexthops.erase(nhindex);
+}
+
+
+
+bool
+crtroute_in4::has_nexthop_in4(
+		unsigned int nhindex) const
+{
+	return (not (nexthops.find(nhindex) == nexthops.end()));
+}
+
+
+
+crtnexthop_in6&
+crtroute_in6::add_nexthop_in6(
+		unsigned int nhindex)
+{
+	if (nexthops.find(nhindex) != nexthops.end()) {
+		nexthops.erase(nhindex);
+	}
+	return nexthops[nhindex];
+}
+
+
+
+crtnexthop_in6&
+crtroute_in6::set_nexthop_in6(
+		unsigned int nhindex)
+{
+	if (nexthops.find(nhindex) == nexthops.end()) {
+		(void)nexthops[nhindex];
+	}
+	return nexthops[nhindex];
+}
+
+
+
+const crtnexthop_in6&
+crtroute_in6::get_nexthop_in6(
+		unsigned int nhindex) const
+{
+	if (nexthops.find(nhindex) == nexthops.end()) {
+		throw eRtRouteNotFound();
+	}
+	return nexthops.at(nhindex);
+}
+
+
+
+void
+crtroute_in6::drop_nexthop_in6(
+		unsigned int nhindex)
+{
+	if (nexthops.find(nhindex) == nexthops.end()) {
+		return;
+	}
+	nexthops.erase(nhindex);
+}
+
+
+
+bool
+crtroute_in6::has_nexthop_in6(
+		unsigned int nhindex) const
+{
+	return (not (nexthops.find(nhindex) == nexthops.end()));
 }
 
 

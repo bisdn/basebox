@@ -9,16 +9,16 @@ ipcored_SOURCES = ipcored.cc \
 		cipcore.cc \
 		cconfig.h \
 		cconfig.cc \
-		dptroute.h \
-		dptroute.cc \
+		cdptroute.h \
+		cdptroute.cc \
 		cdptlink.h \
 		cdptlink.cc \
 		cdptaddr.h \
 		cdptaddr.cc \
 		cdptneigh.h \
 		cdptneigh.cc \
-		dptnexthop.h \
-		dptnexthop.cc \
+		cdptnexthop.h \
+		cdptnexthop.cc \
 		cpacketpool.h \
 		cpacketpool.cc \
 		cnetdev.h \

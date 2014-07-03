@@ -8,13 +8,9 @@
 #ifndef CDPTLINK_H_
 #define CDPTLINK_H_ 1
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include <inttypes.h>
-#ifdef __cplusplus
-}
-#endif
+
+#include <bitset>
 
 #include <rofl/common/logging.h>
 #include <rofl/common/crofbase.h>
@@ -44,21 +40,6 @@ public:
 
 	static cdptlink&
 	get_link(unsigned int ifindex);
-
-private:
-
-	static std::map<unsigned int, cdptlink*>		dptlinks;
-
-	rofl::cdptid						dptid;
-	uint8_t								table_id;
-	uint32_t			 		 		of_port_no;		// OpenFlow portno assigned to port on dpt mapped to this dptport instance
-	rofcore::ctapdev					*tapdev;		// tap device emulating the mapped port on this system
-	unsigned int		 		 		ifindex;		// ifindex for tapdevice
-	std::map<uint16_t, cdptaddr_in4>  	dpt4addrs;		// all IPv4 addresses assigned to this link
-	std::map<uint16_t, cdptaddr_in6>  	dpt6addrs;		// all IPv6 addresses assigned to this link
-	std::map<uint16_t, cdptneigh_in4>	dpt4neighs;		// all neighbors seen on this link (for ARP)
-	std::map<uint16_t, cdptneigh_in6>	dpt6neighs;		// all neighbors seen on this link (for NDP)
-
 
 public:
 
@@ -102,30 +83,37 @@ public:
 	unsigned int
 	get_ifindex() const { return ifindex; }
 
-
 	/**
 	 *
 	 */
 	uint32_t
 	get_ofp_port_no() const { return of_port_no; };
 
+	/**
+	 *
+	 */
+	void
+	tap_open();
 
 	/**
 	 *
 	 */
 	void
-	open();
-
+	tap_close();
 
 	/**
 	 *
 	 */
 	void
-	close();
+	install();
 
+	/**
+	 *
+	 */
+	void
+	uninstall();
 
 public:
-
 
 	/*
 	 * from ctapdev
@@ -151,6 +139,9 @@ public:
 
 
 public:
+
+	void
+	clear();
 
 	cdptaddr_in4&
 	add_addr_in4(
@@ -383,6 +374,54 @@ public:
 		}
 		return os;
 	};
+
+
+	/**
+	 *
+	 */
+	class cdptlink_by_ofp_port_no {
+		uint32_t ofp_port_no;
+	public:
+		cdptlink_by_ofp_port_no(uint32_t ofp_port_no) : ofp_port_no(ofp_port_no) {};
+		bool operator() (const std::pair<unsigned int, cdptlink>& p) {
+			return (ofp_port_no == p.second.of_port_no);
+		};
+	};
+
+
+	/**
+	 *
+	 */
+	class cdptlink_by_ifindex {
+		int ifindex;
+	public:
+		cdptlink_by_ifindex(int ifindex) : ifindex(ifindex) {};
+		bool operator() (const std::pair<unsigned int, cdptlink>& p) {
+			return (ifindex == p.second.ifindex);
+		};
+	};
+
+private:
+
+	static std::map<unsigned int, cdptlink*>		dptlinks;
+
+	rofl::cdptid						dptid;
+	uint8_t								table_id;
+	uint32_t			 		 		of_port_no;		// OpenFlow portno assigned to port on dpt mapped to this dptport instance
+	rofcore::ctapdev					*tapdev;		// tap device emulating the mapped port on this system
+	unsigned int		 		 		ifindex;		// ifindex for tapdevice
+
+	enum cdptlink_flag_t {
+		FLAG_TAP_DEVICE_ACTIVE = 1,
+		FLAG_FLOW_MOD_INSTALLED = 2,
+	};
+
+	std::bitset<32>						flags;
+
+	std::map<uint16_t, cdptaddr_in4>  	dpt4addrs;		// all IPv4 addresses assigned to this link
+	std::map<uint16_t, cdptaddr_in6>  	dpt6addrs;		// all IPv6 addresses assigned to this link
+	std::map<uint16_t, cdptneigh_in4>	dpt4neighs;		// all neighbors seen on this link (for ARP)
+	std::map<uint16_t, cdptneigh_in6>	dpt6neighs;		// all neighbors seen on this link (for NDP)
 };
 
 }; // end of namespace

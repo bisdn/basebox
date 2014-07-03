@@ -31,10 +31,6 @@ cdptlink::cdptlink(
 				ifindex(0),
 				table_id(0)
 {
-	tapdev = new rofcore::ctapdev(this, get_devname(), get_hwaddr());
-
-	ifindex = tapdev->get_ifindex();
-
 	cdptlink::dptlinks[ifindex] = this;
 }
 
@@ -43,26 +39,76 @@ cdptlink::cdptlink(
 cdptlink::~cdptlink()
 {
 	cdptlink::dptlinks.erase(ifindex);
+}
 
+
+
+void
+cdptlink::tap_open()
+{
+	tapdev = new rofcore::ctapdev(this, get_devname(), get_hwaddr());
+
+	ifindex = tapdev->get_ifindex();
+
+	flags.set(FLAG_TAP_DEVICE_ACTIVE);
+}
+
+
+
+void
+cdptlink::tap_close()
+{
 	if (tapdev) delete tapdev;
+
+	flags.reset(FLAG_TAP_DEVICE_ACTIVE);
 }
 
 
 
 void
-cdptlink::open()
+cdptlink::install()
 {
-	// do nothing
+	for (std::map<uint16_t, cdptaddr_in4>::iterator
+			it = dpt4addrs.begin(); it != dpt4addrs.end(); ++it) {
+		it->second.install();
+	}
+	for (std::map<uint16_t, cdptaddr_in6>::iterator
+			it = dpt6addrs.begin(); it != dpt6addrs.end(); ++it) {
+		it->second.install();
+	}
+	for (std::map<uint16_t, cdptneigh_in4>::iterator
+			it = dpt4neighs.begin(); it != dpt4neighs.end(); ++it) {
+		it->second.install();
+	}
+	for (std::map<uint16_t, cdptneigh_in6>::iterator
+			it = dpt6neighs.begin(); it != dpt6neighs.end(); ++it) {
+		it->second.install();
+	}
+	flags.set(FLAG_FLOW_MOD_INSTALLED);
 }
 
 
 
 void
-cdptlink::close()
+cdptlink::uninstall()
 {
-	delete_all_neighs();
-
-	delete_all_addrs();
+	for (std::map<uint16_t, cdptaddr_in4>::iterator
+			it = dpt4addrs.begin(); it != dpt4addrs.end(); ++it) {
+		it->second.uninstall();
+	}
+	for (std::map<uint16_t, cdptaddr_in6>::iterator
+			it = dpt6addrs.begin(); it != dpt6addrs.end(); ++it) {
+		it->second.uninstall();
+	}
+	for (std::map<uint16_t, cdptneigh_in4>::iterator
+			it = dpt4neighs.begin(); it != dpt4neighs.end(); ++it) {
+		it->second.uninstall();
+	}
+	for (std::map<uint16_t, cdptneigh_in6>::iterator
+			it = dpt6neighs.begin(); it != dpt6neighs.end(); ++it) {
+		it->second.uninstall();
+	}
+	flags.reset(FLAG_FLOW_MOD_INSTALLED);
 }
 
 
@@ -167,6 +213,9 @@ void
 cdptlink::handle_port_status()
 {
 	try {
+		if (0 == tapdev)
+			return;
+
 		if (get_ofp_port().link_state_is_link_down() || get_ofp_port().config_is_port_down()) {
 			tapdev->disable_interface();
 		} else {
@@ -176,6 +225,16 @@ cdptlink::handle_port_status()
 	} catch (rofl::openflow::ePortNotFound& e) {
 
 	}
+}
+
+
+
+void
+cdptlink::clear()
+{
+	delete_all_neighs();
+
+	delete_all_addrs();
 }
 
 

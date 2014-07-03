@@ -1,17 +1,17 @@
 /*
- * dptroute.cc
+ * cdptroute.cc
  *
  *  Created on: 02.07.2013
  *      Author: andreas
  */
 
-#include <dptroute.h>
+#include <cdptroute.h>
 
 
 using namespace ipcore;
 
 
-dptroute::dptroute(
+cdptroute::cdptroute(
 		rofl::crofbase* rofbase,
 		rofl::crofdpt* dpt,
 		uint8_t table_id,
@@ -27,7 +27,7 @@ dptroute::dptroute(
 
 
 
-dptroute::~dptroute()
+cdptroute::~cdptroute()
 {
 
 }
@@ -35,7 +35,7 @@ dptroute::~dptroute()
 
 
 void
-dptroute::open()
+cdptroute::open()
 {
 	route_created(table_id, rtindex);
 }
@@ -43,7 +43,7 @@ dptroute::open()
 
 
 void
-dptroute::close()
+cdptroute::close()
 {
 	delete_all_nexthops();
 
@@ -53,13 +53,13 @@ dptroute::close()
 
 
 void
-dptroute::set_nexthops()
+cdptroute::set_nexthops()
 {
 	std::cerr << "dptroute::set_nexthops()" << std::endl;
 
-	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
+	rofcore::crtroute& rtr = rofcore::cnetlink::get_instance().get_route(table_id, rtindex);
 
-	std::vector<crtnexthop>::iterator it;
+	std::map<unsigned int, crtnexthop>::iterator it;
 	for (it = rtr.get_nexthops().begin(); it != rtr.get_nexthops().end(); ++it) {
 		crtnexthop& rtnh = (*it);
 		try {
@@ -75,7 +75,7 @@ dptroute::set_nexthops()
 				continue;
 
 			// no => create new dptnexthop instance
-			dptnexthops[nbindex] = dptnexthop(
+			dptnexthops[nbindex] = cdptnexthop(
 										rofbase,
 										dpt,
 										cdptlink::get_link(rtnh.get_ifindex()).get_of_port_no(),
@@ -106,9 +106,9 @@ dptroute::set_nexthops()
 
 
 void
-dptroute::delete_all_nexthops()
+cdptroute::delete_all_nexthops()
 {
-	std::map<uint16_t, dptnexthop>::iterator it;
+	std::map<uint16_t, cdptnexthop>::iterator it;
 	for (it = dptnexthops.begin(); it != dptnexthops.end(); ++it) {
 		it->second.close();
 	}
@@ -118,7 +118,7 @@ dptroute::delete_all_nexthops()
 
 
 void
-dptroute::addr_deleted(
+cdptroute::addr_deleted(
 			unsigned int ifindex,
 			uint16_t adindex)
 {
@@ -132,10 +132,10 @@ dptroute::addr_deleted(
 		if ((RT_SCOPE_LINK != cnetlink::get_instance().get_route(table_id, rtindex).get_scope()) &&
 				(RT_SCOPE_HOST != cnetlink::get_instance().get_route(table_id, rtindex).get_scope())) {
 
-			std::map<uint16_t, dptnexthop>::iterator it;
+			std::map<uint16_t, cdptnexthop>::iterator it;
 restart:
 			for (it = dptnexthops.begin(); it != dptnexthops.end(); ++it) {
-				dptnexthop& nhop = it->second;
+				cdptnexthop& nhop = it->second;
 				if ((nhop.get_ifindex() == ifindex) &&
 						((nhop.get_gateway() & rta.get_mask()) == (rta.get_local_addr() & rta.get_mask()))) {
 					it->second.close();
@@ -161,7 +161,7 @@ restart:
 
 
 void
-dptroute::route_created(
+cdptroute::route_created(
 		uint8_t table_id,
 		unsigned int rtindex)
 {
@@ -230,7 +230,7 @@ dptroute::route_created(
 
 
 void
-dptroute::route_updated(
+cdptroute::route_updated(
 		uint8_t table_id,
 		unsigned int rtindex)
 {
@@ -246,7 +246,7 @@ dptroute::route_updated(
 
 
 void
-dptroute::route_deleted(
+cdptroute::route_deleted(
 		uint8_t table_id,
 		unsigned int rtindex)
 {
@@ -274,7 +274,7 @@ dptroute::route_deleted(
 
 
 void
-dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
+cdptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 {
 	//std::cerr << "dptroute::neigh_created() => ifindex=" << ifindex
 	//		<< " nbindex=" << (unsigned int)nbindex << std::endl;
@@ -323,7 +323,7 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 			if (dptnexthops.find(nbindex) != dptnexthops.end()) {
 				dptnexthops[nbindex].close();
 			}
-			dptnexthops[nbindex] = dptnexthop(
+			dptnexthops[nbindex] = cdptnexthop(
 										rofbase,
 										dpt,
 										cdptlink::get_link(rtnh.get_ifindex()).get_of_port_no(),
@@ -345,7 +345,7 @@ dptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
 
 
 void
-dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
+cdptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 {
 	try {
 		cdptlink::get_link(ifindex);
@@ -400,7 +400,7 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 				}
 
 				std::cerr << "dptroute::neigh_updated() ADD => " << dptnexthops[nbindex] << std::endl;
-				dptnexthops[nbindex] = dptnexthop(
+				dptnexthops[nbindex] = cdptnexthop(
 											rofbase,
 											dpt,
 											cdptlink::get_link(rtnh.get_ifindex()).get_of_port_no(),
@@ -425,7 +425,7 @@ dptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
 
 
 void
-dptroute::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
+cdptroute::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
 {
 	//std::cerr << "dptroute::neigh_deleted() => ifindex=" << ifindex
 	//		<< " nbindex=" << (unsigned int)nbindex << std::endl;

@@ -1,5 +1,5 @@
 /*
- * crtable.h
+ * cdptroute.h
  *
  *  Created on: 02.07.2013
  *      Author: andreas
@@ -28,12 +28,12 @@ extern "C" {
 #include "cnetlink.h"
 #include "crtroute.h"
 #include "cdptlink.h"
-#include "dptnexthop.h"
+#include "cdptnexthop.h"
 
 namespace ipcore
 {
 
-class dptroute :
+class cdptroute :
 		public rofcore::cnetlink_subscriber
 {
 private:
@@ -48,7 +48,7 @@ private:
 	/* we make here one assumtpion: only one nexthop exists per neighbor and route
 	 * this should be valid under all circumstances
 	 */
-	std::map<uint16_t, dptnexthop> 	dptnexthops; // key1:nbindex, value:dptnexthop instance
+	std::map<uint16_t, cdptnexthop> 	dptnexthops; // key1:nbindex, value:dptnexthop instance
 
 
 public:
@@ -57,7 +57,7 @@ public:
 	/**
 	 *
 	 */
-	dptroute(
+	cdptroute(
 			rofl::crofbase* rofbase,
 			rofl::crofdpt* dpt,
 			uint8_t table_id,
@@ -70,7 +70,7 @@ public:
 	 * @param rtindex
 	 */
 	virtual
-	~dptroute();
+	~cdptroute();
 
 
 	/**
@@ -167,7 +167,7 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (std::ostream& os, dptroute const& route) {
+	operator<< (std::ostream& os, cdptroute const& route) {
 		rofcore::crtroute& rtr = rofcore::cnetlink::get_instance().get_route_in4(route.table_id, route.rtindex);
 
 		switch (rtr.get_scope()) {
@@ -190,7 +190,7 @@ public:
 			os << rofl::indent(2) << "<rtindex: " 		<< route.rtindex 		<< " >" << std::endl;
 
 			rofl::indent i(2);
-			for (std::map<uint16_t, dptnexthop>::const_iterator
+			for (std::map<uint16_t, cdptnexthop>::const_iterator
 					it = route.dptnexthops.begin(); it != route.dptnexthops.end(); ++it) {
 				os << it->second;
 			}
@@ -215,6 +215,14 @@ private:
 	 */
 	void
 	delete_all_nexthops();
+
+};
+
+class cdptroute_in4 : public cdptroute {
+
+};
+
+class cdptroute_in6 : public cdptroute {
 
 };
 

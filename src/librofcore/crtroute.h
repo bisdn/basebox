@@ -8,7 +8,7 @@
 #ifndef CRTROUTE_H_
 #define CRTROUTE_H_ 1
 
-#include <vector>
+#include <map>
 #include <ostream>
 #include <algorithm>
 #include <exception>
@@ -25,7 +25,7 @@ extern "C" {
 #include <rofl/common/logging.h>
 #include <rofl/common/caddress.h>
 
-#include <crtnexthop.h>
+#include "crtnexthop.h"
 
 
 namespace rofcore {
@@ -159,17 +159,6 @@ public:
 	int
 	get_iif() const { return iif; };
 
-	/**
-	 *
-	 */
-	std::vector<crtnexthop>&
-	get_nexthops() { return nexthops; };
-
-	/**
-	 *
-	 */
-	crtnexthop&
-	get_nexthop(unsigned int index);
 
 
 public:
@@ -189,12 +178,6 @@ public:
 		os << rofl::indent(2) << "<metric: " 	<< (int)route.metric 				<< " >" << std::endl;
 		os << rofl::indent(2) << "<ifindex: " 	<< (unsigned int)route.iif 		<< " >" << std::endl;
 
-		rofl::indent i(2);
-		for (std::vector<crtnexthop>::const_iterator
-				it = route.nexthops.begin(); it != route.nexthops.end(); ++it) {
-			os << (*it);
-		}
-
 		return os;
 	};
 
@@ -211,18 +194,6 @@ private:
 	uint32_t				flags;
 	int						metric;
 	unsigned int			iif;
-
-	rofl::caddress_in4		dst_in4;
-	rofl::caddress_in4		mask_in4;
-	rofl::caddress_in4		src_in4;
-	rofl::caddress_in4		pref_src_in4;
-
-	rofl::caddress_in6		dst_in6;
-	rofl::caddress_in6		mask_in6;
-	rofl::caddress_in6		src_in6;
-	rofl::caddress_in6		pref_src_in6;
-
-	std::vector<crtnexthop>	nexthops;
 };
 
 
@@ -290,6 +261,10 @@ public:
 		s_pref_src 	= s_pref_src.substr(0, s_pref_src.find_first_of("/", 0));
 		pref_src	= rofl::caddress_in4(s_pref_src);
 
+		for (int i = 0; i < rtnl_route_get_nnexthops(route); i++) {
+			set_nexthop_in4(i) = crtnexthop_in4(route, rtnl_route_nexthop_n(route, i));
+		}
+
 		rtnl_route_put(route); // decrement reference count by one
 	};
 
@@ -356,6 +331,48 @@ public:
 	const rofl::caddress_in4&
 	get_ipv4_pref_src() const { return pref_src; };
 
+
+	/**
+	 *
+	 */
+	std::map<unsigned int, crtnexthop_in4>&
+	get_nexthops() { return nexthops; };
+
+	/**
+	 *
+	 */
+	crtnexthop_in4&
+	add_nexthop_in4(
+			unsigned int nhindex);
+
+	/**
+	 *
+	 */
+	crtnexthop_in4&
+	set_nexthop_in4(
+			unsigned int nhindex);
+
+	/**
+	 *
+	 */
+	const crtnexthop_in4&
+	get_nexthop_in4(
+			unsigned int nhindex) const;
+
+	/**
+	 *
+	 */
+	void
+	drop_nexthop_in4(
+			unsigned int nhindex);
+
+	/**
+	 *
+	 */
+	bool
+	has_nexthop_in4(
+			unsigned int nhindex) const;
+
 public:
 
 	friend std::ostream&
@@ -369,6 +386,13 @@ public:
 		{ rofl::indent i(4); os << route.get_ipv4_src(); }
 		os << rofl::indent(2) << "<pref-src: >" << std::endl;
 		{ rofl::indent i(4); os << route.get_ipv4_pref_src(); }
+
+		rofl::indent i(2);
+		for (std::map<unsigned int, crtnexthop_in4>::const_iterator
+				it = route.nexthops.begin(); it != route.nexthops.end(); ++it) {
+			os << (it->second);
+		}
+
 		return os;
 	};
 
@@ -398,6 +422,8 @@ private:
 	rofl::caddress_in4		mask;
 	rofl::caddress_in4		src;
 	rofl::caddress_in4		pref_src;
+
+	std::map<unsigned int, crtnexthop_in4>	nexthops;
 };
 
 
@@ -474,6 +500,10 @@ public:
 		s_pref_src 	= s_pref_src.substr(0, s_pref_src.find_first_of("/", 0));
 		pref_src	= rofl::caddress_in6(s_pref_src);
 
+		for (int i = 0; i < rtnl_route_get_nnexthops(route); i++) {
+			set_nexthop_in6(i) = crtnexthop_in6(route, rtnl_route_nexthop_n(route, i));
+		}
+
 		rtnl_route_put(route); // decrement reference count by one
 	};
 
@@ -540,6 +570,47 @@ public:
 	const rofl::caddress_in6&
 	get_ipv6_pref_src() const { return pref_src; };
 
+	/**
+	 *
+	 */
+	std::map<unsigned int, crtnexthop_in6>&
+	get_nexthops() { return nexthops; };
+
+	/**
+	 *
+	 */
+	crtnexthop_in6&
+	add_nexthop_in6(
+			unsigned int nhindex);
+
+	/**
+	 *
+	 */
+	crtnexthop_in6&
+	set_nexthop_in6(
+			unsigned int nhindex);
+
+	/**
+	 *
+	 */
+	const crtnexthop_in6&
+	get_nexthop_in6(
+			unsigned int nhindex) const;
+
+	/**
+	 *
+	 */
+	void
+	drop_nexthop_in6(
+			unsigned int nhindex);
+
+	/**
+	 *
+	 */
+	bool
+	has_nexthop_in6(
+			unsigned int nhindex) const;
+
 public:
 
 	friend std::ostream&
@@ -553,6 +624,13 @@ public:
 		{ rofl::indent i(4); os << route.get_ipv6_src(); }
 		os << rofl::indent(2) << "<pref-src: >" << std::endl;
 		{ rofl::indent i(4); os << route.get_ipv6_pref_src(); }
+
+		rofl::indent i(2);
+		for (std::map<unsigned int, crtnexthop_in6>::const_iterator
+				it = route.nexthops.begin(); it != route.nexthops.end(); ++it) {
+			os << (it->second);
+		}
+
 		return os;
 	};
 
@@ -582,6 +660,8 @@ private:
 	rofl::caddress_in6		mask;
 	rofl::caddress_in6		src;
 	rofl::caddress_in6		pref_src;
+
+	std::map<unsigned int, crtnexthop_in6>	nexthops;
 };
 
 

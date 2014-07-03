@@ -155,6 +155,7 @@ class Link(object):
         
     def deactivated(self):
         self.active = False
+        self.radvd.stop()
         self.baseCore.addEvent(BaseCoreEvent(self, BaseCore.EVENT_DEL_LINK))
         self.logger.debug('DELLINK: ' + str(self))
     

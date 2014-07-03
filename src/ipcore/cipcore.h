@@ -28,12 +28,13 @@ extern "C" {
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cofhelloelemversionbitmap.h>
 
+#include "logging.h"
 #include "cdptlink.h"
-#include "dptroute.h"
 #include "cnetlink.h"
+#include "croutetables.h"
+#include "clinktables.h"
 
-namespace ipcore
-{
+namespace ipcore {
 
 class eVmCoreBase 			: public std::exception {};
 class eVmCoreCritical 		: public eVmCoreBase {};
@@ -44,35 +45,20 @@ class cipcore :
 		public rofl::crofbase,
 		public rofcore::cnetlink_subscriber
 {
-	#define DEFAULT_DPATH_OPEN_SCRIPT_PATH 	"/var/lib/ipcore/dpath-open.sh"
-	#define DEFAULT_DPATH_CLOSE_SCRIPT_PATH "/var/lib/ipcore/dpath-close.sh"
-	#define DEFAULT_PORT_UP_SCRIPT_PATH 	"/var/lib/ipcore/port-up.sh"
-	#define DEFAULT_PORT_DOWN_SCRIPT_PATH 	"/var/lib/ipcore/port-down.sh"
+public:
 
-	static std::string	dpath_open_script_path;
-	static std::string	dpath_close_script_path;
-	static std::string	port_up_script_path;
-	static std::string	port_down_script_path;
-
-	static void
-	execute(
-			std::string const& executable,
-			std::vector<std::string> argv,
-			std::vector<std::string> envp);
-private:
-
-
-	rofl::crofdpt 												*dpt;			// handle for cofdpt instance managed by this vmcore
-	std::map<rofl::crofdpt*, std::map<uint32_t, cdptlink*> > 	 dptlinks;		// mapped ports per data path element
-	std::map<uint8_t, std::map<unsigned int, dptroute*> >		 dpt4routes;	// active routes => key1:table_id, key2:routing index, value: dptroute instance
-	std::map<uint8_t, std::map<unsigned int, dptroute*> >		 dpt6routes;	// active routes => key1:table_id, key2:routing index, value: dptroute instance
-
-	enum ipcore_timer_t {
-		IPCORE_TIMER_BASE = 0x6423beed,
-		IPCORE_TIMER_DUMP,
+	static cipcore&
+	get_ipcore(const rofl::cdptid& dptid) {
+		if (cipcore::ipcores.find(dptid) == cipcore::ipcores.end()) {
+			new cipcore(dptid);
+		}
+		return cipcore::ipcores[dptid];
 	};
 
-	int dump_state_interval;
+	static bool
+	has_ipcore(const rofl::cdptid& dptid) const {
+		return (not (cipcore::ipcores.find(dptid) == cipcore::ipcores.end()));
+	};
 
 public:
 
@@ -81,7 +67,8 @@ public:
 	 *
 	 */
 	cipcore(
-			rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap);
+			rofl::cdptid& dptid,
+			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap);
 
 
 	/**
@@ -95,30 +82,30 @@ public:
 
 
 	virtual void
-	handle_dpath_open(rofl::crofdpt& dpt);
+	handle_dpt_open(rofl::crofdpt& dpt);
 
 
 	virtual void
-	handle_dpath_close(rofl::crofdpt& dpt);
+	handle_dpt_close(rofl::crofdpt& dpt);
 
 
 	virtual void
-	handle_port_status(rofl::crofdpt& dpt, rofl::openflow::cofmsg_port_status& msg, uint8_t aux_id = 0);
+	handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);
 
 	virtual void
-	handle_packet_out(rofl::crofctl& ctl, rofl::openflow::cofmsg_packet_out& msg, uint8_t aux_id = 0);
+	handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);
 
 	virtual void
-	handle_packet_in(rofl::crofdpt& dpt, rofl::openflow::cofmsg_packet_in& msg, uint8_t aux_id = 0);
+	handle_packet_out(rofl::crofctl& ctl, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_out& msg);
 
 	virtual void
-	handle_error(rofl::crofdpt& dpt, rofl::openflow::cofmsg_error& msg, uint8_t aux_id = 0);
+	handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
 
 	virtual void
-	handle_flow_removed(rofl::crofdpt& dpt, rofl::openflow::cofmsg_flow_removed& msg, uint8_t aux_id = 0);
+	handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg);
 
 	virtual void
-	handle_timeout(int opaque, void *data = (void*)0);
+	handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg);
 
 
 public:
@@ -147,17 +134,8 @@ public:
 
 private:
 
-	bool
-	link_is_mapped_from_dpt(int ifindex);
-
-	cdptlink&
-	get_mapped_link_from_dpt(int ifindex);
-
 	void
-	delete_all_ports();
-
-	void
-	delete_all_routes();
+	purge_dpt_entries();
 
 	void
 	block_stp_frames();
@@ -187,12 +165,39 @@ private:
 	void
 	hook_port_down(std::string const& devname);
 
+public:
 
-	/*
-	 * dump state periodically
-	 */
-	void
-	dump_state();
+	friend std::ostream&
+	operator<< (std::ostream& os, const cipcore& ipcore) {
+		os << rofcore::indent(0) << "<cipcore dptid: " << ipcore.dptid << " >" << std::endl;
+		rofcore::indent i(2);
+		os << ipcore.ltable;
+		os << ipcore.rtable;
+		return os;
+	};
+
+private:
+
+	static std::map<rofl::cdptid, cipcore*> ipcores;
+
+	static const unsigned int ETH_FRAME_LEN = 9018; // including jumbo frames
+
+	static const std::string script_path_dpt_open	("/var/lib/ipcore/dpath-open.sh");
+	static const std::string script_path_dpt_close	("/var/lib/ipcore/dpath-close.sh");
+	static const std::string script_path_port_up	("/var/lib/ipcore/port-up.sh");
+	static const std::string script_path_port_down	("/var/lib/ipcore/port-down.sh");
+
+	static void
+	execute(
+			std::string const& executable,
+			std::vector<std::string> argv,
+			std::vector<std::string> envp);
+
+
+	rofl::cdptid 	dptid;
+	clinktable 		ltable;	// table of links
+	croutetables 	rtable;	// routing tables (v4 and v6)
+
 };
 
 }; // end of namespace vmcore

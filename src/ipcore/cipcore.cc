@@ -2,144 +2,41 @@
 
 using namespace ipcore;
 
-std::string	cipcore::dpath_open_script_path(DEFAULT_DPATH_OPEN_SCRIPT_PATH);
-std::string	cipcore::dpath_close_script_path(DEFAULT_DPATH_CLOSE_SCRIPT_PATH);
-std::string	cipcore::port_up_script_path(DEFAULT_PORT_UP_SCRIPT_PATH);
-std::string	cipcore::port_down_script_path(DEFAULT_PORT_DOWN_SCRIPT_PATH);
-
+std::map<rofl::cdptid, cipcore*> cipcore::ipcores;
 
 cipcore::cipcore(
-		rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap) :
-		dpt(0),
-		dump_state_interval(15),
+		rofl::cdptid& dptid,
+		const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap) :
+		dptid(dptid),
 		rofl::crofbase(versionbitmap)
 {
-	register_timer(IPCORE_TIMER_DUMP, dump_state_interval);
+
 }
 
 
 cipcore::~cipcore()
 {
-	if (0 != dpt) {
-		delete_all_routes();
-
-		delete_all_ports();
-	}
+	rtable.clear();
+	ltable.clear();
 }
 
 
 
 void
-cipcore::handle_timeout(int opaque, void *data)
-{
-	switch (opaque) {
-	case IPCORE_TIMER_DUMP: {
-		dump_state();
-	} break;
-	default:
-		crofbase::handle_timeout(opaque);
-	}
-}
-
-
-
-bool
-cipcore::link_is_mapped_from_dpt(int ifindex)
-{
-	std::map<uint32_t, cdptlink*>::const_iterator it;
-	for (it = dptlinks[dpt].begin(); it != dptlinks[dpt].end(); ++it) {
-		if (it->second->get_ifindex() == ifindex) {
-			return true;
-		}
-	}
-	return false;
-}
-
-
-
-cdptlink&
-cipcore::get_mapped_link_from_dpt(int ifindex)
-{
-	std::map<uint32_t, cdptlink*>::const_iterator it;
-	for (it = dptlinks[dpt].begin(); it != dptlinks[dpt].end(); ++it) {
-		if (it->second->get_ifindex() == ifindex) {
-			return *(it->second);
-		}
-	}
-	throw eVmCoreNotFound();
-}
-
-
-
-void
-cipcore::delete_all_ports()
-{
-	for (std::map<rofl::crofdpt*, std::map<uint32_t, cdptlink*> >::iterator
-			jt = dptlinks.begin(); jt != dptlinks.end(); ++jt) {
-		for (std::map<uint32_t, cdptlink*>::iterator
-				it = dptlinks[jt->first].begin(); it != dptlinks[jt->first].end(); ++it) {
-			hook_port_down(it->second->get_devname());
-			delete (it->second); // remove dptport instance from heap
-		}
-	}
-	dptlinks.clear();
-}
-
-
-
-void
-cipcore::delete_all_routes()
-{
-	for (std::map<uint8_t, std::map<unsigned int, dptroute*> >::iterator
-			it = dptroutes.begin(); it != dptroutes.end(); ++it) {
-		for (std::map<unsigned int, dptroute*>::iterator
-				jt = it->second.begin(); jt != it->second.end(); ++jt) {
-			delete (jt->second); // remove dptroute instance from heap
-		}
-	}
-	dptroutes.clear();
-}
-
-
-
-void
-cipcore::handle_dpath_open(
-		rofl::crofdpt& dpt)
+cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
-		this->dpt = &dpt;
+		if (dptid != dpt.get_dptid()) {
+			return;
+		}
 
-		/*
-		 * remove all routes
-		 */
-		delete_all_routes();
+		rtable.clear();
+		ltable.clear();
 
-		/*
-		 * remove all old pending tap devices
-		 */
-		delete_all_ports();
-
-		/*
-		 * purge all entries from data path
-		 */
-		rofl::openflow::cofflowmod fe(dpt.get_version());
-		fe.set_command(rofl::openflow::OFPFC_DELETE);
-		fe.set_table_id(rofl::openflow::base::get_ofptt_all(dpt.get_version()));
-		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
-
-		/*
-		 * block all STP related frames for now
-		 */
+		purge_dpt_entries();
 		block_stp_frames();
-
-		/*
-		 * default: redirect multicast traffic always to controller
-		 */
 		redirect_ipv4_multicast();
 		redirect_ipv6_multicast();
-
-		// TODO: how many data path elements are allowed to connect to ourselves? only one makes sense ...
-
 
 		/*
 		 * create new tap devices for (reconnecting?) data path
@@ -147,17 +44,16 @@ cipcore::handle_dpath_open(
 		std::map<uint32_t, rofl::openflow::cofport*> ports = dpt.get_ports().get_ports();
 		for (std::map<uint32_t, rofl::openflow::cofport*>::iterator
 				it = ports.begin(); it != ports.end(); ++it) {
-			rofl::openflow::cofport *port = it->second;
-			if (dptlinks[&dpt].find(port->get_port_no()) == dptlinks[&dpt].end()) {
-				dptlinks[&dpt][port->get_port_no()] = new cdptlink(this, &dpt, port->get_port_no());
-			}
+			uint32_t port_no = it->first;
+			ltable.add_link(port_no).tap_open();
 		}
 
+		// deprecated:
 		// get full-length packets (what is the ethernet max length on dpt?)
-		dpt.send_set_config_message(rofl::cauxid(0), 0, 1518);
+		//dpt.send_set_config_message(rofl::cauxid(0), 0, ETH_FRAME_LEN);
 
 		/*
-		 * install default FlowMod entry for table 0 => GotoTable(1)
+		 * install default policy for table 0 => GotoTable(1)
 		 */
 		rofl::openflow::cofflowmod fed = rofl::openflow::cofflowmod(dpt.get_version());
 
@@ -175,7 +71,8 @@ cipcore::handle_dpath_open(
 	} catch (rofcore::eNetDevCritical& e) {
 
 		fprintf(stderr, "ipcore::handle_dpath_open() unable to create tap device\n");
-		throw;
+
+	} catch (rofl::eRofDptNotFound& e) {
 
 	}
 }
@@ -183,16 +80,17 @@ cipcore::handle_dpath_open(
 
 
 void
-cipcore::handle_dpath_close(
-		rofl::crofdpt& dpt)
+cipcore::handle_dpt_close(rofl::crofdpt& dpt)
 {
+	if (dptid != dpt.get_dptid()) {
+		return;
+	}
+
 	hook_dpt_detach();
 
-	delete_all_routes();
+	rtable.clear();
 
-	delete_all_ports();
-
-	this->dpt = (rofl::crofdpt*)0;
+	ltable.clear();
 }
 
 
@@ -200,9 +98,10 @@ cipcore::handle_dpath_close(
 void
 cipcore::handle_port_status(
 		rofl::crofdpt& dpt,
-		rofl::openflow::cofmsg_port_status& msg,
-		uint8_t aux_id)
+		const rofl::cauxid& auxid,
+		rofl::openflow::cofmsg_port_status& msg)
 {
+
 	if (this->dpt != &dpt) {
 		fprintf(stderr, "ipcore::handle_port_stats() received PortStatus from invalid data path\n");
 		return;
@@ -322,7 +221,7 @@ cipcore::route_in4_created(uint8_t table_id, unsigned int rtindex)
 		rofl::logging::info << "[ipcore] crtroute CREATE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in4(table_id, rtindex);
 
 		if (dpt4routes[table_id].find(rtindex) == dpt4routes[table_id].end()) {
-			dpt4routes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
+			dpt4routes[table_id][rtindex] = new cdptroute(this, dpt, table_id, rtindex);
 			if (dpt->get_channel().is_established()) {
 				dpt4routes[table_id][rtindex]->open();
 			}
@@ -417,7 +316,7 @@ cipcore::route_in6_created(uint8_t table_id, unsigned int rtindex)
 		rofl::logging::info << "[ipcore] crtroute CREATE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in6(table_id, rtindex);
 
 		if (dpt6routes[table_id].find(rtindex) == dpt6routes[table_id].end()) {
-			dpt6routes[table_id][rtindex] = new dptroute(this, dpt, table_id, rtindex);
+			dpt6routes[table_id][rtindex] = new cdptroute(this, dpt, table_id, rtindex);
 			if (dpt->get_channel().is_established()) {
 				dpt6routes[table_id][rtindex]->open();
 			}
@@ -496,18 +395,41 @@ cipcore::route_in6_deleted(uint8_t table_id, unsigned int rtindex)
 
 
 void
+cipcore::purge_dpt_entries()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
+		// all wildcard matches with non-strict deletion => removes all state from data path
+		rofl::openflow::cofflowmod fe(dpt.get_version());
+		fe.set_command(rofl::openflow::OFPFC_DELETE);
+		fe.set_table_id(rofl::openflow::base::get_ofptt_all(dpt.get_version()));
+		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
+}
+
+
+
+void
 cipcore::block_stp_frames()
 {
-	if (0 == dpt)
-		return;
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-	rofl::openflow::cofflowmod fe(dpt->get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version());
 
-	fe.set_command(rofl::openflow::OFPFC_ADD);
-	fe.set_table_id(0);
-	fe.set_match().set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
+		fe.set_command(rofl::openflow::OFPFC_ADD);
+		fe.set_table_id(0);
+		fe.set_match().set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
 
-	dpt->send_flow_mod_message(rofl::cauxid(0), fe);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
 }
 
 
@@ -515,16 +437,20 @@ cipcore::block_stp_frames()
 void
 cipcore::unblock_stp_frames()
 {
-	if (0 == dpt)
-		return;
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-	rofl::openflow::cofflowmod fe(dpt->get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version());
 
-	fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-	fe.set_table_id(0);
-	fe.set_match().set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
+		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
+		fe.set_table_id(0);
+		fe.set_match().set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
 
-	dpt->send_flow_mod_message(rofl::cauxid(0), fe);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
 }
 
 
@@ -532,19 +458,27 @@ cipcore::unblock_stp_frames()
 void
 cipcore::redirect_ipv4_multicast()
 {
-	if (0 == dpt)
-		return;
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-	rofl::openflow::cofflowmod fe(dpt->get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version());
 
-	fe.set_command(rofl::openflow::OFPFC_ADD);
-	fe.set_table_id(0);
-	fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-	fe.set_match().set_ipv4_dst(rofl::caddress_in4("224.0.0.0"), rofl::caddress_in4("240.0.0.0"));
-	fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(0).set_port_no(
-			rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()));
+		fe.set_command(rofl::openflow::OFPFC_ADD);
+		fe.set_table_id(0);
 
-	dpt->send_flow_mod_message(rofl::cauxid(0), fe);
+		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+		fe.set_match().set_ipv4_dst(rofl::caddress_in4("224.0.0.0"), rofl::caddress_in4("240.0.0.0"));
+
+		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(0).
+				set_port_no(rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()));
+		fe.set_instructions().add_inst_apply_actions().set_actions().set_action_output(0).
+				set_max_len(ETH_FRAME_LEN);
+
+		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
 }
 
 
@@ -552,19 +486,27 @@ cipcore::redirect_ipv4_multicast()
 void
 cipcore::redirect_ipv6_multicast()
 {
-	if (0 == dpt)
-		return;
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-	rofl::openflow::cofflowmod fe(dpt->get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version());
 
-	fe.set_command(rofl::openflow::OFPFC_ADD);
-	fe.set_table_id(0);
-	fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-	fe.set_match().set_ipv6_dst(rofl::caddress_in6("ff00::"), rofl::caddress_in6("ff00::"));
-	fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(0).set_port_no(
-			rofl::openflow::base::get_ofpp_controller_port(dpt->get_version()));
+		fe.set_command(rofl::openflow::OFPFC_ADD);
+		fe.set_table_id(0);
 
-	dpt->send_flow_mod_message(rofl::cauxid(0), fe);
+		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+		fe.set_match().set_ipv6_dst(rofl::caddress_in6("ff00::"), rofl::caddress_in6("ff00::"));
+
+		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(0).
+				set_port_no(rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()));
+		fe.set_instructions().add_inst_apply_actions().set_actions().set_action_output(0).
+				set_max_len(ETH_FRAME_LEN);
+
+		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
 }
 
 
@@ -572,14 +514,21 @@ cipcore::redirect_ipv6_multicast()
 void
 cipcore::hook_dpt_attach()
 {
-	std::vector<std::string> argv;
-	std::vector<std::string> envp;
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-	std::stringstream s_dpid;
-	s_dpid << "DPID=" << dpt->get_dpid();
-	envp.push_back(s_dpid.str());
+		std::vector<std::string> argv;
+		std::vector<std::string> envp;
 
-	cipcore::execute(cipcore::dpath_open_script_path, argv, envp);
+		std::stringstream s_dpid;
+		s_dpid << "DPID=" << dpt->get_dpid();
+		envp.push_back(s_dpid.str());
+
+		cipcore::execute(cipcore::script_path_dpt_open, argv, envp);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
 }
 
 
@@ -587,14 +536,21 @@ cipcore::hook_dpt_attach()
 void
 cipcore::hook_dpt_detach()
 {
-	std::vector<std::string> argv;
-	std::vector<std::string> envp;
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-	std::stringstream s_dpid;
-	s_dpid << "DPID=" << dpt->get_dpid();
-	envp.push_back(s_dpid.str());
+		std::vector<std::string> argv;
+		std::vector<std::string> envp;
 
-	cipcore::execute(cipcore::dpath_close_script_path, argv, envp);
+		std::stringstream s_dpid;
+		s_dpid << "DPID=" << dpt.get_dpid();
+		envp.push_back(s_dpid.str());
+
+		cipcore::execute(cipcore::script_path_dpt_close, argv, envp);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
 }
 
 
@@ -602,18 +558,25 @@ cipcore::hook_dpt_detach()
 void
 cipcore::hook_port_up(std::string const& devname)
 {
-	std::vector<std::string> argv;
-	std::vector<std::string> envp;
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-	std::stringstream s_dpid;
-	s_dpid << "DPID=" << dpt->get_dpid();
-	envp.push_back(s_dpid.str());
+		std::vector<std::string> argv;
+		std::vector<std::string> envp;
 
-	std::stringstream s_devname;
-	s_devname << "DEVNAME=" << devname;
-	envp.push_back(s_devname.str());
+		std::stringstream s_dpid;
+		s_dpid << "DPID=" << dpt.get_dpid();
+		envp.push_back(s_dpid.str());
 
-	cipcore::execute(cipcore::port_up_script_path, argv, envp);
+		std::stringstream s_devname;
+		s_devname << "DEVNAME=" << devname;
+		envp.push_back(s_devname.str());
+
+		cipcore::execute(cipcore::script_path_port_up, argv, envp);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
 }
 
 
@@ -621,18 +584,25 @@ cipcore::hook_port_up(std::string const& devname)
 void
 cipcore::hook_port_down(std::string const& devname)
 {
-	std::vector<std::string> argv;
-	std::vector<std::string> envp;
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-	std::stringstream s_dpid;
-	s_dpid << "DPID=" << dpt->get_dpid();
-	envp.push_back(s_dpid.str());
+		std::vector<std::string> argv;
+		std::vector<std::string> envp;
 
-	std::stringstream s_devname;
-	s_devname << "DEVNAME=" << devname;
-	envp.push_back(s_devname.str());
+		std::stringstream s_dpid;
+		s_dpid << "DPID=" << dpt.get_dpid();
+		envp.push_back(s_dpid.str());
 
-	cipcore::execute(cipcore::port_down_script_path, argv, envp);
+		std::stringstream s_devname;
+		s_devname << "DEVNAME=" << devname;
+		envp.push_back(s_devname.str());
+
+		cipcore::execute(cipcore::script_path_port_down, argv, envp);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
 }
 
 
@@ -679,43 +649,5 @@ cipcore::execute(
 }
 
 
-
-void
-cipcore::dump_state()
-{
-	register_timer(IPCORE_TIMER_DUMP, dump_state_interval);
-
-	for (std::map<rofl::crofdpt*, std::map<uint32_t, cdptlink*> >::iterator
-			it = dptlinks.begin(); it != dptlinks.end(); ++it) {
-
-		rofl::crofdpt *dpt = it->first;
-
-		std::cerr << "data path <dpid: " << dpt->get_dpid_s() << "> => " << std::endl;
-
-		for (std::map<uint32_t, cdptlink*>::iterator
-				jt = dptlinks[dpt].begin(); jt != dptlinks[dpt].end(); ++jt) {
-
-			std::cerr << "  " << *(jt->second) << std::endl;
-		}
-
-		std::cerr << std::endl;
-
-		// FIXME: routes should be handled by data path
-
-		for (std::map<uint8_t, std::map<unsigned int, dptroute*> >::iterator
-				jt = dptroutes.begin(); jt != dptroutes.end(); ++jt) {
-
-			uint8_t scope = jt->first;
-
-			for (std::map<unsigned int, dptroute*>::iterator
-					kt = dptroutes[scope].begin(); kt != dptroutes[scope].end(); ++kt) {
-
-				std::cerr << "  " << (*kt->second) << std::endl;
-			}
-		}
-
-		std::cerr << std::endl;
-	}
-}
 
 
