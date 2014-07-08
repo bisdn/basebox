@@ -478,6 +478,9 @@ ipcore::redirect_ipv6_multicast()
 void
 ipcore::run_dpath_open_script()
 {
+	if (NULL == dpt)
+			return;
+
 	std::vector<std::string> argv;
 	std::vector<std::string> envp;
 
@@ -493,6 +496,9 @@ ipcore::run_dpath_open_script()
 void
 ipcore::run_dpath_close_script()
 {
+	if (NULL == dpt)
+		return;
+
 	std::vector<std::string> argv;
 	std::vector<std::string> envp;
 
@@ -508,6 +514,9 @@ ipcore::run_dpath_close_script()
 void
 ipcore::run_port_up_script(std::string const& devname)
 {
+	if (NULL == dpt)
+			return;
+
 	std::vector<std::string> argv;
 	std::vector<std::string> envp;
 
@@ -527,6 +536,9 @@ ipcore::run_port_up_script(std::string const& devname)
 void
 ipcore::run_port_down_script(std::string const& devname)
 {
+	if (NULL == dpt)
+			return;
+
 	std::vector<std::string> argv;
 	std::vector<std::string> envp;
 
