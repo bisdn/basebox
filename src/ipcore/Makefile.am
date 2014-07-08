@@ -27,7 +27,12 @@ ipcored_SOURCES = ipcored.cc \
 		ctapdev.cc \
 		cnetlink.h \
 		cnetlink.cc \
-		flowmod.h
+		flowmod.h \
+		clinktable.h \
+		clinktable.cc \
+		croutetable.h \
+		croutetables.h \
+		croutetables.cc
 		
 ipcored_LDADD = -lpthread -lrt -l../librofcore.la
 

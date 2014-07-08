@@ -169,13 +169,13 @@ public:
 		os << rofl::indent(2) << "<table_id: " 	<< route.get_table_id_s() 		<< " >" << std::endl;
 		os << rofl::indent(2) << "<scope: " 	<< route.get_scope_s() 			<< " >" << std::endl;
 		os << rofl::indent(2) << "<tos: " 		<< (unsigned int)route.tos 		<< " >" << std::endl;
-		os << rofl::indent(2) << "<protocol: " 	<< (unsigned int)route.protocol 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<priority: " 	<< (unsigned int)route.priority 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<protocol: " 	<< (unsigned int)route.protocol << " >" << std::endl;
+		os << rofl::indent(2) << "<priority: " 	<< (unsigned int)route.priority << " >" << std::endl;
 		os << rofl::indent(2) << "<family: " 	<< (unsigned int)route.family 	<< " >" << std::endl;
 		os << rofl::indent(2) << "<prefixlen: " << route.prefixlen 				<< " >" << std::endl;
-		os << rofl::indent(2) << "<type: " 		<< (unsigned int)route.type 		<< " >" << std::endl;
-		os << rofl::indent(2) << "<flags: " 	<< (unsigned int)route.flags 		<< " >" << std::endl;
-		os << rofl::indent(2) << "<metric: " 	<< (int)route.metric 				<< " >" << std::endl;
+		os << rofl::indent(2) << "<type: " 		<< (unsigned int)route.type 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<flags: " 	<< (unsigned int)route.flags 	<< " >" << std::endl;
+		os << rofl::indent(2) << "<metric: " 	<< (int)route.metric 			<< " >" << std::endl;
 		os << rofl::indent(2) << "<ifindex: " 	<< (unsigned int)route.iif 		<< " >" << std::endl;
 
 		return os;

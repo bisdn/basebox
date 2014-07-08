@@ -32,7 +32,7 @@ extern "C" {
 #include "cdptlink.h"
 #include "cnetlink.h"
 #include "croutetables.h"
-#include "clinktables.h"
+#include "clinktable.h"
 
 namespace ipcore {
 

@@ -43,7 +43,7 @@ private:
 	rofl::crofdpt					*dpt;
 	uint8_t					 		table_id;
 	unsigned int			 		rtindex;
-	rofl::openflow::cofflowmod			flowentry;
+	rofl::openflow::cofflowmod		flowentry;
 
 	/* we make here one assumtpion: only one nexthop exists per neighbor and route
 	 * this should be valid under all circumstances
@@ -182,9 +182,9 @@ public:
 		case RT_SCOPE_UNIVERSE:
 		default: {
 			os << rofl::indent(0) << "<dptroute: >" 	<< std::endl;
-			os << rofl::indent(2) << "<destination: " 	<< rtr.get_dst() 		<< " >" << std::endl;
+			//os << rofl::indent(2) << "<destination: " 	<< rtr.get_dst() 		<< " >" << std::endl;
 			os << rofl::indent(2) << "<prefix: " 		<< rtr.get_prefixlen() 	<< " >" << std::endl;
-			os << rofl::indent(2) << "<src " 			<< rtr.get_src() 		<< " >" << std::endl;
+			//os << rofl::indent(2) << "<src " 			<< rtr.get_src() 		<< " >" << std::endl;
 			os << rofl::indent(2) << "<scope " 			<< rtr.get_scope_s() 	<< " >" << std::endl;
 			os << rofl::indent(2) << "<table " 			<< rtr.get_table_id_s() << " >" << std::endl;
 			os << rofl::indent(2) << "<rtindex: " 		<< route.rtindex 		<< " >" << std::endl;
