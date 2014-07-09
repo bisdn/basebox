@@ -24,7 +24,7 @@ ctapdev::ctapdev(
 	try {
 		tap_open(devname, hwaddr);
 	} catch (...) {
-		port_open_timer_id = register_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec(0, 500000/* 500ms */))
+		port_open_timer_id = register_timer(CTAPDEV_TIMER_OPEN_PORT, 1);
 	}
 }
 
@@ -90,6 +90,13 @@ ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
 
 		throw eNetDevCritical();
 
+	} catch (eNetDevIoctl& e) {
+
+		fprintf(stderr, "ctapdev::tap_open() ioctl() failed: dev[%s] (%d:%s)\n",
+				devname.c_str(), errno, strerror(errno));
+
+		throw eNetDevCritical();
+
 	}
 }
 
@@ -97,15 +104,21 @@ ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
 void
 ctapdev::tap_close()
 {
-	if (fd == -1) {
-		return;
+	try {
+		if (fd == -1) {
+			return;
+		}
+
+		//netdev_owner->netdev_close(this);
+
+		disable_interface();
+
+		deregister_filedesc_r(fd);
+
+	} catch (eNetDevIoctl& e) {
+		fprintf(stderr, "ctapdev::tap_close() ioctl() failed: dev[%s] (%d:%s)\n",
+				devname.c_str(), errno, strerror(errno));
 	}
-
-	//netdev_owner->netdev_close(this);
-
-	disable_interface();
-
-	deregister_filedesc_r(fd);
 
 	close(fd);
 
@@ -247,14 +260,14 @@ ctapdev::handle_wevent(int fd)
 
 
 void
-ctapdev::handle_timeout(int opaque, void* data = (void*)0)
+ctapdev::handle_timeout(int opaque, void* data)
 {
 	switch (opaque) {
 	case CTAPDEV_TIMER_OPEN_PORT: {
 		try {
 			tap_open(devname, hwaddr);
 		} catch (...) {
-			port_open_timer_id = register_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec(0, 500000/* 500ms */))
+			port_open_timer_id = register_timer(CTAPDEV_TIMER_OPEN_PORT, 1);
 		}
 	} break;
 	}

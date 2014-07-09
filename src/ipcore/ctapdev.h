@@ -46,7 +46,7 @@ class ctapdev : public cnetdev
 	std::list<rofl::cpacket*> 		pout_queue;		// queue of outgoing packets
 	std::string						devname;
 	rofl::cmacaddr					hwaddr;
-	rofl::ctimerid					port_open_timer_id;
+	uint32_t						port_open_timer_id;
 
 	enum ctapdev_timer_t {
 		CTAPDEV_TIMER_OPEN_PORT = 1,
