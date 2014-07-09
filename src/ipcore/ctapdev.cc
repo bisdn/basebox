@@ -17,9 +17,15 @@ ctapdev::ctapdev(
 		std::string const& devname,
 		rofl::cmacaddr const& hwaddr) :
 		cnetdev(netdev_owner, devname),
-		fd(-1)
+		fd(-1),
+		devname(devname),
+		hwaddr(hwaddr)
 {
-	tap_open(devname, hwaddr);
+	try {
+		tap_open(devname, hwaddr);
+	} catch (...) {
+		port_open_timer_id = register_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec(0, 500000/* 500ms */))
+	}
 }
 
 
@@ -235,6 +241,22 @@ ctapdev::handle_wevent(int fd)
 		cpacketpool::get_instance().release_pkt(pkt);
 
 		delete this; return;
+	}
+}
+
+
+
+void
+ctapdev::handle_timeout(int opaque, void* data = (void*)0)
+{
+	switch (opaque) {
+	case CTAPDEV_TIMER_OPEN_PORT: {
+		try {
+			tap_open(devname, hwaddr);
+		} catch (...) {
+			port_open_timer_id = register_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec(0, 500000/* 500ms */))
+		}
+	} break;
 	}
 }
 

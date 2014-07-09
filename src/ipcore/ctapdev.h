@@ -44,6 +44,13 @@ class ctapdev : public cnetdev
 {
 	int 							fd; 			// tap device file descriptor
 	std::list<rofl::cpacket*> 		pout_queue;		// queue of outgoing packets
+	std::string						devname;
+	rofl::cmacaddr					hwaddr;
+	rofl::ctimerid					port_open_timer_id;
+
+	enum ctapdev_timer_t {
+		CTAPDEV_TIMER_OPEN_PORT = 1,
+	};
 
 public:
 
@@ -106,6 +113,14 @@ protected:
 	 */
 	virtual void
 	handle_wevent(int fd);
+
+private:
+
+	/**
+	 * @brief	reschedule opening of port in case of failure
+	 */
+	virtual void
+	handle_timeout(int opaque, void* data = (void*)0);
 
 };
 
