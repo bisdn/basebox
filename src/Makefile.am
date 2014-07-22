@@ -1,8 +1,8 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-export INCLUDES += -I$(abs_srcdir)/librofcore
+export INCLUDES += -I$(abs_srcdir)/librofnetlink
 
-SUBDIRS = librofcore ipcore ethcore dhcpv6snoop rofcore 
-LIBS_ROFCORE=librofcore/librofcore.la 
+SUBDIRS = librofnetlink ipcore ethcore dhcpv6snoop rofcore 
+LIBS_ROFCORE=librofnetlink/librofnetlink.la 
 
 

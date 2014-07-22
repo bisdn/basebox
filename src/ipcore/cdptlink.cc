@@ -22,14 +22,11 @@ cdptlink::get_link(unsigned int ifindex)
 }
 
 
-cdptlink::cdptlink(
-		const rofl::cdptid& dptid,
-		uint32_t of_port_no) :
-				dptid(dptid),
-				of_port_no(of_port_no),
-				tapdev(0),
-				ifindex(0),
-				table_id(0)
+cdptlink::cdptlink(unsigned int ifindex) :
+		ifindex(ifindex),
+		of_port_no(0),
+		tapdev(0),
+		table_id(0)
 {
 	cdptlink::dptlinks[ifindex] = this;
 }
@@ -39,6 +36,10 @@ cdptlink::cdptlink(
 cdptlink::~cdptlink()
 {
 	cdptlink::dptlinks.erase(ifindex);
+
+	if (ifindex > 0) {
+		tap_close();
+	}
 }
 
 
@@ -59,6 +60,8 @@ void
 cdptlink::tap_close()
 {
 	if (tapdev) delete tapdev;
+
+	ifindex = -1;
 
 	flags.reset(FLAG_TAP_DEVICE_ACTIVE);
 }
@@ -161,7 +164,7 @@ cdptlink::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		}
 
 		rofl::openflow::cofactions actions(rofl::crofdpt::get_dpt(dptid).get_version());
-		actions.set_action_output(0).set_port_no(of_port_no);
+		actions.set_action_output(rofl::cindex(0)).set_port_no(of_port_no);
 
 		rofl::crofdpt::get_dpt(dptid).send_packet_out_message(
 				rofl::cauxid(0),

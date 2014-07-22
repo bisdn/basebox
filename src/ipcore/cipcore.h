@@ -47,27 +47,11 @@ class cipcore :
 {
 public:
 
-	static cipcore&
-	get_ipcore(const rofl::cdptid& dptid) {
-		if (cipcore::ipcores.find(dptid) == cipcore::ipcores.end()) {
-			new cipcore(dptid);
-		}
-		return cipcore::ipcores[dptid];
-	};
-
-	static bool
-	has_ipcore(const rofl::cdptid& dptid) const {
-		return (not (cipcore::ipcores.find(dptid) == cipcore::ipcores.end()));
-	};
-
-public:
-
 
 	/**
 	 *
 	 */
 	cipcore(
-			rofl::cdptid& dptid,
 			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap);
 
 
@@ -77,6 +61,31 @@ public:
 	virtual
 	~cipcore();
 
+public:
+
+	/**
+	 *
+	 */
+	const clinktable&
+	get_link_table() const { return ltable; };
+
+	/**
+	 *
+	 */
+	clinktable&
+	set_link_table() { return ltable; };
+
+	/**
+	 *
+	 */
+	const croutetables&
+	get_route_tables() const { return rtables; };
+
+	/**
+	 *
+	 */
+	croutetables&
+	set_route_tables() { return rtables; };
 
 public:
 
@@ -87,10 +96,6 @@ public:
 
 	virtual void
 	handle_dpt_close(rofl::crofdpt& dpt);
-
-
-	virtual void
-	handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);
 
 	virtual void
 	handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);
@@ -109,6 +114,26 @@ public:
 
 
 public:
+
+	// IPv4 addresses
+	virtual void
+	addr_in4_created(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_in4_updated(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_in4_deleted(unsigned int ifindex, uint16_t adindex);
+
+	// IPv6 addresses
+	virtual void
+	addr_in6_created(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_in6_updated(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_in6_deleted(unsigned int ifindex, uint16_t adindex);
 
 	// IPv4 routes
 	virtual void
@@ -172,7 +197,7 @@ public:
 		os << rofcore::indent(0) << "<cipcore dptid: " << ipcore.dptid << " >" << std::endl;
 		rofcore::indent i(2);
 		os << ipcore.ltable;
-		os << ipcore.rtable;
+		os << ipcore.rtables;
 		return os;
 	};
 
@@ -180,12 +205,12 @@ private:
 
 	static std::map<rofl::cdptid, cipcore*> ipcores;
 
-	static const unsigned int ETH_FRAME_LEN = 9018; // including jumbo frames
+	static const unsigned int __ETH_FRAME_LEN = 9018; // including jumbo frames
 
-	static const std::string script_path_dpt_open	("/var/lib/ipcore/dpath-open.sh");
-	static const std::string script_path_dpt_close	("/var/lib/ipcore/dpath-close.sh");
-	static const std::string script_path_port_up	("/var/lib/ipcore/port-up.sh");
-	static const std::string script_path_port_down	("/var/lib/ipcore/port-down.sh");
+	static std::string script_path_dpt_open;
+	static std::string script_path_dpt_close;
+	static std::string script_path_port_up;
+	static std::string script_path_port_down;
 
 	static void
 	execute(
@@ -196,7 +221,7 @@ private:
 
 	rofl::cdptid 	dptid;
 	clinktable 		ltable;	// table of links
-	croutetables 	rtable;	// routing tables (v4 and v6)
+	croutetables 	rtables;	// routing tables (v4 and v6)
 
 };
 

@@ -36,29 +36,9 @@ namespace rofcore {
 
 class eRtLinkBase		: public std::exception {};
 class eRtLinkNotFound	: public eRtLinkBase {};
+class eRtLinkExists		: public eRtLinkBase {};
 
-class crtlink
-{
-private:
-
-	std::map<uint16_t, crtaddr_in4>  addrs_in4;	// key: index, value: address, index remains constant, as long as addrs endures
-	std::map<uint16_t, crtaddr_in6>  addrs_in6;	// key: index, value: address, index remains constant, as long as addrs endures
-	std::map<uint16_t, crtneigh_in4> neighs_in4; // key: index, valie: neigh, index remains constant throughout lifetime of neighbor entry
-	std::map<uint16_t, crtneigh_in6> neighs_in6; // key: index, valie: neigh, index remains constant throughout lifetime of neighbor entry
-
-public:
-
-
-	std::string				devname;	// device name (e.g. eth0)
-	rofl::cmacaddr			maddr;		// mac address
-	rofl::cmacaddr			bcast; 		// broadcast address
-	unsigned int			flags;		// link flags
-	int						af;			// address family (AF_INET, AF_UNSPEC, ...)
-	unsigned int			arptype;	// ARP type (e.g. ARPHDR_ETHER)
-	int						ifindex;	// interface index
-	unsigned int			mtu;		// maximum transfer unit
-
-
+class crtlink {
 public:
 
 	/**
@@ -66,6 +46,10 @@ public:
 	 */
 	crtlink();
 
+	/**
+	 *
+	 */
+	crtlink(struct rtnl_link *link);
 
 	/**
 	 *
@@ -73,25 +57,59 @@ public:
 	virtual
 	~crtlink();
 
-
 	/**
 	 *
 	 */
-	crtlink(crtlink const& rtlink);
-
+	crtlink(const crtlink& rtlink) { *this = rtlink; };
 
 	/**
 	 *
 	 */
 	crtlink&
-	operator= (crtlink const& rtlink);
+	operator= (const crtlink& rtlink) {
+		if (this == &rtlink)
+			return *this;
 
+		devname = rtlink.devname;
+		maddr	= rtlink.maddr;
+		bcast	= rtlink.bcast;
+		flags	= rtlink.flags;
+		af		= rtlink.af;
+		arptype	= rtlink.arptype;
+		ifindex	= rtlink.ifindex;
+		mtu		= rtlink.mtu;
+
+		addrs_in4.clear();
+		for (std::map<uint16_t, crtaddr_in4>::const_iterator
+				it = rtlink.addrs_in4.begin(); it != rtlink.addrs_in4.end(); ++it) {
+			addrs_in4[it->first] = it->second;
+		}
+		addrs_in6.clear();
+		for (std::map<uint16_t, crtaddr_in6>::const_iterator
+			it = rtlink.addrs_in6.begin(); it != rtlink.addrs_in6.end(); ++it) {
+			addrs_in6[it->first] = it->second;
+		}
+		neighs_in4.clear();
+		for (std::map<uint16_t, crtneigh_in4>::const_iterator
+				it = rtlink.neighs_in4.begin(); it != rtlink.neighs_in4.end(); ++it) {
+			neighs_in4[it->first] = it->second;
+		}
+		neighs_in6.clear();
+		for (std::map<uint16_t, crtneigh_in6>::const_iterator
+			it = rtlink.neighs_in6.begin(); it != rtlink.neighs_in6.end(); ++it) {
+			neighs_in6[it->first] = it->second;
+		}
+
+		return *this;
+	};
 
 	/**
 	 *
 	 */
-	crtlink(struct rtnl_link *link);
-
+	bool
+	operator== (const crtlink& rtlink) {
+		return ((devname == rtlink.devname) && (ifindex == rtlink.ifindex) && (maddr == rtlink.maddr));
+	}
 
 public:
 
@@ -125,7 +143,7 @@ public:
 	 */
 	uint16_t
 	del_addr_in4(
-			uint16_t index = crtaddr::CRTLINK_ADDR_ALL);
+			uint16_t index);
 
 
 	/**
@@ -285,49 +303,57 @@ public:
 	/**
 	 *
 	 */
-	std::string get_devname() const { return devname; };
+	const std::string&
+	get_devname() const { return devname; };
 
 
 	/**
 	 *
 	 */
-	rofl::cmacaddr get_hwaddr() const { return maddr; };
+	const rofl::cmacaddr&
+	get_hwaddr() const { return maddr; };
 
 
 	/**
 	 *
 	 */
-	rofl::cmacaddr get_broadcast() const { return bcast; };
+	const rofl::cmacaddr&
+	get_broadcast() const { return bcast; };
 
 
 	/**
 	 *
 	 */
-	unsigned int get_flags() const { return flags; };
+	unsigned int
+	get_flags() const { return flags; };
 
 
 	/**
 	 *
 	 */
-	int get_family() const { return af; };
+	int
+	get_family() const { return af; };
 
 
 	/**
 	 *
 	 */
-	unsigned int get_arptype() const { return arptype; };
+	unsigned int
+	get_arptype() const { return arptype; };
 
 
 	/**
 	 *
 	 */
-	int get_ifindex() const { return ifindex; };
+	int
+	get_ifindex() const { return ifindex; };
 
 
 	/**
 	 *
 	 */
-	unsigned int get_mtu() const { return mtu; };
+	unsigned int
+	get_mtu() const { return mtu; };
 
 
 public:
@@ -337,8 +363,7 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (std::ostream& os, crtlink const& rtlink)
-	{
+	operator<< (std::ostream& os, crtlink const& rtlink) {
 		os << rofl::indent(0) << "<crtlink: >" << std::endl;
 		os << rofl::indent(2) << "<devname: " << rtlink.devname 	<< " >" << std::endl;
 		os << rofl::indent(2) << "<maddr: >" << std::endl;
@@ -383,6 +408,9 @@ public:
 		bool operator() (std::pair<unsigned int, crtlink> const& p) {
 			return (ifindex == p.second.ifindex);
 		};
+		bool operator() (std::pair<unsigned int, crtlink*> const& p) {
+			return (ifindex == p.second->ifindex);
+		};
 	};
 
 
@@ -400,7 +428,27 @@ public:
 		bool operator() (std::pair<unsigned int, crtlink> const& p) {
 			return (devname == p.second.devname);
 		};
+		bool operator() (std::pair<unsigned int, crtlink*> const& p) {
+			return (devname == p.second->devname);
+		};
 	};
+
+private:
+
+	std::map<uint16_t, crtaddr_in4>  addrs_in4;	// key: index, value: address, index remains constant, as long as addrs endures
+	std::map<uint16_t, crtaddr_in6>  addrs_in6;	// key: index, value: address, index remains constant, as long as addrs endures
+	std::map<uint16_t, crtneigh_in4> neighs_in4; // key: index, value: neigh, index remains constant throughout lifetime of neighbor entry
+	std::map<uint16_t, crtneigh_in6> neighs_in6; // key: index, value: neigh, index remains constant throughout lifetime of neighbor entry
+
+	std::string				devname;	// device name (e.g. eth0)
+	rofl::cmacaddr			maddr;		// mac address
+	rofl::cmacaddr			bcast; 		// broadcast address
+	unsigned int			flags;		// link flags
+	int						af;			// address family (AF_INET, AF_UNSPEC, ...)
+	unsigned int			arptype;	// ARP type (e.g. ARPHDR_ETHER)
+	int						ifindex;	// interface index
+	unsigned int			mtu;		// maximum transfer unit
+
 };
 
 }; // end of namespace dptmap

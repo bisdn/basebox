@@ -57,11 +57,7 @@ public:
 	/**
 	 *
 	 */
-	cdptroute(
-			rofl::crofbase* rofbase,
-			rofl::crofdpt* dpt,
-			uint8_t table_id,
-			unsigned int rtindex);
+	cdptroute(unsigned int rtindex);
 
 
 	/**

@@ -23,37 +23,15 @@ class eRtTablesNotFound : public eRtTablesBase {};
 class croutetables {
 public:
 
-	static croutetables&
-	get_route_tables(const rofl::cdptid& dptid) {
-		if (croutetables::routetables.find(dptid) == croutetables::routetables.end()) {
-			new croutetables(dptid);
-		}
-		return croutetables::routetables[dptid];
-	};
-
-	static bool
-	has_route_tables(const rofl::cdptid& dptid) const {
-		return (not (croutetables::routetables.find(dptid) == croutetables::routetables.end()));
-	};
-
-public:
+	/**
+	 *
+	 */
+	croutetables();
 
 	/**
 	 *
 	 */
-	croutetables(const rofl::cdptid& dptid) {
-		if (croutetables::routetables.find(dptid) != croutetables::routetables.end()) {
-			throw eRtTablesExists();
-		}
-		croutetables::routetables[dptid] = this;
-	};
-
-	/**
-	 *
-	 */
-	~croutetables() {
-		croutetables::routetables.erase(dptid);
-	};
+	~croutetables();
 
 	/**
 	 *
@@ -69,9 +47,9 @@ public:
 			const croutetables& rttables) {
 		if (this == &rttables)
 			return *this;
-		tables.clear();
+		rtables.clear();
 		for (std::map<unsigned int, croutetable>::const_iterator
-				it = rttables.tables.begin(); it != rttables.tables.end(); ++it) {
+				it = rttables.rtables.begin(); it != rttables.rtables.end(); ++it) {
 			set_table(it->first) = rttables.get_table(it->first);
 		}
 		return *this;
@@ -83,17 +61,17 @@ public:
 	 *
 	 */
 	void
-	clear() { tables.clear(); };
+	clear() { rtables.clear(); };
 
 	/**
 	 *
 	 */
 	croutetable&
 	add_table(unsigned int table_id) {
-		if (tables.find(table_id) != tables.end()) {
-			tables.erase(table_id);
+		if (rtables.find(table_id) != rtables.end()) {
+			rtables.erase(table_id);
 		}
-		return tables[table_id];
+		return rtables[table_id];
 	};
 
 	/**
@@ -101,10 +79,10 @@ public:
 	 */
 	croutetable&
 	set_table(unsigned int table_id) {
-		if (tables.find(table_id) == tables.end()) {
-			(void)tables[table_id];
+		if (rtables.find(table_id) == rtables.end()) {
+			(void)rtables[table_id];
 		}
-		return tables[table_id];
+		return rtables[table_id];
 	};
 
 	/**
@@ -112,10 +90,10 @@ public:
 	 */
 	const croutetable&
 	get_table(unsigned int table_id) const {
-		if (tables.find(table_id) == tables.end()) {
+		if (rtables.find(table_id) == rtables.end()) {
 			throw eRtTablesNotFound();
 		}
-		return tables.at(table_id);
+		return rtables.at(table_id);
 	};
 
 	/**
@@ -123,10 +101,10 @@ public:
 	 */
 	void
 	drop_table(unsigned int table_id) {
-		if (tables.find(table_id) == tables.end()) {
+		if (rtables.find(table_id) == rtables.end()) {
 			return;
 		}
-		tables.erase(table_id);
+		rtables.erase(table_id);
 	};
 
 	/**
@@ -134,7 +112,7 @@ public:
 	 */
 	bool
 	has_table(unsigned int table_id) const {
-		return (not (tables.find(table_id) == tables.end()));
+		return (not (rtables.find(table_id) == rtables.end()));
 	};
 
 
@@ -142,10 +120,10 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const croutetables& rttables) {
-		os << rofcore::indent(0) << "<croutetables dptid: " << rttables.dptid << " >" << std::endl;
+		os << rofcore::indent(0) << "<croutetables >" << std::endl;
 		rofcore::indent i(2);
 		for (std::map<unsigned int, croutetable>::const_iterator
-				it = rttables.tables.begin(); it != rttables.tables.end(); ++it) {
+				it = rttables.rtables.begin(); it != rttables.rtables.end(); ++it) {
 			os << rofcore::indent(0) << "<table-id: " << (unsigned int)it->first << " >" << std::endl;
 			os << it->second;
 		}
@@ -154,10 +132,7 @@ public:
 
 private:
 
-	std::map<rofl::cdptid, croutetables*> routetables;
-	rofl::cdptid dptid;
-	std::map<unsigned int, croutetable>	tables;
-
+	std::map<unsigned int, croutetable>	rtables;
 };
 
 }; // end of namespace ipcore

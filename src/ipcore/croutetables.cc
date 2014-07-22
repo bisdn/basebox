@@ -9,4 +9,3 @@
 
 using namespace ipcore;
 
-std::map<rofl::cdptid, croutetables*> croutetables::routetables;

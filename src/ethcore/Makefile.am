@@ -35,6 +35,6 @@ endif
 
 
 	
-ethcored_LDADD = -lpthread -lrt -l ../librofcore.la
+ethcored_LDADD = -lpthread -lrt -l ../librofnetlink.la
 
 AM_LDFLAGS = -static

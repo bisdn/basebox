@@ -2,9 +2,9 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-noinst_LTLIBRARIES = librofcore.la
+noinst_LTLIBRARIES = librofnetlink.la
 
-librofcore_la_SOURCES = \
+librofnetlink_la_SOURCES = \
 	cnetlink.h \
 	cnetlink.cc \
 	cnetdev.h \
@@ -26,7 +26,7 @@ librofcore_la_SOURCES = \
 	logging.cc \
 	logging.h
 
-librofcore_la_LIBADD= -lrt ${LIBNL3_LIBS}
+librofnetlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
 library_includedir=$(includedir)/rofl/common
 library_include_HEADERS= \

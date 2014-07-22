@@ -46,9 +46,7 @@ public:
 	/**
 	 *
 	 */
-	cdptlink(
-			const rofl::cdptid& dptid,
-			uint32_t of_port_no);
+	cdptlink(unsigned int ifindex);
 
 
 	/**
@@ -58,6 +56,30 @@ public:
 	~cdptlink();
 
 public:
+
+	/**
+	 *
+	 */
+	const rofl::cdptid&
+	get_dptid() const { return dptid; };
+
+	/**
+	 *
+	 */
+	void
+	set_dptid(const rofl::cdptid& dptid) { this->dptid = dptid; };
+
+	/**
+	 *
+	 */
+	uint32_t
+	get_ofp_port_no() const { return of_port_no; };
+
+	/**
+	 *
+	 */
+	void
+	set_ofp_port_no(uint32_t of_port_no) { this->of_port_no = of_port_no; };
 
 	/**
 	 *
@@ -82,12 +104,6 @@ public:
 	 */
 	unsigned int
 	get_ifindex() const { return ifindex; }
-
-	/**
-	 *
-	 */
-	uint32_t
-	get_ofp_port_no() const { return of_port_no; };
 
 	/**
 	 *
@@ -405,11 +421,11 @@ private:
 
 	static std::map<unsigned int, cdptlink*>		dptlinks;
 
+	int					 		 		ifindex;		// ifindex for tapdevice
 	rofl::cdptid						dptid;
 	uint8_t								table_id;
 	uint32_t			 		 		of_port_no;		// OpenFlow portno assigned to port on dpt mapped to this dptport instance
 	rofcore::ctapdev					*tapdev;		// tap device emulating the mapped port on this system
-	unsigned int		 		 		ifindex;		// ifindex for tapdevice
 
 	enum cdptlink_flag_t {
 		FLAG_TAP_DEVICE_ACTIVE = 1,

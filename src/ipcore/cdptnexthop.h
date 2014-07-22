@@ -86,7 +86,7 @@ public:
 	 *
 	 */
 	virtual void
-	update() = 0;
+	update() {};
 
 	/**
 	 *
@@ -175,13 +175,13 @@ private:
 	 *
 	 */
 	virtual void
-	flow_mod_add(uint8_t command = rofl::openflow::OFPFC_ADD) = 0;
+	flow_mod_add(uint8_t command = rofl::openflow::OFPFC_ADD);
 
 	/**
 	 *
 	 */
 	virtual void
-	flow_mod_delete() = 0;
+	flow_mod_delete();
 
 
 public:

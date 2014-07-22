@@ -34,7 +34,7 @@ ipcored_SOURCES = ipcored.cc \
 		croutetables.h \
 		croutetables.cc
 		
-ipcored_LDADD = -lpthread -lrt -l../librofcore.la
+ipcored_LDADD = -lpthread -lrt -l../librofnetlink.la
 
 #AM_CPPFLAGS = -I/usr/local/libnl-3.2.22/include/libnl3
 #AM_LDFLAGS = -static -L/usr/local/libnl-3.2.22/lib -lnl-route-3 -lnl-3

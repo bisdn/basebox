@@ -10,6 +10,7 @@
 
 #include <ostream>
 #include <string>
+#include <algorithm>
 
 #include <rofl/common/caddress.h>
 #include <rofl/common/logging.h>
@@ -27,19 +28,39 @@ extern "C" {
 
 namespace rofcore {
 
-class crtaddr {
+class eRtAddrBase		: public std::runtime_error {
 public:
+	eRtAddrBase(const std::string& __arg) : std::runtime_error(__arg) {};
+};
+class eRtAddrNotFound	: public eRtAddrBase {
+public:
+	eRtAddrNotFound(const std::string& __arg) : eRtAddrBase(__arg) {};
+};
+class eRtAddrExists		: public eRtAddrBase {
+public:
+	eRtAddrExists(const std::string& __arg) : eRtAddrBase(__arg) {};
+};
 
-	enum addr_index_t {
-		CRTLINK_ADDR_ALL = 0xffff,	// apply command to all addresses
-	};
+class crtaddr {
+
+	static unsigned int 					nextindex;
+	static std::map<unsigned int, crtaddr*> rtaddrs;
 
 public:
 
 	/**
 	 *
 	 */
-	crtaddr();
+	static crtaddr&
+	get_addr(unsigned int adindex);
+
+public:
+
+	/**
+	 *
+	 */
+	crtaddr(
+			struct rtnl_addr* addr);
 
 	/**
 	 *
@@ -47,24 +68,6 @@ public:
 	virtual
 	~crtaddr();
 
-	/**
-	 *
-	 */
-	crtaddr(
-			const crtaddr& addr);
-
-	/**
-	 *
-	 */
-	crtaddr&
-	operator= (
-			const crtaddr& addr);
-
-	/**
-	 *
-	 */
-	crtaddr(
-			struct rtnl_addr* addr);
 
 public:
 
@@ -119,8 +122,30 @@ public:
 		return os;
 	};
 
+
+	/**
+	 *
+	 */
+	class crtaddr_find_by_adindex : public std::unary_function<crtaddr,bool> {
+		unsigned int adindex;
+	public:
+		crtaddr_find_by_adindex(unsigned int adindex) :
+			adindex(adindex) {};
+		bool operator() (const crtaddr& rta) {
+			return (adindex == rta.adindex);
+		};
+		bool operator() (const std::pair<unsigned int, crtaddr>& p) {
+			return (adindex == p.second.adindex);
+		};
+		bool operator() (const std::pair<unsigned int, crtaddr*>& p) {
+			return (adindex == p.second->adindex);
+		};
+	};
+
+
 private:
 
+	unsigned int		adindex;
 	std::string			label;
 	int					ifindex;
 	int					af;
@@ -137,35 +162,16 @@ public:
 	/**
 	 *
 	 */
-	crtaddr_in4() {};
+	static crtaddr_in4&
+	get_addr_in4(unsigned int adindex);
+
+public:
 
 	/**
 	 *
 	 */
 	virtual
 	~crtaddr_in4() {};
-
-	/**
-	 *
-	 */
-	crtaddr_in4(
-			const crtaddr_in4& addr) { *this = addr; };
-
-	/**
-	 *
-	 */
-	crtaddr_in4&
-	operator= (
-			const crtaddr_in4& addr) {
-		if (this == &addr)
-			return *this;
-		crtaddr::operator= (addr);
-		mask	= addr.mask;
-		local	= addr.local;
-		peer	= addr.peer;
-		bcast	= addr.bcast;
-		return *this;
-	};
 
 	/**
 	 *
@@ -276,35 +282,16 @@ public:
 	/**
 	 *
 	 */
-	crtaddr_in6() {};
+	static crtaddr_in6&
+	get_addr_in6(unsigned int adindex);
+
+public:
 
 	/**
 	 *
 	 */
 	virtual
 	~crtaddr_in6() {};
-
-	/**
-	 *
-	 */
-	crtaddr_in6(
-			const crtaddr_in6& addr) { *this = addr; };
-
-	/**
-	 *
-	 */
-	crtaddr_in6&
-	operator= (
-			const crtaddr_in6& addr) {
-		if (this == &addr)
-			return *this;
-		crtaddr::operator= (addr);
-		mask	= addr.mask;
-		local	= addr.local;
-		peer	= addr.peer;
-		bcast	= addr.bcast;
-		return *this;
-	};
 
 	/**
 	 *

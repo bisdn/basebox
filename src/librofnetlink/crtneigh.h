@@ -284,7 +284,7 @@ public:
 		if (std::string(s_buf) != std::string("none"))
 			s_dst.assign(nl_addr2str(rtnl_neigh_get_dst(neigh), s_buf, sizeof(s_buf)));
 		else
-			s_dst.assign("0000:0000:0000:0000:0000:0000:0000:0000");
+			s_dst.assign("::");
 
 		dst = rofl::caddress_in6(s_dst.c_str());
 

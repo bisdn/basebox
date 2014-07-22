@@ -4,10 +4,13 @@ using namespace ipcore;
 
 std::map<rofl::cdptid, cipcore*> cipcore::ipcores;
 
+std::string cipcore::script_path_dpt_open 	= std::string("/var/lib/ipcore/dpath-open.sh");
+std::string cipcore::script_path_dpt_close 	= std::string("/var/lib/ipcore/dpath-close.sh");
+std::string cipcore::script_path_port_up 	= std::string("/var/lib/ipcore/port-up.sh");
+std::string cipcore::script_path_port_down 	= std::string("/var/lib/ipcore/port-down.sh");
+
 cipcore::cipcore(
-		rofl::cdptid& dptid,
 		const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap) :
-		dptid(dptid),
 		rofl::crofbase(versionbitmap)
 {
 
@@ -16,7 +19,7 @@ cipcore::cipcore(
 
 cipcore::~cipcore()
 {
-	rtable.clear();
+	rtables.clear();
 	ltable.clear();
 }
 
@@ -26,11 +29,9 @@ void
 cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
-		if (dptid != dpt.get_dptid()) {
-			return;
-		}
+		dptid = dpt.get_dptid();
 
-		rtable.clear();
+		rtables.clear();
 		ltable.clear();
 
 		purge_dpt_entries();
@@ -50,7 +51,7 @@ cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// deprecated:
 		// get full-length packets (what is the ethernet max length on dpt?)
-		//dpt.send_set_config_message(rofl::cauxid(0), 0, ETH_FRAME_LEN);
+		//dpt.send_set_config_message(rofl::cauxid(0), 0, __ETH_FRAME_LEN);
 
 		/*
 		 * install default policy for table 0 => GotoTable(1)
@@ -88,7 +89,7 @@ cipcore::handle_dpt_close(rofl::crofdpt& dpt)
 
 	hook_dpt_detach();
 
-	rtable.clear();
+	rtables.clear();
 
 	ltable.clear();
 }
@@ -197,11 +198,48 @@ cipcore::handle_error(rofl::crofdpt& dpt, rofl::openflow::cofmsg_error& msg, uin
 
 
 void
-cipcore::handle_flow_removed(rofl::crofdpt& dpt, rofl::openflow::cofmsg_flow_removed& msg, uint8_t aux_id)
+cipcore::handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg)
 {
 	rofl::logging::info << "[ipcore] Flow-Removed message rcvd:" << std::endl << msg;
 }
 
+
+
+void
+cipcore::addr_in4_created(unsigned int ifindex, uint16_t adindex)
+{
+	set_link_table().set_link(ifindex).set_addr_in4(adindex).install();
+}
+
+void
+cipcore::addr_in4_updated(unsigned int ifindex, uint16_t adindex)
+{
+
+}
+
+void
+cipcore::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
+{
+
+}
+
+void
+cipcore::addr_in6_created(unsigned int ifindex, uint16_t adindex)
+{
+
+}
+
+void
+cipcore::addr_in6_updated(unsigned int ifindex, uint16_t adindex)
+{
+
+}
+
+void
+cipcore::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
+{
+
+}
 
 
 void

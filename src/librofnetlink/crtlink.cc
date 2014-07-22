@@ -27,51 +27,6 @@ crtlink::~crtlink()
 }
 
 
-crtlink::crtlink(crtlink const& rtlink) :
-		flags(0),
-		af(0),
-		arptype(0),
-		ifindex(0),
-		mtu(0)
-{
-	*this = rtlink;
-}
-
-
-
-crtlink&
-crtlink::operator= (crtlink const& rtlink)
-{
-	if (this == &rtlink)
-		return *this;
-
-	//std::cerr << "crtlink::operator=() " << *this << std::endl;
-	addrs_in4.clear();
-	for (std::map<uint16_t, crtaddr_in4>::const_iterator
-			it = rtlink.addrs_in4.begin(); it != rtlink.addrs_in4.end(); ++it) {
-		addrs_in4[it->first] = it->second;
-	}
-
-	addrs_in6.clear();
-	for (std::map<uint16_t, crtaddr_in6>::const_iterator
-			it = rtlink.addrs_in6.begin(); it != rtlink.addrs_in6.end(); ++it) {
-		addrs_in6[it->first] = it->second;
-	}
-
-	devname		= rtlink.devname;
-	maddr		= rtlink.maddr;
-	bcast		= rtlink.bcast;
-	flags		= rtlink.flags;
-	af			= rtlink.af;
-	arptype		= rtlink.arptype;
-	ifindex		= rtlink.ifindex;
-	mtu			= rtlink.mtu;
-
-	return *this;
-}
-
-
-
 crtlink::crtlink(struct rtnl_link *link) :
 		flags(0),
 		af(0),
@@ -123,7 +78,7 @@ crtlink::get_addr_in4(const crtaddr_in4& rta)
 
 uint16_t
 crtlink::set_addr_in4(const crtaddr_in4& rta)
-{
+{if (crtlink::rtlinks.find(ifindex) == crtlink::rtlinks.end()) {
 	// address already exists
 	std::map<uint16_t, crtaddr_in4>::iterator it;
 	if ((it = find_if(addrs_in4.begin(), addrs_in4.end(),
@@ -134,17 +89,16 @@ crtlink::set_addr_in4(const crtaddr_in4& rta)
 		it->second = rta;
 		return it->first;
 
-	} else {
-
-		unsigned int index = 0;
-		while (addrs_in4.find(index) != addrs_in4.end()) {
-			index++;
-		}
-		//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-NEW => index=" << index << " " << rta << std::endl;
-		//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-NEW => " << *this << std::endl;
-		addrs_in4[index] = rta;
-		return index;
 	}
+
+	unsigned int adindex = 0;
+	while (addrs_in4.find(adindex) != addrs_in4.end()) {
+		adindex++;
+	}
+	//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-NEW => index=" << index << " " << rta << std::endl;
+	//std::cerr << "crtlink::set_addr() route/addr: NL-ACT-NEW => " << *this << std::endl;
+	addrs_in4[adindex] = rta;
+	return adindex;
 }
 
 
@@ -475,7 +429,7 @@ crtlink::del_neigh_in6(uint16_t index)
 		neighs_in6.erase(index);
 	}
 	//std::cerr << "crtlink::set_neigh() route/neigh: NL-ACT-DEL => " << *this << std::endl;
-	return index;
+	return index;if (crtlink::rtlinks.find(ifindex) == crtlink::rtlinks.end()) {
 }
 
 

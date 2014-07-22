@@ -9,6 +9,5 @@
 
 using namespace ipcore;
 
-std::map<rofl::cdptid, clinktable*> clinktable::linktables;
 
 

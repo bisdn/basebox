@@ -104,7 +104,9 @@ public:
 	 */
 	void
 	subscribe(
-			cnetlink_subscriber* subscriber);
+			cnetlink_subscriber* subscriber) {
+		subscribers.insert(subscriber);
+	};
 
 
 	/**
@@ -112,7 +114,9 @@ public:
 	 */
 	void
 	unsubscribe(
-			cnetlink_subscriber* subscriber);
+			cnetlink_subscriber* subscriber) {
+		subscribers.erase(subscriber);
+	};
 
 
 	/**

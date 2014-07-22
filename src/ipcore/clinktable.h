@@ -10,6 +10,7 @@
 
 #include <map>
 #include <iostream>
+#include <algorithm>
 
 #include "cdptlink.h"
 #include "logging.h"
@@ -23,37 +24,15 @@ class eLinkTableNotFound 	: public eLinkTableBase {};
 class clinktable {
 public:
 
-	static clinktable&
-	get_link_table(const rofl::cdptid& dptid) {
-		if (clinktable::linktables.find(dptid) == clinktable::linktables.end()) {
-			new clinktable(dptid);
-		}
-		return clinktable::linktables[dptid];
-	};
-
-	static bool
-	has_link_table(const rofl::cdptid& dptid) const {
-		return (not (clinktable::linktables.find(dptid) == clinktable::linktables.end()));
-	};
-
-public:
+	/**
+	 *
+	 */
+	clinktable();
 
 	/**
 	 *
 	 */
-	clinktable(rofl::cdptid& dptid) : dptid(dptid) {
-		if (clinktable::linktables.find(dptid) != clinktable::linktables.end()) {
-			throw eLinkTableExists();
-		}
-		clinktable::linktables[dptid] = this;
-	};
-
-	/**
-	 *
-	 */
-	~clinktable() {
-		clinktable::linktables.erase(dptid);
-	};
+	~clinktable();
 
 	/**
 	 *
@@ -69,7 +48,6 @@ public:
 			const clinktable& table) {
 		if (this == &table)
 			return *this;
-		dptid = table.dptid;
 		clear();
 		for (std::map<unsigned int, cdptlink>::const_iterator
 				it = table.links.begin(); it != table.links.end(); ++it) {
@@ -79,18 +57,6 @@ public:
 	};
 
 public:
-
-	/**
-	 *
-	 */
-	void
-	clear() { return links.clear(); };
-
-	/**
-	 *
-	 */
-	const rofl::cdptid&
-	get_dptid() const { return dptid; };
 
 	/**
 	 *
@@ -106,6 +72,7 @@ public:
 		if (links.find(index) != links.end()) {
 			links.erase(index);
 		}
+		links[index] = cdptlink(index);
 		return links[index];
 	};
 
@@ -155,7 +122,7 @@ public:
 	 */
 	const cdptlink&
 	get_link_by_ofp_port_no(uint32_t ofp_port_no) const {
-		std::map<unsigned int, cdptlink>::iterator it;
+		std::map<unsigned int, cdptlink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ofp_port_no(ofp_port_no))) == links.end()) {
 			throw eLinkTableNotFound();
 		}
@@ -165,9 +132,9 @@ public:
 	/**
 	 *
 	 */
-	const cdptlink&
+	bool
 	has_link_by_ofp_port_no(uint32_t ofp_port_no) const {
-		std::map<unsigned int, cdptlink>::iterator it;
+		std::map<unsigned int, cdptlink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ofp_port_no(ofp_port_no))) == links.end()) {
 			return false;
 		}
@@ -179,7 +146,7 @@ public:
 	 */
 	const cdptlink&
 	get_link_by_ifindex(int ifindex) const {
-		std::map<unsigned int, cdptlink>::iterator it;
+		std::map<unsigned int, cdptlink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ifindex(ifindex))) == links.end()) {
 			throw eLinkTableNotFound();
 		}
@@ -189,9 +156,9 @@ public:
 	/**
 	 *
 	 */
-	const cdptlink&
+	bool
 	has_link_by_ifindex(int ifindex) const {
-		std::map<unsigned int, cdptlink>::iterator it;
+		std::map<unsigned int, cdptlink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ifindex(ifindex))) == links.end()) {
 			return false;
 		}
@@ -202,7 +169,7 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const clinktable& table) {
-		os << rofcore::indent(0) << "<clinktable dptid:" << table.dptid << " >" << std::endl;
+		os << rofcore::indent(0) << "<clinktable >" << std::endl;
 		rofcore::indent i(2);
 		for (std::map<unsigned int, cdptlink>::const_iterator
 				it = table.links.begin(); it != table.links.end(); ++it) {
@@ -213,9 +180,7 @@ public:
 
 private:
 
-	static std::map<rofl::cdptid, clinktable*>		linktables;
-	rofl::cdptid 									dptid;
-	std::map<unsigned int, cdptlink> 				links;	// key: internal link index, neither ofp_port_no, nor ifindex assigned from kernel
+	std::map<unsigned int, cdptlink> links;	// key: internal link index, neither ofp_port_no, nor ifindex assigned from kernel
 };
 
 }; // end of namespace ipcore
