@@ -14,14 +14,9 @@ librofnetlink_la_SOURCES = \
 	cpacketpool.h \
 	cpacketpool.cc \
 	crtroute.h \
-	crtroute.cc \
-	crtaddr.cc \
 	crtaddr.h \
-	crtlink.cc \
 	crtlink.h \
-	crtneigh.cc \
 	crtneigh.h \
-	crtnexthop.cc \
 	crtnexthop.h \
 	logging.cc \
 	logging.h

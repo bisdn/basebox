@@ -26,36 +26,97 @@ namespace rofcore {
 class crtnexthop {
 public:
 
+	class eRtNextHopBase		: public std::runtime_error {
+	public:
+		eRtNextHopBase(const std::string& __arg) : std::runtime_error(__arg) {};
+	};
+	class eRtNextHopNotFound	: public eRtNextHopBase {
+	public:
+		eRtNextHopNotFound(const std::string& __arg) : eRtNextHopBase(__arg) {};
+	};
+	class eRtNextHopExists		: public eRtNextHopBase {
+	public:
+		eRtNextHopExists(const std::string& __arg) : eRtNextHopBase(__arg) {};
+	};
+
+public:
+
 	/**
 	 *
 	 */
-	crtnexthop();
+	crtnexthop() :
+		family(0),
+		weight(0),
+		ifindex(0),
+		flags(0),
+		realms(0) {};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtnexthop();
+	~crtnexthop() {};
 
 	/**
 	 *
 	 */
 	crtnexthop(
-			const crtnexthop& nxthop);
+			const crtnexthop& rtnxthop) { *this = rtnxthop; };
 
 	/**
 	 *
 	 */
 	crtnexthop&
 	operator= (
-			const crtnexthop& nxthop);
+			const crtnexthop& rtnxthop) {
+		if (this == &rtnxthop)
+			return *this;
+
+		family	= rtnxthop.family;
+		weight 	= rtnxthop.weight;
+		ifindex	= rtnxthop.ifindex;
+		flags	= rtnxthop.flags;
+		realms	= rtnxthop.realms;
+
+		return *this;
+	};
 
 	/**
 	 *
 	 */
 	crtnexthop(
 			struct rtnl_route *route,
-			struct rtnl_nexthop *nxthop);
+			struct rtnl_nexthop *nxthop) :
+				family(0),
+				weight(0),
+				ifindex(0),
+				flags(0),
+				realms(0)
+	{
+		rtnl_route_get(route);
+
+		family		= rtnl_route_get_family(route);
+		weight		= rtnl_route_nh_get_weight(nxthop);
+		ifindex		= rtnl_route_nh_get_ifindex(nxthop);
+		flags		= rtnl_route_nh_get_flags(nxthop);
+		realms		= rtnl_route_nh_get_realms(nxthop);
+
+		rtnl_route_put(route);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	operator== (const crtnexthop& rtnexthop) {
+		return ((family 	== rtnexthop.family) 	&&
+				(weight 	== rtnexthop.weight) 	&&
+				(ifindex 	== rtnexthop.ifindex)	&&
+				(flags 		== rtnexthop.flags) 	&&
+				(realms 	== rtnexthop.realms));
+	};
+
+
 
 public:
 
@@ -103,6 +164,27 @@ private:
 	int				ifindex;
 	unsigned int	flags;
 	uint32_t		realms;
+};
+
+
+
+/**
+ *
+ */
+class crtnexthop_find : public std::unary_function<crtnexthop,bool> {
+	crtnexthop rtnexthop;
+public:
+	crtnexthop_find(const crtnexthop& rtnexthop) :
+		rtnexthop(rtnexthop) {};
+	bool operator() (const crtnexthop& rtn) {
+		return (rtnexthop == rtn);
+	};
+	bool operator() (const std::pair<unsigned int, crtnexthop>& p) {
+		return (rtnexthop == p.second);
+	};
+	bool operator() (const std::pair<unsigned int, crtnexthop*>& p) {
+		return (rtnexthop == *(p.second));
+	};
 };
 
 
@@ -160,6 +242,16 @@ public:
 		rtnl_route_put(route);
 	};
 
+
+	/**
+	 *
+	 */
+	bool
+	operator== (const crtnexthop_in4& rtnexthop) {
+		return ((crtnexthop::operator== (rtnexthop)) && (gateway == rtnexthop.gateway));
+	};
+
+
 public:
 
 	/**
@@ -184,6 +276,27 @@ private:
 	rofl::caddress_in4	gateway;
 };
 
+
+/**
+ *
+ */
+class crtnexthop_in4_find : public std::unary_function<crtnexthop_in4,bool> {
+	crtnexthop_in4 rtnexthop;
+public:
+	crtnexthop_in4_find(const crtnexthop_in4& rtnexthop) :
+		rtnexthop(rtnexthop) {};
+	bool operator() (const crtnexthop_in4& rta) {
+		return (rtnexthop == rta);
+	};
+	bool operator() (const std::pair<unsigned int, crtnexthop_in4>& p) {
+		return (rtnexthop == p.second);
+	};
+#if 0
+	bool operator() (const std::pair<unsigned int, crtnexthop_in4*>& p) {
+		return (rtnexthop == *(p.second));
+	};
+#endif
+};
 
 
 
@@ -240,6 +353,15 @@ public:
 		rtnl_route_put(route);
 	};
 
+	/**
+	 *
+	 */
+	bool
+	operator== (const crtnexthop_in6& rtnexthop) {
+		return ((crtnexthop::operator== (rtnexthop)) && (gateway == rtnexthop.gateway));
+	};
+
+
 public:
 
 	/**
@@ -264,6 +386,27 @@ private:
 	rofl::caddress_in6	gateway;
 };
 
+
+/**
+ *
+ */
+class crtnexthop_in6_find : public std::unary_function<crtnexthop_in6,bool> {
+	crtnexthop_in6 rtnexthop;
+public:
+	crtnexthop_in6_find(const crtnexthop_in6& rtnexthop) :
+		rtnexthop(rtnexthop) {};
+	bool operator() (const crtnexthop_in6& rta) {
+		return (rtnexthop == rta);
+	};
+	bool operator() (const std::pair<unsigned int, crtnexthop_in6>& p) {
+		return (rtnexthop == p.second);
+	};
+#if 0
+	bool operator() (const std::pair<unsigned int, crtnexthop_in6*>& p) {
+		return (rtnexthop == *(p.second));
+	};
+#endif
+};
 
 
 };

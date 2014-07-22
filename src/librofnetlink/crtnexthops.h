@@ -63,6 +63,53 @@ public:
 	/**
 	 *
 	 */
+	unsigned int
+	add_nexthop(const crtnexthop_in4& rtnexthop) {
+		std::map<unsigned int, crtnexthop_in4>::iterator it;
+		if ((it = find_if(rtnexthops.begin(), rtnexthops.end(),
+				crtnexthop_in4_find(rtnexthop))) != rtnexthops.end()) {
+			rtnexthops.erase(it->first);
+		}
+		unsigned int adindex = 0;
+		while (rtnexthops.find(adindex) != rtnexthops.end()) {
+			adindex++;
+		}
+		rtnexthops[adindex] = rtnexthop;
+		return adindex;
+	};
+
+
+	/**
+	 *
+	 */
+	unsigned int
+	set_nexthop(const crtnexthop_in4& rtnexthop) {
+		std::map<unsigned int, crtnexthop_in4>::iterator it;
+		if ((it = find_if(rtnexthops.begin(), rtnexthops.end(),
+				crtnexthop_in4_find(rtnexthop))) == rtnexthops.end()) {
+			return add_nexthop(rtnexthop);
+		}
+		rtnexthops[it->first] = rtnexthop;
+		return it->first;
+	};
+
+
+	/**
+	 *
+	 */
+	unsigned int
+	get_nexthop(const crtnexthop_in4& rtnexthop) const {
+		std::map<unsigned int, crtnexthop_in4>::const_iterator it;
+		if ((it = find_if(rtnexthops.begin(), rtnexthops.end(),
+				crtnexthop_in4_find(rtnexthop))) == rtnexthops.end()) {
+			throw crtnexthop::eRtNextHopNotFound("crtnexthops_in4::get_nexthop() / error: rtnexthop not found");
+		}
+		return it->first;
+	};
+
+	/**
+	 *
+	 */
 	crtnexthop_in4&
 	add_nexthop(unsigned int nbindex) {
 		if (rtnexthops.find(nbindex) != rtnexthops.end()) {
@@ -77,7 +124,7 @@ public:
 	crtnexthop_in4&
 	set_nexthop(unsigned int nbindex) {
 		if (rtnexthops.find(nbindex) == rtnexthops.end()) {
-			rtnexthops[nbindex] = crtnexthop(nbindex);
+			rtnexthops[nbindex];
 		}
 		return rtnexthops[nbindex];
 	};
@@ -88,7 +135,7 @@ public:
 	const crtnexthop_in4&
 	get_nexthop(unsigned int nbindex) const {
 		if (rtnexthops.find(nbindex) == rtnexthops.end()) {
-			throw eRtLinkNotFound();
+			throw crtnexthop::eRtNextHopNotFound("crtnexthops::get_link() / error: nbindex not found");
 		}
 		return rtnexthops.at(nbindex);
 	};
@@ -116,9 +163,9 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtnexthops_in4& rtnexthops) {
-		os << logging::indent(0) << "<crtnexthops_in4 #rtnexthops: " << rtnexthops.rtnexthops.size() << " >" << std::endl;
-		logging::indent i(2);
-		for (std::map<unsigned int, crtnexthop>::const_iterator
+		os << rofcore::indent(0) << "<crtnexthops_in4 #rtnexthops: " << rtnexthops.rtnexthops.size() << " >" << std::endl;
+		rofcore::indent i(2);
+		for (std::map<unsigned int, crtnexthop_in4>::const_iterator
 				it = rtnexthops.rtnexthops.begin(); it != rtnexthops.rtnexthops.end(); ++it) {
 			os << it->second;
 		}
@@ -180,6 +227,54 @@ public:
 	/**
 	 *
 	 */
+	unsigned int
+	add_nexthop(const crtnexthop_in6& rtnexthop) {
+		std::map<unsigned int, crtnexthop_in6>::iterator it;
+		if ((it = find_if(rtnexthops.begin(), rtnexthops.end(),
+				crtnexthop_in6_find(rtnexthop))) != rtnexthops.end()) {
+			rtnexthops.erase(it->first);
+		}
+		unsigned int adindex = 0;
+		while (rtnexthops.find(adindex) != rtnexthops.end()) {
+			adindex++;
+		}
+		rtnexthops[adindex] = rtnexthop;
+		return adindex;
+	};
+
+
+	/**
+	 *
+	 */
+	unsigned int
+	set_nexthop(const crtnexthop_in6& rtnexthop) {
+		std::map<unsigned int, crtnexthop_in6>::iterator it;
+		if ((it = find_if(rtnexthops.begin(), rtnexthops.end(),
+				crtnexthop_in6_find(rtnexthop))) == rtnexthops.end()) {
+			return add_nexthop(rtnexthop);
+		}
+		rtnexthops[it->first] = rtnexthop;
+		return it->first;
+	};
+
+
+	/**
+	 *
+	 */
+	unsigned int
+	get_nexthop(const crtnexthop_in6& rtnexthop) const {
+		std::map<unsigned int, crtnexthop_in6>::const_iterator it;
+		if ((it = find_if(rtnexthops.begin(), rtnexthops.end(),
+				crtnexthop_in6_find(rtnexthop))) == rtnexthops.end()) {
+			throw crtnexthop::eRtNextHopNotFound("crtnexthops_in4::get_nexthop() / error: rtnexthop not found");
+		}
+		return it->first;
+	};
+
+
+	/**
+	 *
+	 */
 	crtnexthop_in6&
 	add_nexthop(unsigned int nbindex) {
 		if (rtnexthops.find(nbindex) != rtnexthops.end()) {
@@ -194,7 +289,7 @@ public:
 	crtnexthop_in6&
 	set_nexthop(unsigned int nbindex) {
 		if (rtnexthops.find(nbindex) == rtnexthops.end()) {
-			rtnexthops[nbindex] = crtnexthop(nbindex);
+			rtnexthops[nbindex];
 		}
 		return rtnexthops[nbindex];
 	};
@@ -205,7 +300,7 @@ public:
 	const crtnexthop_in6&
 	get_nexthop(unsigned int nbindex) const {
 		if (rtnexthops.find(nbindex) == rtnexthops.end()) {
-			throw eRtLinkNotFound();
+			throw crtnexthop::eRtNextHopNotFound("crtnexthops::get_nexthop() / error: nbindex not found");
 		}
 		return rtnexthops.at(nbindex);
 	};
@@ -233,9 +328,9 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtnexthops_in6& rtnexthops) {
-		os << logging::indent(0) << "<crtnexthops_in6 #rtnexthops: " << rtnexthops.rtnexthops.size() << " >" << std::endl;
-		logging::indent i(2);
-		for (std::map<unsigned int, crtnexthop>::const_iterator
+		os << rofcore::indent(0) << "<crtnexthops_in6 #rtnexthops: " << rtnexthops.rtnexthops.size() << " >" << std::endl;
+		rofcore::indent i(2);
+		for (std::map<unsigned int, crtnexthop_in6>::const_iterator
 				it = rtnexthops.rtnexthops.begin(); it != rtnexthops.rtnexthops.end(); ++it) {
 			os << it->second;
 		}

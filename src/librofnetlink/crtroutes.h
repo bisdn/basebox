@@ -8,6 +8,8 @@
 #ifndef CRTROUTES_H_
 #define CRTROUTES_H_
 
+
+
 #include <iostream>
 #include <map>
 
@@ -22,13 +24,13 @@ public:
 	/**
 	 *
 	 */
-	crtroutes_in4();
+	crtroutes_in4() {};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtroutes_in4();
+	~crtroutes_in4() {};
 
 	/**
 	 *
@@ -63,62 +65,113 @@ public:
 	/**
 	 *
 	 */
-	crtroute_in4&
-	add_route(unsigned int nbindex) {
-		if (rtroutes.find(nbindex) != rtroutes.end()) {
-			rtroutes.erase(nbindex);
+	unsigned int
+	add_route(const crtroute_in4& rtroute) {
+		std::map<unsigned int, crtroute_in4>::iterator it;
+		if ((it = find_if(rtroutes.begin(), rtroutes.end(),
+				crtroute_in4_find(rtroute))) != rtroutes.end()) {
+			rtroutes.erase(it->first);
 		}
-		return rtroutes[nbindex];
+		unsigned int rtindex = 0;
+		while (rtroutes.find(rtindex) != rtroutes.end()) {
+			rtindex++;
+		}
+		rtroutes[rtindex] = rtroute;
+		return rtindex;
 	};
+
+
+	/**
+	 *
+	 */
+	unsigned int
+	set_route(const crtroute_in4& rtroute) {
+		std::map<unsigned int, crtroute_in4>::iterator it;
+		if ((it = find_if(rtroutes.begin(), rtroutes.end(),
+				crtroute_in4_find(rtroute))) == rtroutes.end()) {
+			return add_route(rtroute);
+		}
+		rtroutes[it->first] = rtroute;
+		return it->first;
+	};
+
+
+	/**
+	 *
+	 */
+	unsigned int
+	get_route(const crtroute_in4& rtroute) const {
+		std::map<unsigned int, crtroute_in4>::const_iterator it;
+		if ((it = find_if(rtroutes.begin(), rtroutes.end(),
+				crtroute_in4_find(rtroute))) == rtroutes.end()) {
+			throw crtroute::eRtRouteNotFound("crtroutes_in4::get_route() / error: rtroute not found");
+		}
+		return it->first;
+	};
+
+
+
 
 	/**
 	 *
 	 */
 	crtroute_in4&
-	set_route(unsigned int nbindex) {
-		if (rtroutes.find(nbindex) == rtroutes.end()) {
-			rtroutes[nbindex] = crtroute(nbindex);
+	add_route(unsigned int rtindex) {
+		if (rtroutes.find(rtindex) != rtroutes.end()) {
+			rtroutes.erase(rtindex);
 		}
-		return rtroutes[nbindex];
+		return rtroutes[rtindex];
+	};
+
+
+	/**
+	 *
+	 */
+	crtroute_in4&
+	set_route(unsigned int rtindex) {
+		if (rtroutes.find(rtindex) == rtroutes.end()) {
+			rtroutes[rtindex];
+		}
+		return rtroutes[rtindex];
 	};
 
 	/**
 	 *
 	 */
 	const crtroute_in4&
-	get_route(unsigned int nbindex) const {
-		if (rtroutes.find(nbindex) == rtroutes.end()) {
-			throw eRtLinkNotFound();
+	get_route(unsigned int rtindex) const {
+		if (rtroutes.find(rtindex) == rtroutes.end()) {
+			throw crtroute::eRtRouteNotFound("crtroutes_in4::get_route() / error: rtindex not found");
 		}
-		return rtroutes.at(nbindex);
+		return rtroutes.at(rtindex);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_route(unsigned int nbindex) {
-		if (rtroutes.find(nbindex) == rtroutes.end()) {
+	drop_route(unsigned int rtindex) {
+		if (rtroutes.find(rtindex) == rtroutes.end()) {
 			return;
 		}
-		rtroutes.erase(nbindex);
+		rtroutes.erase(rtindex);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_route(unsigned int nbindex) const {
-		return (not (rtroutes.find(nbindex) == rtroutes.end()));
+	has_route(unsigned int rtindex) const {
+		return (not (rtroutes.find(rtindex) == rtroutes.end()));
 	};
 
 public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtroutes_in4& rtroutes) {
-		os << logging::indent(0) << "<crtroutes_in4 #rtroutes: " << rtroutes.rtroutes.size() << " >" << std::endl;
-		logging::indent i(2);
-		for (std::map<unsigned int, crtroute>::const_iterator
+		os << rofcore::indent(0) << "<crtroutes_in4 #rtroutes: " << rtroutes.rtroutes.size() << " >" << std::endl;
+		rofcore::indent i(2);
+		for (std::map<unsigned int, crtroute_in4>::const_iterator
 				it = rtroutes.rtroutes.begin(); it != rtroutes.rtroutes.end(); ++it) {
 			os << it->second;
 		}
@@ -130,22 +183,19 @@ private:
 	std::map<unsigned int, crtroute_in4> rtroutes;
 };
 
-
-
-
 class crtroutes_in6 {
 public:
 
 	/**
 	 *
 	 */
-	crtroutes_in6();
+	crtroutes_in6() {};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtroutes_in6();
+	~crtroutes_in6() {};
 
 	/**
 	 *
@@ -180,62 +230,114 @@ public:
 	/**
 	 *
 	 */
-	crtroute_in6&
-	add_route(unsigned int nbindex) {
-		if (rtroutes.find(nbindex) != rtroutes.end()) {
-			rtroutes.erase(nbindex);
+	unsigned int
+	add_route(const crtroute_in6& rtroute) {
+		std::map<unsigned int, crtroute_in6>::iterator it;
+		if ((it = find_if(rtroutes.begin(), rtroutes.end(),
+				crtroute_in6_find(rtroute))) != rtroutes.end()) {
+			rtroutes.erase(it->first);
 		}
-		return rtroutes[nbindex];
+		unsigned int rtindex = 0;
+		while (rtroutes.find(rtindex) != rtroutes.end()) {
+			rtindex++;
+		}
+		rtroutes[rtindex] = rtroute;
+		return rtindex;
+	};
+
+
+	/**
+	 *
+	 */
+	unsigned int
+	set_route(const crtroute_in6& rtroute) {
+		std::map<unsigned int, crtroute_in6>::iterator it;
+		if ((it = find_if(rtroutes.begin(), rtroutes.end(),
+				crtroute_in6_find(rtroute))) == rtroutes.end()) {
+			return add_route(rtroute);
+		}
+		rtroutes[it->first] = rtroute;
+		return it->first;
+	};
+
+
+	/**
+	 *
+	 */
+	unsigned int
+	get_route(const crtroute_in6& rtroute) const {
+		std::map<unsigned int, crtroute_in6>::const_iterator it;
+		if ((it = find_if(rtroutes.begin(), rtroutes.end(),
+				crtroute_in6_find(rtroute))) == rtroutes.end()) {
+			throw crtroute::eRtRouteNotFound("crtroutes_in6::get_route() / error: rtroute not found");
+		}
+		return it->first;
+	};
+
+
+
+
+
+
+	/**
+	 *
+	 */
+	crtroute_in6&
+	add_route(unsigned int rtindex) {
+		if (rtroutes.find(rtindex) != rtroutes.end()) {
+			rtroutes.erase(rtindex);
+		}
+		return rtroutes[rtindex];
 	};
 
 	/**
 	 *
 	 */
 	crtroute_in6&
-	set_route(unsigned int nbindex) {
-		if (rtroutes.find(nbindex) == rtroutes.end()) {
-			rtroutes[nbindex] = crtroute(nbindex);
+	set_route(unsigned int rtindex) {
+		if (rtroutes.find(rtindex) == rtroutes.end()) {
+			rtroutes[rtindex];
 		}
-		return rtroutes[nbindex];
+		return rtroutes[rtindex];
 	};
 
 	/**
 	 *
 	 */
 	const crtroute_in6&
-	get_route(unsigned int nbindex) const {
-		if (rtroutes.find(nbindex) == rtroutes.end()) {
-			throw eRtLinkNotFound();
+	get_route(unsigned int rtindex) const {
+		if (rtroutes.find(rtindex) == rtroutes.end()) {
+			throw crtroute::eRtRouteNotFound("crtroutes_in6::get_route() / error: rtindex not found");
 		}
-		return rtroutes.at(nbindex);
+		return rtroutes.at(rtindex);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_route(unsigned int nbindex) {
-		if (rtroutes.find(nbindex) == rtroutes.end()) {
+	drop_route(unsigned int rtindex) {
+		if (rtroutes.find(rtindex) == rtroutes.end()) {
 			return;
 		}
-		rtroutes.erase(nbindex);
+		rtroutes.erase(rtindex);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_route(unsigned int nbindex) const {
-		return (not (rtroutes.find(nbindex) == rtroutes.end()));
+	has_route(unsigned int rtindex) const {
+		return (not (rtroutes.find(rtindex) == rtroutes.end()));
 	};
 
 public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtroutes_in6& rtroutes) {
-		os << logging::indent(0) << "<crtroutes_in6 #rtroutes: " << rtroutes.rtroutes.size() << " >" << std::endl;
-		logging::indent i(2);
-		for (std::map<unsigned int, crtroute>::const_iterator
+		os << rofcore::indent(0) << "<crtroutes_in6 #rtroutes: " << rtroutes.rtroutes.size() << " >" << std::endl;
+		rofcore::indent i(2);
+		for (std::map<unsigned int, crtroute_in6>::const_iterator
 				it = rtroutes.rtroutes.begin(); it != rtroutes.rtroutes.end(); ++it) {
 			os << it->second;
 		}
@@ -246,5 +348,9 @@ private:
 
 	std::map<unsigned int, crtroute_in6> rtroutes;
 };
+
+
+}; // end of namespace
+
 
 #endif /* CRTROUTES_H_ */

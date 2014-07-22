@@ -29,33 +29,71 @@ extern "C" {
 }
 #endif
 
-#include <crtaddr.h>
-#include <crtneigh.h>
+#include "crtaddrs.h"
+#include "crtneighs.h"
 
 namespace rofcore {
 
-class eRtLinkBase		: public std::exception {};
-class eRtLinkNotFound	: public eRtLinkBase {};
-class eRtLinkExists		: public eRtLinkBase {};
-
 class crtlink {
+public:
+
+	class eRtLinkBase		: public std::runtime_error {
+	public:
+		eRtLinkBase(const std::string& __arg) : std::runtime_error(__arg) {};
+	};
+	class eRtLinkNotFound	: public eRtLinkBase {
+	public:
+		eRtLinkNotFound(const std::string& __arg) : eRtLinkBase(__arg) {};
+	};
+	class eRtLinkExists		: public eRtLinkBase {
+	public:
+		eRtLinkExists(const std::string& __arg) : eRtLinkBase(__arg) {};
+	};
+
 public:
 
 	/**
 	 *
 	 */
-	crtlink();
+	crtlink() :
+		flags(0),
+		af(0),
+		arptype(0),
+		ifindex(0),
+		mtu(0) {};
 
 	/**
 	 *
 	 */
-	crtlink(struct rtnl_link *link);
+	crtlink(struct rtnl_link *link) :
+		flags(0),
+		af(0),
+		arptype(0),
+		ifindex(0),
+		mtu(0)
+	{
+		char s_buf[128];
+		memset(s_buf, 0, sizeof(s_buf));
+
+		nl_object_get((struct nl_object*)link); // increment reference counter by one
+
+		devname.assign(rtnl_link_get_name(link));
+		maddr 	= rofl::cmacaddr(nl_addr2str(rtnl_link_get_addr(link), 		s_buf, sizeof(s_buf)));
+		bcast 	= rofl::cmacaddr(nl_addr2str(rtnl_link_get_broadcast(link), s_buf, sizeof(s_buf)));
+		flags 	= rtnl_link_get_flags(link);
+		af 		= rtnl_link_get_family(link);
+		arptype = rtnl_link_get_arptype(link);
+		ifindex	= rtnl_link_get_ifindex(link);
+		mtu 	= rtnl_link_get_mtu(link);
+
+		nl_object_put((struct nl_object*)link); // decrement reference counter by one
+	};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtlink();
+	~crtlink() {};
 
 	/**
 	 *
@@ -79,26 +117,10 @@ public:
 		ifindex	= rtlink.ifindex;
 		mtu		= rtlink.mtu;
 
-		addrs_in4.clear();
-		for (std::map<uint16_t, crtaddr_in4>::const_iterator
-				it = rtlink.addrs_in4.begin(); it != rtlink.addrs_in4.end(); ++it) {
-			addrs_in4[it->first] = it->second;
-		}
-		addrs_in6.clear();
-		for (std::map<uint16_t, crtaddr_in6>::const_iterator
-			it = rtlink.addrs_in6.begin(); it != rtlink.addrs_in6.end(); ++it) {
-			addrs_in6[it->first] = it->second;
-		}
-		neighs_in4.clear();
-		for (std::map<uint16_t, crtneigh_in4>::const_iterator
-				it = rtlink.neighs_in4.begin(); it != rtlink.neighs_in4.end(); ++it) {
-			neighs_in4[it->first] = it->second;
-		}
-		neighs_in6.clear();
-		for (std::map<uint16_t, crtneigh_in6>::const_iterator
-			it = rtlink.neighs_in6.begin(); it != rtlink.neighs_in6.end(); ++it) {
-			neighs_in6[it->first] = it->second;
-		}
+		addrs_in4	= rtlink.addrs_in4;
+		addrs_in6	= rtlink.addrs_in6;
+		neighs_in4	= rtlink.neighs_in4;
+		neighs_in6	= rtlink.neighs_in6;
 
 		return *this;
 	};
@@ -113,187 +135,54 @@ public:
 
 public:
 
+	/**
+	 *
+	 */
+	const crtaddrs_in4&
+	get_addrs_in4() const { return addrs_in4; };
 
 	/**
 	 *
 	 */
-	crtaddr_in4&
-	get_addr_in4(
-			uint16_t index);
-
+	crtaddrs_in4&
+	set_addrs_in4() { return addrs_in4; };
 
 	/**
 	 *
 	 */
-	uint16_t
-	get_addr_in4(
-			const crtaddr_in4& rta);
-
+	const crtaddrs_in6&
+	get_addrs_in6() const { return addrs_in6; };
 
 	/**
 	 *
 	 */
-	uint16_t
-	set_addr_in4(
-			const crtaddr_in4& rta);
-
-
-	/**
-	 *
-	 */
-	uint16_t
-	del_addr_in4(
-			uint16_t index);
+	crtaddrs_in6&
+	set_addrs_in6() { return addrs_in6; };
 
 
 	/**
 	 *
 	 */
-	uint16_t
-	del_addr_in4(
-			const crtaddr_in4& rta);
-
-
+	const crtneighs_in4&
+	get_neighs_in4() const { return neighs_in4; };
 
 	/**
 	 *
 	 */
-	crtaddr_in6&
-	get_addr_in6(
-			uint16_t index);
-
+	crtneighs_in4&
+	set_neighs_in4() { return neighs_in4; };
 
 	/**
 	 *
 	 */
-	uint16_t
-	get_addr_in6(
-			const crtaddr_in6& rta);
-
+	const crtneighs_in6&
+	get_neighs_in6() const { return neighs_in6; };
 
 	/**
 	 *
 	 */
-	uint16_t
-	set_addr_in6(
-			const crtaddr_in6& rta);
-
-
-	/**
-	 *
-	 */
-	uint16_t
-	del_addr_in6(
-			uint16_t index = crtaddr::CRTLINK_ADDR_ALL);
-
-
-	/**
-	 *
-	 */
-	uint16_t
-	del_addr_in6(
-			const crtaddr_in6& rta);
-
-
-
-	/**
-	 *
-	 */
-	crtneigh_in4&
-	get_neigh_in4(
-			uint16_t index);
-
-	/**
-	 *
-	 */
-	crtneigh_in4&
-	get_neigh_in4(
-			const rofl::caddress_in4& dst);
-
-	/**
-	 *
-	 */
-	uint16_t
-	get_neigh_in4_index(
-			const crtneigh_in4& neigh);
-
-	/**
-	 *
-	 */
-	uint16_t
-	get_neigh_in4_index(
-			const rofl::caddress_in4& dst);
-
-	/**
-	 *
-	 */
-	uint16_t
-	set_neigh_in4(
-			const crtneigh_in4& neigh);
-
-	/**
-	 *
-	 */
-	uint16_t
-	del_neigh_in4(
-			uint16_t index = crtneigh::CRTNEIGH_ADDR_ALL);
-
-	/**
-	 *
-	 */
-	uint16_t
-	del_neigh_in4(
-			const crtneigh_in4& neigh);
-
-
-	/**
-	 *
-	 */
-	crtneigh_in6&
-	get_neigh_in6(
-			uint16_t index);
-
-	/**
-	 *
-	 */
-	crtneigh_in6&
-	get_neigh_in6(
-			const rofl::caddress_in6& dst);
-
-	/**
-	 *
-	 */
-	uint16_t
-	get_neigh_in6_index(
-			const crtneigh_in6& neigh);
-
-	/**
-	 *
-	 */
-	uint16_t
-	get_neigh_in6_index(
-			const rofl::caddress_in6& dst);
-
-	/**
-	 *
-	 */
-	uint16_t
-	set_neigh_in6(
-			const crtneigh_in6& neigh);
-
-	/**
-	 *
-	 */
-	uint16_t
-	del_neigh_in6(
-			uint16_t index = crtneigh::CRTNEIGH_ADDR_ALL);
-
-	/**
-	 *
-	 */
-	uint16_t
-	del_neigh_in6(
-			const crtneigh_in6& neigh);
+	crtneighs_in6&
+	set_neighs_in6() { return neighs_in6; };
 
 
 
@@ -375,20 +264,11 @@ public:
 		os << rofl::indent(2) << "<arptype: " << rtlink.arptype 	<< " >" << std::endl;
 		os << rofl::indent(2) << "<ifindex: " << rtlink.ifindex 	<< " >" << std::endl;
 		os << rofl::indent(2) << "<mtu: " << rtlink.mtu 			<< " >" << std::endl;
-		if (rtlink.addrs_in4.size() > 0) {
-			rofl::indent i(4);
-			for (std::map<uint16_t, crtaddr_in4>::const_iterator
-					it = rtlink.addrs_in4.begin(); it != rtlink.addrs_in4.end(); ++it) {
-				os << it->second;
-			}
-		}
-		if (rtlink.addrs_in6.size() > 0) {
-			rofl::indent i(4);
-			for (std::map<uint16_t, crtaddr_in6>::const_iterator
-					it = rtlink.addrs_in6.begin(); it != rtlink.addrs_in6.end(); ++it) {
-				os << it->second;
-			}
-		}
+
+		{ rofl::indent i(2); os << rtlink.addrs_in4; };
+		{ rofl::indent i(2); os << rtlink.addrs_in6; };
+		{ rofl::indent i(2); os << rtlink.neighs_in4; };
+		{ rofl::indent i(2); os << rtlink.neighs_in6; };
 
 		return os;
 	};
@@ -428,17 +308,14 @@ public:
 		bool operator() (std::pair<unsigned int, crtlink> const& p) {
 			return (devname == p.second.devname);
 		};
+#if 0
 		bool operator() (std::pair<unsigned int, crtlink*> const& p) {
 			return (devname == p.second->devname);
 		};
+#endif
 	};
 
 private:
-
-	std::map<uint16_t, crtaddr_in4>  addrs_in4;	// key: index, value: address, index remains constant, as long as addrs endures
-	std::map<uint16_t, crtaddr_in6>  addrs_in6;	// key: index, value: address, index remains constant, as long as addrs endures
-	std::map<uint16_t, crtneigh_in4> neighs_in4; // key: index, value: neigh, index remains constant throughout lifetime of neighbor entry
-	std::map<uint16_t, crtneigh_in6> neighs_in6; // key: index, value: neigh, index remains constant throughout lifetime of neighbor entry
 
 	std::string				devname;	// device name (e.g. eth0)
 	rofl::cmacaddr			maddr;		// mac address
@@ -448,6 +325,11 @@ private:
 	unsigned int			arptype;	// ARP type (e.g. ARPHDR_ETHER)
 	int						ifindex;	// interface index
 	unsigned int			mtu;		// maximum transfer unit
+
+	crtaddrs_in4			addrs_in4;
+	crtaddrs_in6			addrs_in6;
+	crtneighs_in4			neighs_in4;
+	crtneighs_in6			neighs_in6;
 
 };
 

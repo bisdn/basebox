@@ -27,8 +27,17 @@ namespace rofcore {
 class crtneigh {
 public:
 
-	enum neigh_index_t {
-		CRTNEIGH_ADDR_ALL = 0xffff,	// apply command to all neighbors
+	class eRtNeighBase		: public std::runtime_error {
+	public:
+		eRtNeighBase(const std::string& __arg) : std::runtime_error(__arg) {};
+	};
+	class eRtNeighNotFound	: public eRtNeighBase {
+	public:
+		eRtNeighNotFound(const std::string& __arg) : eRtNeighBase(__arg) {};
+	};
+	class eRtNeighExists		: public eRtNeighBase {
+	public:
+		eRtNeighExists(const std::string& __arg) : eRtNeighBase(__arg) {};
 	};
 
 public:
@@ -36,33 +45,90 @@ public:
 	/**
 	 *
 	 */
-	crtneigh();
+	crtneigh() :
+		state(0),
+		flags(0),
+		ifindex(0),
+		lladdr(rofl::cmacaddr("00:00:00:00:00:00")),
+		family(0),
+		type(0) {};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtneigh();
+	~crtneigh() {};
 
 	/**
 	 *
 	 */
 	crtneigh(
-			const crtneigh& neigh);
+			const crtneigh& rtneigh) { *this = rtneigh; };
 
 	/**
 	 *
 	 */
 	crtneigh&
 	operator= (
-			const crtneigh& neigh);
+			const crtneigh& neigh) {
+		if (this == &neigh)
+			return *this;
+
+		state		= neigh.state;
+		flags		= neigh.flags;
+		ifindex		= neigh.ifindex;
+		lladdr		= neigh.lladdr;
+		family 		= neigh.family;
+		type		= neigh.type;
+
+		return *this;
+	};
 
 	/**
 	 *
 	 */
 	crtneigh(
-			struct rtnl_neigh* neigh);
+			struct rtnl_neigh* neigh) :
+				state(0),
+				flags(0),
+				ifindex(0),
+				lladdr(rofl::cmacaddr("00:00:00:00:00:00")),
+				family(0),
+				type(0)
+	{
+		char s_buf[128];
 
+		nl_object_get((struct nl_object*)neigh); // increment reference counter by one
+
+		state	= rtnl_neigh_get_state(neigh);
+		flags	= rtnl_neigh_get_flags(neigh);
+		ifindex	= rtnl_neigh_get_ifindex(neigh);
+		family	= rtnl_neigh_get_family(neigh);
+		type	= rtnl_neigh_get_type(neigh);
+
+		memset(s_buf, 0, sizeof(s_buf));
+		nl_addr2str(rtnl_neigh_get_lladdr(neigh), s_buf, sizeof(s_buf));
+		if (std::string(s_buf) != std::string("none"))
+			lladdr 	= rofl::cmacaddr(nl_addr2str(rtnl_neigh_get_lladdr(neigh), s_buf, sizeof(s_buf)));
+		else
+			lladdr 	= rofl::cmacaddr("00:00:00:00:00:00");
+
+		nl_object_put((struct nl_object*)neigh); // decrement reference counter by one
+	};
+
+
+	/**
+	 *
+	 */
+	bool
+	operator== (const crtneigh& rtneigh) {
+		return ((state 		== rtneigh.state) 	&&
+				(flags 		== rtneigh.flags) 	&&
+				(ifindex 	== rtneigh.ifindex) &&
+				(lladdr 	== rtneigh.lladdr) 	&&
+				(family 	== rtneigh.family) 	&&
+				(type 		== rtneigh.type));
+	};
 
 public:
 
@@ -76,7 +142,22 @@ public:
 	 *
 	 */
 	std::string
-	get_state_s() const;
+	get_state_s() const {
+		std::string str;
+
+		switch (state) {
+		case NUD_INCOMPLETE: 	str = std::string("INCOMPLETE"); 	break;
+		case NUD_REACHABLE: 	str = std::string("REACHABLE"); 	break;
+		case NUD_STALE:			str = std::string("STALE");			break;
+		case NUD_DELAY:			str = std::string("DELAY");			break;
+		case NUD_PROBE:			str = std::string("PROBE");			break;
+		case NUD_FAILED:		str = std::string("FAILED");		break;
+		default:				str = std::string("UNKNOWN");		break;
+		}
+
+		return str;
+	};
+
 
 	/**
 	 *
@@ -192,6 +273,14 @@ public:
 		nl_object_put((struct nl_object*)neigh); // decrement reference counter by one
 	};
 
+	/**
+	 *
+	 */
+	bool
+	operator== (const crtneigh_in4& rtneigh) {
+		return ((crtneigh::operator== (rtneigh)) && (dst == rtneigh.dst));
+	};
+
 public:
 
 	/**
@@ -225,11 +314,33 @@ public:
 		};
 	};
 
+
 private:
 
 	rofl::caddress_in4	dst;
 };
 
+
+/**
+ *
+ */
+class crtneigh_in4_find : public std::unary_function<crtneigh_in4,bool> {
+	crtneigh_in4 rtneigh;
+public:
+	crtneigh_in4_find(const crtneigh_in4& rtneigh) :
+		rtneigh(rtneigh) {};
+	bool operator() (const crtneigh_in4& rtn) {
+		return (rtneigh == rtn);
+	};
+	bool operator() (const std::pair<unsigned int, crtneigh_in4>& p) {
+		return (rtneigh == p.second);
+	};
+#if 0
+	bool operator() (const std::pair<unsigned int, crtneigh_in4*>& p) {
+		return (rtneigh == *(p.second));
+	};
+#endif
+};
 
 
 
@@ -291,6 +402,15 @@ public:
 		nl_object_put((struct nl_object*)neigh); // decrement reference counter by one
 	};
 
+
+	/**
+	 *
+	 */
+	bool
+	operator== (const crtneigh_in6& rtneigh) {
+		return ((crtneigh::operator== (rtneigh)) && (dst == rtneigh.dst));
+	};
+
 public:
 
 	/**
@@ -324,11 +444,32 @@ public:
 		};
 	};
 
+
 private:
 
 	rofl::caddress_in6	dst;
 };
 
+/**
+ *
+ */
+class crtneigh_in6_find : public std::unary_function<crtneigh_in6,bool> {
+	crtneigh_in6 rtneigh;
+public:
+	crtneigh_in6_find(const crtneigh_in6& rtneigh) :
+		rtneigh(rtneigh) {};
+	bool operator() (const crtneigh_in6& rtn) {
+		return (rtneigh == rtn);
+	};
+	bool operator() (const std::pair<unsigned int, crtneigh_in6>& p) {
+		return (rtneigh == p.second);
+	};
+#if 0
+	bool operator() (const std::pair<unsigned int, crtneigh_in6*>& p) {
+		return (rtneigh == *(p.second));
+	};
+#endif
+};
 
 
 }; // end of namespace

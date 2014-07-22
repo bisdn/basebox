@@ -25,55 +25,130 @@ extern "C" {
 #include <rofl/common/logging.h>
 #include <rofl/common/caddress.h>
 
-#include "crtnexthop.h"
+#include "crtnexthops.h"
 
 
 namespace rofcore {
 
-class eRtRouteBase 			: public std::exception {};
-class eRtRouteNotFound 		: public eRtRouteBase {};
-class eRtRouteInval			: public eRtRouteBase {};
-
-
 class crtroute {
+public:
+
+	class eRtRouteBase		: public std::runtime_error {
+	public:
+		eRtRouteBase(const std::string& __arg) : std::runtime_error(__arg) {};
+	};
+	class eRtRouteNotFound	: public eRtRouteBase {
+	public:
+		eRtRouteNotFound(const std::string& __arg) : eRtRouteBase(__arg) {};
+	};
+	class eRtRouteExists		: public eRtRouteBase {
+	public:
+		eRtRouteExists(const std::string& __arg) : eRtRouteBase(__arg) {};
+	};
+
 public:
 
 	/**
 	 *
 	 */
-	crtroute();
+	crtroute() :
+		table_id(0),
+		scope(0),
+		tos(0),
+		protocol(0),
+		priority(0),
+		family(0),
+		prefixlen(0),
+		type(0),
+		flags(0),
+		metric(0),
+		iif(0) {};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtroute();
+	~crtroute() {};
 
 	/**
 	 *
 	 */
 	crtroute(
-			const crtroute& route);
+			const crtroute& rtroute) { *this = rtroute; };
 
 	/**
 	 *
 	 */
 	crtroute&
 	operator= (
-			const crtroute& route);
+			const crtroute& rtroute) {
+		if (this == &rtroute)
+			return *this;
+
+		table_id 	= rtroute.table_id;
+		scope		= rtroute.scope;
+		tos			= rtroute.tos;
+		protocol	= rtroute.protocol;
+		priority	= rtroute.priority;
+		family		= rtroute.family;
+		prefixlen	= rtroute.prefixlen;
+		type		= rtroute.type;
+		flags		= rtroute.flags;
+		metric		= rtroute.metric;
+		iif			= rtroute.iif;
+
+		return *this;
+	};
 
 	/**
 	 *
 	 */
-	crtroute(
-			struct rtnl_route *route);
+	crtroute(struct rtnl_route *route) :
+			table_id(0),
+			scope(0),
+			tos(0),
+			protocol(0),
+			priority(0),
+			family(0),
+			prefixlen(0),
+			type(0),
+			flags(0),
+			metric(0),
+			iif(0)
+	{
+		char s_buf[128];
+		memset(s_buf, 0, sizeof(s_buf));
+
+		rtnl_route_get(route); // increment reference count by one
+
+		table_id 	= rtnl_route_get_table(route);
+		scope		= rtnl_route_get_scope(route);
+		tos			= rtnl_route_get_tos(route);
+		protocol	= rtnl_route_get_protocol(route);
+		priority	= rtnl_route_get_priority(route);
+		family		= rtnl_route_get_family(route);
+		type 		= rtnl_route_get_type(route);
+		flags		= rtnl_route_get_flags(route);
+		metric		= rtnl_route_get_metric(route, 0, NULL); // FIXME: check the integer value
+		iif		= rtnl_route_get_iif(route);
+		prefixlen	= nl_addr_get_prefixlen(rtnl_route_get_dst(route));
+
+		rtnl_route_put(route); // decrement reference count by one
+	}
+
 
 	/**
 	 *
 	 */
 	bool
 	operator== (
-			const crtroute& route);
+			const crtroute& rtroute) {
+		// FIXME: anything else beyond this?
+		return ((table_id 		== rtroute.table_id) &&
+				(scope 			== rtroute.scope) &&
+				(iif			== rtroute.iif));
+	};
+
 
 
 public:
@@ -90,7 +165,21 @@ public:
 	 *
 	 */
 	std::string
-	get_table_id_s() const;
+	get_table_id_s() const {
+		std::string str;
+
+		switch (table_id) {
+		/*255*/case RT_TABLE_LOCAL:		str = std::string("local");		break;
+		/*254*/case RT_TABLE_MAIN:		str = std::string("main");		break;
+		/*253*/case RT_TABLE_DEFAULT:	str = std::string("default");	break;
+		/*252*/case RT_TABLE_COMPAT:	str = std::string("compat");	break;
+		default:						str = std::string("unknown");	break;
+		}
+
+		return str;
+	};
+
+
 
 
 	/**
@@ -103,7 +192,22 @@ public:
 	 *
 	 */
 	std::string
-	get_scope_s() const;
+	get_scope_s() const {
+		std::string str;
+
+		switch (scope) {
+		/*255*/case RT_SCOPE_NOWHERE:	str = std::string("nowhere");	break;
+		/*254*/case RT_SCOPE_HOST:		str = std::string("host");		break;
+		/*253*/case RT_SCOPE_LINK:		str = std::string("link");		break;
+		/*200*/case RT_SCOPE_SITE:		str = std::string("site");		break;
+		/*000*/case RT_SCOPE_UNIVERSE:	str = std::string("universe");	break;
+		default:						str = std::string("unknown");	break;
+		}
+
+		return str;
+	};
+
+
 
 	/**
 	 *
@@ -199,6 +303,30 @@ private:
 
 
 
+
+/**
+ *
+ */
+class crtroute_find : public std::unary_function<crtroute,bool> {
+	crtroute rtroute;
+public:
+	crtroute_find(const crtroute& rtroute) :
+		rtroute(rtroute) {};
+	bool operator() (const crtroute& rta) {
+		return (rtroute == rta);
+	};
+	bool operator() (const std::pair<unsigned int, crtroute>& p) {
+		return (rtroute == p.second);
+	};
+	bool operator() (const std::pair<unsigned int, crtroute*>& p) {
+		return (rtroute == *(p.second));
+	};
+};
+
+
+
+
+
 class crtroute_in4 : public crtroute {
 public:
 
@@ -224,14 +352,15 @@ public:
 	 */
 	crtroute_in4&
 	operator= (
-			const crtroute_in4& route) {
-		if (this == &route)
+			const crtroute_in4& rtroute) {
+		if (this == &rtroute)
 			return *this;
-		crtroute::operator= (route);
-		dst 		= route.dst;
-		mask		= route.mask;
-		src			= route.src;
-		pref_src	= route.pref_src;
+		crtroute::operator= (rtroute);
+		dst 		= rtroute.dst;
+		mask		= rtroute.mask;
+		src			= rtroute.src;
+		pref_src	= rtroute.pref_src;
+		nxthops		= rtroute.nxthops;
 		return *this;
 	}
 
@@ -262,7 +391,7 @@ public:
 		pref_src	= rofl::caddress_in4(s_pref_src);
 
 		for (int i = 0; i < rtnl_route_get_nnexthops(route); i++) {
-			set_nexthop_in4(i) = crtnexthop_in4(route, rtnl_route_nexthop_n(route, i));
+			nxthops.add_nexthop(crtnexthop_in4(route, rtnl_route_nexthop_n(route, i)));
 		}
 
 		rtnl_route_put(route); // decrement reference count by one
@@ -282,6 +411,18 @@ public:
 	};
 
 public:
+
+	/**
+	 *
+	 */
+	const crtnexthops_in4&
+	get_nxthops_in4() const { return nxthops; };
+
+	/**
+	 *
+	 */
+	crtnexthops_in4&
+	set_nxthops_in4() { return nxthops; };
 
 	/**
 	 *
@@ -331,48 +472,6 @@ public:
 	const rofl::caddress_in4&
 	get_ipv4_pref_src() const { return pref_src; };
 
-
-	/**
-	 *
-	 */
-	std::map<unsigned int, crtnexthop_in4>&
-	get_nexthops() { return nexthops; };
-
-	/**
-	 *
-	 */
-	crtnexthop_in4&
-	add_nexthop_in4(
-			unsigned int nhindex);
-
-	/**
-	 *
-	 */
-	crtnexthop_in4&
-	set_nexthop_in4(
-			unsigned int nhindex);
-
-	/**
-	 *
-	 */
-	const crtnexthop_in4&
-	get_nexthop_in4(
-			unsigned int nhindex) const;
-
-	/**
-	 *
-	 */
-	void
-	drop_nexthop_in4(
-			unsigned int nhindex);
-
-	/**
-	 *
-	 */
-	bool
-	has_nexthop_in4(
-			unsigned int nhindex) const;
-
 public:
 
 	friend std::ostream&
@@ -386,12 +485,7 @@ public:
 		{ rofl::indent i(4); os << route.get_ipv4_src(); }
 		os << rofl::indent(2) << "<pref-src: >" << std::endl;
 		{ rofl::indent i(4); os << route.get_ipv4_pref_src(); }
-
-		rofl::indent i(2);
-		for (std::map<unsigned int, crtnexthop_in4>::const_iterator
-				it = route.nexthops.begin(); it != route.nexthops.end(); ++it) {
-			os << (it->second);
-		}
+		{ rofl::indent i(2); os << route.get_nxthops_in4(); };
 
 		return os;
 	};
@@ -423,8 +517,35 @@ private:
 	rofl::caddress_in4		src;
 	rofl::caddress_in4		pref_src;
 
-	std::map<unsigned int, crtnexthop_in4>	nexthops;
+	crtnexthops_in4			nxthops;
 };
+
+
+
+
+/**
+ *
+ */
+class crtroute_in4_find : public std::unary_function<crtroute_in4,bool> {
+	crtroute_in4 rtroute;
+public:
+	crtroute_in4_find(const crtroute_in4& rtroute) :
+		rtroute(rtroute) {};
+	bool operator() (const crtroute_in4& rta) {
+		return (rtroute == rta);
+	};
+	bool operator() (const std::pair<unsigned int, crtroute_in4>& p) {
+		return (rtroute == p.second);
+	};
+#if 0
+	bool operator() (const std::pair<unsigned int, crtroute_in4*>& p) {
+		return (rtroute == *(p.second));
+	};
+#endif
+};
+
+
+
 
 
 
@@ -453,14 +574,15 @@ public:
 	 */
 	crtroute_in6&
 	operator= (
-			const crtroute_in6& route) {
-		if (this == &route)
+			const crtroute_in6& rtroute) {
+		if (this == &rtroute)
 			return *this;
-		crtroute::operator= (route);
-		dst 		= route.dst;
-		mask		= route.mask;
-		src			= route.src;
-		pref_src	= route.pref_src;
+		crtroute::operator= (rtroute);
+		dst 		= rtroute.dst;
+		mask		= rtroute.mask;
+		src			= rtroute.src;
+		pref_src	= rtroute.pref_src;
+		nxthops		= rtroute.nxthops;
 		return *this;
 	}
 
@@ -501,7 +623,7 @@ public:
 		pref_src	= rofl::caddress_in6(s_pref_src);
 
 		for (int i = 0; i < rtnl_route_get_nnexthops(route); i++) {
-			set_nexthop_in6(i) = crtnexthop_in6(route, rtnl_route_nexthop_n(route, i));
+			nxthops.add_nexthop(crtnexthop_in6(route, rtnl_route_nexthop_n(route, i)));
 		}
 
 		rtnl_route_put(route); // decrement reference count by one
@@ -521,6 +643,18 @@ public:
 	};
 
 public:
+
+	/**
+	 *
+	 */
+	const crtnexthops_in6&
+	get_nxthops_in6() const { return nxthops; };
+
+	/**
+	 *
+	 */
+	crtnexthops_in6&
+	set_nxthops_in6() { return nxthops; };
 
 	/**
 	 *
@@ -570,47 +704,6 @@ public:
 	const rofl::caddress_in6&
 	get_ipv6_pref_src() const { return pref_src; };
 
-	/**
-	 *
-	 */
-	std::map<unsigned int, crtnexthop_in6>&
-	get_nexthops() { return nexthops; };
-
-	/**
-	 *
-	 */
-	crtnexthop_in6&
-	add_nexthop_in6(
-			unsigned int nhindex);
-
-	/**
-	 *
-	 */
-	crtnexthop_in6&
-	set_nexthop_in6(
-			unsigned int nhindex);
-
-	/**
-	 *
-	 */
-	const crtnexthop_in6&
-	get_nexthop_in6(
-			unsigned int nhindex) const;
-
-	/**
-	 *
-	 */
-	void
-	drop_nexthop_in6(
-			unsigned int nhindex);
-
-	/**
-	 *
-	 */
-	bool
-	has_nexthop_in6(
-			unsigned int nhindex) const;
-
 public:
 
 	friend std::ostream&
@@ -624,12 +717,7 @@ public:
 		{ rofl::indent i(4); os << route.get_ipv6_src(); }
 		os << rofl::indent(2) << "<pref-src: >" << std::endl;
 		{ rofl::indent i(4); os << route.get_ipv6_pref_src(); }
-
-		rofl::indent i(2);
-		for (std::map<unsigned int, crtnexthop_in6>::const_iterator
-				it = route.nexthops.begin(); it != route.nexthops.end(); ++it) {
-			os << (it->second);
-		}
+		{ rofl::indent i(2); os << route.get_nxthops_in6(); };
 
 		return os;
 	};
@@ -661,9 +749,31 @@ private:
 	rofl::caddress_in6		src;
 	rofl::caddress_in6		pref_src;
 
-	std::map<unsigned int, crtnexthop_in6>	nexthops;
+	crtnexthops_in6			nxthops;
 };
 
+
+
+/**
+ *
+ */
+class crtroute_in6_find : public std::unary_function<crtroute_in6,bool> {
+	crtroute_in6 rtroute;
+public:
+	crtroute_in6_find(const crtroute_in6& rtroute) :
+		rtroute(rtroute) {};
+	bool operator() (const crtroute_in6& rta) {
+		return (rtroute == rta);
+	};
+	bool operator() (const std::pair<unsigned int, crtroute_in6>& p) {
+		return (rtroute == p.second);
+	};
+#if 0
+	bool operator() (const std::pair<unsigned int, crtroute_in6*>& p) {
+		return (rtroute == *(p.second));
+	};
+#endif
+};
 
 
 }; // end of namespace

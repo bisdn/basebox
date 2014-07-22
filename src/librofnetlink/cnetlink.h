@@ -32,8 +32,9 @@ extern "C" {
 
 #include <rofl/common/ciosrv.h>
 
-#include "crtlink.h"
-#include "crtroute.h"
+#include "crtlinks.h"
+#include "crtroutes.h"
+#include "logging.h"
 
 namespace rofcore {
 
@@ -53,13 +54,13 @@ class cnetlink :
 		NL_NEIGH_CACHE = 3,
 	};
 
-	struct nl_cache_mngr *mngr;
-	std::map<enum nl_cache_t, struct nl_cache*> caches;
-	std::set<cnetlink_subscriber*> subscribers;
+	struct nl_cache_mngr*							mngr;
+	std::map<enum nl_cache_t, struct nl_cache*> 	caches;
+	std::set<cnetlink_subscriber*> 					subscribers;
 
-	std::map<unsigned int, crtlink>		links;	// all links in system => key:ifindex, value:crtlink instance
-	std::map<uint8_t, std::map<unsigned int, crtroute_in4> >	routes_in4;	// all routes in system => key1:table_id, key2:routeindex, value:crtroute instance
-	std::map<uint8_t, std::map<unsigned int, crtroute_in6> >	routes_in6;	// all routes in system => key1:table_id, key2:routeindex, value:crtroute instance
+	crtlinks						rtlinks;		// all links in system => key:ifindex, value:crtlink instance
+	std::map<int, crtroutes_in4>	rtroutes_in4;	// all routes in system => key:table_id
+	std::map<int, crtroutes_in6>	rtroutes_in6;	// all routes in system => key:table_id
 
 public:
 
@@ -118,111 +119,43 @@ public:
 		subscribers.erase(subscriber);
 	};
 
+public:
 
 	/**
 	 *
 	 */
-	crtlink&
-	get_link(
-			std::string const& devname);
-
+	const crtlinks&
+	get_links() const { return rtlinks; };
 
 	/**
 	 *
 	 */
-	crtlink&
-	get_link(
-			unsigned int ifindex);
-
+	crtlinks&
+	set_links() { return rtlinks; };
 
 	/**
 	 *
 	 */
-	crtlink&
-	set_link(
-			crtlink const& rtl);
-
+	const crtroutes_in4&
+	get_routes_in4(int table_id) const { return rtroutes_in4.at(table_id); };
 
 	/**
 	 *
 	 */
-	void
-	del_link(
-			unsigned int ifindex);
-
+	crtroutes_in4&
+	set_routes_in4(int table_id) { return rtroutes_in4[table_id]; };
 
 	/**
 	 *
 	 */
-	crtroute_in4&
-	get_route_in4(
-			uint8_t table_id,
-			unsigned int rtindex);
-
-
-	/**
-	 *
-	 * @param rtr
-	 * @return
-	 */
-	unsigned int
-	get_route_in4(
-			crtroute_in4 const& rtr);
-
+	const crtroutes_in6&
+	get_routes_in6(int table_id) const { return rtroutes_in6.at(table_id); };
 
 	/**
 	 *
 	 */
-	unsigned int
-	set_route_in4(
-			crtroute_in4 const& rtr);
-
-
-	/**
-	 *
-	 */
-	void
-	del_route_in4(
-			uint8_t table_id,
-			unsigned int rtindex);
-
-
-
-	/**
-	 *
-	 */
-	crtroute_in6&
-	get_route_in6(
-			uint8_t table_id,
-			unsigned int rtindex);
-
-
-	/**
-	 *
-	 * @param rtr
-	 * @return
-	 */
-	unsigned int
-	get_route_in6(
-			crtroute_in6 const& rtr);
-
-
-	/**
-	 *
-	 */
-	unsigned int
-	set_route_in6(
-			crtroute_in6 const& rtr);
-
-
-	/**
-	 *
-	 */
-	void
-	del_route_in6(
-			uint8_t table_id,
-			unsigned int rtindex);
-
+	crtroutes_in6&
+	set_routes_in6(int table_id) { return rtroutes_in6[table_id]; };
 
 private:
 
@@ -266,8 +199,152 @@ private:
 	 */
 	void
 	handle_revent(int fd);
-};
 
+public:
+
+	/**
+	 *
+	 */
+	void
+	notify_link_created(unsigned int ifindex);
+
+	/**
+	 *
+	 */
+	void
+	notify_link_updated(unsigned int ifindex);
+
+	/**
+	 *
+	 */
+	void
+	notify_link_deleted(unsigned int ifindex);
+
+	/**
+	 *
+	 */
+	void
+	notify_addr_in4_created(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_addr_in6_created(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_addr_in4_updated(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_addr_in6_updated(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_addr_in4_deleted(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_addr_in6_deleted(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_neigh_in4_created(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_neigh_in6_created(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_neigh_in4_updated(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_neigh_in6_updated(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_neigh_in4_deleted(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_neigh_in6_deleted(unsigned int ifindex, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_route_in4_created(uint8_t table_id, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_route_in6_created(uint8_t table_id, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_route_in4_updated(uint8_t table_id, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_route_in6_updated(uint8_t table_id, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_route_in4_deleted(uint8_t table_id, unsigned int adindex);
+
+
+	/**
+	 *
+	 */
+	void
+	notify_route_in6_deleted(uint8_t table_id, unsigned int adindex);
+};
 
 
 

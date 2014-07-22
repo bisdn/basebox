@@ -28,46 +28,101 @@ extern "C" {
 
 namespace rofcore {
 
-class eRtAddrBase		: public std::runtime_error {
-public:
-	eRtAddrBase(const std::string& __arg) : std::runtime_error(__arg) {};
-};
-class eRtAddrNotFound	: public eRtAddrBase {
-public:
-	eRtAddrNotFound(const std::string& __arg) : eRtAddrBase(__arg) {};
-};
-class eRtAddrExists		: public eRtAddrBase {
-public:
-	eRtAddrExists(const std::string& __arg) : eRtAddrBase(__arg) {};
-};
 
 class crtaddr {
+public:
 
-	static unsigned int 					nextindex;
-	static std::map<unsigned int, crtaddr*> rtaddrs;
+	class eRtAddrBase		: public std::runtime_error {
+	public:
+		eRtAddrBase(const std::string& __arg) : std::runtime_error(__arg) {};
+	};
+	class eRtAddrNotFound	: public eRtAddrBase {
+	public:
+		eRtAddrNotFound(const std::string& __arg) : eRtAddrBase(__arg) {};
+	};
+	class eRtAddrExists		: public eRtAddrBase {
+	public:
+		eRtAddrExists(const std::string& __arg) : eRtAddrBase(__arg) {};
+	};
 
 public:
 
 	/**
 	 *
 	 */
-	static crtaddr&
-	get_addr(unsigned int adindex);
-
-public:
+	crtaddr() :
+		ifindex(0),
+		af(0),
+		prefixlen(0),
+		scope(0),
+		flags(0) {};
 
 	/**
 	 *
 	 */
-	crtaddr(
-			struct rtnl_addr* addr);
+	crtaddr(struct rtnl_addr* addr) :
+			ifindex(0),
+			af(0),
+			prefixlen(0),
+			scope(0),
+			flags(0)
+	{
+		char s_buf[128];
+		memset(s_buf, 0, sizeof(s_buf));
+
+		nl_object_get((struct nl_object*)addr); // increment reference counter by one
+
+		if (rtnl_addr_get_label(addr)) label.assign(rtnl_addr_get_label(addr)); // label might be null in case of IPv6 addresses
+		ifindex 	= rtnl_addr_get_ifindex(addr);
+		af 			= rtnl_addr_get_family(addr);
+		prefixlen 	= rtnl_addr_get_prefixlen(addr);
+		scope 		= rtnl_addr_get_scope(addr);
+		flags 		= rtnl_addr_get_flags(addr);
+
+		nl_object_put((struct nl_object*)addr); // decrement reference counter by one
+	};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtaddr();
+	~crtaddr() {};
 
+	/**
+	 *
+	 */
+	crtaddr(const crtaddr& rtaddr) { *this = rtaddr; };
+
+	/**
+	 *
+	 */
+	crtaddr&
+	operator= (const crtaddr& rtaddr) {
+		if (this == &rtaddr)
+			return *this;
+
+		label 		= rtaddr.label;
+		ifindex 	= rtaddr.ifindex;
+		af 			= rtaddr.af;
+		prefixlen 	= rtaddr.prefixlen;
+		scope 		= rtaddr.scope;
+		flags 		= rtaddr.flags;
+
+		return *this;
+	};
+
+	/**
+	 *
+	 */
+	bool
+	operator== (const crtaddr& rtaddr) {
+		return ((label 		== rtaddr.label) 		&&
+				(ifindex 	== rtaddr.ifindex) 		&&
+				(af 		== rtaddr.af) 			&&
+				(prefixlen 	== rtaddr.prefixlen) 	&&
+				(scope 		== rtaddr.scope) 		&&
+				(flags 		== rtaddr.flags));
+	};
 
 public:
 
@@ -93,7 +148,17 @@ public:
 	 *
 	 */
 	std::string
-	get_family_s() const;
+	get_family_s() const {
+		std::string str;
+
+		switch (af) {
+		case AF_INET:	str = std::string("inet"); 		break;
+		case AF_INET6:	str = std::string("inet6");		break;
+		default:		str = std::string("unknown"); 	break;
+		}
+
+		return str;
+	};
 
 	/**
 	 *
@@ -123,29 +188,8 @@ public:
 	};
 
 
-	/**
-	 *
-	 */
-	class crtaddr_find_by_adindex : public std::unary_function<crtaddr,bool> {
-		unsigned int adindex;
-	public:
-		crtaddr_find_by_adindex(unsigned int adindex) :
-			adindex(adindex) {};
-		bool operator() (const crtaddr& rta) {
-			return (adindex == rta.adindex);
-		};
-		bool operator() (const std::pair<unsigned int, crtaddr>& p) {
-			return (adindex == p.second.adindex);
-		};
-		bool operator() (const std::pair<unsigned int, crtaddr*>& p) {
-			return (adindex == p.second->adindex);
-		};
-	};
-
-
 private:
 
-	unsigned int		adindex;
 	std::string			label;
 	int					ifindex;
 	int					af;
@@ -153,6 +197,28 @@ private:
 	int					scope;
 	int					flags;
 };
+
+
+
+/**
+ *
+ */
+class crtaddr_find : public std::unary_function<crtaddr,bool> {
+	crtaddr rtaddr;
+public:
+	crtaddr_find(const crtaddr& rtaddr) :
+		rtaddr(rtaddr) {};
+	bool operator() (const crtaddr& rta) {
+		return (rtaddr == rta);
+	};
+	bool operator() (const std::pair<unsigned int, crtaddr>& p) {
+		return (rtaddr == p.second);
+	};
+	bool operator() (const std::pair<unsigned int, crtaddr*>& p) {
+		return (rtaddr == *(p.second));
+	};
+};
+
 
 
 
@@ -166,6 +232,11 @@ public:
 	get_addr_in4(unsigned int adindex);
 
 public:
+
+	/**
+	 *
+	 */
+	crtaddr_in4() {};
 
 	/**
 	 *
@@ -211,6 +282,17 @@ public:
 		return (local < addr.local);
 	};
 
+	/**
+	 *
+	 */
+	bool
+	operator== (const crtaddr_in4& rtaddr) {
+		return ((crtaddr::operator== (rtaddr))	&&
+				(local 	== rtaddr.local) 		&&
+				(peer 	== rtaddr.peer) 		&&
+				(bcast 	== rtaddr.bcast) 		&&
+				(mask 	== rtaddr.mask));
+	};
 
 public:
 
@@ -274,6 +356,28 @@ private:
 };
 
 
+/**
+ *
+ */
+class crtaddr_in4_find : public std::unary_function<crtaddr_in4,bool> {
+	crtaddr_in4 rtaddr;
+public:
+	crtaddr_in4_find(const crtaddr_in4& rtaddr) :
+		rtaddr(rtaddr) {};
+	bool operator() (const crtaddr_in4& rta) {
+		return (rtaddr == rta);
+	};
+	bool operator() (const std::pair<unsigned int, crtaddr_in4>& p) {
+		return (rtaddr == p.second);
+	};
+#if 0
+	bool operator() (const std::pair<unsigned int, crtaddr_in4*>& p) {
+		return (rtaddr == *(p.second));
+	};
+#endif
+};
+
+
 
 
 class crtaddr_in6 : public crtaddr {
@@ -286,6 +390,11 @@ public:
 	get_addr_in6(unsigned int adindex);
 
 public:
+
+	/**
+	 *
+	 */
+	crtaddr_in6() {};
 
 	/**
 	 *
@@ -341,6 +450,17 @@ public:
 		return (local < addr.local);
 	};
 
+	/**
+	 *
+	 */
+	bool
+	operator== (const crtaddr_in6& rtaddr) {
+		return ((crtaddr::operator== (rtaddr))	&&
+				(local 	== rtaddr.local) 		&&
+				(peer 	== rtaddr.peer) 		&&
+				(bcast 	== rtaddr.bcast) 		&&
+				(mask 	== rtaddr.mask));
+	};
 
 public:
 
@@ -403,6 +523,27 @@ private:
 
 };
 
+
+/**
+ *
+ */
+class crtaddr_in6_find : public std::unary_function<crtaddr_in6,bool> {
+	crtaddr_in6 rtaddr;
+public:
+	crtaddr_in6_find(const crtaddr_in6& rtaddr) :
+		rtaddr(rtaddr) {};
+	bool operator() (const crtaddr_in6& rta) {
+		return (rtaddr == rta);
+	};
+	bool operator() (const std::pair<unsigned int, crtaddr_in6>& p) {
+		return (rtaddr == p.second);
+	};
+#if 0
+	bool operator() (const std::pair<unsigned int, crtaddr_in6*>& p) {
+		return (rtaddr == *(p.second));
+	};
+#endif
+};
 
 }; // end of namespace
 
