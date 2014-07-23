@@ -7,7 +7,7 @@
 
 #include "cconfig.h"
 
-using namespace iprotcore;
+using namespace rofcore;
 
 std::string const cconfig::CONFPATH = std::string("./ipcored.conf");
 

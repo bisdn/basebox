@@ -28,6 +28,7 @@ extern "C" {
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cofhelloelemversionbitmap.h>
 
+#include "cconfig.h"
 #include "logging.h"
 #include "cdptlink.h"
 #include "cnetlink.h"
@@ -189,6 +190,12 @@ private:
 
 	void
 	hook_port_down(std::string const& devname);
+
+	/*
+	 * data path related methods
+	 */
+	void
+	set_forwarding(bool forward = true);
 
 public:
 

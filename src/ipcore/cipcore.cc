@@ -28,54 +28,44 @@ cipcore::~cipcore()
 void
 cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
-	try {
-		dptid = dpt.get_dptid();
+	dptid = dpt.get_dptid();
 
-		rtables.clear();
-		ltable.clear();
+	rtables.clear();
+	ltable.clear();
 
-		purge_dpt_entries();
-		block_stp_frames();
-		redirect_ipv4_multicast();
-		redirect_ipv6_multicast();
+	purge_dpt_entries();
+	block_stp_frames();
+	redirect_ipv4_multicast();
+	redirect_ipv6_multicast();
 
-		/*
-		 * create new tap devices for (reconnecting?) data path
+	/*
+	 * create new tap devices for (reconnecting?) data path
+	 */
+	std::map<uint32_t, rofl::openflow::cofport*> ports = dpt.get_ports().get_ports();
+	for (std::map<uint32_t, rofl::openflow::cofport*>::iterator
+			it = ports.begin(); it != ports.end(); ++it) try {
+		/* set_link() avoids destruction of an already existing tap device.
+		 * this may avoid race conditions with the kernel, when a fast reconstruction is needed.
 		 */
-		std::map<uint32_t, rofl::openflow::cofport*> ports = dpt.get_ports().get_ports();
-		for (std::map<uint32_t, rofl::openflow::cofport*>::iterator
-				it = ports.begin(); it != ports.end(); ++it) {
-			uint32_t port_no = it->first;
-			ltable.add_link(port_no).tap_open();
-		}
-
-		// deprecated:
-		// get full-length packets (what is the ethernet max length on dpt?)
-		//dpt.send_set_config_message(rofl::cauxid(0), 0, __ETH_FRAME_LEN);
-
-		/*
-		 * install default policy for table 0 => GotoTable(1)
-		 */
-		rofl::openflow::cofflowmod fed = rofl::openflow::cofflowmod(dpt.get_version());
-
-		fed.set_command(rofl::openflow::OFPFC_ADD);
-		fed.set_table_id(0);
-		fed.set_idle_timeout(0);
-		fed.set_hard_timeout(0);
-		fed.set_priority(0); // lowest priority
-		fed.set_instructions().add_inst_goto_table().set_table_id(1);
-
-		dpt.send_flow_mod_message(rofl::cauxid(0), fed);
-
-		hook_dpt_attach();
-
+		ltable.set_link(/*port_no*/it->first).tap_open();
 	} catch (rofcore::eNetDevCritical& e) {
-
-		fprintf(stderr, "ipcore::handle_dpath_open() unable to create tap device\n");
-
-	} catch (rofl::eRofDptNotFound& e) {
-
+		rofcore::logging::debug << "[ipcore] new data path attaching: unable to create tap device: " << it->second->get_name() << std::endl;
 	}
+
+	// deprecated:
+	// get full-length packets (what is the ethernet max length on dpt?)
+	//dpt.send_set_config_message(rofl::cauxid(0), 0, __ETH_FRAME_LEN);
+
+
+	// install default policy for table 0 => GotoTable(1)
+	if (rofcore::cconfig::get_instance().exists("ipcored.enable_forwarding")) {
+		set_forwarding(true);
+	} else {
+		set_forwarding(false);
+	}
+
+	// call external scripting hook
+	hook_dpt_attach();
 }
 
 
@@ -87,6 +77,7 @@ cipcore::handle_dpt_close(rofl::crofdpt& dpt)
 		return;
 	}
 
+	// call external scripting hook
 	hook_dpt_detach();
 
 	rtables.clear();
@@ -103,57 +94,44 @@ cipcore::handle_port_status(
 		rofl::openflow::cofmsg_port_status& msg)
 {
 
-	if (this->dpt != &dpt) {
-		fprintf(stderr, "ipcore::handle_port_stats() received PortStatus from invalid data path\n");
+	if (dpt.get_dptid() != dptid) {
+		rofcore::logging::debug << "[ipcore] received PortStatus from invalid data path, ignoring" << std::endl;
 		return;
 	}
 
 	uint32_t port_no = msg.get_port().get_port_no();
 
-	rofl::logging::info << "[ipcore] Port-Status message rcvd:" << std::endl << msg;
+	rofcore::logging::debug << "[ipcore] Port-Status message rcvd:" << std::endl << msg;
 
 	try {
 		switch (msg.get_reason()) {
 		case rofl::openflow::OFPPR_ADD: {
-			if (dptlinks[&dpt].find(port_no) == dptlinks[&dpt].end()) {
-				dptlinks[&dpt][port_no] = new cdptlink(this, &dpt, msg.get_port().get_port_no());
-				hook_port_up(msg.get_port().get_name());
-				dptlinks[&dpt][port_no]->open();
-			}
+			ltable.set_link(port_no).tap_open();
+			hook_port_up(msg.get_port().get_name());
 		} break;
 		case rofl::openflow::OFPPR_MODIFY: {
-			if (dptlinks[&dpt].find(port_no) != dptlinks[&dpt].end()) {
-				dptlinks[&dpt][port_no]->handle_port_status();
-				//run_port_up_script(msg->get_port().get_name()); // TODO: check flags
-			}
+			ltable.set_link(port_no).tap_open();
+			hook_port_up(msg.get_port().get_name());
 		} break;
 		case rofl::openflow::OFPPR_DELETE: {
-			if (dptlinks[&dpt].find(port_no) != dptlinks[&dpt].end()) {
-				dptlinks[&dpt][port_no]->close();
-				delete dptlinks[&dpt][port_no];
-				dptlinks[&dpt].erase(port_no);
-				hook_port_down(msg.get_port().get_name());
-			}
+			ltable.set_link(port_no).tap_close();
+			ltable.drop_link(port_no);
+			hook_port_down(msg.get_port().get_name());
 		} break;
 		default: {
-
-			fprintf(stderr, "ipcore::handle_port_status() message with invalid reason code received, ignoring\n");
-
-		} break;
+			rofcore::logging::debug << "[ipcore] received PortStatus with unknown reason code received, ignoring" << std::endl;
+		};
 		}
 
 	} catch (rofcore::eNetDevCritical& e) {
-
-		// TODO: handle error condition appropriately, for now: rethrow
-		throw;
-
+		rofcore::logging::debug << "[ipcore] new port created: unable to create tap device: " << msg.get_port().get_name() << std::endl;
 	}
 }
 
 
 
 void
-cipcore::handle_packet_out(rofl::crofctl& ctl, rofl::openflow::cofmsg_packet_out& msg, uint8_t aux_id)
+cipcore::handle_packet_out(rofl::crofctl& ctl, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_out& msg)
 {
 
 }
@@ -162,35 +140,34 @@ cipcore::handle_packet_out(rofl::crofctl& ctl, rofl::openflow::cofmsg_packet_out
 
 
 void
-cipcore::handle_packet_in(rofl::crofdpt& dpt, rofl::openflow::cofmsg_packet_in& msg, uint8_t aux_id)
+cipcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
 	try {
 		uint32_t port_no = msg.get_match().get_in_port();
 
-		if (dptlinks[&dpt].find(port_no) == dptlinks[&dpt].end()) {
-			fprintf(stderr, "ipcore::handle_packet_in() frame for port_no=%d received, but port not found\n", port_no);
-
+		if (not ltable.has_link(port_no)) {
+			rofcore::logging::debug << "[ipcore] received PacketIn message for unknown port, ignoring" << std::endl;
 			return;
 		}
 
-		dptlinks[&dpt][port_no]->handle_packet_in(msg.get_packet());
+		ltable.set_link(port_no).handle_packet_in(msg.get_packet());
 
 		if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()) != msg.get_buffer_id()) {
 			rofl::openflow::cofactions actions(dpt.get_version());
-			dpt.send_packet_out_message(rofl::cauxid(0), msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
+			dpt.send_packet_out_message(auxid, msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
 		}
 
 	} catch (rofcore::ePacketPoolExhausted& e) {
-
-		fprintf(stderr, "ipcore::handle_packet_in() packetpool exhausted\n");
-
+		rofcore::logging::warn << "[ipcore] received PacketIn message, but buffer-pool exhausted" << std::endl;
+	} catch (rofl::openflow::eOxmNotFound& e) {
+		rofcore::logging::debug << "[ipcore] received PacketIn message without in-port match, ignoring" << std::endl;
 	}
 }
 
 
 
 void
-cipcore::handle_error(rofl::crofdpt& dpt, rofl::openflow::cofmsg_error& msg, uint8_t aux_id)
+cipcore::handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg)
 {
 	rofl::logging::warn << "[ipcore] error message rcvd:" << std::endl << msg;
 }
@@ -203,6 +180,37 @@ cipcore::handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl
 	rofl::logging::info << "[ipcore] Flow-Removed message rcvd:" << std::endl << msg;
 }
 
+
+
+void
+cipcore::set_forwarding(bool forward)
+{
+	try {
+		rofl::openflow::cofflowmod fed = rofl::openflow::cofflowmod(rofl::crofdpt::get_dpt(dptid).get_version());
+
+		if (forward == true) {
+			fed.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
+		} else {
+			fed.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
+		}
+		fed.set_table_id(0);
+		fed.set_idle_timeout(0);
+		fed.set_hard_timeout(0);
+		fed.set_priority(0); // lowest priority
+		fed.set_instructions().add_inst_goto_table().set_table_id(1);
+
+		rofl::crofdpt::get_dpt(dptid).send_flow_mod_message(rofl::cauxid(0), fed);
+
+	} catch (rofl::eSocketTxAgain& e) {
+
+		rofcore::logging::debug << "[ipcore] enable forwarding: control channel congested, rescheduling (TODO)" << std::endl;
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+		rofcore::logging::debug << "[ipcore] enable forwarding: dptid not found: " << dptid << std::endl;
+
+	}
+}
 
 
 void

@@ -49,7 +49,7 @@ public:
 		if (this == &table)
 			return *this;
 		clear();
-		for (std::map<unsigned int, cdptlink>::const_iterator
+		for (std::map<uint32_t, cdptlink>::const_iterator
 				it = table.links.begin(); it != table.links.end(); ++it) {
 			add_link(it->first) = it->second;
 		}
@@ -68,53 +68,53 @@ public:
 	 *
 	 */
 	cdptlink&
-	add_link(int index) {
-		if (links.find(index) != links.end()) {
-			links.erase(index);
+	add_link(uint32_t ofp_port_no) {
+		if (links.find(ofp_port_no) != links.end()) {
+			links.erase(ofp_port_no);
 		}
-		links[index] = cdptlink(index);
-		return links[index];
+		links[ofp_port_no].set_ofp_port_no(ofp_port_no);
+		return links[ofp_port_no];
 	};
 
 	/**
 	 *
 	 */
 	cdptlink&
-	set_link(int index) {
-		if (links.find(index) == links.end()) {
-			(void)links[index];
+	set_link(uint32_t ofp_port_no) {
+		if (links.find(ofp_port_no) == links.end()) {
+			links[ofp_port_no].set_ofp_port_no(ofp_port_no);
 		}
-		return links[index];
+		return links[ofp_port_no];
 	};
 
 	/**
 	 *
 	 */
 	const cdptlink&
-	get_link(int index) const {
-		if (links.find(index) == links.end()) {
+	get_link(uint32_t ofp_port_no) const {
+		if (links.find(ofp_port_no) == links.end()) {
 			throw eLinkTableNotFound();
 		}
-		return links.at(index);
+		return links.at(ofp_port_no);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_link(int index) {
-		if (links.find(index) == links.end()) {
+	drop_link(uint32_t ofp_port_no) {
+		if (links.find(ofp_port_no) == links.end()) {
 			return;
 		}
-		links.erase(index);
+		links.erase(ofp_port_no);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_link(int index) const {
-		return (not (links.find(index) == links.end()));
+	has_link(uint32_t ofp_port_no) const {
+		return (not (links.find(ofp_port_no) == links.end()));
 	};
 
 	/**
@@ -122,7 +122,7 @@ public:
 	 */
 	const cdptlink&
 	get_link_by_ofp_port_no(uint32_t ofp_port_no) const {
-		std::map<unsigned int, cdptlink>::const_iterator it;
+		std::map<uint32_t, cdptlink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ofp_port_no(ofp_port_no))) == links.end()) {
 			throw eLinkTableNotFound();
 		}
@@ -134,7 +134,7 @@ public:
 	 */
 	bool
 	has_link_by_ofp_port_no(uint32_t ofp_port_no) const {
-		std::map<unsigned int, cdptlink>::const_iterator it;
+		std::map<uint32_t, cdptlink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ofp_port_no(ofp_port_no))) == links.end()) {
 			return false;
 		}
@@ -146,7 +146,7 @@ public:
 	 */
 	const cdptlink&
 	get_link_by_ifindex(int ifindex) const {
-		std::map<unsigned int, cdptlink>::const_iterator it;
+		std::map<uint32_t, cdptlink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ifindex(ifindex))) == links.end()) {
 			throw eLinkTableNotFound();
 		}
@@ -158,7 +158,7 @@ public:
 	 */
 	bool
 	has_link_by_ifindex(int ifindex) const {
-		std::map<unsigned int, cdptlink>::const_iterator it;
+		std::map<uint32_t, cdptlink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ifindex(ifindex))) == links.end()) {
 			return false;
 		}
@@ -180,7 +180,7 @@ public:
 
 private:
 
-	std::map<unsigned int, cdptlink> links;	// key: internal link index, neither ofp_port_no, nor ifindex assigned from kernel
+	std::map<uint32_t, cdptlink> links;	// key: link ofp port-no
 };
 
 }; // end of namespace ipcore

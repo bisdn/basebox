@@ -33,54 +33,33 @@ extern "C" {
 namespace ipcore
 {
 
-class cdptroute :
-		public rofcore::cnetlink_subscriber
-{
-private:
-
-
-	rofl::crofbase					*rofbase;
-	rofl::crofdpt					*dpt;
-	uint8_t					 		table_id;
-	unsigned int			 		rtindex;
-	rofl::openflow::cofflowmod		flowentry;
-
-	/* we make here one assumption: only one nexthop exists per neighbor and route
-	 * this should be valid under all circumstances
-	 */
-	std::map<uint16_t, cdptnexthop> 	dptnexthops; // key1:nbindex, value:dptnexthop instance
-
-
+class cdptroute : public rofcore::cnetlink_subscriber {
 public:
 
 
 	/**
 	 *
 	 */
-	cdptroute(unsigned int rtindex);
-
+	cdptroute();
 
 	/**
 	 *
-	 * @param table_id
-	 * @param rtindex
 	 */
 	virtual
 	~cdptroute();
 
+	/**
+	 *
+	 */
+	void
+	install();
+
 
 	/**
 	 *
 	 */
 	void
-	open();
-
-
-	/**
-	 *
-	 */
-	void
-	close();
+	uninstall();
 
 
 	/**
@@ -213,6 +192,21 @@ private:
 	 */
 	void
 	delete_all_nexthops();
+
+private:
+
+
+	rofl::crofbase					*rofbase;
+	rofl::crofdpt					*dpt;
+	uint8_t					 		table_id;
+	unsigned int			 		rtindex;
+	rofl::openflow::cofflowmod		flowentry;
+
+	/* we make here one assumption: only one nexthop exists per neighbor and route
+	 * this should be valid under all circumstances
+	 */
+	std::map<uint16_t, cdptnexthop> 	dptnexthops; // key1:nbindex, value:dptnexthop instance
+
 
 };
 

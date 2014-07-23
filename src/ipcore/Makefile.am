@@ -29,7 +29,6 @@ ipcored_SOURCES = ipcored.cc \
 		cnetlink.cc \
 		flowmod.h \
 		clinktable.h \
-		clinktable.cc \
 		croutetable.h \
 		croutetables.h \
 		croutetables.cc

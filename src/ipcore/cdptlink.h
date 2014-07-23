@@ -38,15 +38,10 @@ class cdptlink :
 {
 public:
 
-	static cdptlink&
-	get_link(unsigned int ifindex);
-
-public:
-
 	/**
 	 *
 	 */
-	cdptlink(unsigned int ifindex);
+	cdptlink();
 
 
 	/**
@@ -73,19 +68,19 @@ public:
 	 *
 	 */
 	uint32_t
-	get_ofp_port_no() const { return of_port_no; };
+	get_ofp_port_no() const { return ofp_port_no; };
 
 	/**
 	 *
 	 */
 	void
-	set_ofp_port_no(uint32_t of_port_no) { this->of_port_no = of_port_no; };
+	set_ofp_port_no(uint32_t ofp_port_no) { this->ofp_port_no = ofp_port_no; };
 
 	/**
 	 *
 	 */
 	const rofl::openflow::cofport&
-	get_ofp_port() const { return rofl::crofdpt::get_dpt(dptid).get_ports().get_port(of_port_no); };
+	get_ofp_port() const { return rofl::crofdpt::get_dpt(dptid).get_ports().get_port(ofp_port_no); };
 
 	/**
 	 *
@@ -365,7 +360,7 @@ public:
 		os << rofl::indent(0) << "<dptlink: ifindex:" << (int)link.ifindex << " "
 				<< "devname:" << link.get_devname() << " >" << std::endl;
 		os << rofl::indent(2) << "<hwaddr:"  << link.get_hwaddr() << " "
-				<< "portno:"  << (int)link.of_port_no << " >" << std::endl;
+				<< "portno:"  << (int)link.ofp_port_no << " >" << std::endl;
 		try {
 			rofl::indent i(2);
 			os << rofcore::cnetlink::get_instance().get_links().get_link(link.ifindex);
@@ -400,7 +395,7 @@ public:
 	public:
 		cdptlink_by_ofp_port_no(uint32_t ofp_port_no) : ofp_port_no(ofp_port_no) {};
 		bool operator() (const std::pair<unsigned int, cdptlink>& p) {
-			return (ofp_port_no == p.second.of_port_no);
+			return (ofp_port_no == p.second.ofp_port_no);
 		};
 	};
 
@@ -419,12 +414,10 @@ public:
 
 private:
 
-	static std::map<unsigned int, cdptlink*>		dptlinks;
-
+	uint32_t			 		 		ofp_port_no;		// OpenFlow portno assigned to port on dpt mapped to this dptport instance
 	int					 		 		ifindex;		// ifindex for tapdevice
 	rofl::cdptid						dptid;
 	uint8_t								table_id;
-	uint32_t			 		 		of_port_no;		// OpenFlow portno assigned to port on dpt mapped to this dptport instance
 	rofcore::ctapdev					*tapdev;		// tap device emulating the mapped port on this system
 
 	enum cdptlink_flag_t {

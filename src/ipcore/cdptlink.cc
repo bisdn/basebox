@@ -9,34 +9,22 @@
 
 using namespace ipcore;
 
-std::map<unsigned int, cdptlink*> cdptlink::dptlinks;
 
 
-cdptlink&
-cdptlink::get_link(unsigned int ifindex)
+
+cdptlink::cdptlink() :
+				ofp_port_no(0),
+				ifindex(0),
+				tapdev(0),
+				table_id(0)
 {
-	if (cdptlink::dptlinks.find(ifindex) == cdptlink::dptlinks.end()) {
-		throw eDptLinkNotFound();
-	}
-	return *(cdptlink::dptlinks[ifindex]);
-}
 
-
-cdptlink::cdptlink(unsigned int ifindex) :
-		ifindex(ifindex),
-		of_port_no(0),
-		tapdev(0),
-		table_id(0)
-{
-	cdptlink::dptlinks[ifindex] = this;
 }
 
 
 
 cdptlink::~cdptlink()
 {
-	cdptlink::dptlinks.erase(ifindex);
-
 	if (ifindex > 0) {
 		tap_close();
 	}
@@ -47,6 +35,11 @@ cdptlink::~cdptlink()
 void
 cdptlink::tap_open()
 {
+	if (NULL != tapdev) {
+		// tap device already exists, ignoring
+		return;
+	}
+
 	tapdev = new rofcore::ctapdev(this, get_devname(), get_hwaddr());
 
 	ifindex = tapdev->get_ifindex();
@@ -60,6 +53,8 @@ void
 cdptlink::tap_close()
 {
 	if (tapdev) delete tapdev;
+
+	tapdev = NULL;
 
 	ifindex = -1;
 
@@ -164,7 +159,7 @@ cdptlink::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		}
 
 		rofl::openflow::cofactions actions(rofl::crofdpt::get_dpt(dptid).get_version());
-		actions.set_action_output(rofl::cindex(0)).set_port_no(of_port_no);
+		actions.set_action_output(rofl::cindex(0)).set_port_no(ofp_port_no);
 
 		rofl::crofdpt::get_dpt(dptid).send_packet_out_message(
 				rofl::cauxid(0),
@@ -635,7 +630,7 @@ cdptlink::neigh_in4_created(unsigned int ifindex, uint16_t nbindex)
 		}
 
 		add_neigh_in4(nbindex).set_dptid(dptid);	// reset any existing instance
-		set_neigh_in4(nbindex).set_ofp_port_no(of_port_no);
+		set_neigh_in4(nbindex).set_ofp_port_no(ofp_port_no);
 		set_neigh_in4(nbindex).set_ifindex(ifindex);
 		set_neigh_in4(nbindex).set_nbindex(nbindex);
 		set_neigh_in4(nbindex).set_table_id(2); // table-id: 2
@@ -749,7 +744,7 @@ cdptlink::neigh_in6_created(unsigned int ifindex, uint16_t nbindex)
 		}
 
 		add_neigh_in6(nbindex).set_dptid(dptid);	// reset any existing instance
-		set_neigh_in6(nbindex).set_ofp_port_no(of_port_no);
+		set_neigh_in6(nbindex).set_ofp_port_no(ofp_port_no);
 		set_neigh_in6(nbindex).set_ifindex(ifindex);
 		set_neigh_in6(nbindex).set_nbindex(nbindex);
 		set_neigh_in6(nbindex).set_table_id(2); // table-id: 2
