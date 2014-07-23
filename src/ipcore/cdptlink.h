@@ -368,7 +368,7 @@ public:
 				<< "portno:"  << (int)link.of_port_no << " >" << std::endl;
 		try {
 			rofl::indent i(2);
-			os << rofcore::cnetlink::get_instance().get_link(link.ifindex);
+			os << rofcore::cnetlink::get_instance().get_links().get_link(link.ifindex);
 		} catch (rofcore::eNetLinkNotFound& e) {
 			os << rofl::indent(2) << "<no crtlink found >" << std::endl;
 		}

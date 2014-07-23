@@ -195,10 +195,11 @@ public:
 		try {
 			os << rofl::indent(0) << "<dptnexthop: >" 	<< std::endl;
 
-			rofcore::crtneigh_in4& rtn = rofcore::cnetlink::get_instance().get_link(neigh.ifindex).get_neigh_in4(neigh.nbindex);
+			const rofcore::crtneigh_in4& rtn = rofcore::cnetlink::get_instance().get_links().
+									get_link(neigh.ifindex).get_neighs_in4().get_neigh(neigh.nbindex);
 			os << rofl::indent(0) << "<dptnexthop: >" 	<< std::endl;
 			os << rofl::indent(2) << "<destination: " 	<< rtn.get_dst() << " >" << std::endl;
-			os << rofl::indent(2) << "<device: " 		<< rofcore::cnetlink::get_instance().get_link(neigh.ifindex).get_devname() << " >" << std::endl;
+			os << rofl::indent(2) << "<device: " 		<< rofcore::cnetlink::get_instance().get_links().get_link(neigh.ifindex).get_devname() << " >" << std::endl;
 			os << rofl::indent(2) << "<hwaddr: " 		<< rtn.get_lladdr() << " >" << std::endl;
 			os << rofl::indent(2) << "<state: " 		<< rtn.get_state() << " >" << std::endl;
 			os << rofl::indent(2) << "<table-id: " 		<< (unsigned int)neigh.table_id << " >" << std::endl;
@@ -210,7 +211,7 @@ public:
 				os << "ofportno:" << (unsigned int)neigh.ofp_port_no << " ";
 				os << "oftableid: " << (unsigned int)neigh.table_id << " ";
 			os << ">";
-		} catch (rofcore::eRtLinkNotFound& e) {
+		} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 			os << "<dptnexthop: ";
 				os << "ifindex:" << neigh.ifindex << " ";
 				os << "nhindex:" << (unsigned int)neigh.nbindex << " ";

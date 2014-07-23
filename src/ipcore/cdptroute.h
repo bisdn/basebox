@@ -45,7 +45,7 @@ private:
 	unsigned int			 		rtindex;
 	rofl::openflow::cofflowmod		flowentry;
 
-	/* we make here one assumtpion: only one nexthop exists per neighbor and route
+	/* we make here one assumption: only one nexthop exists per neighbor and route
 	 * this should be valid under all circumstances
 	 */
 	std::map<uint16_t, cdptnexthop> 	dptnexthops; // key1:nbindex, value:dptnexthop instance
@@ -164,9 +164,11 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, cdptroute const& route) {
-		rofcore::crtroute& rtr = rofcore::cnetlink::get_instance().get_route_in4(route.table_id, route.rtindex);
+		const rofcore::crtroute& rtroute =
+				rofcore::cnetlink::get_instance().
+							get_routes_in4(route.table_id).get_route(route.rtindex);
 
-		switch (rtr.get_scope()) {
+		switch (rtroute.get_scope()) {
 #if 0
 		case RT_SCOPE_HOST: {
 			// nothing to do
@@ -179,10 +181,10 @@ public:
 		default: {
 			os << rofl::indent(0) << "<dptroute: >" 	<< std::endl;
 			//os << rofl::indent(2) << "<destination: " 	<< rtr.get_dst() 		<< " >" << std::endl;
-			os << rofl::indent(2) << "<prefix: " 		<< rtr.get_prefixlen() 	<< " >" << std::endl;
+			os << rofl::indent(2) << "<prefix: " 		<< rtroute.get_prefixlen() 	<< " >" << std::endl;
 			//os << rofl::indent(2) << "<src " 			<< rtr.get_src() 		<< " >" << std::endl;
-			os << rofl::indent(2) << "<scope " 			<< rtr.get_scope_s() 	<< " >" << std::endl;
-			os << rofl::indent(2) << "<table " 			<< rtr.get_table_id_s() << " >" << std::endl;
+			os << rofl::indent(2) << "<scope " 			<< rtroute.get_scope_s() 	<< " >" << std::endl;
+			os << rofl::indent(2) << "<table " 			<< rtroute.get_table_id_s() << " >" << std::endl;
 			os << rofl::indent(2) << "<rtindex: " 		<< route.rtindex 		<< " >" << std::endl;
 
 			rofl::indent i(2);

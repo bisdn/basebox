@@ -41,7 +41,7 @@ cnetlink::init_caches()
 {
 	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
 	if (rc < 0) {
-		fprintf(stderr, "clinkcache::clinkcache() failed to allocate netlink cache manager\n");
+		rofcore::logging::debug << "clinkcache::clinkcache() failed to allocate netlink cache manager" << std::endl;
 		throw eNetLinkCritical();
 	}
 
@@ -137,12 +137,13 @@ cnetlink::handle_revent(int fd)
 
 
 
+/* static C-callback */
 void
 cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data)
 {
 	try {
 		if (std::string(nl_object_get_type(obj)) != std::string("route/link")) {
-			fprintf(stderr, "cnetlink::route_link_cb() ignoring non link object received\n");
+			rofcore::logging::debug << "cnetlink::route_link_cb() ignoring non link object received" << std::endl;
 			return;
 		}
 
@@ -167,7 +168,7 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 			cnetlink::get_instance().notify_link_deleted(ifindex);
 		} break;
 		default: {
-			fprintf(stderr, "route/link: unknown NL action\n");
+			rofcore::logging::debug << "route/link: unknown NL action" << std::endl;
 		}
 		}
 
@@ -179,12 +180,12 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 }
 
 
-
+/* static C-callback */
 void
 cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data)
 {
 	if (std::string(nl_object_get_type(obj)) != std::string("route/addr")) {
-		fprintf(stderr, "cnetlink::route_addr_cb() ignoring non addr object received\n");
+		rofcore::logging::debug << "cnetlink::route_addr_cb() ignoring non addr object received" << std::endl;
 		return;
 	}
 
@@ -237,31 +238,31 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 		} break;
 		default: {
-			fprintf(stderr, "route/addr: unknown NL action\n");
+			rofcore::logging::debug << "route/addr: unknown NL action" << std::endl;
 		}
 		}
 	} catch (eNetLinkNotFound& e) {
-		fprintf(stderr, "cnetlink::route_addr_cb() oops, route_addr_cb() was called with an invalid link [1]\n");
+		rofcore::logging::debug << "cnetlink::route_addr_cb() oops, route_addr_cb() was called with an invalid link [1]" << std::endl;
 	} catch (crtaddr::eRtAddrNotFound& e) {
-		fprintf(stderr, "cnetlink::route_addr_cb() oops, route_addr_cb() was called with an invalid address [2]\n");
+		rofcore::logging::debug << "cnetlink::route_addr_cb() oops, route_addr_cb() was called with an invalid address [2]" << std::endl;
 	}
 
 	nl_object_put(obj); // release reference to object
 }
 
 
-
+/* static C-callback */
 void
 cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data)
 {
 	if (std::string(nl_object_get_type(obj)) != std::string("route/route")) {
-		fprintf(stderr, "cnetlink::route_route_cb() ignoring non route object received\n");
+		rofcore::logging::debug << "cnetlink::route_route_cb() ignoring non route object received" << std::endl;
 		return;
 	}
 
 	nl_object_get(obj); // get reference to object
 
-	//fprintf(stderr, "cnetlink::route_route_cb() called\n");
+	//rofcore::logging::debug << "cnetlink::route_route_cb() called" << std::endl;
 
 	int family = rtnl_route_get_family((struct rtnl_route*)obj);
 	int table_id = rtnl_route_get_table((struct rtnl_route*)obj);
@@ -307,25 +308,25 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 			}
 		} break;
 		default: {
-			fprintf(stderr, "route/route: unknown NL action\n");
+			rofcore::logging::debug << "route/route: unknown NL action" << std::endl;
 		}
 		}
 	} catch (eNetLinkNotFound& e) {
-		fprintf(stderr, "cnetlink::route_route_cb() oops, route_route_cb() was called with an invalid link\n");
+		rofcore::logging::debug << "cnetlink::route_route_cb() oops, route_route_cb() was called with an invalid link" << std::endl;
 	} catch (crtroute::eRtRouteNotFound& e) {
-		fprintf(stderr, "cnetlink::route_route_cb() oops, route_route_cb() was called with an invalid route\n");
+		rofcore::logging::debug << "cnetlink::route_route_cb() oops, route_route_cb() was called with an invalid route" << std::endl;
 	}
 
 	nl_object_put(obj); // release reference to object
 }
 
 
-
+/* static C-callback */
 void
 cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data)
 {
 	if (std::string(nl_object_get_type(obj)) != std::string("route/neigh")) {
-		fprintf(stderr, "cnetlink::route_neigh_cb() ignoring non neighbor object received\n");
+		rofcore::logging::debug << "cnetlink::route_neigh_cb() ignoring non neighbor object received" << std::endl;
 		return;
 	}
 
@@ -377,13 +378,13 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 			}
 		} break;
 		default: {
-			fprintf(stderr, "route/addr: unknown NL action\n");
+			rofcore::logging::debug << "route/addr: unknown NL action" << std::endl;
 		}
 		}
 	} catch (eNetLinkNotFound& e) {
-		fprintf(stderr, "cnetlink::route_neigh_cb() oops, route_neigh_cb() was called with an invalid link\n");
+		rofcore::logging::debug << "cnetlink::route_neigh_cb() oops, route_neigh_cb() was called with an invalid link" << std::endl;
 	} catch (crtneigh::eRtNeighNotFound& e) {
-		fprintf(stderr, "cnetlink::route_neigh_cb() oops, route_neigh_cb() was called with an invalid neighbor\n");
+		rofcore::logging::debug << "cnetlink::route_neigh_cb() oops, route_neigh_cb() was called with an invalid neighbor" << std::endl;
 	}
 
 	nl_object_put(obj); // release reference to object
