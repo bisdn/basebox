@@ -141,7 +141,7 @@ cdptnexthop_in6::flow_mod_add(uint8_t command)
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_routes_in6(table_id).get_route(rtindex).get_ipv6_dst());
 
 		rofl::cmacaddr eth_src(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_hwaddr());
-		rofl::cmacaddr eth_dst(rofcore::cnetlink::get_instance().get_routes_in6(table_id).get_route(rtindex).get_nxthops_in6().get_nexthop(nbindex).get_lladdr());
+		rofl::cmacaddr eth_dst(rofcore::cnetlink::get_instance().get_routes_in6(table_id).get_route(rtindex).get_nxthops_in6().get_nexthop(nbindex).get_);
 
 		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_set_field(0).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(1).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
