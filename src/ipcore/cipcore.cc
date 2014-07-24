@@ -48,6 +48,7 @@ cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 		 * this may avoid race conditions with the kernel, when a fast reconstruction is needed.
 		 */
 		ltable.set_link(/*port_no*/it->first).tap_open();
+		ltable.set_link(/*port_no*/it->first).install();
 	} catch (rofcore::eNetDevCritical& e) {
 		rofcore::logging::debug << "[ipcore] new data path attaching: unable to create tap device: " << it->second->get_name() << std::endl;
 	}
@@ -216,37 +217,117 @@ cipcore::set_forwarding(bool forward)
 void
 cipcore::addr_in4_created(unsigned int ifindex, uint16_t adindex)
 {
-	set_link_table().set_link(ifindex).set_addr_in4(adindex).install();
+	try {
+
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] addr_in4 create: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (not ltable.get_link(ifindex).get_addr_table().has_addr_in4(adindex)) {
+			ltable.set_link(ifindex).set_addr_table().set_addr_in4(adindex).install();
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] addr_in4 create: exception " << e.what() << std::endl;
+	}
 }
 
 void
 cipcore::addr_in4_updated(unsigned int ifindex, uint16_t adindex)
 {
+	try {
 
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] addr_in4 update: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (not ltable.get_link(ifindex).get_addr_table().has_addr_in4(adindex)) {
+			ltable.set_link(ifindex).set_addr_table().set_addr_in4(adindex).install();
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] addr_in4 update: exception " << e.what() << std::endl;
+	}
 }
 
 void
 cipcore::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
 {
+	try {
 
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] addr_in4 delete: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (ltable.get_link(ifindex).get_addr_table().has_addr_in4(adindex)) {
+			ltable.set_link(ifindex).set_addr_table().set_addr_in4(adindex).uninstall();
+			ltable.set_link(ifindex).set_addr_table().drop_addr_in4(adindex);
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] addr_in4 delete: exception " << e.what() << std::endl;
+	}
 }
 
 void
 cipcore::addr_in6_created(unsigned int ifindex, uint16_t adindex)
 {
+	try {
 
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] addr_in6 create: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (not ltable.get_link(ifindex).get_addr_table().has_addr_in6(adindex)) {
+			ltable.set_link(ifindex).set_addr_table().set_addr_in6(adindex).install();
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] addr_in6 create: exception " << e.what() << std::endl;
+	}
 }
 
 void
 cipcore::addr_in6_updated(unsigned int ifindex, uint16_t adindex)
 {
+	try {
 
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] addr_in6 update: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (not ltable.get_link(ifindex).get_addr_table().has_addr_in6(adindex)) {
+			ltable.set_link(ifindex).set_addr_table().set_addr_in6(adindex).install();
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] addr_in6 update: exception " << e.what() << std::endl;
+	}
 }
 
 void
 cipcore::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 {
+	try {
 
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] addr_in6 delete: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (ltable.get_link(ifindex).get_addr_table().has_addr_in6(adindex)) {
+			ltable.set_link(ifindex).set_addr_table().set_addr_in6(adindex).uninstall();
+			ltable.set_link(ifindex).set_addr_table().drop_addr_in6(adindex);
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] addr_in6 delete: exception " << e.what() << std::endl;
+	}
 }
 
 
@@ -254,23 +335,17 @@ void
 cipcore::route_in4_created(uint8_t table_id, unsigned int rtindex)
 {
 	try {
-		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt4route
-			return;
-
 		// ignore local route table and unspecified table_id
 		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-			std::cerr << "ipcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			rofcore::logging::debug << "[ipcore] create route => suppressing table_id=" << (unsigned int)table_id << std::endl;
 			return;
 		}
 
-		rofl::logging::info << "[ipcore] crtroute CREATE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in4(table_id, rtindex);
+		rofl::logging::info << "[ipcore] crtroute CREATE:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in4(table_id).get_route(rtindex);
 
-		if (dpt4routes[table_id].find(rtindex) == dpt4routes[table_id].end()) {
-			dpt4routes[table_id][rtindex] = new cdptroute(this, dpt, table_id, rtindex);
-			if (dpt->get_channel().is_established()) {
-				dpt4routes[table_id][rtindex]->open();
-			}
+		if (not rtables.get_table(table_id).has_route_in4(rtindex)) {
+			rtables.set_table(table_id).add_route_in4(rtindex).install();
 		}
 
 	} catch (rofcore::eNetLinkNotFound& e) {
@@ -285,21 +360,17 @@ void
 cipcore::route_in4_updated(uint8_t table_id, unsigned int rtindex)
 {
 	try {
-		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt4route
-			return;
-
 		// ignore local route table and unspecified table_id
 		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-			std::cerr << "ipcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			rofcore::logging::debug << "[ipcore] route update => suppressing table_id=" << (unsigned int)table_id << std::endl;
 			return;
 		}
 
-		rofl::logging::info << "[ipcore] crtroute UPDATE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in4(table_id, rtindex);
+		rofl::logging::info << "[ipcore] route update:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in4(table_id).get_route(rtindex);
 
-		//std::cerr << "ipcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-		if (dpt4routes[table_id].find(rtindex) == dpt4routes[table_id].end()) {
-			route_in4_created(table_id, rtindex);
+		if (not rtables.get_table(table_id).has_route_in4(rtindex)) {
+			rtables.set_table(table_id).add_route_in4(rtindex).install();
 		}
 
 		// do nothing here, this event is handled directly by dptroute instance
@@ -316,25 +387,18 @@ void
 cipcore::route_in4_deleted(uint8_t table_id, unsigned int rtindex)
 {
 	try {
-		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt4route
-			return;
-
 		// ignore local route table and unspecified table_id
 		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-			std::cerr << "ipcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			rofcore::logging::debug << "[ipcore] route delete => suppressing table_id=" << (unsigned int)table_id << std::endl;
 			return;
 		}
 
-		rofl::logging::info << "[ipcore] crtroute DELETE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in4(table_id, rtindex);
+		rofl::logging::info << "[ipcore] crtroute DELETE:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in4(table_id).get_route(rtindex);
 
-		//std::cerr << "ipcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-		if (dpt4routes[table_id].find(rtindex) != dpt4routes[table_id].end()) {
-			if (dpt->get_channel().is_established()) {
-				dpt4routes[table_id][rtindex]->close();
-			}
-			delete dpt4routes[table_id][rtindex];
-			dpt4routes[table_id].erase(rtindex);
+		if (rtables.get_table(table_id).has_route_in4(rtindex)) {
+			rtables.set_table(table_id).set_route_in4(rtindex).uninstall();
+			rtables.set_table(table_id).drop_route_in4(rtindex);
 		}
 
 	} catch (rofcore::eNetLinkNotFound& e) {
@@ -349,9 +413,6 @@ void
 cipcore::route_in6_created(uint8_t table_id, unsigned int rtindex)
 {
 	try {
-		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt6route
-			return;
-
 		// ignore local route table and unspecified table_id
 		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
@@ -359,13 +420,10 @@ cipcore::route_in6_created(uint8_t table_id, unsigned int rtindex)
 			return;
 		}
 
-		rofl::logging::info << "[ipcore] crtroute CREATE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in6(table_id, rtindex);
+		rofl::logging::info << "[ipcore] crtroute CREATE:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in6(table_id).get_route(rtindex);
 
-		if (dpt6routes[table_id].find(rtindex) == dpt6routes[table_id].end()) {
-			dpt6routes[table_id][rtindex] = new cdptroute(this, dpt, table_id, rtindex);
-			if (dpt->get_channel().is_established()) {
-				dpt6routes[table_id][rtindex]->open();
-			}
+		if (not rtables.get_table(table_id).has_route_in6(rtindex)) {
+			rtables.set_table(table_id).add_route_in6(rtindex).install();
 		}
 
 	} catch (rofcore::eNetLinkNotFound& e) {
@@ -380,21 +438,17 @@ void
 cipcore::route_in6_updated(uint8_t table_id, unsigned int rtindex)
 {
 	try {
-		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt6route
-			return;
-
 		// ignore local route table and unspecified table_id
 		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-			std::cerr << "ipcore::route_updated() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			rofcore::logging::debug << "[ipcore] route update => suppressing table_id=" << (unsigned int)table_id << std::endl;
 			return;
 		}
 
-		rofl::logging::info << "[ipcore] crtroute UPDATE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in6(table_id, rtindex);
+		rofl::logging::info << "[ipcore] route update:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in6(table_id).get_route(rtindex);
 
-		//std::cerr << "ipcore::route_updated() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-		if (dpt6routes[table_id].find(rtindex) == dpt6routes[table_id].end()) {
-			route_in6_created(table_id, rtindex);
+		if (not rtables.get_table(table_id).has_route_in6(rtindex)) {
+			rtables.set_table(table_id).add_route_in6(rtindex).install();
 		}
 
 		// do nothing here, this event is handled directly by dptroute instance
@@ -411,9 +465,6 @@ void
 cipcore::route_in6_deleted(uint8_t table_id, unsigned int rtindex)
 {
 	try {
-		if (0 == dpt) // TODO: make this check when installing the flow-mod in dpt6route
-			return;
-
 		// ignore local route table and unspecified table_id
 		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
@@ -421,15 +472,11 @@ cipcore::route_in6_deleted(uint8_t table_id, unsigned int rtindex)
 			return;
 		}
 
-		rofl::logging::info << "[ipcore] crtroute DELETE:" << std::endl << rofcore::cnetlink::get_instance().get_route_in6(table_id, rtindex);
+		rofl::logging::info << "[ipcore] crtroute DELETE:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in6(table_id).get_route(rtindex);
 
-		//std::cerr << "ipcore::route_deleted() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-		if (dpt6routes[table_id].find(rtindex) != dpt6routes[table_id].end()) {
-			if (dpt->get_channel().is_established()) {
-				dpt6routes[table_id][rtindex]->close();
-			}
-			delete dpt6routes[table_id][rtindex];
-			dpt6routes[table_id].erase(rtindex);
+		if (rtables.get_table(table_id).has_route_in6(rtindex)) {
+			rtables.set_table(table_id).set_route_in6(rtindex).uninstall();
+			rtables.set_table(table_id).drop_route_in6(rtindex);
 		}
 
 	} catch (rofcore::eNetLinkNotFound& e) {
@@ -515,9 +562,11 @@ cipcore::redirect_ipv4_multicast()
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofl::caddress_in4("224.0.0.0"), rofl::caddress_in4("240.0.0.0"));
 
-		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(0).
+		rofl::cindex index(0);
+
+		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(index).
 				set_port_no(rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()));
-		fe.set_instructions().add_inst_apply_actions().set_actions().set_action_output(0).
+		fe.set_instructions().add_inst_apply_actions().set_actions().set_action_output(index).
 				set_max_len(ETH_FRAME_LEN);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
@@ -543,9 +592,11 @@ cipcore::redirect_ipv6_multicast()
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofl::caddress_in6("ff00::"), rofl::caddress_in6("ff00::"));
 
-		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(0).
+		rofl::cindex index(0);
+
+		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(index).
 				set_port_no(rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()));
-		fe.set_instructions().add_inst_apply_actions().set_actions().set_action_output(0).
+		fe.set_instructions().add_inst_apply_actions().set_actions().set_action_output(index).
 				set_max_len(ETH_FRAME_LEN);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
@@ -567,7 +618,7 @@ cipcore::hook_dpt_attach()
 		std::vector<std::string> envp;
 
 		std::stringstream s_dpid;
-		s_dpid << "DPID=" << dpt->get_dpid();
+		s_dpid << "DPID=" << dpt.get_dpid();
 		envp.push_back(s_dpid.str());
 
 		cipcore::execute(cipcore::script_path_dpt_open, argv, envp);

@@ -27,12 +27,12 @@ public:
 	/**
 	 *
 	 */
-	clinktable();
+	clinktable() {};
 
 	/**
 	 *
 	 */
-	~clinktable();
+	~clinktable() {};
 
 	/**
 	 *
@@ -54,6 +54,48 @@ public:
 			add_link(it->first) = it->second;
 		}
 		return *this;
+	};
+
+	/**
+	 *
+	 */
+	void
+	install() {
+		for (std::map<uint32_t, cdptlink>::iterator
+				it = links.begin(); it != links.end(); ++it) {
+			it->second.install();
+		}
+	};
+
+	/**
+	 *
+	 */
+	void
+	uninstall() {
+		for (std::map<uint32_t, cdptlink>::iterator
+				it = links.begin(); it != links.end(); ++it) {
+			it->second.uninstall();
+		}
+	};
+
+public:
+
+	/**
+	 *
+	 */
+	const rofl::cdptid&
+	get_dptid() const { return dptid; };
+
+	/**
+	 *
+	 */
+	void
+	set_dptid(const rofl::cdptid& dptid) {
+		this->dptid = dptid;
+		for (std::map<uint32_t, cdptlink>::iterator
+				it = links.begin(); it != links.end(); ++it) {
+			it->second.set_dptid(dptid);
+		}
 	};
 
 public:
@@ -180,7 +222,8 @@ public:
 
 private:
 
-	std::map<uint32_t, cdptlink> links;	// key: link ofp port-no
+	rofl::cdptid					dptid;
+	std::map<uint32_t, cdptlink> 	links;	// key: link ofp port-no
 };
 
 }; // end of namespace ipcore

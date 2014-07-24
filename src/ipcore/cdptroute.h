@@ -195,9 +195,7 @@ private:
 
 private:
 
-
-	rofl::crofbase					*rofbase;
-	rofl::crofdpt					*dpt;
+	rofl::cdptid					dptid;
 	uint8_t					 		table_id;
 	unsigned int			 		rtindex;
 	rofl::openflow::cofflowmod		flowentry;

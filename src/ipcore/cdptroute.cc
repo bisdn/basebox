@@ -11,16 +11,9 @@
 using namespace ipcore;
 
 
-cdptroute::cdptroute(
-		rofl::crofbase* rofbase,
-		rofl::crofdpt* dpt,
-		uint8_t table_id,
-		unsigned int rtindex) :
-		rofbase(rofbase),
-		dpt(dpt),
-		table_id(table_id),
-		rtindex(rtindex),
-		flowentry(dpt->get_version())
+cdptroute::cdptroute() :
+		table_id(0),
+		rtindex(0)
 {
 
 }

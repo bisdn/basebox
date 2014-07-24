@@ -40,12 +40,17 @@ cdptnexthop_in4::flow_mod_add(uint8_t command)
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(dstaddr, dstmask);
 
-		rofl::cmacaddr eth_src(rofcore::cnetlink::get_instance().get_link(ifindex).get_hwaddr());
-		rofl::cmacaddr eth_dst(rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in4(nbindex).get_lladdr());
+		rofl::cmacaddr eth_src(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_hwaddr());
+		rofl::cmacaddr eth_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_lladdr());
 
-		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_set_field(0).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
-		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(1).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_output(2).set_port_no(ofp_port_no);
+		rofl::cindex index(0);
+
+		fe.set_instructions().add_inst_apply_actions().set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
+		fe.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
+		fe.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_output(index++).set_port_no(ofp_port_no);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
@@ -55,7 +60,7 @@ cdptnexthop_in4::flow_mod_add(uint8_t command)
 	} catch (rofcore::eNetLinkNotFound& e) {
 		rofcore::logging::error << "[dptnexthop_in4][flow_mod_add] unable to find link" << std::endl << *this;
 
-	} catch (rofcore::eRtLinkNotFound& e) {
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::error << "[dptnexthop_in4][flow_mod_add] unable to find address" << std::endl << *this;
 
 	} catch (...) {
@@ -84,7 +89,7 @@ cdptnexthop_in4::flow_mod_delete()
 		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!
 		 */
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_link(ifindex).get_nexthop_in4(nbindex).get_dst());
+		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in.get_ne(nbindex).get_dst());
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
@@ -133,10 +138,10 @@ cdptnexthop_in6::flow_mod_add(uint8_t command)
 		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!
 		 */
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_link(ifindex).get_nexthop_in6(nbindex).get_dst());
+		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_routes_in6(table_id).get_route(rtindex).get_ipv6_dst());
 
-		rofl::cmacaddr eth_src(rofcore::cnetlink::get_instance().get_link(ifindex).get_hwaddr());
-		rofl::cmacaddr eth_dst(rofcore::cnetlink::get_instance().get_link(ifindex).get_nexthop_in6(nbindex).get_lladdr());
+		rofl::cmacaddr eth_src(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_hwaddr());
+		rofl::cmacaddr eth_dst(rofcore::cnetlink::get_instance().get_routes_in6(table_id).get_route(rtindex).get_nxthops_in6().get_nexthop(nbindex).get_lladdr());
 
 		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_set_field(0).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(1).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));

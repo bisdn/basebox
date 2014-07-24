@@ -228,6 +228,7 @@ private:
 	uint32_t					ofp_port_no;
 	uint8_t						table_id;
 	int							ifindex;
+	int							rtindex;
 	uint16_t					nbindex;
 };
 
