@@ -28,112 +28,125 @@ extern "C" {
 #include "cnetlink.h"
 #include "crtroute.h"
 #include "cdptlink.h"
-#include "cdptnexthop.h"
+#include "cnexthoptable.h"
 
-namespace ipcore
-{
+namespace ipcore {
 
-class cdptroute : public rofcore::cnetlink_subscriber {
+class cdptroute : public flowmod {
 public:
-
 
 	/**
 	 *
 	 */
-	cdptroute();
+	cdptroute() : rttblid(0), rtindex(0) {};
+
+	/**
+	 *
+	 */
+	cdptroute(
+			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid) :
+				dptid(dptid), rttblid(rttblid), rtindex(rtindex) {};
+
+	/**
+	 *
+	 */
+	cdptroute(const cdptroute& dptroute) { *this = dptroute; };
+
+	/**
+	 *
+	 */
+	cdptroute&
+	operator= (const cdptroute& dptroute) {
+		if (this == &dptroute)
+			return *this;
+		dptid			= dptroute.dptid;
+		rttblid			= dptroute.rttblid;
+		rtindex			= dptroute.rtindex;
+		nexthoptable	= dptroute.nexthoptable;
+		return *this;
+	};
 
 	/**
 	 *
 	 */
 	virtual
-	~cdptroute();
+	~cdptroute() {};
+
+public:
+
+	/**
+	 *
+	 */
+	virtual void
+	update() { reinstall(); };
 
 	/**
 	 *
 	 */
 	void
-	install();
-
+	install() { flow_mod_add(rofl::openflow::OFPFC_ADD); };
 
 	/**
 	 *
 	 */
 	void
-	uninstall();
+	reinstall() { flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT); };
+
+	/**
+	 *
+	 */
+	void
+	uninstall() { flow_mod_delete(); };
+
+
+public:
+
+	/**
+	 *
+	 */
+	const cnexthoptable&
+	get_nexthop_table() const { return nexthoptable; };
+
+	/**
+	 *
+	 */
+	cnexthoptable&
+	set_nexthop_table() { return nexthoptable; };
+
+	/**
+	 *
+	 */
+	const rofl::cdptid&
+	get_dptid() const { return dptid; };
+
+	/**
+	 *
+	 */
+	unsigned int
+	get_rtindex() const { return rtindex; };
+
+	/**
+	 *
+	 */
+	uint8_t
+	get_rttblid() const { return rttblid; };
+
+protected:
 
 
 	/**
 	 *
-	 * @param ifindex
-	 * @param adindex
 	 */
 	virtual void
-	addr_deleted(
-			unsigned int ifindex,
-			uint16_t adindex);
-
+	flow_mod_add(
+			uint8_t command = rofl::openflow::OFPFC_ADD) {};
 
 	/**
 	 *
-	 * @param rtindex
 	 */
 	virtual void
-	route_created(
-			uint8_t table_id,
-			unsigned int rtindex);
+	flow_mod_delete() {};
 
-
-	/**
-	 *
-	 * @param rtindex
-	 */
-	virtual void
-	route_updated(
-			uint8_t table_id,
-			unsigned int rtindex);
-
-
-	/**
-	 *
-	 * @param rtindex
-	 */
-	virtual void
-	route_deleted(
-			uint8_t table_id,
-			unsigned int rtindex);
-
-
-	/**
-	 *
-	 * @param ifindex
-	 * @param nbindex
-	 */
-	virtual void
-	neigh_created(
-			unsigned int ifindex,
-			uint16_t nbindex);
-
-
-	/**
-	 *
-	 * @param ifindex
-	 * @param nbindex
-	 */
-	virtual void
-	neigh_updated(
-			unsigned int ifindex,
-			uint16_t nbindex);
-
-
-	/**
-	 *
-	 * @param ifindex
-	 * @param nbindex
-	 */
-	virtual void
-	neigh_deleted(
-			unsigned int ifindex,
-			uint16_t nbindex);
 
 
 public:
@@ -143,79 +156,173 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, cdptroute const& route) {
-		const rofcore::crtroute& rtroute =
-				rofcore::cnetlink::get_instance().
-							get_routes_in4(route.table_id).get_route(route.rtindex);
-
-		switch (rtroute.get_scope()) {
-#if 0
-		case RT_SCOPE_HOST: {
-			// nothing to do
-		} break;
-#endif
-		case RT_SCOPE_HOST:
-		case RT_SCOPE_LINK:
-		case RT_SCOPE_SITE:
-		case RT_SCOPE_UNIVERSE:
-		default: {
-			os << rofl::indent(0) << "<dptroute: >" 	<< std::endl;
-			//os << rofl::indent(2) << "<destination: " 	<< rtr.get_dst() 		<< " >" << std::endl;
-			os << rofl::indent(2) << "<prefix: " 		<< rtroute.get_prefixlen() 	<< " >" << std::endl;
-			//os << rofl::indent(2) << "<src " 			<< rtr.get_src() 		<< " >" << std::endl;
-			os << rofl::indent(2) << "<scope " 			<< rtroute.get_scope_s() 	<< " >" << std::endl;
-			os << rofl::indent(2) << "<table " 			<< rtroute.get_table_id_s() << " >" << std::endl;
-			os << rofl::indent(2) << "<rtindex: " 		<< route.rtindex 		<< " >" << std::endl;
-
-			rofl::indent i(2);
-			for (std::map<uint16_t, cdptnexthop>::const_iterator
-					it = route.dptnexthops.begin(); it != route.dptnexthops.end(); ++it) {
-				os << it->second;
-			}
-		} break;
-		}
+		os << rofcore::indent(0) << "<cdptroute ";
+		os << "rttblid:" << (unsigned int)route.get_rttblid() << " ";
+		os << "rtindex:" << route.get_rtindex() << " ";
+		os << " >" << std::endl;
+		rofcore::indent i(2);
+		os << route.get_nexthop_table();
 		return os;
 	};
-
-
-private:
-
-
-	/**
-	 *
-	 */
-	void
-	set_nexthops();
-
-
-	/**
-	 *
-	 */
-	void
-	delete_all_nexthops();
 
 private:
 
 	rofl::cdptid					dptid;
-	uint8_t					 		table_id;
+	uint8_t					 		rttblid;
 	unsigned int			 		rtindex;
-	rofl::openflow::cofflowmod		flowentry;
 
 	/* we make here one assumption: only one nexthop exists per neighbor and route
 	 * this should be valid under all circumstances
 	 */
-	std::map<uint16_t, cdptnexthop> 	dptnexthops; // key1:nbindex, value:dptnexthop instance
-
-
+	cnexthoptable 					nexthoptable;
 };
+
+
 
 class cdptroute_in4 : public cdptroute {
+public:
 
+	/**
+	 *
+	 */
+	cdptroute_in4() {};
+
+	/**
+	 *
+	 */
+	cdptroute_in4(
+			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid);
+
+	/**
+	 *
+	 */
+	cdptroute_in4(
+			const cdptroute_in4& dptroute) { *this = dptroute; };
+
+	/**
+	 *
+	 */
+	cdptroute_in4&
+	operator= (
+			const cdptroute_in4& dptroute) {
+		if (this == &dptroute)
+			return *this;
+		cdptroute::operator= (dptroute);
+		return *this;
+	};
+
+	/*
+	 *
+	 */
+	virtual
+	~cdptroute_in4() {};
+
+
+protected:
+
+
+	/**
+	 *
+	 */
+	virtual void
+	flow_mod_add(
+			uint8_t command = rofl::openflow::OFPFC_ADD);
+
+	/**
+	 *
+	 */
+	virtual void
+	flow_mod_delete();
+
+
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const cdptroute_in4& dptroute) {
+		const rofcore::crtroute& rtroute =
+				rofcore::cnetlink::get_instance().
+							get_routes_in4(dptroute.get_rttblid()).get_route(dptroute.get_rtindex());
+			os << rofl::indent(0) << "<dptroute_in4 >" 	<< std::endl;
+			rofl::indent i(2);
+			os << dynamic_cast<const cdptroute&>(dptroute);
+			os << rtroute;
+		return os;
+	};
 };
+
+
 
 class cdptroute_in6 : public cdptroute {
+public:
 
+	/**
+	 *
+	 */
+	cdptroute_in6() {};
+
+	/**
+	 *
+	 */
+	cdptroute_in6(
+			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid);
+
+	/**
+	 *
+	 */
+	cdptroute_in6(
+			const cdptroute_in6& dptroute) { *this = dptroute; };
+
+	/**
+	 *
+	 */
+	cdptroute_in6&
+	operator= (
+			const cdptroute_in6& dptroute) {
+		if (this == &dptroute)
+			return *this;
+		cdptroute::operator= (dptroute);
+		return *this;
+	};
+
+	/*
+	 *
+	 */
+	virtual
+	~cdptroute_in6() {};
+
+
+protected:
+
+
+	/**
+	 *
+	 */
+	virtual void
+	flow_mod_add(
+			uint8_t command = rofl::openflow::OFPFC_ADD);
+
+	/**
+	 *
+	 */
+	virtual void
+	flow_mod_delete();
+
+
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const cdptroute_in6& dptroute) {
+		const rofcore::crtroute& rtroute =
+				rofcore::cnetlink::get_instance().
+							get_routes_in6(dptroute.get_rttblid()).get_route(dptroute.get_rtindex());
+			os << rofl::indent(0) << "<dptroute_in6 >" 	<< std::endl;
+			rofl::indent i(2);
+			os << dynamic_cast<const cdptroute&>(dptroute);
+			os << rtroute;
+		return os;
+	};
 };
 
 };
 
-#endif /* CRTABLE_H_ */
+#endif /* CDPTROUTE_H_ */

@@ -416,13 +416,13 @@ public:
 	 *
 	 */
 	const crtnexthops_in4&
-	get_nxthops_in4() const { return nxthops; };
+	get_nexthops_in4() const { return nxthops; };
 
 	/**
 	 *
 	 */
 	crtnexthops_in4&
-	set_nxthops_in4() { return nxthops; };
+	set_nexthops_in4() { return nxthops; };
 
 	/**
 	 *
@@ -485,7 +485,7 @@ public:
 		{ rofl::indent i(4); os << route.get_ipv4_src(); }
 		os << rofl::indent(2) << "<pref-src: >" << std::endl;
 		{ rofl::indent i(4); os << route.get_ipv4_pref_src(); }
-		{ rofl::indent i(2); os << route.get_nxthops_in4(); };
+		{ rofl::indent i(2); os << route.get_nexthops_in4(); };
 
 		return os;
 	};
@@ -648,13 +648,13 @@ public:
 	 *
 	 */
 	const crtnexthops_in6&
-	get_nxthops_in6() const { return nxthops; };
+	get_nexthops_in6() const { return nxthops; };
 
 	/**
 	 *
 	 */
 	crtnexthops_in6&
-	set_nxthops_in6() { return nxthops; };
+	set_nexthops_in6() { return nxthops; };
 
 	/**
 	 *
@@ -717,7 +717,7 @@ public:
 		{ rofl::indent i(4); os << route.get_ipv6_src(); }
 		os << rofl::indent(2) << "<pref-src: >" << std::endl;
 		{ rofl::indent i(4); os << route.get_ipv6_pref_src(); }
-		{ rofl::indent i(2); os << route.get_nxthops_in6(); };
+		{ rofl::indent i(2); os << route.get_nexthops_in6(); };
 
 		return os;
 	};

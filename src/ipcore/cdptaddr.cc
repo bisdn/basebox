@@ -15,7 +15,7 @@ using namespace ipcore;
 void
 cdptaddr_in4::update()
 {
-	rofcore::logging::warn << "[ipcore][cdptaddr_in4][update] not implemented" << std::endl;
+	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
 }
 
 
@@ -102,7 +102,7 @@ cdptaddr_in4::flow_mod_delete()
 void
 cdptaddr_in6::update()
 {
-	rofcore::logging::warn << "[ipcore][cdptaddr_in6][update] not implemented" << std::endl;
+	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
 }
 
 

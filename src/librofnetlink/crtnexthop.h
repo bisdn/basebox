@@ -45,7 +45,6 @@ public:
 	 *
 	 */
 	crtnexthop() :
-		family(0),
 		weight(0),
 		ifindex(0),
 		flags(0),
@@ -72,7 +71,6 @@ public:
 		if (this == &rtnxthop)
 			return *this;
 
-		family	= rtnxthop.family;
 		weight 	= rtnxthop.weight;
 		ifindex	= rtnxthop.ifindex;
 		flags	= rtnxthop.flags;
@@ -87,7 +85,6 @@ public:
 	crtnexthop(
 			struct rtnl_route *route,
 			struct rtnl_nexthop *nxthop) :
-				family(0),
 				weight(0),
 				ifindex(0),
 				flags(0),
@@ -95,7 +92,6 @@ public:
 	{
 		rtnl_route_get(route);
 
-		family		= rtnl_route_get_family(route);
 		weight		= rtnl_route_nh_get_weight(nxthop);
 		ifindex		= rtnl_route_nh_get_ifindex(nxthop);
 		flags		= rtnl_route_nh_get_flags(nxthop);
@@ -109,8 +105,7 @@ public:
 	 */
 	bool
 	operator== (const crtnexthop& rtnexthop) {
-		return ((family 	== rtnexthop.family) 	&&
-				(weight 	== rtnexthop.weight) 	&&
+		return ((weight 	== rtnexthop.weight) 	&&
 				(ifindex 	== rtnexthop.ifindex)	&&
 				(flags 		== rtnexthop.flags) 	&&
 				(realms 	== rtnexthop.realms));
@@ -149,7 +144,6 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, crtnexthop const& nxthop) {
 		os << rofl::indent(0) << "<crtnexthop: >" << std::endl;
-		os << rofl::indent(2) << "<family: " 	<< (int)nxthop.family 			<< " >" << std::endl;
 		os << rofl::indent(2) << "<weight: " 	<< (int)nxthop.weight 			<< " >" << std::endl;
 		os << rofl::indent(2) << "<ifindex: " 	<< (int)nxthop.ifindex 			<< " >" << std::endl;
 		os << rofl::indent(2) << "<flags: " 	<< nxthop.flags 				<< " >" << std::endl;
@@ -159,7 +153,6 @@ public:
 
 private:
 
-	uint8_t			family;
 	uint8_t			weight;
 	int				ifindex;
 	unsigned int	flags;

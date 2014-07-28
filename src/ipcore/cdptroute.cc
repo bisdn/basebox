@@ -7,146 +7,66 @@
 
 #include <cdptroute.h>
 
-
 using namespace ipcore;
 
-
-cdptroute::cdptroute() :
-		table_id(0),
-		rtindex(0)
+cdptroute_in4::cdptroute_in4(
+		uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid) :
+			cdptroute(rttblid, rtindex, dptid)
 {
+	const rofcore::crtroute_in4& rtroute =
+			rofcore::cnetlink::get_instance().get_routes_in4(rttblid).get_route(rtindex);
 
-}
-
-
-
-cdptroute::~cdptroute()
-{
-
-}
-
-
-
-void
-cdptroute::install()
-{
-	route_created(table_id, rtindex);
-}
-
-
-
-void
-cdptroute::uninstall()
-{
-	delete_all_nexthops();
-
-	route_deleted(table_id, rtindex);
-}
-
-
-
-void
-cdptroute::set_nexthops()
-{
-	std::cerr << "dptroute::set_nexthops()" << std::endl;
-
-	rofcore::crtroute& rtr = rofcore::cnetlink::get_instance().get_route(table_id, rtindex);
-
-	std::map<unsigned int, crtnexthop>::iterator it;
-	for (it = rtr.get_nexthops().begin(); it != rtr.get_nexthops().end(); ++it) {
-		crtnexthop& rtnh = (*it);
-		try {
-
-			crtlink& rtl = cnetlink::get_instance().get_link(rtnh.get_ifindex());
-
-			crtneigh& rtn = rtl.get_neigh(rtnh.get_gateway());
-
-			uint16_t nbindex = rtl.get_neigh_index(rtn);
-
-			// dptnexthop instance already active? yes => continue with next next-hop
-			if (dptnexthops.find(nbindex) != dptnexthops.end())
-				continue;
-
-			// no => create new dptnexthop instance
-			dptnexthops[nbindex] = cdptnexthop(
-										rofbase,
-										dpt,
-										cdptlink::get_link(rtnh.get_ifindex()).get_of_port_no(),
-										/*of_table_id=*/2,
-										rtnh.get_ifindex(),
-										nbindex,
-										rtr.get_dst(),
-										rtr.get_mask());
-
-			// and activate its FlowMod (installs FlowMod on data path element)
-			dptnexthops[nbindex].install();
-
-			std::cerr << "dptroute::set_nexthops() => " << dptnexthops[nbindex] << std::endl;
-
-		} catch (eNetLinkNotFound& e) {
-			// oops, link assigned to next hop not found, skip this one for now
-			continue;
-		} catch (eRtLinkNotFound& e){
-			// no valid neighbour entry found for gateway specified in next hop, skip this one for now
-			continue;
-		} catch (eDptLinkNotFound& e) {
-			// no dptlink instance found for interface referenced by ifindex
-			continue;
-		}
+	for (std::map<unsigned int, rofcore::crtnexthop_in4>::const_iterator
+			it = rtroute.get_nexthops_in4().get_nexthops_in4().begin();
+					it != rtroute.get_nexthops_in4().get_nexthops_in4().end(); ++it) {
+		unsigned int nhindex = it->first;
+		set_nexthop_table().add_nexthop_in4(nhindex) = cdptnexthop_in4(rttblid, rtindex, nhindex, dptid);
 	}
 }
 
 
 
 void
-cdptroute::delete_all_nexthops()
-{
-	std::map<uint16_t, cdptnexthop>::iterator it;
-	for (it = dptnexthops.begin(); it != dptnexthops.end(); ++it) {
-		it->second.uninstall();
-	}
-	dptnexthops.clear();
-}
-
-
-
-void
-cdptroute::addr_deleted(
-			unsigned int ifindex,
-			uint16_t adindex)
+cdptroute_in4::flow_mod_add(uint8_t command)
 {
 	try {
-		std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex << std::endl << *this;
+		set_nexthop_table().install();
 
-		crtaddr& rta = cnetlink::get_instance().get_link(ifindex).get_addr(adindex);
+		const rofcore::crtroute_in4& rtroute =
+				rofcore::cnetlink::get_instance().get_routes_in4(get_rttblid()).get_route(get_rtindex());
 
-		std::cerr << "dptroute::addr_deleted() => ifindex:" << ifindex << std::endl << rta;
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
+		rofl::openflow::cofflowmod fm(dpt.get_version());
 
-		if ((RT_SCOPE_LINK != cnetlink::get_instance().get_route(table_id, rtindex).get_scope()) &&
-				(RT_SCOPE_HOST != cnetlink::get_instance().get_route(table_id, rtindex).get_scope())) {
+		fm.set_command(command);
+		fm.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fm.set_idle_timeout(0);
+		fm.set_hard_timeout(0);
+		fm.set_priority(0x8000 + (rtroute.get_prefixlen() << 8));
+		fm.set_table_id(1);	// FIXME: check for first table-id in data path
+		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
-			std::map<uint16_t, cdptnexthop>::iterator it;
-restart:
-			for (it = dptnexthops.begin(); it != dptnexthops.end(); ++it) {
-				cdptnexthop& nhop = it->second;
-				if ((nhop.get_ifindex() == ifindex) &&
-						((nhop.get_gateway() & rta.get_mask()) == (rta.get_local_addr() & rta.get_mask()))) {
-					it->second.uninstall();
-					dptnexthops.erase(it->first);
-					goto restart;
-				}
-			}
+		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+		fm.set_match().set_ipv4_dst(rtroute.get_ipv4_dst(), rtroute.get_ipv4_mask());
 
-			if (dptnexthops.empty()) {
-				std::cerr << "dptroute::addr_deleted() => ifindex=" << ifindex
-						<< "all next hops lost, deleting route" << std::endl;
-				route_deleted(table_id, rtindex);
-			}
-		}
+		fm.set_instructions().add_inst_goto_table().set_table_id(2);
 
-	} catch (eNetLinkNotFound& e) {
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
-	} catch (eRtLinkNotFound& e) {
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::debug << "[dptroute_in4] route create - dpt instance not found: " << e.what() << std::endl;
+
+	} catch (std::out_of_range& e) {
+		rofcore::logging::debug << "[dptroute_in4] route create - routing table not found: " << e.what() << std::endl;
+
+	} catch (rofcore::crtroute::eRtRouteNotFound& e) {
+		rofcore::logging::debug << "[dptroute_in4] route create - route index not found: " << e.what() << std::endl;
+
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::debug << "[dptroute_in4] route create - OFP channel congested: " << e.what() << std::endl;
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::debug << "[dptroute_in4] route create - generic error caught: " << e.what() << std::endl;
 
 	}
 }
@@ -154,305 +74,157 @@ restart:
 
 
 void
-cdptroute::route_created(
-		uint8_t table_id,
-		unsigned int rtindex)
+cdptroute_in4::flow_mod_delete()
 {
 	try {
-		if ((this->table_id != table_id) || (this->rtindex != rtindex))
-			return;
+		set_nexthop_table().uninstall();
 
-#if 1
-		std::cerr << "dptroute::route_created() " << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-#endif
+		const rofcore::crtroute_in4& rtroute =
+				rofcore::cnetlink::get_instance().get_routes_in4(get_rttblid()).get_route(get_rtindex());
 
-		crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
+		rofl::openflow::cofflowmod fm(dpt.get_version());
 
-		set_nexthops();
+		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
+		fm.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fm.set_idle_timeout(0);
+		fm.set_hard_timeout(0);
+		fm.set_priority(0x8000 + (rtroute.get_prefixlen() << 8));
+		fm.set_table_id(1);	// FIXME: check for first table-id in data path
+		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
-		flowentry = rofl::openflow::cofflowmod(dpt->get_version());
+		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+		fm.set_match().set_ipv4_dst(rtroute.get_ipv4_dst(), rtroute.get_ipv4_mask());
 
-		flowentry.set_command(rofl::openflow::OFPFC_ADD);
-		flowentry.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt->get_version()));
-		flowentry.set_idle_timeout(0);
-		flowentry.set_hard_timeout(0);
-		flowentry.set_priority(0x8000 + (rtr.get_prefixlen() << 8));
-#if 0
-		switch (table_id) {
-		case RT_TABLE_LOCAL: {
-			flowentry.set_table_id(0);
-			flowentry.instructions.next() = rofl::cofinst_apply_actions(dpt->get_version());
-			flowentry.instructions.back().actions.next() = rofl::cofaction_output(dpt->get_version(), OFPP12_CONTROLLER);
-		} break;
-		default: {
-#endif
-			flowentry.set_table_id(1);
-			flowentry.set_flags(rofl::openflow12::OFPFF_SEND_FLOW_REM);
-			flowentry.set_instructions().add_inst_goto_table().set_table_id(2);
-#if 0
-		} break;
-		}
-#endif
-		//flowentry.set_table_id(1);			// FIXME: check for first table-id in data path
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
-		switch (rtr.get_family()) {
-		case AF_INET: {
-			flowentry.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-			flowentry.set_match().set_ipv4_dst(rtr.get_dst(), rtr.get_mask());
-		} break;
-		case AF_INET6: {
-			flowentry.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-			flowentry.set_match().set_ipv6_dst(rtr.get_dst(), rtr.get_mask());
-		} break;
-		}
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::debug << "[dptroute_in4] route delete - dpt instance not found: " << e.what() << std::endl;
 
+	} catch (std::out_of_range& e) {
+		rofcore::logging::debug << "[dptroute_in4] route delete - routing table not found: " << e.what() << std::endl;
 
-		//fprintf(stderr, "dptroute::route_created() => flowentry: %s\n", flowentry.c_str());
+	} catch (rofcore::crtroute::eRtRouteNotFound& e) {
+		rofcore::logging::debug << "[dptroute_in4] route delete - route index not found: " << e.what() << std::endl;
 
-		dpt->send_flow_mod_message(rofl::cauxid(0), flowentry);
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::debug << "[dptroute_in4] route delete - OFP channel congested: " << e.what() << std::endl;
 
-	} catch (eNetLinkNotFound& e) {
-		std::cerr << "dptroute::route_created() crtroute object not found" << std::endl;
-
-	} catch (eRtRouteNotFound& e) {
-		std::cerr << "dptroute::route_created() crtnexthop object not found" << std::endl;
+	} catch (std::runtime_error& e) {
+		rofcore::logging::debug << "[dptroute_in4] route delete - generic error caught: " << e.what() << std::endl;
 
 	}
 }
 
 
 
-void
-cdptroute::route_updated(
-		uint8_t table_id,
-		unsigned int rtindex)
+
+cdptroute_in6::cdptroute_in6(
+		uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid) :
+			cdptroute(rttblid, rtindex, dptid)
 {
-	if ((this->table_id != table_id) || (this->rtindex != rtindex))
-		return;
+	const rofcore::crtroute_in6& rtroute =
+			rofcore::cnetlink::get_instance().get_routes_in6(rttblid).get_route(rtindex);
 
-#if 1
-	fprintf(stderr, "dptroute::route_updated() rtindex=%d => ", rtindex);
-	std::cerr << cnetlink::get_instance().get_route(table_id, rtindex) << std::endl;
-#endif
-}
-
-
-
-void
-cdptroute::route_deleted(
-		uint8_t table_id,
-		unsigned int rtindex)
-{
-	if ((this->table_id != table_id) || (this->rtindex != rtindex))
-		return;
-
-#if 1
-	fprintf(stderr, "dptroute::route_deleted() table_id=%d rtindex=%d\n", table_id, rtindex);
-#endif
-
-	try {
-		flowentry.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-
-		dpt->send_flow_mod_message(rofl::cauxid(0), flowentry);
-
-	} catch (rofl::eRofBaseNotConnected& e) {
-
-	}
-
-	//fprintf(stderr, "\n\n\n FLOWENTRY => %s\n\n\n\n", flowentry.c_str());
-
-	delete_all_nexthops();
-}
-
-
-
-void
-cdptroute::neigh_created(unsigned int ifindex, uint16_t nbindex)
-{
-	//std::cerr << "dptroute::neigh_created() => ifindex=" << ifindex
-	//		<< " nbindex=" << (unsigned int)nbindex << std::endl;
-
-	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
-	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
-
-	//std::cerr << "dptroute::neigh_created() => " << rtn << std::endl;
-
-	// do for all next hops defined in crtroute ...
-	std::vector<crtnexthop>::iterator it;
-	for (it = rtr.get_nexthops().begin(); it != rtr.get_nexthops().end(); ++it) {
-		crtnexthop& rtnh = (*it);
-
-		// nexthop and neighbour must be bound to same link
-		if (rtnh.get_ifindex() != rtn.get_ifindex()) {
-			//fprintf(stderr, "rtnh.get_ifindex(%d) != rtn.get_ifindex(%d)\n",
-			//		rtnh.get_ifindex(), rtn.get_ifindex());
-			continue;
-		}
-
-		// gateway in nexthop must match dst address in neighbor instance
-		if (rtnh.get_gateway() != rtn.get_dst()) {
-			//std::cerr << "rtnh.get_gateway(" << rtnh.get_gateway() << ")!="
-			//		<< "rtn.get_dst(" << rtn.get_dst() << ")" << std::endl;
-			continue;
-		}
-
-		// state of neighbor instance must be REACHABLE, PERMANENT, or NOARP
-		switch (rtn.get_state()) {
-		case NUD_INCOMPLETE: 	{ fprintf(stderr, "NUD_INCOMPLETE\n"); } 	continue;
-		case NUD_DELAY: 		{ fprintf(stderr, "NUD_DELAY\n"); } 		continue;
-		case NUD_PROBE: 		{ fprintf(stderr, "NUD_PROBE\n"); } 		continue;
-		case NUD_FAILED: 		{ fprintf(stderr, "NUD_FAILED\n"); } 		continue;
-
-		case NUD_STALE:
-		case NUD_NOARP:
-		case NUD_REACHABLE:
-		case NUD_PERMANENT: {
-			/* go on and create entry */
-		} break;
-		}
-
-		// lookup the dptlink instance mapped to crtlink
-		try {
-			if (dptnexthops.find(nbindex) != dptnexthops.end()) {
-				dptnexthops[nbindex].uninstall();
-			}
-			dptnexthops[nbindex] = cdptnexthop(
-										rofbase,
-										dpt,
-										cdptlink::get_link(rtnh.get_ifindex()).get_of_port_no(),
-										/*of_table_id=*/2,
-										ifindex,
-										nbindex,
-										rtr.get_dst(),
-										rtr.get_mask());
-			dptnexthops[nbindex].install();
-
-			std::cerr << "dptroute::neigh_created() => " << dptnexthops[nbindex] << std::endl;
-
-		} catch (eDptLinkNotFound& e) {
-
-		}
+	for (std::map<unsigned int, rofcore::crtnexthop_in6>::const_iterator
+			it = rtroute.get_nexthops_in6().get_nexthops_in6().begin();
+					it != rtroute.get_nexthops_in6().get_nexthops_in6().end(); ++it) {
+		unsigned int nhindex = it->first;
+		set_nexthop_table().add_nexthop_in6(nhindex) = cdptnexthop_in6(rttblid, rtindex, nhindex, dptid);
 	}
 }
 
 
 
 void
-cdptroute::neigh_updated(unsigned int ifindex, uint16_t nbindex)
+cdptroute_in6::flow_mod_add(uint8_t command)
 {
 	try {
-		cdptlink::get_link(ifindex);
+		set_nexthop_table().install();
 
-		crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
-		crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
+		const rofcore::crtroute_in6& rtroute =
+				rofcore::cnetlink::get_instance().get_routes_in6(get_rttblid()).get_route(get_rtindex());
 
-		std::cerr << "dptroute::neigh_updated() => " << rtn << std::endl;
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
+		rofl::openflow::cofflowmod fm(dpt.get_version());
 
-		// TODO: check status update and notify dptnexthop instance
+		fm.set_command(command);
+		fm.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fm.set_idle_timeout(0);
+		fm.set_hard_timeout(0);
+		fm.set_priority(0x8000 + (rtroute.get_prefixlen() << 8));
+		fm.set_table_id(1);	// FIXME: check for first table-id in data path
+		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
-		// do for all next hops defined in crtroute ...
-		std::vector<crtnexthop>::iterator it;
-		for (it = rtr.get_nexthops().begin(); it != rtr.get_nexthops().end(); ++it) {
-			crtnexthop& rtnh = (*it);
+		fm.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+		fm.set_match().set_ipv6_dst(rtroute.get_ipv6_dst(), rtroute.get_ipv6_mask());
 
-			// nexthop and neighbour must be bound to same link
-			if (rtnh.get_ifindex() != rtn.get_ifindex()) {
-				fprintf(stderr, "rtnh.get_ifindex(%d) != rtn.get_ifindex(%d)\n",
-						rtnh.get_ifindex(), rtn.get_ifindex());
-				continue;
-			}
+		fm.set_instructions().add_inst_goto_table().set_table_id(2);
 
-			// gateway in nexthop must match dst address in neighbor instance
-			if (rtnh.get_gateway() != rtn.get_dst()) {
-				std::cerr << "rtnh.get_gateway(" << rtnh.get_gateway() << ")!="
-							<< "rtn.get_dst(" << rtn.get_dst() << ")" << std::endl;
-				continue;
-			}
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
-			// state of neighbor instance must be REACHABLE, PERMANENT, or NOARP
-			switch (rtn.get_state()) {
-			case NUD_INCOMPLETE:
-			case NUD_DELAY:
-			case NUD_PROBE:
-			case NUD_FAILED: {
-				/* go on and delete entry */
-				if (dptnexthops.find(nbindex) == dptnexthops.end())
-					continue;
-				std::cerr << "dptroute::neigh_updated() DELETE => " << dptnexthops[nbindex] << std::endl;
-				dptnexthops[nbindex].uninstall();
-				dptnexthops.erase(nbindex);
-			} break;
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::debug << "[dptroute_in6] route create - dpt instance not found: " << e.what() << std::endl;
 
-			case NUD_STALE:
-			case NUD_NOARP:
-			case NUD_REACHABLE:
-			case NUD_PERMANENT: {
-				if (dptnexthops.find(nbindex) != dptnexthops.end()) {
-					dptnexthops[nbindex].uninstall();
-					dptnexthops.erase(nbindex);
-				}
+	} catch (std::out_of_range& e) {
+		rofcore::logging::debug << "[dptroute_in6] route create - routing table not found: " << e.what() << std::endl;
 
-				std::cerr << "dptroute::neigh_updated() ADD => " << dptnexthops[nbindex] << std::endl;
-				dptnexthops[nbindex] = cdptnexthop(
-											rofbase,
-											dpt,
-											cdptlink::get_link(rtnh.get_ifindex()).get_of_port_no(),
-											/*of_table_id=*/2,
-											ifindex,
-											nbindex,
-											rtr.get_dst(),
-											rtr.get_mask());
-				dptnexthops[nbindex].install();
+	} catch (rofcore::crtroute::eRtRouteNotFound& e) {
+		rofcore::logging::debug << "[dptroute_in6] route create - route index not found: " << e.what() << std::endl;
 
-			} break;
-			}
-		}
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::debug << "[dptroute_in6] route create - OFP channel congested: " << e.what() << std::endl;
 
-	} catch (eDptLinkNotFound& e) {
-		// this happens, when an update for a non-data path interface is received
-	} catch (eNetLinkNotFound& e) {
-		// ...
+	} catch (std::runtime_error& e) {
+		rofcore::logging::debug << "[dptroute_in6] route create - generic error caught: " << e.what() << std::endl;
+
 	}
 }
 
 
 
 void
-cdptroute::neigh_deleted(unsigned int ifindex, uint16_t nbindex)
+cdptroute_in6::flow_mod_delete()
 {
-	//std::cerr << "dptroute::neigh_deleted() => ifindex=" << ifindex
-	//		<< " nbindex=" << (unsigned int)nbindex << std::endl;
+	try {
+		set_nexthop_table().uninstall();
 
-	crtroute& rtr = cnetlink::get_instance().get_route(table_id, rtindex);
-	crtneigh& rtn = cnetlink::get_instance().get_link(ifindex).get_neigh(nbindex);
+		const rofcore::crtroute_in6& rtroute =
+				rofcore::cnetlink::get_instance().get_routes_in6(get_rttblid()).get_route(get_rtindex());
 
-	// do for all next hops defined in crtroute ...
-	std::vector<crtnexthop>::iterator it;
-	for (it = rtr.get_nexthops().begin(); it != rtr.get_nexthops().end(); ++it) {
-		crtnexthop& rtnh = (*it);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
+		rofl::openflow::cofflowmod fm(dpt.get_version());
 
-		// nexthop and neighbour must be bound to same link
-		if (rtnh.get_ifindex() != rtn.get_ifindex())
-			continue;
+		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
+		fm.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fm.set_idle_timeout(0);
+		fm.set_hard_timeout(0);
+		fm.set_priority(0x8000 + (rtroute.get_prefixlen() << 8));
+		fm.set_table_id(1);	// FIXME: check for first table-id in data path
+		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
-		// gateway in nexthop must match dst address in neighbor instance
-		if (rtnh.get_gateway() != rtn.get_dst())
-			continue;
+		fm.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+		fm.set_match().set_ipv6_dst(rtroute.get_ipv6_dst(), rtroute.get_ipv6_mask());
 
-		// do we have to check here rtn.get_state() once again?
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
-		if (dptnexthops.find(nbindex) == dptnexthops.end())
-			continue;
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::debug << "[dptroute_in6] route delete - dpt instance not found: " << e.what() << std::endl;
 
-		std::cerr << "dptroute::neigh_deleted() => " << dptnexthops[nbindex] << std::endl;
+	} catch (std::out_of_range& e) {
+		rofcore::logging::debug << "[dptroute_in6] route delete - routing table not found: " << e.what() << std::endl;
 
-		dptnexthops[nbindex].uninstall();
-		dptnexthops.erase(nbindex);
+	} catch (rofcore::crtroute::eRtRouteNotFound& e) {
+		rofcore::logging::debug << "[dptroute_in6] route delete - route index not found: " << e.what() << std::endl;
+
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::debug << "[dptroute_in6] route delete - OFP channel congested: " << e.what() << std::endl;
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::debug << "[dptroute_in6] route delete - generic error caught: " << e.what() << std::endl;
+
 	}
 }
-
-
-
 
 
 

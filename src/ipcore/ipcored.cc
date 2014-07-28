@@ -43,14 +43,13 @@ main(int argc, char** argv)
 	} else {
 		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
 	}
-	ipcore::cipcore core(versionbitmap);
 
 
 	// prepare control socket and listen for incoming control connections
 	enum rofl::csocket::socket_type_t socket_type = rofl::csocket::SOCKET_TYPE_PLAIN;
 	rofl::cparams socket_params = rofl::csocket::get_default_params(socket_type);
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string() = env_parser.get_arg("port");
-	core.rpc_listen_for_dpts(socket_type, socket_params);
+	ipcore::cipcore::get_instance(versionbitmap).rpc_listen_for_dpts(socket_type, socket_params);
 
 
 	// enter main loop

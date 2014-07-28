@@ -57,6 +57,20 @@ public:
 	/**
 	 *
 	 */
+	const std::map<unsigned int, crtnexthop_in4>&
+	get_nexthops_in4() const { return rtnexthops; };
+
+
+	/**
+	 *
+	 */
+	std::map<unsigned int, crtnexthop_in4>&
+	set_nexthops_in4() { return rtnexthops; };
+
+
+	/**
+	 *
+	 */
 	void
 	clear() { rtnexthops.clear(); };
 
@@ -111,52 +125,52 @@ public:
 	 *
 	 */
 	crtnexthop_in4&
-	add_nexthop(unsigned int nbindex) {
-		if (rtnexthops.find(nbindex) != rtnexthops.end()) {
-			rtnexthops.erase(nbindex);
+	add_nexthop(unsigned int nhindex) {
+		if (rtnexthops.find(nhindex) != rtnexthops.end()) {
+			rtnexthops.erase(nhindex);
 		}
-		return rtnexthops[nbindex];
+		return rtnexthops[nhindex];
 	};
 
 	/**
 	 *
 	 */
 	crtnexthop_in4&
-	set_nexthop(unsigned int nbindex) {
-		if (rtnexthops.find(nbindex) == rtnexthops.end()) {
-			rtnexthops[nbindex];
+	set_nexthop(unsigned int nhindex) {
+		if (rtnexthops.find(nhindex) == rtnexthops.end()) {
+			rtnexthops[nhindex];
 		}
-		return rtnexthops[nbindex];
+		return rtnexthops[nhindex];
 	};
 
 	/**
 	 *
 	 */
 	const crtnexthop_in4&
-	get_nexthop(unsigned int nbindex) const {
-		if (rtnexthops.find(nbindex) == rtnexthops.end()) {
-			throw crtnexthop::eRtNextHopNotFound("crtnexthops::get_link() / error: nbindex not found");
+	get_nexthop(unsigned int nhindex) const {
+		if (rtnexthops.find(nhindex) == rtnexthops.end()) {
+			throw crtnexthop::eRtNextHopNotFound("crtnexthops::get_link() / error: nhindex not found");
 		}
-		return rtnexthops.at(nbindex);
+		return rtnexthops.at(nhindex);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_nexthop(unsigned int nbindex) {
-		if (rtnexthops.find(nbindex) == rtnexthops.end()) {
+	drop_nexthop(unsigned int nhindex) {
+		if (rtnexthops.find(nhindex) == rtnexthops.end()) {
 			return;
 		}
-		rtnexthops.erase(nbindex);
+		rtnexthops.erase(nhindex);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_nexthop(unsigned int nbindex) const {
-		return (not (rtnexthops.find(nbindex) == rtnexthops.end()));
+	has_nexthop(unsigned int nhindex) const {
+		return (not (rtnexthops.find(nhindex) == rtnexthops.end()));
 	};
 
 public:
@@ -221,6 +235,20 @@ public:
 	/**
 	 *
 	 */
+	const std::map<unsigned int, crtnexthop_in6>&
+	get_nexthops_in6() const { return rtnexthops; };
+
+
+	/**
+	 *
+	 */
+	std::map<unsigned int, crtnexthop_in6>&
+	set_nexthops_in6() { return rtnexthops; };
+
+
+	/**
+	 *
+	 */
 	void
 	clear() { rtnexthops.clear(); };
 
@@ -276,52 +304,52 @@ public:
 	 *
 	 */
 	crtnexthop_in6&
-	add_nexthop(unsigned int nbindex) {
-		if (rtnexthops.find(nbindex) != rtnexthops.end()) {
-			rtnexthops.erase(nbindex);
+	add_nexthop(unsigned int nhindex) {
+		if (rtnexthops.find(nhindex) != rtnexthops.end()) {
+			rtnexthops.erase(nhindex);
 		}
-		return rtnexthops[nbindex];
+		return rtnexthops[nhindex];
 	};
 
 	/**
 	 *
 	 */
 	crtnexthop_in6&
-	set_nexthop(unsigned int nbindex) {
-		if (rtnexthops.find(nbindex) == rtnexthops.end()) {
-			rtnexthops[nbindex];
+	set_nexthop(unsigned int nhindex) {
+		if (rtnexthops.find(nhindex) == rtnexthops.end()) {
+			rtnexthops[nhindex];
 		}
-		return rtnexthops[nbindex];
+		return rtnexthops[nhindex];
 	};
 
 	/**
 	 *
 	 */
 	const crtnexthop_in6&
-	get_nexthop(unsigned int nbindex) const {
-		if (rtnexthops.find(nbindex) == rtnexthops.end()) {
-			throw crtnexthop::eRtNextHopNotFound("crtnexthops::get_nexthop() / error: nbindex not found");
+	get_nexthop(unsigned int nhindex) const {
+		if (rtnexthops.find(nhindex) == rtnexthops.end()) {
+			throw crtnexthop::eRtNextHopNotFound("crtnexthops::get_nexthop() / error: nhindex not found");
 		}
-		return rtnexthops.at(nbindex);
+		return rtnexthops.at(nhindex);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_nexthop(unsigned int nbindex) {
-		if (rtnexthops.find(nbindex) == rtnexthops.end()) {
+	drop_nexthop(unsigned int nhindex) {
+		if (rtnexthops.find(nhindex) == rtnexthops.end()) {
 			return;
 		}
-		rtnexthops.erase(nbindex);
+		rtnexthops.erase(nhindex);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_nexthop(unsigned int nbindex) const {
-		return (not (rtnexthops.find(nbindex) == rtnexthops.end()));
+	has_nexthop(unsigned int nhindex) const {
+		return (not (rtnexthops.find(nhindex) == rtnexthops.end()));
 	};
 
 public:

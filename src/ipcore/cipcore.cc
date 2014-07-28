@@ -2,12 +2,27 @@
 
 using namespace ipcore;
 
-std::map<rofl::cdptid, cipcore*> cipcore::ipcores;
-
 std::string cipcore::script_path_dpt_open 	= std::string("/var/lib/ipcore/dpath-open.sh");
 std::string cipcore::script_path_dpt_close 	= std::string("/var/lib/ipcore/dpath-close.sh");
 std::string cipcore::script_path_port_up 	= std::string("/var/lib/ipcore/port-up.sh");
 std::string cipcore::script_path_port_down 	= std::string("/var/lib/ipcore/port-down.sh");
+
+
+/*static*/cipcore* cipcore::__ipcore__ = (cipcore*)NULL;
+
+
+/*static*/
+cipcore&
+cipcore::get_instance(
+		const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap)
+{
+	if (NULL == cipcore::__ipcore__) {
+		cipcore::__ipcore__ = new cipcore(versionbitmap);
+	}
+	return *(cipcore::__ipcore__);
+}
+
+
 
 cipcore::cipcore(
 		const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap) :

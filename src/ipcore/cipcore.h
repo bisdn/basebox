@@ -46,21 +46,18 @@ class cipcore :
 		public rofl::crofbase,
 		public rofcore::cnetlink_subscriber
 {
+	static cipcore* __ipcore__;
+
 public:
 
-
 	/**
 	 *
 	 */
-	cipcore(
-			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap);
+	static cipcore&
+	get_instance(
+			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap =
+					rofl::openflow::cofhello_elem_versionbitmap());
 
-
-	/**
-	 *
-	 */
-	virtual
-	~cipcore();
 
 public:
 
@@ -157,6 +154,41 @@ public:
 	route_in6_deleted(uint8_t table_id, unsigned int rtindex);
 
 
+	// IPv4 neighbors
+	virtual void
+	neigh_in4_created(unsigned int ifindex, uint16_t nbindex);
+
+	virtual void
+	neigh_in4_updated(unsigned int ifindex, uint16_t nbindex);
+
+	virtual void
+	neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex);
+
+	// IPv6 neighbors
+	virtual void
+	neigh_in6_created(unsigned int ifindex, uint16_t nbindex);
+
+	virtual void
+	neigh_in6_updated(unsigned int ifindex, uint16_t nbindex);
+
+	virtual void
+	neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex);
+
+
+private:
+
+	/**
+	 *
+	 */
+	cipcore(
+			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap);
+
+
+	/**
+	 *
+	 */
+	virtual
+	~cipcore();
 
 private:
 
@@ -209,8 +241,6 @@ public:
 	};
 
 private:
-
-	static std::map<rofl::cdptid, cipcore*> ipcores;
 
 	static const unsigned int __ETH_FRAME_LEN = 9018; // including jumbo frames
 

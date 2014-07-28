@@ -38,7 +38,7 @@ public:
 	 *
 	 */
 	cdptnexthop() :
-		ofp_port_no(0), table_id(0), ifindex(0), nbindex(0) {};
+				rttblid(0), rtindex(0), nhindex(0) {};
 
 
 	/**
@@ -62,10 +62,9 @@ public:
 		if (this == &nexthop)
 			return *this;
 		dptid	 	= nexthop.dptid;
-		ofp_port_no = nexthop.ofp_port_no;
-		table_id 	= nexthop.table_id;
-		ifindex	 	= nexthop.ifindex;
-		nbindex	 	= nexthop.nbindex;
+		rttblid 	= nexthop.rttblid;
+		rtindex	 	= nexthop.rtindex;
+		nhindex	 	= nexthop.nhindex;
 		return *this;
 	};
 
@@ -73,12 +72,11 @@ public:
 	 *
 	 */
 	cdptnexthop(
-			const rofl::cdptid& dptid, uint32_t ofp_port_no, int ifindex, uint16_t nhindex, uint8_t table_id) :
+			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid) :
 				dptid(dptid),
-				ofp_port_no(ofp_port_no),
-				table_id(table_id),
-				ifindex(ifindex),
-				nbindex(nhindex) {};
+				rttblid(rttableid),
+				rtindex(rtindex),
+				nhindex(nhindex) {};
 
 public:
 
@@ -118,56 +116,20 @@ public:
 	/**
 	 *
 	 */
-	void
-	set_dptid(const rofl::cdptid& dptid) { this->dptid = dptid; };
-
-	/**
-	 *
-	 */
-	uint32_t
-	get_ofp_port_no() const { return ofp_port_no; };
-
-	/**
-	 *
-	 */
-	void
-	set_ofp_port_no(uint32_t ofp_port_no) { this->ofp_port_no = ofp_port_no; };
-
-	/**
-	 *
-	 */
 	uint8_t
-	get_table_id() const { return table_id; };
+	get_rttblid() const { return rttblid; };
 
 	/**
 	 *
 	 */
-	void
-	set_table_id(uint8_t table_id) { this->table_id = table_id; };
+	unsigned int
+	get_rtindex() const { return rtindex; };
 
 	/**
 	 *
 	 */
-	int
-	get_ifindex() const { return ifindex; };
-
-	/**
-	 *
-	 */
-	void
-	set_ifindex(int ifinfex) { this->ifindex = ifindex; };
-
-	/**
-	 *
-	 */
-	uint16_t
-	get_nbindex() const { return nbindex; };
-
-	/**
-	 *
-	 */
-	void
-	set_nbindex(uint16_t nhindex) { this->nbindex = nhindex; };
+	unsigned int
+	get_nhindex() const { return nhindex; };
 
 private:
 
@@ -191,32 +153,25 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (std::ostream& os, cdptnexthop const& neigh) {
+	operator<< (std::ostream& os, const cdptnexthop& nexthop) {
 		try {
 			os << rofl::indent(0) << "<dptnexthop: >" 	<< std::endl;
 
-			const rofcore::crtneigh_in4& rtn = rofcore::cnetlink::get_instance().get_links().
-									get_link(neigh.ifindex).get_neighs_in4().get_neigh(neigh.nbindex);
-			os << rofl::indent(0) << "<dptnexthop: >" 	<< std::endl;
-			os << rofl::indent(2) << "<destination: " 	<< rtn.get_dst() << " >" << std::endl;
-			os << rofl::indent(2) << "<device: " 		<< rofcore::cnetlink::get_instance().get_links().get_link(neigh.ifindex).get_devname() << " >" << std::endl;
-			os << rofl::indent(2) << "<hwaddr: " 		<< rtn.get_lladdr() << " >" << std::endl;
-			os << rofl::indent(2) << "<state: " 		<< rtn.get_state() << " >" << std::endl;
-			os << rofl::indent(2) << "<table-id: " 		<< (unsigned int)neigh.table_id << " >" << std::endl;
+			const rofcore::crtnexthop_in4& rtn =
+					rofcore::cnetlink::get_instance().get_routes_in4(nexthop.get_rttblid()).
+						get_route(nexthop.get_rtindex()).get_nexthops_in4().get_nexthop(nexthop.get_nhindex());
 
-		} catch (rofcore::eNetLinkNotFound& e) {
+			os << rofl::indent(0) << "<dptnexthop: >" 	<< std::endl;
+			os << rofl::indent(2) << "<weight: " 	<< rtn.get_weight() 	<< " >" << std::endl;
+			os << rofl::indent(2) << "<ifindex: " 	<< rtn.get_ifindex() 	<< " >" << std::endl;
+			os << rofl::indent(2) << "<realms: " 	<< rtn.get_realms() 	<< " >" << std::endl;
+			os << rofl::indent(2) << "<flags: " 	<< rtn.get_flags() 		<< " >" << std::endl;
+
+		} catch (...) {
 			os << "<dptnexthop: ";
-				os << "ifindex:" << neigh.ifindex << " ";
-				os << "nhindex:" << (unsigned int)neigh.nbindex << " ";
-				os << "ofportno:" << (unsigned int)neigh.ofp_port_no << " ";
-				os << "oftableid: " << (unsigned int)neigh.table_id << " ";
-			os << ">";
-		} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-			os << "<dptnexthop: ";
-				os << "ifindex:" << neigh.ifindex << " ";
-				os << "nhindex:" << (unsigned int)neigh.nbindex << " ";
-				os << "ofportno:" << (unsigned int)neigh.ofp_port_no << " ";
-				os << "oftableid: " << (unsigned int)neigh.table_id << " ";
+				os << "rttableid:" 	<< nexthop.get_rttblid() << " ";
+				os << "rtindex:" 	<< nexthop.get_rtindex() 	<< " ";
+				os << "nhindex:" 	<< nexthop.get_nhindex() 	<< " ";
 			os << ">";
 		}
 		return os;
@@ -225,11 +180,9 @@ public:
 private:
 
 	rofl::cdptid				dptid;
-	uint32_t					ofp_port_no;
-	uint8_t						table_id;
-	int							ifindex;
-	int							rtindex;
-	uint16_t					nbindex;
+	uint8_t						rttblid; // routing table id, not OFP related
+	unsigned int				rtindex;
+	unsigned int				nhindex;
 };
 
 
@@ -247,13 +200,6 @@ public:
 	 *
 	 */
 	cdptnexthop_in4(
-			const rofl::cdptid& dptid, uint32_t ofp_port_no, int ifindex, uint16_t nhindex, uint8_t table_id) :
-				cdptnexthop(dptid, ofp_port_no, ifindex, nhindex, table_id) {};
-
-	/**
-	 *
-	 */
-	cdptnexthop_in4(
 			const cdptnexthop_in4& nexthop) { *this = nexthop; };
 
 	/**
@@ -265,48 +211,16 @@ public:
 		if (this == &nexthop)
 			return *this;
 		cdptnexthop::operator= (nexthop);
-		dstaddr = nexthop.dstaddr;
-		dstmask = nexthop.dstmask;
 		return *this;
 	};
 
-public:
-
 	/**
 	 *
 	 */
-	const rofl::caddress_in4&
-	get_addr() const { return dstaddr; };
+	cdptnexthop_in4(
+			uint8_t rttblid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid) :
+				cdptnexthop(rttblid, rtindex, nhindex, dptid) {};
 
-	/**
-	 *
-	 */
-	rofl::caddress_in4&
-	set_addr() { return dstaddr; };
-
-	/**
-	 *
-	 */
-	void
-	set_addr(const rofl::caddress_in4& dstaddr) { this->dstaddr = dstaddr; };
-
-	/**
-	 *
-	 */
-	const rofl::caddress_in4&
-	get_mask() const { return dstmask; };
-
-	/**
-	 *
-	 */
-	rofl::caddress_in4&
-	set_mask() { return dstmask; };
-
-	/**
-	 *
-	 */
-	void
-	set_mask(const rofl::caddress_in4& dstmask) { this->dstmask = dstmask; };
 
 public:
 
@@ -335,18 +249,32 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cdptnexthop_in4& nexthop) {
-		os << rofcore::indent(0) << "<cdptnexthop_in4 >" << std::endl;
-		rofcore::indent i(2);
+		try {
+			os << rofl::indent(0) << "<dptnexthop_in4 >" 	<< std::endl;
 
+			const rofcore::crtnexthop_in4& rtn =
+					rofcore::cnetlink::get_instance().get_routes_in4(nexthop.get_rttblid()).
+						get_route(nexthop.get_rtindex()).get_nexthops_in4().get_nexthop(nexthop.get_nhindex());
+
+			os << rofcore::indent(2) << "<gateway: " 	<< rtn.get_gateway()	<< " >" << std::endl;
+			os << rofcore::indent(2) << "<weight: " 	<< rtn.get_weight() 	<< " >" << std::endl;
+			os << rofcore::indent(2) << "<ifindex: " 	<< rtn.get_ifindex() 	<< " >" << std::endl;
+			os << rofcore::indent(2) << "<realms: " 	<< rtn.get_realms() 	<< " >" << std::endl;
+			os << rofcore::indent(2) << "<flags: " 		<< rtn.get_flags() 		<< " >" << std::endl;
+
+		} catch (...) {
+			os << "<dptnexthop: ";
+				os << "rttableid:" 	<< nexthop.get_rttblid() << " ";
+				os << "rtindex:" 	<< nexthop.get_rtindex() 	<< " ";
+				os << "nhindex:" 	<< nexthop.get_nhindex() 	<< " ";
+			os << " in state -invalid- >";
+		}
 
 		return os;
 	};
 
-private:
-
-	rofl::caddress_in4	dstaddr; // destination address when acting as a gateway
-	rofl::caddress_in4	dstmask; // destination mask when acting as a gateway
 };
+
 
 
 
@@ -363,13 +291,6 @@ public:
 	 *
 	 */
 	cdptnexthop_in6(
-			const rofl::cdptid& dptid, uint32_t ofp_port_no, int ifindex, uint16_t nhindex, uint8_t table_id) :
-				cdptnexthop(dptid, ofp_port_no, ifindex, nhindex, table_id) {};
-
-	/**
-	 *
-	 */
-	cdptnexthop_in6(
 			const cdptnexthop_in6& nexthop) { *this = nexthop; };
 
 	/**
@@ -381,48 +302,16 @@ public:
 		if (this == &nexthop)
 			return *this;
 		cdptnexthop::operator= (nexthop);
-		dstaddr = nexthop.dstaddr;
-		dstmask = nexthop.dstmask;
 		return *this;
 	};
 
-public:
-
 	/**
 	 *
 	 */
-	const rofl::caddress_in6&
-	get_addr() const { return dstaddr; };
+	cdptnexthop_in6(
+			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid) :
+				cdptnexthop(rttableid, rtindex, nhindex, dptid) {};
 
-	/**
-	 *
-	 */
-	rofl::caddress_in6&
-	set_addr() { return dstaddr; };
-
-	/**
-	 *
-	 */
-	void
-	set_addr(const rofl::caddress_in6& dstaddr) { this->dstaddr = dstaddr; };
-
-	/**
-	 *
-	 */
-	const rofl::caddress_in6&
-	get_mask() const { return dstmask; };
-
-	/**
-	 *
-	 */
-	rofl::caddress_in6&
-	set_mask() { return dstmask; };
-
-	/**
-	 *
-	 */
-	void
-	set_mask(const rofl::caddress_in6& dstmask) { this->dstmask = dstmask; };
 
 public:
 
@@ -451,20 +340,31 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cdptnexthop_in6& nexthop) {
-		os << rofcore::indent(0) << "<cdptnexthop_in6 >" << std::endl;
-		rofcore::indent i(2);
+		try {
+			os << rofl::indent(0) << "<dptnexthop_in6 >" 	<< std::endl;
 
+			const rofcore::crtnexthop_in6& rtn =
+					rofcore::cnetlink::get_instance().get_routes_in6(nexthop.get_rttblid()).
+						get_route(nexthop.get_rtindex()).get_nexthops_in6().get_nexthop(nexthop.get_nhindex());
+
+			os << rofcore::indent(2) << "<gateway: " 	<< rtn.get_gateway()	<< " >" << std::endl;
+			os << rofcore::indent(2) << "<weight: " 	<< rtn.get_weight() 	<< " >" << std::endl;
+			os << rofcore::indent(2) << "<ifindex: " 	<< rtn.get_ifindex() 	<< " >" << std::endl;
+			os << rofcore::indent(2) << "<realms: " 	<< rtn.get_realms() 	<< " >" << std::endl;
+			os << rofcore::indent(2) << "<flags: " 		<< rtn.get_flags() 		<< " >" << std::endl;
+
+		} catch (...) {
+			os << "<dptnexthop: ";
+				os << "rttableid:" 	<< nexthop.get_rttblid() << " ";
+				os << "rtindex:" 	<< nexthop.get_rtindex() 	<< " ";
+				os << "nhindex:" 	<< nexthop.get_nhindex() 	<< " ";
+			os << " in state -invalid- >";
+		}
 
 		return os;
 	};
 
-private:
-
-	rofl::caddress_in6	dstaddr; // destination address when acting as a gateway
-	rofl::caddress_in6	dstmask; // destination mask when acting as a gateway
 };
-
-
 
 
 }; // end of namespace
