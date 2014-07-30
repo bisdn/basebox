@@ -4,7 +4,6 @@
 #include <set>
 #include <map>
 
-#include <rofl/common/cmacaddr.h>
 #include <rofl/common/caddress.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
@@ -14,20 +13,20 @@
 #include "sport.h"
 #include "logging.h"
 #include "cnetlink.h"
-#include "dptlink.h"
+#include "cdptlink.h"
 #include "cconfig.h"
+#include "clinktable.h"
 
 using namespace rofl;
 using namespace rofl::openflow;
 
-namespace ethercore
-{
+namespace ethercore {
 
-class ethcore :
+class cethcore :
 		public crofbase,
 		public sport_owner,
 		public cfib_owner,
-		public cnetlink_subscriber
+		public rofcore::cnetlink_common_observer
 {
 private:
 
@@ -38,7 +37,7 @@ private:
 	uint16_t			default_vid;
 	std::set<uint32_t>	group_ids;		// set of group-ids in use by this controller (assigned to sport instances and cfib instance)
 	unsigned int		timer_dump_interval;
-	std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> > 	 dptlinks;	// mapped ports per data path element
+	clinktable			ltable;
 	bool				netlink_enabled;
 
 #define DEFAULT_TIMER_DUMP_INTERVAL 10
@@ -52,25 +51,25 @@ private:
 	};
 
 
-    static ethcore          *sethcore;
+    static cethcore          *sethcore;
 
     /**
      * @brief	Make copy constructor private for singleton
      */
-    ethcore(ethcore const& sethcore) {};
+    cethcore(const cethcore& ethcore) {};
 
 	/**
 	 *
 	 * @param table_id
 	 * @param default_vid
 	 */
-	ethcore(cofhello_elem_versionbitmap const& versionbitmap);
+	cethcore(cofhello_elem_versionbitmap const& versionbitmap);
 
 	/**
 	 *
 	 */
 	virtual
-	~ethcore();
+	~cethcore();
 
 public:
 
@@ -78,7 +77,7 @@ public:
 	 *
 	 * @return
 	 */
-    static ethcore&
+    static cethcore&
     get_instance(cofhello_elem_versionbitmap const& versionbitmap);
 
 
@@ -176,13 +175,11 @@ private:
 	virtual void
 	release_group_id(uint32_t group_id);
 
-	void
-	delete_all_ports();
 
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, ethcore const& ec) {
+	operator<< (std::ostream& os, const cethcore& ec) {
 		os << indent(0) << "<ethcore ";
 			os << "default-vid:" << (int)ec.default_vid << " ";
 			os << "port-stage-table-id:" << (int)ec.port_stage_table_id << " ";

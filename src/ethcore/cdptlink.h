@@ -20,12 +20,8 @@
 #include "ctapdev.h"
 #include "cnetlink.h"
 #include "cpacketpool.h"
-#include "cdptaddr.h"
-#include "cdptneigh.h"
-#include "caddrtable.h"
-#include "cneightable.h"
 
-namespace ipcore {
+namespace ethercore {
 
 class eDptLinkBase 				: public std::exception {};
 class eDptLinkCritical 			: public eDptLinkBase {};
@@ -63,11 +59,7 @@ public:
 	 *
 	 */
 	void
-	set_dptid(const rofl::cdptid& dptid) {
-		this->dptid = dptid;
-		addrtable.set_dptid(dptid);
-		neightable.set_dptid(dptid);
-	};
+	set_dptid(const rofl::cdptid& dptid) { this->dptid = dptid; };
 
 	/**
 	 *
@@ -131,14 +123,6 @@ public:
 
 public:
 
-	/**
-	 *
-	 */
-	void
-	clear() {
-		addrtable.clear(); neightable.clear();
-	};
-
 	/*
 	 * from ctapdev
 	 */
@@ -164,32 +148,6 @@ public:
 
 public:
 
-	/**
-	 *
-	 */
-	const caddrtable&
-	get_addr_table() const { return addrtable; };
-
-	/**
-	 *
-	 */
-	caddrtable&
-	set_addr_table() { return addrtable; };
-
-	/**
-	 *
-	 */
-	const cneightable&
-	get_neigh_table() const { return neightable; };
-
-	/**
-	 *
-	 */
-	cneightable&
-	set_neigh_table() { return neightable; };
-
-public:
-
 
 	/**
 	 *
@@ -206,8 +164,6 @@ public:
 		} catch (rofcore::eNetLinkNotFound& e) {
 			os << rofl::indent(2) << "<no crtlink found >" << std::endl;
 		}
-		{ rofcore::indent i(2); os << link.addrtable; };
-		{ rofcore::indent i(2); os << link.neightable; };
 		return os;
 	};
 
@@ -251,9 +207,6 @@ private:
 	};
 
 	std::bitset<32>						flags;
-
-	caddrtable							addrtable;		// all IPv4 and IPv6 addresses assigned to this link
-	cneightable							neightable;		// all neighbors seen on this link for ARP and NDP
 };
 
 }; // end of namespace

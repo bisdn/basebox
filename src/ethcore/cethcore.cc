@@ -1,24 +1,24 @@
-#include "ethcore.h"
+#include "cethcore.h"
 
 #include <inttypes.h>
 
 using namespace ethercore;
 
-ethcore* ethcore::sethcore = (ethcore*)0;
+cethcore* cethcore::sethcore = (cethcore*)0;
 
 
-ethcore&
-ethcore::get_instance(cofhello_elem_versionbitmap const& versionbitmap)
+cethcore&
+cethcore::get_instance(rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap)
 {
-	if (0 == ethcore::sethcore) {
-		ethcore::sethcore =
-				new ethcore(versionbitmap);
+	if (0 == cethcore::sethcore) {
+		cethcore::sethcore =
+				new cethcore(versionbitmap);
 	}
-	return *(ethcore::sethcore);
+	return *(cethcore::sethcore);
 }
 
 
-ethcore::ethcore(cofhello_elem_versionbitmap const& versionbitmap) :
+cethcore::cethcore(rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap) :
 		rofl::crofbase(versionbitmap),
 		dpid(0),
 		port_stage_table_id(0),
@@ -33,7 +33,7 @@ ethcore::ethcore(cofhello_elem_versionbitmap const& versionbitmap) :
 
 
 void
-ethcore::init(
+cethcore::init(
 		uint8_t port_stage_table_id,
 		uint8_t fib_in_stage_table_id,
 		uint8_t fib_out_stage_table_id,
@@ -47,7 +47,7 @@ ethcore::init(
 
 
 
-ethcore::~ethcore()
+cethcore::~cethcore()
 {
 	// ...
 }
@@ -55,21 +55,7 @@ ethcore::~ethcore()
 
 
 void
-ethcore::delete_all_ports()
-{
-	for (std::map<rofl::crofdpt*, std::map<uint32_t, dptlink*> >::iterator
-			jt = dptlinks.begin(); jt != dptlinks.end(); ++jt) {
-		for (std::map<uint32_t, dptlink*>::iterator
-				it = dptlinks[jt->first].begin(); it != dptlinks[jt->first].end(); ++it) {
-			delete (it->second); // remove dptport instance from heap
-		}
-	}
-	dptlinks.clear();
-}
-
-
-void
-ethcore::link_created(unsigned int ifindex)
+cethcore::link_created(unsigned int ifindex)
 {
 	if (not netlink_enabled)
 		return;
@@ -79,7 +65,7 @@ ethcore::link_created(unsigned int ifindex)
 
 	try {
 		// ge0.100 => vid 100 assigned to ge0
-		std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
+		std::string devname = rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_devname();
 
 		if (devname.find_first_of(".") == std::string::npos) {
 			return;
@@ -98,7 +84,7 @@ ethcore::link_created(unsigned int ifindex)
 
 		sport::get_sport(dpid, devbase).get_membership(vid);
 
-	} catch (eNetLinkNotFound& e) {
+	} catch (rofcore::eNetLinkNotFound& e) {
 
 		/* interface index ifindex not found, skip this event */
 
@@ -115,7 +101,7 @@ ethcore::link_created(unsigned int ifindex)
 
 
 void
-ethcore::link_updated(unsigned int ifindex)
+cethcore::link_updated(unsigned int ifindex)
 {
 	if (not netlink_enabled)
 		return;
@@ -125,7 +111,7 @@ ethcore::link_updated(unsigned int ifindex)
 
 	try {
 		// ge0.100 => vid 100 assigned to ge0
-		std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
+		std::string devname = rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_devname();
 
 		if (devname.find_first_of(".") == std::string::npos) {
 			return;
@@ -136,14 +122,14 @@ ethcore::link_updated(unsigned int ifindex)
 
 		rofl::logging::debug << "[ethcore][link-updated] devbase:" << devbase << " vid:" << (int)vid << std::endl;
 
-	} catch (eNetLinkNotFound& e) {
+	} catch (rofcore::eNetLinkNotFound& e) {
 
 	}
 }
 
 
 void
-ethcore::link_deleted(unsigned int ifindex)
+cethcore::link_deleted(unsigned int ifindex)
 {
 	if (not netlink_enabled)
 		return;
@@ -153,7 +139,7 @@ ethcore::link_deleted(unsigned int ifindex)
 
 	try {
 		// ge0.100 => vid 100 removed from ge0
-		std::string devname = cnetlink::get_instance().get_link(ifindex).get_devname();
+		std::string devname = rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_devname();
 
 		if (devname.find_first_of(".") == std::string::npos) {
 			return;
@@ -166,7 +152,7 @@ ethcore::link_deleted(unsigned int ifindex)
 
 		drop_port_from_vlan(dpid, devbase, vid);
 
-	} catch (eNetLinkNotFound& e) {
+	} catch (rofcore::eNetLinkNotFound& e) {
 
 		/* interface index ifindex was not found, skip event */
 
@@ -183,7 +169,7 @@ ethcore::link_deleted(unsigned int ifindex)
 
 
 void
-ethcore::handle_timeout(int opaque)
+cethcore::handle_timeout(int opaque)
 {
 	switch (opaque) {
 	case ETHSWITCH_TIMER_DUMP: {
@@ -197,7 +183,7 @@ ethcore::handle_timeout(int opaque)
 
 
 void
-ethcore::request_flow_stats()
+cethcore::request_flow_stats()
 {
 #if 0
 	std::map<crofdpt*, std::map<uint16_t, std::map<cmacaddr, struct fibentry_t> > >::iterator it;
@@ -243,7 +229,7 @@ ethcore::request_flow_stats()
 
 
 void
-ethcore::handle_flow_stats_reply(crofdpt& dpt, cofmsg_flow_stats_reply& msg, uint8_t aux_id)
+cethcore::handle_flow_stats_reply(crofdpt& dpt, cofmsg_flow_stats_reply& msg, uint8_t aux_id)
 {
 #if 0
 	if (fib.find(dpt) == fib.end()) {
@@ -276,7 +262,7 @@ ethcore::handle_flow_stats_reply(crofdpt& dpt, cofmsg_flow_stats_reply& msg, uin
 
 
 void
-ethcore::handle_dpath_open(crofdpt& dpt)
+cethcore::handle_dpath_open(crofdpt& dpt)
 {
 	try {
 		netlink_enabled = (bool)cconfig::get_instance().lookup("ethcored.enable_netlink");
@@ -356,8 +342,8 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 			 * create new tap device for port announced by (reconnecting?) data path
 			 */
 			if (netlink_enabled) {
-				if (dptlinks[&dpt].find(port->get_port_no()) == dptlinks[&dpt].end()) {
-					dptlinks[&dpt][port->get_port_no()] = new dptlink(this, &dpt, port->get_port_no());
+				if (not ltable.has_link_by_ofp_port_no(port->get_port_no())) {
+					ltable.add_link(port->get_port_no());
 				}
 			}
 
@@ -374,7 +360,7 @@ ethcore::handle_dpath_open(crofdpt& dpt)
 
 
 void
-ethcore::handle_dpath_close(crofdpt& dpt)
+cethcore::handle_dpath_close(crofdpt& dpt)
 {
 	logging::info << "[ethcore] dpath detaching dpid:" << (unsigned long long)dpt.get_dpid() << std::endl;
 
@@ -383,13 +369,13 @@ ethcore::handle_dpath_close(crofdpt& dpt)
 	// destroy all sports associated with dpt
 	sport::destroy_sports(dpt.get_dpid());
 
-	delete_all_ports();
+	ltable.clear();
 }
 
 
 
 void
-ethcore::handle_packet_in(crofdpt& dpt, cofmsg_packet_in& msg, uint8_t aux_id)
+cethcore::handle_packet_in(crofdpt& dpt, cofmsg_packet_in& msg, uint8_t aux_id)
 {
 	//uint16_t vid = 0xffff;
 	uint16_t vid = default_vid;
@@ -429,13 +415,13 @@ ethcore::handle_packet_in(crofdpt& dpt, cofmsg_packet_in& msg, uint8_t aux_id)
 		logging::crit << "[ethcore] no PVID for sport instance found for Packet-In message" << msg << std::endl;
 
 		rofl::openflow::cofactions actions(dpt.get_version());
-		dpt.send_packet_out_message(msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
+		dpt.send_packet_out_message(rofl::cauxid(0), msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
 	}
 }
 
 
 void
-ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_id)
+cethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_id)
 {
 	// TODO
 
@@ -480,8 +466,8 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 		 * create new tap device for port announced by (reconnecting?) data path
 		 */
 		if (netlink_enabled) {
-			if (dptlinks[&dpt].find(msg.get_port().get_port_no()) == dptlinks[&dpt].end()) {
-				dptlinks[&dpt][msg.get_port().get_port_no()] = new dptlink(this, &dpt, msg.get_port().get_port_no());
+			if (not ltable.has_link_by_ofp_port_no(msg.get_port().get_port_no())) {
+				ltable.add_link(msg.get_port().get_port_no());
 			}
 		}
 
@@ -546,9 +532,8 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 		 * create new tap device for port announced by (reconnecting?) data path
 		 */
 		if (netlink_enabled) {
-			if (dptlinks[&dpt].find(msg.get_port().get_port_no()) != dptlinks[&dpt].end()) {
-				delete dptlinks[&dpt][msg.get_port().get_port_no()];
-				dptlinks[&dpt].erase(msg.get_port().get_port_no());
+			if (ltable.has_link_by_ofp_port_no(msg.get_port().get_port_no())) {
+				ltable.drop_link(msg.get_port().get_port_no());
 			}
 		}
 
@@ -577,7 +562,7 @@ ethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_i
 
 
 void
-ethcore::handle_flow_removed(crofdpt& dpt, cofmsg_flow_removed& msg, uint8_t aux_id)
+cethcore::handle_flow_removed(crofdpt& dpt, cofmsg_flow_removed& msg, uint8_t aux_id)
 {
 	uint16_t vid = default_vid;
 	try {
@@ -609,7 +594,7 @@ ethcore::handle_flow_removed(crofdpt& dpt, cofmsg_flow_removed& msg, uint8_t aux
 
 
 uint32_t
-ethcore::get_idle_group_id()
+cethcore::get_idle_group_id()
 {
 	uint32_t group_id = 0;
 	while (group_ids.find(group_id) != group_ids.end()) {
@@ -621,7 +606,7 @@ ethcore::get_idle_group_id()
 
 
 void
-ethcore::release_group_id(uint32_t group_id)
+cethcore::release_group_id(uint32_t group_id)
 {
 	if (group_ids.find(group_id) != group_ids.end()) {
 		group_ids.erase(group_id);
@@ -630,7 +615,7 @@ ethcore::release_group_id(uint32_t group_id)
 
 
 void
-ethcore::add_vlan(
+cethcore::add_vlan(
 		uint64_t dpid,
 		uint16_t vid)
 {
@@ -646,7 +631,7 @@ ethcore::add_vlan(
 
 
 void
-ethcore::drop_vlan(
+cethcore::drop_vlan(
 		uint64_t dpid,
 		uint16_t vid)
 {
@@ -662,7 +647,7 @@ ethcore::drop_vlan(
 
 
 void
-ethcore::add_port_to_vlan(
+cethcore::add_port_to_vlan(
 		uint64_t dpid,
 		std::string const& devname,
 		uint16_t vid,
@@ -683,7 +668,7 @@ ethcore::add_port_to_vlan(
 
 
 void
-ethcore::drop_port_from_vlan(
+cethcore::drop_port_from_vlan(
 		uint64_t dpid,
 		std::string const& devname,
 		uint16_t vid)

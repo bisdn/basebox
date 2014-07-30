@@ -2,7 +2,7 @@
 #include <rofl/platform/unix/cdaemon.h>
 #include <rofl/platform/unix/cunixenv.h>
 
-#include "ethcore.h"
+#include "cethcore.h"
 #ifdef AMQP_QMF_SUPPORT
 #include "qmfagent.h"
 #endif
@@ -107,7 +107,7 @@ main(int argc, char** argv)
 
 	rofl::logging::notice << "[ethcore][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
-	ethercore::ethcore& core = ethercore::ethcore::get_instance(versionbitmap);
+	ethercore::cethcore& core = ethercore::cethcore::get_instance(versionbitmap);
 
 	core.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
 

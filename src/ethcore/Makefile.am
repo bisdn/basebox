@@ -6,8 +6,8 @@ sbin_PROGRAMS = ethcored
 
 ethcored_SOURCES = \
 	ethcored.cc \
-	ethcore.cc \
-	ethcore.h \
+	cethcore.cc \
+	cethcore.h \
 	cfib.cc \
 	cfib.h \
 	cfibentry.h \
@@ -18,14 +18,9 @@ ethcored_SOURCES = \
 	logging.cc \
 	cnetlink.cc \
 	cnetlink.h \
-	cnetdev.cc \
-	cnetdev.h \
-	ctapdev.cc \
-	ctapdev.h \
-	cpacketpool.cc \
-	cpacketpool.h \
-	dptlink.cc \
-	dptlink.h \
+	cdptlink.cc \
+	cdptlink.h \
+	clinktable.h \
 	cconfig.cc \
 	cconfig.h
 

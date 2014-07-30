@@ -24,7 +24,7 @@ extern "C" {
 #include <rofl/common/ciosrv.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
-#include <rofl/common/cmacaddr.h>
+#include <rofl/common/caddress.h>
 #include <rofl/common/logging.h>
 
 
