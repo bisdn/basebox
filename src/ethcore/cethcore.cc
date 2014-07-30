@@ -342,8 +342,8 @@ cethcore::handle_dpath_open(crofdpt& dpt)
 			 * create new tap device for port announced by (reconnecting?) data path
 			 */
 			if (netlink_enabled) {
-				if (not ltable.has_link_by_ofp_port_no(port->get_port_no())) {
-					ltable.add_link(port->get_port_no());
+				if (not ltable[dpt.get_dptid()].has_link_by_ofp_port_no(port->get_port_no())) {
+					ltable[dpt.get_dptid()].add_link(port->get_port_no());
 				}
 			}
 
@@ -466,8 +466,8 @@ cethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_
 		 * create new tap device for port announced by (reconnecting?) data path
 		 */
 		if (netlink_enabled) {
-			if (not ltable.has_link_by_ofp_port_no(msg.get_port().get_port_no())) {
-				ltable.add_link(msg.get_port().get_port_no());
+			if (not ltable[dpt.get_dptid()].has_link_by_ofp_port_no(msg.get_port().get_port_no())) {
+				ltable[dpt.get_dptid()].add_link(msg.get_port().get_port_no());
 			}
 		}
 
@@ -532,8 +532,8 @@ cethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_
 		 * create new tap device for port announced by (reconnecting?) data path
 		 */
 		if (netlink_enabled) {
-			if (ltable.has_link_by_ofp_port_no(msg.get_port().get_port_no())) {
-				ltable.drop_link(msg.get_port().get_port_no());
+			if (ltable[dpt.get_dptid()].has_link_by_ofp_port_no(msg.get_port().get_port_no())) {
+				ltable[dpt.get_dptid()].drop_link(msg.get_port().get_port_no());
 			}
 		}
 

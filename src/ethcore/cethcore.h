@@ -37,7 +37,7 @@ private:
 	uint16_t			default_vid;
 	std::set<uint32_t>	group_ids;		// set of group-ids in use by this controller (assigned to sport instances and cfib instance)
 	unsigned int		timer_dump_interval;
-	clinktable			ltable;
+	std::map<rofl::cdptid, clinktable>	ltable;
 	bool				netlink_enabled;
 
 #define DEFAULT_TIMER_DUMP_INTERVAL 10
