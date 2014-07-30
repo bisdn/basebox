@@ -5,7 +5,7 @@
  *      Author: andreas
  */
 
-#include <dptlink.h>
+#include "cdptlink.h"
 
 using namespace ipcore;
 
@@ -87,7 +87,7 @@ void
 cdptlink::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 {
 	try {
-		if (not rofl::crofdpt::get_dpt(dptid).get_channel().is_established())
+		if (not rofl::crofdpt::get_dpt(dptid).get_channel().is_established()) {
 			throw eDptLinkNoDptAttached();
 		}
 
