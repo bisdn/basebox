@@ -35,7 +35,7 @@ class eDptLinkTapDevNotFound	: public eDptLinkBase {};
 class eDptLinkNotFound			: public eDptLinkBase {};
 
 class cdptlink :
-		public rofcore::cnetlink_subscriber,
+		public rofcore::cnetlink_common_observer,
 		public rofcore::cnetdev_owner
 {
 public:

@@ -394,9 +394,9 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 
 void
 cnetlink::notify_link_created(unsigned int ifindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->link_created(ifindex);
 	}
 };
@@ -405,9 +405,9 @@ cnetlink::notify_link_created(unsigned int ifindex) {
 
 void
 cnetlink::notify_link_updated(unsigned int ifindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->link_updated(ifindex);
 	}
 };
@@ -416,9 +416,9 @@ cnetlink::notify_link_updated(unsigned int ifindex) {
 
 void
 cnetlink::notify_link_deleted(unsigned int ifindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->link_deleted(ifindex);
 	}
 };
@@ -427,9 +427,9 @@ cnetlink::notify_link_deleted(unsigned int ifindex) {
 
 void
 cnetlink::notify_addr_in4_created(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->addr_in4_created(ifindex, adindex);
 	}
 };
@@ -438,9 +438,9 @@ cnetlink::notify_addr_in4_created(unsigned int ifindex, unsigned int adindex) {
 
 void
 cnetlink::notify_addr_in6_created(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->addr_in6_created(ifindex, adindex);
 	}
 };
@@ -449,9 +449,9 @@ cnetlink::notify_addr_in6_created(unsigned int ifindex, unsigned int adindex) {
 
 void
 cnetlink::notify_addr_in4_updated(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->addr_in4_updated(ifindex, adindex);
 	}
 };
@@ -460,9 +460,9 @@ cnetlink::notify_addr_in4_updated(unsigned int ifindex, unsigned int adindex) {
 
 void
 cnetlink::notify_addr_in6_updated(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->addr_in6_updated(ifindex, adindex);
 	}
 };
@@ -471,9 +471,9 @@ cnetlink::notify_addr_in6_updated(unsigned int ifindex, unsigned int adindex) {
 
 void
 cnetlink::notify_addr_in4_deleted(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->addr_in4_deleted(ifindex, adindex);
 	}
 };
@@ -482,9 +482,9 @@ cnetlink::notify_addr_in4_deleted(unsigned int ifindex, unsigned int adindex) {
 
 void
 cnetlink::notify_addr_in6_deleted(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->addr_in6_deleted(ifindex, adindex);
 	}
 };
@@ -492,66 +492,120 @@ cnetlink::notify_addr_in6_deleted(unsigned int ifindex, unsigned int adindex) {
 
 
 void
-cnetlink::notify_neigh_in4_created(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
-		(*it)->neigh_in4_created(ifindex, adindex);
+cnetlink::notify_neigh_in4_created(unsigned int ifindex, unsigned int nbindex) {
+	const rofl::caddress_in4& dst = cnetlink::get_instance().get_links().
+									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
+
+	for (std::set<cnetlink_neighbour_observer*>::iterator
+			it = nbobservers_in4[ifindex][dst].begin();
+				it != nbobservers_in4[ifindex][dst].end(); ++it) {
+		(*it)->neigh_in4_created(ifindex, nbindex);
+	}
+
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
+		(*it)->neigh_in4_created(ifindex, nbindex);
 	}
 };
 
 
 
 void
-cnetlink::notify_neigh_in6_created(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
-		(*it)->neigh_in6_created(ifindex, adindex);
+cnetlink::notify_neigh_in6_created(unsigned int ifindex, unsigned int nbindex) {
+	const rofl::caddress_in6& dst = cnetlink::get_instance().get_links().
+									get_link(ifindex).get_neighs_in6().get_neigh(nbindex).get_dst();
+
+	for (std::set<cnetlink_neighbour_observer*>::iterator
+			it = nbobservers_in6[ifindex][dst].begin();
+				it != nbobservers_in6[ifindex][dst].end(); ++it) {
+		(*it)->neigh_in6_created(ifindex, nbindex);
+	}
+
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
+		(*it)->neigh_in6_created(ifindex, nbindex);
 	}
 };
 
 
 
 void
-cnetlink::notify_neigh_in4_updated(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
-		(*it)->neigh_in4_updated(ifindex, adindex);
+cnetlink::notify_neigh_in4_updated(unsigned int ifindex, unsigned int nbindex) {
+	const rofl::caddress_in4& dst = cnetlink::get_instance().get_links().
+									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
+
+	for (std::set<cnetlink_neighbour_observer*>::iterator
+			it = nbobservers_in4[ifindex][dst].begin();
+				it != nbobservers_in4[ifindex][dst].end(); ++it) {
+		(*it)->neigh_in4_updated(ifindex, nbindex);
+	}
+
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
+		(*it)->neigh_in4_updated(ifindex, nbindex);
 	}
 };
 
 
 
 void
-cnetlink::notify_neigh_in6_updated(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
-		(*it)->neigh_in6_updated(ifindex, adindex);
+cnetlink::notify_neigh_in6_updated(unsigned int ifindex, unsigned int nbindex) {
+	const rofl::caddress_in6& dst = cnetlink::get_instance().get_links().
+									get_link(ifindex).get_neighs_in6().get_neigh(nbindex).get_dst();
+
+	for (std::set<cnetlink_neighbour_observer*>::iterator
+			it = nbobservers_in6[ifindex][dst].begin();
+				it != nbobservers_in6[ifindex][dst].end(); ++it) {
+		(*it)->neigh_in6_updated(ifindex, nbindex);
+	}
+
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
+		(*it)->neigh_in6_updated(ifindex, nbindex);
 	}
 };
 
 
 
 void
-cnetlink::notify_neigh_in4_deleted(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
-		(*it)->neigh_in4_deleted(ifindex, adindex);
+cnetlink::notify_neigh_in4_deleted(unsigned int ifindex, unsigned int nbindex) {
+	const rofl::caddress_in4& dst = cnetlink::get_instance().get_links().
+									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
+
+	for (std::set<cnetlink_neighbour_observer*>::iterator
+			it = nbobservers_in4[ifindex][dst].begin();
+				it != nbobservers_in4[ifindex][dst].end(); ++it) {
+		(*it)->neigh_in4_deleted(ifindex, nbindex);
+	}
+
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
+		(*it)->neigh_in4_deleted(ifindex, nbindex);
 	}
 };
 
 
 
 void
-cnetlink::notify_neigh_in6_deleted(unsigned int ifindex, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
-		(*it)->neigh_in6_deleted(ifindex, adindex);
+cnetlink::notify_neigh_in6_deleted(unsigned int ifindex, unsigned int nbindex) {
+	const rofl::caddress_in6& dst = cnetlink::get_instance().get_links().
+									get_link(ifindex).get_neighs_in6().get_neigh(nbindex).get_dst();
+
+	for (std::set<cnetlink_neighbour_observer*>::iterator
+			it = nbobservers_in6[ifindex][dst].begin();
+				it != nbobservers_in6[ifindex][dst].end(); ++it) {
+		(*it)->neigh_in6_deleted(ifindex, nbindex);
+	}
+
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
+		(*it)->neigh_in6_deleted(ifindex, nbindex);
 	}
 };
 
@@ -559,9 +613,9 @@ cnetlink::notify_neigh_in6_deleted(unsigned int ifindex, unsigned int adindex) {
 
 void
 cnetlink::notify_route_in4_created(uint8_t table_id, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->route_in4_created(table_id, adindex);
 	}
 };
@@ -570,9 +624,9 @@ cnetlink::notify_route_in4_created(uint8_t table_id, unsigned int adindex) {
 
 void
 cnetlink::notify_route_in6_created(uint8_t table_id, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->route_in6_created(table_id, adindex);
 	}
 };
@@ -581,9 +635,9 @@ cnetlink::notify_route_in6_created(uint8_t table_id, unsigned int adindex) {
 
 void
 cnetlink::notify_route_in4_updated(uint8_t table_id, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->route_in4_updated(table_id, adindex);
 	}
 };
@@ -592,9 +646,9 @@ cnetlink::notify_route_in4_updated(uint8_t table_id, unsigned int adindex) {
 
 void
 cnetlink::notify_route_in6_updated(uint8_t table_id, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->route_in6_updated(table_id, adindex);
 	}
 };
@@ -603,9 +657,9 @@ cnetlink::notify_route_in6_updated(uint8_t table_id, unsigned int adindex) {
 
 void
 cnetlink::notify_route_in4_deleted(uint8_t table_id, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->route_in4_deleted(table_id, adindex);
 	}
 };
@@ -614,9 +668,9 @@ cnetlink::notify_route_in4_deleted(uint8_t table_id, unsigned int adindex) {
 
 void
 cnetlink::notify_route_in6_deleted(uint8_t table_id, unsigned int adindex) {
-	for (std::set<cnetlink_subscriber*>::iterator
-			it = cnetlink::get_instance().subscribers.begin();
-				it != cnetlink::get_instance().subscribers.end(); ++it) {
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->route_in6_deleted(table_id, adindex);
 	}
 };

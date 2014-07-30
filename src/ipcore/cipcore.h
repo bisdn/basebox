@@ -44,7 +44,7 @@ class eVmCoreNotFound		: public eVmCoreBase {};
 
 class cipcore :
 		public rofl::crofbase,
-		public rofcore::cnetlink_subscriber
+		public rofcore::cnetlink_common_observer
 {
 	static cipcore* __ipcore__;
 

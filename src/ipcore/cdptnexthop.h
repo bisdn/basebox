@@ -30,7 +30,7 @@ extern "C" {
 namespace ipcore
 {
 
-class cdptnexthop : public flowmod {
+class cdptnexthop : public flowmod, public rofcore::cnetlink_neighbour_observer {
 public:
 
 
@@ -194,7 +194,7 @@ public:
 	/**
 	 *
 	 */
-	cdptnexthop_in4() {};
+	cdptnexthop_in4() : flow_mod_installed(false) {};
 
 	/**
 	 *
@@ -211,6 +211,7 @@ public:
 		if (this == &nexthop)
 			return *this;
 		cdptnexthop::operator= (nexthop);
+		flow_mod_installed = nexthop.flow_mod_installed;
 		return *this;
 	};
 
@@ -219,7 +220,7 @@ public:
 	 */
 	cdptnexthop_in4(
 			uint8_t rttblid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid) :
-				cdptnexthop(rttblid, rtindex, nhindex, dptid) {};
+				cdptnexthop(rttblid, rtindex, nhindex, dptid), flow_mod_installed(false) {};
 
 
 public:
@@ -244,6 +245,27 @@ protected:
 	 */
 	virtual void
 	flow_mod_delete();
+
+private:
+
+	virtual void
+	neigh_in4_created(unsigned int ifindex, uint16_t nbindex) {
+		if (not flow_mod_installed) {
+			flow_mod_add();
+		}
+	};
+
+	virtual void
+	neigh_in4_updated(unsigned int ifindex, uint16_t nbindex) {
+		flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
+	};
+
+	virtual void
+	neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex) {
+		if (flow_mod_installed) {
+			flow_mod_delete();
+		}
+	};
 
 public:
 
@@ -273,6 +295,9 @@ public:
 		return os;
 	};
 
+private:
+
+	bool flow_mod_installed;
 };
 
 
@@ -285,7 +310,7 @@ public:
 	/**
 	 *
 	 */
-	cdptnexthop_in6() {};
+	cdptnexthop_in6() : flow_mod_installed(false) {};
 
 	/**
 	 *
@@ -302,6 +327,7 @@ public:
 		if (this == &nexthop)
 			return *this;
 		cdptnexthop::operator= (nexthop);
+		flow_mod_installed = nexthop.flow_mod_installed;
 		return *this;
 	};
 
@@ -310,7 +336,7 @@ public:
 	 */
 	cdptnexthop_in6(
 			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid) :
-				cdptnexthop(rttableid, rtindex, nhindex, dptid) {};
+				cdptnexthop(rttableid, rtindex, nhindex, dptid), flow_mod_installed(false) {};
 
 
 public:
@@ -335,6 +361,27 @@ protected:
 	 */
 	virtual void
 	flow_mod_delete();
+
+private:
+
+	virtual void
+	neigh_in6_created(unsigned int ifindex, uint16_t nbindex) {
+		if (not flow_mod_installed) {
+			flow_mod_add();
+		}
+	};
+
+	virtual void
+	neigh_in6_updated(unsigned int ifindex, uint16_t nbindex) {
+		flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
+	};
+
+	virtual void
+	neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex) {
+		if (flow_mod_installed) {
+			flow_mod_delete();
+		}
+	};
 
 public:
 
@@ -364,6 +411,9 @@ public:
 		return os;
 	};
 
+private:
+
+	bool flow_mod_installed;
 };
 
 

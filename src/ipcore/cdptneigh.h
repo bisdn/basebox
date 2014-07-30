@@ -253,6 +253,15 @@ public:
 	virtual void
 	update();
 
+	/**
+	 *
+	 */
+	const rofcore::crtneigh_in4&
+	get_crtneigh_in4() const {
+		return rofcore::cnetlink::get_instance().get_links().
+				get_link(get_ifindex()).get_neighs_in4().get_neigh(get_nbindex());
+	};
+
 protected:
 
 	/**
@@ -280,6 +289,16 @@ public:
 	};
 };
 
+
+class cdptneigh_in4_find_by_dst {
+	rofl::caddress_in4 dst;
+public:
+	cdptneigh_in4_find_by_dst(const rofl::caddress_in4& dst) :
+		dst(dst) {};
+	bool operator() (const std::pair<unsigned int, cdptneigh_in4>& p) const {
+		return (p.second.get_crtneigh_in4().get_dst() == dst);
+	};
+};
 
 
 class cdptneigh_in6 : public cdptneigh {
@@ -323,6 +342,15 @@ public:
 	virtual void
 	update();
 
+	/**
+	 *
+	 */
+	const rofcore::crtneigh_in6&
+	get_crtneigh_in6() const {
+		return rofcore::cnetlink::get_instance().get_links().
+				get_link(get_ifindex()).get_neighs_in6().get_neigh(get_nbindex());
+	};
+
 protected:
 
 	/**
@@ -347,6 +375,17 @@ public:
 
 
 		return os;
+	};
+};
+
+
+class cdptneigh_in6_find_by_dst {
+	rofl::caddress_in6 dst;
+public:
+	cdptneigh_in6_find_by_dst(const rofl::caddress_in6& dst) :
+		dst(dst) {};
+	bool operator() (const std::pair<unsigned int, cdptneigh_in6>& p) const {
+		return (p.second.get_crtneigh_in6().get_dst() == dst);
 	};
 };
 

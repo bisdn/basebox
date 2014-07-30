@@ -42,7 +42,8 @@ class eNetLinkBase 			: public std::exception {};
 class eNetLinkCritical		: public eNetLinkBase {};
 class eNetLinkNotFound		: public eNetLinkBase {};
 
-class cnetlink_subscriber;
+class cnetlink_common_observer;
+class cnetlink_neighbour_observer;
 
 class cnetlink :
 		public rofl::ciosrv
@@ -54,9 +55,12 @@ class cnetlink :
 		NL_NEIGH_CACHE = 3,
 	};
 
-	struct nl_cache_mngr*							mngr;
-	std::map<enum nl_cache_t, struct nl_cache*> 	caches;
-	std::set<cnetlink_subscriber*> 					subscribers;
+	struct nl_cache_mngr*									mngr;
+	std::map<enum nl_cache_t, struct nl_cache*> 			caches;
+	std::set<cnetlink_common_observer*> 					observers;
+
+	std::map<int, std::map<rofl::caddress_in4, std::set<cnetlink_neighbour_observer*> > > nbobservers_in4;
+	std::map<int, std::map<rofl::caddress_in6, std::set<cnetlink_neighbour_observer*> > > nbobservers_in6;
 
 	crtlinks						rtlinks;		// all links in system => key:ifindex, value:crtlink instance
 	std::map<int, crtroutes_in4>	rtroutes_in4;	// all routes in system => key:table_id
@@ -105,8 +109,8 @@ public:
 	 */
 	void
 	subscribe(
-			cnetlink_subscriber* subscriber) {
-		subscribers.insert(subscriber);
+			cnetlink_common_observer* subscriber) {
+		observers.insert(subscriber);
 	};
 
 
@@ -115,8 +119,72 @@ public:
 	 */
 	void
 	unsubscribe(
-			cnetlink_subscriber* subscriber) {
-		subscribers.erase(subscriber);
+			cnetlink_common_observer* subscriber) {
+		observers.erase(subscriber);
+	};
+
+	/**
+	 *
+	 */
+	void
+	observe_neighbour(
+			cnetlink_neighbour_observer* observer, int ifindex, const rofl::caddress_in4& dst) {
+		nbobservers_in4[ifindex][dst].insert(observer);
+	};
+
+	/**
+	 *
+	 */
+	void
+	ignore_neighbour(
+			cnetlink_neighbour_observer* observer, int ifindex, const rofl::caddress_in4& dst) {
+		nbobservers_in4[ifindex][dst].erase(observer);
+	};
+
+	/**
+	 *
+	 */
+	void
+	observe_neighbour(
+			cnetlink_neighbour_observer* observer, int ifindex, const rofl::caddress_in6& dst) {
+		nbobservers_in6[ifindex][dst].insert(observer);
+	};
+
+	/**
+	 *
+	 */
+	void
+	ignore_neighbour(
+			cnetlink_neighbour_observer* observer, int ifindex, const rofl::caddress_in6& dst) {
+		nbobservers_in6[ifindex][dst].erase(observer);
+	};
+
+	/**
+	 *
+	 */
+	void
+	ignore_neighbours(
+			cnetlink_neighbour_observer* observer) {
+		/* remove observer for all neigh_in4 instances */
+		if (true) {
+			std::map<int, std::map<rofl::caddress_in4, std::set<cnetlink_neighbour_observer*> > >::iterator it;
+			for (it = nbobservers_in4.begin(); it != nbobservers_in4.end(); ++it) {
+				std::map<rofl::caddress_in4, std::set<cnetlink_neighbour_observer*> >::iterator jt;
+				for (jt = it->second.begin(); jt != it->second.end(); ++jt) {
+					jt->second.erase(observer);
+				}
+			}
+		}
+		/* remove observer for all neigh_in6 instances */
+		if (true) {
+			std::map<int, std::map<rofl::caddress_in6, std::set<cnetlink_neighbour_observer*> > >::iterator it;
+			for (it = nbobservers_in6.begin(); it != nbobservers_in6.end(); ++it) {
+				std::map<rofl::caddress_in6, std::set<cnetlink_neighbour_observer*> >::iterator jt;
+				for (jt = it->second.begin(); jt != it->second.end(); ++jt) {
+					jt->second.erase(observer);
+				}
+			}
+		}
 	};
 
 public:
@@ -348,20 +416,19 @@ public:
 
 
 
-class cnetlink_subscriber
-{
+class cnetlink_common_observer {
 public:
 	/**
 	 *
 	 */
-	cnetlink_subscriber() {
+	cnetlink_common_observer() {
 		nl_subscribe();
 	};
 
 	/**
 	 *
 	 */
-	virtual ~cnetlink_subscriber() {
+	virtual ~cnetlink_common_observer() {
 		nl_unsubscribe();
 	};
 
@@ -474,6 +541,93 @@ public:
 	 * @param ifindex
 	 */
 	virtual void route_in6_deleted(uint8_t table_id, unsigned int rtindex) {};
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void neigh_in4_created(unsigned int ifindex, uint16_t nbindex) {};
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void neigh_in4_updated(unsigned int ifindex, uint16_t nbindex) {};
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	virtual void neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex) {};
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void neigh_in6_created(unsigned int ifindex, uint16_t nbindex) {};
+
+	/**
+	 *
+	 * @param rtl
+	 */
+	virtual void neigh_in6_updated(unsigned int ifindex, uint16_t nbindex) {};
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	virtual void neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex) {};
+};
+
+
+
+
+
+class cnetlink_neighbour_observer {
+public:
+	/**
+	 *
+	 */
+	cnetlink_neighbour_observer() {};
+
+	/**
+	 *
+	 */
+	virtual ~cnetlink_neighbour_observer() {
+		cnetlink::get_instance().ignore_neighbours(this);
+	};
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	void watch(int ifindex, const rofl::caddress_in4& dst) {
+		cnetlink::get_instance().observe_neighbour(this, ifindex, dst);
+	};
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	void unwatch(int ifindex, const rofl::caddress_in4& dst) {
+		cnetlink::get_instance().ignore_neighbour(this, ifindex, dst);
+	};
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	void watch(int ifindex, const rofl::caddress_in6& dst) {
+		cnetlink::get_instance().observe_neighbour(this, ifindex, dst);
+	};
+
+	/**
+	 *
+	 * @param ifindex
+	 */
+	void unwatch(int ifindex, const rofl::caddress_in6& dst) {
+		cnetlink::get_instance().ignore_neighbour(this, ifindex, dst);
+	};
 
 	/**
 	 *

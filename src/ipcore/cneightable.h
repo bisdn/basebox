@@ -127,109 +127,133 @@ public:
 	 *
 	 */
 	cdptneigh_in4&
-	add_neigh_in4(unsigned int adindex) {
-		if (neighs_in4.find(adindex) != neighs_in4.end()) {
-			neighs_in4.erase(adindex);
+	add_neigh_in4(unsigned int nbindex) {
+		if (neighs_in4.find(nbindex) != neighs_in4.end()) {
+			neighs_in4.erase(nbindex);
 		}
-		neighs_in4[adindex].set_dptid(dptid);
-		return neighs_in4[adindex];
+		neighs_in4[nbindex].set_dptid(dptid);
+		return neighs_in4[nbindex];
 	};
 
 	/**
 	 *
 	 */
 	cdptneigh_in4&
-	set_neigh_in4(unsigned int adindex) {
-		if (neighs_in4.find(adindex) == neighs_in4.end()) {
-			neighs_in4[adindex].set_dptid(dptid);
+	set_neigh_in4(unsigned int nbindex) {
+		if (neighs_in4.find(nbindex) == neighs_in4.end()) {
+			neighs_in4[nbindex].set_dptid(dptid);
 		}
-		return neighs_in4[adindex];
+		return neighs_in4[nbindex];
 	};
 
 	/**
 	 *
 	 */
 	const cdptneigh_in4&
-	get_neigh_in4(unsigned int adindex) const {
-		if (neighs_in4.find(adindex) == neighs_in4.end()) {
+	get_neigh_in4(unsigned int nbindex) const {
+		if (neighs_in4.find(nbindex) == neighs_in4.end()) {
 			throw eNeighTableNotFound();
 		}
-		return neighs_in4.at(adindex);
+		return neighs_in4.at(nbindex);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_neigh_in4(unsigned int adindex) {
-		if (neighs_in4.find(adindex) == neighs_in4.end()) {
+	drop_neigh_in4(unsigned int nbindex) {
+		if (neighs_in4.find(nbindex) == neighs_in4.end()) {
 			return;
 		}
-		neighs_in4.erase(adindex);
+		neighs_in4.erase(nbindex);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_neigh_in4(unsigned int adindex) const {
-		return (not (neighs_in4.find(adindex) == neighs_in4.end()));
-	};
-
-
-	/**
-	 *
-	 */
-	cdptneigh_in6&
-	add_neigh_in6(unsigned int adindex) {
-		if (neighs_in6.find(adindex) != neighs_in6.end()) {
-			neighs_in6.erase(adindex);
-		}
-		neighs_in6[adindex].set_dptid(dptid);
-		return neighs_in6[adindex];
+	has_neigh_in4(unsigned int nbindex) const {
+		return (not (neighs_in4.find(nbindex) == neighs_in4.end()));
 	};
 
 	/**
 	 *
 	 */
-	cdptneigh_in6&
-	set_neigh_in6(unsigned int adindex) {
-		if (neighs_in6.find(adindex) == neighs_in6.end()) {
-			neighs_in6[adindex].set_dptid(dptid);
+	const cdptneigh_in4&
+	get_neigh_in4(const rofl::caddress_in4& dst) const {
+		std::map<unsigned int, cdptneigh_in4>::const_iterator it;
+		if ((it = find_if(neighs_in4.begin(), neighs_in4.end(),
+				cdptneigh_in4_find_by_dst(dst))) == neighs_in4.end()) {
+			throw eNeighTableNotFound();
 		}
-		return neighs_in6[adindex];
+		return it->second;
+	};
+
+	/**
+	 *
+	 */
+	cdptneigh_in6&
+	add_neigh_in6(unsigned int nbindex) {
+		if (neighs_in6.find(nbindex) != neighs_in6.end()) {
+			neighs_in6.erase(nbindex);
+		}
+		neighs_in6[nbindex].set_dptid(dptid);
+		return neighs_in6[nbindex];
+	};
+
+	/**
+	 *
+	 */
+	cdptneigh_in6&
+	set_neigh_in6(unsigned int nbindex) {
+		if (neighs_in6.find(nbindex) == neighs_in6.end()) {
+			neighs_in6[nbindex].set_dptid(dptid);
+		}
+		return neighs_in6[nbindex];
 	};
 
 	/**
 	 *
 	 */
 	const cdptneigh_in6&
-	get_neigh_in6(unsigned int adindex) const {
-		if (neighs_in6.find(adindex) == neighs_in6.end()) {
+	get_neigh_in6(unsigned int nbindex) const {
+		if (neighs_in6.find(nbindex) == neighs_in6.end()) {
 			throw eNeighTableNotFound();
 		}
-		return neighs_in6.at(adindex);
+		return neighs_in6.at(nbindex);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_neigh_in6(unsigned int adindex) {
-		if (neighs_in6.find(adindex) == neighs_in6.end()) {
+	drop_neigh_in6(unsigned int nbindex) {
+		if (neighs_in6.find(nbindex) == neighs_in6.end()) {
 			return;
 		}
-		neighs_in6.erase(adindex);
+		neighs_in6.erase(nbindex);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_neigh_in6(unsigned int adindex) const {
-		return (not (neighs_in6.find(adindex) == neighs_in6.end()));
+	has_neigh_in6(unsigned int nbindex) const {
+		return (not (neighs_in6.find(nbindex) == neighs_in6.end()));
 	};
 
+	/**
+	 *
+	 */
+	const cdptneigh_in6&
+	get_neigh_in6(const rofl::caddress_in6& dst) const {
+		std::map<unsigned int, cdptneigh_in6>::const_iterator it;
+		if ((it = find_if(neighs_in6.begin(), neighs_in6.end(),
+				cdptneigh_in6_find_by_dst(dst))) == neighs_in6.end()) {
+			throw eNeighTableNotFound();
+		}
+		return it->second;
+	};
 
 public:
 
