@@ -26,12 +26,12 @@ public:
 	/**
 	 *
 	 */
-	croutetables();
+	croutetables() {};
 
 	/**
 	 *
 	 */
-	~croutetables();
+	~croutetables() {};
 
 	/**
 	 *

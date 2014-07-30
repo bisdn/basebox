@@ -23,12 +23,10 @@ extern "C" {
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
 
-#include "crtneigh.h"
 #include "flowmod.h"
 #include "cnetlink.h"
 
-namespace ipcore
-{
+namespace ipcore {
 
 class cdptnexthop : public flowmod, public rofcore::cnetlink_neighbour_observer {
 public:
@@ -137,13 +135,13 @@ private:
 	 *
 	 */
 	virtual void
-	flow_mod_add(uint8_t command = rofl::openflow::OFPFC_ADD);
+	flow_mod_add(uint8_t command = rofl::openflow::OFPFC_ADD) {};
 
 	/**
 	 *
 	 */
 	virtual void
-	flow_mod_delete();
+	flow_mod_delete() {};
 
 
 public:

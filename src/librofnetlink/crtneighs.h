@@ -23,13 +23,13 @@ public:
 	/**
 	 *
 	 */
-	crtneighs_in4();
+	crtneighs_in4() {};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtneighs_in4();
+	~crtneighs_in4() {};
 
 	/**
 	 *
@@ -186,13 +186,13 @@ public:
 	/**
 	 *
 	 */
-	crtneighs_in6();
+	crtneighs_in6() {};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtneighs_in6();
+	~crtneighs_in6() {};
 
 	/**
 	 *

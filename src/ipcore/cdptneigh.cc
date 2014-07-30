@@ -6,6 +6,7 @@
  */
 
 #include "cdptneigh.h"
+#include "cipcore.h"
 
 using namespace ipcore;
 
@@ -13,7 +14,7 @@ using namespace ipcore;
 void
 cdptneigh_in4::update()
 {
-	rofcore::logging::warn << "[ipcore][cdptneigh_in4][update] not implemented" << std::endl;
+	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
 }
 
 
@@ -22,7 +23,36 @@ void
 cdptneigh_in4::flow_mod_add(uint8_t command)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
+
+		// the neighbour ...
+		const rofcore::crtneigh_in4& rtn =
+				netlink.get_links().get_link(get_ifindex()).get_neighs_in4().get_neigh(get_nbindex());
+
+		// ... reachable via this link (crtlink) ...
+		const rofcore::crtlink& rtl =
+				netlink.get_links().get_link(rtn.get_ifindex());
+
+		// ... and the link's dpt representation (cdptlink) needed for OFP related data
+		const ipcore::cdptlink& dpl =
+				cipcore::get_instance().get_link_table().
+						get_link_by_ifindex(rtn.get_ifindex());
+
+
+
+		// local outgoing interface mac address
+		const rofl::cmacaddr& eth_src 	= rtl.get_hwaddr();
+
+		// neighbour mac address
+		const rofl::cmacaddr& eth_dst 	= rtn.get_lladdr();
+
+		// local outgoing interface => OFP portno
+		uint32_t out_portno 			= dpl.get_ofp_port_no();
+
+
+
+
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(command);
@@ -30,32 +60,31 @@ cdptneigh_in4::flow_mod_add(uint8_t command)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(table_id);
+		fe.set_table_id(get_table_id());
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
-		/*
-		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!
-		 */
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in4(nbindex).get_dst());
+		fe.set_match().set_ipv4_dst(rtn.get_dst());
 
-		rofl::cmacaddr eth_src(rofcore::cnetlink::get_instance().get_link(ifindex).get_hwaddr());
-		rofl::cmacaddr eth_dst(rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in4(nbindex).get_lladdr());
+		rofl::cindex index(0);
 
-		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_set_field(0).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
-		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(1).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_output(2).set_port_no(of_port_no);
+		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
+		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
+		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_output(index++).set_port_no(out_portno);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
-
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_add] unable to find data path" << std::endl << *this;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
 		rofcore::logging::error << "[dptneigh_in4][flow_mod_add] unable to find link" << std::endl << *this;
 
-	} catch (rofcore::eRtLinkNotFound& e) {
+	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
+		rofcore::logging::error << "[dptneigh_in4][flow_mod_add] unable to find neighbour" << std::endl << *this;
+
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::error << "[dptneigh_in4][flow_mod_add] unable to find address" << std::endl << *this;
+
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::error << "[dptneigh_in4][flow_mod_add] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
 		rofcore::logging::error << "[dptneigh_in4][flow_mod_add] unexpected error" << std::endl << *this;
@@ -69,7 +98,14 @@ void
 cdptneigh_in4::flow_mod_delete()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
+
+		// the neighbour ...
+		const rofcore::crtneigh_in4& rtn =
+				netlink.get_links().get_link(get_ifindex()).get_neighs_in4().get_neigh(get_nbindex());
+
+
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -77,24 +113,24 @@ cdptneigh_in4::flow_mod_delete()
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(table_id);
+		fe.set_table_id(get_table_id());
 
-		/*
-		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!
-		 */
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in4(nbindex).get_dst());
+		fe.set_match().set_ipv4_dst(rtn.get_dst());
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
-
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_delete] unable to find data path" << std::endl << *this;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
 		rofcore::logging::error << "[dptneigh_in4][flow_mod_delete] unable to find link" << std::endl << *this;
 
-	} catch (rofcore::eRtLinkNotFound& e) {
+	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
+		rofcore::logging::error << "[dptneigh_in4][flow_mod_delete] unable to find neighbour" << std::endl << *this;
+
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::error << "[dptneigh_in4][flow_mod_delete] unable to find address" << std::endl << *this;
+
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::error << "[dptneigh_in4][flow_mod_delete] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
 		rofcore::logging::error << "[dptneigh_in4][flow_mod_delete] unexpected error" << std::endl << *this;
@@ -108,7 +144,7 @@ cdptneigh_in4::flow_mod_delete()
 void
 cdptneigh_in6::update()
 {
-	rofcore::logging::warn << "[ipcore][cdptneigh_in6][update] not implemented" << std::endl;
+	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
 }
 
 
@@ -117,7 +153,36 @@ void
 cdptneigh_in6::flow_mod_add(uint8_t command)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
+
+		// the neighbour ...
+		const rofcore::crtneigh_in6& rtn =
+				netlink.get_links().get_link(get_ifindex()).get_neighs_in6().get_neigh(get_nbindex());
+
+		// ... reachable via this link (crtlink) ...
+		const rofcore::crtlink& rtl =
+				netlink.get_links().get_link(rtn.get_ifindex());
+
+		// ... and the link's dpt representation (cdptlink) needed for OFP related data
+		const ipcore::cdptlink& dpl =
+				cipcore::get_instance().get_link_table().
+						get_link_by_ifindex(rtn.get_ifindex());
+
+
+
+		// local outgoing interface mac address
+		const rofl::cmacaddr& eth_src 	= rtl.get_hwaddr();
+
+		// neighbour mac address
+		const rofl::cmacaddr& eth_dst 	= rtn.get_lladdr();
+
+		// local outgoing interface => OFP portno
+		uint32_t out_portno 			= dpl.get_ofp_port_no();
+
+
+
+
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(command);
@@ -125,32 +190,31 @@ cdptneigh_in6::flow_mod_add(uint8_t command)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(table_id);
+		fe.set_table_id(get_table_id());
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
-		/*
-		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!
-		 */
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in6(nbindex).get_dst());
+		fe.set_match().set_ipv6_dst(rtn.get_dst());
 
-		rofl::cmacaddr eth_src(rofcore::cnetlink::get_instance().get_link(ifindex).get_hwaddr());
-		rofl::cmacaddr eth_dst(rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in6(nbindex).get_lladdr());
+		rofl::cindex index(0);
 
-		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_set_field(0).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
-		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(1).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_output(2).set_port_no(of_port_no);
+		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
+		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
+		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_output(index++).set_port_no(out_portno);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
-
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_add] unable to find data path" << std::endl << *this;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
 		rofcore::logging::error << "[dptneigh_in6][flow_mod_add] unable to find link" << std::endl << *this;
 
-	} catch (rofcore::eRtLinkNotFound& e) {
+	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
+		rofcore::logging::error << "[dptneigh_in6][flow_mod_add] unable to find neighbour" << std::endl << *this;
+
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::error << "[dptneigh_in6][flow_mod_add] unable to find address" << std::endl << *this;
+
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::error << "[dptneigh_in6][flow_mod_add] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
 		rofcore::logging::error << "[dptneigh_in6][flow_mod_add] unexpected error" << std::endl << *this;
@@ -164,7 +228,14 @@ void
 cdptneigh_in6::flow_mod_delete()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
+
+		// the neighbour ...
+		const rofcore::crtneigh_in6& rtn =
+				netlink.get_links().get_link(get_ifindex()).get_neighs_in6().get_neigh(get_nbindex());
+
+
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -172,31 +243,28 @@ cdptneigh_in6::flow_mod_delete()
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(table_id);
+		fe.set_table_id(get_table_id());
 
-		/*
-		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!
-		 */
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_link(ifindex).get_neigh_in6(nbindex).get_dst());
+		fe.set_match().set_ipv6_dst(rtn.get_dst());
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
-
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_delete] unable to find data path" << std::endl << *this;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
 		rofcore::logging::error << "[dptneigh_in6][flow_mod_delete] unable to find link" << std::endl << *this;
 
-	} catch (rofcore::eRtLinkNotFound& e) {
+	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
+		rofcore::logging::error << "[dptneigh_in6][flow_mod_delete] unable to find neighbour" << std::endl << *this;
+
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::error << "[dptneigh_in6][flow_mod_delete] unable to find address" << std::endl << *this;
+
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::error << "[dptneigh_in6][flow_mod_delete] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
 		rofcore::logging::error << "[dptneigh_in6][flow_mod_delete] unexpected error" << std::endl << *this;
 
 	}
 }
-
-
-
 

@@ -22,13 +22,13 @@ public:
 	/**
 	 *
 	 */
-	crtlinks();
+	crtlinks() {};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtlinks();
+	~crtlinks() {};
 
 	/**
 	 *

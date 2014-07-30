@@ -22,13 +22,13 @@ public:
 	/**
 	 *
 	 */
-	crtnexthops_in4();
+	crtnexthops_in4() {};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtnexthops_in4();
+	~crtnexthops_in4() {};
 
 	/**
 	 *
@@ -200,13 +200,13 @@ public:
 	/**
 	 *
 	 */
-	crtnexthops_in6();
+	crtnexthops_in6() {};
 
 	/**
 	 *
 	 */
 	virtual
-	~crtnexthops_in6();
+	~crtnexthops_in6() {};
 
 	/**
 	 *

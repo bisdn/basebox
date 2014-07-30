@@ -29,11 +29,11 @@ cdptnexthop_in4::flow_mod_add(uint8_t command)
 
 		// the route ...
 		const rofcore::crtroute_in4& rtr =
-				netlink.get_routes_in4(rttblid).get_route(rtindex);
+				netlink.get_routes_in4(get_rttblid()).get_route(get_rtindex());
 
 		// ... with its destination reachable via this next hop ...
 		const rofcore::crtnexthop_in4& rtn =
-				rtr.get_nexthops_in4().get_nexthop(nhindex);
+				rtr.get_nexthops_in4().get_nexthop(get_nhindex());
 
 		// in the meantime: watch our associated neighbour and track his fate
 		rofcore::cnetlink_neighbour_observer::watch(rtn.get_ifindex(), rtn.get_gateway());
@@ -65,7 +65,7 @@ cdptnexthop_in4::flow_mod_add(uint8_t command)
 
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(command);
@@ -73,7 +73,7 @@ cdptnexthop_in4::flow_mod_add(uint8_t command)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(rttblid);
+		fe.set_table_id(get_rttblid());
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -131,18 +131,18 @@ cdptnexthop_in4::flow_mod_delete()
 
 		// the route ...
 		const rofcore::crtroute_in4& rtr =
-				netlink.get_routes_in4(rttblid).get_route(rtindex);
+				netlink.get_routes_in4(get_rttblid()).get_route(get_rtindex());
 
 		// ... with its destination reachable via this next hop ...
 		const rofcore::crtnexthop_in4& rtn =
-				rtr.get_nexthops_in4().get_nexthop(nhindex);
+				rtr.get_nexthops_in4().get_nexthop(get_nhindex());
 
 		// ... finally, un-watch our associated neighbour
 		rofcore::cnetlink_neighbour_observer::unwatch(rtn.get_ifindex(), rtn.get_gateway());
 
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -150,7 +150,7 @@ cdptnexthop_in4::flow_mod_delete()
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(rttblid);
+		fe.set_table_id(get_rttblid());
 
 		/*
 		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!
@@ -196,11 +196,11 @@ cdptnexthop_in6::flow_mod_add(uint8_t command)
 
 		// the route ...
 		const rofcore::crtroute_in6& rtr =
-				netlink.get_routes_in6(rttblid).get_route(rtindex);
+				netlink.get_routes_in6(get_rttblid()).get_route(get_rtindex());
 
 		// ... with its destination reachable via this next hop ...
 		const rofcore::crtnexthop_in6& rtn =
-				rtr.get_nexthops_in6().get_nexthop(nhindex);
+				rtr.get_nexthops_in6().get_nexthop(get_nhindex());
 
 		// in the meantime: watch our associated neighbour and track his fate
 		rofcore::cnetlink_neighbour_observer::watch(rtn.get_ifindex(), rtn.get_gateway());
@@ -232,7 +232,7 @@ cdptnexthop_in6::flow_mod_add(uint8_t command)
 		uint32_t out_portno 			= dpl.get_ofp_port_no();
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(command);
@@ -240,7 +240,7 @@ cdptnexthop_in6::flow_mod_add(uint8_t command)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(rttblid);
+		fe.set_table_id(get_rttblid());
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
@@ -298,18 +298,18 @@ cdptnexthop_in6::flow_mod_delete()
 
 		// the route ...
 		const rofcore::crtroute_in6& rtr =
-				netlink.get_routes_in6(rttblid).get_route(rtindex);
+				netlink.get_routes_in6(get_rttblid()).get_route(get_rtindex());
 
 		// ... with its destination reachable via this next hop ...
 		const rofcore::crtnexthop_in6& rtn =
-				rtr.get_nexthops_in6().get_nexthop(nhindex);
+				rtr.get_nexthops_in6().get_nexthop(get_nhindex());
 
 		// ... finally, un-watch our associated neighbour
 		rofcore::cnetlink_neighbour_observer::unwatch(rtn.get_ifindex(), rtn.get_gateway());
 
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -317,7 +317,7 @@ cdptnexthop_in6::flow_mod_delete()
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(rttblid);
+		fe.set_table_id(get_rttblid());
 
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rtr.get_ipv6_dst(), rtr.get_ipv6_mask());

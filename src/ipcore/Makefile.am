@@ -19,24 +19,15 @@ ipcored_SOURCES = ipcored.cc \
 		cdptneigh.cc \
 		cdptnexthop.h \
 		cdptnexthop.cc \
-		cpacketpool.h \
-		cpacketpool.cc \
-		cnetdev.h \
-		cnetdev.cc \
-		ctapdev.h \
-		ctapdev.cc \
-		cnetlink.h \
-		cnetlink.cc \
 		flowmod.h \
 		clinktable.h \
 		caddrtable.h \
 		cneightable.h \
 		cnexthoptable.h \
 		croutetable.h \
-		croutetables.h \
-		croutetables.cc
+		croutetables.h
 		
-ipcored_LDADD = -lpthread -lrt -l../librofnetlink.la
+ipcored_LDADD = -lpthread -lrt -L../librofnetlink -lrofnetlink
 
 #AM_CPPFLAGS = -I/usr/local/libnl-3.2.22/include/libnl3
 #AM_LDFLAGS = -static -L/usr/local/libnl-3.2.22/lib -lnl-route-3 -lnl-3

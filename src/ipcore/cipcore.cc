@@ -501,6 +501,47 @@ cipcore::route_in6_deleted(uint8_t table_id, unsigned int rtindex)
 }
 
 
+void
+cipcore::neigh_in4_created(unsigned int ifindex, uint16_t nbindex)
+{
+	// TODO
+}
+
+
+void
+cipcore::neigh_in4_updated(unsigned int ifindex, uint16_t nbindex)
+{
+	// TODO
+}
+
+
+void
+cipcore::neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex)
+{
+	// TODO
+}
+
+
+void
+cipcore::neigh_in6_created(unsigned int ifindex, uint16_t nbindex)
+{
+	// TODO
+}
+
+
+void
+cipcore::neigh_in6_updated(unsigned int ifindex, uint16_t nbindex)
+{
+	// TODO
+}
+
+
+void
+cipcore::neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex)
+{
+	// TODO
+}
+
 
 void
 cipcore::purge_dpt_entries()
