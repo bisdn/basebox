@@ -504,42 +504,122 @@ cipcore::route_in6_deleted(uint8_t table_id, unsigned int rtindex)
 void
 cipcore::neigh_in4_created(unsigned int ifindex, uint16_t nbindex)
 {
-	// TODO
+	try {
+
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] neigh_in4 create: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (not ltable.get_link(ifindex).get_neigh_table().has_neigh_in4(nbindex)) {
+			ltable.set_link(ifindex).set_neigh_table().set_neigh_in4(nbindex).install();
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] neigh_in4 create: exception " << e.what() << std::endl;
+	}
 }
 
 
 void
 cipcore::neigh_in4_updated(unsigned int ifindex, uint16_t nbindex)
 {
-	// TODO
+	try {
+
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] neigh_in4 create: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (not ltable.get_link(ifindex).get_neigh_table().has_neigh_in4(nbindex)) {
+			ltable.set_link(ifindex).set_neigh_table().set_neigh_in4(nbindex).install();
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] neigh_in4 create: exception " << e.what() << std::endl;
+	}
 }
 
 
 void
 cipcore::neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex)
 {
-	// TODO
+	try {
+
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] neigh_in4 delete: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (ltable.get_link(ifindex).get_neigh_table().has_neigh_in6(nbindex)) {
+			ltable.set_link(ifindex).set_neigh_table().set_neigh_in6(nbindex).uninstall();
+			ltable.set_link(ifindex).set_neigh_table().drop_neigh_in6(nbindex);
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] neigh_in4 delete: exception " << e.what() << std::endl;
+	}
 }
 
 
 void
 cipcore::neigh_in6_created(unsigned int ifindex, uint16_t nbindex)
 {
-	// TODO
+	try {
+
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] neigh_in6 create: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (not ltable.get_link(ifindex).get_neigh_table().has_neigh_in6(nbindex)) {
+			ltable.set_link(ifindex).set_neigh_table().set_neigh_in6(nbindex).install();
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] neigh_in6 create: exception " << e.what() << std::endl;
+	}
 }
 
 
 void
 cipcore::neigh_in6_updated(unsigned int ifindex, uint16_t nbindex)
 {
-	// TODO
+	try {
+
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] neigh_in6 create: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (not ltable.get_link(ifindex).get_neigh_table().has_neigh_in6(nbindex)) {
+			ltable.set_link(ifindex).set_neigh_table().set_neigh_in6(nbindex).install();
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] neigh_in6 create: exception " << e.what() << std::endl;
+	}
 }
 
 
 void
 cipcore::neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex)
 {
-	// TODO
+	try {
+
+		if (not ltable.has_link(ifindex)) {
+			rofcore::logging::error << "[ipcore] neigh_in6 delete: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		if (ltable.get_link(ifindex).get_neigh_table().has_neigh_in6(nbindex)) {
+			ltable.set_link(ifindex).set_neigh_table().set_neigh_in6(nbindex).uninstall();
+			ltable.set_link(ifindex).set_neigh_table().drop_neigh_in6(nbindex);
+		}
+
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[ipcore] neigh_in6 delete: exception " << e.what() << std::endl;
+	}
 }
 
 
