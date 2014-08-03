@@ -5,6 +5,9 @@ SUBDIRS =
 sbin_PROGRAMS = ethcored
 
 ethcored_SOURCES = \
+	cvlantable.hpp \
+	cvlantable.cpp \
+	cvlan.hpp \
 	ethcored.cc \
 	cethcore.cc \
 	cethcore.h \

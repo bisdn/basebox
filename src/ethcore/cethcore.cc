@@ -11,8 +11,7 @@ cethcore&
 cethcore::get_instance(rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap)
 {
 	if (0 == cethcore::sethcore) {
-		cethcore::sethcore =
-				new cethcore(versionbitmap);
+		cethcore::sethcore = new cethcore(versionbitmap);
 	}
 	return *(cethcore::sethcore);
 }
