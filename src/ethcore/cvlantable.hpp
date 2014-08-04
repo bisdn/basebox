@@ -160,6 +160,20 @@ public:
 		return (not (vlans.find(vid) == vlans.end()));
 	};
 
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const cvlantable& vtable) {
+		os << rofcore::indent(0) << "<cvlantable "
+				<< " dptid: " << vtable.get_dptid() << " >" << std::endl;
+		rofcore::indent i(2);
+		for (std::map<uint16_t, cvlan>::const_iterator
+				it = vtable.vlans.begin(); it != vtable.vlans.end(); ++it) {
+			os << it->second;
+		}
+		return os;
+	};
+
 private:
 
 	rofl::cdptid								dptid;
