@@ -13,6 +13,7 @@
 #include <iostream>
 #include <rofl/common/cdptid.h>
 #include "logging.h"
+#include "cdpid.hpp"
 
 namespace ethcore {
 
@@ -38,9 +39,9 @@ public:
 	 *
 	 */
 	cmemberport(
-			const rofl::cdptid& dptid, uint32_t portno = 0xffffffff,
+			const cdpid& dpid, uint32_t portno = 0xffffffff,
 			uint16_t vid = 0xffff, bool tagged = true) :
-		dptid(dptid), portno(portno), vid(vid), tagged(tagged) {};
+		dpid(dpid), portno(portno), vid(vid), tagged(tagged) {};
 
 	/**
 	 *
@@ -61,7 +62,7 @@ public:
 	operator= (const cmemberport& port) {
 		if (this == &port)
 			return *this;
-		dptid 	= port.dptid;
+		dpid 	= port.dpid;
 		portno 	= port.portno;
 		vid 	= port.vid;
 		tagged 	= port.tagged;
@@ -95,7 +96,7 @@ public:
 
 private:
 
-	rofl::cdptid	dptid;
+	cdpid			dpid;
 	uint32_t		portno;
 	uint16_t 		vid;
 	bool 			tagged;

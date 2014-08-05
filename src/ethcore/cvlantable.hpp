@@ -14,6 +14,7 @@
 #include <rofl/common/crofdpt.h>
 #include "logging.h"
 #include "cvlan.hpp"
+#include "cdpid.hpp"
 
 namespace ethcore {
 
@@ -24,53 +25,53 @@ public:
 	 *
 	 */
 	static cvlantable&
-	add_vtable(const rofl::cdptid& dptid) {
-		if (cvlantable::vtables.find(dptid) != cvlantable::vtables.end()) {
-			delete cvlantable::vtables[dptid];
+	add_vtable(const cdpid& dpid) {
+		if (cvlantable::vtables.find(dpid) != cvlantable::vtables.end()) {
+			delete cvlantable::vtables[dpid];
 		}
-		new cvlantable(dptid);
-		return *(cvlantable::vtables[dptid]);
+		new cvlantable(dpid);
+		return *(cvlantable::vtables[dpid]);
 	};
 
 	/**
 	 *
 	 */
 	static cvlantable&
-	set_vtable(const rofl::cdptid& dptid) {
-		if (cvlantable::vtables.find(dptid) == cvlantable::vtables.end()) {
-			new cvlantable(dptid);
+	set_vtable(const cdpid& dpid) {
+		if (cvlantable::vtables.find(dpid) == cvlantable::vtables.end()) {
+			new cvlantable(dpid);
 		}
-		return *(cvlantable::vtables[dptid]);
+		return *(cvlantable::vtables[dpid]);
 	};
 
 	/**
 	 *
 	 */
 	static const cvlantable&
-	get_vtable(const rofl::cdptid& dptid) {
-		if (cvlantable::vtables.find(dptid) == cvlantable::vtables.end()) {
-			throw eVlanNotFound("cvlantable::get_vtable() dptid not found");
+	get_vtable(const cdpid& dpid) {
+		if (cvlantable::vtables.find(dpid) == cvlantable::vtables.end()) {
+			throw eVlanNotFound("cvlantable::get_vtable() dpid not found");
 		}
-		return *(cvlantable::vtables.at(dptid));
+		return *(cvlantable::vtables.at(dpid));
 	};
 
 	/**
 	 *
 	 */
 	static void
-	drop_vtable(const rofl::cdptid& dptid) {
-		if (cvlantable::vtables.find(dptid) == cvlantable::vtables.end()) {
+	drop_vtable(const cdpid& dpid) {
+		if (cvlantable::vtables.find(dpid) == cvlantable::vtables.end()) {
 			return;
 		}
-		delete cvlantable::vtables[dptid];
+		delete cvlantable::vtables[dpid];
 	};
 
 	/**
 	 *
 	 */
 	static bool
-	has_vtable(const rofl::cdptid& dptid) {
-		return (not (cvlantable::vtables.find(dptid) == cvlantable::vtables.end()));
+	has_vtable(const cdpid& dpid) {
+		return (not (cvlantable::vtables.find(dpid) == cvlantable::vtables.end()));
 	};
 
 public:
@@ -78,18 +79,18 @@ public:
 	/**
 	 *
 	 */
-	cvlantable(const rofl::cdptid& dptid) : dptid(dptid) {
-		if (cvlantable::vtables.find(dptid) != cvlantable::vtables.end()) {
+	cvlantable(const cdpid& dpid) : dpid(dpid) {
+		if (cvlantable::vtables.find(dpid) != cvlantable::vtables.end()) {
 			throw eVlanExists("cvlantable::cvlantable() dptid already exists");
 		}
-		cvlantable::vtables[dptid] = this;
+		cvlantable::vtables[dpid] = this;
 	};
 
 	/**
 	 *
 	 */
 	~cvlantable() {
-		cvlantable::vtables.erase(dptid);
+		cvlantable::vtables.erase(dpid);
 	};
 
 public:
@@ -97,8 +98,8 @@ public:
 	/**
 	 *
 	 */
-	const rofl::cdptid&
-	get_dptid() const { return dptid; };
+	const cdpid&
+	get_dpid() const { return dpid; };
 
 public:
 
@@ -116,7 +117,7 @@ public:
 		if (vlans.find(vid) != vlans.end()) {
 			vlans.erase(vid);
 		}
-		return (vlans[vid] = cvlan(dptid, vid));
+		return (vlans[vid] = cvlan(dpid, vid));
 	};
 
 	/**
@@ -125,7 +126,7 @@ public:
 	cvlan&
 	set_vlan(uint16_t vid) {
 		if (vlans.find(vid) == vlans.end()) {
-			vlans[vid] = cvlan(dptid, vid);
+			vlans[vid] = cvlan(dpid, vid);
 		}
 		return vlans[vid];
 	};
@@ -165,7 +166,7 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const cvlantable& vtable) {
 		os << rofcore::indent(0) << "<cvlantable "
-				<< " dptid: " << vtable.get_dptid() << " >" << std::endl;
+				<< " dpid: " << vtable.get_dpid() << " >" << std::endl;
 		rofcore::indent i(2);
 		for (std::map<uint16_t, cvlan>::const_iterator
 				it = vtable.vlans.begin(); it != vtable.vlans.end(); ++it) {
@@ -176,10 +177,10 @@ public:
 
 private:
 
-	rofl::cdptid								dptid;
-	std::map<uint16_t, cvlan>					vlans;
+	cdpid									dpid;
+	std::map<uint16_t, cvlan>				vlans;
 
-	static std::map<rofl::cdptid, cvlantable*> 	vtables;
+	static std::map<cdpid, cvlantable*> 	vtables;
 };
 
 }; // end of namespace

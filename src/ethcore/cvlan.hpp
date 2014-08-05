@@ -16,6 +16,7 @@
 
 #include "logging.h"
 #include "cmemberport.hpp"
+#include "cdpid.hpp"
 
 namespace ethcore {
 
@@ -49,8 +50,8 @@ public:
 	/**
 	 *
 	 */
-	cvlan(const rofl::cdptid& dptid, uint16_t vid = VID_NO_VLAN, uint32_t group_id = 0) :
-		dptid(dptid), vid(vid), group_id(group_id) {};
+	cvlan(const cdpid& dpid, uint16_t vid = VID_NO_VLAN, uint32_t group_id = 0) :
+		dpid(dpid), vid(vid), group_id(group_id) {};
 
 	/**
 	 *
@@ -71,7 +72,7 @@ public:
 	operator= (const cvlan& vlan) {
 		if (this == &vlan)
 			return *this;
-		dptid = vlan.dptid;
+		dpid = vlan.dpid;
 		vid = vlan.vid;
 		group_id = vlan.group_id;
 		return *this;
@@ -85,7 +86,7 @@ public:
 	cmemberport&
 	add_port(uint32_t portno, bool tagged = true) {
 		if (ports.find(portno) != ports.end()) {
-			ports[portno] = cmemberport(dptid, portno, vid, tagged);
+			ports[portno] = cmemberport(dpid, portno, vid, tagged);
 		}
 		return ports[portno];
 	};
@@ -96,7 +97,7 @@ public:
 	cmemberport&
 	set_port(uint32_t portno, bool tagged = true) {
 		if (ports.find(portno) == ports.end()) {
-			ports[portno] = cmemberport(dptid, portno, vid, tagged);
+			ports[portno] = cmemberport(dpid, portno, vid, tagged);
 		}
 		return ports[portno];
 	};
@@ -136,8 +137,8 @@ public:
 	/**
 	 *
 	 */
-	const rofl::cdptid&
-	get_dptid() const { return dptid; };
+	const cdpid&
+	get_dpid() const { return dpid; };
 
 	/**
 	 *
@@ -169,7 +170,7 @@ public:
 
 private:
 
-	rofl::cdptid		dptid;
+	cdpid				dpid;
 	uint16_t			vid;
 	uint32_t			group_id;	// OFP group identifier for broadcasting frames for this vid
 

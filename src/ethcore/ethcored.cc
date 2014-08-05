@@ -2,7 +2,7 @@
 #include <rofl/platform/unix/cdaemon.h>
 #include <rofl/platform/unix/cunixenv.h>
 
-#include "cethcore.h"
+#include "cethbase.hpp"
 #ifdef AMQP_QMF_SUPPORT
 #include "qmfagent.h"
 #endif
@@ -98,18 +98,18 @@ main(int argc, char** argv)
 	qmf::qmfagent::get_instance().init(argc, argv);
 #endif
 
-	cofhello_elem_versionbitmap versionbitmap;
+	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
 	if (ethercore::cconfig::get_instance().exists("ethcored.openflow.version")) {
 		versionbitmap.add_ofp_version((int)ethercore::cconfig::get_instance().lookup("ethcored.openflow.version"));
 	} else {
-		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
+		versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
 	}
 
-	rofl::logging::notice << "[ethcore][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
+	rofl::logging::notice << "[ethcored][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
-	ethercore::cethcore& core = ethercore::cethcore::get_instance(versionbitmap);
+	ethcore::cethbase& base = ethcore::cethbase::get_instance(versionbitmap);
 
-	core.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
+	//base.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
 
 	uint16_t portno = 6633;
 	if (ethercore::cconfig::get_instance().exists("ethcored.openflow.port")) {
@@ -120,7 +120,7 @@ main(int argc, char** argv)
 	rofl::cparams socket_params = rofl::csocket::get_default_params(socket_type);
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string("6653");
 
-	core.rpc_listen_for_dpts(socket_type, socket_params);
+	base.rpc_listen_for_dpts(socket_type, socket_params);
 
 	rofl::cioloop::run();
 

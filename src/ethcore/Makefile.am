@@ -9,18 +9,14 @@ ethcored_SOURCES = \
 	cvlantable.cpp \
 	cvlan.hpp \
 	ethcored.cc \
-	cethcore.cc \
-	cethcore.h \
+	cethcore.cpp \
+	cethcore.hpp \
 	cfib.cc \
 	cfib.h \
 	cfibentry.h \
 	cfibentry.cc \
 	sport.h \
 	sport.cc \
-	logging.h \
-	logging.cc \
-	cnetlink.cc \
-	cnetlink.h \
 	cdptlink.cc \
 	cdptlink.h \
 	clinktable.h \

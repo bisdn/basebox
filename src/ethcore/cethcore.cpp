@@ -1,8 +1,8 @@
-#include "cethcore.h"
+#include "cethcore.hpp"
 
 #include <inttypes.h>
 
-using namespace ethercore;
+using namespace ethcore;
 
 cethcore* cethcore::sethcore = (cethcore*)0;
 

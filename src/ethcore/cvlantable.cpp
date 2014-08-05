@@ -9,5 +9,5 @@
 
 using namespace ethcore;
 
-/*static*/std::map<rofl::cdptid, cvlantable*> cvlantable::vtables;
+/*static*/std::map<cdpid, cvlantable*> cvlantable::vtables;
 
