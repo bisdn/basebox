@@ -21,7 +21,7 @@
 #include "cnetlink.h"
 #include "cpacketpool.h"
 
-namespace ethercore {
+namespace ethcore {
 
 class eDptLinkBase 				: public std::exception {};
 class eDptLinkCritical 			: public eDptLinkBase {};

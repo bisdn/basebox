@@ -81,11 +81,11 @@ public:
 	void
 	set_prefixlen(uint8_t prefixlen);
 
-	rofl::caddress
+	rofl::caddress_in6
 	get_prefix() const;
 
 	void
-	set_prefix(rofl::caddress const& prefix);
+	set_prefix(rofl::caddress_in6 const& prefix);
 
 public:
 

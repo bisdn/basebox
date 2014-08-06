@@ -7,7 +7,7 @@
 
 #include "cdptlink.h"
 
-using namespace ipcore;
+using namespace ethcore;
 
 
 
@@ -66,8 +66,6 @@ cdptlink::tap_close()
 void
 cdptlink::install()
 {
-	addrtable.install();
-	neightable.install();
 	flags.set(FLAG_FLOW_MOD_INSTALLED);
 }
 
@@ -76,8 +74,6 @@ cdptlink::install()
 void
 cdptlink::uninstall()
 {
-	addrtable.uninstall();
-	neightable.uninstall();
 	flags.reset(FLAG_FLOW_MOD_INSTALLED);
 }
 

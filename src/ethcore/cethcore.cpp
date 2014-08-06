@@ -4,58 +4,13 @@
 
 using namespace ethcore;
 
-cethcore* cethcore::sethcore = (cethcore*)0;
-
-
-cethcore&
-cethcore::get_instance(rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap)
-{
-	if (0 == cethcore::sethcore) {
-		cethcore::sethcore = new cethcore(versionbitmap);
-	}
-	return *(cethcore::sethcore);
-}
-
-
-cethcore::cethcore(rofl::openflow::cofhello_elem_versionbitmap const& versionbitmap) :
-		rofl::crofbase(versionbitmap),
-		dpid(0),
-		port_stage_table_id(0),
-		fib_in_stage_table_id(1),
-		fib_out_stage_table_id(2),
-		default_vid(1),
-		timer_dump_interval(DEFAULT_TIMER_DUMP_INTERVAL),
-		netlink_enabled(false)
-{
-	//register_timer(ETHSWITCH_TIMER_DUMP, timer_dump_interval);
-}
-
-
-void
-cethcore::init(
-		uint8_t port_stage_table_id,
-		uint8_t fib_in_stage_table_id,
-		uint8_t fib_out_stage_table_id,
-		uint16_t default_vid)
-{
-	this->port_stage_table_id 		= port_stage_table_id;
-	this->fib_in_stage_table_id 	= fib_in_stage_table_id;
-	this->fib_out_stage_table_id 	= fib_out_stage_table_id;
-	this->default_vid 				= default_vid;
-}
-
-
-
-cethcore::~cethcore()
-{
-	// ...
-}
-
+/*static*/std::map<cdpid, cethcore*> cethcore::ethcores;
 
 
 void
 cethcore::link_created(unsigned int ifindex)
 {
+#if 0
 	if (not netlink_enabled)
 		return;
 
@@ -96,12 +51,14 @@ cethcore::link_created(unsigned int ifindex)
 		/* device exists, but is not member yet of the new VLAN, add membership in mode tagged */
 		add_port_to_vlan(dpid, devbase, vid, true);
 	}
+#endif
 }
 
 
 void
 cethcore::link_updated(unsigned int ifindex)
 {
+#if 0
 	if (not netlink_enabled)
 		return;
 
@@ -124,12 +81,14 @@ cethcore::link_updated(unsigned int ifindex)
 	} catch (rofcore::eNetLinkNotFound& e) {
 
 	}
+#endif
 }
 
 
 void
 cethcore::link_deleted(unsigned int ifindex)
 {
+#if 0
 	if (not netlink_enabled)
 		return;
 
@@ -164,95 +123,6 @@ cethcore::link_deleted(unsigned int ifindex)
 		/* device is not member of VLAN vid, skip event */
 
 	}
-}
-
-
-void
-cethcore::handle_timeout(int opaque)
-{
-	switch (opaque) {
-	case ETHSWITCH_TIMER_DUMP: {
-		logging::debug << *this << std::endl;
-		register_timer(ETHSWITCH_TIMER_DUMP, timer_dump_interval);
-	} break;
-	}
-}
-
-
-
-
-void
-cethcore::request_flow_stats()
-{
-#if 0
-	std::map<crofdpt*, std::map<uint16_t, std::map<cmacaddr, struct fibentry_t> > >::iterator it;
-
-	for (it = fib.begin(); it != fib.end(); ++it) {
-		crofdpt *dpt = it->first;
-
-		cofflow_stats_request req;
-
-		switch (dpt->get_version()) {
-		case OFP10_VERSION: {
-			req.set_version(dpt->get_version());
-			req.set_table_id(OFPTT_ALL);
-			req.set_match(cofmatch(OFP10_VERSION));
-			req.set_out_port(OFPP_ANY);
-		} break;
-		case OFP12_VERSION: {
-			req.set_version(dpt->get_version());
-			req.set_table_id(OFPTT_ALL);
-			cofmatch match(OFP12_VERSION);
-			//match.set_eth_dst(cmacaddr("01:80:c2:00:00:00"));
-			req.set_match(match);
-			req.set_out_port(OFPP_ANY);
-			req.set_out_group(OFPG_ANY);
-			req.set_cookie(0);
-			req.set_cookie_mask(0);
-		} break;
-		default: {
-			// do nothing
-		} break;
-		}
-
-		fprintf(stderr, "ethercore: calling FLOW-STATS-REQUEST for dpid: 0x%"PRIu64"\n",
-				dpt->get_dpid());
-
-		send_flow_stats_request(dpt, /*flags=*/0, req);
-	}
-
-	register_timer(ETHSWITCH_TIMER_FLOW_STATS, flow_stats_timeout);
-#endif
-}
-
-
-
-void
-cethcore::handle_flow_stats_reply(crofdpt& dpt, cofmsg_flow_stats_reply& msg, uint8_t aux_id)
-{
-#if 0
-	if (fib.find(dpt) == fib.end()) {
-		delete msg; return;
-	}
-
-	std::vector<cofflow_stats_reply>& replies = msg->get_flow_stats();
-
-	std::vector<cofflow_stats_reply>::iterator it;
-	for (it = replies.begin(); it != replies.end(); ++it) {
-		switch (it->get_version()) {
-		case OFP10_VERSION: {
-			fprintf(stderr, "FLOW-STATS-REPLY:\n  match: %s\n  actions: %s\n",
-					it->get_match().c_str(), it->get_actions().c_str());
-		} break;
-		case OFP12_VERSION: {
-			fprintf(stderr, "FLOW-STATS-REPLY:\n  match: %s\n  instructions: %s\n",
-					it->get_match().c_str(), it->get_instructions().c_str());
-		} break;
-		default: {
-			// do nothing
-		} break;
-		}
-	}
 #endif
 }
 
@@ -260,9 +130,12 @@ cethcore::handle_flow_stats_reply(crofdpt& dpt, cofmsg_flow_stats_reply& msg, ui
 
 
 
+
+
 void
-cethcore::handle_dpath_open(crofdpt& dpt)
+cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
+#if 0
 	try {
 		netlink_enabled = (bool)cconfig::get_instance().lookup("ethcored.enable_netlink");
 	} catch (...) {}
@@ -354,13 +227,15 @@ cethcore::handle_dpath_open(crofdpt& dpt)
 	sport::dump_sports();
 
 	cfib::dump_fibs();
+#endif
 }
 
 
 
 void
-cethcore::handle_dpath_close(crofdpt& dpt)
+cethcore::handle_dpt_close(rofl::crofdpt& dpt)
 {
+#if 0
 	logging::info << "[ethcore] dpath detaching dpid:" << (unsigned long long)dpt.get_dpid() << std::endl;
 
 	cfib::destroy_fibs(dpt.get_dpid());
@@ -369,13 +244,15 @@ cethcore::handle_dpath_close(crofdpt& dpt)
 	sport::destroy_sports(dpt.get_dpid());
 
 	ltable.clear();
+#endif
 }
 
 
 
 void
-cethcore::handle_packet_in(crofdpt& dpt, cofmsg_packet_in& msg, uint8_t aux_id)
+cethcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
+#if 0
 	//uint16_t vid = 0xffff;
 	uint16_t vid = default_vid;
 	try {
@@ -416,12 +293,14 @@ cethcore::handle_packet_in(crofdpt& dpt, cofmsg_packet_in& msg, uint8_t aux_id)
 		rofl::openflow::cofactions actions(dpt.get_version());
 		dpt.send_packet_out_message(rofl::cauxid(0), msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
 	}
+#endif
 }
 
 
 void
-cethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_id)
+cethcore::handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg)
 {
+#if 0
 	// TODO
 
 	switch (msg.get_reason()) {
@@ -557,12 +436,14 @@ cethcore::handle_port_status(crofdpt& dpt, cofmsg_port_status& msg, uint8_t aux_
 	}
 
 	sport::dump_sports();
+#endif
 }
 
 
 void
-cethcore::handle_flow_removed(crofdpt& dpt, cofmsg_flow_removed& msg, uint8_t aux_id)
+cethcore::handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg)
 {
+#if 0
 	uint16_t vid = default_vid;
 	try {
 
@@ -589,6 +470,15 @@ cethcore::handle_flow_removed(crofdpt& dpt, cofmsg_flow_removed& msg, uint8_t au
 		logging::crit << "[ethcore][flow-removed] no PVID for sport instance found for Flow-Removed message" << msg << std::endl;
 
 	}
+#endif
+}
+
+
+void
+cethcore::handle_error_message(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg)
+{
+
 }
 
 
@@ -612,7 +502,7 @@ cethcore::release_group_id(uint32_t group_id)
 	}
 }
 
-
+#if 0
 void
 cethcore::add_vlan(
 		uint64_t dpid,
@@ -684,5 +574,5 @@ cethcore::drop_port_from_vlan(
 
 	sport::dump_sports();
 }
-
+#endif
 

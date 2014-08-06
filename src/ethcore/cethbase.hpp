@@ -30,13 +30,14 @@ class cethbase : public rofl::crofbase {
 	 */
 	cethbase(
 			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap =
-					rofl::openflow::cofhello_elem_versionbitmap());
+					rofl::openflow::cofhello_elem_versionbitmap()) :
+						rofl::crofbase(versionbitmap) {};
 
 	/**
 	 *
 	 */
 	virtual
-	~cethbase();
+	~cethbase() {};
 
 	/**
 	 *

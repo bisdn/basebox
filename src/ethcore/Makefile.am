@@ -5,18 +5,16 @@ SUBDIRS =
 sbin_PROGRAMS = ethcored
 
 ethcored_SOURCES = \
+	ethcored.cc \
+	cethbase.hpp \
+	cethbase.cpp \
+	cethcore.hpp \
+	cethcore.cpp \
 	cvlantable.hpp \
 	cvlantable.cpp \
 	cvlan.hpp \
-	ethcored.cc \
-	cethcore.cpp \
-	cethcore.hpp \
-	cfib.cc \
-	cfib.h \
-	cfibentry.h \
-	cfibentry.cc \
-	sport.h \
-	sport.cc \
+	cfibentry.hpp \
+	cfibentry.cpp \
 	cdptlink.cc \
 	cdptlink.h \
 	clinktable.h \
@@ -29,6 +27,6 @@ endif
 
 
 	
-ethcored_LDADD = -lpthread -lrt -l ../librofnetlink.la
+ethcored_LDADD = -lpthread -lrt -L../librofnetlink -lrofnetlink
 
 AM_LDFLAGS = -static

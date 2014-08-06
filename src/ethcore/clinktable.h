@@ -15,7 +15,7 @@
 #include "cdptlink.h"
 #include "logging.h"
 
-namespace ethercore {
+namespace ethcore {
 
 class eLinkTableBase		: public std::exception {};
 class eLinkTableExists		: public eLinkTableBase {};

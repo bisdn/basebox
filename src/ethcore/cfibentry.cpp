@@ -1,87 +1,16 @@
 /*
- * cfibentry.cc
+ * cfibentry.cpp
  *
  *  Created on: 15.07.2013
  *      Author: andreas
  */
 
-#include <cfibentry.h>
+#include "cfibentry.hpp"
 
-using namespace ethercore;
+using namespace ethcore;
 
-cfibentry::cfibentry(
-		cfibentry_owner *fib,
-		uint8_t src_stage_table_id,
-		uint8_t dst_stage_table_id,
-		rofl::cmacaddr lladdr,
-		uint64_t dpid,
-		uint16_t vid,
-		uint32_t out_port_no,
-		bool tagged) :
-		fib(fib),
-		dpid(dpid),
-		vid(vid),
-		portno(out_port_no),
-		tagged(tagged),
-		lladdr(lladdr),
-		src_stage_table_id(src_stage_table_id),
-		dst_stage_table_id(dst_stage_table_id),
-		entry_timeout(CFIBENTRY_DEFAULT_TIMEOUT),
-		expiration_timer_id(0)
-{
-	flow_mod_configure(FLOW_MOD_ADD);
-
-	//expiration_timer_id = register_timer(CFIBENTRY_ENTRY_EXPIRED, entry_timeout);
-}
-
-
-cfibentry::~cfibentry()
-{
-	flow_mod_configure(FLOW_MOD_DELETE);
-#if 0
-	rofl::crofbase *rofbase = fib->get_rofbase();
-	rofl::crofdpt *dpt = rofbase->dpt_find(dpid);
-
-	//rofbase->send_barrier_request(dpt);
-#endif
-}
-
-
-
-void
-cfibentry::handle_timeout(int opaque, void *data)
-{
-	switch (opaque) {
-	// intentionally disabled
-#if 0
-	case CFIBENTRY_ENTRY_EXPIRED: {
-		flow_mod_configure(FLOW_MOD_DELETE);
-		fib->fib_timer_expired(this);
-	} break;
-#endif
-	}
-}
-
-
-
-
-void
-cfibentry::set_portno(uint32_t portno)
-{
-	flow_mod_configure(FLOW_MOD_DELETE);
-
-	this->portno = portno;
 
 #if 0
-	// intentionally disabled
-	reset_timer(expiration_timer_id, entry_timeout);
-#endif
-
-	flow_mod_configure(FLOW_MOD_ADD);
-}
-
-
-
 void
 cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 {
@@ -154,5 +83,5 @@ cfibentry::flow_mod_configure(enum flow_mod_cmd_t flow_mod_cmd)
 		logging::error << "[ethcore][cfibentry] data path already disconnected, unable to remove our entries" << std::endl;
 	}
 }
-
+#endif
 

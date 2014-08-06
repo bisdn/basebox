@@ -9,7 +9,6 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/logging.h>
 
-#include "cfib.h"
 #include "sport.h"
 #include "logging.h"
 #include "cnetlink.h"
@@ -128,17 +127,14 @@ private:
 	virtual void
 	link_deleted(unsigned int ifindex);
 
-private:
+public:
 
 	virtual void
-	handle_timeout(int opaque);
-
-	virtual void
-	handle_dpath_open(
+	handle_dpt_open(
 			rofl::crofdpt& dpt);
 
 	virtual void
-	handle_dpath_close(
+	handle_dpt_close(
 			rofl::crofdpt& dpt);
 
 	virtual void
@@ -148,10 +144,6 @@ private:
 	virtual void
 	handle_port_status(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);
-
-	virtual void
-	handle_flow_stats_reply(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_stats_reply& msg);
 
 	virtual void
 	handle_flow_removed(
@@ -191,7 +183,7 @@ private:
 	uint8_t				fib_out_stage_table_id;
 	uint16_t			default_vid;
 	std::set<uint32_t>	group_ids;		// set of group-ids in use by this controller (assigned to sport instances and cfib instance)
-	std::map<rofl::cdptid, clinktable>	ltable;
+	//std::map<rofl::cdptid, clinktable>	ltable;
 	bool				netlink_enabled;
 
 	static std::map<cdpid, cethcore*> 	ethcores;

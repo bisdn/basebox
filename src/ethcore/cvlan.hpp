@@ -17,6 +17,7 @@
 #include "logging.h"
 #include "cmemberport.hpp"
 #include "cdpid.hpp"
+#include "cfibentry.hpp"
 
 namespace ethcore {
 
@@ -34,7 +35,7 @@ public:
 };
 
 
-class cvlan {
+class cvlan : public cfibentry_owner {
 public:
 
 	enum cvlan_vid_type_t {
@@ -167,6 +168,16 @@ public:
 		}
 		return os;
 	};
+
+protected:
+
+	friend class cfibentry;
+
+	/**
+	 *
+	 */
+	virtual void
+	fib_expired(cfibentry& entry);
 
 private:
 

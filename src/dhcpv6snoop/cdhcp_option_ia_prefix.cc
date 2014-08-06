@@ -177,12 +177,12 @@ cdhcp_option_ia_prefix::set_prefixlen(uint8_t prefixlen)
 
 
 
-rofl::caddress
+rofl::caddress_in6
 cdhcp_option_ia_prefix::get_prefix() const
 {
-	rofl::caddress addr(AF_INET6, "::");
+	rofl::caddress_in6 addr("::");
 
-	memcpy(addr.ca_s6addr->sin6_addr.s6_addr, hdr->prefix, 16);
+	addr.unpack(hdr->prefix, 16);
 
 	return addr;
 }
@@ -190,12 +190,10 @@ cdhcp_option_ia_prefix::get_prefix() const
 
 
 void
-cdhcp_option_ia_prefix::set_prefix(rofl::caddress const& prefix)
+cdhcp_option_ia_prefix::set_prefix(rofl::caddress_in6 const& prefix)
 {
-	if (AF_INET6 != prefix.get_family())
-		throw eDhcpOptionInval();
-
-	memcpy(hdr->prefix, prefix.ca_s6addr->sin6_addr.s6_addr, 16);
+	rofl::caddress_in6 addr(prefix);
+	addr.pack(hdr->prefix, 16);
 }
 
 
