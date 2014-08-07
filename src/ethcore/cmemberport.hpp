@@ -36,7 +36,7 @@ public:
 	 *
 	 */
 	cmemberport() :
-		portno(0xffffffff), vid(0xffff), tagged(false) {};
+		state(STATE_IDLE), portno(0xffffffff), vid(0xffff), tagged(false) {};
 
 	/**
 	 *
@@ -44,13 +44,18 @@ public:
 	cmemberport(
 			const cdpid& dpid, uint32_t portno = 0xffffffff,
 			uint16_t vid = 0xffff, bool tagged = true) :
-		dpid(dpid), portno(portno), vid(vid), tagged(tagged) {};
+		state(STATE_IDLE), dpid(dpid), portno(portno), vid(vid), tagged(tagged) {};
 
 	/**
 	 *
 	 */
-	~cmemberport()
-		{};
+	~cmemberport() {
+		try {
+			if (STATE_ATTACHED == state) {
+				handle_dpt_close(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+	};
 
 	/**
 	 *
@@ -65,6 +70,7 @@ public:
 	operator= (const cmemberport& port) {
 		if (this == &port)
 			return *this;
+		state	= port.state;
 		dpid 	= port.dpid;
 		portno 	= port.portno;
 		vid 	= port.vid;
@@ -142,6 +148,14 @@ public:
 	};
 
 private:
+
+	enum dpt_state_t {
+		STATE_IDLE = 1,
+		STATE_DETACHED = 2,
+		STATE_ATTACHED = 3,
+	};
+
+	dpt_state_t		state;
 
 	cdpid			dpid;
 	uint32_t		portno;

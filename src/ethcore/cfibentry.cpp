@@ -18,9 +18,12 @@ cfibentry::handle_dpt_open(
 
 		state = STATE_ATTACHED;
 
-		expiration_timer_id = register_timer(FIB_ENTRY_TIMEOUT, entry_timeout);
-
 		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
+			return;
+		}
+
+		// check for existence of our port on dpt
+		if (not dpt.get_ports().has_port(portno)) {
 			return;
 		}
 
@@ -43,6 +46,7 @@ cfibentry::handle_dpt_open(
 		fm_dst_table.set_table_id(dst_stage_table_id);
 		fm_dst_table.set_priority(0x8000);
 		fm_dst_table.set_idle_timeout(entry_timeout);
+		fm_dst_table.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm_dst_table.set_match().set_vlan_vid(vid);
 		fm_dst_table.set_match().set_eth_dst(lladdr);
 		rofl::cindex index(0);
@@ -68,9 +72,12 @@ cfibentry::handle_dpt_close(
 
 		state = STATE_DETACHED;
 
-		cancel_timer(expiration_timer_id);
-
 		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
+			return;
+		}
+
+		// check for existence of our port on dpt
+		if (not dpt.get_ports().has_port(portno)) {
 			return;
 		}
 
@@ -91,6 +98,7 @@ cfibentry::handle_dpt_close(
 		fm_dst_table.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm_dst_table.set_table_id(dst_stage_table_id);
 		fm_dst_table.set_priority(0x8000);
+		fm_dst_table.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm_dst_table.set_idle_timeout(entry_timeout);
 		fm_dst_table.set_match().set_vlan_vid(vid);
 		fm_dst_table.set_match().set_eth_dst(lladdr);
@@ -108,15 +116,26 @@ cfibentry::handle_packet_in(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
 	try {
+		// oops ...
 		if (STATE_ATTACHED != state) {
 			return;
 		}
 
+		// sanity check
 		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
 			return;
 		}
 
+		// has station moved to another port? src-stage flowmod entry has not matched causing this packet-in event
+		uint32_t in_port = msg.get_match().get_in_port();
+		if (in_port != portno) {
+			handle_dpt_close(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			portno = in_port;
+			handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+		}
 
+#if 0
+		// handle buffered packet
 		rofl::openflow::cofactions actions(dpt.get_version());
 		rofl::cindex index(0);
 		if (not tagged) {
@@ -132,9 +151,13 @@ cfibentry::handle_packet_in(
 			dpt.send_packet_out_message(auxid, msg.get_buffer_id(),
 					msg.get_match().get_in_port(), actions);
 		}
+#endif
 
 	} catch (rofl::eRofSockTxAgain& e) {
 		// TODO: handle control channel congestion
+
+	} catch (rofl::openflow::eOxmNotFound& e) {
+
 	}
 }
 
@@ -144,7 +167,7 @@ void
 cfibentry::handle_flow_removed(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg)
 {
-
+	fib->fib_expired(*this);
 }
 
 
@@ -153,7 +176,25 @@ void
 cfibentry::handle_port_status(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg)
 {
+	if (STATE_ATTACHED != state) {
+		return;
+	}
 
+	if (msg.get_port().get_port_no() != portno) {
+		return;
+	}
+
+	switch (msg.get_reason()) {
+	case rofl::openflow::OFPPR_ADD: {
+		handle_dpt_open(dpt);
+	} break;
+	case rofl::openflow::OFPPR_MODIFY: {
+		// TODO: port up/down?
+	} break;
+	case rofl::openflow::OFPPR_DELETE: {
+		handle_dpt_close(dpt);
+	} break;
+	}
 }
 
 

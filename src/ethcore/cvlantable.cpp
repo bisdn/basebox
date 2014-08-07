@@ -14,10 +14,28 @@ using namespace ethcore;
 void
 cvlantable::handle_dpt_open(rofl::crofdpt& dpt)
 {
-	state = STATE_ATTACHED;
-	for (std::map<uint16_t, cvlan>::iterator
-			it = vlans.begin(); it != vlans.end(); ++it) {
-		it->second.handle_dpt_open(dpt);
+	try {
+		state = STATE_ATTACHED;
+
+		for (std::map<uint16_t, cvlan>::iterator
+				it = vlans.begin(); it != vlans.end(); ++it) {
+			it->second.handle_dpt_open(dpt);
+		}
+
+		// install miss entry for src stage table
+		rofl::openflow::cofflowmod fm(dpt.get_version());
+		fm.set_command(rofl::openflow::OFPFC_ADD);
+		fm.set_priority(0x0000);
+		fm.set_table_id(1); // TODO: table_id
+		fm.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::debug << "[cvlantable][handle_dpt_open] control channel congested" << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::debug << "[cvlantable][handle_dpt_open] control channel not connected" << std::endl;
 	}
 }
 
@@ -26,10 +44,26 @@ cvlantable::handle_dpt_open(rofl::crofdpt& dpt)
 void
 cvlantable::handle_dpt_close(rofl::crofdpt& dpt)
 {
-	state = STATE_DETACHED;
-	for (std::map<uint16_t, cvlan>::iterator
-			it = vlans.begin(); it != vlans.end(); ++it) {
-		it->second.handle_dpt_close(dpt);
+	try {
+		state = STATE_DETACHED;
+
+		for (std::map<uint16_t, cvlan>::iterator
+				it = vlans.begin(); it != vlans.end(); ++it) {
+			it->second.handle_dpt_close(dpt);
+		}
+
+		// install miss entry for src stage table
+		rofl::openflow::cofflowmod fm(dpt.get_version());
+		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
+		fm.set_priority(0x0000);
+		fm.set_table_id(1); // TODO: table_id
+
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::debug << "[cvlantable][handle_dpt_close] control channel congested" << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::debug << "[cvlantable][handle_dpt_close] control channel not connected" << std::endl;
 	}
 }
 
@@ -109,5 +143,26 @@ cvlantable::drop_buffer(const rofl::cauxid& auxid, uint32_t buffer_id)
 		rofcore::logging::debug << "[cvlantable][drop_buffer] unable to drop buffer, dpt not found" << std::endl;
 	}
 }
+
+
+
+uint32_t
+cvlantable::get_next_group_id()
+{
+	uint32_t group_id = 0;
+	while (group_ids.find(group_id) != group_ids.end()) {
+		group_id++;
+	}
+	return group_id;
+}
+
+
+
+void
+cvlantable::release_group_id(uint32_t group_id)
+{
+	group_ids.erase(group_id);
+}
+
 
 

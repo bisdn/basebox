@@ -118,13 +118,11 @@ public:
 	cvlan&
 	add_vlan(uint16_t vid) {
 		if (vlans.find(vid) != vlans.end()) {
-			if (STATE_ATTACHED == state) {
-				vlans[vid].handle_dpt_close(rofl::crofdpt::get_dpt(dpid.get_dpid()));
-			}
-			vlans[vid] = cvlan(dpid, vid);
-			if (STATE_ATTACHED == state) {
-				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
-			}
+			vlans.erase(vid);
+		}
+		vlans[vid] = cvlan(dpid, vid, get_next_group_id());
+		if (STATE_ATTACHED == state) {
+			vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
 		}
 		return vlans[vid];
 	};
@@ -135,7 +133,7 @@ public:
 	cvlan&
 	set_vlan(uint16_t vid) {
 		if (vlans.find(vid) == vlans.end()) {
-			vlans[vid] = cvlan(dpid, vid);
+			vlans[vid] = cvlan(dpid, vid, get_next_group_id());
 			if (STATE_ATTACHED == state) {
 				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
 			}
@@ -151,6 +149,7 @@ public:
 		if (vlans.find(vid) == vlans.end()) {
 			return;
 		}
+		release_group_id(vlans[vid].get_group_id());
 		vlans.erase(vid);
 	};
 
@@ -226,6 +225,18 @@ private:
 	drop_buffer(
 			const rofl::cauxid& auxid, uint32_t buffer_id);
 
+	/**
+	 *
+	 */
+	uint32_t
+	get_next_group_id();
+
+	/**
+	 *
+	 */
+	void
+	release_group_id(uint32_t group_id);
+
 public:
 
 	friend std::ostream&
@@ -251,6 +262,7 @@ private:
 	cvlan_state_t							state;
 	cdpid									dpid;
 	std::map<uint16_t, cvlan>				vlans;
+	std::set<uint32_t>						group_ids;
 
 	static std::map<cdpid, cvlantable*> 	vtables;
 };

@@ -31,6 +31,10 @@ class eFibEntryNotFound : public eFibEntryBase {
 public:
 	eFibEntryNotFound(const std::string& __arg) : eFibEntryBase(__arg) {};
 };
+class eFibEntryPortNotMember : public eFibEntryBase {
+public:
+	eFibEntryPortNotMember(const std::string& __arg) : eFibEntryBase(__arg) {};
+};
 
 class cfibentry; // forward declaration, see below
 
@@ -40,7 +44,7 @@ public:
 	virtual void fib_expired(cfibentry& entry) = 0;
 };
 
-class cfibentry : public rofl::ciosrv {
+class cfibentry {
 public:
 
 	/**
@@ -59,15 +63,22 @@ public:
 			uint16_t vid,
 			uint32_t portno,
 			bool tagged,
-			const rofl::caddress_ll& lladdr) :
+			const rofl::caddress_ll& lladdr,
+			int entry_timeout = FIB_ENTRY_DEFAULT_TIMEOUT) :
 				state(STATE_IDLE), fib(fib), dpid(dpid), vid(vid), portno(portno), tagged(tagged), lladdr(lladdr),
-				entry_timeout(FIB_ENTRY_TIMEOUT), dst_stage_table_id(2), src_stage_table_id(1) {};
+				entry_timeout(entry_timeout), dst_stage_table_id(2), src_stage_table_id(1) {};
 
 	/**
 	 *
 	 */
 	virtual
-	~cfibentry() {};
+	~cfibentry() {
+		try {
+			if (STATE_ATTACHED == state) {
+				handle_dpt_close(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			}
+		} catch (rofl::eRofDptNotFound& e) {}
+	};
 
 	/**
 	 *
@@ -81,6 +92,7 @@ public:
 	operator= (const cfibentry& entry) {
 		if (this == &entry)
 			return *this;
+		state				= entry.state;
 		fib 				= entry.fib;
 		dpid 				= entry.dpid;
 		vid 				= entry.vid;
@@ -124,6 +136,12 @@ public:
 	 */
 	rofl::cmacaddr const&
 	get_lladdr() const { return lladdr; };
+
+	/**
+	 *
+	 */
+	int
+	get_entry_timeout() const { return entry_timeout; };
 
 public:
 
@@ -175,18 +193,6 @@ private:
 	/**
 	 *
 	 */
-	virtual void
-	handle_timeout(int opaque, void *data = (void*)0) {
-		switch (opaque) {
-		case TIMER_ENTRY_EXPIRED: {
-			if (fib) fib->fib_expired(*this);
-		} return; // immediate return, this instance might have been deleted here already
-		}
-	};
-
-	/**
-	 *
-	 */
 	void
 	drop_buffer(
 			const rofl::cauxid& auxid, uint32_t buffer_id);
@@ -208,6 +214,21 @@ public:
 		return os;
 	};
 
+	static const int FIB_ENTRY_DEFAULT_TIMEOUT = 20; // seconds (for idle-timeout)
+	static const int FIB_ENTRY_PERMANENT = 0; // seconds (for idle-timeout)
+
+	/**
+	 *
+	 */
+	class cfibentry_find_by_portno {
+		uint32_t portno;
+	public:
+		cfibentry_find_by_portno(uint32_t portno) : portno(portno) {};
+		bool operator() (const std::pair<rofl::caddress_ll, cfibentry>& p) const {
+			return (p.second.get_portno() == portno);
+		};
+	};
+
 private:
 
 	enum dpt_state_t {
@@ -217,12 +238,6 @@ private:
 	};
 
 	dpt_state_t			state;
-
-	enum cfibentry_timer_type_t {
-		TIMER_ENTRY_EXPIRED = 1,
-	};
-
-	static const int FIB_ENTRY_TIMEOUT = 20; // seconds
 
 	cfibentry_owner				*fib;
 	cdpid						dpid;
@@ -234,7 +249,6 @@ private:
 	uint8_t						src_stage_table_id;
 	uint8_t						dst_stage_table_id;
 	int							entry_timeout;
-	rofl::ctimerid				expiration_timer_id;
 };
 
 }; // end of namespace ethcore
