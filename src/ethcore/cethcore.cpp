@@ -135,6 +135,8 @@ cethcore::link_deleted(unsigned int ifindex)
 void
 cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
+	cvlantable::set_vtable(cdpid(dpt.get_dpid())).handle_dpt_open(dpt, );
+
 #if 0
 	try {
 		netlink_enabled = (bool)cconfig::get_instance().lookup("ethcored.enable_netlink");

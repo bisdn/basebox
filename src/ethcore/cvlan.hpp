@@ -46,19 +46,22 @@ public:
 	 *
 	 */
 	cvlan() :
-		vid(VID_NO_VLAN), group_id(0) {};
+		state(STATE_IDLE), vid(VID_NO_VLAN), group_id(0) {};
 
 	/**
 	 *
 	 */
 	cvlan(const cdpid& dpid, uint16_t vid = VID_NO_VLAN, uint32_t group_id = 0) :
-		dpid(dpid), vid(vid), group_id(group_id) {};
+		state(STATE_IDLE), dpid(dpid), vid(vid), group_id(group_id) {};
 
 	/**
 	 *
 	 */
-	~cvlan()
-		{};
+	~cvlan() {
+		if (STATE_ATTACHED == state) {
+			// TODO
+		}
+	};
 
 	/**
 	 *
@@ -86,8 +89,14 @@ public:
 	 */
 	cmemberport&
 	add_port(uint32_t portno, bool tagged = true) {
+		if (STATE_ATTACHED == state) {
+			ports[portno].handle_dpt_close(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+		}
 		if (ports.find(portno) != ports.end()) {
 			ports[portno] = cmemberport(dpid, portno, vid, tagged);
+		}
+		if (STATE_ATTACHED == state) {
+			ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
 		}
 		return ports[portno];
 	};
@@ -99,6 +108,9 @@ public:
 	set_port(uint32_t portno, bool tagged = true) {
 		if (ports.find(portno) == ports.end()) {
 			ports[portno] = cmemberport(dpid, portno, vid, tagged);
+			if (STATE_ATTACHED == state) {
+				ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			}
 		}
 		return ports[portno];
 	};
@@ -138,6 +150,69 @@ public:
 	/**
 	 *
 	 */
+	cfibentry&
+	add_fib_entry(const rofl::caddress_ll& lladdr, uint32_t portno, bool tagged) {
+		if (STATE_ATTACHED == state) {
+			fib[lladdr].handle_dpt_close(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+		}
+		if (fib.find(lladdr) != fib.end()) {
+			fib[lladdr] = cfibentry(this, dpid, vid, portno, tagged, lladdr);
+		}
+		if (STATE_ATTACHED == state) {
+			fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+		}
+		return fib[lladdr];
+	};
+
+	/**
+	 *
+	 */
+	cfibentry&
+	set_fib_entry(const rofl::caddress_ll& lladdr, uint32_t portno, bool tagged) {
+		if (fib.find(lladdr) == fib.end()) {
+			fib[lladdr] = cfibentry(this, dpid, vid, portno, tagged, lladdr);
+			if (STATE_ATTACHED == state) {
+				fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			}
+		}
+		return fib[lladdr];
+	};
+
+	/**
+	 *
+	 */
+	const cfibentry&
+	get_fib_entry(const rofl::caddress_ll& lladdr) const {
+		if (fib.find(lladdr) == fib.end()) {
+			throw eFibEntryNotFound("cvlan::get_fib_entry() lladdr not found");
+		}
+		return fib.at(lladdr);
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_fib_entry(const rofl::caddress_ll& lladdr) {
+		if (fib.find(lladdr) == fib.end()) {
+			return;
+		}
+		fib.erase(lladdr);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_fib_entry(const rofl::caddress_ll& lladdr) const {
+		return (not (fib.find(lladdr) == fib.end()));
+	};
+
+public:
+
+	/**
+	 *
+	 */
 	const cdpid&
 	get_dpid() const { return dpid; };
 
@@ -152,6 +227,59 @@ public:
 	 */
 	uint32_t
 	get_group_id() const { return group_id; };
+
+public:
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_open(
+			rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_close(
+			rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
+
+	/**
+	 *
+	 */
+	void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg);
+
+	/**
+	 *
+	 */
+	void
+	handle_port_status(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);
+
+	/**
+	 *
+	 */
+	void
+	handle_error_message(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg);
+
+private:
+
+	/**
+	 *
+	 */
+	void
+	drop_buffer(
+			const rofl::cauxid& auxid, uint32_t buffer_id);
 
 public:
 
@@ -177,15 +305,23 @@ protected:
 	 *
 	 */
 	virtual void
-	fib_expired(cfibentry& entry);
+	fib_expired(cfibentry& entry) {};
 
 private:
 
+	enum dpt_state_t {
+		STATE_IDLE = 1,
+		STATE_DETACHED = 2,
+		STATE_ATTACHED = 3,
+	};
+
+	dpt_state_t			state;
 	cdpid				dpid;
 	uint16_t			vid;
 	uint32_t			group_id;	// OFP group identifier for broadcasting frames for this vid
 
-	std::map<uint32_t, cmemberport>		ports;
+	std::map<uint32_t, cmemberport>			ports;
+	std::map<rofl::caddress_ll, cfibentry>	fib;
 };
 
 }; // end of namespace

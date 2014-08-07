@@ -8,13 +8,14 @@ ethcored_SOURCES = \
 	ethcored.cc \
 	cethbase.hpp \
 	cethbase.cpp \
-	cethcore.hpp \
-	cethcore.cpp \
 	cvlantable.hpp \
 	cvlantable.cpp \
 	cvlan.hpp \
+	cvlan.cpp \
 	cfibentry.hpp \
 	cfibentry.cpp \
+	cmemberport.hpp \
+	cmemberport.cpp \
 	cdptlink.cc \
 	cdptlink.h \
 	clinktable.h \

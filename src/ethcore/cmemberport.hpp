@@ -11,7 +11,10 @@
 #include <inttypes.h>
 #include <exception>
 #include <iostream>
+
+#include <rofl/common/crofdpt.h>
 #include <rofl/common/cdptid.h>
+
 #include "logging.h"
 #include "cdpid.hpp"
 
@@ -82,6 +85,50 @@ public:
 	 */
 	bool
 	get_tagged() const { return tagged; };
+
+public:
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_open(
+			rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_close(
+			rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
+
+	/**
+	 *
+	 */
+	void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg);
+
+	/**
+	 *
+	 */
+	void
+	handle_port_status(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);
+
+	/**
+	 *
+	 */
+	void
+	handle_error_message(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg);
 
 public:
 

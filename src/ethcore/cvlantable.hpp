@@ -79,7 +79,7 @@ public:
 	/**
 	 *
 	 */
-	cvlantable(const cdpid& dpid) : dpid(dpid) {
+	cvlantable(const cdpid& dpid) : state(STATE_IDLE), dpid(dpid) {
 		if (cvlantable::vtables.find(dpid) != cvlantable::vtables.end()) {
 			throw eVlanExists("cvlantable::cvlantable() dptid already exists");
 		}
@@ -90,6 +90,9 @@ public:
 	 *
 	 */
 	~cvlantable() {
+		if (STATE_ATTACHED == state) {
+			// TODO
+		}
 		cvlantable::vtables.erase(dpid);
 	};
 
@@ -115,9 +118,15 @@ public:
 	cvlan&
 	add_vlan(uint16_t vid) {
 		if (vlans.find(vid) != vlans.end()) {
-			vlans.erase(vid);
+			if (STATE_ATTACHED == state) {
+				vlans[vid].handle_dpt_close(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			}
+			vlans[vid] = cvlan(dpid, vid);
+			if (STATE_ATTACHED == state) {
+				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			}
 		}
-		return (vlans[vid] = cvlan(dpid, vid));
+		return vlans[vid];
 	};
 
 	/**
@@ -127,6 +136,9 @@ public:
 	set_vlan(uint16_t vid) {
 		if (vlans.find(vid) == vlans.end()) {
 			vlans[vid] = cvlan(dpid, vid);
+			if (STATE_ATTACHED == state) {
+				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			}
 		}
 		return vlans[vid];
 	};
@@ -163,6 +175,59 @@ public:
 
 public:
 
+	/**
+	 *
+	 */
+	void
+	handle_dpt_open(
+			rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_close(
+			rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
+
+	/**
+	 *
+	 */
+	void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg);
+
+	/**
+	 *
+	 */
+	void
+	handle_port_status(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);
+
+	/**
+	 *
+	 */
+	void
+	handle_error_message(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg);
+
+private:
+
+	/**
+	 *
+	 */
+	void
+	drop_buffer(
+			const rofl::cauxid& auxid, uint32_t buffer_id);
+
+public:
+
 	friend std::ostream&
 	operator<< (std::ostream& os, const cvlantable& vtable) {
 		os << rofcore::indent(0) << "<cvlantable "
@@ -177,6 +242,13 @@ public:
 
 private:
 
+	enum cvlan_state_t {
+		STATE_IDLE = 1,
+		STATE_DETACHED = 2,
+		STATE_ATTACHED = 3,
+	};
+
+	cvlan_state_t							state;
 	cdpid									dpid;
 	std::map<uint16_t, cvlan>				vlans;
 
