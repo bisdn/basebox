@@ -14,7 +14,7 @@
 #include <algorithm>
 
 #include "cdptneigh.h"
-#include "logging.h"
+#include "clogging.h"
 
 namespace ipcore {
 

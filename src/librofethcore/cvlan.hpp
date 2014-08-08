@@ -14,7 +14,7 @@
 #include <map>
 #include <rofl/common/crofdpt.h>
 
-#include "logging.h"
+#include "clogging.h"
 #include "cmemberport.hpp"
 #include "cdpid.hpp"
 #include "cfibentry.hpp"

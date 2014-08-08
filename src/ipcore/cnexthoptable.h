@@ -13,7 +13,7 @@
 #include <algorithm>
 
 #include "cdptnexthop.h"
-#include "logging.h"
+#include "clogging.h"
 
 namespace ipcore {
 

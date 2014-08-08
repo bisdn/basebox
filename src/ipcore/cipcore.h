@@ -29,7 +29,7 @@ extern "C" {
 #include <rofl/common/openflow/cofhelloelemversionbitmap.h>
 
 #include "cconfig.h"
-#include "logging.h"
+#include "clogging.h"
 #include "cdptlink.h"
 #include "cnetlink.h"
 #include "croutetables.h"

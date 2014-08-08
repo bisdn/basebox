@@ -34,7 +34,7 @@ extern "C" {
 
 #include "crtlinks.h"
 #include "crtroutes.h"
-#include "logging.h"
+#include "clogging.h"
 
 namespace rofcore {
 

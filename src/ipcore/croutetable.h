@@ -12,7 +12,7 @@
 #include <iostream>
 
 #include "cdptroute.h"
-#include "logging.h"
+#include "clogging.h"
 
 namespace ipcore {
 

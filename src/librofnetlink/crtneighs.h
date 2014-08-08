@@ -13,7 +13,7 @@
 #include <map>
 
 #include "crtneigh.h"
-#include "logging.h"
+#include "clogging.h"
 
 namespace rofcore {
 

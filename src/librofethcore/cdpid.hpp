@@ -10,7 +10,8 @@
 
 #include <inttypes.h>
 #include <iostream>
-#include "logging.h"
+
+#include "clogging.h"
 
 namespace ethcore {
 

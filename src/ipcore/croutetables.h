@@ -12,7 +12,7 @@
 #include <iostream>
 
 #include "croutetable.h"
-#include "logging.h"
+#include "clogging.h"
 
 namespace ipcore {
 

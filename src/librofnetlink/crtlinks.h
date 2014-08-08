@@ -12,7 +12,7 @@
 #include <map>
 
 #include "crtlink.h"
-#include "logging.h"
+#include "clogging.h"
 
 namespace rofcore {
 

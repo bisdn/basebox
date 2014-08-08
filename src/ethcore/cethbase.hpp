@@ -12,9 +12,9 @@
 #include <exception>
 #include <rofl/common/crofbase.h>
 
-#include "cvlantable.hpp"
-#include "cdpid.hpp"
-#include "logging.h"
+#include "../librofethcore/cvlantable.hpp"
+#include "../librofethcore/cdpid.hpp"
+#include "clogging.h"
 
 namespace ethcore {
 

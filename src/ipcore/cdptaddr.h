@@ -16,7 +16,7 @@
 #include "crtaddr.h"
 #include "flowmod.h"
 #include "cnetlink.h"
-#include "logging.h"
+#include "clogging.h"
 
 namespace ipcore
 {

@@ -8,14 +8,6 @@ ethcored_SOURCES = \
 	ethcored.cc \
 	cethbase.hpp \
 	cethbase.cpp \
-	cvlantable.hpp \
-	cvlantable.cpp \
-	cvlan.hpp \
-	cvlan.cpp \
-	cfibentry.hpp \
-	cfibentry.cpp \
-	cmemberport.hpp \
-	cmemberport.cpp \
 	cdptlink.cc \
 	cdptlink.h \
 	clinktable.h \
@@ -28,6 +20,7 @@ endif
 
 
 	
-ethcored_LDADD = -lpthread -lrt -L../librofnetlink -lrofnetlink
+ethcored_LDADD = -lpthread -lrt -L../librofnetlink -lrofnetlink -L../librofethcore -lrofethcore
 
+AM_CPPFLAGS = -I../librofethcore
 AM_LDFLAGS = -static

@@ -18,8 +18,8 @@ librofnetlink_la_SOURCES = \
 	crtlink.h \
 	crtneigh.h \
 	crtnexthop.h \
-	logging.cc \
-	logging.h
+	clogging.cc \
+	clogging.h
 
 librofnetlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
@@ -34,6 +34,6 @@ library_include_HEADERS= \
 	crtlink.h \
 	crtneigh.h \
 	crtnexthop.h \
-	logging.h
+	clogging.h
 
 AM_CPPFLAGS=-fPIC

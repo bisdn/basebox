@@ -12,7 +12,8 @@
 #include <iostream>
 #include <map>
 #include <rofl/common/crofdpt.h>
-#include "logging.h"
+
+#include "clogging.h"
 #include "cvlan.hpp"
 #include "cdpid.hpp"
 

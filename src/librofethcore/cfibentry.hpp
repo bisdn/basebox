@@ -18,7 +18,7 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/logging.h>
 
-#include "logging.h"
+#include "clogging.h"
 #include "cdpid.hpp"
 
 namespace ethcore {

@@ -12,7 +12,7 @@
 #include <map>
 
 #include "crtnexthop.h"
-#include "logging.h"
+#include "clogging.h"
 
 namespace rofcore {
 

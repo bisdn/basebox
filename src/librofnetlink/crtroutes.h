@@ -14,7 +14,7 @@
 #include <map>
 
 #include "crtroute.h"
-#include "logging.h"
+#include "clogging.h"
 
 namespace rofcore {
 

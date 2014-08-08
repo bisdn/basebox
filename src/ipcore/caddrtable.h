@@ -13,7 +13,7 @@
 #include <algorithm>
 
 #include "cdptaddr.h"
-#include "logging.h"
+#include "clogging.h"
 
 namespace ipcore {
 
