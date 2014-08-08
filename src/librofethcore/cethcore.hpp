@@ -1,12 +1,12 @@
 /*
- * cvlantable.hpp
+ * cethcore.hpp
  *
  *  Created on: 03.08.2014
  *      Author: andreas
  */
 
-#ifndef CVLANTABLE_HPP_
-#define CVLANTABLE_HPP_
+#ifndef CETHCORE_HPP_
+#define CETHCORE_HPP_
 
 #include <inttypes.h>
 #include <iostream>
@@ -19,60 +19,60 @@
 
 namespace ethcore {
 
-class cvlantable {
+class cethcore {
 public:
 
 	/**
 	 *
 	 */
-	static cvlantable&
-	add_vtable(const cdpid& dpid) {
-		if (cvlantable::vtables.find(dpid) != cvlantable::vtables.end()) {
-			delete cvlantable::vtables[dpid];
+	static cethcore&
+	add_core(const cdpid& dpid) {
+		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
+			delete cethcore::ethcores[dpid];
 		}
-		new cvlantable(dpid);
-		return *(cvlantable::vtables[dpid]);
+		new cethcore(dpid);
+		return *(cethcore::ethcores[dpid]);
 	};
 
 	/**
 	 *
 	 */
-	static cvlantable&
-	set_vtable(const cdpid& dpid) {
-		if (cvlantable::vtables.find(dpid) == cvlantable::vtables.end()) {
-			new cvlantable(dpid);
+	static cethcore&
+	set_core(const cdpid& dpid) {
+		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
+			new cethcore(dpid);
 		}
-		return *(cvlantable::vtables[dpid]);
+		return *(cethcore::ethcores[dpid]);
 	};
 
 	/**
 	 *
 	 */
-	static const cvlantable&
-	get_vtable(const cdpid& dpid) {
-		if (cvlantable::vtables.find(dpid) == cvlantable::vtables.end()) {
-			throw eVlanNotFound("cvlantable::get_vtable() dpid not found");
+	static const cethcore&
+	get_core(const cdpid& dpid) {
+		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
+			throw eVlanNotFound("cethcore::get_vtable() dpid not found");
 		}
-		return *(cvlantable::vtables.at(dpid));
+		return *(cethcore::ethcores.at(dpid));
 	};
 
 	/**
 	 *
 	 */
 	static void
-	drop_vtable(const cdpid& dpid) {
-		if (cvlantable::vtables.find(dpid) == cvlantable::vtables.end()) {
+	drop_core(const cdpid& dpid) {
+		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
 			return;
 		}
-		delete cvlantable::vtables[dpid];
+		delete cethcore::ethcores[dpid];
 	};
 
 	/**
 	 *
 	 */
 	static bool
-	has_vtable(const cdpid& dpid) {
-		return (not (cvlantable::vtables.find(dpid) == cvlantable::vtables.end()));
+	has_core(const cdpid& dpid) {
+		return (not (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()));
 	};
 
 public:
@@ -80,21 +80,21 @@ public:
 	/**
 	 *
 	 */
-	cvlantable(const cdpid& dpid) : state(STATE_IDLE), dpid(dpid) {
-		if (cvlantable::vtables.find(dpid) != cvlantable::vtables.end()) {
-			throw eVlanExists("cvlantable::cvlantable() dptid already exists");
+	cethcore(const cdpid& dpid) : state(STATE_IDLE), dpid(dpid) {
+		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
+			throw eVlanExists("cethcore::cethcore() dptid already exists");
 		}
-		cvlantable::vtables[dpid] = this;
+		cethcore::ethcores[dpid] = this;
 	};
 
 	/**
 	 *
 	 */
-	~cvlantable() {
+	~cethcore() {
 		if (STATE_ATTACHED == state) {
 			// TODO
 		}
-		cvlantable::vtables.erase(dpid);
+		cethcore::ethcores.erase(dpid);
 	};
 
 public:
@@ -160,7 +160,7 @@ public:
 	const cvlan&
 	get_vlan(uint16_t vid) const {
 		if (vlans.find(vid) == vlans.end()) {
-			throw eVlanNotFound("cvlantable::get_vlan() vid not found");
+			throw eVlanNotFound("cethcore::get_vlan() vid not found");
 		}
 		return vlans.at(vid);
 	};
@@ -241,12 +241,12 @@ private:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const cvlantable& vtable) {
-		os << rofcore::indent(0) << "<cvlantable "
-				<< " dpid: " << vtable.get_dpid() << " >" << std::endl;
+	operator<< (std::ostream& os, const cethcore& core) {
+		os << rofcore::indent(0) << "<cethcore "
+				<< " dpid: " << core.get_dpid() << " >" << std::endl;
 		rofcore::indent i(2);
 		for (std::map<uint16_t, cvlan>::const_iterator
-				it = vtable.vlans.begin(); it != vtable.vlans.end(); ++it) {
+				it = core.vlans.begin(); it != core.vlans.end(); ++it) {
 			os << it->second;
 		}
 		return os;
@@ -254,20 +254,20 @@ public:
 
 private:
 
-	enum cvlan_state_t {
+	enum cethcore_state_t {
 		STATE_IDLE = 1,
 		STATE_DETACHED = 2,
 		STATE_ATTACHED = 3,
 	};
 
-	cvlan_state_t							state;
-	cdpid									dpid;
-	std::map<uint16_t, cvlan>				vlans;
-	std::set<uint32_t>						group_ids;
+	cethcore_state_t					state;
+	cdpid								dpid;
+	std::map<uint16_t, cvlan>			vlans;
+	std::set<uint32_t>					group_ids;
 
-	static std::map<cdpid, cvlantable*> 	vtables;
+	static std::map<cdpid, cethcore*> 	ethcores;
 };
 
 }; // end of namespace
 
-#endif /* CVLANTABLE_HPP_ */
+#endif /* CETHCORE_HPP_ */

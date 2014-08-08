@@ -12,8 +12,8 @@
 #include <exception>
 #include <rofl/common/crofbase.h>
 
-#include "../librofethcore/cvlantable.hpp"
-#include "../librofethcore/cdpid.hpp"
+#include "cethcore.hpp"
+#include "cdpid.hpp"
 #include "clogging.h"
 
 namespace ethcore {
@@ -68,7 +68,7 @@ protected:
 	virtual void
 	handle_dpt_open(
 			rofl::crofdpt& dpt) {
-		cvlantable::set_vtable(cdpid(dpt.get_dpid())).handle_dpt_open(dpt);
+		cethcore::set_core(cdpid(dpt.get_dpid())).handle_dpt_open(dpt);
 	};
 
 	/**
@@ -77,7 +77,7 @@ protected:
 	virtual void
 	handle_dpt_close(
 			rofl::crofdpt& dpt) {
-		cvlantable::set_vtable(cdpid(dpt.get_dpid())).handle_dpt_close(dpt);
+		cethcore::set_core(cdpid(dpt.get_dpid())).handle_dpt_close(dpt);
 	};
 
 	/**
@@ -86,10 +86,10 @@ protected:
 	virtual void
 	handle_packet_in(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {
-		if (not cvlantable::has_vtable(cdpid(dpt.get_dpid()))) {
+		if (not cethcore::has_core(cdpid(dpt.get_dpid()))) {
 			return;
 		}
-		cvlantable::set_vtable(cdpid(dpt.get_dpid())).handle_packet_in(dpt, auxid, msg);
+		cethcore::set_core(cdpid(dpt.get_dpid())).handle_packet_in(dpt, auxid, msg);
 	};
 
 	/**
@@ -98,10 +98,10 @@ protected:
 	virtual void
 	handle_flow_removed(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {
-		if (not cvlantable::has_vtable(cdpid(dpt.get_dpid()))) {
+		if (not cethcore::has_core(cdpid(dpt.get_dpid()))) {
 			return;
 		}
-		cvlantable::set_vtable(cdpid(dpt.get_dpid())).handle_flow_removed(dpt, auxid, msg);
+		cethcore::set_core(cdpid(dpt.get_dpid())).handle_flow_removed(dpt, auxid, msg);
 	};
 
 	/**
@@ -110,10 +110,10 @@ protected:
 	virtual void
 	handle_port_status(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg) {
-		if (not cvlantable::has_vtable(cdpid(dpt.get_dpid()))) {
+		if (not cethcore::has_core(cdpid(dpt.get_dpid()))) {
 			return;
 		}
-		cvlantable::set_vtable(cdpid(dpt.get_dpid())).handle_port_status(dpt, auxid, msg);
+		cethcore::set_core(cdpid(dpt.get_dpid())).handle_port_status(dpt, auxid, msg);
 	};
 
 	/**
@@ -122,10 +122,10 @@ protected:
 	virtual void
 	handle_error_message(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
-		if (not cvlantable::has_vtable(cdpid(dpt.get_dpid()))) {
+		if (not cethcore::has_core(cdpid(dpt.get_dpid()))) {
 			return;
 		}
-		cvlantable::set_vtable(cdpid(dpt.get_dpid())).handle_error_message(dpt, auxid, msg);
+		cethcore::set_core(cdpid(dpt.get_dpid())).handle_error_message(dpt, auxid, msg);
 	};
 
 public:

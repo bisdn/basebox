@@ -12,8 +12,8 @@ librofethcore_la_SOURCES = \
 	cmemberport.hpp \
 	cvlan.cpp \
 	cvlan.hpp \
-	cvlantable.cpp \
-	cvlantable.hpp
+	cethcore.cpp \
+	cethcore.hpp
 
 librofethcore_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
@@ -23,6 +23,6 @@ library_include_HEADERS= \
 	cfibentry.hpp \
 	cmemberport.hpp \
 	cvlan.hpp \
-	cvlantable.hpp
+	cethcore.hpp
 
 AM_CPPFLAGS=-fPIC

@@ -1,18 +1,18 @@
 /*
- * cvlantable.cpp
+ * cethcore.cpp
  *
  *  Created on: 03.08.2014
  *      Author: andreas
  */
 
-#include "cvlantable.hpp"
+#include "cethcore.hpp"
 
 using namespace ethcore;
 
-/*static*/std::map<cdpid, cvlantable*> cvlantable::vtables;
+/*static*/std::map<cdpid, cethcore*> cethcore::ethcores;
 
 void
-cvlantable::handle_dpt_open(rofl::crofdpt& dpt)
+cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
 		state = STATE_ATTACHED;
@@ -33,16 +33,16 @@ cvlantable::handle_dpt_open(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::debug << "[cvlantable][handle_dpt_open] control channel congested" << std::endl;
+		rofcore::logging::debug << "[cethcore][handle_dpt_open] control channel congested" << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::debug << "[cvlantable][handle_dpt_open] control channel not connected" << std::endl;
+		rofcore::logging::debug << "[cethcore][handle_dpt_open] control channel not connected" << std::endl;
 	}
 }
 
 
 
 void
-cvlantable::handle_dpt_close(rofl::crofdpt& dpt)
+cethcore::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
 		state = STATE_DETACHED;
@@ -61,16 +61,16 @@ cvlantable::handle_dpt_close(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::debug << "[cvlantable][handle_dpt_close] control channel congested" << std::endl;
+		rofcore::logging::debug << "[cethcore][handle_dpt_close] control channel congested" << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::debug << "[cvlantable][handle_dpt_close] control channel not connected" << std::endl;
+		rofcore::logging::debug << "[cethcore][handle_dpt_close] control channel not connected" << std::endl;
 	}
 }
 
 
 
 void
-cvlantable::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+cethcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
 	try {
 		uint16_t vid = msg.get_match().get_vlan_vid_value();
@@ -82,14 +82,14 @@ cvlantable::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl
 		}
 
 	} catch (rofl::openflow::eOxmNotFound& e) {
-		rofcore::logging::debug << "[cvlantable][handle_packet_in] no IN-PORT match found" << std::endl;
+		rofcore::logging::debug << "[cethcore][handle_packet_in] no IN-PORT match found" << std::endl;
 	}
 }
 
 
 
 void
-cvlantable::handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg)
+cethcore::handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg)
 {
 	try {
 		uint16_t vid = msg.get_match().get_vlan_vid_value();
@@ -99,14 +99,14 @@ cvlantable::handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, r
 		}
 
 	} catch (rofl::openflow::eOxmNotFound& e) {
-		rofcore::logging::debug << "[cvlantable][handle_flow_removed] no IN-PORT match found" << std::endl;
+		rofcore::logging::debug << "[cethcore][handle_flow_removed] no IN-PORT match found" << std::endl;
 	}
 }
 
 
 
 void
-cvlantable::handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg)
+cethcore::handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg)
 {
 	for (std::map<uint16_t, cvlan>::iterator
 			it = vlans.begin(); it != vlans.end(); ++it) {
@@ -117,7 +117,7 @@ cvlantable::handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, ro
 
 
 void
-cvlantable::handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg)
+cethcore::handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg)
 {
 	for (std::map<uint16_t, cvlan>::iterator
 			it = vlans.begin(); it != vlans.end(); ++it) {
@@ -128,7 +128,7 @@ cvlantable::handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, 
 
 
 void
-cvlantable::drop_buffer(const rofl::cauxid& auxid, uint32_t buffer_id)
+cethcore::drop_buffer(const rofl::cauxid& auxid, uint32_t buffer_id)
 {
 	try {
 		if (STATE_ATTACHED != state) {
@@ -140,14 +140,14 @@ cvlantable::drop_buffer(const rofl::cauxid& auxid, uint32_t buffer_id)
 		dpt.send_packet_out_message(auxid, buffer_id, rofl::openflow::OFPP_CONTROLLER, empty);
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::debug << "[cvlantable][drop_buffer] unable to drop buffer, dpt not found" << std::endl;
+		rofcore::logging::debug << "[cethcore][drop_buffer] unable to drop buffer, dpt not found" << std::endl;
 	}
 }
 
 
 
 uint32_t
-cvlantable::get_next_group_id()
+cethcore::get_next_group_id()
 {
 	uint32_t group_id = 0;
 	while (group_ids.find(group_id) != group_ids.end()) {
@@ -159,7 +159,7 @@ cvlantable::get_next_group_id()
 
 
 void
-cvlantable::release_group_id(uint32_t group_id)
+cethcore::release_group_id(uint32_t group_id)
 {
 	group_ids.erase(group_id);
 }

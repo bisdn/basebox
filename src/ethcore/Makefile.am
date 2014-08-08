@@ -22,5 +22,5 @@ endif
 	
 ethcored_LDADD = -lpthread -lrt -L../librofnetlink -lrofnetlink -L../librofethcore -lrofethcore
 
-AM_CPPFLAGS = -I../librofethcore
+AM_CPPFLAGS = -I$(top_srcdir)/src/librofethcore
 AM_LDFLAGS = -static
