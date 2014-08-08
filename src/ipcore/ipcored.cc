@@ -1,5 +1,5 @@
 //#include "cnetlink.h"
-#include "cipcore.h"
+#include "cipbase.hpp"
 #include "cconfig.h"
 
 #include <rofl/common/ciosrv.h>
@@ -49,7 +49,7 @@ main(int argc, char** argv)
 	enum rofl::csocket::socket_type_t socket_type = rofl::csocket::SOCKET_TYPE_PLAIN;
 	rofl::cparams socket_params = rofl::csocket::get_default_params(socket_type);
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string() = env_parser.get_arg("port");
-	ipcore::cipcore::get_instance(versionbitmap).rpc_listen_for_dpts(socket_type, socket_params);
+	ipcore::cipbase::get_instance(versionbitmap).rpc_listen_for_dpts(socket_type, socket_params);
 
 
 	// enter main loop

@@ -6,7 +6,9 @@ sbin_PROGRAMS = ipcored
 
 ipcored_SOURCES = ipcored.cc \
 		cconfig.h \
-		cconfig.cc
+		cconfig.cc \
+		cipbase.hpp \
+		cipbase.cpp
 		
 ipcored_LDADD = -lpthread -lrt -L../librofnetlink -lrofnetlink -L../librofipcore -lrofipcore
 

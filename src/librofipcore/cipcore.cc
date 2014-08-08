@@ -25,8 +25,7 @@ cipcore::get_instance(
 
 
 cipcore::cipcore(
-		const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap) :
-		rofl::crofbase(versionbitmap)
+		const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap)
 {
 
 }

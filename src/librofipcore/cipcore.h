@@ -42,12 +42,7 @@ class eVmCoreCritical 		: public eVmCoreBase {};
 class eVmCoreNoDptAttached	: public eVmCoreBase {};
 class eVmCoreNotFound		: public eVmCoreBase {};
 
-class cipcore :
-		public rofl::crofbase,
-		public rofcore::cnetlink_common_observer
-{
-	static cipcore* __ipcore__;
-
+class cipcore : public rofcore::cnetlink_common_observer {
 public:
 
 	/**
@@ -260,6 +255,7 @@ private:
 	clinktable 		ltable;	// table of links
 	croutetables 	rtables;	// routing tables (v4 and v6)
 
+	static cipcore* __ipcore__;
 };
 
 }; // end of namespace vmcore
