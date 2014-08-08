@@ -146,15 +146,6 @@ cipcore::handle_port_status(
 
 
 void
-cipcore::handle_packet_out(rofl::crofctl& ctl, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_out& msg)
-{
-
-}
-
-
-
-
-void
 cipcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
 	try {

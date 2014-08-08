@@ -94,9 +94,6 @@ public:
 	handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);
 
 	virtual void
-	handle_packet_out(rofl::crofctl& ctl, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_out& msg);
-
-	virtual void
 	handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
 
 	virtual void
@@ -218,11 +215,14 @@ private:
 	void
 	hook_port_down(std::string const& devname);
 
-	/*
-	 * data path related methods
-	 */
 	void
 	set_forwarding(bool forward = true);
+
+	static void
+	execute(
+			std::string const& executable,
+			std::vector<std::string> argv,
+			std::vector<std::string> envp);
 
 public:
 
@@ -243,13 +243,6 @@ private:
 	static std::string script_path_dpt_close;
 	static std::string script_path_port_up;
 	static std::string script_path_port_down;
-
-	static void
-	execute(
-			std::string const& executable,
-			std::vector<std::string> argv,
-			std::vector<std::string> envp);
-
 
 	rofl::cdptid 	dptid;
 	clinktable 		ltable;	// table of links
