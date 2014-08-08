@@ -74,11 +74,11 @@ cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 	// install default policy for table 0 => GotoTable(1)
-	if (rofcore::cconfig::get_instance().exists("ipcored.enable_forwarding")) {
+	//if (rofcore::cconfig::get_instance().exists("ipcored.enable_forwarding")) {
 		set_forwarding(true);
-	} else {
-		set_forwarding(false);
-	}
+	//} else {
+	//	set_forwarding(false);
+	//}
 
 	// call external scripting hook
 	hook_dpt_attach();

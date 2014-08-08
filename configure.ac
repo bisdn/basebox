@@ -50,25 +50,6 @@ else
 	AC_MSG_RESULT(no)
 fi
 
-# Check for AMQP-QMF support
-PKG_CHECK_MODULES([QMF2], [qmf2 >= 0.22], [have_qmf2=yes], [have_qmf2=no])
-AC_MSG_CHECKING(whether to enable AMQP-QMF support)
-qmf_default="no"
-AC_ARG_ENABLE(qmf, [--enable-qmf     turn on qmf support [default=no]],    [ enable_qmf=yes ], [enable_qmf="$qmf_default"])
-if test "$enable_qmf" = "yes"; then
-	AC_DEFINE(AMQP_QMF_SUPPORT)
-	AC_MSG_RESULT(yes)
-	if (test "${have_qmf2}" = "yes"); then
-      	 	PKG_CHECK_EXISTS([qmf2 >= 0.24], AC_DEFINE(WITH_QMF2_024))
-        	CPPFLAGS+="$QMF2_CFLAGS"
-        	LIBS+="$QMF2_LIBS"
-	fi
-else
-	AC_MSG_RESULT(no)
-fi
-AM_CONDITIONAL(AMQP_QMF_SUPPORT, [test "$enable_qmf" = "yes"])
-
-
 
 
 PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.1 libnl-route-3.0 >= 3.1, [have_libnl3=yes], [have_libnl3=no])
@@ -125,6 +106,7 @@ AC_CONFIG_FILES([
 	src/dhcpv6snoop/Makefile
 	src/rofcore/Makefile
 	src/librofnetlink/Makefile
+	src/librofipcore/Makefile
 	src/librofethcore/Makefile
 	
 	test/Makefile

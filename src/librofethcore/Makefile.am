@@ -26,3 +26,5 @@ library_include_HEADERS= \
 	cethcore.hpp
 
 AM_CPPFLAGS=-fPIC
+AM_LDFLAGS=-L../librofnetlink -lrofnetlink
+
