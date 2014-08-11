@@ -111,7 +111,7 @@ cvlan::handle_packet_in(
 {
 	try {
 		assert(dpid.get_dpid() == dpt.get_dpid());
-		assert(vid == (msg.get_match().get_vlan_vid_value() & ((uint16_t)~rofl::openflow::OFPVID_PRESENT)));
+		assert(vid == (msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT)));
 
 		uint32_t in_port = msg.get_match().get_in_port();
 		const rofl::caddress_ll& lladdr = msg.get_match().get_eth_src_addr();
@@ -140,7 +140,7 @@ cvlan::handle_flow_removed(
 {
 	try {
 		assert(dpid.get_dpid() == dpt.get_dpid());
-		assert(vid == (msg.get_match().get_vlan_vid_value() & ((uint16_t)~rofl::openflow::OFPVID_PRESENT)));
+		assert(vid == (msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT)));
 
 		// TODO: check port here?
 
