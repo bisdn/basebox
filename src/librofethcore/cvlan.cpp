@@ -31,7 +31,7 @@ cvlan::handle_dpt_open(
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
-		fm.set_match().set_vlan_vid(vid);
+		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm.set_instructions().set_inst_apply_actions().
 				set_actions().add_action_group(index++).set_group_id(group_id);
 
@@ -86,7 +86,7 @@ cvlan::handle_dpt_close(
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
-		fm.set_match().set_vlan_vid(vid);
+		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
@@ -111,7 +111,7 @@ cvlan::handle_packet_in(
 {
 	try {
 		assert(dpid.get_dpid() == dpt.get_dpid());
-		assert(vid == msg.get_match().get_vlan_vid_value());
+		assert(vid == (msg.get_match().get_vlan_vid_value() & ((uint16_t)~rofl::openflow::OFPVID_PRESENT)));
 
 		uint32_t in_port = msg.get_match().get_in_port();
 		const rofl::caddress_ll& lladdr = msg.get_match().get_eth_src_addr();
@@ -140,7 +140,7 @@ cvlan::handle_flow_removed(
 {
 	try {
 		assert(dpid.get_dpid() == dpt.get_dpid());
-		assert(vid == msg.get_match().get_vlan_vid_value());
+		assert(vid == (msg.get_match().get_vlan_vid_value() & ((uint16_t)~rofl::openflow::OFPVID_PRESENT)));
 
 		// TODO: check port here?
 

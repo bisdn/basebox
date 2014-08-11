@@ -35,7 +35,7 @@ cfibentry::handle_dpt_open(
 		fm_src_table.set_idle_timeout(entry_timeout);
 		fm_src_table.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm_src_table.set_match().set_in_port(portno);
-		fm_src_table.set_match().set_vlan_vid(vid);
+		fm_src_table.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm_src_table.set_match().set_eth_src(lladdr); // yes, indeed: set_eth_src for dst
 		fm_src_table.set_instructions().add_inst_goto_table().set_table_id(dst_stage_table_id);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm_src_table);
@@ -47,7 +47,7 @@ cfibentry::handle_dpt_open(
 		fm_dst_table.set_priority(0x8000);
 		fm_dst_table.set_idle_timeout(entry_timeout);
 		fm_dst_table.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
-		fm_dst_table.set_match().set_vlan_vid(vid);
+		fm_dst_table.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm_dst_table.set_match().set_eth_dst(lladdr);
 		rofl::cindex index(0);
 		if (not tagged) {
@@ -89,7 +89,7 @@ cfibentry::handle_dpt_close(
 		fm_src_table.set_idle_timeout(entry_timeout);
 		fm_src_table.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm_src_table.set_match().set_in_port(portno);
-		fm_src_table.set_match().set_vlan_vid(vid);
+		fm_src_table.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm_src_table.set_match().set_eth_src(lladdr); // yes, indeed: set_eth_src for dst
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm_src_table);
 
@@ -100,7 +100,7 @@ cfibentry::handle_dpt_close(
 		fm_dst_table.set_priority(0x8000);
 		fm_dst_table.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm_dst_table.set_idle_timeout(entry_timeout);
-		fm_dst_table.set_match().set_vlan_vid(vid);
+		fm_dst_table.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm_dst_table.set_match().set_eth_dst(lladdr);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm_dst_table);
 

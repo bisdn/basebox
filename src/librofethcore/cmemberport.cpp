@@ -36,7 +36,7 @@ cmemberport::handle_dpt_open(
 		fm.set_table_id(0); // TODO: table_id
 		fm.set_match().set_in_port(portno);
 		if (tagged) {
-			fm.set_match().set_vlan_vid(vid);
+			fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		} else {
 			fm.set_match().set_vlan_untagged();
 			fm.set_instructions().set_inst_apply_actions().set_actions().
@@ -79,7 +79,7 @@ cmemberport::handle_dpt_close(
 		fm.set_table_id(0); // TODO: table_id
 		fm.set_match().set_in_port(portno);
 		if (tagged) {
-			fm.set_match().set_vlan_vid(vid);
+			fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		} else {
 			fm.set_match().set_vlan_untagged();
 		}
