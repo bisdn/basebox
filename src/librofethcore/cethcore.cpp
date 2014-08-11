@@ -99,7 +99,7 @@ void
 cethcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
 	try {
-		uint16_t vid = msg.get_match().get_vlan_vid_value() & ~rofl::openflow::OFPVID_PRESENT;
+		uint16_t vid = msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT);
 
 		if (has_vlan(vid)) {
 			set_vlan(vid).handle_packet_in(dpt, auxid, msg);
@@ -108,7 +108,7 @@ cethcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::
 		}
 
 	} catch (rofl::openflow::eOxmNotFound& e) {
-		rofcore::logging::debug << "[cethcore][handle_packet_in] no IN-PORT match found" << std::endl;
+		rofcore::logging::debug << "[cethcore][handle_packet_in] no VID match found" << std::endl;
 	}
 }
 
@@ -118,7 +118,7 @@ void
 cethcore::handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg)
 {
 	try {
-		uint16_t vid = msg.get_match().get_vlan_vid_value() & ~rofl::openflow::OFPVID_PRESENT;
+		uint16_t vid = msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT);
 
 		if (has_vlan(vid)) {
 			set_vlan(vid).handle_flow_removed(dpt, auxid, msg);
