@@ -36,8 +36,19 @@ cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 			it->second.handle_dpt_open(dpt, get_next_group_id());
 		}
 
-		// install miss entry for src stage table
+		// install 01:80:c2:xx:xx:xx entry in table 0
 		rofl::openflow::cofflowmod fm(dpt.get_version());
+		fm.set_command(rofl::openflow::OFPFC_ADD);
+		fm.set_priority(0x0000);
+		fm.set_table_id(0); // TODO: table_id
+		fm.set_match().set_eth_dst(rofl::caddress_ll("01:80:c2:00:00:00"), rofl::caddress_ll("ff:ff:ff:00:00:00"));
+		fm.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+		// install miss entry for src stage table
+		fm.clear();
 		fm.set_command(rofl::openflow::OFPFC_ADD);
 		fm.set_priority(0x0000);
 		fm.set_table_id(1); // TODO: table_id
