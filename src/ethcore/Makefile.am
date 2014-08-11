@@ -5,11 +5,11 @@ SUBDIRS =
 sbin_PROGRAMS = ethcored
 
 ethcored_SOURCES = \
-	ethcored.cc \
+	ethcored.cpp \
 	cethbase.hpp \
 	cethbase.cpp \
-	cconfig.cc \
-	cconfig.h
+	cconfig.hpp \
+	cconfig.cpp
 
 	
 ethcored_LDADD = -lpthread -lrt -L../librofnetlink -lrofnetlink -L../librofethcore -lrofethcore

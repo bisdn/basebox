@@ -26,11 +26,11 @@ public:
 	 *
 	 */
 	static cethcore&
-	add_core(const cdpid& dpid) {
+	add_core(const cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID) {
 		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
 			delete cethcore::ethcores[dpid];
 		}
-		new cethcore(dpid);
+		new cethcore(dpid, default_pvid);
 		return *(cethcore::ethcores[dpid]);
 	};
 
@@ -38,9 +38,9 @@ public:
 	 *
 	 */
 	static cethcore&
-	set_core(const cdpid& dpid) {
+	set_core(const cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
-			new cethcore(dpid);
+			new cethcore(dpid, default_pvid);
 		}
 		return *(cethcore::ethcores[dpid]);
 	};
@@ -80,7 +80,8 @@ public:
 	/**
 	 *
 	 */
-	cethcore(const cdpid& dpid) : state(STATE_IDLE), dpid(dpid) {
+	cethcore(const cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID) :
+		state(STATE_IDLE), dpid(dpid), default_pvid(default_pvid) {
 		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
 			throw eVlanExists("cethcore::cethcore() dptid already exists");
 		}
@@ -104,6 +105,12 @@ public:
 	 */
 	const cdpid&
 	get_dpid() const { return dpid; };
+
+	/**
+	 *
+	 */
+	uint16_t
+	get_default_pvid() const { return default_pvid; };
 
 public:
 
@@ -242,9 +249,9 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cethcore& core) {
-		os << rofcore::indent(0) << "<cethcore "
-				<< " dpid: " << core.get_dpid() << " >" << std::endl;
+		os << rofcore::indent(0) << "<cethcore default-pvid: " << (int)core.get_default_pvid() << " >" << std::endl;
 		rofcore::indent i(2);
+		os << core.get_dpid();
 		for (std::map<uint16_t, cvlan>::const_iterator
 				it = core.vlans.begin(); it != core.vlans.end(); ++it) {
 			os << it->second;
@@ -260,8 +267,11 @@ private:
 		STATE_ATTACHED = 3,
 	};
 
+	static const uint16_t				DEFAULT_PVID = 1;
+
 	cethcore_state_t					state;
 	cdpid								dpid;
+	uint16_t							default_pvid;
 	std::map<uint16_t, cvlan>			vlans;
 	std::set<uint32_t>					group_ids;
 

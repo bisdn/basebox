@@ -1,13 +1,13 @@
 /*
- * cconfig.cc
+ * cconfig.cpp
  *
  *  Created on: 17.12.2013
  *      Author: andreas
  */
 
-#include "cconfig.h"
+#include "cconfig.hpp"
 
-using namespace ethercore;
+using namespace ethcore;
 
 std::string const cconfig::CONFPATH = std::string("./ethcored.conf");
 

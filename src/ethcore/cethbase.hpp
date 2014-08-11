@@ -12,9 +12,13 @@
 #include <exception>
 #include <rofl/common/crofbase.h>
 
+#include <rofl/platform/unix/cdaemon.h>
+#include <rofl/platform/unix/cunixenv.h>
+
 #include "cethcore.hpp"
 #include "cdpid.hpp"
 #include "clogging.h"
+#include "cconfig.hpp"
 
 namespace ethcore {
 
@@ -59,6 +63,12 @@ public:
 		}
 		return *(cethbase::ethbase);
 	};
+
+	/**
+	 *
+	 */
+	int
+	run(int argc, char** argv);
 
 protected:
 
@@ -135,6 +145,13 @@ public:
 
 		return os;
 	};
+
+private:
+
+	static const std::string ETHCORE_LOG_FILE;
+	static const std::string ETHCORE_PID_FILE;
+	static const std::string ETHCORE_CONFIG_FILE;
+	static const std::string ETHCORE_CONFIG_DPT_LIST;
 };
 
 }; // end of namespace ethcore

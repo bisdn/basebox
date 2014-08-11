@@ -1,12 +1,12 @@
 /*
- * cconfig.h
+ * cconfig.hpp
  *
  *  Created on: 17.12.2013
  *      Author: andreas
  */
 
-#ifndef CCONFIG_H_
-#define CCONFIG_H_
+#ifndef CCONFIG_HPP_
+#define CCONFIG_HPP_
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,8 +24,7 @@ extern "C" {
 
 using namespace libconfig;
 
-namespace ethercore
-{
+namespace ethcore {
 
 class cconfig : public Config {
 private:
@@ -74,4 +73,4 @@ public:
 
 }; // end of namespace
 
-#endif /* CCONFIG_H_ */
+#endif /* CCONFIG_HPP_ */
