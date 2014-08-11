@@ -67,7 +67,7 @@ public:
 	/**
 	 *
 	 */
-	int
+	static int
 	run(int argc, char** argv);
 
 protected:

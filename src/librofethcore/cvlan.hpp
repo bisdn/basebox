@@ -279,7 +279,7 @@ public:
 	 */
 	void
 	handle_dpt_open(
-			rofl::crofdpt& dpt);
+			rofl::crofdpt& dpt, uint32_t group_id);
 
 	/**
 	 *
@@ -329,7 +329,7 @@ private:
 	 *
 	 */
 	void
-	update_group_entry_buckets();
+	update_group_entry_buckets(uint16_t command = rofl::openflow::OFPGC_MODIFY);
 
 public:
 

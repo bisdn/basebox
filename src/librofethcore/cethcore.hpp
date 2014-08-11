@@ -130,7 +130,7 @@ public:
 		}
 		vlans[vid] = cvlan(dpid, vid, get_next_group_id());
 		if (STATE_ATTACHED == state) {
-			vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()), get_next_group_id());
 		}
 		return vlans[vid];
 	};
@@ -143,7 +143,7 @@ public:
 		if (vlans.find(vid) == vlans.end()) {
 			vlans[vid] = cvlan(dpid, vid, get_next_group_id());
 			if (STATE_ATTACHED == state) {
-				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()), get_next_group_id());
 			}
 		}
 		return vlans[vid];

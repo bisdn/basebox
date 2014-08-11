@@ -16,6 +16,7 @@ using namespace ethcore;
 /*static*/const std::string cethbase::ETHCORE_CONFIG_DPT_LIST = std::string("ethcored.datapaths");
 
 
+/*static*/
 int
 cethbase::run(int argc, char** argv)
 {

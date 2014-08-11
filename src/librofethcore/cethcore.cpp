@@ -19,7 +19,7 @@ cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 
 		for (std::map<uint16_t, cvlan>::iterator
 				it = vlans.begin(); it != vlans.end(); ++it) {
-			it->second.handle_dpt_open(dpt);
+			it->second.handle_dpt_open(dpt, get_next_group_id());
 		}
 
 		// install miss entry for src stage table
@@ -149,10 +149,11 @@ cethcore::drop_buffer(const rofl::cauxid& auxid, uint32_t buffer_id)
 uint32_t
 cethcore::get_next_group_id()
 {
-	uint32_t group_id = 0;
+	uint32_t group_id = 1;
 	while (group_ids.find(group_id) != group_ids.end()) {
 		group_id++;
 	}
+	group_ids.insert(group_id);
 	return group_id;
 }
 
