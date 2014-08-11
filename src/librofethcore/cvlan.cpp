@@ -144,7 +144,17 @@ cvlan::handle_flow_removed(
 
 		// TODO: check port here?
 
-		const rofl::caddress_ll& lladdr = msg.get_match().get_eth_src_addr();
+		rofl::caddress_ll lladdr;
+
+		if (msg.get_table_id() == 1) {
+			lladdr = msg.get_match().get_eth_src_addr();
+		} else
+		if (msg.get_table_id() == 2) {
+			lladdr = msg.get_match().get_eth_dst_addr();
+		} else {
+			return;
+		}
+
 		if (lladdr.is_multicast() || lladdr.is_null()) {
 			rofcore::logging::debug << "[cvlan][handle_flow_removed] invalid source lladdr found" << std::endl << msg;
 			return;
