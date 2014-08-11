@@ -227,14 +227,14 @@ public:
 	/**
 	 *
 	 */
-	virtual void
+	void
 	handle_port_desc_stats_reply(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg);
 
 	/**
 	 *
 	 */
-	virtual void
+	void
 	handle_port_desc_stats_reply_timeout(rofl::crofdpt& dpt, uint32_t xid);
 
 private:

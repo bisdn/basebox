@@ -126,7 +126,7 @@ cethbase::run(int argc, char** argv)
 				}
 
 				// this is the cethcore instance for this data path
-				ethcore::cethcore& ethcore = ethcore::cethcore::set_core(dpid);
+				ethcore::cethcore& ethcore = ethcore::cethcore::set_core(dpid, default_pvid);
 
 				// create vlan instance for default_pvid, just in case, there are no member ports defined
 				ethcore.set_vlan(default_pvid);

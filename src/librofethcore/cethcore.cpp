@@ -30,6 +30,9 @@ cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 
 		for (std::map<uint16_t, cvlan>::iterator
 				it = vlans.begin(); it != vlans.end(); ++it) {
+			if (it->second.get_group_id() != 0) {
+				release_group_id(it->second.get_group_id());
+			}
 			it->second.handle_dpt_open(dpt, get_next_group_id());
 		}
 
@@ -61,6 +64,7 @@ cethcore::handle_dpt_close(rofl::crofdpt& dpt)
 		for (std::map<uint16_t, cvlan>::iterator
 				it = vlans.begin(); it != vlans.end(); ++it) {
 			it->second.handle_dpt_close(dpt);
+			release_group_id(it->second.get_group_id());
 		}
 
 		// install miss entry for src stage table
@@ -146,6 +150,26 @@ cethcore::handle_port_desc_stats_reply(rofl::crofdpt& dpt, const rofl::cauxid& a
 	switch (state) {
 	case STATE_QUERYING: {
 		state = STATE_ATTACHED;
+		/*
+		 * this code block adds all unspecified ports automatically to the default port vid defined for this cethcore instance
+		 */
+		for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
+				it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
+			bool found = false;
+			for (std::map<uint16_t, cvlan>::iterator
+					jt = vlans.begin(); jt != vlans.end(); ++jt) {
+				if (jt->second.has_port(it->first)) {
+					found = true;
+				}
+			}
+			if (not found) {
+				set_vlan(default_pvid).add_port(it->first, false);
+			}
+		}
+
+		/*
+		 *
+		 */
 		handle_dpt_open(dpt);
 	} break;
 	default: {

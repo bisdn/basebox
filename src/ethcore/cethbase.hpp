@@ -78,6 +78,8 @@ protected:
 	virtual void
 	handle_dpt_open(
 			rofl::crofdpt& dpt) {
+		dpt.flow_mod_reset();
+		dpt.group_mod_reset();
 		cethcore::set_core(cdpid(dpt.get_dpid())).handle_dpt_open(dpt);
 	};
 
