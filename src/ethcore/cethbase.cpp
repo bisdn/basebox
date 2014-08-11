@@ -25,6 +25,7 @@ cethbase::run(int argc, char** argv)
 	/* update defaults */
 	//env_parser.update_default_option("logfile", ETHCORE_LOG_FILE);
 	//env_parser.update_default_option("config-file", ETHCORE_CONFIG_FILE);
+	env_parser.add_option(rofl::coption(true, NO_ARGUMENT,'D',"daemonize","daemonize",""));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'l', "logfile", "set log-file", std::string(ETHCORE_LOG_FILE)));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'c', "config-file", "set config-file", std::string(ETHCORE_CONFIG_FILE)));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(ETHCORE_PID_FILE)));
