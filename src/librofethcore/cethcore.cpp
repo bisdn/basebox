@@ -15,7 +15,18 @@ void
 cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
-		state = STATE_ATTACHED;
+
+		switch (state) {
+		case STATE_IDLE:
+		case STATE_DETACHED: {
+			state = STATE_QUERYING;
+			dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
+		} return;
+		default: {
+			state = STATE_ATTACHED;
+
+		};
+		}
 
 		for (std::map<uint16_t, cvlan>::iterator
 				it = vlans.begin(); it != vlans.end(); ++it) {
@@ -123,6 +134,32 @@ cethcore::handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, ro
 			it = vlans.begin(); it != vlans.end(); ++it) {
 		it->second.handle_error_message(dpt, auxid, msg);
 	}
+}
+
+
+
+void
+cethcore::handle_port_desc_stats_reply(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg)
+{
+	dpt.set_ports() = msg.get_ports();
+
+	switch (state) {
+	case STATE_QUERYING: {
+		state = STATE_ATTACHED;
+		handle_dpt_open(dpt);
+	} break;
+	default: {
+
+	};
+	}
+}
+
+
+
+void
+cethcore::handle_port_desc_stats_reply_timeout(rofl::crofdpt& dpt, uint32_t xid)
+{
+	dpt.disconnect(rofl::cauxid(0));
 }
 
 

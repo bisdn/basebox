@@ -138,6 +138,29 @@ protected:
 		cethcore::set_core(cdpid(dpt.get_dpid())).handle_error_message(dpt, auxid, msg);
 	};
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_port_desc_stats_reply(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg) {
+		if (not cethcore::has_core(cdpid(dpt.get_dpid()))) {
+			return;
+		}
+		cethcore::set_core(cdpid(dpt.get_dpid())).handle_port_desc_stats_reply(dpt, auxid, msg);
+	};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_port_desc_stats_reply_timeout(rofl::crofdpt& dpt, uint32_t xid) {
+		if (not cethcore::has_core(cdpid(dpt.get_dpid()))) {
+			return;
+		}
+		cethcore::set_core(cdpid(dpt.get_dpid())).handle_port_desc_stats_reply_timeout(dpt, xid);
+	};
+
 public:
 
 	friend std::ostream&

@@ -224,6 +224,19 @@ public:
 	handle_error_message(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg);
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_port_desc_stats_reply(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg);
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_port_desc_stats_reply_timeout(rofl::crofdpt& dpt, uint32_t xid);
+
 private:
 
 	/**
@@ -264,7 +277,8 @@ private:
 	enum cethcore_state_t {
 		STATE_IDLE = 1,
 		STATE_DETACHED = 2,
-		STATE_ATTACHED = 3,
+		STATE_QUERYING = 3,
+		STATE_ATTACHED = 4,
 	};
 
 	static const uint16_t				DEFAULT_PVID = 1;

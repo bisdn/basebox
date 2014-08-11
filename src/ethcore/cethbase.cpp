@@ -205,7 +205,9 @@ cethbase::run(int argc, char** argv)
 	 */
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
 	if (cconfig::get_instance().exists("ethcored.openflow.version")) {
-		versionbitmap.add_ofp_version((int)cconfig::get_instance().lookup("ethcored.openflow.version"));
+		int ofp_version = (int)cconfig::get_instance().lookup("ethcored.openflow.version");
+		ofp_version = (ofp_version < rofl::openflow13::OFP_VERSION) ? rofl::openflow13::OFP_VERSION : ofp_version;
+		versionbitmap.add_ofp_version(ofp_version);
 	} else {
 		versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
 	}
