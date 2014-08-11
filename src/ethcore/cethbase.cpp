@@ -41,13 +41,16 @@ cethbase::run(int argc, char** argv)
 	/*
 	 * extract debug level
 	 */
-	int debug;
+	int rofl_debug = 0;
+	if (cconfig::get_instance().exists("ethcored.daemon.logging.rofl.debug")) {
+		rofl_debug = (int)cconfig::get_instance().lookup("ethcored.daemon.logging.rofl.debug");
+	}
+	int core_debug = 0;
+	if (cconfig::get_instance().exists("ethcored.daemon.logging.core.debug")) {
+		core_debug = (int)cconfig::get_instance().lookup("ethcored.daemon.logging.core.debug");
+	}
 	if (env_parser.is_arg_set("debug")) {
-		debug = atoi(env_parser.get_arg("debug").c_str());
-	} else if (cconfig::get_instance().exists("ethcored.daemon.debug")) {
-		debug = (int)cconfig::get_instance().lookup("ethcored.daemon.debug");
-	} else {
-		debug = 0; // default
+		rofl_debug = core_debug = atoi(env_parser.get_arg("debug").c_str());
 	}
 
 	/*
@@ -94,13 +97,14 @@ cethbase::run(int argc, char** argv)
 	if (daemonize) {
 		rofl::cdaemon::daemonize(env_parser.get_arg("pidfile"), env_parser.get_arg("logfile"));
 	}
-	rofl::logging::set_debug_level(debug);
+	rofl::logging::set_debug_level(rofl_debug);
+	rofcore::logging::set_debug_level(core_debug);
+
 	if (daemonize) {
-		rofl::logging::notice << "[ethcore][main] daemonizing successful" << std::endl;
+		rofcore::logging::notice << "[ethcore][main] daemonizing successful" << std::endl;
 	}
 
 
-	rofcore::logging::set_debug_level(8);
 
 
 	/*
@@ -213,7 +217,7 @@ cethbase::run(int argc, char** argv)
 		versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
 	}
 
-	rofl::logging::notice << "[ethcored][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
+	rofcore::logging::notice << "[ethcored][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
 	ethcore::cethbase& ethbase = ethcore::cethbase::get_instance(versionbitmap);
 
