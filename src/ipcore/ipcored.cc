@@ -33,7 +33,7 @@ main(int argc, char** argv)
 	env_parser.parse_args();
 
 	// configuration file
-	iprotcore::cconfig::get_instance().open(env_parser.get_arg("conffile"));
+	rofcore::cconfig::get_instance().open(env_parser.get_arg("conffile"));
 
 #if 0
 	if (not env_parser.is_arg_set("daemonize")) {
@@ -55,8 +55,8 @@ main(int argc, char** argv)
 		rofl_verbosity = atoi(env_parser.get_arg("debug").c_str());
 	} else
 	/* read from configuration file */{
-		if (iprotcore::cconfig::get_instance().exists("ipcored.daemon.verbosity.rofl")) {
-			rofl_verbosity = iprotcore::cconfig::get_instance().lookup("ipcored.daemon.verbosity.rofl");
+		if (rofcore::cconfig::get_instance().exists("ipcored.daemon.verbosity.rofl")) {
+			rofl_verbosity = rofcore::cconfig::get_instance().lookup("ipcored.daemon.verbosity.rofl");
 		}
 	}
 
@@ -71,16 +71,16 @@ main(int argc, char** argv)
 		if (env_parser.is_arg_set("pidfile")) {
 			pidfile = env_parser.get_arg("pidfile");
 		} else
-		if (iprotcore::cconfig::get_instance().exists("ipcored.daemon.pidfile")) {
-			pidfile = (const char*)iprotcore::cconfig::get_instance().lookup("sgwuctld.daemon.pidfile");
+		if (rofcore::cconfig::get_instance().exists("ipcored.daemon.pidfile")) {
+			pidfile = (const char*)rofcore::cconfig::get_instance().lookup("sgwuctld.daemon.pidfile");
 		}
 
 		std::string logfile(IPCORE_LOG_FILE);
 		if (env_parser.is_arg_set("logfile")) {
 			logfile = env_parser.get_arg("logfile");
 		} else
-		if (iprotcore::cconfig::get_instance().exists("ipcored.daemon.logfile")) {
-			logfile = (const char*)iprotcore::cconfig::get_instance().lookup("ipcored.daemon.logfile");
+		if (rofcore::cconfig::get_instance().exists("ipcored.daemon.logfile")) {
+			logfile = (const char*)rofcore::cconfig::get_instance().lookup("ipcored.daemon.logfile");
 		}
 
 		rofl::cdaemon::daemonize(pidfile, logfile);
