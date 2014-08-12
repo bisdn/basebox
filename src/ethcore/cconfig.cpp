@@ -1,15 +1,15 @@
 /*
- * cconfig.cc
+ * cconfig.cpp
  *
  *  Created on: 17.12.2013
  *      Author: andreas
  */
 
-#include "cconfig.h"
+#include "cconfig.hpp"
 
-using namespace rofcore;
+using namespace ethcore;
 
-std::string const cconfig::CONFPATH = std::string("./ipcored.conf");
+std::string const cconfig::CONFPATH = std::string("./ethcored.conf");
 
 cconfig* cconfig::scconfig = (cconfig*)0;
 
@@ -30,7 +30,7 @@ cconfig::open(std::string const& confpath)
 		this->confpath = confpath;
 		Config::readFile(confpath.c_str());
 	} catch (FileIOException& e) {
-		std::cerr << "[ipcore][config] unable to find config file \"" << confpath << "\", continuing with defaults." << std::endl;
+		std::cerr << "[ethcore][config] unable to find config file \"" << confpath << "\", continuing with defaults." << std::endl;
 	}
 }
 

@@ -5,46 +5,14 @@ SUBDIRS =
 sbin_PROGRAMS = ethcored
 
 ethcored_SOURCES = \
-	ethcored.cc \
-	ethcore.cc \
-	ethcore.h \
-	cfib.cc \
-	cfib.h \
-	cfibentry.h \
-	cfibentry.cc \
-	sport.h \
-	sport.cc \
-	logging.h \
-	logging.cc \
-	cnetlink.cc \
-	cnetlink.h \
-	crtaddr.cc \
-	crtaddr.h \
-	crtlink.cc \
-	crtlink.h \
-	crtneigh.cc \
-	crtneigh.h \
-	crtnexthop.cc \
-	crtnexthop.h \
-	crtroute.cc \
-	crtroute.h \
-	cnetdev.cc \
-	cnetdev.h \
-	ctapdev.cc \
-	ctapdev.h \
-	cpacketpool.cc \
-	cpacketpool.h \
-	dptlink.cc \
-	dptlink.h \
-	cconfig.cc \
-	cconfig.h
-
-if AMQP_QMF_SUPPORT
-ethcored_SOURCES += qmfagent.h qmfagent.cc
-endif
-
+	ethcored.cpp \
+	cethbase.hpp \
+	cethbase.cpp \
+	cconfig.hpp \
+	cconfig.cpp
 
 	
-ethcored_LDADD = -lpthread -lrt 
+ethcored_LDADD = -lpthread -lrt -L../librofnetlink -lrofnetlink -L../librofethcore -lrofethcore
 
+AM_CPPFLAGS = -I$(top_srcdir)/src/librofethcore
 AM_LDFLAGS = -static

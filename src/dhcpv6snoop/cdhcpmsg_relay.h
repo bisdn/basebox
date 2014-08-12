@@ -66,17 +66,17 @@ public:
 	void
 	set_hop_count(uint8_t hop_count);
 
-	rofl::caddress
+	rofl::caddress_in6
 	get_link_address() const;
 
 	void
-	set_link_address(rofl::caddress const& link_address);
+	set_link_address(rofl::caddress_in6 const& link_address);
 
-	rofl::caddress
+	rofl::caddress_in6
 	get_peer_address() const;
 
 	void
-	set_peer_address(rofl::caddress const& peer_address);
+	set_peer_address(rofl::caddress_in6 const& peer_address);
 
 private:
 

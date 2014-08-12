@@ -1,5 +1,5 @@
 //#include "cnetlink.h"
-#include "ipcore.h"
+#include "cipbase.hpp"
 #include "cconfig.h"
 
 #include <rofl/common/ciosrv.h>
@@ -89,28 +89,26 @@ main(int argc, char** argv)
 
 
 
+
+	// create cipcore instance with defined OpenFlow version
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-	if (iprotcore::cconfig::get_instance().exists("ipcored.openflow.version")) {
-		versionbitmap.add_ofp_version((int)iprotcore::cconfig::get_instance().lookup("ipcored.openflow.version"));
+	if (rofcore::cconfig::get_instance().exists("ipcored.openflow.version")) {
+		versionbitmap.add_ofp_version((int)rofcore::cconfig::get_instance().lookup("ipcored.openflow.version"));
 	} else {
 		versionbitmap.add_ofp_version(rofl::openflow12::OFP_VERSION);
 	}
-	dptmap::ipcore core(versionbitmap);
 
-	uint16_t portno = 6633;
-	if (iprotcore::cconfig::get_instance().exists("ipcored.openflow.port")) {
-		portno = (int)iprotcore::cconfig::get_instance().lookup("ipcored.openflow.port");
-	}
-	std::stringstream s_portno; s_portno << portno;
-
+	// prepare control socket and listen for incoming control connections
 	enum rofl::csocket::socket_type_t socket_type = rofl::csocket::SOCKET_TYPE_PLAIN;
 	rofl::cparams socket_params = rofl::csocket::get_default_params(socket_type);
-	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string(s_portno.str());
+	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string() = env_parser.get_arg("port");
+	ipcore::cipbase::get_instance(versionbitmap).rpc_listen_for_dpts(socket_type, socket_params);
 
-	core.rpc_listen_for_dpts(socket_type, socket_params);
 
+	// enter main loop
 	rofl::cioloop::run();
 
+	// clean-up and terminate
 	rofl::cioloop::shutdown();
 
 	return 0;

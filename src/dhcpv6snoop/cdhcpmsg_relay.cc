@@ -135,48 +135,40 @@ cdhcpmsg_relay::set_hop_count(uint8_t hop_count)
 
 
 
-rofl::caddress
+rofl::caddress_in6
 cdhcpmsg_relay::get_link_address() const
 {
-	rofl::caddress addr(AF_INET6, "::");
-
-	memcpy(addr.ca_s6addr->sin6_addr.s6_addr, hdr->link_address, 16);
-
+	rofl::caddress_in6 addr("::");
+	addr.unpack(hdr->link_address, 16);
 	return addr;
 }
 
 
 
 void
-cdhcpmsg_relay::set_link_address(rofl::caddress const& link_address)
+cdhcpmsg_relay::set_link_address(rofl::caddress_in6 const& link_address)
 {
-	if (AF_INET6 != link_address.get_family())
-		throw eDhcpMsgInval();
-
-	memcpy(hdr->link_address, link_address.ca_s6addr->sin6_addr.s6_addr, 16);
+	rofl::caddress_in6 addr(link_address);
+	addr.pack(hdr->link_address, 16);
 }
 
 
 
-rofl::caddress
+rofl::caddress_in6
 cdhcpmsg_relay::get_peer_address() const
 {
-	rofl::caddress addr(AF_INET6, "::");
-
-	memcpy(addr.ca_s6addr->sin6_addr.s6_addr, hdr->peer_address, 16);
-
+	rofl::caddress_in6 addr("::");
+	addr.unpack(hdr->peer_address, 16);
 	return addr;
 }
 
 
 
 void
-cdhcpmsg_relay::set_peer_address(rofl::caddress const& peer_address)
+cdhcpmsg_relay::set_peer_address(rofl::caddress_in6 const& peer_address)
 {
-	if (AF_INET6 != peer_address.get_family())
-		throw eDhcpMsgInval();
-
-	memcpy(hdr->peer_address, peer_address.ca_s6addr->sin6_addr.s6_addr, 16);
+	rofl::caddress_in6 addr(peer_address);
+	addr.pack(hdr->peer_address, 16);
 }
 
 

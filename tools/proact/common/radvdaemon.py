@@ -64,7 +64,7 @@ class RAdvd(object):
         self.state = self.STATE_STOPPED
         if self.process == None:
             return
-        kill_cmd = 'kill -INT ' + str(self.process.pid)
+        kill_cmd = 'kill -KILL ' + str(self.process.pid)
         self.baseCore.logger.debug('radvd stop: executing command => ' + str(kill_cmd))
         subprocess.call(kill_cmd.split())
         self.process = None
