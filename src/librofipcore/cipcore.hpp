@@ -32,7 +32,7 @@ extern "C" {
 #include "clogging.h"
 #include "clink.hpp"
 #include "cnetlink.h"
-#include "croutetable.h"
+#include "croutetable.hpp"
 
 namespace ipcore {
 

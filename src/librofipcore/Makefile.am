@@ -13,7 +13,7 @@ librofipcore_la_SOURCES = \
 	caddr.cpp \
 	cneigh.hpp \
 	cneigh.cpp \
-	croutetable.h \
+	croutetable.hpp \
 	croute.hpp \
 	croute.cpp \
 	cnexthop.hpp \
@@ -27,7 +27,7 @@ library_include_HEADERS= \
 	clink.hpp \
 	caddr.hpp \
 	cneigh.hpp \
-	croutetable.h \
+	croutetable.hpp \
 	croute.hpp \
 	cnexthop.hpp
 
