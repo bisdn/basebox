@@ -24,12 +24,11 @@ extern "C" {
 #include <rofl/common/cdptid.h>
 
 #include "crtneigh.h"
-#include "flowmod.h"
 #include "cnetlink.h"
 
 namespace ipcore {
 
-class cneigh : public flowmod {
+class cneigh {
 public:
 
 
@@ -37,7 +36,7 @@ public:
 	 *
 	 */
 	cneigh() :
-		of_port_no(0), ifindex(0), nbindex(0), table_id(0) {};
+		state(STATE_DETACHED), ifindex(0), nbindex(0), table_id(0), of_port_no(0) {};
 
 
 	/**
@@ -62,6 +61,7 @@ public:
 			cneigh const& neigh) {
 		if (this == &neigh)
 			return *this;
+		state		= neigh.state;
 		dptid	 	= neigh.dptid;
 		of_port_no 	= neigh.of_port_no;
 		ifindex	 	= neigh.ifindex;
@@ -75,54 +75,17 @@ public:
 	 *
 	 */
 	cneigh(
-			const rofl::cdptid& dptid,
-			uint32_t of_port_no,
 			int ifindex,
 			uint16_t nbindex,
-			uint8_t table_id) :
-				dptid(dptid),
-				of_port_no(of_port_no),
+			const rofl::cdptid& dptid,
+			uint8_t table_id,
+			uint32_t of_port_no) :
+				state(STATE_DETACHED),
 				ifindex(ifindex),
 				nbindex(nbindex),
-				table_id(table_id) {};
-
-public:
-
-	/**
-	 *
-	 */
-	virtual void
-	update() = 0;
-
-	/**
-	 *
-	 */
-	void
-	install() { flow_mod_add(rofl::openflow::OFPFC_ADD); };
-
-	/**
-	 *
-	 */
-	void
-	reinstall() { flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT); };
-
-	/**
-	 *
-	 */
-	void
-	uninstall() { flow_mod_delete(); };
-
-	/**
-	 *
-	 */
-	virtual void
-	handle_dpt_open(rofl::crofdpt& dpt) {};
-
-	/**
-	 *
-	 */
-	virtual void
-	handle_dpt_close(rofl::crofdpt& dpt) {};
+				dptid(dptid),
+				table_id(table_id),
+				of_port_no(of_port_no) {};
 
 public:
 
@@ -186,20 +149,6 @@ public:
 	void
 	set_nbindex(uint16_t nbindex) { this->nbindex = nbindex; };
 
-private:
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_add(uint8_t command = rofl::openflow::OFPFC_ADD) = 0;
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_delete() = 0;
-
 public:
 
 	friend std::ostream&
@@ -212,13 +161,19 @@ public:
 		return os;
 	};
 
-private:
+protected:
 
-	rofl::cdptid				dptid;
-	uint32_t					of_port_no;
+	enum ofp_state_t {
+		STATE_DETACHED = 1,
+		STATE_ATTACHED = 2,
+	};
+
+	enum ofp_state_t			state;
 	int							ifindex;
 	uint16_t					nbindex;
+	rofl::cdptid				dptid;
 	uint8_t 					table_id;
+	uint32_t					of_port_no;
 };
 
 
@@ -234,8 +189,8 @@ public:
 	 *
 	 */
 	cneigh_in4(
-			const rofl::cdptid& dptid, uint32_t of_port_no, int ifindex, uint16_t nbindex, uint8_t table_id) :
-				cneigh(dptid, of_port_no, ifindex, nbindex, table_id) {};
+			int ifindex, uint16_t nbindex, const rofl::cdptid& dptid, uint8_t table_id, uint32_t of_port_no) :
+				cneigh(ifindex, nbindex, dptid, table_id, of_port_no) {};
 
 	/**
 	 *
@@ -255,13 +210,18 @@ public:
 		return *this;
 	};
 
-public:
-
 	/**
 	 *
 	 */
-	virtual void
-	update();
+	~cneigh_in4() {
+		try {
+			if (STATE_ATTACHED == state) {
+				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {}
+	};
+
+public:
 
 	/**
 	 *
@@ -275,29 +235,15 @@ public:
 	/**
 	 *
 	 */
-	virtual void
-	handle_dpt_open(rofl::crofdpt& dpt) {};
+	void
+	handle_dpt_open(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
-	virtual void
-	handle_dpt_close(rofl::crofdpt& dpt) {};
+	void
+	handle_dpt_close(rofl::crofdpt& dpt);
 
-protected:
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_add(
-			uint8_t command = rofl::openflow::OFPFC_ADD);
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_delete();
 
 public:
 
@@ -335,8 +281,8 @@ public:
 	 *
 	 */
 	cneigh_in6(
-			const rofl::cdptid& dptid, uint32_t of_port_no, int ifindex, uint16_t nbindex, uint8_t table_id) :
-				cneigh(dptid, of_port_no, ifindex, nbindex, table_id) {};
+			int ifindex, uint16_t nbindex, const rofl::cdptid& dptid, uint8_t table_id, uint32_t of_port_no) :
+				cneigh(ifindex, nbindex, dptid, table_id, of_port_no) {};
 
 	/**
 	 *
@@ -356,13 +302,18 @@ public:
 		return *this;
 	};
 
-public:
-
 	/**
 	 *
 	 */
-	virtual void
-	update();
+	~cneigh_in6() {
+		try {
+			if (STATE_ATTACHED == state) {
+				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {}
+	};
+
+public:
 
 	/**
 	 *
@@ -376,29 +327,14 @@ public:
 	/**
 	 *
 	 */
-	virtual void
-	handle_dpt_open(rofl::crofdpt& dpt) {};
+	void
+	handle_dpt_open(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
-	virtual void
-	handle_dpt_close(rofl::crofdpt& dpt) {};
-
-protected:
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_add(
-			uint8_t command = rofl::openflow::OFPFC_ADD);
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_delete();
+	void
+	handle_dpt_close(rofl::crofdpt& dpt);
 
 public:
 

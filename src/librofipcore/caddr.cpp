@@ -11,23 +11,22 @@
 using namespace ipcore;
 
 
-
 void
-caddr_in4::update()
-{
-	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
-}
-
-
-
-void
-caddr_in4::flow_mod_add(uint8_t command)
+caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
-		fe.set_command(command);
+		switch (state) {
+		case STATE_DETACHED: {
+			fe.set_command(rofl::openflow::OFPFC_ADD);
+		} break;
+		case STATE_ATTACHED: {
+			fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
+		} break;
+		}
+
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
@@ -47,6 +46,8 @@ caddr_in4::flow_mod_add(uint8_t command)
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+		state = STATE_ATTACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[dptaddr_in4][flow_mod_add] unable to find data path" << std::endl << *this;
@@ -66,7 +67,7 @@ caddr_in4::flow_mod_add(uint8_t command)
 
 
 void
-caddr_in4::flow_mod_delete()
+caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
@@ -81,6 +82,8 @@ caddr_in4::flow_mod_delete()
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[dptaddr_in4][flow_mod_delete] unable to find data path" << std::endl << *this;
@@ -100,21 +103,21 @@ caddr_in4::flow_mod_delete()
 
 
 void
-caddr_in6::update()
-{
-	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
-}
-
-
-
-void
-caddr_in6::flow_mod_add(uint8_t command)
+caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
-		fe.set_command(command);
+		switch (state) {
+		case STATE_DETACHED: {
+			fe.set_command(rofl::openflow::OFPFC_ADD);
+		} break;
+		case STATE_ATTACHED: {
+			fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
+		} break;
+		}
+
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
@@ -135,6 +138,8 @@ caddr_in6::flow_mod_add(uint8_t command)
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
+		state = STATE_ATTACHED;
+
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[dptaddr_in6][flow_mod_add] unable to find data path" << std::endl << *this;
 
@@ -153,7 +158,7 @@ caddr_in6::flow_mod_add(uint8_t command)
 
 
 void
-caddr_in6::flow_mod_delete()
+caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
@@ -168,6 +173,8 @@ caddr_in6::flow_mod_delete()
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[dptaddr_in6][flow_mod_delete] unable to find data path" << std::endl << *this;

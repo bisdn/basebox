@@ -14,21 +14,25 @@
 #include <rofl/common/openflow/cofflowmod.h>
 
 #include "crtaddr.h"
-#include "flowmod.h"
 #include "cnetlink.h"
 #include "clogging.h"
 
-namespace ipcore
-{
+namespace ipcore {
 
-class caddr : public flowmod {
+class caddr {
 public:
 
 	/**
 	 *
 	 */
 	caddr() :
-		table_id(0), ifindex(0), adindex(0) {};
+		state(STATE_DETACHED), ifindex(0), adindex(0), table_id(0) {};
+
+	/**
+	 *
+	 */
+	caddr(int ifindex, uint16_t adindex, const rofl::cdptid& dptid, uint8_t table_id = 0) :
+		state(STATE_DETACHED), ifindex(ifindex), adindex(adindex), dptid(dptid), table_id(table_id) {};
 
 	/**
 	 *
@@ -50,60 +54,13 @@ public:
 			caddr const& addr) {
 		if (this == &addr)
 			return *this;
+		state	 = addr.state;
 		dptid	 = addr.dptid;
 		table_id = addr.table_id;
 		ifindex	 = addr.ifindex;
 		adindex	 = addr.adindex;
 		return *this;
 	};
-
-	/**
-	 *
-	 */
-	caddr(
-			const rofl::cdptid& dptid, int ifindex, uint16_t adindex, uint8_t table_id) :
-				dptid(dptid),
-				table_id(table_id),
-				ifindex(ifindex),
-				adindex(adindex) {};
-
-public:
-
-	/**
-	 *
-	 */
-	virtual void
-	update() {};
-
-	/**
-	 *
-	 */
-	void
-	install() { flow_mod_add(rofl::openflow::OFPFC_ADD); };
-
-	/**
-	 *
-	 */
-	void
-	reinstall() { flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT); };
-
-	/**
-	 *
-	 */
-	void
-	uninstall() { flow_mod_delete(); };
-
-	/**
-	 *
-	 */
-	virtual void
-	handle_dpt_open(rofl::crofdpt& dpt) {};
-
-	/**
-	 *
-	 */
-	virtual void
-	handle_dpt_close(rofl::crofdpt& dpt) {};
 
 public:
 
@@ -155,23 +112,6 @@ public:
 	void
 	set_table_id(uint8_t table_id) { this->table_id = table_id; };
 
-protected:
-
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_add(
-			uint8_t command = rofl::openflow::OFPFC_ADD) = 0;
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_delete() = 0;
-
-
 public:
 
 	friend std::ostream&
@@ -186,10 +126,17 @@ public:
 
 protected:
 
-	rofl::cdptid				dptid;
-	uint8_t						table_id;
+	enum ofp_state_t {
+		STATE_DETACHED = 1,
+		STATE_ATTACHED = 2,
+	};
+
+	enum ofp_state_t			state;
 	int							ifindex;
 	uint16_t					adindex;
+	rofl::cdptid				dptid;
+	uint8_t						table_id;
+
 };
 
 
@@ -206,8 +153,8 @@ public:
 	 *
 	 */
 	caddr_in4(
-			const rofl::cdptid& dptid, int ifindex, uint16_t adindex, uint8_t table_id) :
-				caddr(dptid, ifindex, adindex, table_id) {};
+			int ifindex, uint16_t adindex, const rofl::cdptid& dptid, uint8_t table_id) :
+				caddr(ifindex, adindex, dptid, table_id) {};
 
 	/**
 	 *
@@ -227,40 +174,30 @@ public:
 		return *this;
 	};
 
+	/**
+	 *
+	 */
+	~caddr_in4() {
+		try {
+			if (STATE_ATTACHED == state) {
+				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {}
+	};
+
 public:
 
 	/**
 	 *
 	 */
-	virtual void
-	update();
+	void
+	handle_dpt_open(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
-	virtual void
-	handle_dpt_open(rofl::crofdpt& dpt) {};
-
-	/**
-	 *
-	 */
-	virtual void
-	handle_dpt_close(rofl::crofdpt& dpt) {};
-
-protected:
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_add(
-			uint8_t command = rofl::openflow::OFPFC_ADD);
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_delete();
+	void
+	handle_dpt_close(rofl::crofdpt& dpt);
 
 public:
 
@@ -288,8 +225,8 @@ public:
 	 *
 	 */
 	caddr_in6(
-			const rofl::cdptid& dptid, int ifindex, uint16_t adindex, uint8_t table_id) :
-				caddr(dptid, ifindex, adindex, table_id) {};
+			int ifindex, uint16_t adindex, const rofl::cdptid& dptid, uint8_t table_id) :
+				caddr(ifindex, adindex, dptid, table_id) {};
 
 	/**
 	 *
@@ -309,40 +246,30 @@ public:
 		return *this;
 	};
 
+	/**
+	 *
+	 */
+	~caddr_in6() {
+		try {
+			if (STATE_ATTACHED == state) {
+				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {}
+	};
+
 public:
 
 	/**
 	 *
 	 */
-	virtual void
-	update();
+	void
+	handle_dpt_open(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
-	virtual void
-	handle_dpt_open(rofl::crofdpt& dpt) {};
-
-	/**
-	 *
-	 */
-	virtual void
-	handle_dpt_close(rofl::crofdpt& dpt) {};
-
-protected:
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_add(
-			uint8_t command = rofl::openflow::OFPFC_ADD);
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_delete();
+	void
+	handle_dpt_close(rofl::crofdpt& dpt);
 
 public:
 

@@ -82,6 +82,39 @@ public:
 	virtual
 	~clink();
 
+	/**
+	 *
+	 */
+	clink(const clink& link) { *this = link; };
+
+	/**
+	 *
+	 */
+	clink&
+	operator= (const clink& link) {
+		if (this == &link)
+			return *this;
+		clear_addrs();
+		for (std::map<uint32_t, caddr_in4>::const_iterator
+				it = link.addrs_in4.begin(); it != link.addrs_in4.end(); ++it) {
+			add_addr_in4(it->first) = it->second;
+		}
+		for (std::map<uint32_t, caddr_in6>::const_iterator
+				it = link.addrs_in6.begin(); it != link.addrs_in6.end(); ++it) {
+			add_addr_in6(it->first) = it->second;
+		}
+		clear_neighs();
+		for (std::map<uint32_t, cneigh_in4>::const_iterator
+				it = link.neighs_in4.begin(); it != link.neighs_in4.end(); ++it) {
+			add_neigh_in4(it->first) = it->second;
+		}
+		for (std::map<uint32_t, cneigh_in6>::const_iterator
+				it = link.neighs_in6.begin(); it != link.neighs_in6.end(); ++it) {
+			add_neigh_in6(it->first) = it->second;
+		}
+		return *this;
+	};
+
 public:
 
 	/**
@@ -164,7 +197,10 @@ public:
 		if (addrs_in4.find(adindex) != addrs_in4.end()) {
 			addrs_in4.erase(adindex);
 		}
-		addrs_in4[adindex].set_dptid(dptid);
+		addrs_in4[adindex] = caddr_in4(ifindex, adindex, dptid, /*table_id=*/0);
+		if (STATE_ATTACHED == state) {
+			addrs_in4[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+		}
 		return addrs_in4[adindex];
 	};
 
@@ -174,7 +210,10 @@ public:
 	caddr_in4&
 	set_addr_in4(unsigned int adindex) {
 		if (addrs_in4.find(adindex) == addrs_in4.end()) {
-			addrs_in4[adindex].set_dptid(dptid);
+			addrs_in4[adindex] = caddr_in4(ifindex, adindex, dptid, /*table_id=*/0);
+			if (STATE_ATTACHED == state) {
+				addrs_in4[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			}
 		}
 		return addrs_in4[adindex];
 	};
@@ -218,7 +257,10 @@ public:
 		if (addrs_in6.find(adindex) != addrs_in6.end()) {
 			addrs_in6.erase(adindex);
 		}
-		addrs_in6[adindex].set_dptid(dptid);
+		addrs_in6[adindex] = caddr_in6(ifindex, adindex, dptid, /*table_id=*/0);
+		if (STATE_ATTACHED == state) {
+			addrs_in6[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+		}
 		return addrs_in6[adindex];
 	};
 
@@ -228,7 +270,10 @@ public:
 	caddr_in6&
 	set_addr_in6(unsigned int adindex) {
 		if (addrs_in6.find(adindex) == addrs_in6.end()) {
-			addrs_in6[adindex].set_dptid(dptid);
+			addrs_in6[adindex] = caddr_in6(ifindex, adindex, dptid, /*table_id=*/0);
+			if (STATE_ATTACHED == state) {
+				addrs_in6[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			}
 		}
 		return addrs_in6[adindex];
 	};
@@ -279,7 +324,10 @@ public:
 		if (neighs_in4.find(nbindex) != neighs_in4.end()) {
 			neighs_in4.erase(nbindex);
 		}
-		neighs_in4[nbindex].set_dptid(dptid);
+		neighs_in4[nbindex] = cneigh_in4(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+		if (STATE_ATTACHED == state) {
+			neighs_in4[nbindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+		}
 		return neighs_in4[nbindex];
 	};
 
@@ -289,7 +337,10 @@ public:
 	cneigh_in4&
 	set_neigh_in4(unsigned int nbindex) {
 		if (neighs_in4.find(nbindex) == neighs_in4.end()) {
-			neighs_in4[nbindex].set_dptid(dptid);
+			neighs_in4[nbindex] = cneigh_in4(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+			if (STATE_ATTACHED == state) {
+				neighs_in4[nbindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			}
 		}
 		return neighs_in4[nbindex];
 	};
@@ -345,7 +396,10 @@ public:
 		if (neighs_in6.find(nbindex) != neighs_in6.end()) {
 			neighs_in6.erase(nbindex);
 		}
-		neighs_in6[nbindex].set_dptid(dptid);
+		neighs_in6[nbindex] = cneigh_in6(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+		if (STATE_ATTACHED == state) {
+			neighs_in6[nbindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+		}
 		return neighs_in6[nbindex];
 	};
 
@@ -355,7 +409,10 @@ public:
 	cneigh_in6&
 	set_neigh_in6(unsigned int nbindex) {
 		if (neighs_in6.find(nbindex) == neighs_in6.end()) {
-			neighs_in6[nbindex].set_dptid(dptid);
+			neighs_in6[nbindex] = cneigh_in6(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+			if (STATE_ATTACHED == state) {
+				neighs_in6[nbindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			}
 		}
 		return neighs_in6[nbindex];
 	};

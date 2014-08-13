@@ -7,41 +7,29 @@ noinst_LTLIBRARIES = librofipcore.la
 librofipcore_la_SOURCES = \
 	cipcore.hpp \
 	cipcore.cpp \
-	caddr.hpp \
-	caddr.cpp \
 	clink.hpp \
 	clink.cpp \
+	caddr.hpp \
+	caddr.cpp \
 	cneigh.hpp \
 	cneigh.cpp \
-	cdptnexthop.h \
-	cdptnexthop.cc \
-	cdptroute.h \
-	cdptroute.cc \
-	flowmod.h \
-	clinktable.h \
-	cnexthoptable.h \
-	caddrtable.h \
-	cneightable.h \
 	croutetable.h \
-	croutetables.h
+	croute.hpp \
+	croute.cpp \
+	cnexthop.hpp \
+	cnexthop.cpp
 
 librofipcore_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
 library_includedir=$(includedir)/rofl/common
 library_include_HEADERS= \
 	cipcore.hpp \
-	caddr.hpp \
 	clink.hpp \
+	caddr.hpp \
 	cneigh.hpp \
-	cdptnexthop.h \
-	cdptroute.h \
-	flowmod.h \
-	clinktable.h \
-	cnexthoptable.h \
-	caddrtable.h \
-	cneightable.h \
 	croutetable.h \
-	croutetables.h
+	croute.hpp \
+	cnexthop.hpp
 
 AM_CPPFLAGS=-fPIC
 AM_LDFLAGS=-L../librofnetlink -lrofnetlink

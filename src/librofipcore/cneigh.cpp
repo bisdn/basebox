@@ -12,15 +12,7 @@ using namespace ipcore;
 
 
 void
-cneigh_in4::update()
-{
-	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
-}
-
-
-
-void
-cneigh_in4::flow_mod_add(uint8_t command)
+cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
@@ -33,7 +25,7 @@ cneigh_in4::flow_mod_add(uint8_t command)
 		const rofcore::crtlink& rtl =
 				netlink.get_links().get_link(rtn.get_ifindex());
 
-		// ... and the link's dpt representation (cdptlink) needed for OFP related data
+		// ... and the link's dpt representation (clink) needed for OFP related data
 		const ipcore::clink& dpl =
 				cipcore::get_instance().get_link_by_ifindex(rtn.get_ifindex());
 
@@ -54,7 +46,15 @@ cneigh_in4::flow_mod_add(uint8_t command)
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
-		fe.set_command(command);
+		switch (state) {
+		case STATE_DETACHED: {
+			fe.set_command(rofl::openflow::OFPFC_ADD);
+		} break;
+		case STATE_ATTACHED: {
+			fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
+		} break;
+		}
+
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
@@ -67,26 +67,31 @@ cneigh_in4::flow_mod_add(uint8_t command)
 
 		rofl::cindex index(0);
 
-		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
-		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_output(index++).set_port_no(out_portno);
+		fe.set_instructions().add_inst_apply_actions().set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
+		fe.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
+		fe.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_output(index++).set_port_no(out_portno);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
+		state = STATE_ATTACHED;
+
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_add] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_open] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_add] unable to find neighbour" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_open] unable to find neighbour" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_add] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_open] unable to find address" << std::endl << *this;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_add] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_open] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_add] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_open] unexpected error" << std::endl << *this;
 
 	}
 }
@@ -94,7 +99,7 @@ cneigh_in4::flow_mod_add(uint8_t command)
 
 
 void
-cneigh_in4::flow_mod_delete()
+cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
@@ -119,37 +124,30 @@ cneigh_in4::flow_mod_delete()
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
+		state = STATE_DETACHED;
+
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_delete] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_close] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_delete] unable to find neighbour" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_close] unable to find neighbour" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_delete] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_close] unable to find address" << std::endl << *this;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_delete] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_close] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptneigh_in4][flow_mod_delete] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_close] unexpected error" << std::endl << *this;
 
 	}
 }
 
 
 
-
 void
-cneigh_in6::update()
-{
-	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
-}
-
-
-
-void
-cneigh_in6::flow_mod_add(uint8_t command)
+cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
@@ -162,7 +160,7 @@ cneigh_in6::flow_mod_add(uint8_t command)
 		const rofcore::crtlink& rtl =
 				netlink.get_links().get_link(rtn.get_ifindex());
 
-		// ... and the link's dpt representation (cdptlink) needed for OFP related data
+		// ... and the link's dpt representation (clink) needed for OFP related data
 		const ipcore::clink& dpl =
 				cipcore::get_instance().get_link_by_ifindex(rtn.get_ifindex());
 
@@ -183,7 +181,15 @@ cneigh_in6::flow_mod_add(uint8_t command)
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
-		fe.set_command(command);
+		switch (state) {
+		case STATE_DETACHED: {
+			fe.set_command(rofl::openflow::OFPFC_ADD);
+		} break;
+		case STATE_ATTACHED: {
+			fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
+		} break;
+		}
+
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
@@ -196,26 +202,31 @@ cneigh_in6::flow_mod_add(uint8_t command)
 
 		rofl::cindex index(0);
 
-		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
-		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-		fe.set_instructions().set_inst_apply_actions().set_actions().add_action_output(index++).set_port_no(out_portno);
+		fe.set_instructions().add_inst_apply_actions().set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
+		fe.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
+		fe.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_output(index++).set_port_no(out_portno);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
+		state = STATE_ATTACHED;
+
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_add] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_open] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_add] unable to find neighbour" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_open] unable to find neighbour" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_add] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_open] unable to find address" << std::endl << *this;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_add] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_open] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_add] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_open] unexpected error" << std::endl << *this;
 
 	}
 }
@@ -223,7 +234,7 @@ cneigh_in6::flow_mod_add(uint8_t command)
 
 
 void
-cneigh_in6::flow_mod_delete()
+cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
@@ -248,20 +259,22 @@ cneigh_in6::flow_mod_delete()
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
+		state = STATE_DETACHED;
+
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_delete] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_close] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_delete] unable to find neighbour" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_close] unable to find neighbour" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_delete] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_close] unable to find address" << std::endl << *this;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_delete] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_close] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptneigh_in6][flow_mod_delete] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_close] unexpected error" << std::endl << *this;
 
 	}
 }

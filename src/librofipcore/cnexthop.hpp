@@ -1,5 +1,5 @@
 /*
- * dptnexthop.h
+ * cdptnexthop.h
  *
  *  Created on: 03.07.2013
  *      Author: andreas
@@ -9,6 +9,7 @@
 #define DPTNEXTHOP_H_ 1
 
 #include <ostream>
+#include <exception>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,43 +24,51 @@ extern "C" {
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
 
-#include "flowmod.h"
 #include "cnetlink.h"
-#include "cneightable.h"
 
 namespace ipcore {
 
-class cdptnexthop : public flowmod, public rofcore::cnetlink_neighbour_observer {
+class eNextHopBase : public std::runtime_error {
+public:
+	eNextHopBase(const std::string& __arg) : std::runtime_error(__arg) {};
+};
+class eNextHopNotFound : public eNextHopBase {
+public:
+	eNextHopNotFound(const std::string& __arg) : eNextHopBase(__arg) {};
+};
+
+class cnexthop : public rofcore::cnetlink_neighbour_observer {
 public:
 
 
 	/**
 	 *
 	 */
-	cdptnexthop() :
-				rttblid(0), rtindex(0), nhindex(0) {};
+	cnexthop() :
+				state(STATE_DETACHED), rttblid(0), rtindex(0), nhindex(0) {};
 
 
 	/**
 	 *
 	 */
 	virtual
-	~cdptnexthop() {};
+	~cnexthop() {};
 
 	/**
 	 *
 	 */
-	cdptnexthop(
-			cdptnexthop const& nexthop) { *this = nexthop; };
+	cnexthop(
+			cnexthop const& nexthop) { *this = nexthop; };
 
 	/**
 	 *
 	 */
-	cdptnexthop&
+	cnexthop&
 	operator= (
-			cdptnexthop const& nexthop) {
+			cnexthop const& nexthop) {
 		if (this == &nexthop)
 			return *this;
+		state		= nexthop.state;
 		dptid	 	= nexthop.dptid;
 		rttblid 	= nexthop.rttblid;
 		rtindex	 	= nexthop.rtindex;
@@ -70,39 +79,13 @@ public:
 	/**
 	 *
 	 */
-	cdptnexthop(
+	cnexthop(
 			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid) :
+				state(STATE_DETACHED),
 				dptid(dptid),
 				rttblid(rttableid),
 				rtindex(rtindex),
 				nhindex(nhindex) {};
-
-public:
-
-	/**
-	 *
-	 */
-	virtual void
-	update() {};
-
-	/**
-	 *
-	 */
-	void
-	install() { flow_mod_add(rofl::openflow::OFPFC_ADD); };
-
-	/**
-	 *
-	 */
-	void
-	reinstall() { flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT); };
-
-	/**
-	 *
-	 */
-	void
-	uninstall() { flow_mod_delete(); };
-
 
 public:
 
@@ -130,21 +113,6 @@ public:
 	unsigned int
 	get_nhindex() const { return nhindex; };
 
-private:
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_add(uint8_t command = rofl::openflow::OFPFC_ADD) {};
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_delete() {};
-
-
 public:
 
 
@@ -152,22 +120,22 @@ public:
 	 *
 	 */
 	friend std::ostream&
-	operator<< (std::ostream& os, const cdptnexthop& nexthop) {
+	operator<< (std::ostream& os, const cnexthop& nexthop) {
 		try {
-			os << rofl::indent(0) << "<dptnexthop: >" 	<< std::endl;
+			os << rofl::indent(0) << "<cdptnexthop: >" 	<< std::endl;
 
 			const rofcore::crtnexthop_in4& rtn =
 					rofcore::cnetlink::get_instance().get_routes_in4(nexthop.get_rttblid()).
 						get_route(nexthop.get_rtindex()).get_nexthops_in4().get_nexthop(nexthop.get_nhindex());
 
-			os << rofl::indent(0) << "<dptnexthop: >" 	<< std::endl;
+			os << rofl::indent(0) << "<cdptnexthop: >" 	<< std::endl;
 			os << rofl::indent(2) << "<weight: " 	<< rtn.get_weight() 	<< " >" << std::endl;
 			os << rofl::indent(2) << "<ifindex: " 	<< rtn.get_ifindex() 	<< " >" << std::endl;
 			os << rofl::indent(2) << "<realms: " 	<< rtn.get_realms() 	<< " >" << std::endl;
 			os << rofl::indent(2) << "<flags: " 	<< rtn.get_flags() 		<< " >" << std::endl;
 
 		} catch (...) {
-			os << "<dptnexthop: ";
+			os << "<cdptnexthop: ";
 				os << "rttableid:" 	<< nexthop.get_rttblid() << " ";
 				os << "rtindex:" 	<< nexthop.get_rtindex() 	<< " ";
 				os << "nhindex:" 	<< nexthop.get_nhindex() 	<< " ";
@@ -176,8 +144,14 @@ public:
 		return os;
 	};
 
-private:
+protected:
 
+	enum ofp_state_t {
+		STATE_DETACHED = 1,
+		STATE_ATTACHED = 2,
+	};
+
+	enum ofp_state_t			state;
 	rofl::cdptid				dptid;
 	uint8_t						rttblid; // routing table id, not OFP related
 	unsigned int				rtindex;
@@ -187,91 +161,80 @@ private:
 
 
 
-class cdptnexthop_in4 : public cdptnexthop {
+class cnexthop_in4 : public cnexthop {
 public:
 
 	/**
 	 *
 	 */
-	cdptnexthop_in4() : flow_mod_installed(false) {};
+	cnexthop_in4() {};
 
 	/**
 	 *
 	 */
-	cdptnexthop_in4(
-			const cdptnexthop_in4& nexthop) { *this = nexthop; };
+	cnexthop_in4(
+			const cnexthop_in4& nexthop) { *this = nexthop; };
 
 	/**
 	 *
 	 */
-	cdptnexthop_in4&
+	cnexthop_in4&
 	operator= (
-			const cdptnexthop_in4& nexthop) {
+			const cnexthop_in4& nexthop) {
 		if (this == &nexthop)
 			return *this;
-		cdptnexthop::operator= (nexthop);
-		flow_mod_installed = nexthop.flow_mod_installed;
+		cnexthop::operator= (nexthop);
 		return *this;
 	};
 
 	/**
 	 *
 	 */
-	cdptnexthop_in4(
+	cnexthop_in4(
 			uint8_t rttblid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid) :
-				cdptnexthop(rttblid, rtindex, nhindex, dptid), flow_mod_installed(false) {};
-
+				cnexthop(rttblid, rtindex, nhindex, dptid) {};
 
 public:
 
 	/**
 	 *
 	 */
-	virtual void
-	update();
-
-protected:
+	void
+	handle_dpt_open(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
-	virtual void
-	flow_mod_add(
-			uint8_t command = rofl::openflow::OFPFC_ADD);
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_delete();
+	void
+	handle_dpt_close(rofl::crofdpt& dpt);
 
 private:
 
 	virtual void
 	neigh_in4_created(unsigned int ifindex, uint16_t nbindex) {
-		if (not flow_mod_installed) {
-			flow_mod_add();
+		if (STATE_DETACHED == state) {
+			handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
 	};
 
 	virtual void
 	neigh_in4_updated(unsigned int ifindex, uint16_t nbindex) {
-		flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
+		handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 	};
 
 	virtual void
 	neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex) {
-		if (flow_mod_installed) {
-			flow_mod_delete();
+		if (STATE_ATTACHED == state) {
+			handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
 		}
 	};
 
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const cdptnexthop_in4& nexthop) {
+	operator<< (std::ostream& os, const cnexthop_in4& nexthop) {
 		try {
-			os << rofl::indent(0) << "<dptnexthop_in4 >" 	<< std::endl;
+			os << rofl::indent(0) << "<cdptnexthop_in4 >" 	<< std::endl;
 
 			const rofcore::crtnexthop_in4& rtn =
 					rofcore::cnetlink::get_instance().get_routes_in4(nexthop.get_rttblid()).
@@ -284,7 +247,7 @@ public:
 			os << rofcore::indent(2) << "<flags: " 		<< rtn.get_flags() 		<< " >" << std::endl;
 
 		} catch (...) {
-			os << "<dptnexthop: ";
+			os << "<cdptnexthop: ";
 				os << "rttableid:" 	<< nexthop.get_rttblid() << " ";
 				os << "rtindex:" 	<< nexthop.get_rtindex() 	<< " ";
 				os << "nhindex:" 	<< nexthop.get_nhindex() 	<< " ";
@@ -294,48 +257,46 @@ public:
 		return os;
 	};
 
-private:
+protected:
 
-	bool flow_mod_installed;
 };
 
 
 
 
 
-class cdptnexthop_in6 : public cdptnexthop {
+class cnexthop_in6 : public cnexthop {
 public:
 
 	/**
 	 *
 	 */
-	cdptnexthop_in6() : flow_mod_installed(false) {};
+	cnexthop_in6() {};
 
 	/**
 	 *
 	 */
-	cdptnexthop_in6(
-			const cdptnexthop_in6& nexthop) { *this = nexthop; };
+	cnexthop_in6(
+			const cnexthop_in6& nexthop) { *this = nexthop; };
 
 	/**
 	 *
 	 */
-	cdptnexthop_in6&
+	cnexthop_in6&
 	operator= (
-			const cdptnexthop_in6& nexthop) {
+			const cnexthop_in6& nexthop) {
 		if (this == &nexthop)
 			return *this;
-		cdptnexthop::operator= (nexthop);
-		flow_mod_installed = nexthop.flow_mod_installed;
+		cnexthop::operator= (nexthop);
 		return *this;
 	};
 
 	/**
 	 *
 	 */
-	cdptnexthop_in6(
+	cnexthop_in6(
 			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid) :
-				cdptnexthop(rttableid, rtindex, nhindex, dptid), flow_mod_installed(false) {};
+				cnexthop(rttableid, rtindex, nhindex, dptid) {};
 
 
 public:
@@ -343,51 +304,42 @@ public:
 	/**
 	 *
 	 */
-	virtual void
-	update();
-
-protected:
+	void
+	handle_dpt_open(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
-	virtual void
-	flow_mod_add(
-			uint8_t command = rofl::openflow::OFPFC_ADD);
-
-	/**
-	 *
-	 */
-	virtual void
-	flow_mod_delete();
+	void
+	handle_dpt_close(rofl::crofdpt& dpt);
 
 private:
 
 	virtual void
 	neigh_in6_created(unsigned int ifindex, uint16_t nbindex) {
-		if (not flow_mod_installed) {
-			flow_mod_add();
+		if (STATE_DETACHED == state) {
+			handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
 	};
 
 	virtual void
 	neigh_in6_updated(unsigned int ifindex, uint16_t nbindex) {
-		flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
+		handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 	};
 
 	virtual void
 	neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex) {
-		if (flow_mod_installed) {
-			flow_mod_delete();
+		if (STATE_ATTACHED == state) {
+			handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
 		}
 	};
 
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const cdptnexthop_in6& nexthop) {
+	operator<< (std::ostream& os, const cnexthop_in6& nexthop) {
 		try {
-			os << rofl::indent(0) << "<dptnexthop_in6 >" 	<< std::endl;
+			os << rofl::indent(0) << "<cdptnexthop_in6 >" 	<< std::endl;
 
 			const rofcore::crtnexthop_in6& rtn =
 					rofcore::cnetlink::get_instance().get_routes_in6(nexthop.get_rttblid()).
@@ -400,7 +352,7 @@ public:
 			os << rofcore::indent(2) << "<flags: " 		<< rtn.get_flags() 		<< " >" << std::endl;
 
 		} catch (...) {
-			os << "<dptnexthop: ";
+			os << "<cdptnexthop: ";
 				os << "rttableid:" 	<< nexthop.get_rttblid() << " ";
 				os << "rtindex:" 	<< nexthop.get_rtindex() 	<< " ";
 				os << "nhindex:" 	<< nexthop.get_nhindex() 	<< " ";
@@ -409,10 +361,6 @@ public:
 
 		return os;
 	};
-
-private:
-
-	bool flow_mod_installed;
 };
 
 

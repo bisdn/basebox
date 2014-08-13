@@ -5,24 +5,14 @@
  *      Author: andreas
  */
 
-#include "cdptnexthop.h"
+#include "cnexthop.hpp"
 #include "cipcore.hpp"
 
 using namespace ipcore;
 
 
-
-
 void
-cdptnexthop_in4::update()
-{
-	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
-}
-
-
-
-void
-cdptnexthop_in4::flow_mod_add(uint8_t command)
+cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
@@ -66,7 +56,15 @@ cdptnexthop_in4::flow_mod_add(uint8_t command)
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
-		fe.set_command(command);
+		switch (state) {
+		case STATE_DETACHED: {
+			fe.set_command(rofl::openflow::OFPFC_ADD);
+		} break;
+		case STATE_ATTACHED: {
+			fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
+		} break;
+		}
+
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
@@ -89,7 +87,7 @@ cdptnexthop_in4::flow_mod_add(uint8_t command)
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-		flow_mod_installed = true;
+		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
 		rofcore::logging::error << "[dptnexthop_in4][flow_mod_add] unable to find link" << std::endl << *this;
@@ -97,7 +95,7 @@ cdptnexthop_in4::flow_mod_add(uint8_t command)
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::error << "[dptnexthop_in4][flow_mod_add] unable to find address" << std::endl << *this;
 
-	} catch (eNeighTableNotFound& e) {
+	} catch (eNeighNotFound& e) {
 		rofcore::logging::debug << "[dptnexthop_in4][flow_mod_add] unable to find dst neighbour" << std::endl << *this;
 
 		/* non-critical error: just indicating that the kernel has not yet resolved (via ARP or NDP)
@@ -122,7 +120,7 @@ cdptnexthop_in4::flow_mod_add(uint8_t command)
 
 
 void
-cdptnexthop_in4::flow_mod_delete()
+cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
@@ -158,7 +156,7 @@ cdptnexthop_in4::flow_mod_delete()
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-		flow_mod_installed = false;
+		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[dptnexthop_in4][flow_mod_delete] unable to find data path" << std::endl << *this;
@@ -177,17 +175,8 @@ cdptnexthop_in4::flow_mod_delete()
 
 
 
-
 void
-cdptnexthop_in6::update()
-{
-	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
-}
-
-
-
-void
-cdptnexthop_in6::flow_mod_add(uint8_t command)
+cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
@@ -231,7 +220,15 @@ cdptnexthop_in6::flow_mod_add(uint8_t command)
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
-		fe.set_command(command);
+		switch (state) {
+		case STATE_DETACHED: {
+			fe.set_command(rofl::openflow::OFPFC_ADD);
+		} break;
+		case STATE_ATTACHED: {
+			fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
+		} break;
+		}
+
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
@@ -254,7 +251,7 @@ cdptnexthop_in6::flow_mod_add(uint8_t command)
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-		flow_mod_installed = true;
+		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
 		rofcore::logging::error << "[dptnexthop_in6][flow_mod_add] unable to find link" << std::endl << *this;
@@ -262,7 +259,7 @@ cdptnexthop_in6::flow_mod_add(uint8_t command)
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::error << "[dptnexthop_in6][flow_mod_add] unable to find address" << std::endl << *this;
 
-	} catch (eNeighTableNotFound& e) {
+	} catch (eNeighNotFound& e) {
 		rofcore::logging::debug << "[dptnexthop_in6][flow_mod_add] unable to find dst neighbour" << std::endl << *this;
 
 		/* non-critical error: just indicating that the kernel has not yet resolved (via ARP or NDP)
@@ -287,7 +284,7 @@ cdptnexthop_in6::flow_mod_add(uint8_t command)
 
 
 void
-cdptnexthop_in6::flow_mod_delete()
+cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
@@ -320,7 +317,7 @@ cdptnexthop_in6::flow_mod_delete()
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-		flow_mod_installed = false;
+		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[dptnexthop_in6][flow_mod_delete] unable to find data path" << std::endl << *this;
