@@ -5,14 +5,14 @@ SUBDIRS =
 noinst_LTLIBRARIES = librofipcore.la
 
 librofipcore_la_SOURCES = \
-	cipcore.h \
-	cipcore.cc \
-	cdptaddr.h \
-	cdptaddr.cc \
-	cdptlink.h \
-	cdptlink.cc \
-	cdptneigh.h \
-	cdptneigh.cc \
+	cipcore.hpp \
+	cipcore.cpp \
+	caddr.hpp \
+	caddr.cpp \
+	clink.hpp \
+	clink.cpp \
+	cneigh.hpp \
+	cneigh.cpp \
 	cdptnexthop.h \
 	cdptnexthop.cc \
 	cdptroute.h \
@@ -29,10 +29,10 @@ librofipcore_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
 library_includedir=$(includedir)/rofl/common
 library_include_HEADERS= \
-	cipcore.h \
-	cdptaddr.h \
-	cdptlink.h \
-	cdptneigh.h \
+	cipcore.hpp \
+	caddr.hpp \
+	clink.hpp \
+	cneigh.hpp \
 	cdptnexthop.h \
 	cdptroute.h \
 	flowmod.h \

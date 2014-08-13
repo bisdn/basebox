@@ -5,8 +5,8 @@
  *      Author: andreas
  */
 
-#ifndef CDPTNEIGH_H_
-#define CDPTNEIGH_H_ 1
+#ifndef CNEIGH_HPP_
+#define CNEIGH_HPP_ 1
 
 #include <ostream>
 
@@ -27,17 +27,16 @@ extern "C" {
 #include "flowmod.h"
 #include "cnetlink.h"
 
-namespace ipcore
-{
+namespace ipcore {
 
-class cdptneigh : public flowmod {
+class cneigh : public flowmod {
 public:
 
 
 	/**
 	 *
 	 */
-	cdptneigh() :
+	cneigh() :
 		of_port_no(0), ifindex(0), nbindex(0), table_id(0) {};
 
 
@@ -45,22 +44,22 @@ public:
 	 *
 	 */
 	virtual
-	~cdptneigh() {};
+	~cneigh() {};
 
 
 	/**
 	 *
 	 */
-	cdptneigh(
-			cdptneigh const& neigh) { *this = neigh; };
+	cneigh(
+			cneigh const& neigh) { *this = neigh; };
 
 
 	/**
 	 *
 	 */
-	cdptneigh&
+	cneigh&
 	operator= (
-			cdptneigh const& neigh) {
+			cneigh const& neigh) {
 		if (this == &neigh)
 			return *this;
 		dptid	 	= neigh.dptid;
@@ -75,7 +74,7 @@ public:
 	/**
 	 *
 	 */
-	cdptneigh(
+	cneigh(
 			const rofl::cdptid& dptid,
 			uint32_t of_port_no,
 			int ifindex,
@@ -113,6 +112,17 @@ public:
 	void
 	uninstall() { flow_mod_delete(); };
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_open(rofl::crofdpt& dpt) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_close(rofl::crofdpt& dpt) {};
 
 public:
 
@@ -193,7 +203,7 @@ private:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, cdptneigh const& neigh) {
+	operator<< (std::ostream& os, cneigh const& neigh) {
 		os << rofl::indent(0) << "<cdptneigh ";
 		os << "nbindex: " << (unsigned int)neigh.nbindex << " ";
 		os << "ifindex: " << (unsigned int)neigh.ifindex << " ";
@@ -212,36 +222,36 @@ private:
 };
 
 
-class cdptneigh_in4 : public cdptneigh {
+class cneigh_in4 : public cneigh {
 public:
 
 	/**
 	 *
 	 */
-	cdptneigh_in4() {};
+	cneigh_in4() {};
 
 	/**
 	 *
 	 */
-	cdptneigh_in4(
+	cneigh_in4(
 			const rofl::cdptid& dptid, uint32_t of_port_no, int ifindex, uint16_t nbindex, uint8_t table_id) :
-				cdptneigh(dptid, of_port_no, ifindex, nbindex, table_id) {};
+				cneigh(dptid, of_port_no, ifindex, nbindex, table_id) {};
 
 	/**
 	 *
 	 */
-	cdptneigh_in4(
-			const cdptneigh_in4& neigh) { *this = neigh; };
+	cneigh_in4(
+			const cneigh_in4& neigh) { *this = neigh; };
 
 	/**
 	 *
 	 */
-	cdptneigh_in4&
+	cneigh_in4&
 	operator= (
-			const cdptneigh_in4& dptneigh) {
+			const cneigh_in4& dptneigh) {
 		if (this == &dptneigh)
 			return *this;
-		cdptneigh::operator= (dptneigh);
+		cneigh::operator= (dptneigh);
 		return *this;
 	};
 
@@ -262,6 +272,18 @@ public:
 				get_link(get_ifindex()).get_neighs_in4().get_neigh(get_nbindex());
 	};
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_open(rofl::crofdpt& dpt) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_close(rofl::crofdpt& dpt) {};
+
 protected:
 
 	/**
@@ -280,7 +302,7 @@ protected:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const cdptneigh_in4& neigh) {
+	operator<< (std::ostream& os, const cneigh_in4& neigh) {
 		os << rofcore::indent(0) << "<cdptneigh_in4 >" << std::endl;
 		rofcore::indent i(2);
 
@@ -290,47 +312,47 @@ public:
 };
 
 
-class cdptneigh_in4_find_by_dst {
+class cneigh_in4_find_by_dst {
 	rofl::caddress_in4 dst;
 public:
-	cdptneigh_in4_find_by_dst(const rofl::caddress_in4& dst) :
+	cneigh_in4_find_by_dst(const rofl::caddress_in4& dst) :
 		dst(dst) {};
-	bool operator() (const std::pair<unsigned int, cdptneigh_in4>& p) const {
+	bool operator() (const std::pair<unsigned int, cneigh_in4>& p) const {
 		return (p.second.get_crtneigh_in4().get_dst() == dst);
 	};
 };
 
 
-class cdptneigh_in6 : public cdptneigh {
+class cneigh_in6 : public cneigh {
 public:
 
 	/**
 	 *
 	 */
-	cdptneigh_in6() {};
+	cneigh_in6() {};
 
 	/**
 	 *
 	 */
-	cdptneigh_in6(
+	cneigh_in6(
 			const rofl::cdptid& dptid, uint32_t of_port_no, int ifindex, uint16_t nbindex, uint8_t table_id) :
-				cdptneigh(dptid, of_port_no, ifindex, nbindex, table_id) {};
+				cneigh(dptid, of_port_no, ifindex, nbindex, table_id) {};
 
 	/**
 	 *
 	 */
-	cdptneigh_in6(
-			const cdptneigh_in6& neigh) { *this = neigh; };
+	cneigh_in6(
+			const cneigh_in6& neigh) { *this = neigh; };
 
 	/**
 	 *
 	 */
-	cdptneigh_in6&
+	cneigh_in6&
 	operator= (
-			const cdptneigh_in6& dptneigh) {
+			const cneigh_in6& dptneigh) {
 		if (this == &dptneigh)
 			return *this;
-		cdptneigh::operator= (dptneigh);
+		cneigh::operator= (dptneigh);
 		return *this;
 	};
 
@@ -351,6 +373,18 @@ public:
 				get_link(get_ifindex()).get_neighs_in6().get_neigh(get_nbindex());
 	};
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_open(rofl::crofdpt& dpt) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_close(rofl::crofdpt& dpt) {};
+
 protected:
 
 	/**
@@ -369,7 +403,7 @@ protected:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const cdptneigh_in6& neigh) {
+	operator<< (std::ostream& os, const cneigh_in6& neigh) {
 		os << rofcore::indent(0) << "<cdptneigh_in6 >" << std::endl;
 		rofcore::indent i(2);
 
@@ -379,22 +413,19 @@ public:
 };
 
 
-class cdptneigh_in6_find_by_dst {
+class cneigh_in6_find_by_dst {
 	rofl::caddress_in6 dst;
 public:
-	cdptneigh_in6_find_by_dst(const rofl::caddress_in6& dst) :
+	cneigh_in6_find_by_dst(const rofl::caddress_in6& dst) :
 		dst(dst) {};
-	bool operator() (const std::pair<unsigned int, cdptneigh_in6>& p) const {
+	bool operator() (const std::pair<unsigned int, cneigh_in6>& p) const {
 		return (p.second.get_crtneigh_in6().get_dst() == dst);
 	};
 };
 
 
-
-
-
 }; // end of namespace
 
-#endif /* DPTNEIGH_H_ */
+#endif /* CNEIGH_HPP_ */
 
 

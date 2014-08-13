@@ -5,14 +5,14 @@
  *      Author: andreas
  */
 
-#include "cdptneigh.h"
-#include "cipcore.h"
+#include "cneigh.hpp"
+#include "cipcore.hpp"
 
 using namespace ipcore;
 
 
 void
-cdptneigh_in4::update()
+cneigh_in4::update()
 {
 	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
 }
@@ -20,7 +20,7 @@ cdptneigh_in4::update()
 
 
 void
-cdptneigh_in4::flow_mod_add(uint8_t command)
+cneigh_in4::flow_mod_add(uint8_t command)
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
@@ -34,9 +34,8 @@ cdptneigh_in4::flow_mod_add(uint8_t command)
 				netlink.get_links().get_link(rtn.get_ifindex());
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data
-		const ipcore::cdptlink& dpl =
-				cipcore::get_instance().get_link_table().
-						get_link_by_ifindex(rtn.get_ifindex());
+		const ipcore::clink& dpl =
+				cipcore::get_instance().get_link_by_ifindex(rtn.get_ifindex());
 
 
 
@@ -95,7 +94,7 @@ cdptneigh_in4::flow_mod_add(uint8_t command)
 
 
 void
-cdptneigh_in4::flow_mod_delete()
+cneigh_in4::flow_mod_delete()
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
@@ -142,7 +141,7 @@ cdptneigh_in4::flow_mod_delete()
 
 
 void
-cdptneigh_in6::update()
+cneigh_in6::update()
 {
 	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
 }
@@ -150,7 +149,7 @@ cdptneigh_in6::update()
 
 
 void
-cdptneigh_in6::flow_mod_add(uint8_t command)
+cneigh_in6::flow_mod_add(uint8_t command)
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
@@ -164,9 +163,8 @@ cdptneigh_in6::flow_mod_add(uint8_t command)
 				netlink.get_links().get_link(rtn.get_ifindex());
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data
-		const ipcore::cdptlink& dpl =
-				cipcore::get_instance().get_link_table().
-						get_link_by_ifindex(rtn.get_ifindex());
+		const ipcore::clink& dpl =
+				cipcore::get_instance().get_link_by_ifindex(rtn.get_ifindex());
 
 
 
@@ -225,7 +223,7 @@ cdptneigh_in6::flow_mod_add(uint8_t command)
 
 
 void
-cdptneigh_in6::flow_mod_delete()
+cneigh_in6::flow_mod_delete()
 {
 	try {
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();

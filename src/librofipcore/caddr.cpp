@@ -6,14 +6,14 @@
  */
 
 
-#include "cdptaddr.h"
+#include "caddr.hpp"
 
 using namespace ipcore;
 
 
 
 void
-cdptaddr_in4::update()
+caddr_in4::update()
 {
 	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
 }
@@ -21,7 +21,7 @@ cdptaddr_in4::update()
 
 
 void
-cdptaddr_in4::flow_mod_add(uint8_t command)
+caddr_in4::flow_mod_add(uint8_t command)
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
@@ -66,7 +66,7 @@ cdptaddr_in4::flow_mod_add(uint8_t command)
 
 
 void
-cdptaddr_in4::flow_mod_delete()
+caddr_in4::flow_mod_delete()
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
@@ -100,7 +100,7 @@ cdptaddr_in4::flow_mod_delete()
 
 
 void
-cdptaddr_in6::update()
+caddr_in6::update()
 {
 	flow_mod_add(rofl::openflow::OFPFC_MODIFY_STRICT);
 }
@@ -108,7 +108,7 @@ cdptaddr_in6::update()
 
 
 void
-cdptaddr_in6::flow_mod_add(uint8_t command)
+caddr_in6::flow_mod_add(uint8_t command)
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
@@ -153,7 +153,7 @@ cdptaddr_in6::flow_mod_add(uint8_t command)
 
 
 void
-cdptaddr_in6::flow_mod_delete()
+caddr_in6::flow_mod_delete()
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);

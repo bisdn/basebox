@@ -6,7 +6,7 @@
  */
 
 #include "cdptnexthop.h"
-#include "cipcore.h"
+#include "cipcore.hpp"
 
 using namespace ipcore;
 
@@ -43,14 +43,12 @@ cdptnexthop_in4::flow_mod_add(uint8_t command)
 				netlink.get_links().get_link(rtn.get_ifindex());
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data ...
-		const ipcore::cdptlink& dpl =
-				cipcore::get_instance().get_link_table().
-						get_link_by_ifindex(rtn.get_ifindex());
+		const ipcore::clink& dpl =
+				cipcore::get_instance().get_link_by_ifindex(rtn.get_ifindex());
 
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in4& rtb =
-				dpl.get_neigh_table().
-						get_neigh_in4(rtn.get_gateway()).get_crtneigh_in4();
+				dpl.get_neigh_in4(rtn.get_gateway()).get_crtneigh_in4();
 
 
 
@@ -210,14 +208,12 @@ cdptnexthop_in6::flow_mod_add(uint8_t command)
 				netlink.get_links().get_link(rtn.get_ifindex());
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data ...
-		const ipcore::cdptlink& dpl =
-				cipcore::get_instance().get_link_table().
-						get_link_by_ifindex(rtn.get_ifindex());
+		const ipcore::clink& dpl =
+				cipcore::get_instance().get_link_by_ifindex(rtn.get_ifindex());
 
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in6& rtb =
-				dpl.get_neigh_table().
-						get_neigh_in6(rtn.get_gateway()).get_crtneigh_in6();
+				dpl.get_neigh_in6(rtn.get_gateway()).get_crtneigh_in6();
 
 
 

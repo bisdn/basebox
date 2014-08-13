@@ -13,7 +13,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "cdptneigh.h"
+#include "cneigh.hpp"
 #include "clogging.h"
 
 namespace ipcore {
@@ -50,11 +50,11 @@ public:
 		if (this == &table)
 			return *this;
 		clear();
-		for (std::map<uint32_t, cdptneigh_in4>::const_iterator
+		for (std::map<uint32_t, cneigh_in4>::const_iterator
 				it = table.neighs_in4.begin(); it != table.neighs_in4.end(); ++it) {
 			add_neigh_in4(it->first) = it->second;
 		}
-		for (std::map<uint32_t, cdptneigh_in6>::const_iterator
+		for (std::map<uint32_t, cneigh_in6>::const_iterator
 				it = table.neighs_in6.begin(); it != table.neighs_in6.end(); ++it) {
 			add_neigh_in6(it->first) = it->second;
 		}
@@ -66,11 +66,11 @@ public:
 	 */
 	void
 	install() {
-		for (std::map<unsigned int, cdptneigh_in4>::iterator
+		for (std::map<unsigned int, cneigh_in4>::iterator
 				it = neighs_in4.begin(); it != neighs_in4.end(); ++it) {
 			it->second.install();
 		}
-		for (std::map<unsigned int, cdptneigh_in6>::iterator
+		for (std::map<unsigned int, cneigh_in6>::iterator
 				it = neighs_in6.begin(); it != neighs_in6.end(); ++it) {
 			it->second.install();
 		}
@@ -81,11 +81,11 @@ public:
 	 */
 	void
 	uninstall() {
-		for (std::map<unsigned int, cdptneigh_in4>::iterator
+		for (std::map<unsigned int, cneigh_in4>::iterator
 				it = neighs_in4.begin(); it != neighs_in4.end(); ++it) {
 			it->second.uninstall();
 		}
-		for (std::map<unsigned int, cdptneigh_in6>::iterator
+		for (std::map<unsigned int, cneigh_in6>::iterator
 				it = neighs_in6.begin(); it != neighs_in6.end(); ++it) {
 			it->second.uninstall();
 		}
@@ -105,11 +105,11 @@ public:
 	void
 	set_dptid(const rofl::cdptid& dptid) {
 		this->dptid = dptid;
-		for (std::map<unsigned int, cdptneigh_in4>::iterator
+		for (std::map<unsigned int, cneigh_in4>::iterator
 				it = neighs_in4.begin(); it != neighs_in4.end(); ++it) {
 			it->second.set_dptid(dptid);
 		}
-		for (std::map<unsigned int, cdptneigh_in6>::iterator
+		for (std::map<unsigned int, cneigh_in6>::iterator
 				it = neighs_in6.begin(); it != neighs_in6.end(); ++it) {
 			it->second.set_dptid(dptid);
 		}
@@ -126,7 +126,7 @@ public:
 	/**
 	 *
 	 */
-	cdptneigh_in4&
+	cneigh_in4&
 	add_neigh_in4(unsigned int nbindex) {
 		if (neighs_in4.find(nbindex) != neighs_in4.end()) {
 			neighs_in4.erase(nbindex);
@@ -138,7 +138,7 @@ public:
 	/**
 	 *
 	 */
-	cdptneigh_in4&
+	cneigh_in4&
 	set_neigh_in4(unsigned int nbindex) {
 		if (neighs_in4.find(nbindex) == neighs_in4.end()) {
 			neighs_in4[nbindex].set_dptid(dptid);
@@ -149,7 +149,7 @@ public:
 	/**
 	 *
 	 */
-	const cdptneigh_in4&
+	const cneigh_in4&
 	get_neigh_in4(unsigned int nbindex) const {
 		if (neighs_in4.find(nbindex) == neighs_in4.end()) {
 			throw eNeighTableNotFound();
@@ -179,11 +179,11 @@ public:
 	/**
 	 *
 	 */
-	const cdptneigh_in4&
+	const cneigh_in4&
 	get_neigh_in4(const rofl::caddress_in4& dst) const {
-		std::map<unsigned int, cdptneigh_in4>::const_iterator it;
+		std::map<unsigned int, cneigh_in4>::const_iterator it;
 		if ((it = find_if(neighs_in4.begin(), neighs_in4.end(),
-				cdptneigh_in4_find_by_dst(dst))) == neighs_in4.end()) {
+				cneigh_in4_find_by_dst(dst))) == neighs_in4.end()) {
 			throw eNeighTableNotFound();
 		}
 		return it->second;
@@ -192,7 +192,7 @@ public:
 	/**
 	 *
 	 */
-	cdptneigh_in6&
+	cneigh_in6&
 	add_neigh_in6(unsigned int nbindex) {
 		if (neighs_in6.find(nbindex) != neighs_in6.end()) {
 			neighs_in6.erase(nbindex);
@@ -204,7 +204,7 @@ public:
 	/**
 	 *
 	 */
-	cdptneigh_in6&
+	cneigh_in6&
 	set_neigh_in6(unsigned int nbindex) {
 		if (neighs_in6.find(nbindex) == neighs_in6.end()) {
 			neighs_in6[nbindex].set_dptid(dptid);
@@ -215,7 +215,7 @@ public:
 	/**
 	 *
 	 */
-	const cdptneigh_in6&
+	const cneigh_in6&
 	get_neigh_in6(unsigned int nbindex) const {
 		if (neighs_in6.find(nbindex) == neighs_in6.end()) {
 			throw eNeighTableNotFound();
@@ -245,11 +245,11 @@ public:
 	/**
 	 *
 	 */
-	const cdptneigh_in6&
+	const cneigh_in6&
 	get_neigh_in6(const rofl::caddress_in6& dst) const {
-		std::map<unsigned int, cdptneigh_in6>::const_iterator it;
+		std::map<unsigned int, cneigh_in6>::const_iterator it;
 		if ((it = find_if(neighs_in6.begin(), neighs_in6.end(),
-				cdptneigh_in6_find_by_dst(dst))) == neighs_in6.end()) {
+				cneigh_in6_find_by_dst(dst))) == neighs_in6.end()) {
 			throw eNeighTableNotFound();
 		}
 		return it->second;
@@ -261,11 +261,11 @@ public:
 	operator<< (std::ostream& os, const cneightable& table) {
 		os << rofcore::indent(0) << "<cneightable >" << std::endl;
 		rofcore::indent i(2);
-		for (std::map<unsigned int, cdptneigh_in4>::const_iterator
+		for (std::map<unsigned int, cneigh_in4>::const_iterator
 				it = table.neighs_in4.begin(); it != table.neighs_in4.end(); ++it) {
 			os << it->second;
 		}
-		for (std::map<unsigned int, cdptneigh_in6>::const_iterator
+		for (std::map<unsigned int, cneigh_in6>::const_iterator
 				it = table.neighs_in6.begin(); it != table.neighs_in6.end(); ++it) {
 			os << it->second;
 		}
@@ -275,8 +275,8 @@ public:
 private:
 
 	rofl::cdptid							dptid;
-	std::map<unsigned int, cdptneigh_in4> 	neighs_in4;	// key: neigh ofp port-no
-	std::map<unsigned int, cdptneigh_in6> 	neighs_in6;	// key: neigh ofp port-no
+	std::map<unsigned int, cneigh_in4> 	neighs_in4;	// key: neigh ofp port-no
+	std::map<unsigned int, cneigh_in6> 	neighs_in6;	// key: neigh ofp port-no
 };
 
 }; // end of namespace ipcore

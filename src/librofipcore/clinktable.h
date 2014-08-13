@@ -49,7 +49,7 @@ public:
 		if (this == &table)
 			return *this;
 		clear();
-		for (std::map<uint32_t, cdptlink>::const_iterator
+		for (std::map<uint32_t, clink>::const_iterator
 				it = table.links.begin(); it != table.links.end(); ++it) {
 			add_link(it->first) = it->second;
 		}
@@ -61,7 +61,7 @@ public:
 	 */
 	void
 	install() {
-		for (std::map<uint32_t, cdptlink>::iterator
+		for (std::map<uint32_t, clink>::iterator
 				it = links.begin(); it != links.end(); ++it) {
 			it->second.install();
 		}
@@ -72,7 +72,7 @@ public:
 	 */
 	void
 	uninstall() {
-		for (std::map<uint32_t, cdptlink>::iterator
+		for (std::map<uint32_t, clink>::iterator
 				it = links.begin(); it != links.end(); ++it) {
 			it->second.uninstall();
 		}
@@ -92,7 +92,7 @@ public:
 	void
 	set_dptid(const rofl::cdptid& dptid) {
 		this->dptid = dptid;
-		for (std::map<uint32_t, cdptlink>::iterator
+		for (std::map<uint32_t, clink>::iterator
 				it = links.begin(); it != links.end(); ++it) {
 			it->second.set_dptid(dptid);
 		}
@@ -109,7 +109,7 @@ public:
 	/**
 	 *
 	 */
-	cdptlink&
+	clink&
 	add_link(uint32_t ofp_port_no) {
 		if (links.find(ofp_port_no) != links.end()) {
 			links.erase(ofp_port_no);
@@ -121,7 +121,7 @@ public:
 	/**
 	 *
 	 */
-	cdptlink&
+	clink&
 	set_link(uint32_t ofp_port_no) {
 		if (links.find(ofp_port_no) == links.end()) {
 			links[ofp_port_no].set_ofp_port_no(ofp_port_no);
@@ -132,7 +132,7 @@ public:
 	/**
 	 *
 	 */
-	const cdptlink&
+	const clink&
 	get_link(uint32_t ofp_port_no) const {
 		if (links.find(ofp_port_no) == links.end()) {
 			throw eLinkTableNotFound();
@@ -162,10 +162,10 @@ public:
 	/**
 	 *
 	 */
-	const cdptlink&
+	const clink&
 	get_link_by_ofp_port_no(uint32_t ofp_port_no) const {
-		std::map<uint32_t, cdptlink>::const_iterator it;
-		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ofp_port_no(ofp_port_no))) == links.end()) {
+		std::map<uint32_t, clink>::const_iterator it;
+		if ((it = find_if(links.begin(), links.end(), clink::clink_by_ofp_port_no(ofp_port_no))) == links.end()) {
 			throw eLinkTableNotFound();
 		}
 		return it->second;
@@ -176,8 +176,8 @@ public:
 	 */
 	bool
 	has_link_by_ofp_port_no(uint32_t ofp_port_no) const {
-		std::map<uint32_t, cdptlink>::const_iterator it;
-		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ofp_port_no(ofp_port_no))) == links.end()) {
+		std::map<uint32_t, clink>::const_iterator it;
+		if ((it = find_if(links.begin(), links.end(), clink::clink_by_ofp_port_no(ofp_port_no))) == links.end()) {
 			return false;
 		}
 		return true;
@@ -186,10 +186,10 @@ public:
 	/**
 	 *
 	 */
-	const cdptlink&
+	const clink&
 	get_link_by_ifindex(int ifindex) const {
-		std::map<uint32_t, cdptlink>::const_iterator it;
-		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ifindex(ifindex))) == links.end()) {
+		std::map<uint32_t, clink>::const_iterator it;
+		if ((it = find_if(links.begin(), links.end(), clink::clink_by_ifindex(ifindex))) == links.end()) {
 			throw eLinkTableNotFound();
 		}
 		return it->second;
@@ -200,8 +200,8 @@ public:
 	 */
 	bool
 	has_link_by_ifindex(int ifindex) const {
-		std::map<uint32_t, cdptlink>::const_iterator it;
-		if ((it = find_if(links.begin(), links.end(), cdptlink::cdptlink_by_ifindex(ifindex))) == links.end()) {
+		std::map<uint32_t, clink>::const_iterator it;
+		if ((it = find_if(links.begin(), links.end(), clink::clink_by_ifindex(ifindex))) == links.end()) {
 			return false;
 		}
 		return true;
@@ -213,7 +213,7 @@ public:
 	operator<< (std::ostream& os, const clinktable& table) {
 		os << rofcore::indent(0) << "<clinktable >" << std::endl;
 		rofcore::indent i(2);
-		for (std::map<unsigned int, cdptlink>::const_iterator
+		for (std::map<unsigned int, clink>::const_iterator
 				it = table.links.begin(); it != table.links.end(); ++it) {
 			os << it->second;
 		}
@@ -223,7 +223,7 @@ public:
 private:
 
 	rofl::cdptid					dptid;
-	std::map<uint32_t, cdptlink> 	links;	// key: link ofp port-no
+	std::map<uint32_t, clink> 	links;	// key: link ofp port-no
 };
 
 }; // end of namespace ipcore

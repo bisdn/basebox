@@ -25,6 +25,7 @@ extern "C" {
 
 #include "flowmod.h"
 #include "cnetlink.h"
+#include "cneightable.h"
 
 namespace ipcore {
 

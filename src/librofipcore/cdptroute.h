@@ -27,7 +27,7 @@ extern "C" {
 
 #include "cnetlink.h"
 #include "crtroute.h"
-#include "cdptlink.h"
+#include "clink.hpp"
 #include "cnexthoptable.h"
 
 namespace ipcore {

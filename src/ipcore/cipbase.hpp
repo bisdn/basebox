@@ -12,7 +12,7 @@
 #include <exception>
 #include <rofl/common/crofbase.h>
 
-#include "cipcore.h"
+#include "cipcore.hpp"
 #include "clogging.h"
 
 namespace ipcore {
@@ -67,6 +67,21 @@ protected:
 	virtual void
 	handle_dpt_open(
 			rofl::crofdpt& dpt) {
+		dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
+	};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_port_desc_stats_reply(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg) {
+		dpt.set_ports() = msg.get_ports();
+		for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
+				it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
+			const rofl::openflow::cofport& port = *(it->second);
+			cipcore::get_instance().add_link(port.get_port_no(), port.get_name(), port.get_hwaddr());
+		}
 		cipcore::get_instance().handle_dpt_open(dpt);
 	};
 
@@ -103,7 +118,30 @@ protected:
 	virtual void
 	handle_port_status(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg) {
-		cipcore::get_instance().handle_port_status(dpt, auxid, msg);
+		const rofl::openflow::cofport& port = msg.get_port();
+
+		rofcore::logging::debug << "[cipbase] Port-Status message rcvd:" << std::endl << msg;
+
+		try {
+			switch (msg.get_reason()) {
+			case rofl::openflow::OFPPR_ADD: {
+				cipcore::get_instance().add_link(port.get_port_no(), port.get_name(), port.get_hwaddr());
+			} break;
+			case rofl::openflow::OFPPR_MODIFY: {
+				cipcore::get_instance().set_link(port.get_port_no(), port.get_name(), port.get_hwaddr()).
+						handle_port_status(dpt, auxid, msg);
+			} break;
+			case rofl::openflow::OFPPR_DELETE: {
+				cipcore::get_instance().drop_link(port.get_port_no());
+			} break;
+			default: {
+				rofcore::logging::debug << "[cipbase] received PortStatus with unknown reason code received, ignoring" << std::endl;
+			};
+			}
+
+		} catch (rofcore::eNetDevCritical& e) {
+			rofcore::logging::debug << "[cipbase] new port created: unable to create tap device: " << msg.get_port().get_name() << std::endl;
+		}
 	};
 
 	/**

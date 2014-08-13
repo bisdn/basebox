@@ -16,8 +16,14 @@
 
 namespace ipcore {
 
-class eRtTableBase		: public std::exception {};
-class eRtTableNotFound	: public eRtTableBase {};
+class eRtTableBase		: public std::runtime_error {
+public:
+	eRtTableBase(const std::string& __arg) : std::runtime_error(__arg) {};
+};
+class eRtTableNotFound : public eRtTableBase {
+public:
+	eRtTableNotFound(const std::string& __arg) : eRtTableBase(__arg) {};
+};
 
 class croutetable {
 public:
@@ -110,7 +116,7 @@ public:
 	get_route_in4(
 			unsigned int rtindex) const {
 		if (rib4.find(rtindex) == rib4.end()) {
-			throw eRtTableNotFound();
+			throw eRtTableNotFound("croutetable::get_route_in4() rtindex not found");
 		}
 		return rib4.at(rtindex);
 	};
@@ -169,7 +175,7 @@ public:
 	get_route_in6(
 			unsigned int rtindex) const {
 		if (rib6.find(rtindex) == rib6.end()) {
-			throw eRtTableNotFound();
+			throw eRtTableNotFound("croutetable::get_route_in6() rtindex not found");
 		}
 		return rib6.at(rtindex);
 	};
@@ -225,6 +231,19 @@ private:
 	std::map<unsigned int, cdptroute_in4> 	rib4;
 	std::map<unsigned int, cdptroute_in6> 	rib6;
 
+public:
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_open(rofl::crofdpt& dpt) {};
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_close(rofl::crofdpt& dpt) {};
 };
 
 }; // end of namespace cr4table

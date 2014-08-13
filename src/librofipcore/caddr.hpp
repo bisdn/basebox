@@ -21,33 +21,33 @@
 namespace ipcore
 {
 
-class cdptaddr : public flowmod {
+class caddr : public flowmod {
 public:
 
 	/**
 	 *
 	 */
-	cdptaddr() :
+	caddr() :
 		table_id(0), ifindex(0), adindex(0) {};
 
 	/**
 	 *
 	 */
 	virtual
-	~cdptaddr() {};
+	~caddr() {};
 
 	/**
 	 *
 	 */
-	cdptaddr(
-			cdptaddr const& addr) { *this = addr; };
+	caddr(
+			caddr const& addr) { *this = addr; };
 
 	/**
 	 *
 	 */
-	cdptaddr&
+	caddr&
 	operator= (
-			cdptaddr const& addr) {
+			caddr const& addr) {
 		if (this == &addr)
 			return *this;
 		dptid	 = addr.dptid;
@@ -60,7 +60,7 @@ public:
 	/**
 	 *
 	 */
-	cdptaddr(
+	caddr(
 			const rofl::cdptid& dptid, int ifindex, uint16_t adindex, uint8_t table_id) :
 				dptid(dptid),
 				table_id(table_id),
@@ -92,6 +92,18 @@ public:
 	 */
 	void
 	uninstall() { flow_mod_delete(); };
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_open(rofl::crofdpt& dpt) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_close(rofl::crofdpt& dpt) {};
 
 public:
 
@@ -163,8 +175,8 @@ protected:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, cdptaddr const& addr) {
-		os << rofl::indent(0) << "<cdptaddr ";
+	operator<< (std::ostream& os, caddr const& addr) {
+		os << rofl::indent(0) << "<caddr ";
 		os << "adindex: " << (unsigned int)addr.adindex << " ";
 		os << "ifindex: " << (unsigned int)addr.ifindex << " ";
 		os << "tableid: " << (unsigned int)addr.table_id << " ";
@@ -182,36 +194,36 @@ protected:
 
 
 
-class cdptaddr_in4 : public cdptaddr {
+class caddr_in4 : public caddr {
 public:
 
 	/**
 	 *
 	 */
-	cdptaddr_in4() {};
+	caddr_in4() {};
 
 	/**
 	 *
 	 */
-	cdptaddr_in4(
+	caddr_in4(
 			const rofl::cdptid& dptid, int ifindex, uint16_t adindex, uint8_t table_id) :
-				cdptaddr(dptid, ifindex, adindex, table_id) {};
+				caddr(dptid, ifindex, adindex, table_id) {};
 
 	/**
 	 *
 	 */
-	cdptaddr_in4(
-			const cdptaddr_in4& addr) { *this = addr; };
+	caddr_in4(
+			const caddr_in4& addr) { *this = addr; };
 
 	/**
 	 *
 	 */
-	cdptaddr_in4&
+	caddr_in4&
 	operator= (
-			const cdptaddr_in4& dptaddr) {
+			const caddr_in4& dptaddr) {
 		if (this == &dptaddr)
 			return *this;
-		cdptaddr::operator= (dptaddr);
+		caddr::operator= (dptaddr);
 		return *this;
 	};
 
@@ -222,6 +234,18 @@ public:
 	 */
 	virtual void
 	update();
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_open(rofl::crofdpt& dpt) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_close(rofl::crofdpt& dpt) {};
 
 protected:
 
@@ -241,8 +265,8 @@ protected:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const cdptaddr_in4& addr) {
-		os << rofcore::indent(0) << "<cdptaddr_in4 >" << std::endl;
+	operator<< (std::ostream& os, const caddr_in4& addr) {
+		os << rofcore::indent(0) << "<caddr_in4 >" << std::endl;
 		rofcore::indent i(2);
 
 
@@ -252,36 +276,36 @@ public:
 
 
 
-class cdptaddr_in6 : public cdptaddr {
+class caddr_in6 : public caddr {
 public:
 
 	/**
 	 *
 	 */
-	cdptaddr_in6() {};
+	caddr_in6() {};
 
 	/**
 	 *
 	 */
-	cdptaddr_in6(
+	caddr_in6(
 			const rofl::cdptid& dptid, int ifindex, uint16_t adindex, uint8_t table_id) :
-				cdptaddr(dptid, ifindex, adindex, table_id) {};
+				caddr(dptid, ifindex, adindex, table_id) {};
 
 	/**
 	 *
 	 */
-	cdptaddr_in6(
-			const cdptaddr_in6& addr) { *this = addr; };
+	caddr_in6(
+			const caddr_in6& addr) { *this = addr; };
 
 	/**
 	 *
 	 */
-	cdptaddr_in6&
+	caddr_in6&
 	operator= (
-			const cdptaddr_in6& dptaddr) {
+			const caddr_in6& dptaddr) {
 		if (this == &dptaddr)
 			return *this;
-		cdptaddr::operator= (dptaddr);
+		caddr::operator= (dptaddr);
 		return *this;
 	};
 
@@ -292,6 +316,18 @@ public:
 	 */
 	virtual void
 	update();
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_open(rofl::crofdpt& dpt) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_dpt_close(rofl::crofdpt& dpt) {};
 
 protected:
 
@@ -311,8 +347,8 @@ protected:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const cdptaddr_in6& addr) {
-		os << rofcore::indent(0) << "<cdptaddr_in6 >" << std::endl;
+	operator<< (std::ostream& os, const caddr_in6& addr) {
+		os << rofcore::indent(0) << "<caddr_in6 >" << std::endl;
 		rofcore::indent i(2);
 
 
