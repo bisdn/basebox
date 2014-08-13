@@ -49,9 +49,7 @@ public:
 	 *
 	 */
 	static cipcore&
-	get_instance(
-			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap =
-					rofl::openflow::cofhello_elem_versionbitmap());
+	get_instance();
 
 
 public:
@@ -172,8 +170,7 @@ private:
 	/**
 	 *
 	 */
-	cipcore(
-			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap);
+	cipcore();
 
 
 	/**

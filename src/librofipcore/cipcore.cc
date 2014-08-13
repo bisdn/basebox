@@ -13,19 +13,17 @@ std::string cipcore::script_path_port_down 	= std::string("/var/lib/ipcore/port-
 
 /*static*/
 cipcore&
-cipcore::get_instance(
-		const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap)
+cipcore::get_instance()
 {
 	if (NULL == cipcore::__ipcore__) {
-		cipcore::__ipcore__ = new cipcore(versionbitmap);
+		cipcore::__ipcore__ = new cipcore();
 	}
 	return *(cipcore::__ipcore__);
 }
 
 
 
-cipcore::cipcore(
-		const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap)
+cipcore::cipcore()
 {
 
 }
