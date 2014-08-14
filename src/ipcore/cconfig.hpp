@@ -24,7 +24,7 @@ extern "C" {
 
 using namespace libconfig;
 
-namespace rofcore {
+namespace ipcore {
 
 class cconfig : public Config {
 private:

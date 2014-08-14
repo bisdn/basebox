@@ -17,7 +17,7 @@ clink::clink() :
 		ofp_port_no(0),
 		ifindex(0),
 		tapdev(0),
-		table_id(0)
+		in_ofp_table_id(0)
 {
 
 }
@@ -25,14 +25,19 @@ clink::clink() :
 
 
 clink::clink(
-		uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr) :
+		const rofl::cdptid& dptid,
+		uint32_t ofp_port_no,
+		const std::string& devname,
+		const rofl::caddress_ll& hwaddr,
+		uint8_t in_ofp_table_id) :
 				state(STATE_DETACHED),
 				ofp_port_no(ofp_port_no),
 				devname(devname),
 				hwaddr(hwaddr),
 				ifindex(0),
 				tapdev(0),
-				table_id(0)
+				dptid(dptid),
+				in_ofp_table_id(in_ofp_table_id)
 {
 
 }
@@ -53,6 +58,22 @@ clink::tap_open()
 {
 	if (NULL != tapdev) {
 		// tap device already exists, ignoring
+		return;
+	}
+
+	try {
+		std::cerr << "TTT1: " << get_devname() << std::endl;
+	} catch (...) {
+		std::cerr << "UUU1" << std::endl;
+
+		return;
+	}
+
+	try {
+		std::cerr << "TTT2: " << get_hwaddr() << std::endl;
+	} catch (...) {
+		std::cerr << "UUU2" << std::endl;
+
 		return;
 	}
 

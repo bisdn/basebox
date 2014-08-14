@@ -13,7 +13,6 @@
 #include <algorithm>
 
 #include <rofl/common/caddress.h>
-#include <rofl/common/logging.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +24,7 @@ extern "C" {
 }
 #endif
 
+#include "clogging.h"
 
 namespace rofcore {
 
@@ -182,8 +182,8 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, crtaddr const& rtaddr) {
-		os << rofl::indent(0) << "<crtaddr label: " << rtaddr.label << " ifindex: " << rtaddr.ifindex << " >" << std::endl;
-		os << rofl::indent(2) << "<af: " << rtaddr.get_family_s() << " prefixlen: " << rtaddr.prefixlen << " >" << std::endl;
+		os << rofcore::indent(0) << "<crtaddr label: " << rtaddr.label << " ifindex: " << rtaddr.ifindex << " >" << std::endl;
+		os << rofcore::indent(2) << "<af: " << rtaddr.get_family_s() << " prefixlen: " << rtaddr.prefixlen << " >" << std::endl;
 		return os;
 	};
 
@@ -259,16 +259,22 @@ public:
 		memset(s_buf, 0, sizeof(s_buf));
 
 		std::string s_local(nl_addr2str(rtnl_addr_get_local(addr), s_buf, sizeof(s_buf)));
-		s_local = s_local.substr(0, s_local.find_first_of("/", 0));
-		local 		= rofl::caddress_in4(s_local.c_str());
+		if (s_local != "none") {
+			s_local = s_local.substr(0, s_local.find_first_of("/", 0));
+			local 		= rofl::caddress_in4(s_local.c_str());
+		}
 
 		std::string s_peer (nl_addr2str(rtnl_addr_get_peer(addr), s_buf, sizeof(s_buf)));
-		s_peer  = s_peer .substr(0,  s_peer.find_first_of("/", 0));
-		peer 		= rofl::caddress_in4(s_peer.c_str());
+		if (s_peer != "none") {
+			s_peer  = s_peer .substr(0,  s_peer.find_first_of("/", 0));
+			peer 		= rofl::caddress_in4(s_peer.c_str());
+		}
 
 		std::string s_bcast(nl_addr2str(rtnl_addr_get_broadcast(addr), s_buf, sizeof(s_buf)));
-		s_bcast = s_bcast.substr(0, s_bcast.find_first_of("/", 0));
-		bcast 		= rofl::caddress_in4(s_bcast.c_str());
+		if (s_bcast != "none") {
+			s_bcast = s_bcast.substr(0, s_bcast.find_first_of("/", 0));
+			bcast 		= rofl::caddress_in4(s_bcast.c_str());
+		}
 
 		nl_object_put((struct nl_object*)addr); // decrement reference counter by one
 	};
@@ -325,8 +331,16 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtaddr_in4& rtaddr) {
-		os << rofl::indent(2) << "<crtaddr mask: " << rtaddr.mask << " >" << std::endl;
-		os << rofl::indent(2) << "<local: " << rtaddr.local << " peer: " << rtaddr.peer << " broadcast: " << rtaddr.bcast << " >" << std::endl;
+		os << rofcore::indent(0) << "<crtaddr_in4 >" << std::endl;
+		{ rofcore::indent i(2); os << dynamic_cast<const crtaddr&>(rtaddr); };
+		os << rofcore::indent(2) << "<local: >" << std::endl;
+		os << rofcore::indent(4) << rtaddr.get_local_addr();
+		os << rofcore::indent(2) << "<peer: >" << std::endl;
+		os << rofcore::indent(4) << rtaddr.get_peer_addr();
+		os << rofcore::indent(2) << "<broadcast: >" << std::endl;
+		os << rofcore::indent(4) << rtaddr.get_broadcast_addr();
+		os << rofcore::indent(2) << "<mask: >" << std::endl;
+		os << rofcore::indent(4) << rtaddr.get_mask();
 		return os;
 	};
 
@@ -427,16 +441,22 @@ public:
 		memset(s_buf, 0, sizeof(s_buf));
 
 		std::string s_local(nl_addr2str(rtnl_addr_get_local(addr), s_buf, sizeof(s_buf)));
-		s_local = s_local.substr(0, s_local.find_first_of("/", 0));
-		local 		= rofl::caddress_in6(s_local.c_str());
+		if (s_local != "none") {
+			s_local = s_local.substr(0, s_local.find_first_of("/", 0));
+			local 	= rofl::caddress_in6(s_local.c_str());
+		}
 
 		std::string s_peer (nl_addr2str(rtnl_addr_get_peer(addr), s_buf, sizeof(s_buf)));
-		s_peer  = s_peer .substr(0,  s_peer.find_first_of("/", 0));
-		peer 		= rofl::caddress_in6(s_peer.c_str());
+		if (s_peer != "none") {
+			s_peer  = s_peer .substr(0,  s_peer.find_first_of("/", 0));
+			peer	= rofl::caddress_in6(s_peer.c_str());
+		}
 
 		std::string s_bcast(nl_addr2str(rtnl_addr_get_broadcast(addr), s_buf, sizeof(s_buf)));
-		s_bcast = s_bcast.substr(0, s_bcast.find_first_of("/", 0));
-		bcast 		= rofl::caddress_in6(s_bcast.c_str());
+		if (s_bcast != "none") {
+			s_bcast = s_bcast.substr(0, s_bcast.find_first_of("/", 0));
+			bcast	= rofl::caddress_in6(s_bcast.c_str());
+		}
 
 		nl_object_put((struct nl_object*)addr); // decrement reference counter by one
 	};
@@ -493,8 +513,16 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtaddr_in6& rtaddr) {
-		os << rofl::indent(2) << "<crtaddr mask: " << rtaddr.mask << " >" << std::endl;
-		os << rofl::indent(2) << "<local: " << rtaddr.local << " peer: " << rtaddr.peer << " broadcast: " << rtaddr.bcast << " >" << std::endl;
+		os << rofcore::indent(0) << "<crtaddr_in6 >" << std::endl;
+		{ rofcore::indent i(2); os << dynamic_cast<const crtaddr&>(rtaddr); };
+		os << rofcore::indent(2) << "<local: >" << std::endl;
+		os << rofcore::indent(4) << rtaddr.get_local_addr();
+		os << rofcore::indent(2) << "<peer: >" << std::endl;
+		os << rofcore::indent(4) << rtaddr.get_peer_addr();
+		os << rofcore::indent(2) << "<broadcast: >" << std::endl;
+		os << rofcore::indent(4) << rtaddr.get_broadcast_addr();
+		os << rofcore::indent(2) << "<mask: >" << std::endl;
+		os << rofcore::indent(4) << rtaddr.get_mask();
 		return os;
 	};
 

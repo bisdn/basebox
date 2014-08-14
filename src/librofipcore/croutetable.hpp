@@ -65,6 +65,8 @@ public:
 		if (this == &rtable)
 			return *this;
 		state = rtable.state;
+		dptid = rtable.dptid;
+		rttblid = rtable.rttblid;
 		rib4.clear();
 		for (std::map<unsigned int, croute_in4>::const_iterator
 				it = rtable.rib4.begin(); it != rtable.rib4.end(); ++it) {

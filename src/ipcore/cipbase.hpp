@@ -14,6 +14,7 @@
 
 #include "cipcore.hpp"
 #include "clogging.h"
+#include "cconfig.hpp"
 
 namespace ipcore {
 
@@ -59,6 +60,12 @@ public:
 		return *(cipbase::ipbase);
 	};
 
+	/**
+	 *
+	 */
+	static int
+	run(int argc, char** argv);
+
 protected:
 
 	/**
@@ -67,6 +74,7 @@ protected:
 	virtual void
 	handle_dpt_open(
 			rofl::crofdpt& dpt) {
+		cipcore::get_instance(dpt.get_dptid());
 		dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 	};
 

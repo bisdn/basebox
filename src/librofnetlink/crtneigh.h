@@ -19,8 +19,9 @@ extern "C" {
 }
 #endif
 
-#include <rofl/common/logging.h>
 #include <rofl/common/caddress.h>
+
+#include "clogging.h"
 
 namespace rofcore {
 
@@ -193,13 +194,13 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, crtneigh const& neigh) {
-		os << rofl::indent(0) << "<crtneigh: >" << std::endl;
-		os << rofl::indent(2) << "<state: " 	<< neigh.state 		<< " >" << std::endl;
-		os << rofl::indent(2) << "<flags: " 	<< neigh.flags 		<< " >" << std::endl;
-		os << rofl::indent(2) << "<ifindex: " 	<< neigh.ifindex 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<lladdr: " 	<< neigh.lladdr 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<family: " 	<< neigh.family 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<type: " 		<< neigh.type 		<< " >" << std::endl;
+		os << rofcore::indent(0) << "<crtneigh: >" << std::endl;
+		os << rofcore::indent(2) << "<state: " 	<< neigh.state 		<< " >" << std::endl;
+		os << rofcore::indent(2) << "<flags: " 	<< neigh.flags 		<< " >" << std::endl;
+		os << rofcore::indent(2) << "<ifindex: " 	<< neigh.ifindex 	<< " >" << std::endl;
+		os << rofcore::indent(2) << "<lladdr: " 	<< neigh.lladdr 	<< " >" << std::endl;
+		os << rofcore::indent(2) << "<family: " 	<< neigh.family 	<< " >" << std::endl;
+		os << rofcore::indent(2) << "<type: " 		<< neigh.type 		<< " >" << std::endl;
 		return os;
 	};
 
@@ -293,9 +294,9 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtneigh_in4& neigh) {
-		os << rofl::indent(0) << "<crtneigh_in4: >" << std::endl;
-		os << rofl::indent(2) << "<dst: >" << std::endl;
-		rofl::indent i(4); os << neigh.dst;
+		os << rofcore::indent(0) << "<crtneigh_in4: >" << std::endl;
+		os << rofcore::indent(2) << "<dst: >" << std::endl;
+		rofcore::indent i(4); os << neigh.dst;
 		return os;
 	};
 
@@ -423,9 +424,9 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtneigh_in6& neigh) {
-		os << rofl::indent(0) << "<crtneigh_in6: >" << std::endl;
-		os << rofl::indent(2) << "<dst: >" << std::endl;
-		rofl::indent i(4); os << neigh.dst;
+		os << rofcore::indent(0) << "<crtneigh_in6: >" << std::endl;
+		os << rofcore::indent(2) << "<dst: >" << std::endl;
+		rofcore::indent i(4); os << neigh.dst;
 		return os;
 	};
 

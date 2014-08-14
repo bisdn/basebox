@@ -16,7 +16,11 @@ cnetlink* cnetlink::netlink = (cnetlink*)0;
 cnetlink::cnetlink() :
 		mngr(0)
 {
+	try {
 	init_caches();
+	} catch (...) {
+		std::cerr << "UUU" << std::endl;
+	}
 }
 
 
@@ -66,8 +70,12 @@ cnetlink::init_caches()
 		nl_object_get(obj);
 		unsigned int ifindex = rtnl_addr_get_ifindex((struct rtnl_addr*)obj);
 		switch (rtnl_addr_get_family((struct rtnl_addr*)obj)) {
-		case AF_INET:	rtlinks.set_link(ifindex).set_addrs_in4().add_addr(crtaddr_in4((struct rtnl_addr*)obj)); break;
-		case AF_INET6:	rtlinks.set_link(ifindex).set_addrs_in6().add_addr(crtaddr_in6((struct rtnl_addr*)obj)); break;
+		case AF_INET:
+			rtlinks.set_link(ifindex).set_addrs_in4().add_addr(crtaddr_in4((struct rtnl_addr*)obj));
+			break;
+		case AF_INET6:
+			rtlinks.set_link(ifindex).set_addrs_in6().add_addr(crtaddr_in6((struct rtnl_addr*)obj));
+			break;
 		}
 		nl_object_put(obj);
 		obj = nl_cache_get_next(obj);
@@ -78,8 +86,12 @@ cnetlink::init_caches()
 		nl_object_get(obj);
 		int table_id = rtnl_route_get_table((struct rtnl_route*)obj);
 		switch (rtnl_route_get_family((struct rtnl_route*)obj)) {
-		case AF_INET:	rtroutes_in4[table_id].add_route(crtroute_in4((struct rtnl_route*)obj)); break;
-		case AF_INET6:	rtroutes_in6[table_id].add_route(crtroute_in6((struct rtnl_route*)obj)); break;
+		case AF_INET:
+			rtroutes_in4[table_id].add_route(crtroute_in4((struct rtnl_route*)obj));
+			break;
+		case AF_INET6:
+			rtroutes_in6[table_id].add_route(crtroute_in6((struct rtnl_route*)obj));
+			break;
 		}
 		nl_object_put(obj);
 		obj = nl_cache_get_next(obj);

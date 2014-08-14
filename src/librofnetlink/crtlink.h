@@ -253,22 +253,22 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, crtlink const& rtlink) {
-		os << rofl::indent(0) << "<crtlink: >" << std::endl;
-		os << rofl::indent(2) << "<devname: " << rtlink.devname 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<maddr: >" << std::endl;
-		{ rofl::indent i(4); os << rtlink.maddr; };
-		os << rofl::indent(2) << "<bcast: >" << std::endl;
-		{ rofl::indent i(4); os << rtlink.bcast; };
-		os << rofl::indent(2) << "<flags: " << (std::hex) << rtlink.flags << (std::dec) << " >" << std::endl;
-		os << rofl::indent(2) << "<af: " << rtlink.af 				<< " >" << std::endl;
-		os << rofl::indent(2) << "<arptype: " << rtlink.arptype 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<ifindex: " << rtlink.ifindex 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<mtu: " << rtlink.mtu 			<< " >" << std::endl;
+		os << rofcore::indent(0) << "<crtlink: >" << std::endl;
+		os << rofcore::indent(2) << "<devname: " << rtlink.devname 	<< " >" << std::endl;
+		os << rofcore::indent(2) << "<hwaddr: >" << std::endl;
+		os << rofcore::indent(4) << rtlink.maddr;
+		os << rofcore::indent(2) << "<bcast: >" << std::endl;
+		os << rofcore::indent(4) << rtlink.bcast;
+		os << rofcore::indent(2) << "<flags: " << (std::hex) << rtlink.flags << (std::dec) << " >" << std::endl;
+		os << rofcore::indent(2) << "<af: " << rtlink.af 				<< " >" << std::endl;
+		os << rofcore::indent(2) << "<arptype: " << rtlink.arptype 	<< " >" << std::endl;
+		os << rofcore::indent(2) << "<ifindex: " << rtlink.ifindex 	<< " >" << std::endl;
+		os << rofcore::indent(2) << "<mtu: " << rtlink.mtu 			<< " >" << std::endl;
 
-		{ rofl::indent i(2); os << rtlink.addrs_in4; };
-		{ rofl::indent i(2); os << rtlink.addrs_in6; };
-		{ rofl::indent i(2); os << rtlink.neighs_in4; };
-		{ rofl::indent i(2); os << rtlink.neighs_in6; };
+		{ rofcore::indent i(2); os << rtlink.addrs_in4; };
+		{ rofcore::indent i(2); os << rtlink.addrs_in6; };
+		{ rofcore::indent i(2); os << rtlink.neighs_in4; };
+		{ rofcore::indent i(2); os << rtlink.neighs_in6; };
 
 		return os;
 	};

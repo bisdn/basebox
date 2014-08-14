@@ -121,26 +121,11 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, const cnexthop& nexthop) {
-		try {
-			os << rofl::indent(0) << "<cdptnexthop: >" 	<< std::endl;
-
-			const rofcore::crtnexthop_in4& rtn =
-					rofcore::cnetlink::get_instance().get_routes_in4(nexthop.get_rttblid()).
-						get_route(nexthop.get_rtindex()).get_nexthops_in4().get_nexthop(nexthop.get_nhindex());
-
-			os << rofl::indent(0) << "<cdptnexthop: >" 	<< std::endl;
-			os << rofl::indent(2) << "<weight: " 	<< rtn.get_weight() 	<< " >" << std::endl;
-			os << rofl::indent(2) << "<ifindex: " 	<< rtn.get_ifindex() 	<< " >" << std::endl;
-			os << rofl::indent(2) << "<realms: " 	<< rtn.get_realms() 	<< " >" << std::endl;
-			os << rofl::indent(2) << "<flags: " 	<< rtn.get_flags() 		<< " >" << std::endl;
-
-		} catch (...) {
-			os << "<cdptnexthop: ";
-				os << "rttableid:" 	<< nexthop.get_rttblid() << " ";
-				os << "rtindex:" 	<< nexthop.get_rtindex() 	<< " ";
-				os << "nhindex:" 	<< nexthop.get_nhindex() 	<< " ";
-			os << ">";
-		}
+		os << rofcore::indent(0) << "<cnexthop "
+				<< "rttblid: " << (int)nexthop.rttblid << " "
+				<< "rtindex: " << nexthop.rtindex << " "
+				<< "nhindex: " << nexthop.nhindex << " "
+				<< " >" << std::endl;
 		return os;
 	};
 
@@ -234,26 +219,14 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const cnexthop_in4& nexthop) {
 		try {
-			os << rofl::indent(0) << "<cdptnexthop_in4 >" 	<< std::endl;
-
+			os << rofcore::indent(0) << "<cnexthop_in4 >" 	<< std::endl;
 			const rofcore::crtnexthop_in4& rtn =
 					rofcore::cnetlink::get_instance().get_routes_in4(nexthop.get_rttblid()).
 						get_route(nexthop.get_rtindex()).get_nexthops_in4().get_nexthop(nexthop.get_nhindex());
-
-			os << rofcore::indent(2) << "<gateway: " 	<< rtn.get_gateway()	<< " >" << std::endl;
-			os << rofcore::indent(2) << "<weight: " 	<< rtn.get_weight() 	<< " >" << std::endl;
-			os << rofcore::indent(2) << "<ifindex: " 	<< rtn.get_ifindex() 	<< " >" << std::endl;
-			os << rofcore::indent(2) << "<realms: " 	<< rtn.get_realms() 	<< " >" << std::endl;
-			os << rofcore::indent(2) << "<flags: " 		<< rtn.get_flags() 		<< " >" << std::endl;
-
-		} catch (...) {
-			os << "<cdptnexthop: ";
-				os << "rttableid:" 	<< nexthop.get_rttblid() << " ";
-				os << "rtindex:" 	<< nexthop.get_rtindex() 	<< " ";
-				os << "nhindex:" 	<< nexthop.get_nhindex() 	<< " ";
-			os << " in state -invalid- >";
+			rofcore::indent i(2); os << rtn;
+		} catch (rofcore::crtroute::eRtRouteNotFound& e) {
+		} catch (rofcore::crtnexthop::eRtNextHopNotFound& e) {
 		}
-
 		return os;
 	};
 
@@ -339,26 +312,14 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const cnexthop_in6& nexthop) {
 		try {
-			os << rofl::indent(0) << "<cdptnexthop_in6 >" 	<< std::endl;
-
+			os << rofcore::indent(0) << "<cnexthop_in6 >" 	<< std::endl;
 			const rofcore::crtnexthop_in6& rtn =
 					rofcore::cnetlink::get_instance().get_routes_in6(nexthop.get_rttblid()).
 						get_route(nexthop.get_rtindex()).get_nexthops_in6().get_nexthop(nexthop.get_nhindex());
-
-			os << rofcore::indent(2) << "<gateway: " 	<< rtn.get_gateway()	<< " >" << std::endl;
-			os << rofcore::indent(2) << "<weight: " 	<< rtn.get_weight() 	<< " >" << std::endl;
-			os << rofcore::indent(2) << "<ifindex: " 	<< rtn.get_ifindex() 	<< " >" << std::endl;
-			os << rofcore::indent(2) << "<realms: " 	<< rtn.get_realms() 	<< " >" << std::endl;
-			os << rofcore::indent(2) << "<flags: " 		<< rtn.get_flags() 		<< " >" << std::endl;
-
-		} catch (...) {
-			os << "<cdptnexthop: ";
-				os << "rttableid:" 	<< nexthop.get_rttblid() << " ";
-				os << "rtindex:" 	<< nexthop.get_rtindex() 	<< " ";
-				os << "nhindex:" 	<< nexthop.get_nhindex() 	<< " ";
-			os << " in state -invalid- >";
+			rofcore::indent i(2); os << rtn;
+		} catch (rofcore::crtroute::eRtRouteNotFound& e) {
+		} catch (rofcore::crtnexthop::eRtNextHopNotFound& e) {
 		}
-
 		return os;
 	};
 };

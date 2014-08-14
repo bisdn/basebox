@@ -74,7 +74,12 @@ public:
 	/**
 	 *
 	 */
-	clink(uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr);
+	clink(
+			const rofl::cdptid& dptid,
+			uint32_t ofp_port_no,
+			const std::string& devname,
+			const rofl::caddress_ll& hwaddr,
+			uint8_t in_ofp_table_id);
 
 	/**
 	 *
@@ -94,6 +99,17 @@ public:
 	operator= (const clink& link) {
 		if (this == &link)
 			return *this;
+
+		state 		= link.state;
+		ofp_port_no = link.ofp_port_no;
+		devname 	= link.devname;
+		hwaddr 		= link.hwaddr;
+		ifindex 	= link.ifindex;
+		dptid 		= link.dptid;
+		in_ofp_table_id = link.in_ofp_table_id;
+		tapdev 		= NULL;
+		flags		= link.flags;
+
 		clear_addrs();
 		for (std::map<uint32_t, caddr_in4>::const_iterator
 				it = link.addrs_in4.begin(); it != link.addrs_in4.end(); ++it) {
@@ -197,7 +213,7 @@ public:
 		if (addrs_in4.find(adindex) != addrs_in4.end()) {
 			addrs_in4.erase(adindex);
 		}
-		addrs_in4[adindex] = caddr_in4(ifindex, adindex, dptid, /*table_id=*/0);
+		addrs_in4[adindex] = caddr_in4(ifindex, adindex, dptid, in_ofp_table_id);
 		if (STATE_ATTACHED == state) {
 			addrs_in4[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
@@ -210,7 +226,7 @@ public:
 	caddr_in4&
 	set_addr_in4(unsigned int adindex) {
 		if (addrs_in4.find(adindex) == addrs_in4.end()) {
-			addrs_in4[adindex] = caddr_in4(ifindex, adindex, dptid, /*table_id=*/0);
+			addrs_in4[adindex] = caddr_in4(ifindex, adindex, dptid, in_ofp_table_id);
 			if (STATE_ATTACHED == state) {
 				addrs_in4[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
@@ -257,7 +273,7 @@ public:
 		if (addrs_in6.find(adindex) != addrs_in6.end()) {
 			addrs_in6.erase(adindex);
 		}
-		addrs_in6[adindex] = caddr_in6(ifindex, adindex, dptid, /*table_id=*/0);
+		addrs_in6[adindex] = caddr_in6(ifindex, adindex, dptid, in_ofp_table_id);
 		if (STATE_ATTACHED == state) {
 			addrs_in6[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
@@ -270,7 +286,7 @@ public:
 	caddr_in6&
 	set_addr_in6(unsigned int adindex) {
 		if (addrs_in6.find(adindex) == addrs_in6.end()) {
-			addrs_in6[adindex] = caddr_in6(ifindex, adindex, dptid, /*table_id=*/0);
+			addrs_in6[adindex] = caddr_in6(ifindex, adindex, dptid, in_ofp_table_id);
 			if (STATE_ATTACHED == state) {
 				addrs_in6[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
@@ -508,16 +524,23 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, clink const& link) {
-		os << rofcore::indent(0) << "<dptlink: ifindex:" << (int)link.ifindex << " "
-				<< "devname:" << link.get_devname() << " >" << std::endl;
-		os << rofcore::indent(2) << "<hwaddr:"  << link.get_hwaddr() << " "
-				<< "portno:"  << (int)link.ofp_port_no << " >" << std::endl;
+		os << rofcore::indent(0) << "<clink: "
+				<< "ofp-portno:" << (unsigned int)link.ofp_port_no << " "
+				<< "ifindex:" << (int)link.ifindex << " "
+				<< "devname:" << link.get_devname() << " "
+				<< " >" << std::endl;
+		os << rofcore::indent(2) << "<hwaddr: >"  << std::endl;
+		os << rofcore::indent(4) << link.get_hwaddr();
+#if 0
 		try {
 			rofcore::indent i(2);
 			os << rofcore::cnetlink::get_instance().get_links().get_link(link.ifindex);
 		} catch (rofcore::eNetLinkNotFound& e) {
 			os << rofl::indent(2) << "<no crtlink found >" << std::endl;
+		} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+			os << rofl::indent(2) << "<no crtlink found >" << std::endl;
 		}
+#endif
 		rofcore::indent i(2);
 		for (std::map<unsigned int, caddr_in4>::const_iterator
 				it = link.addrs_in4.begin(); it != link.addrs_in4.end(); ++it) {
@@ -590,7 +613,7 @@ private:
 	rofl::caddress_ll					hwaddr;
 	int					 		 		ifindex;		// ifindex for tapdevice
 	rofl::cdptid						dptid;
-	uint8_t								table_id;
+	uint8_t								in_ofp_table_id;
 	rofcore::ctapdev					*tapdev;		// tap device emulating the mapped port on this system
 
 	enum cdptlink_flag_t {

@@ -8,30 +8,17 @@ std::string cipcore::script_path_port_up 	= std::string("/var/lib/ipcore/port-up
 std::string cipcore::script_path_port_down 	= std::string("/var/lib/ipcore/port-down.sh");
 
 
-/*static*/cipcore* cipcore::__ipcore__ = (cipcore*)NULL;
+/*static*/cipcore* cipcore::sipcore = (cipcore*)NULL;
 
 
 /*static*/
 cipcore&
-cipcore::get_instance()
+cipcore::get_instance(const rofl::cdptid& dptid, uint8_t in_ofp_table_id)
 {
-	if (NULL == cipcore::__ipcore__) {
-		cipcore::__ipcore__ = new cipcore();
+	if (NULL == cipcore::sipcore) {
+		cipcore::sipcore = new cipcore(dptid, in_ofp_table_id);
 	}
-	return *(cipcore::__ipcore__);
-}
-
-
-
-cipcore::cipcore() : state(STATE_DETACHED)
-{
-
-}
-
-
-cipcore::~cipcore()
-{
-
+	return *(cipcore::sipcore);
 }
 
 
@@ -232,6 +219,7 @@ cipcore::addr_in4_created(unsigned int ifindex, uint16_t adindex)
 
 		if (not get_link_by_ifindex(ifindex).has_addr_in4(adindex)) {
 			set_link_by_ifindex(ifindex).set_addr_in4(adindex);
+			rofcore::logging::debug << "[cipcore][addr_in4_created] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -250,6 +238,7 @@ cipcore::addr_in4_updated(unsigned int ifindex, uint16_t adindex)
 
 		if (not get_link_by_ifindex(ifindex).has_addr_in4(adindex)) {
 			set_link_by_ifindex(ifindex).set_addr_in4(adindex);
+			rofcore::logging::debug << "[cipcore][addr_in4_updated] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -268,6 +257,7 @@ cipcore::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
 
 		if (get_link_by_ifindex(ifindex).has_addr_in4(adindex)) {
 			set_link_by_ifindex(ifindex).drop_addr_in4(adindex);
+			rofcore::logging::debug << "[cipcore][addr_in4_deleted] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -286,6 +276,7 @@ cipcore::addr_in6_created(unsigned int ifindex, uint16_t adindex)
 
 		if (not get_link_by_ifindex(ifindex).has_addr_in6(adindex)) {
 			set_link_by_ifindex(ifindex).set_addr_in6(adindex);
+			rofcore::logging::debug << "[cipcore][addr_in6_created] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -304,6 +295,7 @@ cipcore::addr_in6_updated(unsigned int ifindex, uint16_t adindex)
 
 		if (not get_link_by_ifindex(ifindex).has_addr_in6(adindex)) {
 			set_link_by_ifindex(ifindex).set_addr_in6(adindex);
+			rofcore::logging::debug << "[cipcore][addr_in6_updated] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -322,6 +314,7 @@ cipcore::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 
 		if (get_link_by_ifindex(ifindex).has_addr_in6(adindex)) {
 			set_link_by_ifindex(ifindex).drop_addr_in6(adindex);
+			rofcore::logging::debug << "[cipcore][addr_in6_deleted] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -343,8 +336,9 @@ cipcore::route_in4_created(uint8_t table_id, unsigned int rtindex)
 
 		rofcore::logging::info << "[cipcore] crtroute CREATE:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in4(table_id).get_route(rtindex);
 
-		if (not get_table(table_id).has_route_in4(rtindex)) {
+		if ((not has_table(table_id)) || (not get_table(table_id).has_route_in4(rtindex))) {
 			set_table(table_id).add_route_in4(rtindex);
+			rofcore::logging::debug << "[cipcore][route_in4_created] state:" << std::endl << *this;
 		}
 
 	} catch (rofcore::eNetLinkNotFound& e) {
@@ -368,8 +362,9 @@ cipcore::route_in4_updated(uint8_t table_id, unsigned int rtindex)
 
 		rofcore::logging::info << "[cipcore] route update:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in4(table_id).get_route(rtindex);
 
-		if (not get_table(table_id).has_route_in4(rtindex)) {
+		if ((not has_table(table_id)) || (not get_table(table_id).has_route_in4(rtindex))) {
 			set_table(table_id).add_route_in4(rtindex);
+			rofcore::logging::debug << "[cipcore][route_in4_updated] state:" << std::endl << *this;
 		}
 
 		// do nothing here, this event is handled directly by dptroute instance
@@ -395,8 +390,9 @@ cipcore::route_in4_deleted(uint8_t table_id, unsigned int rtindex)
 
 		rofcore::logging::info << "[cipcore] crtroute DELETE:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in4(table_id).get_route(rtindex);
 
-		if (get_table(table_id).has_route_in4(rtindex)) {
+		if (has_table(table_id) && get_table(table_id).has_route_in4(rtindex)) {
 			set_table(table_id).drop_route_in4(rtindex);
+			rofcore::logging::debug << "[cipcore][route_in4_deleted] state:" << std::endl << *this;
 		}
 
 	} catch (rofcore::eNetLinkNotFound& e) {
@@ -420,8 +416,9 @@ cipcore::route_in6_created(uint8_t table_id, unsigned int rtindex)
 
 		rofcore::logging::info << "[cipcore] crtroute CREATE:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in6(table_id).get_route(rtindex);
 
-		if (not get_table(table_id).has_route_in6(rtindex)) {
+		if ((not has_table(table_id)) || (not get_table(table_id).has_route_in6(rtindex))) {
 			set_table(table_id).add_route_in6(rtindex);
+			rofcore::logging::debug << "[cipcore][route_in6_created] state:" << std::endl << *this;
 		}
 
 	} catch (rofcore::eNetLinkNotFound& e) {
@@ -445,8 +442,9 @@ cipcore::route_in6_updated(uint8_t table_id, unsigned int rtindex)
 
 		rofcore::logging::info << "[cipcore] route update:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in6(table_id).get_route(rtindex);
 
-		if (not get_table(table_id).has_route_in6(rtindex)) {
+		if ((not has_table(table_id)) || (not get_table(table_id).has_route_in6(rtindex))) {
 			set_table(table_id).add_route_in6(rtindex);
+			rofcore::logging::debug << "[cipcore][route_in6_updated] state:" << std::endl << *this;
 		}
 
 		// do nothing here, this event is handled directly by dptroute instance
@@ -472,8 +470,9 @@ cipcore::route_in6_deleted(uint8_t table_id, unsigned int rtindex)
 
 		rofcore::logging::info << "[cipcore] crtroute DELETE:" << std::endl << rofcore::cnetlink::get_instance().get_routes_in6(table_id).get_route(rtindex);
 
-		if (get_table(table_id).has_route_in6(rtindex)) {
+		if (has_table(table_id) && get_table(table_id).has_route_in6(rtindex)) {
 			set_table(table_id).drop_route_in6(rtindex);
+			rofcore::logging::debug << "[cipcore][route_in6_deleted] state:" << std::endl << *this;
 		}
 
 	} catch (rofcore::eNetLinkNotFound& e) {
@@ -495,6 +494,7 @@ cipcore::neigh_in4_created(unsigned int ifindex, uint16_t nbindex)
 
 		if (not get_link_by_ifindex(ifindex).has_neigh_in4(nbindex)) {
 			set_link_by_ifindex(ifindex).set_neigh_in4(nbindex);
+			rofcore::logging::debug << "[cipcore][neigh_in4_created] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -515,6 +515,7 @@ cipcore::neigh_in4_updated(unsigned int ifindex, uint16_t nbindex)
 
 		if (not get_link_by_ifindex(ifindex).has_neigh_in4(nbindex)) {
 			set_link_by_ifindex(ifindex).set_neigh_in4(nbindex);
+			rofcore::logging::debug << "[cipcore][neigh_in4_updated] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -535,6 +536,7 @@ cipcore::neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex)
 
 		if (get_link_by_ifindex(ifindex).has_neigh_in6(nbindex)) {
 			set_link_by_ifindex(ifindex).drop_neigh_in6(nbindex);
+			rofcore::logging::debug << "[cipcore][neigh_in4_deleted] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -555,6 +557,7 @@ cipcore::neigh_in6_created(unsigned int ifindex, uint16_t nbindex)
 
 		if (not get_link_by_ifindex(ifindex).has_neigh_in6(nbindex)) {
 			set_link_by_ifindex(ifindex).set_neigh_in6(nbindex);
+			rofcore::logging::debug << "[cipcore][neigh_in6_created] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -575,6 +578,7 @@ cipcore::neigh_in6_updated(unsigned int ifindex, uint16_t nbindex)
 
 		if (not get_link_by_ifindex(ifindex).has_neigh_in6(nbindex)) {
 			set_link_by_ifindex(ifindex).set_neigh_in6(nbindex);
+			rofcore::logging::debug << "[cipcore][neigh_in6_updated] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -595,6 +599,7 @@ cipcore::neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex)
 
 		if (get_link_by_ifindex(ifindex).has_neigh_in6(nbindex)) {
 			set_link_by_ifindex(ifindex).drop_neigh_in6(nbindex);
+			rofcore::logging::debug << "[cipcore][neigh_in6_deleted] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {

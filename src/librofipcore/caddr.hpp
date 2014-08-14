@@ -26,13 +26,13 @@ public:
 	 *
 	 */
 	caddr() :
-		state(STATE_DETACHED), ifindex(0), adindex(0), table_id(0) {};
+		state(STATE_DETACHED), ifindex(0), adindex(0), in_ofp_table_id(0) {};
 
 	/**
 	 *
 	 */
-	caddr(int ifindex, uint16_t adindex, const rofl::cdptid& dptid, uint8_t table_id = 0) :
-		state(STATE_DETACHED), ifindex(ifindex), adindex(adindex), dptid(dptid), table_id(table_id) {};
+	caddr(int ifindex, uint16_t adindex, const rofl::cdptid& dptid, uint8_t in_ofp_table_id = 0) :
+		state(STATE_DETACHED), ifindex(ifindex), adindex(adindex), dptid(dptid), in_ofp_table_id(in_ofp_table_id) {};
 
 	/**
 	 *
@@ -56,7 +56,7 @@ public:
 			return *this;
 		state	 = addr.state;
 		dptid	 = addr.dptid;
-		table_id = addr.table_id;
+		in_ofp_table_id = addr.in_ofp_table_id;
 		ifindex	 = addr.ifindex;
 		adindex	 = addr.adindex;
 		return *this;
@@ -104,22 +104,22 @@ public:
 	 *
 	 */
 	uint8_t
-	get_table_id() const { return table_id; };
+	get_table_id() const { return in_ofp_table_id; };
 
 	/**
 	 *
 	 */
 	void
-	set_table_id(uint8_t table_id) { this->table_id = table_id; };
+	set_table_id(uint8_t table_id) { this->in_ofp_table_id = table_id; };
 
 public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, caddr const& addr) {
-		os << rofl::indent(0) << "<caddr ";
+		os << rofcore::indent(0) << "<caddr ";
 		os << "adindex: " << (unsigned int)addr.adindex << " ";
 		os << "ifindex: " << (unsigned int)addr.ifindex << " ";
-		os << "tableid: " << (unsigned int)addr.table_id << " ";
+		os << "tableid: " << (unsigned int)addr.in_ofp_table_id << " ";
 		os << ">" << std::endl;
 		return os;
 	};
@@ -135,7 +135,7 @@ protected:
 	int							ifindex;
 	uint16_t					adindex;
 	rofl::cdptid				dptid;
-	uint8_t						table_id;
+	uint8_t						in_ofp_table_id;
 
 };
 
@@ -205,8 +205,15 @@ public:
 	operator<< (std::ostream& os, const caddr_in4& addr) {
 		os << rofcore::indent(0) << "<caddr_in4 >" << std::endl;
 		rofcore::indent i(2);
-
-
+		os << dynamic_cast<const caddr&>(addr);
+		try {
+			const rofcore::crtaddr_in4& rtaddr =
+					rofcore::cnetlink::get_instance().get_links().
+							get_link(addr.ifindex).get_addrs_in4().get_addr(addr.adindex);
+			rofcore::indent i(2); os << rtaddr;
+		} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
+		}
 		return os;
 	};
 };
@@ -277,8 +284,15 @@ public:
 	operator<< (std::ostream& os, const caddr_in6& addr) {
 		os << rofcore::indent(0) << "<caddr_in6 >" << std::endl;
 		rofcore::indent i(2);
-
-
+		os << dynamic_cast<const caddr&>(addr);
+		try {
+			const rofcore::crtaddr_in6& rtaddr =
+					rofcore::cnetlink::get_instance().get_links().
+							get_link(addr.ifindex).get_addrs_in6().get_addr(addr.adindex);
+			rofcore::indent i(2); os << rtaddr;
+		} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
+		}
 		return os;
 	};
 };

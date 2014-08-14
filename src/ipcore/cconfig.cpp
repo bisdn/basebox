@@ -5,9 +5,9 @@
  *      Author: andreas
  */
 
-#include "cconfig.h"
+#include "cconfig.hpp"
 
-using namespace rofcore;
+using namespace ipcore;
 
 std::string const cconfig::CONFPATH = std::string("./ipcored.conf");
 

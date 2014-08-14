@@ -143,11 +143,11 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, crtnexthop const& nxthop) {
-		os << rofl::indent(0) << "<crtnexthop: >" << std::endl;
-		os << rofl::indent(2) << "<weight: " 	<< (int)nxthop.weight 			<< " >" << std::endl;
-		os << rofl::indent(2) << "<ifindex: " 	<< (int)nxthop.ifindex 			<< " >" << std::endl;
-		os << rofl::indent(2) << "<flags: " 	<< nxthop.flags 				<< " >" << std::endl;
-		os << rofl::indent(2) << "<realms: " 	<< (unsigned int)nxthop.realms 	<< " >" << std::endl;
+		os << rofcore::indent(0) << "<crtnexthop: >" << std::endl;
+		os << rofcore::indent(2) << "<weight: " 	<< (int)nxthop.weight 			<< " >" << std::endl;
+		os << rofcore::indent(2) << "<ifindex: " 	<< (int)nxthop.ifindex 			<< " >" << std::endl;
+		os << rofcore::indent(2) << "<flags: " 	<< nxthop.flags 				<< " >" << std::endl;
+		os << rofcore::indent(2) << "<realms: " 	<< (unsigned int)nxthop.realms 	<< " >" << std::endl;
 		return os;
 	};
 
@@ -229,8 +229,10 @@ public:
 		memset(s_buf, 0, sizeof(s_buf));
 
 		std::string s_gw(nl_addr2str(rtnl_route_nh_get_gateway(nxthop), s_buf, sizeof(s_buf)));
-		s_gw 		= s_gw.substr(0, s_gw.find_first_of("/", 0));
-		gateway 	= rofl::caddress_in4(s_gw.c_str());
+		if (s_gw != "none") {
+			s_gw 		= s_gw.substr(0, s_gw.find_first_of("/", 0));
+			gateway 	= rofl::caddress_in4(s_gw.c_str());
+		}
 
 		rtnl_route_put(route);
 	};
@@ -257,10 +259,10 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, crtnexthop_in4 const& nxthop) {
-		os << dynamic_cast<const crtnexthop&>( nxthop );
-		os << rofl::indent(0) << "<crtnexthop_in4: >" << std::endl;
-		os << rofl::indent(2) << "<gateway: >" << std::endl;
-		{ rofl::indent i(4); os << nxthop.gateway; }
+		os << rofcore::indent(0) << "<crtnexthop_in4 >" << std::endl;
+		{ rofcore::indent i(2); os << dynamic_cast<const crtnexthop&>( nxthop ); };
+		os << rofcore::indent(4) << "<gateway: >" << std::endl;
+		os << rofcore::indent(6) << nxthop.gateway;
 		return os;
 	};
 
@@ -340,8 +342,10 @@ public:
 		memset(s_buf, 0, sizeof(s_buf));
 
 		std::string s_gw(nl_addr2str(rtnl_route_nh_get_gateway(nxthop), s_buf, sizeof(s_buf)));
-		s_gw 		= s_gw.substr(0, s_gw.find_first_of("/", 0));
-		gateway 	= rofl::caddress_in6(s_gw.c_str());
+		if (s_gw != "none") {
+			s_gw 		= s_gw.substr(0, s_gw.find_first_of("/", 0));
+			gateway 	= rofl::caddress_in6(s_gw.c_str());
+		}
 
 		rtnl_route_put(route);
 	};
@@ -367,10 +371,10 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, crtnexthop_in6 const& nxthop) {
-		os << dynamic_cast<const crtnexthop&>( nxthop );
-		os << rofl::indent(0) << "<crtnexthop_in6: >" << std::endl;
-		os << rofl::indent(2) << "<gateway: >" << std::endl;
-		{ rofl::indent i(4); os << nxthop.gateway; }
+		os << rofcore::indent(0) << "<crtnexthop_in6 >" << std::endl;
+		{ rofcore::indent i(2); os << dynamic_cast<const crtnexthop&>( nxthop ); };
+		os << rofcore::indent(4) << "<gateway: >" << std::endl;
+		os << rofcore::indent(6) << nxthop.gateway;
 		return os;
 	};
 

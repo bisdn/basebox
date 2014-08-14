@@ -31,7 +31,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(table_id);			// FIXME: check for first table-id in data path
+		fe.set_table_id(in_ofp_table_id);			// FIXME: check for first table-id in data path
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		rofl::cindex index(0);
@@ -42,9 +42,18 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 				set_action_output(index).set_max_len(1518);
 
 		//fe.set_match().set_in_port(cdptlink::get_link(ifindex).get_ofp_port_no());
+
+		// redirect ARP packets to control plane
+		fe.set_match().clear();
+		fe.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
+		fe.set_match().set_arp_tpa(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
+		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+		// redirect ICMPv4 packets to control plane
+		fe.set_match().clear();
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
-
+		fe.set_match().set_ip_proto(rofl::ficmpv4frame::ICMPV4_IP_PROTO);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_ATTACHED;
@@ -75,12 +84,21 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(table_id);			// FIXME: check for first table-id in data path
+		fe.set_table_id(in_ofp_table_id);			// FIXME: check for first table-id in data path
 
 		//fe.set_match().set_in_port(cdptlink::get_link(ifindex).get_ofp_port_no());
+
+		// redirect ARP packets to control plane
+		fe.set_match().clear();
+		fe.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
+		fe.set_match().set_arp_tpa(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
+		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+		// redirect ICMPv4 packets to control plane
+		fe.set_match().clear();
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
-
+		fe.set_match().set_ip_proto(rofl::ficmpv4frame::ICMPV4_IP_PROTO);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_DETACHED;
@@ -122,7 +140,7 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(table_id);			// FIXME: check for first table-id in data path
+		fe.set_table_id(in_ofp_table_id);			// FIXME: check for first table-id in data path
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		rofl::cindex index(0);
@@ -166,7 +184,7 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(table_id);			// FIXME: check for first table-id in data path
+		fe.set_table_id(in_ofp_table_id);			// FIXME: check for first table-id in data path
 
 		//fe.set_match().set_in_port(cdptlink::get_link(ifindex).get_ofp_port_no());
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);

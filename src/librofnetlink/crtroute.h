@@ -254,7 +254,7 @@ public:
 	/**
 	 *
 	 */
-	int
+	unsigned int
 	get_metric() const { return metric; };
 
 	/**
@@ -269,18 +269,18 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, crtroute const& route) {
-		os << rofl::indent(0) << "<crtroute: >" << std::endl;
-		os << rofl::indent(2) << "<table_id: " 	<< route.get_table_id_s() 		<< " >" << std::endl;
-		os << rofl::indent(2) << "<scope: " 	<< route.get_scope_s() 			<< " >" << std::endl;
-		os << rofl::indent(2) << "<tos: " 		<< (unsigned int)route.tos 		<< " >" << std::endl;
-		os << rofl::indent(2) << "<protocol: " 	<< (unsigned int)route.protocol << " >" << std::endl;
-		os << rofl::indent(2) << "<priority: " 	<< (unsigned int)route.priority << " >" << std::endl;
-		os << rofl::indent(2) << "<family: " 	<< (unsigned int)route.family 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<prefixlen: " << route.prefixlen 				<< " >" << std::endl;
-		os << rofl::indent(2) << "<type: " 		<< (unsigned int)route.type 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<flags: " 	<< (unsigned int)route.flags 	<< " >" << std::endl;
-		os << rofl::indent(2) << "<metric: " 	<< (int)route.metric 			<< " >" << std::endl;
-		os << rofl::indent(2) << "<ifindex: " 	<< (unsigned int)route.iif 		<< " >" << std::endl;
+		os << rofcore::indent(0) << "<crtroute: >" << std::endl;
+		os << rofcore::indent(2) << "<table_id: " 	<< route.get_table_id_s() 		<< " >" << std::endl;
+		os << rofcore::indent(2) << "<scope: " 	<< route.get_scope_s() 			<< " >" << std::endl;
+		os << rofcore::indent(2) << "<tos: " 		<< (unsigned int)route.tos 		<< " >" << std::endl;
+		os << rofcore::indent(2) << "<protocol: " 	<< (unsigned int)route.protocol << " >" << std::endl;
+		os << rofcore::indent(2) << "<priority: " 	<< (unsigned int)route.priority << " >" << std::endl;
+		os << rofcore::indent(2) << "<family: " 	<< (unsigned int)route.family 	<< " >" << std::endl;
+		os << rofcore::indent(2) << "<prefixlen: " << route.prefixlen 				<< " >" << std::endl;
+		os << rofcore::indent(2) << "<type: " 		<< (unsigned int)route.type 	<< " >" << std::endl;
+		os << rofcore::indent(2) << "<flags: " 	<< (unsigned int)route.flags 	<< " >" << std::endl;
+		os << rofcore::indent(2) << "<metric: " 	<< (unsigned int)route.metric 			<< " >" << std::endl;
+		os << rofcore::indent(2) << "<ifindex: " 	<< (unsigned int)route.iif 		<< " >" << std::endl;
 
 		return os;
 	};
@@ -296,7 +296,7 @@ private:
 	unsigned int			prefixlen;
 	uint8_t					type;
 	uint32_t				flags;
-	int						metric;
+	unsigned int			metric;
 	unsigned int			iif;
 };
 
@@ -379,16 +379,22 @@ public:
 		memset(s_buf, 0, sizeof(s_buf));
 
 		std::string s_dst(nl_addr2str(rtnl_route_get_dst(route), s_buf, sizeof(s_buf)));
-		s_dst 		= s_dst.substr(0, s_dst.find_first_of("/", 0));
-		dst 		= rofl::caddress_in4(s_dst);
+		if (s_dst != "none") {
+			s_dst		= s_dst.substr(0, s_dst.find_first_of("/", 0));
+			dst 		= rofl::caddress_in4(s_dst);
+		}
 
 		std::string s_src(nl_addr2str(rtnl_route_get_src(route), s_buf, sizeof(s_buf)));
-		s_src  		= s_src.substr(0,  s_src.find_first_of("/", 0));
-		src 		= rofl::caddress_in4(s_src);
+		if (s_src != "none") {
+			s_src	 	= s_src.substr(0,  s_src.find_first_of("/", 0));
+			src 		= rofl::caddress_in4(s_src);
+		}
 
 		std::string s_pref_src(nl_addr2str(rtnl_route_get_pref_src(route), s_buf, sizeof(s_buf)));
-		s_pref_src 	= s_pref_src.substr(0, s_pref_src.find_first_of("/", 0));
-		pref_src	= rofl::caddress_in4(s_pref_src);
+		if (s_pref_src != "none") {
+			s_pref_src 	= s_pref_src.substr(0, s_pref_src.find_first_of("/", 0));
+			pref_src	= rofl::caddress_in4(s_pref_src);
+		}
 
 		for (int i = 0; i < rtnl_route_get_nnexthops(route); i++) {
 			nxthops.add_nexthop(crtnexthop_in4(route, rtnl_route_nexthop_n(route, i)));
@@ -476,16 +482,17 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtroute_in4& route) {
-		os << dynamic_cast<const crtroute&>( route );
-		os << rofl::indent(2) << "<dst: >" << std::endl;
-		{ rofl::indent i(4); os << route.get_ipv4_dst(); }
-		os << rofl::indent(2) << "<mask: >" << std::endl;
-		{ rofl::indent i(4); os << route.get_ipv4_mask(); }
-		os << rofl::indent(2) << "<src: >" << std::endl;
-		{ rofl::indent i(4); os << route.get_ipv4_src(); }
-		os << rofl::indent(2) << "<pref-src: >" << std::endl;
-		{ rofl::indent i(4); os << route.get_ipv4_pref_src(); }
-		{ rofl::indent i(2); os << route.get_nexthops_in4(); };
+		os << rofcore::indent(0) << "<crtroute_in4 >" << std::endl;
+		{ rofcore::indent i(2); os << dynamic_cast<const crtroute&>( route ); }
+		os << rofcore::indent(2) << "<dst: >" << std::endl;
+		os << rofcore::indent(4) << route.get_ipv4_dst();
+		os << rofcore::indent(2) << "<mask: >" << std::endl;
+		os << rofcore::indent(4) << route.get_ipv4_mask();
+		os << rofcore::indent(2) << "<src: >" << std::endl;
+		os << rofcore::indent(4) << route.get_ipv4_src();
+		os << rofcore::indent(2) << "<pref-src: >" << std::endl;
+		os << rofcore::indent(4) << route.get_ipv4_pref_src();
+		//{ rofcore::indent i(2); os << route.get_nexthops_in4(); };
 
 		return os;
 	};
@@ -611,16 +618,22 @@ public:
 		memset(s_buf, 0, sizeof(s_buf));
 
 		std::string s_dst(nl_addr2str(rtnl_route_get_dst(route), s_buf, sizeof(s_buf)));
-		s_dst 		= s_dst.substr(0, s_dst.find_first_of("/", 0));
-		dst 		= rofl::caddress_in6(s_dst);
+		if (s_dst != "none") {
+			s_dst 		= s_dst.substr(0, s_dst.find_first_of("/", 0));
+			dst 		= rofl::caddress_in6(s_dst);
+		}
 
 		std::string s_src(nl_addr2str(rtnl_route_get_src(route), s_buf, sizeof(s_buf)));
-		s_src  		= s_src.substr(0,  s_src.find_first_of("/", 0));
-		src 		= rofl::caddress_in6(s_src);
+		if (s_src != "none") {
+			s_src  		= s_src.substr(0,  s_src.find_first_of("/", 0));
+			src 		= rofl::caddress_in6(s_src);
+		}
 
 		std::string s_pref_src(nl_addr2str(rtnl_route_get_pref_src(route), s_buf, sizeof(s_buf)));
-		s_pref_src 	= s_pref_src.substr(0, s_pref_src.find_first_of("/", 0));
-		pref_src	= rofl::caddress_in6(s_pref_src);
+		if (s_pref_src != "none") {
+			s_pref_src 	= s_pref_src.substr(0, s_pref_src.find_first_of("/", 0));
+			pref_src	= rofl::caddress_in6(s_pref_src);
+		}
 
 		for (int i = 0; i < rtnl_route_get_nnexthops(route); i++) {
 			nxthops.add_nexthop(crtnexthop_in6(route, rtnl_route_nexthop_n(route, i)));
@@ -708,16 +721,17 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtroute_in6& route) {
-		os << dynamic_cast<const crtroute&>( route );
-		os << rofl::indent(2) << "<dst: >" << std::endl;
-		{ rofl::indent i(4); os << route.get_ipv6_dst(); }
-		os << rofl::indent(2) << "<mask: >" << std::endl;
-		{ rofl::indent i(4); os << route.get_ipv6_mask(); }
-		os << rofl::indent(2) << "<src: >" << std::endl;
-		{ rofl::indent i(4); os << route.get_ipv6_src(); }
-		os << rofl::indent(2) << "<pref-src: >" << std::endl;
-		{ rofl::indent i(4); os << route.get_ipv6_pref_src(); }
-		{ rofl::indent i(2); os << route.get_nexthops_in6(); };
+		os << rofcore::indent(0) << "<crtroute_in6 >" << std::endl;
+		{ rofcore::indent i(2); os << dynamic_cast<const crtroute&>( route ); }
+		os << rofcore::indent(2) << "<dst: >" << std::endl;
+		os << rofcore::indent(4) << route.get_ipv6_dst();
+		os << rofcore::indent(2) << "<mask: >" << std::endl;
+		os << rofcore::indent(4) << route.get_ipv6_mask();
+		os << rofcore::indent(2) << "<src: >" << std::endl;
+		os << rofcore::indent(4) << route.get_ipv6_src();
+		os << rofcore::indent(2) << "<pref-src: >" << std::endl;
+		os << rofcore::indent(4) << route.get_ipv6_pref_src();
+		//{ rofcore::indent i(2); os << route.get_nexthops_in6(); };
 
 		return os;
 	};

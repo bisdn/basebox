@@ -101,7 +101,7 @@ cethbase::run(int argc, char** argv)
 	rofcore::logging::set_debug_level(core_debug);
 
 	if (daemonize) {
-		rofcore::logging::notice << "[ethcore][main] daemonizing successful" << std::endl;
+		rofcore::logging::notice << "[ethcored][main] daemonizing successful" << std::endl;
 	}
 
 
@@ -224,8 +224,8 @@ cethbase::run(int argc, char** argv)
 	//base.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
 
 	std::stringstream portno;
-	if (cconfig::get_instance().exists("ethcored.openflow.port")) {
-		portno << (int)cconfig::get_instance().lookup("ethcored.openflow.port");
+	if (cconfig::get_instance().exists("ethcored.openflow.bindport")) {
+		portno << (int)cconfig::get_instance().lookup("ethcored.openflow.bindport");
 	} else {
 		portno << (int)6653;
 	}

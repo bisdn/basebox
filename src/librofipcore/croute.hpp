@@ -241,19 +241,10 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, croute const& route) {
-		os << rofcore::indent(0) << "<cdptroute ";
+		os << rofcore::indent(0) << "<croute ";
 		os << "rttblid:" << (unsigned int)route.get_rttblid() << " ";
 		os << "rtindex:" << route.get_rtindex() << " ";
 		os << " >" << std::endl;
-		rofcore::indent i(2);
-		for (std::map<unsigned int, cnexthop_in4>::const_iterator
-				it = route.nexthops_in4.begin(); it != route.nexthops_in4.end(); ++it) {
-			os << it->second;
-		}
-		for (std::map<unsigned int, cnexthop_in6>::const_iterator
-				it = route.nexthops_in6.begin(); it != route.nexthops_in6.end(); ++it) {
-			os << it->second;
-		}
 		return os;
 	};
 
@@ -341,14 +332,23 @@ public:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const croute_in4& dptroute) {
-		const rofcore::crtroute& rtroute =
-				rofcore::cnetlink::get_instance().
-							get_routes_in4(dptroute.get_rttblid()).get_route(dptroute.get_rtindex());
-			os << rofl::indent(0) << "<dptroute_in4 >" 	<< std::endl;
-			rofl::indent i(2);
-			os << dynamic_cast<const croute&>(dptroute);
-			os << rtroute;
+	operator<< (std::ostream& os, const croute_in4& route) {
+		os << rofcore::indent(0) << "<croute_in4 >" << std::endl;
+		rofcore::indent i(2);
+		os << dynamic_cast<const croute&>(route);
+		try {
+			const rofcore::crtroute_in4& rtroute =
+						rofcore::cnetlink::get_instance().
+								get_routes_in4(route.get_rttblid()).get_route(route.get_rtindex());
+			rofcore::indent i(2); os << rtroute;
+		} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		} catch (rofcore::crtroute::eRtRouteNotFound& e) {
+		}
+		rofcore::indent j(2);
+		for (std::map<unsigned int, cnexthop_in4>::const_iterator
+				it = route.nexthops_in4.begin(); it != route.nexthops_in4.end(); ++it) {
+			os << it->second;
+		}
 		return os;
 	};
 };
@@ -417,14 +417,23 @@ public:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const croute_in6& dptroute) {
-		const rofcore::crtroute& rtroute =
-				rofcore::cnetlink::get_instance().
-							get_routes_in6(dptroute.get_rttblid()).get_route(dptroute.get_rtindex());
-			os << rofl::indent(0) << "<dptroute_in6 >" 	<< std::endl;
-			rofl::indent i(2);
-			os << dynamic_cast<const croute&>(dptroute);
-			os << rtroute;
+	operator<< (std::ostream& os, const croute_in6& route) {
+		os << rofcore::indent(0) << "<croute_in6 >" << std::endl;
+		rofcore::indent i(2);
+		os << dynamic_cast<const croute&>(route);
+		try {
+			const rofcore::crtroute_in6& rtroute =
+						rofcore::cnetlink::get_instance().
+								get_routes_in6(route.get_rttblid()).get_route(route.get_rtindex());
+			rofcore::indent i(2); os << rtroute;
+		} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		} catch (rofcore::crtroute::eRtRouteNotFound& e) {
+		}
+		rofcore::indent j(2);
+		for (std::map<unsigned int, cnexthop_in6>::const_iterator
+				it = route.nexthops_in6.begin(); it != route.nexthops_in6.end(); ++it) {
+			os << it->second;
+		}
 		return os;
 	};
 };

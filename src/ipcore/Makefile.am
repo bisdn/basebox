@@ -4,9 +4,9 @@ SUBDIRS =
 
 sbin_PROGRAMS = ipcored
 
-ipcored_SOURCES = ipcored.cc \
-		cconfig.h \
-		cconfig.cc \
+ipcored_SOURCES = ipcored.cpp \
+		cconfig.hpp \
+		cconfig.cpp \
 		cipbase.hpp \
 		cipbase.cpp
 		
