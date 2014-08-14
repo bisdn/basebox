@@ -7,6 +7,7 @@
 
 
 #include "caddr.hpp"
+#include "cipcore.hpp"
 
 using namespace ipcore;
 
@@ -41,10 +42,9 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_instructions().set_inst_apply_actions().set_actions().
 				set_action_output(index).set_max_len(1518);
 
-		//fe.set_match().set_in_port(cdptlink::get_link(ifindex).get_ofp_port_no());
-
 		// redirect ARP packets to control plane
 		fe.set_match().clear();
+		fe.set_match().set_in_port(cipcore::get_instance().get_link_by_ifindex(ifindex).get_ofp_port_no()); // only for ARP (bound to Ethernet segment)
 		fe.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
 		fe.set_match().set_arp_tpa(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
@@ -86,10 +86,10 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_priority(0xfffe);
 		fe.set_table_id(in_ofp_table_id);			// FIXME: check for first table-id in data path
 
-		//fe.set_match().set_in_port(cdptlink::get_link(ifindex).get_ofp_port_no());
 
 		// redirect ARP packets to control plane
 		fe.set_match().clear();
+		fe.set_match().set_in_port(cipcore::get_instance().get_link_by_ifindex(ifindex).get_ofp_port_no()); // only for ARP (bound to Ethernet segment)
 		fe.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
 		fe.set_match().set_arp_tpa(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
@@ -150,9 +150,11 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_instructions().set_inst_apply_actions().set_actions().
 				set_action_output(index).set_max_len(1518);
 
-		//fe.set_match().set_in_port(cdptlink::get_link(ifindex).get_ofp_port_no());
+		// redirect ICMPv6 packets to control plane
+		fe.set_match().clear();
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
+		fe.set_match().set_ip_proto(rofl::ficmpv6frame::ICMPV6_IP_PROTO);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
@@ -186,9 +188,11 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_priority(0xfffe);
 		fe.set_table_id(in_ofp_table_id);			// FIXME: check for first table-id in data path
 
-		//fe.set_match().set_in_port(cdptlink::get_link(ifindex).get_ofp_port_no());
+		// redirect ICMPv6 packets to control plane
+		fe.set_match().clear();
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
+		fe.set_match().set_ip_proto(rofl::ficmpv6frame::ICMPV6_IP_PROTO);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
