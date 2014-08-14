@@ -34,9 +34,9 @@ cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 	redirect_ipv6_multicast();
 	set_forwarding(true);
 
-	for (std::map<uint32_t, clink>::iterator
+	for (std::map<uint32_t, clink*>::iterator
 			it = links.begin(); it != links.end(); ++it) {
-		it->second.handle_dpt_open(dpt);
+		it->second->handle_dpt_open(dpt);
 	}
 	for (std::map<unsigned int, croutetable>::iterator
 			it = rtables.begin(); it != rtables.end(); ++it) {
@@ -63,9 +63,9 @@ cipcore::handle_dpt_close(rofl::crofdpt& dpt)
 			it = rtables.begin(); it != rtables.end(); ++it) {
 		it->second.handle_dpt_close(dpt);
 	}
-	for (std::map<uint32_t, clink>::iterator
+	for (std::map<uint32_t, clink*>::iterator
 			it = links.begin(); it != links.end(); ++it) {
-		it->second.handle_dpt_close(dpt);
+		it->second->handle_dpt_close(dpt);
 	}
 }
 

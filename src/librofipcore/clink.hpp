@@ -87,50 +87,6 @@ public:
 	virtual
 	~clink();
 
-	/**
-	 *
-	 */
-	clink(const clink& link) { *this = link; };
-
-	/**
-	 *
-	 */
-	clink&
-	operator= (const clink& link) {
-		if (this == &link)
-			return *this;
-
-		state 		= link.state;
-		ofp_port_no = link.ofp_port_no;
-		devname 	= link.devname;
-		hwaddr 		= link.hwaddr;
-		ifindex 	= link.ifindex;
-		dptid 		= link.dptid;
-		in_ofp_table_id = link.in_ofp_table_id;
-		tapdev 		= NULL;
-		flags		= link.flags;
-
-		clear_addrs();
-		for (std::map<uint32_t, caddr_in4>::const_iterator
-				it = link.addrs_in4.begin(); it != link.addrs_in4.end(); ++it) {
-			add_addr_in4(it->first) = it->second;
-		}
-		for (std::map<uint32_t, caddr_in6>::const_iterator
-				it = link.addrs_in6.begin(); it != link.addrs_in6.end(); ++it) {
-			add_addr_in6(it->first) = it->second;
-		}
-		clear_neighs();
-		for (std::map<uint32_t, cneigh_in4>::const_iterator
-				it = link.neighs_in4.begin(); it != link.neighs_in4.end(); ++it) {
-			add_neigh_in4(it->first) = it->second;
-		}
-		for (std::map<uint32_t, cneigh_in6>::const_iterator
-				it = link.neighs_in6.begin(); it != link.neighs_in6.end(); ++it) {
-			add_neigh_in6(it->first) = it->second;
-		}
-		return *this;
-	};
-
 public:
 
 	/**
@@ -213,11 +169,11 @@ public:
 		if (addrs_in4.find(adindex) != addrs_in4.end()) {
 			addrs_in4.erase(adindex);
 		}
-		addrs_in4[adindex] = caddr_in4(ifindex, adindex, dptid, in_ofp_table_id);
+		addrs_in4[adindex] = new caddr_in4(ifindex, adindex, dptid, in_ofp_table_id);
 		if (STATE_ATTACHED == state) {
-			addrs_in4[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			addrs_in4[adindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
-		return addrs_in4[adindex];
+		return *(addrs_in4[adindex]);
 	};
 
 	/**
@@ -226,12 +182,12 @@ public:
 	caddr_in4&
 	set_addr_in4(unsigned int adindex) {
 		if (addrs_in4.find(adindex) == addrs_in4.end()) {
-			addrs_in4[adindex] = caddr_in4(ifindex, adindex, dptid, in_ofp_table_id);
+			addrs_in4[adindex] = new caddr_in4(ifindex, adindex, dptid, in_ofp_table_id);
 			if (STATE_ATTACHED == state) {
-				addrs_in4[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				addrs_in4[adindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		}
-		return addrs_in4[adindex];
+		return *(addrs_in4[adindex]);
 	};
 
 	/**
@@ -242,7 +198,7 @@ public:
 		if (addrs_in4.find(adindex) == addrs_in4.end()) {
 			throw eAddrNotFound("clink::get_addr_in4() adindex not found");
 		}
-		return addrs_in4.at(adindex);
+		return *(addrs_in4.at(adindex));
 	};
 
 	/**
@@ -253,6 +209,7 @@ public:
 		if (addrs_in4.find(adindex) == addrs_in4.end()) {
 			return;
 		}
+		delete addrs_in4[adindex];;
 		addrs_in4.erase(adindex);
 	};
 
@@ -273,11 +230,11 @@ public:
 		if (addrs_in6.find(adindex) != addrs_in6.end()) {
 			addrs_in6.erase(adindex);
 		}
-		addrs_in6[adindex] = caddr_in6(ifindex, adindex, dptid, in_ofp_table_id);
+		addrs_in6[adindex] = new caddr_in6(ifindex, adindex, dptid, in_ofp_table_id);
 		if (STATE_ATTACHED == state) {
-			addrs_in6[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			addrs_in6[adindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
-		return addrs_in6[adindex];
+		return *(addrs_in6[adindex]);
 	};
 
 	/**
@@ -286,12 +243,12 @@ public:
 	caddr_in6&
 	set_addr_in6(unsigned int adindex) {
 		if (addrs_in6.find(adindex) == addrs_in6.end()) {
-			addrs_in6[adindex] = caddr_in6(ifindex, adindex, dptid, in_ofp_table_id);
+			addrs_in6[adindex] = new caddr_in6(ifindex, adindex, dptid, in_ofp_table_id);
 			if (STATE_ATTACHED == state) {
-				addrs_in6[adindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				addrs_in6[adindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		}
-		return addrs_in6[adindex];
+		return *(addrs_in6[adindex]);
 	};
 
 	/**
@@ -302,7 +259,7 @@ public:
 		if (addrs_in6.find(adindex) == addrs_in6.end()) {
 			throw eAddrNotFound("clink::get_addr_in6() adindex not found");
 		}
-		return addrs_in6.at(adindex);
+		return *(addrs_in6.at(adindex));
 	};
 
 	/**
@@ -313,6 +270,7 @@ public:
 		if (addrs_in6.find(adindex) == addrs_in6.end()) {
 			return;
 		}
+		delete addrs_in6[adindex];
 		addrs_in6.erase(adindex);
 	};
 
@@ -340,11 +298,11 @@ public:
 		if (neighs_in4.find(nbindex) != neighs_in4.end()) {
 			neighs_in4.erase(nbindex);
 		}
-		neighs_in4[nbindex] = cneigh_in4(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+		neighs_in4[nbindex] = new cneigh_in4(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
 		if (STATE_ATTACHED == state) {
-			neighs_in4[nbindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			neighs_in4[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
-		return neighs_in4[nbindex];
+		return *(neighs_in4[nbindex]);
 	};
 
 	/**
@@ -353,12 +311,12 @@ public:
 	cneigh_in4&
 	set_neigh_in4(unsigned int nbindex) {
 		if (neighs_in4.find(nbindex) == neighs_in4.end()) {
-			neighs_in4[nbindex] = cneigh_in4(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+			neighs_in4[nbindex] = new cneigh_in4(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
 			if (STATE_ATTACHED == state) {
-				neighs_in4[nbindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				neighs_in4[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		}
-		return neighs_in4[nbindex];
+		return *(neighs_in4[nbindex]);
 	};
 
 	/**
@@ -369,7 +327,7 @@ public:
 		if (neighs_in4.find(nbindex) == neighs_in4.end()) {
 			throw eNeighNotFound("clink::get_neigh_in4() nbindex not found");
 		}
-		return neighs_in4.at(nbindex);
+		return *(neighs_in4.at(nbindex));
 	};
 
 	/**
@@ -380,6 +338,7 @@ public:
 		if (neighs_in4.find(nbindex) == neighs_in4.end()) {
 			return;
 		}
+		delete neighs_in4[nbindex];
 		neighs_in4.erase(nbindex);
 	};
 
@@ -396,12 +355,12 @@ public:
 	 */
 	const cneigh_in4&
 	get_neigh_in4(const rofl::caddress_in4& dst) const {
-		std::map<unsigned int, cneigh_in4>::const_iterator it;
+		std::map<unsigned int, cneigh_in4*>::const_iterator it;
 		if ((it = find_if(neighs_in4.begin(), neighs_in4.end(),
 				cneigh_in4_find_by_dst(dst))) == neighs_in4.end()) {
 			throw eNeighNotFound("clink::get_neigh_in4() dst not found");
 		}
-		return it->second;
+		return *(it->second);
 	};
 
 	/**
@@ -412,11 +371,11 @@ public:
 		if (neighs_in6.find(nbindex) != neighs_in6.end()) {
 			neighs_in6.erase(nbindex);
 		}
-		neighs_in6[nbindex] = cneigh_in6(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+		neighs_in6[nbindex] = new cneigh_in6(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
 		if (STATE_ATTACHED == state) {
-			neighs_in6[nbindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			neighs_in6[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
-		return neighs_in6[nbindex];
+		return *(neighs_in6[nbindex]);
 	};
 
 	/**
@@ -425,12 +384,12 @@ public:
 	cneigh_in6&
 	set_neigh_in6(unsigned int nbindex) {
 		if (neighs_in6.find(nbindex) == neighs_in6.end()) {
-			neighs_in6[nbindex] = cneigh_in6(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+			neighs_in6[nbindex] = new cneigh_in6(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
 			if (STATE_ATTACHED == state) {
-				neighs_in6[nbindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				neighs_in6[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		}
-		return neighs_in6[nbindex];
+		return *(neighs_in6[nbindex]);
 	};
 
 	/**
@@ -441,7 +400,7 @@ public:
 		if (neighs_in6.find(nbindex) == neighs_in6.end()) {
 			throw eNeighNotFound("clink::get_neigh_in4() nbindex not found");
 		}
-		return neighs_in6.at(nbindex);
+		return *(neighs_in6.at(nbindex));
 	};
 
 	/**
@@ -452,6 +411,7 @@ public:
 		if (neighs_in6.find(nbindex) == neighs_in6.end()) {
 			return;
 		}
+		delete neighs_in6[nbindex];
 		neighs_in6.erase(nbindex);
 	};
 
@@ -468,12 +428,12 @@ public:
 	 */
 	const cneigh_in6&
 	get_neigh_in6(const rofl::caddress_in6& dst) const {
-		std::map<unsigned int, cneigh_in6>::const_iterator it;
+		std::map<unsigned int, cneigh_in6*>::const_iterator it;
 		if ((it = find_if(neighs_in6.begin(), neighs_in6.end(),
 				cneigh_in6_find_by_dst(dst))) == neighs_in6.end()) {
 			throw eNeighNotFound("clink::get_neigh_in4() dst not found");
 		}
-		return it->second;
+		return *(it->second);
 	};
 
 public:
@@ -542,21 +502,21 @@ public:
 		}
 #endif
 		rofcore::indent i(2);
-		for (std::map<unsigned int, caddr_in4>::const_iterator
+		for (std::map<unsigned int, caddr_in4*>::const_iterator
 				it = link.addrs_in4.begin(); it != link.addrs_in4.end(); ++it) {
-			os << it->second;
+			os << *(it->second);
 		}
-		for (std::map<unsigned int, caddr_in6>::const_iterator
+		for (std::map<unsigned int, caddr_in6*>::const_iterator
 				it = link.addrs_in6.begin(); it != link.addrs_in6.end(); ++it) {
-			os << it->second;
+			os << *(it->second);
 		}
-		for (std::map<unsigned int, cneigh_in4>::const_iterator
+		for (std::map<unsigned int, cneigh_in4*>::const_iterator
 				it = link.neighs_in4.begin(); it != link.neighs_in4.end(); ++it) {
-			os << it->second;
+			os << *(it->second);
 		}
-		for (std::map<unsigned int, cneigh_in6>::const_iterator
+		for (std::map<unsigned int, cneigh_in6*>::const_iterator
 				it = link.neighs_in6.begin(); it != link.neighs_in6.end(); ++it) {
-			os << it->second;
+			os << *(it->second);
 		}
 		return os;
 	};
@@ -569,8 +529,8 @@ public:
 		uint32_t ofp_port_no;
 	public:
 		clink_by_ofp_port_no(uint32_t ofp_port_no) : ofp_port_no(ofp_port_no) {};
-		bool operator() (const std::pair<unsigned int, clink>& p) {
-			return (ofp_port_no == p.second.ofp_port_no);
+		bool operator() (const std::pair<unsigned int, clink*>& p) {
+			return (ofp_port_no == p.second->ofp_port_no);
 		};
 	};
 
@@ -582,8 +542,8 @@ public:
 		int ifindex;
 	public:
 		clink_by_ifindex(int ifindex) : ifindex(ifindex) {};
-		bool operator() (const std::pair<unsigned int, clink>& p) {
-			return (ifindex == p.second.ifindex);
+		bool operator() (const std::pair<unsigned int, clink*>& p) {
+			return (ifindex == p.second->ifindex);
 		};
 	};
 
@@ -595,8 +555,8 @@ public:
 		std::string devname;
 	public:
 		clink_by_devname(const std::string& devname) : devname(devname) {};
-		bool operator() (const std::pair<unsigned int, clink>& p) {
-			return (devname == p.second.devname);
+		bool operator() (const std::pair<unsigned int, clink*>& p) {
+			return (devname == p.second->devname);
 		};
 	};
 
@@ -623,10 +583,10 @@ private:
 
 	std::bitset<32>						flags;
 
-	std::map<unsigned int, caddr_in4> 	addrs_in4;		// key: addr ofp port-no
-	std::map<unsigned int, caddr_in6> 	addrs_in6;		// key: addr ofp port-no
-	std::map<unsigned int, cneigh_in4> 	neighs_in4;		// key: neigh ofp port-no
-	std::map<unsigned int, cneigh_in6> 	neighs_in6;		// key: neigh ofp port-no
+	std::map<unsigned int, caddr_in4*> 	addrs_in4;		// key: addr ofp port-no
+	std::map<unsigned int, caddr_in6*> 	addrs_in6;		// key: addr ofp port-no
+	std::map<unsigned int, cneigh_in4*>	neighs_in4;		// key: neigh ofp port-no
+	std::map<unsigned int, cneigh_in6*>	neighs_in6;		// key: neigh ofp port-no
 };
 
 }; // end of namespace

@@ -263,8 +263,8 @@ class cneigh_in4_find_by_dst {
 public:
 	cneigh_in4_find_by_dst(const rofl::caddress_in4& dst) :
 		dst(dst) {};
-	bool operator() (const std::pair<unsigned int, cneigh_in4>& p) const {
-		return (p.second.get_crtneigh_in4().get_dst() == dst);
+	bool operator() (const std::pair<unsigned int, cneigh_in4*>& p) const {
+		return (p.second->get_crtneigh_in4().get_dst() == dst);
 	};
 };
 
@@ -354,8 +354,8 @@ class cneigh_in6_find_by_dst {
 public:
 	cneigh_in6_find_by_dst(const rofl::caddress_in6& dst) :
 		dst(dst) {};
-	bool operator() (const std::pair<unsigned int, cneigh_in6>& p) const {
-		return (p.second.get_crtneigh_in6().get_dst() == dst);
+	bool operator() (const std::pair<unsigned int, cneigh_in6*>& p) const {
+		return (p.second->get_crtneigh_in6().get_dst() == dst);
 	};
 };
 

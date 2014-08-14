@@ -62,11 +62,9 @@ public:
 	 */
 	void
 	clear_links() {
-		if (STATE_ATTACHED == state) {
-			for (std::map<uint32_t, clink>::iterator
-					it = links.begin(); it != links.end(); ++it) {
-				it->second.handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
-			}
+		for (std::map<uint32_t, clink*>::iterator
+				it = links.begin(); it != links.end(); ++it) {
+			delete it->second;
 		}
 		links.clear();
 	};
@@ -79,13 +77,13 @@ public:
 		if (links.find(ofp_port_no) != links.end()) {
 			links.erase(ofp_port_no);
 		}
-		links[ofp_port_no] = clink(dptid, ofp_port_no, devname, hwaddr, in_ofp_table_id);
-		links[ofp_port_no].tap_open();
+		links[ofp_port_no] = new clink(dptid, ofp_port_no, devname, hwaddr, in_ofp_table_id);
+		links[ofp_port_no]->tap_open();
 		if (STATE_ATTACHED == state) {
-			links[ofp_port_no].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			links[ofp_port_no]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
 		hook_port_up(devname);
-		return links[ofp_port_no];
+		return *(links[ofp_port_no]);
 	};
 
 	/**
@@ -94,14 +92,14 @@ public:
 	clink&
 	set_link(uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr) {
 		if (links.find(ofp_port_no) == links.end()) {
-			links[ofp_port_no] = clink(dptid, ofp_port_no, devname, hwaddr, in_ofp_table_id);
-			links[ofp_port_no].tap_open();
+			links[ofp_port_no] = new clink(dptid, ofp_port_no, devname, hwaddr, in_ofp_table_id);
+			links[ofp_port_no]->tap_open();
 			if (STATE_ATTACHED == state) {
-				links[ofp_port_no].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				links[ofp_port_no]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 			hook_port_up(devname);
 		}
-		return links[ofp_port_no];
+		return *(links[ofp_port_no]);
 	};
 
 	/**
@@ -112,7 +110,7 @@ public:
 		if (links.find(ofp_port_no) == links.end()) {
 			throw eLinkNotFound("cipcore::set_link() ofp-port-no not found");
 		}
-		return links[ofp_port_no];
+		return *(links[ofp_port_no]);
 	};
 
 	/**
@@ -120,12 +118,12 @@ public:
 	 */
 	clink&
 	set_link_by_ifindex(int ifindex) {
-		std::map<uint32_t, clink>::iterator it;
+		std::map<uint32_t, clink*>::iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_ifindex(ifindex))) == links.end()) {
 			throw eLinkNotFound("cipcore::set_link_by_ifindex() ifindex not found");
 		}
-		return it->second;
+		return *(it->second);
 	};
 
 	/**
@@ -136,7 +134,7 @@ public:
 		if (links.find(ofp_port_no) == links.end()) {
 			throw eLinkNotFound("cipcore::get_link() ofp-port-no not found");
 		}
-		return links.at(ofp_port_no);
+		return *(links.at(ofp_port_no));
 	};
 
 	/**
@@ -149,8 +147,9 @@ public:
 		}
 		hook_port_down(get_link(ofp_port_no).get_devname());
 		if (STATE_ATTACHED == state) {
-			links[ofp_port_no].handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			links[ofp_port_no]->handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
 		}
+		delete links[ofp_port_no];
 		links.erase(ofp_port_no);
 	};
 
@@ -167,23 +166,12 @@ public:
 	 */
 	const clink&
 	get_link_by_ofp_port_no(uint32_t ofp_port_no) const {
-		std::map<uint32_t, clink>::const_iterator it;
-		for (std::map<uint32_t, clink>::const_iterator
-				it = links.begin(); it != links.end(); ++it) {
-			if (it->second.get_ofp_port_no() == ofp_port_no) {
-				return it->second;
-			}
-		}
-		throw eLinkNotFound("cipcore::get_link_by_ofp_port_no() ofp-port-no not found");
-#if 0
-		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
-		std::map<uint32_t, clink>::const_iterator it;
+		std::map<uint32_t, clink*>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_ofp_port_no(ofp_port_no))) == links.end()) {
 			throw eLinkNotFound("cipcore::get_link_by_ofp_port_no() ofp-port-no not found");
 		}
-		return it->second;
-#endif
+		return *(it->second);
 	};
 
 	/**
@@ -191,23 +179,12 @@ public:
 	 */
 	bool
 	has_link_by_ofp_port_no(uint32_t ofp_port_no) const {
-		std::map<uint32_t, clink>::const_iterator it;
-		for (std::map<uint32_t, clink>::const_iterator
-				it = links.begin(); it != links.end(); ++it) {
-			if (it->second.get_ofp_port_no() == ofp_port_no) {
-				return true;
-			}
-		}
-		return false;
-#if 0
-		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
-		std::map<uint32_t, clink>::const_iterator it;
+		std::map<uint32_t, clink*>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_ofp_port_no(ofp_port_no))) == links.end()) {
 			return false;
 		}
 		return true;
-#endif
 	};
 
 	/**
@@ -215,23 +192,12 @@ public:
 	 */
 	const clink&
 	get_link_by_ifindex(int ifindex) const {
-		std::map<uint32_t, clink>::const_iterator it;
-		for (std::map<uint32_t, clink>::const_iterator
-				it = links.begin(); it != links.end(); ++it) {
-			if (it->second.get_ifindex() == ifindex) {
-				return it->second;
-			}
-		}
-		throw eLinkNotFound("cipcore::get_link_by_ifindex() ifindex not found");
-#if 0
-		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
-		std::map<uint32_t, clink>::const_iterator it;
+		std::map<uint32_t, clink*>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_ifindex(ifindex))) == links.end()) {
 			throw eLinkNotFound("cipcore::get_link_by_ifindex() ifindex not found");
 		}
-		return it->second;
-#endif
+		return *(it->second);
 	};
 
 	/**
@@ -239,22 +205,12 @@ public:
 	 */
 	bool
 	has_link_by_ifindex(int ifindex) const {
-		std::map<uint32_t, clink>::const_iterator it;
-		for (std::map<uint32_t, clink>::const_iterator
-				it = links.begin(); it != links.end(); ++it) {
-			if (it->second.get_ifindex() == ifindex) {
-				return true;
-			}
-		}
-		return false;
-#if 0
-		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
+		std::map<uint32_t, clink*>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_ifindex(ifindex))) == links.end()) {
 			return false;
 		}
 		return true;
-#endif
 	};
 
 	/**
@@ -262,23 +218,12 @@ public:
 	 */
 	const clink&
 	get_link_by_devname(const std::string& devname) const {
-		std::map<uint32_t, clink>::const_iterator it;
-		for (std::map<uint32_t, clink>::const_iterator
-				it = links.begin(); it != links.end(); ++it) {
-			if (it->second.get_devname() == devname) {
-				return it->second;
-			}
-		}
-		throw eLinkNotFound("cipcore::get_link_by_devname() devname not found");
-#if 0
-		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
-		std::map<uint32_t, clink>::const_iterator it;
+		std::map<uint32_t, clink*>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_devname(devname))) == links.end()) {
 			throw eLinkNotFound("cipcore::get_link_by_devname() devname not found");
 		}
-		return it->second;
-#endif
+		return *(it->second);
 	};
 
 	/**
@@ -286,23 +231,12 @@ public:
 	 */
 	bool
 	has_link_by_devname(const std::string& devname) const {
-		std::map<uint32_t, clink>::const_iterator it;
-		for (std::map<uint32_t, clink>::const_iterator
-				it = links.begin(); it != links.end(); ++it) {
-			if (it->second.get_devname() == devname) {
-				return true;
-			}
-		}
-		return false;
-#if 0
-		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
-		std::map<uint32_t, clink>::const_iterator it;
+		std::map<uint32_t, clink*>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_devname(devname))) == links.end()) {
 			return false;
 		}
 		return true;
-#endif
 	};
 
 public:
@@ -387,9 +321,9 @@ public:
 			os << rofcore::indent(2) << ipcore.dptid;
 		}
 		rofcore::indent i(2);
-		for (std::map<unsigned int, clink>::const_iterator
+		for (std::map<unsigned int, clink*>::const_iterator
 				it = ipcore.links.begin(); it != ipcore.links.end(); ++it) {
-			os << it->second;
+			os << *(it->second);
 		}
 		for (std::map<unsigned int, croutetable>::const_iterator
 				it = ipcore.rtables.begin(); it != ipcore.rtables.end(); ++it) {
@@ -414,7 +348,7 @@ private:
 
 	ofp_core_state_t					state;
 	rofl::cdptid 						dptid;
-	std::map<uint32_t, clink> 			links;	// key: ofp port-no, value: clink
+	std::map<uint32_t, clink*> 			links;	// key: ofp port-no, value: clink
 	std::map<unsigned int, croutetable>	rtables;
 	uint8_t								in_ofp_table_id;
 
