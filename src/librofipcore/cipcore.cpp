@@ -509,7 +509,7 @@ cipcore::neigh_in4_updated(unsigned int ifindex, uint16_t nbindex)
 	try {
 
 		if (not has_link_by_ifindex(ifindex)) {
-			rofcore::logging::error << "[cipcore] neigh_in4 create: link ifindex not found: " << ifindex << std::endl;
+			rofcore::logging::error << "[cipcore] neigh_in4 update: link ifindex not found: " << ifindex << std::endl;
 			return;
 		}
 
@@ -519,7 +519,7 @@ cipcore::neigh_in4_updated(unsigned int ifindex, uint16_t nbindex)
 		}
 
 	} catch (std::runtime_error& e) {
-		rofcore::logging::error << "[cipcore] neigh_in4 create: exception " << e.what() << std::endl;
+		rofcore::logging::error << "[cipcore] neigh_in4 update: exception " << e.what() << std::endl;
 	}
 }
 

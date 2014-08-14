@@ -168,11 +168,22 @@ public:
 	const clink&
 	get_link_by_ofp_port_no(uint32_t ofp_port_no) const {
 		std::map<uint32_t, clink>::const_iterator it;
+		for (std::map<uint32_t, clink>::const_iterator
+				it = links.begin(); it != links.end(); ++it) {
+			if (it->second.get_ofp_port_no() == ofp_port_no) {
+				return it->second;
+			}
+		}
+		throw eLinkNotFound("cipcore::get_link_by_ofp_port_no() ofp-port-no not found");
+#if 0
+		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
+		std::map<uint32_t, clink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_ofp_port_no(ofp_port_no))) == links.end()) {
 			throw eLinkNotFound("cipcore::get_link_by_ofp_port_no() ofp-port-no not found");
 		}
 		return it->second;
+#endif
 	};
 
 	/**
@@ -181,11 +192,22 @@ public:
 	bool
 	has_link_by_ofp_port_no(uint32_t ofp_port_no) const {
 		std::map<uint32_t, clink>::const_iterator it;
+		for (std::map<uint32_t, clink>::const_iterator
+				it = links.begin(); it != links.end(); ++it) {
+			if (it->second.get_ofp_port_no() == ofp_port_no) {
+				return true;
+			}
+		}
+		return false;
+#if 0
+		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
+		std::map<uint32_t, clink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_ofp_port_no(ofp_port_no))) == links.end()) {
 			return false;
 		}
 		return true;
+#endif
 	};
 
 	/**
@@ -194,11 +216,22 @@ public:
 	const clink&
 	get_link_by_ifindex(int ifindex) const {
 		std::map<uint32_t, clink>::const_iterator it;
+		for (std::map<uint32_t, clink>::const_iterator
+				it = links.begin(); it != links.end(); ++it) {
+			if (it->second.get_ifindex() == ifindex) {
+				return it->second;
+			}
+		}
+		throw eLinkNotFound("cipcore::get_link_by_ifindex() ifindex not found");
+#if 0
+		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
+		std::map<uint32_t, clink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_ifindex(ifindex))) == links.end()) {
 			throw eLinkNotFound("cipcore::get_link_by_ifindex() ifindex not found");
 		}
 		return it->second;
+#endif
 	};
 
 	/**
@@ -207,11 +240,21 @@ public:
 	bool
 	has_link_by_ifindex(int ifindex) const {
 		std::map<uint32_t, clink>::const_iterator it;
+		for (std::map<uint32_t, clink>::const_iterator
+				it = links.begin(); it != links.end(); ++it) {
+			if (it->second.get_ifindex() == ifindex) {
+				return true;
+			}
+		}
+		return false;
+#if 0
+		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_ifindex(ifindex))) == links.end()) {
 			return false;
 		}
 		return true;
+#endif
 	};
 
 	/**
@@ -220,11 +263,22 @@ public:
 	const clink&
 	get_link_by_devname(const std::string& devname) const {
 		std::map<uint32_t, clink>::const_iterator it;
+		for (std::map<uint32_t, clink>::const_iterator
+				it = links.begin(); it != links.end(); ++it) {
+			if (it->second.get_devname() == devname) {
+				return it->second;
+			}
+		}
+		throw eLinkNotFound("cipcore::get_link_by_devname() devname not found");
+#if 0
+		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
+		std::map<uint32_t, clink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_devname(devname))) == links.end()) {
 			throw eLinkNotFound("cipcore::get_link_by_devname() devname not found");
 		}
 		return it->second;
+#endif
 	};
 
 	/**
@@ -233,11 +287,22 @@ public:
 	bool
 	has_link_by_devname(const std::string& devname) const {
 		std::map<uint32_t, clink>::const_iterator it;
+		for (std::map<uint32_t, clink>::const_iterator
+				it = links.begin(); it != links.end(); ++it) {
+			if (it->second.get_devname() == devname) {
+				return true;
+			}
+		}
+		return false;
+#if 0
+		// this creates temporary clones of clink instances and closes tap interfaces when destroying them again
+		std::map<uint32_t, clink>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_devname(devname))) == links.end()) {
 			return false;
 		}
 		return true;
+#endif
 	};
 
 public:
