@@ -38,14 +38,18 @@ public:
 	/**
 	 *
 	 */
-	croute() : state(STATE_DETACHED), rttblid(0), rtindex(0), table_id(0) {};
+	croute() :
+		state(STATE_DETACHED), rttblid(0), rtindex(0),
+		fwd_ofp_table_id(1), out_ofp_table_id(2) {};
 
 	/**
 	 *
 	 */
 	croute(
-			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid, uint8_t table_id) :
-				state(STATE_DETACHED), rttblid(rttblid), rtindex(rtindex), dptid(dptid), table_id(table_id) {};
+			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid,
+			uint8_t fwd_ofp_table_id = 1, uint8_t out_ofp_table_id = 2) :
+				state(STATE_DETACHED), rttblid(rttblid), rtindex(rtindex), dptid(dptid),
+				fwd_ofp_table_id(fwd_ofp_table_id), out_ofp_table_id(out_ofp_table_id) {};
 
 	/**
 	 *
@@ -63,7 +67,8 @@ public:
 		dptid			= route.dptid;
 		rttblid			= route.rttblid;
 		rtindex			= route.rtindex;
-		table_id		= route.table_id;
+		fwd_ofp_table_id		= route.fwd_ofp_table_id;
+		out_ofp_table_id		= route.out_ofp_table_id;
 		clear();
 		for (std::map<uint32_t, cnexthop_in4>::const_iterator
 				it = route.nexthops_in4.begin(); it != route.nexthops_in4.end(); ++it) {
@@ -117,7 +122,7 @@ public:
 	 *
 	 */
 	uint8_t
-	get_table_id() const { return table_id; };
+	get_table_id() const { return fwd_ofp_table_id; };
 
 public:
 
@@ -259,7 +264,8 @@ protected:
 	uint8_t					 	rttblid;
 	unsigned int			 	rtindex;
 	rofl::cdptid				dptid;
-	uint8_t						table_id;	// openflow table-id
+	uint8_t						fwd_ofp_table_id;	// openflow table-id for forwarding stage
+	uint8_t						out_ofp_table_id;	// openflow table-id for output stage
 
 	/* we make here one assumption: only one nexthop exists per neighbor and route
 	 * this should be valid under all circumstances
@@ -282,7 +288,8 @@ public:
 	 *
 	 */
 	croute_in4(
-			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid, uint8_t table_id);
+			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid,
+			uint8_t fwd_ofp_table_id, uint8_t out_ofp_table_id);
 
 	/**
 	 *
@@ -367,7 +374,8 @@ public:
 	 *
 	 */
 	croute_in6(
-			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid, uint8_t table_id);
+			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid,
+			uint8_t fwd_ofp_table_id, uint8_t out_ofp_table_id);
 
 	/**
 	 *

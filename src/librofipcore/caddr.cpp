@@ -1,5 +1,5 @@
 /*
- * dptaddr.cc
+ * caddr.cpp
  *
  *  Created on: 03.07.2013
  *      Author: andreas
@@ -16,7 +16,6 @@ void
 caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		switch (state) {
@@ -32,7 +31,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(in_ofp_table_id);			// FIXME: check for first table-id in data path
+		fe.set_table_id(in_ofp_table_id);
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		rofl::cindex index(0);
@@ -59,16 +58,16 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in4][flow_mod_add] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in4][flow_mod_add] unable to find data path" << std::endl << *this;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in4][flow_mod_add] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in4][flow_mod_add] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in4][flow_mod_add] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in4][flow_mod_add] unable to find address" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptaddr_in4][flow_mod_add] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in4][flow_mod_add] unexpected error" << std::endl << *this;
 
 	}
 }
@@ -79,13 +78,11 @@ void
 caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(in_ofp_table_id);			// FIXME: check for first table-id in data path
-
+		fe.set_table_id(in_ofp_table_id);
 
 		// redirect ARP packets to control plane
 		fe.set_match().clear();
@@ -104,16 +101,16 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in4][flow_mod_delete] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in4][flow_mod_delete] unable to find data path" << std::endl << *this;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in4][flow_mod_delete] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in4][flow_mod_delete] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in4][flow_mod_delete] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in4][flow_mod_delete] unable to find address" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptaddr_in4][flow_mod_delete] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in4][flow_mod_delete] unexpected error" << std::endl << *this;
 
 	}
 }
@@ -124,7 +121,6 @@ void
 caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		switch (state) {
@@ -140,7 +136,7 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(in_ofp_table_id);			// FIXME: check for first table-id in data path
+		fe.set_table_id(in_ofp_table_id);
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		rofl::cindex index(0);
@@ -161,16 +157,16 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in6][flow_mod_add] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in6][flow_mod_add] unable to find data path" << std::endl << *this;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in6][flow_mod_add] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in6][flow_mod_add] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in6][flow_mod_add] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in6][flow_mod_add] unable to find address" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptaddr_in6][flow_mod_add] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in6][flow_mod_add] unexpected error" << std::endl << *this;
 
 	}
 }
@@ -181,12 +177,11 @@ void
 caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(in_ofp_table_id);			// FIXME: check for first table-id in data path
+		fe.set_table_id(in_ofp_table_id);
 
 		// redirect ICMPv6 packets to control plane
 		fe.set_match().clear();
@@ -199,16 +194,16 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in6][flow_mod_delete] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in6][flow_mod_delete] unable to find data path" << std::endl << *this;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in6][flow_mod_delete] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in6][flow_mod_delete] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptaddr_in6][flow_mod_delete] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in6][flow_mod_delete] unable to find address" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptaddr_in6][flow_mod_delete] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[caddr_in6][flow_mod_delete] unexpected error" << std::endl << *this;
 
 	}
 }

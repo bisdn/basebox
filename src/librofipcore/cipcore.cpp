@@ -13,10 +13,11 @@ std::string cipcore::script_path_port_down 	= std::string("/var/lib/ipcore/port-
 
 /*static*/
 cipcore&
-cipcore::get_instance(const rofl::cdptid& dptid, uint8_t in_ofp_table_id)
+cipcore::get_instance(
+		const rofl::cdptid& dptid, uint8_t in_ofp_table_id, uint8_t fwd_ofp_table_id, uint8_t out_ofp_table_id)
 {
 	if (NULL == cipcore::sipcore) {
-		cipcore::sipcore = new cipcore(dptid, in_ofp_table_id);
+		cipcore::sipcore = new cipcore(dptid, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id);
 	}
 	return *(cipcore::sipcore);
 }
@@ -26,6 +27,8 @@ cipcore::get_instance(const rofl::cdptid& dptid, uint8_t in_ofp_table_id)
 void
 cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
+	state = STATE_ATTACHED;
+
 	dptid = dpt.get_dptid();
 
 	purge_dpt_entries();
@@ -55,6 +58,8 @@ cipcore::handle_dpt_close(rofl::crofdpt& dpt)
 	if (dptid != dpt.get_dptid()) {
 		return;
 	}
+
+	state = STATE_DETACHED;
 
 	// call external scripting hook
 	hook_dpt_detach();
@@ -127,9 +132,9 @@ cipcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::o
 
 		set_link(port_no).handle_packet_in(msg.get_packet());
 
+		// drop buffer on data path, if the packet was stored there, as it is consumed entirely by the underlying kernel
 		if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()) != msg.get_buffer_id()) {
-			rofl::openflow::cofactions actions(dpt.get_version());
-			dpt.send_packet_out_message(auxid, msg.get_buffer_id(), msg.get_match().get_in_port(), actions);
+			dpt.drop_buffer(auxid, msg.get_buffer_id());
 		}
 
 	} catch (rofcore::ePacketPoolExhausted& e) {

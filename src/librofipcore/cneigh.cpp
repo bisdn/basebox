@@ -42,8 +42,6 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 
-
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		switch (state) {
@@ -109,7 +107,6 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 				netlink.get_links().get_link(get_ifindex()).get_neighs_in4().get_neigh(get_nbindex());
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -177,8 +174,6 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 
-
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		switch (state) {
@@ -244,7 +239,6 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 				netlink.get_links().get_link(get_ifindex()).get_neighs_in6().get_neigh(get_nbindex());
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);

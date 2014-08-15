@@ -1,5 +1,5 @@
 /*
- * cdptneigh.h
+ * cneigh.hpp
  *
  *  Created on: 03.07.2013
  *      Author: andreas
@@ -36,7 +36,7 @@ public:
 	 *
 	 */
 	cneigh() :
-		state(STATE_DETACHED), ifindex(0), nbindex(0), table_id(0), of_port_no(0) {};
+		state(STATE_DETACHED), ifindex(0), nbindex(0), out_ofp_table_id(0) {};
 
 
 	/**
@@ -61,12 +61,11 @@ public:
 			cneigh const& neigh) {
 		if (this == &neigh)
 			return *this;
-		state		= neigh.state;
-		dptid	 	= neigh.dptid;
-		of_port_no 	= neigh.of_port_no;
-		ifindex	 	= neigh.ifindex;
-		nbindex	 	= neigh.nbindex;
-		table_id 	= neigh.table_id;
+		state				= neigh.state;
+		dptid	 			= neigh.dptid;
+		ifindex	 			= neigh.ifindex;
+		nbindex	 			= neigh.nbindex;
+		out_ofp_table_id 	= neigh.out_ofp_table_id;
 		return *this;
 	};
 
@@ -78,14 +77,12 @@ public:
 			int ifindex,
 			uint16_t nbindex,
 			const rofl::cdptid& dptid,
-			uint8_t table_id,
-			uint32_t of_port_no) :
+			uint8_t out_ofp_table_id) :
 				state(STATE_DETACHED),
 				ifindex(ifindex),
 				nbindex(nbindex),
 				dptid(dptid),
-				table_id(table_id),
-				of_port_no(of_port_no) {};
+				out_ofp_table_id(out_ofp_table_id) {};
 
 public:
 
@@ -104,26 +101,14 @@ public:
 	/**
 	 *
 	 */
-	uint32_t
-	get_ofp_port_no() const { return of_port_no; };
-
-	/**
-	 *
-	 */
-	void
-	set_ofp_port_no(uint32_t ofp_port_no) { this->of_port_no = ofp_port_no; };
-
-	/**
-	 *
-	 */
 	uint8_t
-	get_table_id() const { return table_id; };
+	get_table_id() const { return out_ofp_table_id; };
 
 	/**
 	 *
 	 */
 	void
-	set_table_id(uint8_t table_id) { this->table_id = table_id; };
+	set_table_id(uint8_t table_id) { this->out_ofp_table_id = table_id; };
 
 	/**
 	 *
@@ -153,10 +138,10 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, cneigh const& neigh) {
-		os << rofl::indent(0) << "<cdptneigh ";
+		os << rofl::indent(0) << "<cneigh ";
 		os << "nbindex: " << (unsigned int)neigh.nbindex << " ";
 		os << "ifindex: " << (unsigned int)neigh.ifindex << " ";
-		os << "tableid: " << (unsigned int)neigh.table_id << " ";
+		os << "tableid: " << (unsigned int)neigh.out_ofp_table_id << " ";
 		os << ">" << std::endl;
 		return os;
 	};
@@ -172,8 +157,7 @@ protected:
 	int							ifindex;
 	uint16_t					nbindex;
 	rofl::cdptid				dptid;
-	uint8_t 					table_id;
-	uint32_t					of_port_no;
+	uint8_t 					out_ofp_table_id;
 };
 
 
@@ -189,8 +173,8 @@ public:
 	 *
 	 */
 	cneigh_in4(
-			int ifindex, uint16_t nbindex, const rofl::cdptid& dptid, uint8_t table_id, uint32_t of_port_no) :
-				cneigh(ifindex, nbindex, dptid, table_id, of_port_no) {};
+			int ifindex, uint16_t nbindex, const rofl::cdptid& dptid, uint8_t out_ofp_table_id) :
+				cneigh(ifindex, nbindex, dptid, out_ofp_table_id) {};
 
 	/**
 	 *
@@ -203,10 +187,10 @@ public:
 	 */
 	cneigh_in4&
 	operator= (
-			const cneigh_in4& dptneigh) {
-		if (this == &dptneigh)
+			const cneigh_in4& neigh) {
+		if (this == &neigh)
 			return *this;
-		cneigh::operator= (dptneigh);
+		cneigh::operator= (neigh);
 		return *this;
 	};
 
@@ -249,7 +233,7 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cneigh_in4& neigh) {
-		os << rofcore::indent(0) << "<cdptneigh_in4 >" << std::endl;
+		os << rofcore::indent(0) << "<cneigh_in4 >" << std::endl;
 		rofcore::indent i(2);
 
 
@@ -281,8 +265,8 @@ public:
 	 *
 	 */
 	cneigh_in6(
-			int ifindex, uint16_t nbindex, const rofl::cdptid& dptid, uint8_t table_id, uint32_t of_port_no) :
-				cneigh(ifindex, nbindex, dptid, table_id, of_port_no) {};
+			int ifindex, uint16_t nbindex, const rofl::cdptid& dptid, uint8_t out_ofp_table_id) :
+				cneigh(ifindex, nbindex, dptid, out_ofp_table_id) {};
 
 	/**
 	 *
@@ -295,10 +279,10 @@ public:
 	 */
 	cneigh_in6&
 	operator= (
-			const cneigh_in6& dptneigh) {
-		if (this == &dptneigh)
+			const cneigh_in6& neigh) {
+		if (this == &neigh)
 			return *this;
-		cneigh::operator= (dptneigh);
+		cneigh::operator= (neigh);
 		return *this;
 	};
 
@@ -340,7 +324,7 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cneigh_in6& neigh) {
-		os << rofcore::indent(0) << "<cdptneigh_in6 >" << std::endl;
+		os << rofcore::indent(0) << "<cneigh_in6 >" << std::endl;
 		rofcore::indent i(2);
 
 

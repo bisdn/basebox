@@ -79,7 +79,9 @@ public:
 			uint32_t ofp_port_no,
 			const std::string& devname,
 			const rofl::caddress_ll& hwaddr,
-			uint8_t in_ofp_table_id);
+			uint8_t in_ofp_table_id,
+			uint8_t fwd_ofp_table_id,
+			uint8_t out_ofp_table_id);
 
 	/**
 	 *
@@ -209,7 +211,7 @@ public:
 		if (addrs_in4.find(adindex) == addrs_in4.end()) {
 			return;
 		}
-		delete addrs_in4[adindex];;
+		delete addrs_in4[adindex];
 		addrs_in4.erase(adindex);
 	};
 
@@ -298,7 +300,7 @@ public:
 		if (neighs_in4.find(nbindex) != neighs_in4.end()) {
 			neighs_in4.erase(nbindex);
 		}
-		neighs_in4[nbindex] = new cneigh_in4(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+		neighs_in4[nbindex] = new cneigh_in4(ifindex, nbindex, dptid, out_ofp_table_id);
 		if (STATE_ATTACHED == state) {
 			neighs_in4[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
@@ -311,7 +313,7 @@ public:
 	cneigh_in4&
 	set_neigh_in4(unsigned int nbindex) {
 		if (neighs_in4.find(nbindex) == neighs_in4.end()) {
-			neighs_in4[nbindex] = new cneigh_in4(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+			neighs_in4[nbindex] = new cneigh_in4(ifindex, nbindex, dptid, out_ofp_table_id);
 			if (STATE_ATTACHED == state) {
 				neighs_in4[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
@@ -371,7 +373,7 @@ public:
 		if (neighs_in6.find(nbindex) != neighs_in6.end()) {
 			neighs_in6.erase(nbindex);
 		}
-		neighs_in6[nbindex] = new cneigh_in6(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+		neighs_in6[nbindex] = new cneigh_in6(ifindex, nbindex, dptid, out_ofp_table_id);
 		if (STATE_ATTACHED == state) {
 			neighs_in6[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
@@ -384,7 +386,7 @@ public:
 	cneigh_in6&
 	set_neigh_in6(unsigned int nbindex) {
 		if (neighs_in6.find(nbindex) == neighs_in6.end()) {
-			neighs_in6[nbindex] = new cneigh_in6(ifindex, nbindex, dptid, /*table_id=*/3, get_ofp_port_no());
+			neighs_in6[nbindex] = new cneigh_in6(ifindex, nbindex, dptid, out_ofp_table_id);
 			if (STATE_ATTACHED == state) {
 				neighs_in6[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
@@ -574,6 +576,8 @@ private:
 	int					 		 		ifindex;		// ifindex for tapdevice
 	rofl::cdptid						dptid;
 	uint8_t								in_ofp_table_id;
+	uint8_t								fwd_ofp_table_id;
+	uint8_t								out_ofp_table_id;
 	rofcore::ctapdev					*tapdev;		// tap device emulating the mapped port on this system
 
 	enum cdptlink_flag_t {

@@ -45,7 +45,7 @@ public:
 	 *
 	 */
 	cnexthop() :
-				state(STATE_DETACHED), rttblid(0), rtindex(0), nhindex(0) {};
+				state(STATE_DETACHED), rttblid(0), rtindex(0), nhindex(0), out_ofp_table_id(2) {};
 
 
 	/**
@@ -68,11 +68,12 @@ public:
 			cnexthop const& nexthop) {
 		if (this == &nexthop)
 			return *this;
-		state		= nexthop.state;
-		dptid	 	= nexthop.dptid;
-		rttblid 	= nexthop.rttblid;
-		rtindex	 	= nexthop.rtindex;
-		nhindex	 	= nexthop.nhindex;
+		state				= nexthop.state;
+		dptid	 			= nexthop.dptid;
+		rttblid 			= nexthop.rttblid;
+		rtindex	 			= nexthop.rtindex;
+		nhindex	 			= nexthop.nhindex;
+		out_ofp_table_id 	= nexthop.out_ofp_table_id;
 		return *this;
 	};
 
@@ -80,12 +81,13 @@ public:
 	 *
 	 */
 	cnexthop(
-			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid) :
+			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid, uint8_t out_ofp_table_id = 2) :
 				state(STATE_DETACHED),
 				dptid(dptid),
 				rttblid(rttableid),
 				rtindex(rtindex),
-				nhindex(nhindex) {};
+				nhindex(nhindex),
+				out_ofp_table_id(out_ofp_table_id) {};
 
 public:
 
@@ -141,6 +143,7 @@ protected:
 	uint8_t						rttblid; // routing table id, not OFP related
 	unsigned int				rtindex;
 	unsigned int				nhindex;
+	uint8_t						out_ofp_table_id;
 };
 
 
@@ -176,8 +179,8 @@ public:
 	 *
 	 */
 	cnexthop_in4(
-			uint8_t rttblid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid) :
-				cnexthop(rttblid, rtindex, nhindex, dptid) {};
+			uint8_t rttblid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid, uint8_t out_ofp_table_id = 2) :
+				cnexthop(rttblid, rtindex, nhindex, dptid, out_ofp_table_id) {};
 
 public:
 
@@ -268,8 +271,8 @@ public:
 	 *
 	 */
 	cnexthop_in6(
-			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid) :
-				cnexthop(rttableid, rtindex, nhindex, dptid) {};
+			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid, uint8_t out_ofp_table_id = 2) :
+				cnexthop(rttableid, rtindex, nhindex, dptid, out_ofp_table_id) {};
 
 
 public:

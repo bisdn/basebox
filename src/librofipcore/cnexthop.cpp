@@ -69,7 +69,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(get_rttblid());
+		fe.set_table_id(out_ofp_table_id);
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -146,7 +146,7 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(get_rttblid());
+		fe.set_table_id(out_ofp_table_id);
 
 		/*
 		 * TODO: match sollte das Routingprefix sein, nicht nur die Adresse des Gateways!!!
@@ -233,7 +233,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(get_rttblid());
+		fe.set_table_id(out_ofp_table_id);
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
@@ -310,7 +310,7 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
-		fe.set_table_id(get_rttblid());
+		fe.set_table_id(out_ofp_table_id);
 
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rtr.get_ipv6_dst(), rtr.get_ipv6_mask());

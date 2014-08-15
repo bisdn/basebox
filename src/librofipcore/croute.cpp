@@ -10,8 +10,9 @@
 using namespace ipcore;
 
 croute_in4::croute_in4(
-		uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid, uint8_t table_id) :
-			croute(rttblid, rtindex, dptid, table_id)
+		uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid,
+		uint8_t fwd_ofp_table_id, uint8_t out_ofp_table_id) :
+			croute(rttblid, rtindex, dptid, fwd_ofp_table_id, out_ofp_table_id)
 {
 	const rofcore::crtroute_in4& rtroute =
 			rofcore::cnetlink::get_instance().get_routes_in4(rttblid).get_route(rtindex);
@@ -20,7 +21,7 @@ croute_in4::croute_in4(
 			it = rtroute.get_nexthops_in4().get_nexthops_in4().begin();
 					it != rtroute.get_nexthops_in4().get_nexthops_in4().end(); ++it) {
 		unsigned int nhindex = it->first;
-		add_nexthop_in4(nhindex) = cnexthop_in4(rttblid, rtindex, nhindex, dptid);
+		add_nexthop_in4(nhindex) = cnexthop_in4(rttblid, rtindex, nhindex, dptid, out_ofp_table_id);
 	}
 }
 
@@ -58,13 +59,13 @@ croute_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000 + (rtroute.get_prefixlen() << 8));
-		fm.set_table_id(1);	// FIXME: check for first table-id in data path
+		fm.set_table_id(fwd_ofp_table_id);
 		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fm.set_match().set_ipv4_dst(rtroute.get_ipv4_dst(), rtroute.get_ipv4_mask());
 
-		fm.set_instructions().add_inst_goto_table().set_table_id(2);
+		fm.set_instructions().add_inst_goto_table().set_table_id(out_ofp_table_id);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
@@ -114,7 +115,7 @@ croute_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000 + (rtroute.get_prefixlen() << 8));
-		fm.set_table_id(1);	// FIXME: check for first table-id in data path
+		fm.set_table_id(fwd_ofp_table_id);
 		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -146,8 +147,9 @@ croute_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 croute_in6::croute_in6(
-		uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid, uint8_t table_id) :
-			croute(rttblid, rtindex, dptid, table_id)
+		uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid,
+		uint8_t fwd_ofp_table_id, uint8_t out_ofp_table_id) :
+			croute(rttblid, rtindex, dptid, fwd_ofp_table_id, out_ofp_table_id)
 {
 	const rofcore::crtroute_in6& rtroute =
 			rofcore::cnetlink::get_instance().get_routes_in6(rttblid).get_route(rtindex);
@@ -156,7 +158,7 @@ croute_in6::croute_in6(
 			it = rtroute.get_nexthops_in6().get_nexthops_in6().begin();
 					it != rtroute.get_nexthops_in6().get_nexthops_in6().end(); ++it) {
 		unsigned int nhindex = it->first;
-		add_nexthop_in6(nhindex) = cnexthop_in6(rttblid, rtindex, nhindex, dptid);
+		add_nexthop_in6(nhindex) = cnexthop_in6(rttblid, rtindex, nhindex, dptid, out_ofp_table_id);
 	}
 }
 
@@ -194,13 +196,13 @@ croute_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000 + (rtroute.get_prefixlen() << 8));
-		fm.set_table_id(1);	// FIXME: check for first table-id in data path
+		fm.set_table_id(fwd_ofp_table_id);
 		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		fm.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fm.set_match().set_ipv6_dst(rtroute.get_ipv6_dst(), rtroute.get_ipv6_mask());
 
-		fm.set_instructions().add_inst_goto_table().set_table_id(2);
+		fm.set_instructions().add_inst_goto_table().set_table_id(out_ofp_table_id);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
@@ -250,7 +252,7 @@ croute_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000 + (rtroute.get_prefixlen() << 8));
-		fm.set_table_id(1);	// FIXME: check for first table-id in data path
+		fm.set_table_id(fwd_ofp_table_id);
 		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
 		fm.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);

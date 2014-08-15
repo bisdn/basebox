@@ -31,13 +31,18 @@ public:
 	/**
 	 *
 	 */
-	croutetable() : state(STATE_DETACHED), rttblid(0) {};
+	croutetable() :
+		state(STATE_DETACHED), rttblid(0),
+		in_ofp_table_id(0), fwd_ofp_table_id(1), out_ofp_table_id(2) {};
 
 	/**
 	 *
 	 */
-	croutetable(uint8_t rttblid, const rofl::cdptid& dptid) :
-		state(STATE_DETACHED), rttblid(rttblid), dptid(dptid) {};
+	croutetable(
+			uint8_t rttblid, const rofl::cdptid& dptid,
+			uint8_t in_ofp_table_id = 0, uint8_t fwd_ofp_table_id = 1, uint8_t out_ofp_table_id = 2) :
+		state(STATE_DETACHED), rttblid(rttblid), dptid(dptid),
+		in_ofp_table_id(in_ofp_table_id), fwd_ofp_table_id(fwd_ofp_table_id), out_ofp_table_id(out_ofp_table_id) {};
 
 	/**
 	 *
@@ -64,9 +69,11 @@ public:
 			const croutetable& rtable) {
 		if (this == &rtable)
 			return *this;
-		state = rtable.state;
-		dptid = rtable.dptid;
-		rttblid = rtable.rttblid;
+		state 				= rtable.state;
+		dptid 				= rtable.dptid;
+		rttblid 			= rtable.rttblid;
+		fwd_ofp_table_id 	= rtable.fwd_ofp_table_id;
+		out_ofp_table_id 	= rtable.out_ofp_table_id;
 		rib4.clear();
 		for (std::map<unsigned int, croute_in4>::const_iterator
 				it = rtable.rib4.begin(); it != rtable.rib4.end(); ++it) {
@@ -109,7 +116,7 @@ public:
 		if (rib4.find(rtindex) != rib4.end()) {
 			rib4.erase(rtindex);
 		}
-		rib4[rtindex] = croute_in4(rttblid, rtindex, dptid, /*table_id=*/0);
+		rib4[rtindex] = croute_in4(rttblid, rtindex, dptid, fwd_ofp_table_id, out_ofp_table_id);
 		if (STATE_ATTACHED == state) {
 			rib4[rtindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
@@ -123,12 +130,12 @@ public:
 	set_route_in4(
 			unsigned int rtindex) {
 		if (rib4.find(rtindex) == rib4.end()) {
-			rib4[rtindex] = croute_in4(rttblid, rtindex, dptid, /*table_id=*/0);
+			rib4[rtindex] = croute_in4(rttblid, rtindex, dptid, fwd_ofp_table_id, out_ofp_table_id);
 			if (STATE_ATTACHED == state) {
 				rib4[rtindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		}
-		return (rib4[rtindex] = croute_in4(rttblid, rtindex, dptid, /*table_id=*/0));
+		return (rib4[rtindex] = croute_in4(rttblid, rtindex, dptid, fwd_ofp_table_id, out_ofp_table_id));
 	};
 
 	/**
@@ -175,7 +182,7 @@ public:
 		if (rib6.find(rtindex) != rib6.end()) {
 			rib6.erase(rtindex);
 		}
-		rib6[rtindex] = croute_in6(rttblid, rtindex, dptid, /*table_id=*/0);
+		rib6[rtindex] = croute_in6(rttblid, rtindex, dptid, fwd_ofp_table_id, out_ofp_table_id);
 		if (STATE_ATTACHED == state) {
 			rib6[rtindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
@@ -189,12 +196,12 @@ public:
 	set_route_in6(
 			unsigned int rtindex) {
 		if (rib6.find(rtindex) == rib6.end()) {
-			rib6[rtindex] = croute_in6(rttblid, rtindex, dptid, /*table_id=*/0);
+			rib6[rtindex] = croute_in6(rttblid, rtindex, dptid, fwd_ofp_table_id, out_ofp_table_id);
 			if (STATE_ATTACHED == state) {
 				rib6[rtindex].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		}
-		return (rib6[rtindex] = croute_in6(rttblid, rtindex, dptid, /*table_id=*/0));
+		return (rib6[rtindex] = croute_in6(rttblid, rtindex, dptid, fwd_ofp_table_id, out_ofp_table_id));
 	};
 
 	/**
@@ -299,6 +306,9 @@ private:
 	enum ofp_state_t					state;
 	rofl::cdptid 						dptid;
 	uint8_t								rttblid;
+	uint8_t								in_ofp_table_id;
+	uint8_t								fwd_ofp_table_id;
+	uint8_t								out_ofp_table_id;
 	std::map<unsigned int, croute_in4> 	rib4;
 	std::map<unsigned int, croute_in6> 	rib6;
 };
