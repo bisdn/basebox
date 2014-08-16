@@ -16,7 +16,7 @@ croute_in4::croute_in4(
 {
 	const rofcore::crtroute_in4& rtroute =
 			rofcore::cnetlink::get_instance().get_routes_in4(rttblid).get_route(rtindex);
-
+	std::cerr << "UUU:" << rtroute;
 	for (std::map<unsigned int, rofcore::crtnexthop_in4>::const_iterator
 			it = rtroute.get_nexthops_in4().get_nexthops_in4().begin();
 					it != rtroute.get_nexthops_in4().get_nexthops_in4().end(); ++it) {

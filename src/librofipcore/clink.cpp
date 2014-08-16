@@ -72,22 +72,6 @@ clink::tap_open()
 		return;
 	}
 
-	try {
-		std::cerr << "TTT1: " << get_devname() << std::endl;
-	} catch (...) {
-		std::cerr << "UUU1" << std::endl;
-
-		return;
-	}
-
-	try {
-		std::cerr << "TTT2: " << get_hwaddr() << std::endl;
-	} catch (...) {
-		std::cerr << "UUU2" << std::endl;
-
-		return;
-	}
-
 	tapdev = new rofcore::ctapdev(this, get_devname(), get_hwaddr());
 
 	ifindex = tapdev->get_ifindex();

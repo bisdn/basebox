@@ -221,7 +221,7 @@ public:
 	 */
 	crtnexthop_in4(
 			struct rtnl_route *route,
-			struct rtnl_nexthop *nxthop) {
+			struct rtnl_nexthop *nxthop) : crtnexthop(route, nxthop) {
 
 		rtnl_route_get(route);
 
@@ -334,7 +334,7 @@ public:
 	 */
 	crtnexthop_in6(
 			struct rtnl_route *route,
-			struct rtnl_nexthop *nxthop) {
+			struct rtnl_nexthop *nxthop) : crtnexthop(route, nxthop) {
 
 		rtnl_route_get(route);
 

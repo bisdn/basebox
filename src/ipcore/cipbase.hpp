@@ -88,7 +88,7 @@ protected:
 		for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
 				it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
 			const rofl::openflow::cofport& port = *(it->second);
-			cipcore::get_instance().add_link(port.get_port_no(), port.get_name(), port.get_hwaddr());
+			cipcore::get_instance().set_link(port.get_port_no(), port.get_name(), port.get_hwaddr());
 		}
 		cipcore::get_instance().handle_dpt_open(dpt);
 	};
