@@ -145,7 +145,7 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 		rofl::openflow::cofgroupmod gm(dpt.get_version());
 		gm.set_command(rofl::openflow::OFPGC_DELETE);
-		gm.set_type(rofl::openflow::OFPGT_SELECT);
+		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
 		dpt.send_group_mod_message(rofl::cauxid(0), gm);
 
@@ -307,7 +307,7 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 		rofl::openflow::cofgroupmod gm(dpt.get_version());
 		gm.set_command(rofl::openflow::OFPGC_DELETE);
-		gm.set_type(rofl::openflow::OFPGT_SELECT);
+		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
 		dpt.send_group_mod_message(rofl::cauxid(0), gm);
 
