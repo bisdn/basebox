@@ -11,12 +11,11 @@ using namespace ethcore;
 
 void
 cvlan::handle_dpt_open(
-		rofl::crofdpt& dpt, uint32_t group_id)
+		rofl::crofdpt& dpt)
 {
 	try {
-		this->group_id = group_id;
-
 		state = STATE_ATTACHED;
+		group_id = dpt.get_next_idle_group_id();
 
 		// set flooding group entry itself
 		update_group_entry_buckets(rofl::openflow::OFPGC_ADD);
@@ -26,7 +25,7 @@ cvlan::handle_dpt_open(
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 
 		fm.set_command(rofl::openflow::OFPFC_ADD);
-		fm.set_table_id(2); // TODO: table_id
+		fm.set_table_id(dst_stage_table_id);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
@@ -63,8 +62,6 @@ cvlan::handle_dpt_close(
 		rofl::crofdpt& dpt)
 {
 	try {
-		state = STATE_DETACHED;
-
 		// send notification to all fib entries
 		for (std::map<rofl::caddress_ll, cfibentry>::iterator
 				it = fib.begin(); it != fib.end(); ++it) {
@@ -81,7 +78,7 @@ cvlan::handle_dpt_close(
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fm.set_table_id(2); // TODO: table_id
+		fm.set_table_id(dst_stage_table_id);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
@@ -100,7 +97,12 @@ cvlan::handle_dpt_close(
 		rofcore::logging::debug << "[cvlan][handle_dpt_close] control channel congested" << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
 		rofcore::logging::debug << "[cvlan][handle_dpt_close] control channel not connected" << std::endl;
+	} catch(...) {
+
 	}
+
+	state = STATE_DETACHED;
+	dpt.release_group_id(group_id); group_id = 0;
 }
 
 
@@ -117,7 +119,7 @@ cvlan::handle_packet_in(
 		const rofl::caddress_ll& lladdr = msg.get_match().get_eth_src_addr();
 		if (lladdr.is_multicast() || lladdr.is_null()) {
 			rofcore::logging::debug << "[cvlan][handle_packet_in] invalid source lladdr found" << std::endl << msg;
-			drop_buffer(auxid, msg.get_buffer_id());
+			dpt.drop_buffer(auxid, msg.get_buffer_id());
 			return;
 		}
 
@@ -125,10 +127,10 @@ cvlan::handle_packet_in(
 
 	} catch (rofl::openflow::eOxmNotFound& e) {
 		rofcore::logging::debug << "[cvlan][handle_packet_in] match(es) not found" << std::endl << msg;
-		drop_buffer(auxid, msg.get_buffer_id());
+		dpt.drop_buffer(auxid, msg.get_buffer_id());
 	} catch (eFibEntryPortNotMember& e) {
 		rofcore::logging::debug << "[cvlan][handle_packet_in] packet-in on invalid port" << std::endl << msg;
-		drop_buffer(auxid, msg.get_buffer_id());
+		dpt.drop_buffer(auxid, msg.get_buffer_id());
 	}
 }
 
@@ -201,25 +203,6 @@ cvlan::handle_error_message(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg)
 {
 	// TODO
-}
-
-
-
-void
-cvlan::drop_buffer(const rofl::cauxid& auxid, uint32_t buffer_id)
-{
-	try {
-		if (STATE_ATTACHED != state) {
-			return;
-		}
-
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid.get_dpid());
-		rofl::openflow::cofactions empty(dpt.get_version());
-		dpt.send_packet_out_message(auxid, buffer_id, rofl::openflow::OFPP_CONTROLLER, empty);
-
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::debug << "[cvlan][drop_buffer] unable to drop buffer, dpt not found" << std::endl;
-	}
 }
 
 

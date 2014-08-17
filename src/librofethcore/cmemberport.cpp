@@ -33,7 +33,7 @@ cmemberport::handle_dpt_open(
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
-		fm.set_table_id(0); // TODO: table_id
+		fm.set_table_id(in_stage_table_id);
 		fm.set_match().set_in_port(portno);
 		if (tagged) {
 			fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
@@ -76,7 +76,7 @@ cmemberport::handle_dpt_close(
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
-		fm.set_table_id(0); // TODO: table_id
+		fm.set_table_id(in_stage_table_id);
 		fm.set_match().set_in_port(portno);
 		if (tagged) {
 			fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);

@@ -64,9 +64,12 @@ public:
 			uint32_t portno,
 			bool tagged,
 			const rofl::caddress_ll& lladdr,
-			int entry_timeout = FIB_ENTRY_DEFAULT_TIMEOUT) :
-				state(STATE_IDLE), fib(fib), dpid(dpid), vid(vid), portno(portno), tagged(tagged), lladdr(lladdr),
-				entry_timeout(entry_timeout), dst_stage_table_id(2), src_stage_table_id(1) {};
+			int entry_timeout = FIB_ENTRY_DEFAULT_TIMEOUT,
+			uint8_t src_stage_table_id = 1,
+			uint8_t dst_stage_table_id = 2) :
+				state(STATE_IDLE), fib(fib), dpid(dpid), vid(vid), portno(portno),
+				tagged(tagged), lladdr(lladdr), entry_timeout(entry_timeout),
+				dst_stage_table_id(dst_stage_table_id), src_stage_table_id(src_stage_table_id) {};
 
 	/**
 	 *
@@ -187,15 +190,6 @@ public:
 	handle_error_message(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg);
 
-
-private:
-
-	/**
-	 *
-	 */
-	void
-	drop_buffer(
-			const rofl::cauxid& auxid, uint32_t buffer_id);
 
 public:
 

@@ -46,13 +46,16 @@ public:
 	 *
 	 */
 	cvlan() :
-		state(STATE_IDLE), vid(VID_NO_VLAN), group_id(0) {};
+		state(STATE_IDLE), vid(VID_NO_VLAN), group_id(0),
+		in_stage_table_id(0), src_stage_table_id(1), dst_stage_table_id(2) {};
 
 	/**
 	 *
 	 */
-	cvlan(const cdpid& dpid, uint16_t vid = VID_NO_VLAN, uint32_t group_id = 0) :
-		state(STATE_IDLE), dpid(dpid), vid(vid), group_id(group_id) {};
+	cvlan(const cdpid& dpid, uint16_t vid = VID_NO_VLAN,
+			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 2) :
+		state(STATE_IDLE), dpid(dpid), vid(vid), group_id(0),
+		in_stage_table_id(in_stage_table_id), src_stage_table_id(src_stage_table_id), dst_stage_table_id(dst_stage_table_id) {};
 
 	/**
 	 *
@@ -81,6 +84,9 @@ public:
 		dpid 		= vlan.dpid;
 		vid 		= vlan.vid;
 		group_id 	= vlan.group_id;
+		in_stage_table_id  = vlan.in_stage_table_id;
+		src_stage_table_id = vlan.src_stage_table_id;
+		dst_stage_table_id = vlan.dst_stage_table_id;
 		ports.clear();
 		for (std::map<uint32_t, cmemberport>::const_iterator
 				it = vlan.ports.begin(); it != vlan.ports.end(); ++it) {
@@ -104,7 +110,7 @@ public:
 		if (ports.find(portno) != ports.end()) {
 			ports.erase(portno);
 		}
-		ports[portno] = cmemberport(dpid, portno, vid, tagged);
+		ports[portno] = cmemberport(dpid, portno, vid, tagged, in_stage_table_id);
 		if (STATE_ATTACHED == state) {
 			ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
 		}
@@ -129,7 +135,7 @@ public:
 	cmemberport&
 	set_port(uint32_t portno, bool tagged) {
 		if (ports.find(portno) == ports.end()) {
-			ports[portno] = cmemberport(dpid, portno, vid, tagged);
+			ports[portno] = cmemberport(dpid, portno, vid, tagged, in_stage_table_id);
 			update_group_entry_buckets();
 			if (STATE_ATTACHED == state) {
 				ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
@@ -187,7 +193,8 @@ public:
 		if (not has_port(portno)) {
 			throw eFibEntryPortNotMember("cvlan::add_fib_entry() port is not member of this vlan");
 		}
-		fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr, entry_timeout);
+		fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr,
+							entry_timeout, src_stage_table_id, dst_stage_table_id);
 		if (STATE_ATTACHED == state) {
 			fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
 		}
@@ -214,7 +221,8 @@ public:
 			if (not has_port(portno)) {
 				throw eFibEntryPortNotMember("cvlan::set_fib_entry() port is not member of this vlan");
 			}
-			fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr, entry_timeout);
+			fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr,
+										entry_timeout, src_stage_table_id, dst_stage_table_id);
 			if (STATE_ATTACHED == state) {
 				fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
 			}
@@ -279,7 +287,7 @@ public:
 	 */
 	void
 	handle_dpt_open(
-			rofl::crofdpt& dpt, uint32_t group_id);
+			rofl::crofdpt& dpt);
 
 	/**
 	 *
@@ -317,13 +325,6 @@ public:
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg);
 
 private:
-
-	/**
-	 *
-	 */
-	void
-	drop_buffer(
-			const rofl::cauxid& auxid, uint32_t buffer_id);
 
 	/**
 	 *
@@ -378,6 +379,9 @@ private:
 
 	std::map<uint32_t, cmemberport>			ports;
 	std::map<rofl::caddress_ll, cfibentry>	fib;
+	uint8_t				in_stage_table_id;
+	uint8_t 			src_stage_table_id;
+	uint8_t				dst_stage_table_id;
 };
 
 }; // end of namespace
