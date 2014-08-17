@@ -77,11 +77,11 @@ public:
 	 *
 	 */
 	clink&
-	add_link(uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr) {
+	add_link(uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr, bool tagged = false, uint16_t vid = 1) {
 		if (links.find(ofp_port_no) != links.end()) {
 			links.erase(ofp_port_no);
 		}
-		links[ofp_port_no] = new clink(dptid, ofp_port_no, devname, hwaddr, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id);
+		links[ofp_port_no] = new clink(dptid, ofp_port_no, devname, hwaddr, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id, tagged, vid);
 		links[ofp_port_no]->tap_open();
 		if (STATE_ATTACHED == state) {
 			links[ofp_port_no]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
@@ -94,9 +94,9 @@ public:
 	 *
 	 */
 	clink&
-	set_link(uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr) {
+	set_link(uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr, bool tagged = false, uint16_t vid = 1) {
 		if (links.find(ofp_port_no) == links.end()) {
-			links[ofp_port_no] = new clink(dptid, ofp_port_no, devname, hwaddr, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id);
+			links[ofp_port_no] = new clink(dptid, ofp_port_no, devname, hwaddr, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id, tagged, vid);
 			links[ofp_port_no]->tap_open();
 			if (STATE_ATTACHED == state) {
 				links[ofp_port_no]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));

@@ -64,8 +64,15 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
+		// vlan
 		gm.set_buckets().set_bucket(0).set_actions().
-				add_action_output(index++).set_port_no(out_portno);
+				add_action_push_vlan(index++).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
+		gm.set_buckets().set_bucket(0).set_actions().
+				add_action_set_field(index++).set_oxm(
+						rofl::openflow::coxmatch_ofb_vlan_vid(dpl.get_vlan_vid()));
+
+		//gm.set_buckets().set_bucket(0).set_actions().
+		//		add_action_output(index++).set_port_no(out_portno);
 
 		dpt.send_group_mod_message(rofl::cauxid(0), gm);
 
@@ -95,6 +102,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		fe.set_instructions().set_inst_apply_actions().set_actions().
 				add_action_group(rofl::cindex(0)).set_group_id(group_id);
+		fe.set_instructions().set_inst_goto_table().set_table_id(out_ofp_table_id+1);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
