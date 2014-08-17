@@ -19,7 +19,9 @@ clink::clink() :
 		tapdev(0),
 		in_ofp_table_id(0),
 		fwd_ofp_table_id(1),
-		out_ofp_table_id(2)
+		out_ofp_table_id(2),
+		tagged(false),
+		vid(0xffff)
 {
 
 }
@@ -33,7 +35,9 @@ clink::clink(
 		const rofl::caddress_ll& hwaddr,
 		uint8_t in_ofp_table_id,
 		uint8_t fwd_ofp_table_id,
-		uint8_t out_ofp_table_id) :
+		uint8_t out_ofp_table_id,
+		bool tagged,
+		uint16_t vid) :
 				state(STATE_DETACHED),
 				ofp_port_no(ofp_port_no),
 				devname(devname),
@@ -43,7 +47,9 @@ clink::clink(
 				dptid(dptid),
 				in_ofp_table_id(in_ofp_table_id),
 				fwd_ofp_table_id(fwd_ofp_table_id),
-				out_ofp_table_id(out_ofp_table_id)
+				out_ofp_table_id(out_ofp_table_id),
+				tagged(tagged),
+				vid(vid)
 {
 
 }

@@ -81,7 +81,9 @@ public:
 			const rofl::caddress_ll& hwaddr,
 			uint8_t in_ofp_table_id,
 			uint8_t fwd_ofp_table_id,
-			uint8_t out_ofp_table_id);
+			uint8_t out_ofp_table_id,
+			bool tagged = false,
+			uint16_t vid = 0xffff);
 
 	/**
 	 *
@@ -142,6 +144,18 @@ public:
 	 */
 	unsigned int
 	get_ifindex() const { return ifindex; }
+
+	/**
+	 *
+	 */
+	bool
+	get_vlan_tagged() const { return tagged; };
+
+	/**
+	 *
+	 */
+	uint16_t
+	get_vlan_vid() const { return vid; };
 
 	/**
 	 *
@@ -578,6 +592,8 @@ private:
 	uint8_t								in_ofp_table_id;
 	uint8_t								fwd_ofp_table_id;
 	uint8_t								out_ofp_table_id;
+	bool								tagged;
+	uint16_t							vid;
 	rofcore::ctapdev					*tapdev;		// tap device emulating the mapped port on this system
 
 	enum cdptlink_flag_t {
