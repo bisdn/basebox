@@ -40,6 +40,7 @@ croute_in4::handle_dpt_open(rofl::crofdpt& dpt)
 			it->second.handle_dpt_open(dpt);
 		}
 
+#if 0
 		const rofcore::crtroute_in4& rtroute =
 				rofcore::cnetlink::get_instance().get_routes_in4(get_rttblid()).get_route(get_rtindex());
 
@@ -68,7 +69,7 @@ croute_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_instructions().add_inst_goto_table().set_table_id(out_ofp_table_id);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
+#endif
 		state = STATE_ATTACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
@@ -103,7 +104,7 @@ croute_in4::handle_dpt_close(rofl::crofdpt& dpt)
 				it = nexthops_in6.begin(); it != nexthops_in6.end(); ++it) {
 			it->second.handle_dpt_close(dpt);
 		}
-
+#if 0
 		const rofcore::crtroute_in4& rtroute =
 				rofcore::cnetlink::get_instance().get_routes_in4(get_rttblid()).get_route(get_rtindex());
 
@@ -122,7 +123,7 @@ croute_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		fm.set_match().set_ipv4_dst(rtroute.get_ipv4_dst(), rtroute.get_ipv4_mask());
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
+#endif
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
@@ -176,7 +177,7 @@ croute_in6::handle_dpt_open(rofl::crofdpt& dpt)
 				it = nexthops_in6.begin(); it != nexthops_in6.end(); ++it) {
 			it->second.handle_dpt_open(dpt);
 		}
-
+#if 0
 		const rofcore::crtroute_in6& rtroute =
 				rofcore::cnetlink::get_instance().get_routes_in6(get_rttblid()).get_route(get_rtindex());
 
@@ -205,7 +206,7 @@ croute_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_instructions().add_inst_goto_table().set_table_id(out_ofp_table_id);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
+#endif
 		state = STATE_ATTACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
@@ -240,7 +241,7 @@ croute_in6::handle_dpt_close(rofl::crofdpt& dpt)
 				it = nexthops_in6.begin(); it != nexthops_in6.end(); ++it) {
 			it->second.handle_dpt_close(dpt);
 		}
-
+#if 0
 		const rofcore::crtroute_in6& rtroute =
 				rofcore::cnetlink::get_instance().get_routes_in6(get_rttblid()).get_route(get_rtindex());
 
@@ -259,7 +260,7 @@ croute_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		fm.set_match().set_ipv6_dst(rtroute.get_ipv6_dst(), rtroute.get_ipv6_mask());
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
+#endif
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {

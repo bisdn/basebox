@@ -74,7 +74,7 @@ protected:
 	virtual void
 	handle_dpt_open(
 			rofl::crofdpt& dpt) {
-		cipcore::get_instance(dpt.get_dptid());
+		cipcore::get_instance(dpt.get_dptid(), 0, 1, 1);
 		dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 	};
 

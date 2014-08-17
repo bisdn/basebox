@@ -39,7 +39,8 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in4& rtb =
 				dpl.get_neigh_in4(rtn.get_gateway()).get_crtneigh_in4();
-
+		const ipcore::cneigh_in4& neigh =
+				dpl.get_neigh_in4(rtb.get_dst());
 
 
 		// local outgoing interface mac address
@@ -47,6 +48,10 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// neighbour mac address
 		const rofl::cmacaddr& eth_dst 	= rtb.get_lladdr();
+
+		// local VLAN associated with interface
+		bool tagged = dpl.get_vlan_tagged();
+		uint16_t vid = dpl.get_vlan_vid();
 
 		// local outgoing interface => OFP portno
 		uint32_t out_portno 			= dpl.get_ofp_port_no();
@@ -74,16 +79,8 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rtr.get_ipv4_dst(), rtr.get_ipv4_mask());
-
-
-		rofl::cindex index(0);
-
-		fe.set_instructions().add_inst_apply_actions().set_actions().
-				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		fe.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-		fe.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_output(index++).set_port_no(out_portno);
+				add_action_group(rofl::cindex(0)).set_group_id(neigh.get_group_id());
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
@@ -203,7 +200,8 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in6& rtb =
 				dpl.get_neigh_in6(rtn.get_gateway()).get_crtneigh_in6();
-
+		const ipcore::cneigh_in6& neigh =
+				dpl.get_neigh_in6(rtb.get_dst());
 
 
 
@@ -212,6 +210,10 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// neighbour mac address
 		const rofl::cmacaddr& eth_dst 	= rtb.get_lladdr();
+
+		// local VLAN associated with interface
+		bool tagged = dpl.get_vlan_tagged();
+		uint16_t vid = dpl.get_vlan_vid();
 
 		// local outgoing interface => OFP portno
 		uint32_t out_portno 			= dpl.get_ofp_port_no();
@@ -238,16 +240,8 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rtr.get_ipv6_dst(), rtr.get_ipv6_mask());
-
-
-		rofl::cindex index(0);
-
-		fe.set_instructions().add_inst_apply_actions().set_actions().
-				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		fe.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-		fe.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_output(index++).set_port_no(out_portno);
+				add_action_group(rofl::cindex(0)).set_group_id(neigh.get_group_id());
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 

@@ -37,11 +37,41 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		// neighbour mac address
 		const rofl::cmacaddr& eth_dst 	= rtn.get_lladdr();
 
+		// local VLAN associated with interface
+		bool tagged = dpl.get_vlan_tagged();
+		uint16_t vid = dpl.get_vlan_vid();
+
 		// local outgoing interface => OFP portno
 		uint32_t out_portno 			= dpl.get_ofp_port_no();
 
+		// get group-id for this entry
+		group_id = dpt.get_next_idle_group_id();
 
 
+		// create group entry for neighbour
+		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		gm.set_command(rofl::openflow::OFPGC_ADD);
+		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
+		gm.set_group_id(group_id);
+		rofl::cindex index(0);
+		if (tagged) {
+			gm.set_buckets().set_bucket(0).set_actions().
+					add_action_push_vlan(index++).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
+			gm.set_buckets().set_bucket(0).set_actions().
+					add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
+		}
+		gm.set_buckets().set_bucket(0).set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
+		gm.set_buckets().set_bucket(0).set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
+		gm.set_buckets().set_bucket(0).set_actions().
+				add_action_output(index++).set_port_no(out_portno);
+
+		dpt.send_group_mod_message(rofl::cauxid(0), gm);
+
+
+
+		// redirect traffic destined directly to neighbour to group entry
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		switch (state) {
@@ -63,14 +93,8 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rtn.get_dst());
 
-		rofl::cindex index(0);
-
-		fe.set_instructions().add_inst_apply_actions().set_actions().
-				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		fe.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-		fe.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_output(index++).set_port_no(out_portno);
+				add_action_group(rofl::cindex(0)).set_group_id(group_id);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
@@ -108,18 +132,23 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 		rofl::openflow::cofflowmod fe(dpt.get_version());
-
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
 		fe.set_table_id(get_table_id());
-
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rtn.get_dst());
-
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+
+		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		gm.set_command(rofl::openflow::OFPGC_DELETE);
+		gm.set_type(rofl::openflow::OFPGT_SELECT);
+		gm.set_group_id(group_id);
+		dpt.send_group_mod_message(rofl::cauxid(0), gm);
+
 
 		state = STATE_DETACHED;
 
@@ -169,11 +198,41 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		// neighbour mac address
 		const rofl::cmacaddr& eth_dst 	= rtn.get_lladdr();
 
+		// local VLAN associated with interface
+		bool tagged = dpl.get_vlan_tagged();
+		uint16_t vid = dpl.get_vlan_vid();
+
 		// local outgoing interface => OFP portno
 		uint32_t out_portno 			= dpl.get_ofp_port_no();
 
+		// get group-id for this entry
+		group_id = dpt.get_next_idle_group_id();
 
 
+		// create group entry for neighbour
+		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		gm.set_command(rofl::openflow::OFPGC_ADD);
+		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
+		gm.set_group_id(group_id);
+		rofl::cindex index(0);
+		if (tagged) {
+			gm.set_buckets().set_bucket(0).set_actions().
+					add_action_push_vlan(index++).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
+			gm.set_buckets().set_bucket(0).set_actions().
+					add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
+		}
+		gm.set_buckets().set_bucket(0).set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
+		gm.set_buckets().set_bucket(0).set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
+		gm.set_buckets().set_bucket(0).set_actions().
+				add_action_output(index++).set_port_no(out_portno);
+
+		dpt.send_group_mod_message(rofl::cauxid(0), gm);
+
+
+
+		// redirect traffic destined directly to neighbour to group entry
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		switch (state) {
@@ -195,14 +254,8 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rtn.get_dst());
 
-		rofl::cindex index(0);
-
-		fe.set_instructions().add_inst_apply_actions().set_actions().
-				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		fe.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-		fe.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_output(index++).set_port_no(out_portno);
+				add_action_group(rofl::cindex(0)).set_group_id(group_id);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
@@ -247,11 +300,16 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
 		fe.set_table_id(get_table_id());
-
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-		fe.set_match().set_ipv6_dst(rtn.get_dst());
-
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+
+
+		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		gm.set_command(rofl::openflow::OFPGC_DELETE);
+		gm.set_type(rofl::openflow::OFPGT_SELECT);
+		gm.set_group_id(group_id);
+		dpt.send_group_mod_message(rofl::cauxid(0), gm);
+
 
 		state = STATE_DETACHED;
 

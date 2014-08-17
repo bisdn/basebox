@@ -36,7 +36,7 @@ public:
 	 *
 	 */
 	cneigh() :
-		state(STATE_DETACHED), ifindex(0), nbindex(0), out_ofp_table_id(0) {};
+		state(STATE_DETACHED), ifindex(0), nbindex(0), out_ofp_table_id(0), group_id(0) {};
 
 
 	/**
@@ -66,6 +66,7 @@ public:
 		ifindex	 			= neigh.ifindex;
 		nbindex	 			= neigh.nbindex;
 		out_ofp_table_id 	= neigh.out_ofp_table_id;
+		group_id			= neigh.group_id;
 		return *this;
 	};
 
@@ -82,7 +83,8 @@ public:
 				ifindex(ifindex),
 				nbindex(nbindex),
 				dptid(dptid),
-				out_ofp_table_id(out_ofp_table_id) {};
+				out_ofp_table_id(out_ofp_table_id),
+				group_id(0) {};
 
 public:
 
@@ -134,6 +136,12 @@ public:
 	void
 	set_nbindex(uint16_t nbindex) { this->nbindex = nbindex; };
 
+	/**
+	 *
+	 */
+	uint32_t
+	get_group_id() const { return group_id; };
+
 public:
 
 	friend std::ostream&
@@ -158,6 +166,7 @@ protected:
 	uint16_t					nbindex;
 	rofl::cdptid				dptid;
 	uint8_t 					out_ofp_table_id;
+	uint32_t					group_id;
 };
 
 
