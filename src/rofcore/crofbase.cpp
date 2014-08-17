@@ -7,7 +7,7 @@
 
 #include "crofbase.hpp"
 
-using namespace ethcore;
+using namespace basebox;
 
 /*static*/crofbase* crofbase::rofbase = (crofbase*)0;
 /*static*/const std::string crofbase::ROFCORE_LOG_FILE = std::string("/var/log/ethcored.log");
@@ -35,19 +35,19 @@ crofbase::run(int argc, char** argv)
 	env_parser.parse_args();
 
 	// configuration file
-	cconfig::get_instance().open(env_parser.get_arg("config-file"));
+	ethcore::cconfig::get_instance().open(env_parser.get_arg("config-file"));
 
 
 	/*
 	 * extract debug level
 	 */
 	int rofl_debug = 0;
-	if (cconfig::get_instance().exists("ethcored.daemon.logging.rofl.debug")) {
-		rofl_debug = (int)cconfig::get_instance().lookup("ethcored.daemon.logging.rofl.debug");
+	if (ethcore::cconfig::get_instance().exists("ethcored.daemon.logging.rofl.debug")) {
+		rofl_debug = (int)ethcore::cconfig::get_instance().lookup("ethcored.daemon.logging.rofl.debug");
 	}
 	int core_debug = 0;
-	if (cconfig::get_instance().exists("ethcored.daemon.logging.core.debug")) {
-		core_debug = (int)cconfig::get_instance().lookup("ethcored.daemon.logging.core.debug");
+	if (ethcore::cconfig::get_instance().exists("ethcored.daemon.logging.core.debug")) {
+		core_debug = (int)ethcore::cconfig::get_instance().lookup("ethcored.daemon.logging.core.debug");
 	}
 	if (env_parser.is_arg_set("debug")) {
 		rofl_debug = core_debug = atoi(env_parser.get_arg("debug").c_str());
@@ -59,8 +59,8 @@ crofbase::run(int argc, char** argv)
 	std::string logfile;
 	if (env_parser.is_arg_set("logfile")) {
 		logfile = env_parser.get_arg("logfile");
-	} else if (cconfig::get_instance().exists("ethcored.daemon.logfile")) {
-		logfile = (const char*)cconfig::get_instance().lookup("ethcored.daemon.logfile");
+	} else if (ethcore::cconfig::get_instance().exists("ethcored.daemon.logfile")) {
+		logfile = (const char*)ethcore::cconfig::get_instance().lookup("ethcored.daemon.logfile");
 	} else {
 		logfile = std::string(ROFCORE_LOG_FILE); // default
 	}
@@ -71,8 +71,8 @@ crofbase::run(int argc, char** argv)
 	std::string pidfile;
 	if (env_parser.is_arg_set("pidfile")) {
 		pidfile = env_parser.get_arg("pidfile");
-	} else if (cconfig::get_instance().exists("ethcored.daemon.pidfile")) {
-		pidfile = (const char*)cconfig::get_instance().lookup("ethcored.daemon.pidfile");
+	} else if (ethcore::cconfig::get_instance().exists("ethcored.daemon.pidfile")) {
+		pidfile = (const char*)ethcore::cconfig::get_instance().lookup("ethcored.daemon.pidfile");
 	} else {
 		pidfile = std::string(ROFCORE_PID_FILE); // default
 	}
@@ -83,8 +83,8 @@ crofbase::run(int argc, char** argv)
 	bool daemonize = true;
 	if (env_parser.is_arg_set("daemonize")) {
 		daemonize = atoi(env_parser.get_arg("pidfile").c_str());
-	} else if (cconfig::get_instance().exists("ethcored.daemon.daemonize")) {
-		daemonize = (bool)cconfig::get_instance().lookup("ethcored.daemon.daemonize");
+	} else if (ethcore::cconfig::get_instance().exists("ethcored.daemon.daemonize")) {
+		daemonize = (bool)ethcore::cconfig::get_instance().lookup("ethcored.daemon.daemonize");
 	} else {
 		daemonize = true; // default
 	}
@@ -111,7 +111,7 @@ crofbase::run(int argc, char** argv)
 	 * read configuration (for now: from libconfig++ file)
 	 */
 
-	cconfig& config = cconfig::get_instance();
+	ethcore::cconfig& config = ethcore::cconfig::get_instance();
 
 	if (config.exists(ROFCORE_CONFIG_DPT_LIST)) {
 		for (int i = 0; i < config.lookup(ROFCORE_CONFIG_DPT_LIST).getLength(); i++) {
@@ -122,7 +122,7 @@ crofbase::run(int argc, char** argv)
 				if (not datapath.exists("dpid")) {
 					continue; // as we do not know the data path dpid
 				}
-				cdpid dpid( (int)datapath["dpid"] );
+				ethcore::cdpid dpid( (int)datapath["dpid"] );
 
 				// get default port vid
 				uint16_t default_pvid = 1;
@@ -131,7 +131,7 @@ crofbase::run(int argc, char** argv)
 				}
 
 				// this is the cethcore instance for this data path
-				ethcore::cethcore& ethcore = ethcore::cethcore::set_core(dpid, default_pvid);
+				ethcore::cethcore& ethcore = ethcore::cethcore::set_core(dpid, default_pvid, 0, 1, 5);
 
 				// create vlan instance for default_pvid, just in case, there are no member ports defined
 				ethcore.set_vlan(default_pvid);
@@ -196,7 +196,7 @@ crofbase::run(int argc, char** argv)
 					}
 				}
 
-				rofcore::logging::debug << "after config:" << std::endl << cethcore::get_core(dpid);
+				rofcore::logging::debug << "after config:" << std::endl << ethcore::cethcore::get_core(dpid);
 
 
 			} catch (libconfig::SettingNotFoundException& e) {
@@ -209,8 +209,8 @@ crofbase::run(int argc, char** argv)
 	 * prepare OpenFlow socket for listening
 	 */
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-	if (cconfig::get_instance().exists("ethcored.openflow.version")) {
-		int ofp_version = (int)cconfig::get_instance().lookup("ethcored.openflow.version");
+	if (ethcore::cconfig::get_instance().exists("ethcored.openflow.version")) {
+		int ofp_version = (int)ethcore::cconfig::get_instance().lookup("ethcored.openflow.version");
 		ofp_version = (ofp_version < rofl::openflow13::OFP_VERSION) ? rofl::openflow13::OFP_VERSION : ofp_version;
 		versionbitmap.add_ofp_version(ofp_version);
 	} else {
@@ -219,20 +219,20 @@ crofbase::run(int argc, char** argv)
 
 	rofcore::logging::notice << "[ethcored][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
-	ethcore::crofbase& rofbase = ethcore::crofbase::get_instance(versionbitmap);
+	basebox::crofbase& rofbase = basebox::crofbase::get_instance(versionbitmap);
 
 	//base.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
 
 	std::stringstream portno;
-	if (cconfig::get_instance().exists("ethcored.openflow.bindport")) {
-		portno << (int)cconfig::get_instance().lookup("ethcored.openflow.bindport");
+	if (ethcore::cconfig::get_instance().exists("ethcored.openflow.bindport")) {
+		portno << (int)ethcore::cconfig::get_instance().lookup("ethcored.openflow.bindport");
 	} else {
 		portno << (int)6653;
 	}
 
 	std::stringstream bindaddr;
-	if (cconfig::get_instance().exists("ethcored.openflow.bindaddr")) {
-		bindaddr << (const char*)cconfig::get_instance().lookup("ethcored.openflow.bindaddr");
+	if (ethcore::cconfig::get_instance().exists("ethcored.openflow.bindaddr")) {
+		bindaddr << (const char*)ethcore::cconfig::get_instance().lookup("ethcored.openflow.bindaddr");
 	} else {
 		bindaddr << "::";
 	}

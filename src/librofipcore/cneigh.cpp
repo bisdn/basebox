@@ -226,8 +226,8 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-		gm.set_buckets().set_bucket(0).set_actions().
-				add_action_output(index++).set_port_no(out_portno);
+//		gm.set_buckets().set_bucket(0).set_actions().
+	//			add_action_output(index++).set_port_no(out_portno);
 
 		dpt.send_group_mod_message(rofl::cauxid(0), gm);
 

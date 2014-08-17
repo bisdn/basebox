@@ -44,7 +44,8 @@ public:
 	 */
 	cmemberport(
 			const cdpid& dpid, uint32_t portno = 0xffffffff,
-			uint16_t vid = 0xffff, bool tagged = true, uint8_t in_stage_table_id = 0) :
+			uint16_t vid = 0xffff, bool tagged = true,
+			uint8_t in_stage_table_id = 0) :
 		state(STATE_IDLE), dpid(dpid), portno(portno), vid(vid),
 		tagged(tagged), in_stage_table_id(in_stage_table_id) {};
 

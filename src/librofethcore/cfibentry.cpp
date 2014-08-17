@@ -37,7 +37,7 @@ cfibentry::handle_dpt_open(
 		fm_src_table.set_match().set_in_port(portno);
 		fm_src_table.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm_src_table.set_match().set_eth_src(lladdr); // yes, indeed: set_eth_src for dst
-		fm_src_table.set_instructions().add_inst_goto_table().set_table_id(dst_stage_table_id);
+		fm_src_table.set_instructions().add_inst_goto_table().set_table_id(src_stage_table_id+1);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm_src_table);
 
 		// dst table

@@ -27,7 +27,7 @@ public:
 	 */
 	static cethcore&
 	add_core(const cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
-			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 2) {
+			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 3) {
 		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
 			delete cethcore::ethcores[dpid];
 		}
@@ -40,7 +40,7 @@ public:
 	 */
 	static cethcore&
 	set_core(const cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
-			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 2) {
+			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 3) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
 			new cethcore(dpid, default_pvid, in_stage_table_id, src_stage_table_id, dst_stage_table_id);
 		}
@@ -83,7 +83,7 @@ public:
 	 *
 	 */
 	cethcore(const cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
-			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 2) :
+			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 3) :
 		state(STATE_IDLE), dpid(dpid), default_pvid(default_pvid),
 		in_stage_table_id(in_stage_table_id),
 		src_stage_table_id(src_stage_table_id),

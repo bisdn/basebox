@@ -44,9 +44,39 @@ cmemberport::handle_dpt_open(
 			fm.set_instructions().set_inst_apply_actions().set_actions().
 					add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
 		}
-		fm.set_instructions().set_inst_goto_table().set_table_id(1); // TODO: table_id
-
+		fm.set_instructions().set_inst_goto_table().set_table_id(in_stage_table_id+1);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+
+
+		fm.set_table_id(in_stage_table_id+2); // local address stage
+		fm.set_match().clear();
+		fm.set_match().set_eth_dst(dpt.get_ports().get_port(portno).get_hwaddr());
+		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		fm.set_instructions().clear();
+		fm.set_instructions().set_inst_goto_table().set_table_id(in_stage_table_id+3);
+		if (not tagged) {
+			fm.set_instructions().set_inst_apply_actions().set_actions().
+					add_action_pop_vlan(rofl::cindex(0));
+		}
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+
+
+
+		fm.set_table_id(in_stage_table_id+2); // local address stage
+		fm.set_match().clear();
+		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
+		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		fm.set_instructions().clear();
+		fm.set_instructions().set_inst_goto_table().set_table_id(in_stage_table_id+3);
+		if (not tagged) {
+			fm.set_instructions().set_inst_apply_actions().set_actions().
+					add_action_pop_vlan(rofl::cindex(0));
+		}
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+
 
 	} catch (rofl::eRofSockTxAgain& e) {
 		// TODO: handle congested control channel
@@ -83,8 +113,28 @@ cmemberport::handle_dpt_close(
 		} else {
 			fm.set_match().set_vlan_untagged();
 		}
-
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+
+
+
+		fm.set_table_id(in_stage_table_id+2); // local address stage
+		fm.set_match().clear();
+		fm.set_match().set_eth_dst(dpt.get_ports().get_port(portno).get_hwaddr());
+		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		fm.set_instructions().set_inst_goto_table().set_table_id(in_stage_table_id+3);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+
+
+		fm.set_table_id(in_stage_table_id+2); // local address stage
+		fm.set_match().clear();
+		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
+		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		fm.set_instructions().set_inst_goto_table().set_table_id(in_stage_table_id+3);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+
 
 	} catch (rofl::eRofSockTxAgain& e) {
 		// TODO: handle congested control channel

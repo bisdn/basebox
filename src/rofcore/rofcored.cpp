@@ -4,6 +4,6 @@
 int
 main(int argc, char** argv)
 {
-	return ethcore::crofbase::run(argc, argv);
+	return basebox::crofbase::run(argc, argv);
 }
 

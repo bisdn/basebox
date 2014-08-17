@@ -31,8 +31,8 @@ cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 
 	dptid = dpt.get_dptid();
 
-	purge_dpt_entries();
-	block_stp_frames();
+	//purge_dpt_entries();
+	//block_stp_frames();
 	redirect_ipv4_multicast();
 	redirect_ipv6_multicast();
 	set_forwarding(true);
@@ -691,7 +691,7 @@ cipcore::redirect_ipv4_multicast()
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_ADD);
-		fe.set_table_id(0);
+		fe.set_table_id(in_ofp_table_id);
 
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofl::caddress_in4("224.0.0.0"), rofl::caddress_in4("240.0.0.0"));
@@ -721,7 +721,7 @@ cipcore::redirect_ipv6_multicast()
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_ADD);
-		fe.set_table_id(0);
+		fe.set_table_id(in_ofp_table_id);
 
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofl::caddress_in6("ff00::"), rofl::caddress_in6("ff00::"));
