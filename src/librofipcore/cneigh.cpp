@@ -101,19 +101,19 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_open] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_open] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_open] unable to find neighbour" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_open] unable to find neighbour" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_open] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_open] unable to find address" << std::endl << *this;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_open] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_open] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_open] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_open] unexpected error" << std::endl << *this;
 
 	}
 }
@@ -153,19 +153,19 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_close] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_close] unable to find neighbour" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unable to find neighbour" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_close] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unable to find address" << std::endl << *this;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_close] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[cipcore][neigh_in4][handle_dpt_close] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unexpected error" << std::endl << *this;
 
 	}
 }
@@ -262,19 +262,19 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_open] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_open] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_open] unable to find neighbour" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_open] unable to find neighbour" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_open] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_open] unable to find address" << std::endl << *this;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_open] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_open] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_open] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_open] unexpected error" << std::endl << *this;
 
 	}
 }
@@ -314,19 +314,19 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_close] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_close] unable to find neighbour" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unable to find neighbour" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_close] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unable to find address" << std::endl << *this;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_close] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[cipcore][neigh_in6][handle_dpt_close] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unexpected error" << std::endl << *this;
 
 	}
 }

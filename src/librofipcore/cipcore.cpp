@@ -166,20 +166,28 @@ void
 cipcore::set_forwarding(bool forward)
 {
 	try {
-		rofl::openflow::cofflowmod fed = rofl::openflow::cofflowmod(rofl::crofdpt::get_dpt(dptid).get_version());
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
+		rofl::openflow::cofflowmod fed = rofl::openflow::cofflowmod(dpt.get_version());
 		if (forward == true) {
 			fed.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
 		} else {
 			fed.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		}
-		fed.set_table_id(0);
+		fed.set_table_id(in_ofp_table_id);
 		fed.set_idle_timeout(0);
 		fed.set_hard_timeout(0);
 		fed.set_priority(0); // lowest priority
-		fed.set_instructions().add_inst_goto_table().set_table_id(1);
+		fed.set_instructions().add_inst_goto_table().set_table_id(fwd_ofp_table_id);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fed);
 
-		rofl::crofdpt::get_dpt(dptid).send_flow_mod_message(rofl::cauxid(0), fed);
+		fed.set_table_id(fwd_ofp_table_id);
+		fed.set_instructions().clear();
+		fed.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+		fed.set_instructions().set_inst_apply_actions().set_actions().
+				set_action_output(rofl::cindex(0)).set_max_len(1518);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fed);
 
 	} catch (rofl::eSocketTxAgain& e) {
 

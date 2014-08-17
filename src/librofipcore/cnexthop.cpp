@@ -73,7 +73,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
-		fe.set_priority(0xfffe);
+		fe.set_priority(0xf000 + rtr.get_prefixlen() << 8 + rtn.get_weight());
 		fe.set_table_id(out_ofp_table_id);
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
@@ -87,13 +87,13 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in4][flow_mod_add] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in4][flow_mod_add] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in4][flow_mod_add] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in4][flow_mod_add] unable to find address" << std::endl << *this;
 
 	} catch (eNeighNotFound& e) {
-		rofcore::logging::debug << "[dptnexthop_in4][flow_mod_add] unable to find dst neighbour" << std::endl << *this;
+		rofcore::logging::debug << "[cnexthop_in4][flow_mod_add] unable to find dst neighbour" << std::endl << *this;
 
 		/* non-critical error: just indicating that the kernel has not yet resolved (via ARP or NDP)
 		 * the neighbour carrying this next-hops's destination address.
@@ -106,10 +106,10 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		 */
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in4][flow_mod_add] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in4][flow_mod_add] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptnexthop_in4][flow_mod_add] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in4][flow_mod_add] unexpected error" << std::endl << *this;
 
 	}
 }
@@ -142,7 +142,7 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
-		fe.set_priority(0xfffe);
+		fe.set_priority(0xf000 + rtr.get_prefixlen() << 8 + rtn.get_weight());
 		fe.set_table_id(out_ofp_table_id);
 
 		/*
@@ -156,16 +156,16 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in4][flow_mod_delete] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in4][flow_mod_delete] unable to find data path" << std::endl << *this;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in4][flow_mod_delete] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in4][flow_mod_delete] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in4][flow_mod_delete] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in4][flow_mod_delete] unable to find address" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptnexthop_in4][flow_mod_delete] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in4][flow_mod_delete] unexpected error" << std::endl << *this;
 
 	}
 }
@@ -234,7 +234,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
-		fe.set_priority(0xfffe);
+		fe.set_priority(0xf000 + rtr.get_prefixlen() << 8 + rtn.get_weight());
 		fe.set_table_id(out_ofp_table_id);
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
@@ -248,13 +248,13 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in6][flow_mod_add] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in6][flow_mod_add] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in6][flow_mod_add] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in6][flow_mod_add] unable to find address" << std::endl << *this;
 
 	} catch (eNeighNotFound& e) {
-		rofcore::logging::debug << "[dptnexthop_in6][flow_mod_add] unable to find dst neighbour" << std::endl << *this;
+		rofcore::logging::debug << "[cnexthop_in6][flow_mod_add] unable to find dst neighbour" << std::endl << *this;
 
 		/* non-critical error: just indicating that the kernel has not yet resolved (via ARP or NDP)
 		 * the neighbour carrying this next-hops's destination address.
@@ -267,10 +267,10 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		 */
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in6][flow_mod_add] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in6][flow_mod_add] unable to find data path" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptnexthop_in6][flow_mod_add] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in6][flow_mod_add] unexpected error" << std::endl << *this;
 
 	}
 }
@@ -303,7 +303,7 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
-		fe.set_priority(0xfffe);
+		fe.set_priority(0xf000 + rtr.get_prefixlen() << 8 + rtn.get_weight());
 		fe.set_table_id(out_ofp_table_id);
 
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
@@ -314,16 +314,16 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in6][flow_mod_delete] unable to find data path" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in6][flow_mod_delete] unable to find data path" << std::endl << *this;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in6][flow_mod_delete] unable to find link" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in6][flow_mod_delete] unable to find link" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[dptnexthop_in6][flow_mod_delete] unable to find address" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in6][flow_mod_delete] unable to find address" << std::endl << *this;
 
 	} catch (...) {
-		rofcore::logging::error << "[dptnexthop_in6][flow_mod_delete] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[cnexthop_in6][flow_mod_delete] unexpected error" << std::endl << *this;
 
 	}
 }
