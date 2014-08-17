@@ -150,8 +150,6 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		dpt.send_group_mod_message(rofl::cauxid(0), gm);
 
 
-		state = STATE_DETACHED;
-
 	} catch (rofcore::eNetLinkNotFound& e) {
 		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unable to find link" << std::endl << *this;
 
@@ -168,6 +166,9 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unexpected error" << std::endl << *this;
 
 	}
+
+	state = STATE_DETACHED;
+	dpt.release_group_id(group_id); group_id = 0;
 }
 
 
@@ -311,8 +312,6 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		dpt.send_group_mod_message(rofl::cauxid(0), gm);
 
 
-		state = STATE_DETACHED;
-
 	} catch (rofcore::eNetLinkNotFound& e) {
 		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unable to find link" << std::endl << *this;
 
@@ -329,5 +328,8 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unexpected error" << std::endl << *this;
 
 	}
+
+	state = STATE_DETACHED;
+	dpt.release_group_id(group_id); group_id = 0;
 }
 
