@@ -37,7 +37,7 @@ public:
 	 */
 	cmemberport() :
 		state(STATE_IDLE), portno(0xffffffff), vid(0xffff),
-		tagged(false), in_stage_table_id(0) {};
+		tagged(false), in_stage_table_id(0), out_stage_table_id(5) {};
 
 	/**
 	 *
@@ -45,9 +45,9 @@ public:
 	cmemberport(
 			const cdpid& dpid, uint32_t portno = 0xffffffff,
 			uint16_t vid = 0xffff, bool tagged = true,
-			uint8_t in_stage_table_id = 0) :
+			uint8_t in_stage_table_id = 0, uint8_t out_stage_table_id = 5) :
 		state(STATE_IDLE), dpid(dpid), portno(portno), vid(vid),
-		tagged(tagged), in_stage_table_id(in_stage_table_id) {};
+		tagged(tagged), in_stage_table_id(in_stage_table_id), out_stage_table_id(out_stage_table_id) {};
 
 	/**
 	 *
@@ -79,6 +79,7 @@ public:
 		vid 	= port.vid;
 		tagged 	= port.tagged;
 		in_stage_table_id = port.in_stage_table_id;
+		out_stage_table_id = port.out_stage_table_id;
 		return *this;
 	};
 
@@ -166,6 +167,7 @@ private:
 	uint16_t 		vid;
 	bool 			tagged;
 	uint8_t			in_stage_table_id;
+	uint8_t			out_stage_table_id;
 };
 
 }; // end of namespace ethcore

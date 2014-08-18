@@ -110,7 +110,7 @@ public:
 		if (ports.find(portno) != ports.end()) {
 			ports.erase(portno);
 		}
-		ports[portno] = cmemberport(dpid, portno, vid, tagged, in_stage_table_id);
+		ports[portno] = cmemberport(dpid, portno, vid, tagged, in_stage_table_id, dst_stage_table_id);
 		if (STATE_ATTACHED == state) {
 			ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
 		}
@@ -135,7 +135,7 @@ public:
 	cmemberport&
 	set_port(uint32_t portno, bool tagged) {
 		if (ports.find(portno) == ports.end()) {
-			ports[portno] = cmemberport(dpid, portno, vid, tagged, in_stage_table_id);
+			ports[portno] = cmemberport(dpid, portno, vid, tagged, in_stage_table_id, dst_stage_table_id);
 			update_group_entry_buckets();
 			if (STATE_ATTACHED == state) {
 				ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
