@@ -198,13 +198,14 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, const cfibentry& entry) {
-		os << rofcore::indent(0) << "<fibentry ";
-			os << "dpid:" 		<< entry.get_dpid() << " ";
+		os << rofcore::indent(0) << "<cfibentry ";
 			os << "vid:" 		<< (int)entry.get_vid() << " ";
-			os << "lladdr: " 	<< entry.get_lladdr() << " ";
 			os << "portno: " 	<< entry.get_portno() << " ";
 			os << "tagged:" 	<< (entry.get_tagged() ? "true":"false") << " ";
 		os << ">" << std::endl;
+		rofcore::indent i(2);
+		os << "<dpid: >" << std::endl; os << entry.get_dpid();
+		os << "<lladdr: >" << std::endl; os << entry.get_lladdr();
 		return os;
 	};
 

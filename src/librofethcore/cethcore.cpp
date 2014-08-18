@@ -187,6 +187,8 @@ cethcore::link_created(unsigned int ifindex)
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		// should (:) never happen
+	} catch (rofl::openflow::ePortNotFound& e) {
+		// unknown interface
 	} catch (rofl::eRofDptNotFound& e) {
 		// do nothing
 	}
@@ -225,6 +227,8 @@ cethcore::link_updated(unsigned int ifindex)
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		// should (:) never happen
+	} catch (rofl::openflow::ePortNotFound& e) {
+		// unknown interface
 	} catch (rofl::eRofDptNotFound& e) {
 		// do nothing
 	}
@@ -264,6 +268,8 @@ cethcore::link_deleted(unsigned int ifindex)
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		// should (:) never happen
+	} catch (rofl::openflow::ePortNotFound& e) {
+		// unknown interface
 	} catch (rofl::eRofDptNotFound& e) {
 		// do nothing
 	}
