@@ -20,10 +20,12 @@
 #include "cdpid.hpp"
 #include "clogging.h"
 #include "cconfig.hpp"
+#include "cnetlink.h"
+#include "cdpid.hpp"
 
 namespace basebox {
 
-class crofbase : public rofl::crofbase {
+class crofbase : public rofl::crofbase, public rofcore::cnetlink_common_observer {
 
 	/**
 	 * @brief	pointer to singleton
@@ -79,6 +81,7 @@ protected:
 	virtual void
 	handle_dpt_open(
 			rofl::crofdpt& dpt) {
+		dptid = dpt.get_dptid();
 		ipcore::cipcore::get_instance(dpt.get_dptid(), 3, 4, 4);
 		dpt.flow_mod_reset();
 		dpt.group_mod_reset();
@@ -187,6 +190,29 @@ protected:
 
 public:
 
+	/**
+	 *
+	 */
+	virtual void
+	link_created(unsigned int ifindex);
+
+
+	/**
+	 *
+	 */
+	virtual void
+	link_updated(unsigned int ifindex);
+
+
+	/**
+	 *
+	 */
+	virtual void
+	link_deleted(unsigned int ifindex);
+
+
+public:
+
 	friend std::ostream&
 	operator<< (std::ostream& os, const crofbase& ethbase) {
 
@@ -195,6 +221,7 @@ public:
 
 private:
 
+	rofl::cdptid dptid;
 	static const std::string ROFCORE_LOG_FILE;
 	static const std::string ROFCORE_PID_FILE;
 	static const std::string ROFCORE_CONFIG_FILE;

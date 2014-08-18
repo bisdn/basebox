@@ -10,10 +10,10 @@
 using namespace basebox;
 
 /*static*/crofbase* crofbase::rofbase = (crofbase*)0;
-/*static*/const std::string crofbase::ROFCORE_LOG_FILE = std::string("/var/log/ethcored.log");
-/*static*/const std::string crofbase::ROFCORE_PID_FILE = std::string("/var/run/ethcored.pid");
-/*static*/const std::string crofbase::ROFCORE_CONFIG_FILE = std::string("/usr/local/etc/ethcored.conf");
-/*static*/const std::string crofbase::ROFCORE_CONFIG_DPT_LIST = std::string("ethcored.datapaths");
+/*static*/const std::string crofbase::ROFCORE_LOG_FILE = std::string("/var/log/rofcored.log");
+/*static*/const std::string crofbase::ROFCORE_PID_FILE = std::string("/var/run/rofcored.pid");
+/*static*/const std::string crofbase::ROFCORE_CONFIG_FILE = std::string("/usr/local/etc/rofcored.conf");
+/*static*/const std::string crofbase::ROFCORE_CONFIG_DPT_LIST = std::string("rofcored.datapaths");
 
 
 /*static*/
@@ -42,12 +42,12 @@ crofbase::run(int argc, char** argv)
 	 * extract debug level
 	 */
 	int rofl_debug = 0;
-	if (ethcore::cconfig::get_instance().exists("ethcored.daemon.logging.rofl.debug")) {
-		rofl_debug = (int)ethcore::cconfig::get_instance().lookup("ethcored.daemon.logging.rofl.debug");
+	if (ethcore::cconfig::get_instance().exists("rofcored.daemon.logging.rofl.debug")) {
+		rofl_debug = (int)ethcore::cconfig::get_instance().lookup("rofcored.daemon.logging.rofl.debug");
 	}
 	int core_debug = 0;
-	if (ethcore::cconfig::get_instance().exists("ethcored.daemon.logging.core.debug")) {
-		core_debug = (int)ethcore::cconfig::get_instance().lookup("ethcored.daemon.logging.core.debug");
+	if (ethcore::cconfig::get_instance().exists("rofcored.daemon.logging.core.debug")) {
+		core_debug = (int)ethcore::cconfig::get_instance().lookup("rofcored.daemon.logging.core.debug");
 	}
 	if (env_parser.is_arg_set("debug")) {
 		rofl_debug = core_debug = atoi(env_parser.get_arg("debug").c_str());
@@ -59,8 +59,8 @@ crofbase::run(int argc, char** argv)
 	std::string logfile;
 	if (env_parser.is_arg_set("logfile")) {
 		logfile = env_parser.get_arg("logfile");
-	} else if (ethcore::cconfig::get_instance().exists("ethcored.daemon.logfile")) {
-		logfile = (const char*)ethcore::cconfig::get_instance().lookup("ethcored.daemon.logfile");
+	} else if (ethcore::cconfig::get_instance().exists("rofcored.daemon.logfile")) {
+		logfile = (const char*)ethcore::cconfig::get_instance().lookup("rofcored.daemon.logfile");
 	} else {
 		logfile = std::string(ROFCORE_LOG_FILE); // default
 	}
@@ -71,8 +71,8 @@ crofbase::run(int argc, char** argv)
 	std::string pidfile;
 	if (env_parser.is_arg_set("pidfile")) {
 		pidfile = env_parser.get_arg("pidfile");
-	} else if (ethcore::cconfig::get_instance().exists("ethcored.daemon.pidfile")) {
-		pidfile = (const char*)ethcore::cconfig::get_instance().lookup("ethcored.daemon.pidfile");
+	} else if (ethcore::cconfig::get_instance().exists("rofcored.daemon.pidfile")) {
+		pidfile = (const char*)ethcore::cconfig::get_instance().lookup("rofcored.daemon.pidfile");
 	} else {
 		pidfile = std::string(ROFCORE_PID_FILE); // default
 	}
@@ -83,8 +83,8 @@ crofbase::run(int argc, char** argv)
 	bool daemonize = true;
 	if (env_parser.is_arg_set("daemonize")) {
 		daemonize = atoi(env_parser.get_arg("pidfile").c_str());
-	} else if (ethcore::cconfig::get_instance().exists("ethcored.daemon.daemonize")) {
-		daemonize = (bool)ethcore::cconfig::get_instance().lookup("ethcored.daemon.daemonize");
+	} else if (ethcore::cconfig::get_instance().exists("rofcored.daemon.daemonize")) {
+		daemonize = (bool)ethcore::cconfig::get_instance().lookup("rofcored.daemon.daemonize");
 	} else {
 		daemonize = true; // default
 	}
@@ -209,8 +209,8 @@ crofbase::run(int argc, char** argv)
 	 * prepare OpenFlow socket for listening
 	 */
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-	if (ethcore::cconfig::get_instance().exists("ethcored.openflow.version")) {
-		int ofp_version = (int)ethcore::cconfig::get_instance().lookup("ethcored.openflow.version");
+	if (ethcore::cconfig::get_instance().exists("rofcored.openflow.version")) {
+		int ofp_version = (int)ethcore::cconfig::get_instance().lookup("rofcored.openflow.version");
 		ofp_version = (ofp_version < rofl::openflow13::OFP_VERSION) ? rofl::openflow13::OFP_VERSION : ofp_version;
 		versionbitmap.add_ofp_version(ofp_version);
 	} else {
@@ -224,15 +224,15 @@ crofbase::run(int argc, char** argv)
 	//base.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
 
 	std::stringstream portno;
-	if (ethcore::cconfig::get_instance().exists("ethcored.openflow.bindport")) {
-		portno << (int)ethcore::cconfig::get_instance().lookup("ethcored.openflow.bindport");
+	if (ethcore::cconfig::get_instance().exists("rofcored.openflow.bindport")) {
+		portno << (int)ethcore::cconfig::get_instance().lookup("rofcored.openflow.bindport");
 	} else {
 		portno << (int)6653;
 	}
 
 	std::stringstream bindaddr;
-	if (ethcore::cconfig::get_instance().exists("ethcored.openflow.bindaddr")) {
-		bindaddr << (const char*)ethcore::cconfig::get_instance().lookup("ethcored.openflow.bindaddr");
+	if (ethcore::cconfig::get_instance().exists("rofcored.openflow.bindaddr")) {
+		bindaddr << (const char*)ethcore::cconfig::get_instance().lookup("rofcored.openflow.bindaddr");
 	} else {
 		bindaddr << "::";
 	}
@@ -254,3 +254,138 @@ crofbase::run(int argc, char** argv)
 
 	return 0;
 }
+
+
+
+void
+crofbase::link_created(unsigned int ifindex)
+{
+	try {
+		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+
+		size_t pos = rtl.get_devname().find_first_of(".", 0);
+		std::string parent 	= rtl.get_devname().substr(0, pos);
+		uint16_t vid = 0xffff;
+		std::stringstream(rtl.get_devname().substr(pos+1)) >> vid;
+
+		std::cerr << "AAA[1]: " << parent << " vid:" << (unsigned int)vid << std::endl;
+
+		std::cerr << "AAA[1]: " << rtl;
+
+		ipcore::cipcore &ipc =
+				ipcore::cipcore::get_instance();
+		ethcore::cethcore &etc =
+				ethcore::cethcore::set_core(
+						ethcore::cdpid(rofl::crofdpt::get_dpt(dptid).get_dpid()));
+
+		if (ipc.has_link_by_ifindex(ifindex)) {
+			return;
+		}
+
+		if (not ipc.has_link_by_devname(parent)) {
+			rofcore::logging::debug << "[crofbase][link_created] ignoring device: " << parent << std::endl;
+			return;
+		}
+
+		const ipcore::clink& link = ipc.get_link_by_devname(parent);
+
+		if (not ipc.has_link_by_ifindex(ifindex)) {
+			ipc.add_link(link.get_ofp_port_no(), parent, link.get_hwaddr(), true, vid);
+		}
+
+		if (not etc.has_vlan(vid)) {
+			etc.add_vlan(vid);
+		}
+
+		if (not etc.get_vlan(vid).has_port(link.get_ofp_port_no())) {
+			etc.set_vlan(vid).add_port(link.get_ofp_port_no(), /*tagged=*/true);
+		}
+
+	} catch (ipcore::eLinkNotFound& e) {
+		// should (:) never happen
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		// should (:) never happen
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[crofbase][link_created] unexpected exception occured: " << e.what() << std::endl;
+	}
+}
+
+
+
+void
+crofbase::link_updated(unsigned int ifindex)
+{
+	try {
+		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+
+		std::string parent = rtl.get_devname().substr(0, rtl.get_devname().find_first_of(".", 0));
+
+		std::cerr << "AAA[2]: " << parent << std::endl;
+
+		std::cerr << "AAA[2]: " << rtl;
+
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		// should (:) never happen
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[crofbase][link_updated] unexpected exception occured: " << e.what() << std::endl;
+	}
+}
+
+
+
+void
+crofbase::link_deleted(unsigned int ifindex)
+{
+	try {
+		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+
+		size_t pos = rtl.get_devname().find_first_of(".", 0);
+		std::string parent 	= rtl.get_devname().substr(0, pos);
+		uint16_t vid = 0xffff;
+		std::stringstream(rtl.get_devname().substr(pos+1)) >> vid;
+
+		std::cerr << "AAA[3]: " << parent << std::endl;
+
+		std::cerr << "AAA[3]: " << rtl;
+
+		ipcore::cipcore &ipc =
+				ipcore::cipcore::get_instance();
+		ethcore::cethcore &etc =
+				ethcore::cethcore::set_core(
+						ethcore::cdpid(rofl::crofdpt::get_dpt(dptid).get_dpid()));
+
+		if (not ipc.has_link_by_devname(parent)) {
+			rofcore::logging::debug << "[crofbase][link_created] ignoring device: " << parent << std::endl;
+			return;
+		}
+
+		if (not ipc.has_link_by_ifindex(ifindex)) {
+			return;
+		}
+
+		const ipcore::clink& link = ipc.get_link_by_devname(parent);
+
+		ipc.drop_link()
+
+		if (not ipc.has_link_by_ifindex(ifindex)) {
+			ipc.add_link(link.get_ofp_port_no(), parent, link.get_hwaddr(), true, vid);
+		}
+
+		if (not etc.has_vlan(vid)) {
+			etc.add_vlan(vid);
+		}
+
+		if (not etc.get_vlan(vid).has_port(link.get_ofp_port_no())) {
+			etc.set_vlan(vid).add_port(link.get_ofp_port_no(), /*tagged=*/true);
+		}
+
+
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		// should (:) never happen
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[crofbase][link_deleted] unexpected exception occured: " << e.what() << std::endl;
+	}
+}
+
+
+
