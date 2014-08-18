@@ -69,9 +69,7 @@ cmemberport::handle_dpt_open(
 		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm.set_instructions().clear();
-		//fm.set_instructions().set_inst_goto_table().set_table_id(in_stage_table_id+3);
-		fm.set_instructions().set_inst_goto_table().set_table_id(out_stage_table_id); // FIXME
-
+		fm.set_instructions().set_inst_goto_table().set_table_id(out_stage_table_id);
 		if (not tagged) {
 			fm.set_instructions().set_inst_apply_actions().set_actions().
 					add_action_pop_vlan(index++);
