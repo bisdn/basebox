@@ -55,9 +55,8 @@ public:
 	static cipcore&
 	get_instance(
 			const rofl::cdptid& dptid = rofl::cdptid(),
-			uint8_t in_ofp_table_id = 0,
-			uint8_t fwd_ofp_table_id = 1,
-			uint8_t out_ofp_table_id = 2);
+			uint8_t local_ofp_table_id = 3,
+			uint8_t out_ofp_table_id = 4);
 
 public:
 
@@ -82,7 +81,7 @@ public:
 			delete links[ifindex];
 			links.erase(ifindex);
 		}
-		links[ifindex] = new clink(dptid, ifindex, devname, hwaddr, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id, tagged, vid);
+		links[ifindex] = new clink(dptid, ifindex, devname, hwaddr, local_ofp_table_id, out_ofp_table_id, tagged, vid);
 		if (STATE_ATTACHED == state) {
 			links[ifindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
@@ -96,7 +95,7 @@ public:
 	clink&
 	set_link(int ifindex, const std::string& devname, const rofl::caddress_ll& hwaddr, bool tagged = false, uint16_t vid = 1) {
 		if (links.find(ifindex) == links.end()) {
-			links[ifindex] = new clink(dptid, ifindex, devname, hwaddr, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id, tagged, vid);
+			links[ifindex] = new clink(dptid, ifindex, devname, hwaddr, local_ofp_table_id, out_ofp_table_id, tagged, vid);
 			if (STATE_ATTACHED == state) {
 				links[ifindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
@@ -206,7 +205,7 @@ public:
 		if (rtables.find(rttblid) != rtables.end()) {
 			rtables.erase(rttblid);
 		}
-		rtables[rttblid] = croutetable(rttblid, dptid, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id);
+		rtables[rttblid] = croutetable(rttblid, dptid, local_ofp_table_id, out_ofp_table_id);
 		if (STATE_ATTACHED == state) {
 			rtables[rttblid].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
@@ -219,7 +218,7 @@ public:
 	croutetable&
 	set_table(unsigned int rttblid) {
 		if (rtables.find(rttblid) == rtables.end()) {
-			rtables[rttblid] = croutetable(rttblid, dptid, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id);
+			rtables[rttblid] = croutetable(rttblid, dptid, local_ofp_table_id, out_ofp_table_id);
 			if (STATE_ATTACHED == state) {
 				rtables[rttblid].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
@@ -301,8 +300,7 @@ private:
 	rofl::cdptid 						dptid;
 	std::map<int, clink*> 				links;	// key: ifindex, value: ptr to clink
 	std::map<unsigned int, croutetable>	rtables;
-	uint8_t								in_ofp_table_id;
-	uint8_t 							fwd_ofp_table_id;
+	uint8_t								local_ofp_table_id;
 	uint8_t								out_ofp_table_id;
 
 	static cipcore* sipcore;	// singleton
@@ -313,11 +311,11 @@ private:
 	 *
 	 */
 	cipcore(const rofl::cdptid& dptid,
-			uint8_t in_ofp_table_id = 0,
-			uint8_t fwd_ofp_table_id = 1,
-			uint8_t out_ofp_table_id = 2) :
-		state(STATE_DETACHED), dptid(dptid), in_ofp_table_id(in_ofp_table_id),
-			fwd_ofp_table_id(fwd_ofp_table_id), out_ofp_table_id(out_ofp_table_id) {};
+			uint8_t local_ofp_table_id = 3,
+			uint8_t out_ofp_table_id = 4) :
+		state(STATE_DETACHED), dptid(dptid),
+		local_ofp_table_id(local_ofp_table_id),
+		out_ofp_table_id(out_ofp_table_id) {};
 
 
 	/**

@@ -69,7 +69,6 @@ public:
 			const std::string& devname,
 			const rofl::caddress_ll& hwaddr,
 			uint8_t in_ofp_table_id,
-			uint8_t fwd_ofp_table_id,
 			uint8_t out_ofp_table_id,
 			bool tagged = false,
 			uint16_t vid = 0xffff);
@@ -518,7 +517,6 @@ private:
 	int					 		 		ifindex;		// ifindex for tapdevice
 	rofl::cdptid						dptid;
 	uint8_t								in_ofp_table_id;
-	uint8_t								fwd_ofp_table_id;
 	uint8_t								out_ofp_table_id;
 	bool								tagged;
 	uint16_t							vid;

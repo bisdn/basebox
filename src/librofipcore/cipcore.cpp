@@ -14,10 +14,10 @@ std::string cipcore::script_path_port_down 	= std::string("/var/lib/ipcore/port-
 /*static*/
 cipcore&
 cipcore::get_instance(
-		const rofl::cdptid& dptid, uint8_t in_ofp_table_id, uint8_t fwd_ofp_table_id, uint8_t out_ofp_table_id)
+		const rofl::cdptid& dptid, uint8_t local_ofp_table_id, uint8_t out_ofp_table_id)
 {
 	if (NULL == cipcore::sipcore) {
-		cipcore::sipcore = new cipcore(dptid, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id);
+		cipcore::sipcore = new cipcore(dptid, local_ofp_table_id, out_ofp_table_id);
 	}
 	return *(cipcore::sipcore);
 }
@@ -150,14 +150,14 @@ cipcore::set_forwarding(bool forward)
 		} else {
 			fed.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		}
-		fed.set_table_id(in_ofp_table_id);
+		fed.set_table_id(local_ofp_table_id);
 		fed.set_idle_timeout(0);
 		fed.set_hard_timeout(0);
 		fed.set_priority(0); // lowest priority
-		fed.set_instructions().add_inst_goto_table().set_table_id(fwd_ofp_table_id);
+		fed.set_instructions().add_inst_goto_table().set_table_id(out_ofp_table_id);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fed);
 
-		fed.set_table_id(fwd_ofp_table_id);
+		fed.set_table_id(out_ofp_table_id);
 		fed.set_instructions().clear();
 		fed.set_instructions().set_inst_apply_actions().set_actions().
 				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
@@ -689,7 +689,7 @@ cipcore::redirect_ipv4_multicast()
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_ADD);
-		fe.set_table_id(in_ofp_table_id);
+		fe.set_table_id(local_ofp_table_id);
 
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofl::caddress_in4("224.0.0.0"), rofl::caddress_in4("240.0.0.0"));
@@ -719,7 +719,7 @@ cipcore::redirect_ipv6_multicast()
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_ADD);
-		fe.set_table_id(in_ofp_table_id);
+		fe.set_table_id(local_ofp_table_id);
 
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofl::caddress_in6("ff00::"), rofl::caddress_in6("ff00::"));

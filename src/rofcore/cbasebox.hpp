@@ -95,7 +95,7 @@ protected:
 	handle_dpt_open(
 			rofl::crofdpt& dpt) {
 		dptid = dpt.get_dptid();
-		ipcore::cipcore::get_instance(dpt.get_dptid(), 3, 4, 4);
+		ipcore::cipcore::get_instance(dpt.get_dptid(), /*local-stage=*/3, /*out-stage=*/4);
 		ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid()), /*default_vid=*/1, 0, 1, 5);
 		dpt.flow_mod_reset();
 		dpt.group_mod_reset();
