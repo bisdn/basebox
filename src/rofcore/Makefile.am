@@ -12,7 +12,7 @@ rofcored_SOURCES = \
 	cconfig.cpp
 
 	
-rofcored_LDADD = -lpthread -lrt -L../librofnetlink -lrofnetlink -L../librofethcore -lrofethcore -L../librofipcore -lrofipcore
+rofcored_LDADD = -lpthread -lrt -L../librofnetlink -lrofnetlink -L../librofethcore -lrofethcore -L../librofipcore -lrofipcore -L../librofgtpcore -lrofgtpcore
 
 AM_CPPFLAGS = -I$(top_srcdir)/src/librofethcore -I$(top_srcdir)/src/librofipcore
 AM_LDFLAGS = -static
