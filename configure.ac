@@ -101,8 +101,6 @@ m4_include([config/versioning.m4])
 AC_CONFIG_FILES([
 	Makefile
 	src/Makefile
-	src/ipcore/Makefile
-	src/ethcore/Makefile
 	src/dhcpv6snoop/Makefile
 	src/rofcore/Makefile
 	src/librofnetlink/Makefile

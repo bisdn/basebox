@@ -6,8 +6,8 @@ sbin_PROGRAMS = rofcored
 
 rofcored_SOURCES = \
 	rofcored.cpp \
-	crofbase.hpp \
-	crofbase.cpp \
+	cbasebox.hpp \
+	cbasebox.cpp \
 	cconfig.hpp \
 	cconfig.cpp
 

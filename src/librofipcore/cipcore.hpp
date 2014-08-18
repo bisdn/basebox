@@ -28,7 +28,7 @@ extern "C" {
 #include <rofl/common/crofbase.h>
 #include <rofl/common/openflow/cofhelloelemversionbitmap.h>
 
-//#include "cconfig.h"
+#include "ctapdev.h"
 #include "clogging.h"
 #include "clink.hpp"
 #include "cnetlink.h"
@@ -66,7 +66,7 @@ public:
 	 */
 	void
 	clear_links() {
-		for (std::map<uint32_t, clink*>::iterator
+		for (std::map<int, clink*>::iterator
 				it = links.begin(); it != links.end(); ++it) {
 			delete it->second;
 		}
@@ -77,152 +77,86 @@ public:
 	 *
 	 */
 	clink&
-	add_link(uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr, bool tagged = false, uint16_t vid = 1) {
-		if (links.find(ofp_port_no) != links.end()) {
-			links.erase(ofp_port_no);
+	add_link(int ifindex, const std::string& devname, const rofl::caddress_ll& hwaddr, bool tagged = false, uint16_t vid = 1) {
+		if (links.find(ifindex) != links.end()) {
+			delete links[ifindex];
+			links.erase(ifindex);
 		}
-		links[ofp_port_no] = new clink(dptid, ofp_port_no, devname, hwaddr, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id, tagged, vid);
-		links[ofp_port_no]->tap_open();
+		links[ifindex] = new clink(dptid, ifindex, devname, hwaddr, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id, tagged, vid);
 		if (STATE_ATTACHED == state) {
-			links[ofp_port_no]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			links[ifindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
 		hook_port_up(devname);
-		return *(links[ofp_port_no]);
+		return *(links[ifindex]);
 	};
 
 	/**
 	 *
 	 */
 	clink&
-	set_link(uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr, bool tagged = false, uint16_t vid = 1) {
-		if (links.find(ofp_port_no) == links.end()) {
-			links[ofp_port_no] = new clink(dptid, ofp_port_no, devname, hwaddr, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id, tagged, vid);
-			links[ofp_port_no]->tap_open();
+	set_link(int ifindex, const std::string& devname, const rofl::caddress_ll& hwaddr, bool tagged = false, uint16_t vid = 1) {
+		if (links.find(ifindex) == links.end()) {
+			links[ifindex] = new clink(dptid, ifindex, devname, hwaddr, in_ofp_table_id, fwd_ofp_table_id, out_ofp_table_id, tagged, vid);
 			if (STATE_ATTACHED == state) {
-				links[ofp_port_no]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				links[ifindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 			hook_port_up(devname);
 		}
-		return *(links[ofp_port_no]);
+		return *(links[ifindex]);
 	};
 
 	/**
 	 *
 	 */
 	clink&
-	set_link(uint32_t ofp_port_no) {
-		if (links.find(ofp_port_no) == links.end()) {
+	set_link(int ifindex) {
+		if (links.find(ifindex) == links.end()) {
 			throw eLinkNotFound("cipcore::set_link() ofp-port-no not found");
 		}
-		return *(links[ofp_port_no]);
-	};
-
-	/**
-	 *
-	 */
-	clink&
-	set_link_by_ifindex(int ifindex) {
-		std::map<uint32_t, clink*>::iterator it;
-		if ((it = find_if(links.begin(), links.end(),
-				clink::clink_by_ifindex(ifindex))) == links.end()) {
-			throw eLinkNotFound("cipcore::set_link_by_ifindex() ifindex not found");
-		}
-		return *(it->second);
+		return *(links[ifindex]);
 	};
 
 	/**
 	 *
 	 */
 	const clink&
-	get_link(uint32_t ofp_port_no) const {
-		if (links.find(ofp_port_no) == links.end()) {
+	get_link(int ifindex) const {
+		if (links.find(ifindex) == links.end()) {
 			throw eLinkNotFound("cipcore::get_link() ofp-port-no not found");
 		}
-		return *(links.at(ofp_port_no));
+		return *(links.at(ifindex));
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_link(uint32_t ofp_port_no) {
-		if (links.find(ofp_port_no) == links.end()) {
+	drop_link(int ifindex) {
+		if (links.find(ifindex) == links.end()) {
 			return;
 		}
-		hook_port_down(get_link(ofp_port_no).get_devname());
+		hook_port_down(get_link(ifindex).get_devname());
 		if (STATE_ATTACHED == state) {
-			links[ofp_port_no]->handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			links[ifindex]->handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
 		}
-		delete links[ofp_port_no];
-		links.erase(ofp_port_no);
+		delete links[ifindex];
+		links.erase(ifindex);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_link(uint32_t ofp_port_no) const {
-		return (not (links.find(ofp_port_no) == links.end()));
+	has_link(int ifindex) const {
+		return (not (links.find(ifindex) == links.end()));
 	};
 
 	/**
 	 *
 	 */
 	const clink&
-	get_link_by_ofp_port_no(uint32_t ofp_port_no) const {
-		std::map<uint32_t, clink*>::const_iterator it;
-		if ((it = find_if(links.begin(), links.end(),
-				clink::clink_by_ofp_port_no(ofp_port_no))) == links.end()) {
-			throw eLinkNotFound("cipcore::get_link_by_ofp_port_no() ofp-port-no not found");
-		}
-		return *(it->second);
-	};
-
-	/**
-	 *
-	 */
-	bool
-	has_link_by_ofp_port_no(uint32_t ofp_port_no) const {
-		std::map<uint32_t, clink*>::const_iterator it;
-		if ((it = find_if(links.begin(), links.end(),
-				clink::clink_by_ofp_port_no(ofp_port_no))) == links.end()) {
-			return false;
-		}
-		return true;
-	};
-
-	/**
-	 *
-	 */
-	const clink&
-	get_link_by_ifindex(int ifindex) const {
-		std::map<uint32_t, clink*>::const_iterator it;
-		if ((it = find_if(links.begin(), links.end(),
-				clink::clink_by_ifindex(ifindex))) == links.end()) {
-			throw eLinkNotFound("cipcore::get_link_by_ifindex() ifindex not found");
-		}
-		return *(it->second);
-	};
-
-	/**
-	 *
-	 */
-	bool
-	has_link_by_ifindex(int ifindex) const {
-		std::map<uint32_t, clink*>::const_iterator it;
-		if ((it = find_if(links.begin(), links.end(),
-				clink::clink_by_ifindex(ifindex))) == links.end()) {
-			return false;
-		}
-		return true;
-	};
-
-	/**
-	 *
-	 */
-	const clink&
-	get_link_by_devname(const std::string& devname) const {
-		std::map<uint32_t, clink*>::const_iterator it;
+	get_link(const std::string& devname) const {
+		std::map<int, clink*>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_devname(devname))) == links.end()) {
 			throw eLinkNotFound("cipcore::get_link_by_devname() devname not found");
@@ -233,9 +167,22 @@ public:
 	/**
 	 *
 	 */
+	void
+	drop_link(const std::string& devname) {
+		std::map<int, clink*>::const_iterator it;
+		if ((it = find_if(links.begin(), links.end(),
+				clink::clink_by_devname(devname))) == links.end()) {
+			return;
+		}
+		drop_link(it->first);
+	};
+
+	/**
+	 *
+	 */
 	bool
-	has_link_by_devname(const std::string& devname) const {
-		std::map<uint32_t, clink*>::const_iterator it;
+	has_link(const std::string& devname) const {
+		std::map<int, clink*>::const_iterator it;
 		if ((it = find_if(links.begin(), links.end(),
 				clink::clink_by_devname(devname))) == links.end()) {
 			return false;
@@ -325,7 +272,7 @@ public:
 			os << rofcore::indent(2) << ipcore.dptid;
 		}
 		rofcore::indent i(2);
-		for (std::map<unsigned int, clink*>::const_iterator
+		for (std::map<int, clink*>::const_iterator
 				it = ipcore.links.begin(); it != ipcore.links.end(); ++it) {
 			os << *(it->second);
 		}
@@ -352,7 +299,7 @@ private:
 
 	ofp_core_state_t					state;
 	rofl::cdptid 						dptid;
-	std::map<uint32_t, clink*> 			links;	// key: ofp port-no, value: clink
+	std::map<int, clink*> 				links;	// key: ifindex, value: ptr to clink
 	std::map<unsigned int, croutetable>	rtables;
 	uint8_t								in_ofp_table_id;
 	uint8_t 							fwd_ofp_table_id;

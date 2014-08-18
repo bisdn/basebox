@@ -17,9 +17,7 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
 
-#include "ctapdev.h"
 #include "cnetlink.h"
-#include "cpacketpool.h"
 #include "caddr.hpp"
 #include "cneigh.hpp"
 
@@ -30,14 +28,6 @@ public:
 	eLinkBase(const std::string& __arg) : std::runtime_error(__arg) {};
 };
 //class eLinkCritical 			: public eLinkBase {};
-class eLinkNoDptAttached		: public eLinkBase {
-public:
-	eLinkNoDptAttached(const std::string& __arg) : eLinkBase(__arg) {};
-};
-class eLinkTapDevNotFound		: public eLinkBase {
-public:
-	eLinkTapDevNotFound(const std::string& __arg) : eLinkBase(__arg) {};
-};
 class eLinkNotFound				: public eLinkBase {
 public:
 	eLinkNotFound(const std::string& __arg) : eLinkBase(__arg) {};
@@ -61,8 +51,7 @@ public:
 
 
 class clink :
-		public rofcore::cnetlink_common_observer,
-		public rofcore::cnetdev_owner
+		public rofcore::cnetlink_common_observer
 {
 public:
 
@@ -76,7 +65,7 @@ public:
 	 */
 	clink(
 			const rofl::cdptid& dptid,
-			uint32_t ofp_port_no,
+			int ifindex,
 			const std::string& devname,
 			const rofl::caddress_ll& hwaddr,
 			uint8_t in_ofp_table_id,
@@ -109,35 +98,18 @@ public:
 		//neightable.set_dptid(dptid);
 	};
 
-	/**
-	 *
-	 */
-	uint32_t
-	get_ofp_port_no() const { return ofp_port_no; };
-
-	/**
-	 *
-	 */
-	void
-	set_ofp_port_no(uint32_t ofp_port_no) { this->ofp_port_no = ofp_port_no; };
-
-	/**
-	 *
-	 */
-	const rofl::openflow::cofport&
-	get_ofp_port() const { return rofl::crofdpt::get_dpt(dptid).get_ports().get_port(ofp_port_no); };
 
 	/**
 	 *
 	 */
 	std::string
-	get_devname() const { return get_ofp_port().get_name(); };
+	get_devname() const { return devname; };
 
 	/**
 	 *
 	 */
 	rofl::cmacaddr
-	get_hwaddr() const { return get_ofp_port().get_hwaddr(); };
+	get_hwaddr() const { return hwaddr; };
 
 	/**
 	 *
@@ -157,17 +129,6 @@ public:
 	uint16_t
 	get_vlan_vid() const { return vid; };
 
-	/**
-	 *
-	 */
-	void
-	tap_open();
-
-	/**
-	 *
-	 */
-	void
-	tap_close();
 
 public:
 
@@ -462,17 +423,6 @@ public:
 		clear_addrs(); clear_neighs();
 	};
 
-	/*
-	 * from ctapdev
-	 */
-	virtual void
-	enqueue(
-			rofcore::cnetdev *netdev, rofl::cpacket* pkt);
-
-	virtual void
-	enqueue(
-			rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts);
-
 
 	/*
 	 * from crofbase
@@ -482,14 +432,6 @@ public:
 
 	void
 	handle_dpt_close(rofl::crofdpt& dpt);
-
-	void
-	handle_packet_in(
-			rofl::cpacket const& pkt);
-
-	void
-	handle_port_status(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);
 
 
 public:
@@ -501,9 +443,9 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, clink const& link) {
 		os << rofcore::indent(0) << "<clink: "
-				<< "ofp-portno:" << (unsigned int)link.ofp_port_no << " "
 				<< "ifindex:" << (int)link.ifindex << " "
 				<< "devname:" << link.get_devname() << " "
+				<< "vlan:{vid: " << (int)link.vid << ", tagged:" << (link.tagged ? "true":"false") << "} "
 				<< " >" << std::endl;
 		os << rofcore::indent(2) << "<hwaddr: >"  << std::endl;
 		os << rofcore::indent(4) << link.get_hwaddr();
@@ -541,19 +483,6 @@ public:
 	/**
 	 *
 	 */
-	class clink_by_ofp_port_no {
-		uint32_t ofp_port_no;
-	public:
-		clink_by_ofp_port_no(uint32_t ofp_port_no) : ofp_port_no(ofp_port_no) {};
-		bool operator() (const std::pair<unsigned int, clink*>& p) {
-			return (ofp_port_no == p.second->ofp_port_no);
-		};
-	};
-
-
-	/**
-	 *
-	 */
 	class clink_by_ifindex {
 		int ifindex;
 	public:
@@ -584,7 +513,6 @@ private:
 	};
 
 	enum ofp_state_t					state;
-	uint32_t			 		 		ofp_port_no;	// OpenFlow portno assigned to port on dpt mapped to this dptport instance
 	std::string							devname;
 	rofl::caddress_ll					hwaddr;
 	int					 		 		ifindex;		// ifindex for tapdevice
@@ -594,7 +522,6 @@ private:
 	uint8_t								out_ofp_table_id;
 	bool								tagged;
 	uint16_t							vid;
-	rofcore::ctapdev					*tapdev;		// tap device emulating the mapped port on this system
 
 	enum cdptlink_flag_t {
 		FLAG_TAP_DEVICE_ACTIVE = 1,

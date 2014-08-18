@@ -27,7 +27,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
 		const ipcore::clink& dpl =
-				cipcore::get_instance().get_link_by_ifindex(rtn.get_ifindex());
+				cipcore::get_instance().get_link(rtn.get_ifindex());
 
 
 
@@ -42,7 +42,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		uint16_t vid = dpl.get_vlan_vid();
 
 		// local outgoing interface => OFP portno
-		uint32_t out_portno 			= dpl.get_ofp_port_no();
+		//uint32_t out_portno 			= dpl.get_ofp_port_no();
 
 		// get group-id for this entry
 		group_id = dpt.get_next_idle_group_id();
@@ -197,7 +197,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
 		const ipcore::clink& dpl =
-				cipcore::get_instance().get_link_by_ifindex(rtn.get_ifindex());
+				cipcore::get_instance().get_link(rtn.get_ifindex());
 
 
 
@@ -212,7 +212,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		uint16_t vid = dpl.get_vlan_vid();
 
 		// local outgoing interface => OFP portno
-		uint32_t out_portno 			= dpl.get_ofp_port_no();
+		//uint32_t out_portno 			= dpl.get_ofp_port_no();
 
 		// get group-id for this entry
 		group_id = dpt.get_next_idle_group_id();

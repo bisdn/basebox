@@ -1,24 +1,24 @@
 /*
- * cethbase.cpp
+ * crofbase.cpp
  *
  *  Created on: 05.08.2014
  *      Author: andreas
  */
 
-#include "cethbase.hpp"
+#include "cbasebox.hpp"
 
-using namespace ethcore;
+using namespace basebox;
 
-/*static*/cethbase* cethbase::ethbase = (cethbase*)0;
-/*static*/const std::string cethbase::ETHCORE_LOG_FILE = std::string("/var/log/ethcored.log");
-/*static*/const std::string cethbase::ETHCORE_PID_FILE = std::string("/var/run/ethcored.pid");
-/*static*/const std::string cethbase::ETHCORE_CONFIG_FILE = std::string("/usr/local/etc/ethcored.conf");
-/*static*/const std::string cethbase::ETHCORE_CONFIG_DPT_LIST = std::string("ethcored.datapaths");
+/*static*/cbasebox* cbasebox::rofbase = (cbasebox*)0;
+/*static*/const std::string cbasebox::ROFCORE_LOG_FILE = std::string("/var/log/rofcored.log");
+/*static*/const std::string cbasebox::ROFCORE_PID_FILE = std::string("/var/run/rofcored.pid");
+/*static*/const std::string cbasebox::ROFCORE_CONFIG_FILE = std::string("/usr/local/etc/rofcored.conf");
+/*static*/const std::string cbasebox::ROFCORE_CONFIG_DPT_LIST = std::string("rofcored.datapaths");
 
 
 /*static*/
 int
-cethbase::run(int argc, char** argv)
+cbasebox::run(int argc, char** argv)
 {
 	rofl::cunixenv env_parser(argc, argv);
 
@@ -26,28 +26,28 @@ cethbase::run(int argc, char** argv)
 	//env_parser.update_default_option("logfile", ETHCORE_LOG_FILE);
 	//env_parser.update_default_option("config-file", ETHCORE_CONFIG_FILE);
 	env_parser.add_option(rofl::coption(true, NO_ARGUMENT,'D',"daemonize","daemonize",""));
-	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'l', "logfile", "set log-file", std::string(ETHCORE_LOG_FILE)));
-	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'c', "config-file", "set config-file", std::string(ETHCORE_CONFIG_FILE)));
-	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(ETHCORE_PID_FILE)));
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'l', "logfile", "set log-file", std::string(ROFCORE_LOG_FILE)));
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'c', "config-file", "set config-file", std::string(ROFCORE_CONFIG_FILE)));
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(ROFCORE_PID_FILE)));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'p', "port", "set port", ""+6653));
 
 	// command line arguments
 	env_parser.parse_args();
 
 	// configuration file
-	cconfig::get_instance().open(env_parser.get_arg("config-file"));
+	ethcore::cconfig::get_instance().open(env_parser.get_arg("config-file"));
 
 
 	/*
 	 * extract debug level
 	 */
 	int rofl_debug = 0;
-	if (cconfig::get_instance().exists("ethcored.daemon.logging.rofl.debug")) {
-		rofl_debug = (int)cconfig::get_instance().lookup("ethcored.daemon.logging.rofl.debug");
+	if (ethcore::cconfig::get_instance().exists("rofcored.daemon.logging.rofl.debug")) {
+		rofl_debug = (int)ethcore::cconfig::get_instance().lookup("rofcored.daemon.logging.rofl.debug");
 	}
 	int core_debug = 0;
-	if (cconfig::get_instance().exists("ethcored.daemon.logging.core.debug")) {
-		core_debug = (int)cconfig::get_instance().lookup("ethcored.daemon.logging.core.debug");
+	if (ethcore::cconfig::get_instance().exists("rofcored.daemon.logging.core.debug")) {
+		core_debug = (int)ethcore::cconfig::get_instance().lookup("rofcored.daemon.logging.core.debug");
 	}
 	if (env_parser.is_arg_set("debug")) {
 		rofl_debug = core_debug = atoi(env_parser.get_arg("debug").c_str());
@@ -59,10 +59,10 @@ cethbase::run(int argc, char** argv)
 	std::string logfile;
 	if (env_parser.is_arg_set("logfile")) {
 		logfile = env_parser.get_arg("logfile");
-	} else if (cconfig::get_instance().exists("ethcored.daemon.logfile")) {
-		logfile = (const char*)cconfig::get_instance().lookup("ethcored.daemon.logfile");
+	} else if (ethcore::cconfig::get_instance().exists("rofcored.daemon.logfile")) {
+		logfile = (const char*)ethcore::cconfig::get_instance().lookup("rofcored.daemon.logfile");
 	} else {
-		logfile = std::string(ETHCORE_LOG_FILE); // default
+		logfile = std::string(ROFCORE_LOG_FILE); // default
 	}
 
 	/*
@@ -71,10 +71,10 @@ cethbase::run(int argc, char** argv)
 	std::string pidfile;
 	if (env_parser.is_arg_set("pidfile")) {
 		pidfile = env_parser.get_arg("pidfile");
-	} else if (cconfig::get_instance().exists("ethcored.daemon.pidfile")) {
-		pidfile = (const char*)cconfig::get_instance().lookup("ethcored.daemon.pidfile");
+	} else if (ethcore::cconfig::get_instance().exists("rofcored.daemon.pidfile")) {
+		pidfile = (const char*)ethcore::cconfig::get_instance().lookup("rofcored.daemon.pidfile");
 	} else {
-		pidfile = std::string(ETHCORE_PID_FILE); // default
+		pidfile = std::string(ROFCORE_PID_FILE); // default
 	}
 
 	/*
@@ -83,8 +83,8 @@ cethbase::run(int argc, char** argv)
 	bool daemonize = true;
 	if (env_parser.is_arg_set("daemonize")) {
 		daemonize = atoi(env_parser.get_arg("pidfile").c_str());
-	} else if (cconfig::get_instance().exists("ethcored.daemon.daemonize")) {
-		daemonize = (bool)cconfig::get_instance().lookup("ethcored.daemon.daemonize");
+	} else if (ethcore::cconfig::get_instance().exists("rofcored.daemon.daemonize")) {
+		daemonize = (bool)ethcore::cconfig::get_instance().lookup("rofcored.daemon.daemonize");
 	} else {
 		daemonize = true; // default
 	}
@@ -111,18 +111,18 @@ cethbase::run(int argc, char** argv)
 	 * read configuration (for now: from libconfig++ file)
 	 */
 
-	cconfig& config = cconfig::get_instance();
+	ethcore::cconfig& config = ethcore::cconfig::get_instance();
 
-	if (config.exists(ETHCORE_CONFIG_DPT_LIST)) {
-		for (int i = 0; i < config.lookup(ETHCORE_CONFIG_DPT_LIST).getLength(); i++) {
+	if (config.exists(ROFCORE_CONFIG_DPT_LIST)) {
+		for (int i = 0; i < config.lookup(ROFCORE_CONFIG_DPT_LIST).getLength(); i++) {
 			try {
-				libconfig::Setting& datapath = config.lookup(ETHCORE_CONFIG_DPT_LIST)[i];
+				libconfig::Setting& datapath = config.lookup(ROFCORE_CONFIG_DPT_LIST)[i];
 
 				// get data path dpid
 				if (not datapath.exists("dpid")) {
 					continue; // as we do not know the data path dpid
 				}
-				cdpid dpid( (int)datapath["dpid"] );
+				ethcore::cdpid dpid( (int)datapath["dpid"] );
 
 				// get default port vid
 				uint16_t default_pvid = 1;
@@ -131,7 +131,7 @@ cethbase::run(int argc, char** argv)
 				}
 
 				// this is the cethcore instance for this data path
-				ethcore::cethcore& ethcore = ethcore::cethcore::set_core(dpid, default_pvid);
+				ethcore::cethcore& ethcore = ethcore::cethcore::set_core(dpid, default_pvid, 0, 1, 5);
 
 				// create vlan instance for default_pvid, just in case, there are no member ports defined
 				ethcore.set_vlan(default_pvid);
@@ -196,7 +196,7 @@ cethbase::run(int argc, char** argv)
 					}
 				}
 
-				rofcore::logging::debug << "after config:" << std::endl << cethcore::get_core(dpid);
+				rofcore::logging::debug << "after config:" << std::endl << ethcore::cethcore::get_core(dpid);
 
 
 			} catch (libconfig::SettingNotFoundException& e) {
@@ -209,8 +209,8 @@ cethbase::run(int argc, char** argv)
 	 * prepare OpenFlow socket for listening
 	 */
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-	if (cconfig::get_instance().exists("ethcored.openflow.version")) {
-		int ofp_version = (int)cconfig::get_instance().lookup("ethcored.openflow.version");
+	if (ethcore::cconfig::get_instance().exists("rofcored.openflow.version")) {
+		int ofp_version = (int)ethcore::cconfig::get_instance().lookup("rofcored.openflow.version");
 		ofp_version = (ofp_version < rofl::openflow13::OFP_VERSION) ? rofl::openflow13::OFP_VERSION : ofp_version;
 		versionbitmap.add_ofp_version(ofp_version);
 	} else {
@@ -219,20 +219,20 @@ cethbase::run(int argc, char** argv)
 
 	rofcore::logging::notice << "[ethcored][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
-	ethcore::cethbase& ethbase = ethcore::cethbase::get_instance(versionbitmap);
+	basebox::cbasebox& rofbase = basebox::cbasebox::get_instance(versionbitmap);
 
 	//base.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
 
 	std::stringstream portno;
-	if (cconfig::get_instance().exists("ethcored.openflow.bindport")) {
-		portno << (int)cconfig::get_instance().lookup("ethcored.openflow.bindport");
+	if (ethcore::cconfig::get_instance().exists("rofcored.openflow.bindport")) {
+		portno << (int)ethcore::cconfig::get_instance().lookup("rofcored.openflow.bindport");
 	} else {
 		portno << (int)6653;
 	}
 
 	std::stringstream bindaddr;
-	if (cconfig::get_instance().exists("ethcored.openflow.bindaddr")) {
-		bindaddr << (const char*)cconfig::get_instance().lookup("ethcored.openflow.bindaddr");
+	if (ethcore::cconfig::get_instance().exists("rofcored.openflow.bindaddr")) {
+		bindaddr << (const char*)ethcore::cconfig::get_instance().lookup("rofcored.openflow.bindaddr");
 	} else {
 		bindaddr << "::";
 	}
@@ -242,7 +242,7 @@ cethbase::run(int argc, char** argv)
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string(portno.str());
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_HOSTNAME).set_string(bindaddr.str());
 
-	ethbase.rpc_listen_for_dpts(socket_type, socket_params);
+	rofbase.rpc_listen_for_dpts(socket_type, socket_params);
 
 
 	/*
@@ -254,3 +254,55 @@ cethbase::run(int argc, char** argv)
 
 	return 0;
 }
+
+
+
+
+
+
+void
+cbasebox::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
+{
+	try {
+		if (not rofl::crofdpt::get_dpt(dptid).get_channel().is_established()) {
+			throw eLinkNoDptAttached("cbasebox::enqueue() dpt not found");
+		}
+
+		rofcore::ctapdev* tapdev = dynamic_cast<rofcore::ctapdev*>( netdev );
+		if (0 == tapdev) {
+			throw eLinkTapDevNotFound("cbasebox::enqueue() tap device not found");
+		}
+
+		rofl::openflow::cofactions actions(rofl::crofdpt::get_dpt(dptid).get_version());
+		actions.set_action_output(rofl::cindex(0)).set_port_no(tapdev->get_ofp_port_no());
+
+		rofl::crofdpt::get_dpt(dptid).send_packet_out_message(
+				rofl::cauxid(0),
+				rofl::openflow::base::get_ofp_no_buffer(rofl::crofdpt::get_dpt(dptid).get_version()),
+				rofl::openflow::base::get_ofpp_controller_port(rofl::crofdpt::get_dpt(dptid).get_version()),
+				actions,
+				pkt->soframe(),
+				pkt->framelen());
+
+	} catch (eLinkNoDptAttached& e) {
+		rofcore::logging::warn << "[cbasebox][enqueue] no data path attached, dropping outgoing packet" << std::endl;
+
+	} catch (eLinkTapDevNotFound& e) {
+		rofcore::logging::warn << "[cbasebox][enqueue] unable to find tap device" << std::endl;
+	}
+
+	rofcore::cpacketpool::get_instance().release_pkt(pkt);
+}
+
+
+
+void
+cbasebox::enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
+{
+	for (std::vector<rofl::cpacket*>::iterator
+			it = pkts.begin(); it != pkts.end(); ++it) {
+		enqueue(netdev, *it);
+	}
+}
+
+

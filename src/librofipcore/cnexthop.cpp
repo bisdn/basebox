@@ -34,7 +34,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data ...
 		const ipcore::clink& dpl =
-				cipcore::get_instance().get_link_by_ifindex(rtn.get_ifindex());
+				cipcore::get_instance().get_link(rtn.get_ifindex());
 
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in4& rtb =
@@ -54,7 +54,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		uint16_t vid = dpl.get_vlan_vid();
 
 		// local outgoing interface => OFP portno
-		uint32_t out_portno 			= dpl.get_ofp_port_no();
+		//uint32_t out_portno 			= dpl.get_ofp_port_no();
 
 
 
@@ -196,7 +196,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data ...
 		const ipcore::clink& dpl =
-				cipcore::get_instance().get_link_by_ifindex(rtn.get_ifindex());
+				cipcore::get_instance().get_link(rtn.get_ifindex());
 
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in6& rtb =
@@ -217,7 +217,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		uint16_t vid = dpl.get_vlan_vid();
 
 		// local outgoing interface => OFP portno
-		uint32_t out_portno 			= dpl.get_ofp_port_no();
+		//uint32_t out_portno 			= dpl.get_ofp_port_no();
 
 
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());

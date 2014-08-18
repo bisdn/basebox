@@ -15,11 +15,13 @@ extern int errno;
 ctapdev::ctapdev(
 		cnetdev_owner *netdev_owner,
 		std::string const& devname,
-		rofl::cmacaddr const& hwaddr) :
+		rofl::cmacaddr const& hwaddr,
+		uint32_t ofp_port_no) :
 		cnetdev(netdev_owner, devname),
 		fd(-1),
 		devname(devname),
-		hwaddr(hwaddr)
+		hwaddr(hwaddr),
+		ofp_port_no(ofp_port_no)
 {
 	try {
 		tap_open(devname, hwaddr);

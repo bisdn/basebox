@@ -37,7 +37,7 @@ cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 	redirect_ipv6_multicast();
 	set_forwarding(true);
 
-	for (std::map<uint32_t, clink*>::iterator
+	for (std::map<int, clink*>::iterator
 			it = links.begin(); it != links.end(); ++it) {
 		it->second->handle_dpt_open(dpt);
 	}
@@ -68,7 +68,7 @@ cipcore::handle_dpt_close(rofl::crofdpt& dpt)
 			it = rtables.begin(); it != rtables.end(); ++it) {
 		it->second.handle_dpt_close(dpt);
 	}
-	for (std::map<uint32_t, clink*>::iterator
+	for (std::map<int, clink*>::iterator
 			it = links.begin(); it != links.end(); ++it) {
 		it->second->handle_dpt_close(dpt);
 	}
@@ -88,23 +88,18 @@ cipcore::handle_port_status(
 		return;
 	}
 
-	uint32_t port_no = msg.get_port().get_port_no();
-
 	rofcore::logging::debug << "[cipcore] Port-Status message rcvd:" << std::endl << msg;
 
 	try {
 		switch (msg.get_reason()) {
 		case rofl::openflow::OFPPR_ADD: {
-			set_link(port_no).tap_open();
 			hook_port_up(msg.get_port().get_name());
 		} break;
 		case rofl::openflow::OFPPR_MODIFY: {
-			set_link(port_no).tap_open();
 			hook_port_up(msg.get_port().get_name());
 		} break;
 		case rofl::openflow::OFPPR_DELETE: {
-			set_link(port_no).tap_close();
-			drop_link(port_no);
+			drop_link(msg.get_port().get_name());
 			hook_port_down(msg.get_port().get_name());
 		} break;
 		default: {
@@ -122,26 +117,7 @@ cipcore::handle_port_status(
 void
 cipcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
-	try {
-		uint32_t port_no = msg.get_match().get_in_port();
-
-		if (not has_link(port_no)) {
-			rofcore::logging::debug << "[cipcore] received PacketIn message for unknown port, ignoring" << std::endl;
-			return;
-		}
-
-		set_link(port_no).handle_packet_in(msg.get_packet());
-
-		// drop buffer on data path, if the packet was stored there, as it is consumed entirely by the underlying kernel
-		if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()) != msg.get_buffer_id()) {
-			dpt.drop_buffer(auxid, msg.get_buffer_id());
-		}
-
-	} catch (rofcore::ePacketPoolExhausted& e) {
-		rofcore::logging::warn << "[cipcore] received PacketIn message, but buffer-pool exhausted" << std::endl;
-	} catch (rofl::openflow::eOxmNotFound& e) {
-		rofcore::logging::debug << "[cipcore] received PacketIn message without in-port match, ignoring" << std::endl;
-	}
+	rofcore::logging::info << "[cipcore] packet-in message rcvd:" << std::endl << msg;
 }
 
 
@@ -204,21 +180,43 @@ cipcore::set_forwarding(bool forward)
 void
 cipcore::link_created(unsigned int ifindex)
 {
-	// do nothing
+	try {
+		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+
+		std::string devname = rtl.get_devname();
+		uint16_t vid = 1;
+		bool tagged = false;
+
+		size_t pos = rtl.get_devname().find_first_of(".");
+		if (pos != std::string::npos) {
+			devname = rtl.get_devname().substr(0, pos);
+			std::stringstream svid(rtl.get_devname().substr(pos+1));
+			svid >> vid;
+			tagged = true;
+		}
+
+		add_link(ifindex, rtl.get_devname(), rtl.get_hwaddr(), tagged, vid);
+		rofcore::logging::debug << "[cipcore][link_created] state:" << std::endl << *this;
+
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		// should (:) never happen
+	}
 }
 
 
 void
 cipcore::link_updated(unsigned int ifindex)
 {
-	// do nothing
+	// do nothing for now
+	rofcore::logging::debug << "[cipcore][link_updated] state:" << std::endl << *this;
 }
 
 
 void
 cipcore::link_deleted(unsigned int ifindex)
 {
-	// do nothing
+	drop_link(ifindex);
+	rofcore::logging::debug << "[cipcore][link_deleted] state:" << std::endl << *this;
 }
 
 
@@ -226,12 +224,12 @@ void
 cipcore::addr_in4_created(unsigned int ifindex, uint16_t adindex)
 {
 	try {
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			return; // ignore address events for unknown interfaces
 		}
 
-		if (not get_link_by_ifindex(ifindex).has_addr_in4(adindex)) {
-			set_link_by_ifindex(ifindex).set_addr_in4(adindex);
+		if (not get_link(ifindex).has_addr_in4(adindex)) {
+			set_link(ifindex).set_addr_in4(adindex);
 			rofcore::logging::debug << "[cipcore][addr_in4_created] state:" << std::endl << *this;
 		}
 
@@ -245,12 +243,12 @@ cipcore::addr_in4_updated(unsigned int ifindex, uint16_t adindex)
 {
 	try {
 
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			return; // ignore address events for unknown interfaces
 		}
 
-		if (not get_link_by_ifindex(ifindex).has_addr_in4(adindex)) {
-			set_link_by_ifindex(ifindex).set_addr_in4(adindex);
+		if (not get_link(ifindex).has_addr_in4(adindex)) {
+			set_link(ifindex).set_addr_in4(adindex);
 			rofcore::logging::debug << "[cipcore][addr_in4_updated] state:" << std::endl << *this;
 		}
 
@@ -264,12 +262,12 @@ cipcore::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
 {
 	try {
 
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			return; // ignore address events for unknown interfaces
 		}
 
-		if (get_link_by_ifindex(ifindex).has_addr_in4(adindex)) {
-			set_link_by_ifindex(ifindex).drop_addr_in4(adindex);
+		if (get_link(ifindex).has_addr_in4(adindex)) {
+			set_link(ifindex).drop_addr_in4(adindex);
 			rofcore::logging::debug << "[cipcore][addr_in4_deleted] state:" << std::endl << *this;
 		}
 
@@ -283,12 +281,12 @@ cipcore::addr_in6_created(unsigned int ifindex, uint16_t adindex)
 {
 	try {
 
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			return; // ignore address events for unknown interfaces
 		}
 
-		if (not get_link_by_ifindex(ifindex).has_addr_in6(adindex)) {
-			set_link_by_ifindex(ifindex).set_addr_in6(adindex);
+		if (not get_link(ifindex).has_addr_in6(adindex)) {
+			set_link(ifindex).set_addr_in6(adindex);
 			rofcore::logging::debug << "[cipcore][addr_in6_created] state:" << std::endl << *this;
 		}
 
@@ -302,12 +300,12 @@ cipcore::addr_in6_updated(unsigned int ifindex, uint16_t adindex)
 {
 	try {
 
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			return; // ignore address events for unknown interfaces
 		}
 
-		if (not get_link_by_ifindex(ifindex).has_addr_in6(adindex)) {
-			set_link_by_ifindex(ifindex).set_addr_in6(adindex);
+		if (not get_link(ifindex).has_addr_in6(adindex)) {
+			set_link(ifindex).set_addr_in6(adindex);
 			rofcore::logging::debug << "[cipcore][addr_in6_updated] state:" << std::endl << *this;
 		}
 
@@ -321,12 +319,12 @@ cipcore::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 {
 	try {
 
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			return; // ignore address events for unknown interfaces
 		}
 
-		if (get_link_by_ifindex(ifindex).has_addr_in6(adindex)) {
-			set_link_by_ifindex(ifindex).drop_addr_in6(adindex);
+		if (get_link(ifindex).has_addr_in6(adindex)) {
+			set_link(ifindex).drop_addr_in6(adindex);
 			rofcore::logging::debug << "[cipcore][addr_in6_deleted] state:" << std::endl << *this;
 		}
 
@@ -500,13 +498,13 @@ cipcore::neigh_in4_created(unsigned int ifindex, uint16_t nbindex)
 {
 	try {
 
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			rofcore::logging::error << "[cipcore] neigh_in4 create: link ifindex not found: " << ifindex << std::endl;
 			return;
 		}
 
-		if (not get_link_by_ifindex(ifindex).has_neigh_in4(nbindex)) {
-			set_link_by_ifindex(ifindex).set_neigh_in4(nbindex);
+		if (not get_link(ifindex).has_neigh_in4(nbindex)) {
+			set_link(ifindex).set_neigh_in4(nbindex);
 			rofcore::logging::debug << "[cipcore][neigh_in4_created] state:" << std::endl << *this;
 		}
 
@@ -521,13 +519,13 @@ cipcore::neigh_in4_updated(unsigned int ifindex, uint16_t nbindex)
 {
 	try {
 
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			rofcore::logging::error << "[cipcore] neigh_in4 update: link ifindex not found: " << ifindex << std::endl;
 			return;
 		}
 
-		if (not get_link_by_ifindex(ifindex).has_neigh_in4(nbindex)) {
-			set_link_by_ifindex(ifindex).set_neigh_in4(nbindex);
+		if (not get_link(ifindex).has_neigh_in4(nbindex)) {
+			set_link(ifindex).set_neigh_in4(nbindex);
 			rofcore::logging::debug << "[cipcore][neigh_in4_updated] state:" << std::endl << *this;
 		}
 
@@ -542,13 +540,13 @@ cipcore::neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex)
 {
 	try {
 
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			rofcore::logging::error << "[cipcore] neigh_in4 delete: link ifindex not found: " << ifindex << std::endl;
 			return;
 		}
 
-		if (get_link_by_ifindex(ifindex).has_neigh_in6(nbindex)) {
-			set_link_by_ifindex(ifindex).drop_neigh_in6(nbindex);
+		if (get_link(ifindex).has_neigh_in6(nbindex)) {
+			set_link(ifindex).drop_neigh_in6(nbindex);
 			rofcore::logging::debug << "[cipcore][neigh_in4_deleted] state:" << std::endl << *this;
 		}
 
@@ -563,13 +561,13 @@ cipcore::neigh_in6_created(unsigned int ifindex, uint16_t nbindex)
 {
 	try {
 
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			rofcore::logging::error << "[cipcore] neigh_in6 create: link ifindex not found: " << ifindex << std::endl;
 			return;
 		}
 
-		if (not get_link_by_ifindex(ifindex).has_neigh_in6(nbindex)) {
-			set_link_by_ifindex(ifindex).set_neigh_in6(nbindex);
+		if (not get_link(ifindex).has_neigh_in6(nbindex)) {
+			set_link(ifindex).set_neigh_in6(nbindex);
 			rofcore::logging::debug << "[cipcore][neigh_in6_created] state:" << std::endl << *this;
 		}
 
@@ -584,13 +582,13 @@ cipcore::neigh_in6_updated(unsigned int ifindex, uint16_t nbindex)
 {
 	try {
 
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			rofcore::logging::error << "[cipcore] neigh_in6 create: link ifindex not found: " << ifindex << std::endl;
 			return;
 		}
 
-		if (not get_link_by_ifindex(ifindex).has_neigh_in6(nbindex)) {
-			set_link_by_ifindex(ifindex).set_neigh_in6(nbindex);
+		if (not get_link(ifindex).has_neigh_in6(nbindex)) {
+			set_link(ifindex).set_neigh_in6(nbindex);
 			rofcore::logging::debug << "[cipcore][neigh_in6_updated] state:" << std::endl << *this;
 		}
 
@@ -605,13 +603,13 @@ cipcore::neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex)
 {
 	try {
 
-		if (not has_link_by_ifindex(ifindex)) {
+		if (not has_link(ifindex)) {
 			rofcore::logging::error << "[cipcore] neigh_in6 delete: link ifindex not found: " << ifindex << std::endl;
 			return;
 		}
 
-		if (get_link_by_ifindex(ifindex).has_neigh_in6(nbindex)) {
-			set_link_by_ifindex(ifindex).drop_neigh_in6(nbindex);
+		if (get_link(ifindex).has_neigh_in6(nbindex)) {
+			set_link(ifindex).drop_neigh_in6(nbindex);
 			rofcore::logging::debug << "[cipcore][neigh_in6_deleted] state:" << std::endl << *this;
 		}
 
