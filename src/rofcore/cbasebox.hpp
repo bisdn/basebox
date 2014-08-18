@@ -96,9 +96,10 @@ protected:
 			rofl::crofdpt& dpt) {
 		dptid = dpt.get_dptid();
 		ipcore::cipcore::get_instance(dpt.get_dptid(), 3, 4, 4);
+		ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid()), /*default_vid=*/1, 0, 1, 5);
 		dpt.flow_mod_reset();
 		dpt.group_mod_reset();
-		ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).handle_dpt_open(dpt);
+		dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 	};
 
 	/**
@@ -243,10 +244,16 @@ protected:
 	virtual void
 	handle_port_desc_stats_reply(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg) {
-		if (ethcore::cethcore::has_core(ethcore::cdpid(dpt.get_dpid()))) {
-			ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).handle_port_desc_stats_reply(dpt, auxid, msg);
-		}
+
 		dpt.set_ports() = msg.get_ports();
+
+		for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
+				it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
+			const rofl::openflow::cofport& port = *(it->second);
+
+			ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).set_vlan(/*default_vid=*/1).add_port(port.get_port_no(), /*tagged=*/false);
+		}
+
 		for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
 				it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
 			const rofl::openflow::cofport& port = *(it->second);
@@ -255,6 +262,8 @@ protected:
 				add_tap_dev(port.get_port_no(), port.get_name(), port.get_hwaddr());
 			}
 		}
+
+		ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).handle_dpt_open(dpt);
 		ipcore::cipcore::get_instance().handle_dpt_open(dpt);
 	};
 
@@ -263,9 +272,6 @@ protected:
 	 */
 	virtual void
 	handle_port_desc_stats_reply_timeout(rofl::crofdpt& dpt, uint32_t xid) {
-		if (ethcore::cethcore::has_core(ethcore::cdpid(dpt.get_dpid()))) {
-			ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).handle_port_desc_stats_reply_timeout(dpt, xid);
-		}
 	};
 
 public:

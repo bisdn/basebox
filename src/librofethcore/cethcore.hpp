@@ -13,13 +13,14 @@
 #include <map>
 #include <rofl/common/crofdpt.h>
 
+#include "cnetlink.h"
 #include "clogging.h"
 #include "cvlan.hpp"
 #include "cdpid.hpp"
 
 namespace ethcore {
 
-class cethcore {
+class cethcore : public rofcore::cnetlink_common_observer {
 public:
 
 	/**
@@ -163,7 +164,9 @@ public:
 		if (vlans.find(vid) == vlans.end()) {
 			return;
 		}
-		release_group_id(vlans[vid].get_group_id());
+		if (STATE_ATTACHED == state) {
+			rofl::crofdpt::get_dpt(dpid.get_dpid()).release_group_id(vlans[vid].get_group_id());
+		}
 		vlans.erase(vid);
 	};
 
@@ -230,39 +233,6 @@ public:
 	handle_error_message(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg);
 
-	/**
-	 *
-	 */
-	void
-	handle_port_desc_stats_reply(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg);
-
-	/**
-	 *
-	 */
-	void
-	handle_port_desc_stats_reply_timeout(rofl::crofdpt& dpt, uint32_t xid);
-
-private:
-
-	/**
-	 *
-	 */
-	void
-	drop_buffer(
-			const rofl::cauxid& auxid, uint32_t buffer_id);
-
-	/**
-	 *
-	 */
-	uint32_t
-	get_next_group_id();
-
-	/**
-	 *
-	 */
-	void
-	release_group_id(uint32_t group_id);
 
 public:
 
@@ -299,6 +269,18 @@ private:
 	uint8_t								dst_stage_table_id;
 
 	static std::map<cdpid, cethcore*> 	ethcores;
+
+public:
+
+	// links
+	virtual void
+	link_created(unsigned int ifindex);
+
+	virtual void
+	link_updated(unsigned int ifindex);
+
+	virtual void
+	link_deleted(unsigned int ifindex);
 };
 
 }; // end of namespace

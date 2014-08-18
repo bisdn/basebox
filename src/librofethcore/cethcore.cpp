@@ -15,23 +15,12 @@ void
 cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
-
-		switch (state) {
-		case STATE_IDLE:
-		case STATE_DETACHED: {
-			state = STATE_QUERYING;
-			dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
-		} return;
-		default: {
-			state = STATE_ATTACHED;
-
-		};
-		}
+		state = STATE_ATTACHED;
 
 		for (std::map<uint16_t, cvlan>::iterator
 				it = vlans.begin(); it != vlans.end(); ++it) {
 			if (it->second.get_group_id() != 0) {
-				release_group_id(it->second.get_group_id());
+				dpt.release_group_id(it->second.get_group_id());
 			}
 			it->second.handle_dpt_open(dpt);
 		}
@@ -83,7 +72,7 @@ cethcore::handle_dpt_close(rofl::crofdpt& dpt)
 		for (std::map<uint16_t, cvlan>::iterator
 				it = vlans.begin(); it != vlans.end(); ++it) {
 			it->second.handle_dpt_close(dpt);
-			release_group_id(it->second.get_group_id());
+			dpt.release_group_id(it->second.get_group_id());
 		}
 
 		// install miss entry for src stage table
@@ -118,7 +107,7 @@ cethcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::
 		if (has_vlan(vid)) {
 			set_vlan(vid).handle_packet_in(dpt, auxid, msg);
 		} else {
-			drop_buffer(auxid, msg.get_buffer_id());
+			dpt.drop_buffer(auxid, msg.get_buffer_id());
 		}
 
 	} catch (rofl::openflow::eOxmNotFound& e) {
@@ -168,87 +157,116 @@ cethcore::handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, ro
 
 
 void
-cethcore::handle_port_desc_stats_reply(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg)
-{
-	dpt.set_ports() = msg.get_ports();
-
-	switch (state) {
-	case STATE_QUERYING: {
-		state = STATE_ATTACHED;
-		/*
-		 * this code block adds all unspecified ports automatically to the default port vid defined for this cethcore instance
-		 */
-		for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
-				it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
-			bool found = false;
-			for (std::map<uint16_t, cvlan>::iterator
-					jt = vlans.begin(); jt != vlans.end(); ++jt) {
-				if (jt->second.has_port(it->first)) {
-					found = true;
-				}
-			}
-			if (not found) {
-				set_vlan(default_pvid).add_port(it->first, false);
-			}
-		}
-
-		/*
-		 *
-		 */
-		handle_dpt_open(dpt);
-	} break;
-	default: {
-
-	};
-	}
-}
-
-
-
-void
-cethcore::handle_port_desc_stats_reply_timeout(rofl::crofdpt& dpt, uint32_t xid)
-{
-	dpt.disconnect(rofl::cauxid(0));
-}
-
-
-
-void
-cethcore::drop_buffer(const rofl::cauxid& auxid, uint32_t buffer_id)
+cethcore::link_created(unsigned int ifindex)
 {
 	try {
-		if (STATE_ATTACHED != state) {
-			return;
+		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+
+		std::string devname = rtl.get_devname();
+		uint16_t vid = 1;
+		bool tagged = false;
+
+		size_t pos = rtl.get_devname().find_first_of(".");
+		if (pos != std::string::npos) {
+			devname = rtl.get_devname().substr(0, pos);
+			std::stringstream svid(rtl.get_devname().substr(pos+1));
+			svid >> vid;
+			tagged = true;
 		}
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid.get_dpid());
-		rofl::openflow::cofactions empty(dpt.get_version());
-		dpt.send_packet_out_message(auxid, buffer_id, rofl::openflow::OFPP_CONTROLLER, empty);
+		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid.get_dpid()).get_ports().get_port(devname);
 
+		if (not has_vlan(vid)) {
+			add_vlan(vid).add_port(port.get_port_no(), true);
+		} else {
+			if (not get_vlan(vid).has_port(port.get_port_no())) {
+				set_vlan(vid).add_port(port.get_port_no(), true);
+			}
+		}
+		rofcore::logging::debug << "[cethcore][link_created] state:" << std::endl << *this;
+
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		// should (:) never happen
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::debug << "[cethcore][drop_buffer] unable to drop buffer, dpt not found" << std::endl;
+		// do nothing
 	}
-}
-
-
-
-uint32_t
-cethcore::get_next_group_id()
-{
-	uint32_t group_id = 1;
-	while (group_ids.find(group_id) != group_ids.end()) {
-		group_id++;
-	}
-	group_ids.insert(group_id);
-	return group_id;
 }
 
 
 
 void
-cethcore::release_group_id(uint32_t group_id)
+cethcore::link_updated(unsigned int ifindex)
 {
-	group_ids.erase(group_id);
+	try {
+		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+
+		std::string devname = rtl.get_devname();
+		uint16_t vid = 1;
+		bool tagged = false;
+
+		size_t pos = rtl.get_devname().find_first_of(".");
+		if (pos != std::string::npos) {
+			devname = rtl.get_devname().substr(0, pos);
+			std::stringstream svid(rtl.get_devname().substr(pos+1));
+			svid >> vid;
+			tagged = true;
+		}
+
+		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid.get_dpid()).get_ports().get_port(devname);
+
+		if (not has_vlan(vid)) {
+			add_vlan(vid).add_port(port.get_port_no(), true);
+		} else {
+			if (not get_vlan(vid).has_port(port.get_port_no())) {
+				set_vlan(vid).add_port(port.get_port_no(), true);
+			}
+		}
+		rofcore::logging::debug << "[cethcore][link_updated] state:" << std::endl << *this;
+
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		// should (:) never happen
+	} catch (rofl::eRofDptNotFound& e) {
+		// do nothing
+	}
+}
+
+
+
+void
+cethcore::link_deleted(unsigned int ifindex)
+{
+	try {
+		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+
+		std::string devname = rtl.get_devname();
+		uint16_t vid = 1;
+		bool tagged = false;
+
+		size_t pos = rtl.get_devname().find_first_of(".");
+		if (pos != std::string::npos) {
+			devname = rtl.get_devname().substr(0, pos);
+			std::stringstream svid(rtl.get_devname().substr(pos+1));
+			svid >> vid;
+			tagged = true;
+		}
+
+		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid.get_dpid()).get_ports().get_port(devname);
+
+		if (not has_vlan(vid)) {
+			return;
+		}
+		if (not get_vlan(vid).has_port(port.get_port_no())) {
+			return;
+		}
+		set_vlan(vid).drop_port(port.get_port_no());
+
+		rofcore::logging::debug << "[cethcore][link_deleted] state:" << std::endl << *this;
+
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		// should (:) never happen
+	} catch (rofl::eRofDptNotFound& e) {
+		// do nothing
+	}
 }
 
 

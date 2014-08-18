@@ -113,6 +113,7 @@ cbasebox::run(int argc, char** argv)
 
 	ethcore::cconfig& config = ethcore::cconfig::get_instance();
 
+#if 0
 	if (config.exists(ROFCORE_CONFIG_DPT_LIST)) {
 		for (int i = 0; i < config.lookup(ROFCORE_CONFIG_DPT_LIST).getLength(); i++) {
 			try {
@@ -204,6 +205,7 @@ cbasebox::run(int argc, char** argv)
 			}
 		}
 	}
+#endif
 
 	/*
 	 * prepare OpenFlow socket for listening
