@@ -16,7 +16,7 @@
 #include <rofl/common/cdptid.h>
 
 #include "clogging.h"
-#include "cbearer.hpp"
+#include "crelay.hpp"
 #include "cterm.hpp"
 
 namespace rofgtp {
@@ -94,7 +94,7 @@ public:
 	 *
 	 */
 	cgtpcore(const rofl::cdptid& dptid) :
-		dptid(dptid) {};
+		state(STATE_DETACHED), dptid(dptid) {};
 
 	/**
 	 *
@@ -107,46 +107,159 @@ public:
 	 *
 	 */
 	void
-	clear_bearers();
+	handle_dpt_open(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
-	cbearer&
-	add_bearer() {
+	void
+	handle_dpt_close(rofl::crofdpt& dpt);
 
+public:
+
+	/**
+	 *
+	 */
+	void
+	clear_relays_in4() {
+		relays_in4.clear();
 	};
 
 	/**
 	 *
 	 */
-	cbearer&
-	set_bearer() {
-
+	crelay_in4&
+	add_relay_in4(const clabel_in4& label_in, const clabel_in4& label_out) {
+		if (relays_in4.find(label_in) != relays_in4.end()) {
+			relays_in4.erase(label_in);
+		}
+		relays_in4[label_in] = crelay_in4(label_in, label_out);
+		try {
+			if (STATE_ATTACHED == state) {
+				relays_in4[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+		return relays_in4[label_in];
 	};
 
 	/**
 	 *
 	 */
-	const cbearer&
-	get_bearer() const {
+	crelay_in4&
+	set_relay_in4(const clabel_in4& label_in, const clabel_in4& label_out) {
+		if (relays_in4.find(label_in) == relays_in4.end()) {
+			relays_in4[label_in] = crelay_in4(label_in, label_out);
+		}
+		try {
+			if (STATE_ATTACHED == state) {
+				relays_in4[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+		return relays_in4[label_in];
+	};
 
+	/**
+	 *
+	 */
+	const crelay_in4&
+	get_relay_in4(const clabel_in4& label_in) const {
+		if (relays_in4.find(label_in) == relays_in4.end()) {
+			throw eRelayNotFound("cgtpcore::get_relay_in4() label not found");
+		}
+		return relays_in4.at(label_in);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_bearer() {
-
+	drop_relay_in4(const clabel_in4& label_in) {
+		if (relays_in4.find(label_in) == relays_in4.end()) {
+			return;
+		}
+		relays_in4.erase(label_in);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_bearer() const {
+	has_relay_in4(const clabel_in4& label_in) const {
+		return (not (relays_in4.find(label_in) == relays_in4.end()));
+	};
 
+
+
+
+	/**
+	 *
+	 */
+	void
+	clear_relays_in6() {
+		relays_in6.clear();
+	};
+
+	/**
+	 *
+	 */
+	crelay_in6&
+	add_relay_in6(const clabel_in6& label_in, const clabel_in6& label_out) {
+		if (relays_in6.find(label_in) != relays_in6.end()) {
+			relays_in6.erase(label_in);
+		}
+		relays_in6[label_in] = crelay_in6(label_in, label_out);
+		try {
+			if (STATE_ATTACHED == state) {
+				relays_in6[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+		return relays_in6[label_in];
+	};
+
+	/**
+	 *
+	 */
+	crelay_in6&
+	set_relay_in6(const clabel_in6& label_in, const clabel_in6& label_out) {
+		if (relays_in6.find(label_in) == relays_in6.end()) {
+			relays_in6[label_in] = crelay_in6(label_in, label_out);
+		}
+		try {
+			if (STATE_ATTACHED == state) {
+				relays_in6[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+		return relays_in6[label_in];
+	};
+
+	/**
+	 *
+	 */
+	const crelay_in6&
+	get_relay_in6(const clabel_in6& label_in) const {
+		if (relays_in6.find(label_in) == relays_in6.end()) {
+			throw eRelayNotFound("cgtpcore::get_relay_in6() label not found");
+		}
+		return relays_in6.at(label_in);
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_relay_in6(const clabel_in6& label_in) {
+		if (relays_in6.find(label_in) == relays_in6.end()) {
+			return;
+		}
+		relays_in6.erase(label_in);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_relay_in6(const clabel_in6& label_in) const {
+		return (not (relays_in6.find(label_in) == relays_in6.end()));
 	};
 
 public:
@@ -207,8 +320,15 @@ public:
 
 private:
 
-	rofl::cdptid		dptid;
+	enum ofp_state_t {
+		STATE_DETACHED = 1,
+		STATE_ATTACHED = 2,
+	};
 
+	enum ofp_state_t							state;
+	rofl::cdptid								dptid;
+	std::map<clabel_in4, crelay_in4>			relays_in4;
+	std::map<clabel_in6, crelay_in6>			relays_in6;
 	static std::map<rofl::cdptid, cgtpcore*>	gtpcores;
 };
 

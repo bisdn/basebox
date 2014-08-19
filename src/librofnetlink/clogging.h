@@ -105,6 +105,8 @@ public:
 		}
 		return os;
 	};
+	static unsigned int
+	get_width() { return indent::width; };
 };
 
 
