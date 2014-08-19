@@ -37,12 +37,12 @@ public:
 	 *
 	 */
 	static cgtpcore&
-	add_gtp_core(const rofl::cdptid& dptid) {
+	add_gtp_core(const rofl::cdptid& dptid, uint8_t gtp_table_id) {
 		if (cgtpcore::gtpcores.find(dptid) != cgtpcore::gtpcores.end()) {
 			delete cgtpcore::gtpcores[dptid];
 			cgtpcore::gtpcores.erase(dptid);
 		}
-		cgtpcore::gtpcores[dptid] = new cgtpcore(dptid);
+		cgtpcore::gtpcores[dptid] = new cgtpcore(dptid, gtp_table_id);
 		return *(cgtpcore::gtpcores[dptid]);
 	};
 
@@ -50,9 +50,21 @@ public:
 	 *
 	 */
 	static cgtpcore&
+	set_gtp_core(const rofl::cdptid& dptid, uint8_t gtp_table_id) {
+		if (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()) {
+			cgtpcore::gtpcores[dptid] = new cgtpcore(dptid, gtp_table_id);
+		}
+		return *(cgtpcore::gtpcores[dptid]);
+	};
+
+
+	/**
+	 *
+	 */
+	static cgtpcore&
 	set_gtp_core(const rofl::cdptid& dptid) {
 		if (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()) {
-			cgtpcore::gtpcores[dptid] = new cgtpcore(dptid);
+			throw eGtpCoreNotFound("cgtpcore::set_gtp_core() dpt not found");
 		}
 		return *(cgtpcore::gtpcores[dptid]);
 	};
@@ -107,13 +119,33 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt);
+	handle_dpt_open(rofl::crofdpt& dpt) {
+		state = STATE_ATTACHED;
+		for (std::map<clabel_in4, crelay_in4>::iterator
+				it = relays_in4.begin(); it != relays_in4.end(); ++it) {
+			it->second.handle_dpt_open(dpt);
+		}
+		for (std::map<clabel_in6, crelay_in6>::iterator
+				it = relays_in6.begin(); it != relays_in6.end(); ++it) {
+			it->second.handle_dpt_open(dpt);
+		}
+	};
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt);
+	handle_dpt_close(rofl::crofdpt& dpt) {
+		state = STATE_DETACHED;
+		for (std::map<clabel_in4, crelay_in4>::iterator
+				it = relays_in4.begin(); it != relays_in4.end(); ++it) {
+			it->second.handle_dpt_close(dpt);
+		}
+		for (std::map<clabel_in6, crelay_in6>::iterator
+				it = relays_in6.begin(); it != relays_in6.end(); ++it) {
+			it->second.handle_dpt_close(dpt);
+		}
+	};
 
 public:
 

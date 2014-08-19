@@ -7,4 +7,7 @@
 
 #include "cgtpcore.hpp"
 
+using namespace rofgtp;
+
+/*static*/std::map<rofl::cdptid, cgtpcore*> cgtpcore::gtpcores;
 

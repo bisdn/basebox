@@ -17,6 +17,7 @@
 
 #include "cethcore.hpp"
 #include "cipcore.hpp"
+#include "cgtpcore.hpp"
 #include "cdpid.hpp"
 #include "clogging.h"
 #include "cconfig.hpp"
@@ -97,6 +98,7 @@ protected:
 		dptid = dpt.get_dptid();
 		ipcore::cipcore::get_instance(dpt.get_dptid(), /*local-stage=*/3, /*out-stage=*/5);
 		ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid()), /*default_vid=*/1, 0, 1, 6);
+		rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid(), /*gtp-stage=*/4);
 		dpt.flow_mod_reset();
 		dpt.group_mod_reset();
 		dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
@@ -265,6 +267,20 @@ protected:
 
 		ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).handle_dpt_open(dpt);
 		ipcore::cipcore::get_instance().handle_dpt_open(dpt);
+		rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid()).handle_dpt_open(dpt);
+
+		/*
+		 * test
+		 */
+		rofgtp::clabel_in4 label_in(
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(1111)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(2152)),
+				rofgtp::cteid(1111));
+		rofgtp::clabel_in4 label_out(
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(1111)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(2152)),
+				rofgtp::cteid(2222));
+		rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(label_in, label_out);
 	};
 
 	/**
