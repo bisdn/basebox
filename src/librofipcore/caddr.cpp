@@ -57,10 +57,11 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_match().set_ip_proto(rofl::ficmpv4frame::ICMPV4_IP_PROTO);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-		// redirect IPv4 packets to control plane
+		// redirect IPv4 packets to control plane and goto to next table
 		fe.set_match().clear();
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
+		fe.set_instructions().add_inst_goto_table().set_table_id(in_ofp_table_id+1);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_ATTACHED;
@@ -169,10 +170,11 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_match().set_ip_proto(rofl::ficmpv6frame::ICMPV6_IP_PROTO);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-		// redirect IPv6 packets to control plane
+		// redirect IPv6 packets to control plane and goto to next table
 		fe.set_match().clear();
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
+		fe.set_instructions().add_inst_goto_table().set_table_id(in_ofp_table_id+1);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_ATTACHED;

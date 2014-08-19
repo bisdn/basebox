@@ -272,15 +272,28 @@ protected:
 		/*
 		 * test
 		 */
-		rofgtp::clabel_in4 label_in(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(1111)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(2152)),
-				rofgtp::cteid(1111));
-		rofgtp::clabel_in4 label_out(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(1111)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(2152)),
-				rofgtp::cteid(2222));
-		rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(label_in, label_out);
+		if (true) {
+			rofgtp::clabel_in4 label_in(
+					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(1111)),
+					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(2152)),
+					rofgtp::cteid(111111));
+			rofgtp::clabel_in4 label_out(
+					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(1111)),
+					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(2152)),
+					rofgtp::cteid(222222));
+			rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(label_in, label_out);
+		}
+		if (true) {
+			rofgtp::clabel_in4 label_in(
+					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(1111)),
+					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(2152)),
+					rofgtp::cteid(222222));
+			rofgtp::clabel_in4 label_out(
+					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(1111)),
+					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(2152)),
+					rofgtp::cteid(111111));
+			rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(label_in, label_out);
+		}
 	};
 
 	/**

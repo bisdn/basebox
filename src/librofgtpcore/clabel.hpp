@@ -73,8 +73,8 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const clabel& label) {
-		os << rofcore::indent(0) << "<clabel >" << std::endl;
-		rofcore::indent i(2); os << label.get_teid();
+		os << rofcore::indent(0) << "<clabel teid:"
+				<< (unsigned int)label.get_teid().get_value() << " >" << std::endl;
 		return os;
 	};
 
@@ -119,7 +119,7 @@ public:
 			return *this;
 		clabel::operator= (label);
 		saddr = label.saddr;
-		daddr = label.saddr;
+		daddr = label.daddr;
 		return *this;
 	};
 
@@ -200,7 +200,7 @@ public:
 			return *this;
 		clabel::operator= (label);
 		saddr = label.saddr;
-		daddr = label.saddr;
+		daddr = label.daddr;
 		return *this;
 	};
 

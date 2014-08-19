@@ -34,7 +34,7 @@ crelay_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_match().set_ipv4_dst(label_in.get_daddr().get_addr());
 		fm.set_match().set_ip_proto(rofl::fudpframe::UDP_IP_PROTO);
 		fm.set_match().set_udp_src(label_in.get_saddr().get_port().get_value());
-		fm.set_match().set_udp_src(label_in.get_daddr().get_port().get_value());
+		fm.set_match().set_udp_dst(label_in.get_daddr().get_port().get_value());
 		fm.set_match().set_matches().add_match(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_msg_type(255)); // = G-PDU (255)
 		fm.set_match().set_matches().add_match(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_teid(label_in.get_teid().get_value()));
 
@@ -52,6 +52,7 @@ crelay_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(index++).
 				set_oxm(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_teid(label_out.get_teid().get_value()));
 		fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
+
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
@@ -93,7 +94,7 @@ crelay_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		fm.set_match().set_ipv4_dst(label_in.get_daddr().get_addr());
 		fm.set_match().set_ip_proto(rofl::fudpframe::UDP_IP_PROTO);
 		fm.set_match().set_udp_src(label_in.get_saddr().get_port().get_value());
-		fm.set_match().set_udp_src(label_in.get_daddr().get_port().get_value());
+		fm.set_match().set_udp_dst(label_in.get_daddr().get_port().get_value());
 		fm.set_match().set_matches().add_match(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_msg_type(255)); // = G-PDU (255)
 		fm.set_match().set_matches().add_match(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_teid(label_in.get_teid().get_value()));
 
@@ -136,7 +137,7 @@ crelay_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_match().set_ipv6_dst(label_in.get_daddr().get_addr());
 		fm.set_match().set_ip_proto(rofl::fudpframe::UDP_IP_PROTO);
 		fm.set_match().set_udp_src(label_in.get_saddr().get_port().get_value());
-		fm.set_match().set_udp_src(label_in.get_daddr().get_port().get_value());
+		fm.set_match().set_udp_dst(label_in.get_daddr().get_port().get_value());
 		fm.set_match().set_matches().add_match(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_msg_type(255)); // = G-PDU (255)
 		fm.set_match().set_matches().add_match(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_teid(label_in.get_teid().get_value()));
 

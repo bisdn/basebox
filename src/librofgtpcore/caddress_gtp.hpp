@@ -137,8 +137,8 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const caddress_gtp_in4& addr) {
 		os << rofcore::indent(0) << "<caddress_gtp_in4 >" << std::endl;
-		{ rofcore::indent i(2); os << addr.get_port(); };
-		{ rofl::indent i(rofcore::indent::get_width()+2); os << addr.get_addr(); };
+		os << rofcore::indent(2) << addr.get_port();
+		os << addr.get_addr();
 		return os;
 	};
 
@@ -206,8 +206,8 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const caddress_gtp_in6& addr) {
 		os << rofcore::indent(0) << "<caddress_gtp_in6 >" << std::endl;
-		{ rofcore::indent i(2); os << addr.get_port(); };
-		{ rofl::indent i(rofcore::indent::get_width()+2); os << addr.get_addr(); };
+		os << rofcore::indent(2) << addr.get_port();
+		os << addr.get_addr();
 		return os;
 	};
 
