@@ -66,13 +66,13 @@ public:
 	 *
 	 */
 	uint32_t
-	get_teid() const { return teid; };
+	get_value() const { return teid; };
 
 public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cteid& teid) {
-		os << "<cteid " << (unsigned int)teid.get_teid() << " >";
+		os << "<cteid " << (unsigned int)teid.get_value() << " >";
 		return os;
 	};
 

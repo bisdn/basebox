@@ -93,8 +93,8 @@ public:
 	/**
 	 *
 	 */
-	cgtpcore(const rofl::cdptid& dptid) :
-		state(STATE_DETACHED), dptid(dptid) {};
+	cgtpcore(const rofl::cdptid& dptid, uint8_t gtp_table_id = 0) :
+		state(STATE_DETACHED), dptid(dptid), gtp_table_id(gtp_table_id) {};
 
 	/**
 	 *
@@ -133,7 +133,7 @@ public:
 		if (relays_in4.find(label_in) != relays_in4.end()) {
 			relays_in4.erase(label_in);
 		}
-		relays_in4[label_in] = crelay_in4(label_in, label_out);
+		relays_in4[label_in] = crelay_in4(dptid, gtp_table_id, label_in, label_out);
 		try {
 			if (STATE_ATTACHED == state) {
 				relays_in4[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
@@ -148,7 +148,7 @@ public:
 	crelay_in4&
 	set_relay_in4(const clabel_in4& label_in, const clabel_in4& label_out) {
 		if (relays_in4.find(label_in) == relays_in4.end()) {
-			relays_in4[label_in] = crelay_in4(label_in, label_out);
+			relays_in4[label_in] = crelay_in4(dptid, gtp_table_id, label_in, label_out);
 		}
 		try {
 			if (STATE_ATTACHED == state) {
@@ -218,7 +218,7 @@ public:
 		if (relays_in6.find(label_in) != relays_in6.end()) {
 			relays_in6.erase(label_in);
 		}
-		relays_in6[label_in] = crelay_in6(label_in, label_out);
+		relays_in6[label_in] = crelay_in6(dptid, gtp_table_id, label_in, label_out);
 		try {
 			if (STATE_ATTACHED == state) {
 				relays_in6[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
@@ -233,7 +233,7 @@ public:
 	crelay_in6&
 	set_relay_in6(const clabel_in6& label_in, const clabel_in6& label_out) {
 		if (relays_in6.find(label_in) == relays_in6.end()) {
-			relays_in6[label_in] = crelay_in6(label_in, label_out);
+			relays_in6[label_in] = crelay_in6(dptid, gtp_table_id, label_in, label_out);
 		}
 		try {
 			if (STATE_ATTACHED == state) {
@@ -349,6 +349,7 @@ private:
 
 	enum ofp_state_t							state;
 	rofl::cdptid								dptid;
+	uint8_t										gtp_table_id;
 	std::map<clabel_in4, crelay_in4>			relays_in4;
 	std::map<clabel_in6, crelay_in6>			relays_in6;
 	static std::map<rofl::cdptid, cgtpcore*>	gtpcores;

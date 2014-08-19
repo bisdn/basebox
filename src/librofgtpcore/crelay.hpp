@@ -12,6 +12,7 @@
 #include <exception>
 
 #include <rofl/common/crofdpt.h>
+#include <rofl/common/cdptid.h>
 
 #include "clabel.hpp"
 #include "clogging.h"
@@ -33,7 +34,8 @@ public:
 	/**
 	 *
 	 */
-	crelay() {};
+	crelay() :
+		state(STATE_DETACHED), ofp_table_id(0) {};
 
 	/**
 	 *
@@ -43,16 +45,24 @@ public:
 	/**
 	 *
 	 */
-	crelay(const crelay& bearer) { *this = bearer; };
+	crelay(const rofl::cdptid& dptid, uint8_t ofp_table_id) :
+		state(STATE_DETACHED), dptid(dptid), ofp_table_id(ofp_table_id) {};
+
+	/**
+	 *
+	 */
+	crelay(const crelay& relay) { *this = relay; };
 
 	/**
 	 *
 	 */
 	crelay&
-	operator= (const crelay& bearer) {
-		if (this == &bearer)
+	operator= (const crelay& relay) {
+		if (this == &relay)
 			return *this;
-		// ...
+		state = relay.state;
+		dptid = relay.dptid;
+		ofp_table_id = relay.ofp_table_id;
 		return *this;
 	};
 
@@ -63,6 +73,17 @@ public:
 		os << rofcore::indent(0) << "<crelay >" << std::endl;
 		return os;
 	};
+
+protected:
+
+	enum ofp_state_t {
+		STATE_DETACHED = 1,
+		STATE_ATTACHED = 2,
+	};
+
+	enum ofp_state_t state;
+	rofl::cdptid dptid;
+	uint8_t ofp_table_id;
 };
 
 
@@ -78,13 +99,20 @@ public:
 	/**
 	 *
 	 */
-	~crelay_in4() {};
+	~crelay_in4() {
+		try {
+			if (STATE_ATTACHED == state) {
+				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+	};
 
 	/**
 	 *
 	 */
-	crelay_in4(const clabel_in4& label_in, const clabel_in4& label_out) :
-		label_in(label_in), label_out(label_out) {};
+	crelay_in4(const rofl::cdptid, uint8_t ofp_table_id,
+			const clabel_in4& label_in, const clabel_in4& label_out) :
+		crelay(dptid, ofp_table_id), label_in(label_in), label_out(label_out) {};
 
 	/**
 	 *
@@ -98,6 +126,7 @@ public:
 	operator= (const crelay_in4& relay) {
 		if (this == &relay)
 			return *this;
+		crelay::operator= (relay);
 		label_in = relay.label_in;
 		label_out = relay.label_out;
 		return *this;
@@ -131,13 +160,13 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt) {};
+	handle_dpt_open(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt) {};
+	handle_dpt_close(rofl::crofdpt& dpt);
 
 public:
 
@@ -170,13 +199,20 @@ public:
 	/**
 	 *
 	 */
-	~crelay_in6() {};
+	~crelay_in6() {
+		try {
+			if (STATE_ATTACHED == state) {
+				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+	};
 
 	/**
 	 *
 	 */
-	crelay_in6(const clabel_in6& label_in, const clabel_in6& label_out) :
-		label_in(label_in), label_out(label_out) {};
+	crelay_in6(const rofl::cdptid, uint8_t ofp_table_id,
+			const clabel_in6& label_in, const clabel_in6& label_out) :
+		crelay(dptid, ofp_table_id), label_in(label_in), label_out(label_out) {};
 
 	/**
 	 *
@@ -223,13 +259,13 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt) {};
+	handle_dpt_open(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt) {};
+	handle_dpt_close(rofl::crofdpt& dpt);
 
 public:
 

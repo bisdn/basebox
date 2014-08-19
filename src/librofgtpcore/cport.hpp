@@ -62,13 +62,13 @@ public:
 	 *
 	 */
 	uint16_t
-	get_port() const { return port; };
+	get_value() const { return port; };
 
 public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cport& port) {
-		os << "<cport " << (unsigned int)port.get_port() << " >";
+		os << "<cport " << (unsigned int)port.get_value() << " >";
 		return os;
 	};
 

@@ -8,6 +8,7 @@ librofgtpcore_la_SOURCES = \
 	cgtpcore.hpp \
 	cgtpcore.cpp \
 	crelay.hpp \
+	crelay.cpp \
 	cterm.hpp \
 	cterm.cpp \
 	cport.hpp \
