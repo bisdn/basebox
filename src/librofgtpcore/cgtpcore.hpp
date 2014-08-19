@@ -161,6 +161,17 @@ public:
 	/**
 	 *
 	 */
+	crelay_in4&
+	set_relay_in4(const clabel_in4& label_in) {
+		if (relays_in4.find(label_in) == relays_in4.end()) {
+			throw eRelayNotFound("cgtpcore::get_relay_in4() label not found");
+		}
+		return relays_in4[label_in];
+	};
+
+	/**
+	 *
+	 */
 	const crelay_in4&
 	get_relay_in4(const clabel_in4& label_in) const {
 		if (relays_in4.find(label_in) == relays_in4.end()) {
@@ -229,6 +240,17 @@ public:
 				relays_in6[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
+		return relays_in6[label_in];
+	};
+
+	/**
+	 *
+	 */
+	crelay_in6&
+	set_relay_in6(const clabel_in6& label_in) {
+		if (relays_in6.find(label_in) == relays_in6.end()) {
+			throw eRelayNotFound("cgtpcore::get_relay_in6() label not found");
+		}
 		return relays_in6[label_in];
 	};
 
