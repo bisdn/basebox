@@ -14,7 +14,7 @@ cfibentry::handle_dpt_open(
 		rofl::crofdpt& dpt)
 {
 	try {
-		assert(dpt.get_dpid() == dpid.get_dpid());
+		assert(dpt.get_dpid() == dpid);
 
 		state = STATE_ATTACHED;
 
@@ -68,7 +68,7 @@ cfibentry::handle_dpt_close(
 		rofl::crofdpt& dpt)
 {
 	try {
-		assert(dpt.get_dpid() == dpid.get_dpid());
+		assert(dpt.get_dpid() == dpid);
 
 		state = STATE_DETACHED;
 
@@ -129,9 +129,9 @@ cfibentry::handle_packet_in(
 		// has station moved to another port? src-stage flowmod entry has not matched causing this packet-in event
 		uint32_t in_port = msg.get_match().get_in_port();
 		if (in_port != portno) {
-			handle_dpt_close(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			portno = in_port;
-			handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
 
 #if 0

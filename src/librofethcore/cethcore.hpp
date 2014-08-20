@@ -16,7 +16,6 @@
 #include "cnetlink.h"
 #include "clogging.h"
 #include "cvlan.hpp"
-#include "cdpid.hpp"
 
 namespace ethcore {
 
@@ -27,7 +26,7 @@ public:
 	 *
 	 */
 	static cethcore&
-	add_core(const cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
+	add_core(const rofl::cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
 			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 3) {
 		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
 			delete cethcore::ethcores[dpid];
@@ -40,7 +39,7 @@ public:
 	 *
 	 */
 	static cethcore&
-	set_core(const cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
+	set_core(const rofl::cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
 			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 3) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
 			new cethcore(dpid, default_pvid, in_stage_table_id, src_stage_table_id, dst_stage_table_id);
@@ -52,7 +51,7 @@ public:
 	 *
 	 */
 	static const cethcore&
-	get_core(const cdpid& dpid) {
+	get_core(const rofl::cdpid& dpid) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
 			throw eVlanNotFound("cethcore::get_vtable() dpid not found");
 		}
@@ -63,7 +62,7 @@ public:
 	 *
 	 */
 	static void
-	drop_core(const cdpid& dpid) {
+	drop_core(const rofl::cdpid& dpid) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
 			return;
 		}
@@ -74,7 +73,7 @@ public:
 	 *
 	 */
 	static bool
-	has_core(const cdpid& dpid) {
+	has_core(const rofl::cdpid& dpid) {
 		return (not (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()));
 	};
 
@@ -83,7 +82,7 @@ public:
 	/**
 	 *
 	 */
-	cethcore(const cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
+	cethcore(const rofl::cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
 			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 3) :
 		state(STATE_IDLE), dpid(dpid), default_pvid(default_pvid),
 		in_stage_table_id(in_stage_table_id),
@@ -110,7 +109,7 @@ public:
 	/**
 	 *
 	 */
-	const cdpid&
+	const rofl::cdpid&
 	get_dpid() const { return dpid; };
 
 	/**
@@ -137,7 +136,7 @@ public:
 		}
 		vlans[vid] = cvlan(dpid, vid, in_stage_table_id, src_stage_table_id, dst_stage_table_id);
 		if (STATE_ATTACHED == state) {
-			vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
 		return vlans[vid];
 	};
@@ -150,7 +149,7 @@ public:
 		if (vlans.find(vid) == vlans.end()) {
 			vlans[vid] = cvlan(dpid, vid, in_stage_table_id, src_stage_table_id, dst_stage_table_id);
 			if (STATE_ATTACHED == state) {
-				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		}
 		return vlans[vid];
@@ -165,7 +164,7 @@ public:
 			return;
 		}
 		if (STATE_ATTACHED == state) {
-			rofl::crofdpt::get_dpt(dpid.get_dpid()).release_group_id(vlans[vid].get_group_id());
+			rofl::crofdpt::get_dpt(dpid).release_group_id(vlans[vid].get_group_id());
 		}
 		vlans.erase(vid);
 	};
@@ -260,7 +259,7 @@ private:
 	static const uint16_t				DEFAULT_PVID = 1;
 
 	cethcore_state_t					state;
-	cdpid								dpid;
+	rofl::cdpid							dpid;
 	uint16_t							default_pvid;
 	std::map<uint16_t, cvlan>			vlans;
 	std::set<uint32_t>					group_ids;
@@ -268,7 +267,7 @@ private:
 	uint8_t								src_stage_table_id;
 	uint8_t								dst_stage_table_id;
 
-	static std::map<cdpid, cethcore*> 	ethcores;
+	static std::map<rofl::cdpid, cethcore*> 	ethcores;
 
 public:
 

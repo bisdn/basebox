@@ -16,7 +16,6 @@
 #include <rofl/common/cdptid.h>
 
 #include "clogging.h"
-#include "cdpid.hpp"
 
 namespace ethcore {
 
@@ -43,7 +42,7 @@ public:
 	 *
 	 */
 	cmemberport(
-			const cdpid& dpid, uint32_t portno = 0xffffffff,
+			const rofl::cdpid& dpid, uint32_t portno = 0xffffffff,
 			uint16_t vid = 0xffff, bool tagged = true,
 			uint8_t in_stage_table_id = 0, uint8_t out_stage_table_id = 5) :
 		state(STATE_IDLE), dpid(dpid), portno(portno), vid(vid),
@@ -55,7 +54,7 @@ public:
 	~cmemberport() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 	};
@@ -162,7 +161,7 @@ private:
 
 	dpt_state_t		state;
 
-	cdpid			dpid;
+	rofl::cdpid		dpid;
 	uint32_t		portno;
 	uint16_t 		vid;
 	bool 			tagged;

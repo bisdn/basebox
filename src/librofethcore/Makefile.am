@@ -5,7 +5,6 @@ SUBDIRS =
 noinst_LTLIBRARIES = librofethcore.la
 
 librofethcore_la_SOURCES = \
-	cdpid.hpp \
 	cfibentry.cpp \
 	cfibentry.hpp \
 	cmemberport.cpp \
@@ -19,7 +18,6 @@ librofethcore_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
 library_includedir=$(includedir)/rofl/common
 library_include_HEADERS= \
-	cdpid.hpp \
 	cfibentry.hpp \
 	cmemberport.hpp \
 	cvlan.hpp \

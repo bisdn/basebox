@@ -16,10 +16,10 @@
 #include <rofl/common/caddress.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
+#include <rofl/common/cdpid.h>
 #include <rofl/common/logging.h>
 
 #include "clogging.h"
-#include "cdpid.hpp"
 
 namespace ethcore {
 
@@ -59,7 +59,7 @@ public:
 	 */
 	cfibentry(
 			cfibentry_owner *fib,
-			cdpid dpid,
+			rofl::cdpid dpid,
 			uint16_t vid,
 			uint32_t portno,
 			bool tagged,
@@ -78,7 +78,7 @@ public:
 	~cfibentry() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};
@@ -113,7 +113,7 @@ public:
 	/**
 	 *
 	 */
-	const cdpid&
+	const rofl::cdpid&
 	get_dpid() const { return dpid; };
 
 	/**
@@ -235,7 +235,7 @@ private:
 	dpt_state_t			state;
 
 	cfibentry_owner				*fib;
-	cdpid						dpid;
+	rofl::cdpid					dpid;
 	uint16_t					vid;
 	uint32_t					portno;
 	bool						tagged;

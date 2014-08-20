@@ -118,7 +118,7 @@ cvlan::handle_packet_in(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
 	try {
-		assert(dpid.get_dpid() == dpt.get_dpid());
+		assert(dpid == dpt.get_dpid());
 		assert(vid == (msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT)));
 
 		uint32_t in_port = msg.get_match().get_in_port();
@@ -147,7 +147,7 @@ cvlan::handle_flow_removed(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg)
 {
 	try {
-		assert(dpid.get_dpid() == dpt.get_dpid());
+		assert(dpid == dpt.get_dpid());
 		assert(vid == (msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT)));
 
 		// TODO: check port here?
@@ -222,7 +222,7 @@ cvlan::update_group_entry_buckets(uint16_t command)
 		}
 
 		// update flooding group entry
-		rofl::openflow::cofgroupmod gm(rofl::crofdpt::get_dpt(dpid.get_dpid()).get_version());
+		rofl::openflow::cofgroupmod gm(rofl::crofdpt::get_dpt(dpid).get_version());
 		gm.set_command(command);
 		gm.set_group_id(group_id);
 		gm.set_type(rofl::openflow::OFPGT_ALL);
@@ -239,7 +239,7 @@ cvlan::update_group_entry_buckets(uint16_t command)
 			bucket_id++;
 		}
 
-		rofl::crofdpt::get_dpt(dpid.get_dpid()).send_group_mod_message(rofl::cauxid(0), gm);
+		rofl::crofdpt::get_dpt(dpid).send_group_mod_message(rofl::cauxid(0), gm);
 
 	} catch (rofl::eRofSockTxAgain& e) {
 		rofcore::logging::debug << "[cvlan][update_group_entry_buckets] control channel congested" << std::endl;

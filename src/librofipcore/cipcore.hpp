@@ -265,7 +265,7 @@ public:
 	operator<< (std::ostream& os, const cipcore& ipcore) {
 		try {
 			os << rofcore::indent(0) << "<cipcore dpid: "
-					<< rofl::crofdpt::get_dpt(ipcore.dptid).get_dpid_s() << " >" << std::endl;
+					<< rofl::crofdpt::get_dpt(ipcore.dptid).get_dpid().str() << " >" << std::endl;
 		} catch (rofl::eRofDptNotFound& e) {
 			os << rofcore::indent(0) << "<cipcore dptid: >" << std::endl;
 			os << rofcore::indent(2) << ipcore.dptid;

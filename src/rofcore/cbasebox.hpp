@@ -18,11 +18,9 @@
 #include "cethcore.hpp"
 #include "cipcore.hpp"
 #include "cgtpcore.hpp"
-#include "cdpid.hpp"
 #include "clogging.h"
 #include "cconfig.hpp"
 #include "cnetlink.h"
-#include "cdpid.hpp"
 
 namespace basebox {
 
@@ -97,7 +95,7 @@ protected:
 			rofl::crofdpt& dpt) {
 		dptid = dpt.get_dptid();
 		ipcore::cipcore::get_instance(dpt.get_dptid(), /*local-stage=*/3, /*out-stage=*/4);
-		ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid()), /*default_vid=*/1, 0, 1, 5);
+		ethcore::cethcore::set_core(dpt.get_dpid(), /*default_vid=*/1, 0, 1, 5);
 		rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid(), /*gtp-stage=*/3); // yes, same as local for cipcore
 		dpt.flow_mod_reset();
 		dpt.group_mod_reset();
@@ -110,7 +108,7 @@ protected:
 	virtual void
 	handle_dpt_close(
 			rofl::crofdpt& dpt) {
-		ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).handle_dpt_close(dpt);
+		ethcore::cethcore::set_core(dpt.get_dpid()).handle_dpt_close(dpt);
 		ipcore::cipcore::get_instance(dpt.get_dptid()).handle_dpt_close(dpt);
 	};
 
@@ -139,8 +137,8 @@ protected:
 				ipcore::cipcore::get_instance(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
 			} break;
 			default: {
-				if (ethcore::cethcore::has_core(ethcore::cdpid(dpt.get_dpid()))) {
-					ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).handle_packet_in(dpt, auxid, msg);
+				if (ethcore::cethcore::has_core(dpt.get_dpid())) {
+					ethcore::cethcore::set_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 				}
 			};
 			}
@@ -167,8 +165,8 @@ protected:
 			ipcore::cipcore::get_instance(dpt.get_dptid()).handle_flow_removed(dpt, auxid, msg);
 		} break;
 		default: {
-			if (ethcore::cethcore::has_core(ethcore::cdpid(dpt.get_dpid()))) {
-				ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).handle_flow_removed(dpt, auxid, msg);
+			if (ethcore::cethcore::has_core(dpt.get_dpid())) {
+				ethcore::cethcore::set_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
 			}
 		};
 		}
@@ -219,8 +217,8 @@ protected:
 			}
 
 			ipcore::cipcore::get_instance(dpt.get_dptid()).handle_port_status(dpt, auxid, msg);
-			if (ethcore::cethcore::has_core(ethcore::cdpid(dpt.get_dpid()))) {
-				ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).handle_port_status(dpt, auxid, msg);
+			if (ethcore::cethcore::has_core(dpt.get_dpid())) {
+				ethcore::cethcore::set_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
 			}
 
 		} catch (rofl::openflow::ePortNotFound& e) {
@@ -235,8 +233,8 @@ protected:
 	handle_error_message(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
 		ipcore::cipcore::get_instance(dpt.get_dptid()).handle_error_message(dpt, auxid, msg);
-		if (ethcore::cethcore::has_core(ethcore::cdpid(dpt.get_dpid()))) {
-			ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).handle_error_message(dpt, auxid, msg);
+		if (ethcore::cethcore::has_core(dpt.get_dpid())) {
+			ethcore::cethcore::set_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
 		}
 	};
 
@@ -253,7 +251,7 @@ protected:
 				it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
 			const rofl::openflow::cofport& port = *(it->second);
 
-			ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).set_vlan(/*default_vid=*/1).add_port(port.get_port_no(), /*tagged=*/false);
+			ethcore::cethcore::set_core(dpt.get_dpid()).set_vlan(/*default_vid=*/1).add_port(port.get_port_no(), /*tagged=*/false);
 		}
 
 		for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
@@ -265,7 +263,7 @@ protected:
 			}
 		}
 
-		ethcore::cethcore::set_core(ethcore::cdpid(dpt.get_dpid())).handle_dpt_open(dpt);
+		ethcore::cethcore::set_core(dpt.get_dpid()).handle_dpt_open(dpt);
 		ipcore::cipcore::get_instance().handle_dpt_open(dpt);
 		rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid()).handle_dpt_open(dpt);
 
@@ -503,7 +501,7 @@ public:
 		}
 		os << ipcore::cipcore::get_instance();
 		try {
-			os << ethcore::cethcore::get_core(ethcore::cdpid(rofl::crofdpt::get_dpt(box.dptid).get_dpid()));
+			os << ethcore::cethcore::get_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
 		} catch (rofl::eRofDptNotFound& e) {}
 		return os;
 	};

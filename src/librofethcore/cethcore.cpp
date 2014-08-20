@@ -9,7 +9,7 @@
 
 using namespace ethcore;
 
-/*static*/std::map<cdpid, cethcore*> cethcore::ethcores;
+/*static*/std::map<rofl::cdpid, cethcore*> cethcore::ethcores;
 
 void
 cethcore::handle_dpt_open(rofl::crofdpt& dpt)
@@ -174,7 +174,7 @@ cethcore::link_created(unsigned int ifindex)
 			tagged = true;
 		}
 
-		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid.get_dpid()).get_ports().get_port(devname);
+		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid).get_ports().get_port(devname);
 
 		if (not has_vlan(vid)) {
 			add_vlan(vid).add_port(port.get_port_no(), true);
@@ -214,7 +214,7 @@ cethcore::link_updated(unsigned int ifindex)
 			tagged = true;
 		}
 
-		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid.get_dpid()).get_ports().get_port(devname);
+		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid).get_ports().get_port(devname);
 
 		if (not has_vlan(vid)) {
 			add_vlan(vid).add_port(port.get_port_no(), true);
@@ -254,7 +254,7 @@ cethcore::link_deleted(unsigned int ifindex)
 			tagged = true;
 		}
 
-		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid.get_dpid()).get_ports().get_port(devname);
+		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid).get_ports().get_port(devname);
 
 		if (not has_vlan(vid)) {
 			return;

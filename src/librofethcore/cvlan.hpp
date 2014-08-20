@@ -16,7 +16,6 @@
 
 #include "clogging.h"
 #include "cmemberport.hpp"
-#include "cdpid.hpp"
 #include "cfibentry.hpp"
 
 namespace ethcore {
@@ -52,7 +51,7 @@ public:
 	/**
 	 *
 	 */
-	cvlan(const cdpid& dpid, uint16_t vid = VID_NO_VLAN,
+	cvlan(const rofl::cdpid& dpid, uint16_t vid = VID_NO_VLAN,
 			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 2) :
 		state(STATE_IDLE), dpid(dpid), vid(vid), group_id(0),
 		in_stage_table_id(in_stage_table_id), src_stage_table_id(src_stage_table_id), dst_stage_table_id(dst_stage_table_id) {};
@@ -63,7 +62,7 @@ public:
 	~cvlan() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};
@@ -112,7 +111,7 @@ public:
 		}
 		ports[portno] = cmemberport(dpid, portno, vid, tagged, in_stage_table_id, dst_stage_table_id);
 		if (STATE_ATTACHED == state) {
-			ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
 		update_group_entry_buckets();
 		return ports[portno];
@@ -138,7 +137,7 @@ public:
 			ports[portno] = cmemberport(dpid, portno, vid, tagged, in_stage_table_id, dst_stage_table_id);
 			update_group_entry_buckets();
 			if (STATE_ATTACHED == state) {
-				ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+				ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		}
 		return ports[portno];
@@ -196,7 +195,7 @@ public:
 		fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr,
 							entry_timeout, src_stage_table_id, dst_stage_table_id);
 		if (STATE_ATTACHED == state) {
-			fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+			fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
 		return fib[lladdr];
 	};
@@ -224,7 +223,7 @@ public:
 			fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr,
 										entry_timeout, src_stage_table_id, dst_stage_table_id);
 			if (STATE_ATTACHED == state) {
-				fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid.get_dpid()));
+				fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		}
 		return fib[lladdr];
@@ -265,7 +264,7 @@ public:
 	/**
 	 *
 	 */
-	const cdpid&
+	const rofl::cdpid&
 	get_dpid() const { return dpid; };
 
 	/**
@@ -373,7 +372,7 @@ private:
 	};
 
 	dpt_state_t			state;
-	cdpid				dpid;
+	rofl::cdpid			dpid;
 	uint16_t			vid;
 	uint32_t			group_id;	// OFP group identifier for broadcasting frames for this vid
 
