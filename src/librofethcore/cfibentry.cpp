@@ -7,7 +7,7 @@
 
 #include "cfibentry.hpp"
 
-using namespace ethcore;
+using namespace rofeth;
 
 void
 cfibentry::handle_dpt_open(

@@ -21,7 +21,7 @@
 
 #include "clogging.h"
 
-namespace ethcore {
+namespace rofeth {
 
 class eFibEntryBase : public std::runtime_error {
 public:

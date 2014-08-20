@@ -37,24 +37,24 @@ public:
 	 *
 	 */
 	static cgtpcore&
-	add_gtp_core(const rofl::cdptid& dptid, uint8_t gtp_table_id) {
-		if (cgtpcore::gtpcores.find(dptid) != cgtpcore::gtpcores.end()) {
-			delete cgtpcore::gtpcores[dptid];
-			cgtpcore::gtpcores.erase(dptid);
+	add_gtp_core(const rofl::cdpid& dpid, uint8_t gtp_table_id) {
+		if (cgtpcore::gtpcores.find(dpid) != cgtpcore::gtpcores.end()) {
+			delete cgtpcore::gtpcores[dpid];
+			cgtpcore::gtpcores.erase(dpid);
 		}
-		cgtpcore::gtpcores[dptid] = new cgtpcore(dptid, gtp_table_id);
-		return *(cgtpcore::gtpcores[dptid]);
+		cgtpcore::gtpcores[dpid] = new cgtpcore(dpid, gtp_table_id);
+		return *(cgtpcore::gtpcores[dpid]);
 	};
 
 	/**
 	 *
 	 */
 	static cgtpcore&
-	set_gtp_core(const rofl::cdptid& dptid, uint8_t gtp_table_id) {
-		if (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()) {
-			cgtpcore::gtpcores[dptid] = new cgtpcore(dptid, gtp_table_id);
+	set_gtp_core(const rofl::cdpid& dpid, uint8_t gtp_table_id) {
+		if (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()) {
+			cgtpcore::gtpcores[dpid] = new cgtpcore(dpid, gtp_table_id);
 		}
-		return *(cgtpcore::gtpcores[dptid]);
+		return *(cgtpcore::gtpcores[dpid]);
 	};
 
 
@@ -62,42 +62,42 @@ public:
 	 *
 	 */
 	static cgtpcore&
-	set_gtp_core(const rofl::cdptid& dptid) {
-		if (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()) {
+	set_gtp_core(const rofl::cdpid& dpid) {
+		if (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()) {
 			throw eGtpCoreNotFound("cgtpcore::set_gtp_core() dpt not found");
 		}
-		return *(cgtpcore::gtpcores[dptid]);
+		return *(cgtpcore::gtpcores[dpid]);
 	};
 
 	/**
 	 *
 	 */
 	static const cgtpcore&
-	get_gtp_core(const rofl::cdptid& dptid) {
-		if (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()) {
+	get_gtp_core(const rofl::cdpid& dpid) {
+		if (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()) {
 			throw eGtpCoreNotFound("cgtpcore::get_gtp_core() dptid not found");
 		}
-		return *(cgtpcore::gtpcores.at(dptid));
+		return *(cgtpcore::gtpcores.at(dpid));
 	};
 
 	/**
 	 *
 	 */
 	static void
-	drop_gtp_core(const rofl::cdptid& dptid) {
-		if (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()) {
+	drop_gtp_core(const rofl::cdpid& dpid) {
+		if (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()) {
 			return;
 		}
-		delete cgtpcore::gtpcores[dptid];
-		cgtpcore::gtpcores.erase(dptid);
+		delete cgtpcore::gtpcores[dpid];
+		cgtpcore::gtpcores.erase(dpid);
 	}
 
 	/**
 	 *
 	 */
 	static bool
-	has_gtp_core(const rofl::cdptid& dptid) {
-		return (not (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()));
+	has_gtp_core(const rofl::cdpid& dpid) {
+		return (not (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()));
 	};
 
 public:
@@ -105,8 +105,8 @@ public:
 	/**
 	 *
 	 */
-	cgtpcore(const rofl::cdptid& dptid, uint8_t gtp_table_id = 0) :
-		state(STATE_DETACHED), dptid(dptid), gtp_table_id(gtp_table_id) {};
+	cgtpcore(const rofl::cdpid& dpid, uint8_t gtp_table_id = 0) :
+		state(STATE_DETACHED), dpid(dpid), gtp_table_id(gtp_table_id) {};
 
 	/**
 	 *
@@ -165,10 +165,10 @@ public:
 		if (relays_in4.find(label_in) != relays_in4.end()) {
 			relays_in4.erase(label_in);
 		}
-		relays_in4[label_in] = crelay_in4(dptid, gtp_table_id, label_in, label_out);
+		relays_in4[label_in] = crelay_in4(dpid, gtp_table_id, label_in, label_out);
 		try {
 			if (STATE_ATTACHED == state) {
-				relays_in4[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				relays_in4[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 		return relays_in4[label_in];
@@ -180,11 +180,11 @@ public:
 	crelay_in4&
 	set_relay_in4(const clabel_in4& label_in, const clabel_in4& label_out) {
 		if (relays_in4.find(label_in) == relays_in4.end()) {
-			relays_in4[label_in] = crelay_in4(dptid, gtp_table_id, label_in, label_out);
+			relays_in4[label_in] = crelay_in4(dpid, gtp_table_id, label_in, label_out);
 		}
 		try {
 			if (STATE_ATTACHED == state) {
-				relays_in4[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				relays_in4[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 		return relays_in4[label_in];
@@ -250,10 +250,10 @@ public:
 		if (relays_in6.find(label_in) != relays_in6.end()) {
 			relays_in6.erase(label_in);
 		}
-		relays_in6[label_in] = crelay_in6(dptid, gtp_table_id, label_in, label_out);
+		relays_in6[label_in] = crelay_in6(dpid, gtp_table_id, label_in, label_out);
 		try {
 			if (STATE_ATTACHED == state) {
-				relays_in6[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				relays_in6[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 		return relays_in6[label_in];
@@ -265,11 +265,11 @@ public:
 	crelay_in6&
 	set_relay_in6(const clabel_in6& label_in, const clabel_in6& label_out) {
 		if (relays_in6.find(label_in) == relays_in6.end()) {
-			relays_in6[label_in] = crelay_in6(dptid, gtp_table_id, label_in, label_out);
+			relays_in6[label_in] = crelay_in6(dpid, gtp_table_id, label_in, label_out);
 		}
 		try {
 			if (STATE_ATTACHED == state) {
-				relays_in6[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				relays_in6[label_in].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 		return relays_in6[label_in];
@@ -380,11 +380,11 @@ private:
 	};
 
 	enum ofp_state_t							state;
-	rofl::cdptid								dptid;
+	rofl::cdpid									dpid;
 	uint8_t										gtp_table_id;
 	std::map<clabel_in4, crelay_in4>			relays_in4;
 	std::map<clabel_in6, crelay_in6>			relays_in6;
-	static std::map<rofl::cdptid, cgtpcore*>	gtpcores;
+	static std::map<rofl::cdpid, cgtpcore*>		gtpcores;
 };
 
 }; // end of namespace rofgtp

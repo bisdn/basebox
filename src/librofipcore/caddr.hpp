@@ -17,7 +17,7 @@
 #include "cnetlink.h"
 #include "clogging.h"
 
-namespace ipcore {
+namespace rofip {
 
 class caddr {
 public:

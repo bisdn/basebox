@@ -7,7 +7,7 @@
 
 #include "cmemberport.hpp"
 
-using namespace ethcore;
+using namespace rofeth;
 
 
 void

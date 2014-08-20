@@ -7,7 +7,7 @@
 
 #include "cethcore.hpp"
 
-using namespace ethcore;
+using namespace rofeth;
 
 /*static*/std::map<rofl::cdpid, cethcore*> cethcore::ethcores;
 

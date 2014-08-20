@@ -17,7 +17,7 @@
 
 #include "clogging.h"
 
-namespace ethcore {
+namespace rofeth {
 
 class eMemberPortBase : public std::runtime_error {
 public:

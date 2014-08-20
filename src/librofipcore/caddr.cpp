@@ -9,7 +9,7 @@
 #include "caddr.hpp"
 #include "cipcore.hpp"
 
-using namespace ipcore;
+using namespace rofip;
 
 
 void

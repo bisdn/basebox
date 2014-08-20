@@ -21,7 +21,7 @@
 #include "caddr.hpp"
 #include "cneigh.hpp"
 
-namespace ipcore {
+namespace rofip {
 
 class eLinkBase 				: public std::runtime_error {
 public:

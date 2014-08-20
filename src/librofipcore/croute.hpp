@@ -30,7 +30,7 @@ extern "C" {
 #include "clink.hpp"
 #include "cnexthop.hpp"
 
-namespace ipcore {
+namespace rofip {
 
 class croute {
 public:

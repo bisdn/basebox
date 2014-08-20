@@ -34,7 +34,7 @@ extern "C" {
 #include "cnetlink.h"
 #include "croutetable.hpp"
 
-namespace ipcore {
+namespace rofip {
 
 class eVmCoreBase 			: public std::exception {};
 class eVmCoreCritical 		: public eVmCoreBase {};

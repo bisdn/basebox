@@ -9,5 +9,5 @@
 
 using namespace rofgtp;
 
-/*static*/std::map<rofl::cdptid, cgtpcore*> cgtpcore::gtpcores;
+/*static*/std::map<rofl::cdpid, cgtpcore*> cgtpcore::gtpcores;
 

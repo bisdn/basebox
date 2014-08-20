@@ -94,9 +94,9 @@ protected:
 	handle_dpt_open(
 			rofl::crofdpt& dpt) {
 		dptid = dpt.get_dptid();
-		ipcore::cipcore::get_instance(dpt.get_dptid(), /*local-stage=*/3, /*out-stage=*/4);
-		ethcore::cethcore::set_core(dpt.get_dpid(), /*default_vid=*/1, 0, 1, 5);
-		rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid(), /*gtp-stage=*/3); // yes, same as local for cipcore
+		rofip::cipcore::get_instance(dpt.get_dptid(), /*local-stage=*/3, /*out-stage=*/4);
+		rofeth::cethcore::set_eth_core(dpt.get_dpid(), /*default_vid=*/1, 0, 1, 5);
+		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid(), /*gtp-stage=*/3); // yes, same as local for cipcore
 		dpt.flow_mod_reset();
 		dpt.group_mod_reset();
 		dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
@@ -108,8 +108,8 @@ protected:
 	virtual void
 	handle_dpt_close(
 			rofl::crofdpt& dpt) {
-		ethcore::cethcore::set_core(dpt.get_dpid()).handle_dpt_close(dpt);
-		ipcore::cipcore::get_instance(dpt.get_dptid()).handle_dpt_close(dpt);
+		rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
+		rofip::cipcore::get_instance(dpt.get_dptid()).handle_dpt_close(dpt);
 	};
 
 	/**
@@ -134,11 +134,11 @@ protected:
 			switch (msg.get_table_id()) {
 			case 3:
 			case 4: {
-				ipcore::cipcore::get_instance(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
+				rofip::cipcore::get_instance(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
 			} break;
 			default: {
-				if (ethcore::cethcore::has_core(dpt.get_dpid())) {
-					ethcore::cethcore::set_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+				if (rofeth::cethcore::has_eth_core(dpt.get_dpid())) {
+					rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 				}
 			};
 			}
@@ -162,11 +162,11 @@ protected:
 		switch (msg.get_table_id()) {
 		case 3:
 		case 4: {
-			ipcore::cipcore::get_instance(dpt.get_dptid()).handle_flow_removed(dpt, auxid, msg);
+			rofip::cipcore::get_instance(dpt.get_dptid()).handle_flow_removed(dpt, auxid, msg);
 		} break;
 		default: {
-			if (ethcore::cethcore::has_core(dpt.get_dpid())) {
-				ethcore::cethcore::set_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
+			if (rofeth::cethcore::has_eth_core(dpt.get_dpid())) {
+				rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
 			}
 		};
 		}
@@ -216,9 +216,9 @@ protected:
 			} return;
 			}
 
-			ipcore::cipcore::get_instance(dpt.get_dptid()).handle_port_status(dpt, auxid, msg);
-			if (ethcore::cethcore::has_core(dpt.get_dpid())) {
-				ethcore::cethcore::set_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
+			rofip::cipcore::get_instance(dpt.get_dptid()).handle_port_status(dpt, auxid, msg);
+			if (rofeth::cethcore::has_eth_core(dpt.get_dpid())) {
+				rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
 			}
 
 		} catch (rofl::openflow::ePortNotFound& e) {
@@ -232,9 +232,9 @@ protected:
 	virtual void
 	handle_error_message(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
-		ipcore::cipcore::get_instance(dpt.get_dptid()).handle_error_message(dpt, auxid, msg);
-		if (ethcore::cethcore::has_core(dpt.get_dpid())) {
-			ethcore::cethcore::set_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
+		rofip::cipcore::get_instance(dpt.get_dptid()).handle_error_message(dpt, auxid, msg);
+		if (rofeth::cethcore::has_eth_core(dpt.get_dpid())) {
+			rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
 		}
 	};
 
@@ -251,21 +251,21 @@ protected:
 				it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
 			const rofl::openflow::cofport& port = *(it->second);
 
-			ethcore::cethcore::set_core(dpt.get_dpid()).set_vlan(/*default_vid=*/1).add_port(port.get_port_no(), /*tagged=*/false);
+			rofeth::cethcore::set_eth_core(dpt.get_dpid()).set_vlan(/*default_vid=*/1).add_port(port.get_port_no(), /*tagged=*/false);
 		}
 
 		for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
 				it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
 			const rofl::openflow::cofport& port = *(it->second);
-			//ipcore::cipcore::get_instance().set_link(port.get_port_no(), port.get_name(), port.get_hwaddr(), false, 1);
+			//rofip::cipcore::get_instance().set_link(port.get_port_no(), port.get_name(), port.get_hwaddr(), false, 1);
 			if (not has_tap_dev(port.get_port_no())) {
 				add_tap_dev(port.get_port_no(), port.get_name(), port.get_hwaddr());
 			}
 		}
 
-		ethcore::cethcore::set_core(dpt.get_dpid()).handle_dpt_open(dpt);
-		ipcore::cipcore::get_instance().handle_dpt_open(dpt);
-		rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid()).handle_dpt_open(dpt);
+		rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
+		rofip::cipcore::get_instance().handle_dpt_open(dpt);
+		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
 
 		/*
 		 * test
@@ -279,7 +279,7 @@ protected:
 					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(2152)),
 					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(2152)),
 					rofgtp::cteid(222222));
-			rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(label_in, label_out);
+			rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
 		}
 		if (true) {
 			rofgtp::clabel_in4 label_in(
@@ -290,7 +290,7 @@ protected:
 					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(2152)),
 					rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(2152)),
 					rofgtp::cteid(111111));
-			rofgtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(label_in, label_out);
+			rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
 		}
 	};
 
@@ -499,9 +499,9 @@ public:
 				it = box.devs.begin(); it != box.devs.end(); ++it) {
 			os << *(it->second);
 		}
-		os << ipcore::cipcore::get_instance();
+		os << rofip::cipcore::get_instance();
 		try {
-			os << ethcore::cethcore::get_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
+			os << rofeth::cethcore::get_eth_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
 		} catch (rofl::eRofDptNotFound& e) {}
 		return os;
 	};

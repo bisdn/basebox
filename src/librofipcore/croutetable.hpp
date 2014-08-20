@@ -14,7 +14,7 @@
 #include "croute.hpp"
 #include "clogging.h"
 
-namespace ipcore {
+namespace rofip {
 
 class eRtTableBase		: public std::runtime_error {
 public:

@@ -8,7 +8,7 @@
 #include "cnexthop.hpp"
 #include "cipcore.hpp"
 
-using namespace ipcore;
+using namespace rofip;
 
 
 void
@@ -33,13 +33,13 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 				netlink.get_links().get_link(rtn.get_ifindex());
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data ...
-		const ipcore::clink& dpl =
+		const rofip::clink& dpl =
 				cipcore::get_instance().get_link(rtn.get_ifindex());
 
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in4& rtb =
 				dpl.get_neigh_in4(rtn.get_gateway()).get_crtneigh_in4();
-		const ipcore::cneigh_in4& neigh =
+		const rofip::cneigh_in4& neigh =
 				dpl.get_neigh_in4(rtb.get_dst());
 
 
@@ -195,13 +195,13 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 				netlink.get_links().get_link(rtn.get_ifindex());
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data ...
-		const ipcore::clink& dpl =
+		const rofip::clink& dpl =
 				cipcore::get_instance().get_link(rtn.get_ifindex());
 
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in6& rtb =
 				dpl.get_neigh_in6(rtn.get_gateway()).get_crtneigh_in6();
-		const ipcore::cneigh_in6& neigh =
+		const rofip::cneigh_in6& neigh =
 				dpl.get_neigh_in6(rtb.get_dst());
 
 

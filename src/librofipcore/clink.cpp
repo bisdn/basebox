@@ -7,7 +7,7 @@
 
 #include "clink.hpp"
 
-using namespace ipcore;
+using namespace rofip;
 
 
 

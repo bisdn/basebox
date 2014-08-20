@@ -7,7 +7,7 @@
 
 #include "cvlan.hpp"
 
-using namespace ethcore;
+using namespace rofeth;
 
 void
 cvlan::handle_dpt_open(

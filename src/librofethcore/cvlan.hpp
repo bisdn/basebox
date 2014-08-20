@@ -18,7 +18,7 @@
 #include "cmemberport.hpp"
 #include "cfibentry.hpp"
 
-namespace ethcore {
+namespace rofeth {
 
 class eVlanBase : public std::runtime_error {
 public:

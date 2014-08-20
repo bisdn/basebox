@@ -17,7 +17,7 @@
 #include "clogging.h"
 #include "cvlan.hpp"
 
-namespace ethcore {
+namespace rofeth {
 
 class cethcore : public rofcore::cnetlink_common_observer {
 public:
@@ -26,7 +26,7 @@ public:
 	 *
 	 */
 	static cethcore&
-	add_core(const rofl::cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
+	add_eth_core(const rofl::cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
 			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 3) {
 		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
 			delete cethcore::ethcores[dpid];
@@ -39,7 +39,7 @@ public:
 	 *
 	 */
 	static cethcore&
-	set_core(const rofl::cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
+	set_eth_core(const rofl::cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
 			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 3) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
 			new cethcore(dpid, default_pvid, in_stage_table_id, src_stage_table_id, dst_stage_table_id);
@@ -51,7 +51,7 @@ public:
 	 *
 	 */
 	static const cethcore&
-	get_core(const rofl::cdpid& dpid) {
+	get_eth_core(const rofl::cdpid& dpid) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
 			throw eVlanNotFound("cethcore::get_vtable() dpid not found");
 		}
@@ -62,7 +62,7 @@ public:
 	 *
 	 */
 	static void
-	drop_core(const rofl::cdpid& dpid) {
+	drop_eth_core(const rofl::cdpid& dpid) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
 			return;
 		}
@@ -73,7 +73,7 @@ public:
 	 *
 	 */
 	static bool
-	has_core(const rofl::cdpid& dpid) {
+	has_eth_core(const rofl::cdpid& dpid) {
 		return (not (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()));
 	};
 

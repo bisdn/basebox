@@ -1,6 +1,6 @@
 #include "cipcore.hpp"
 
-using namespace ipcore;
+using namespace rofip;
 
 std::string cipcore::script_path_dpt_open 	= std::string("/var/lib/ipcore/dpath-open.sh");
 std::string cipcore::script_path_dpt_close 	= std::string("/var/lib/ipcore/dpath-close.sh");

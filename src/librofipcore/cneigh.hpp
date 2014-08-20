@@ -26,7 +26,7 @@ extern "C" {
 #include "crtneigh.h"
 #include "cnetlink.h"
 
-namespace ipcore {
+namespace rofip {
 
 class cneigh {
 public:
