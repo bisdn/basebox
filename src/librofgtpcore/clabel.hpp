@@ -128,7 +128,7 @@ public:
 	 */
 	bool
 	operator< (const clabel_in4& label) const {
-		return (clabel::operator< (label) && (saddr < label.saddr) && (daddr < label.daddr));
+		return (clabel::operator< (label) || (saddr < label.saddr) || (daddr < label.daddr));
 	};
 
 public:

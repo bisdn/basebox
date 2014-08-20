@@ -52,8 +52,6 @@ crelay_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(index++).
 				set_oxm(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_teid(label_out.get_teid().get_value()));
 		fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
-
-
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		state = STATE_ATTACHED;
@@ -62,6 +60,8 @@ crelay_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		rofcore::logging::error << "[crelay_in4][handle_dpt_open] dpt not found" << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
 		rofcore::logging::error << "[crelay_in4][handle_dpt_open] control channel congested" << std::endl;
+	} catch (rofl::RoflException& e) {
+		rofcore::logging::error << "[crelay_in4][handle_dpt_open] unexpected exception caught: " << e.what() << std::endl;
 	}
 }
 
@@ -97,7 +97,6 @@ crelay_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		fm.set_match().set_udp_dst(label_in.get_daddr().get_port().get_value());
 		fm.set_match().set_matches().add_match(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_msg_type(255)); // = G-PDU (255)
 		fm.set_match().set_matches().add_match(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_teid(label_in.get_teid().get_value()));
-
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 	} catch (rofl::eRofDptNotFound& e) {

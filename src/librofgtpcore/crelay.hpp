@@ -174,9 +174,9 @@ public:
 	operator<< (std::ostream& os, const crelay_in4& relay) {
 		os << rofcore::indent(0) << "<crelay_in4 >" << std::endl;
 		os << rofcore::indent(2) << "<label-in >" << std::endl;
-		{ rofcore::indent i(2); os << relay.get_label_in(); };
+		{ rofcore::indent i(4); os << relay.get_label_in(); };
 		os << rofcore::indent(2) << "<label-out >" << std::endl;
-		{ rofcore::indent i(2); os << relay.get_label_out(); };
+		{ rofcore::indent i(4); os << relay.get_label_out(); };
 		return os;
 	};
 
@@ -273,9 +273,9 @@ public:
 	operator<< (std::ostream& os, const crelay_in6& relay) {
 		os << rofcore::indent(0) << "<crelay_in6 >" << std::endl;
 		os << rofcore::indent(2) << "<label-in >" << std::endl;
-		{ rofcore::indent i(2); os << relay.get_label_in(); };
+		{ rofcore::indent i(4); os << relay.get_label_in(); };
 		os << rofcore::indent(2) << "<label-out >" << std::endl;
-		{ rofcore::indent i(2); os << relay.get_label_out(); };
+		{ rofcore::indent i(4); os << relay.get_label_out(); };
 		return os;
 	};
 
