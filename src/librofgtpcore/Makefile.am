@@ -7,6 +7,8 @@ noinst_LTLIBRARIES = librofgtpcore.la
 librofgtpcore_la_SOURCES = \
 	cgtpcore.hpp \
 	cgtpcore.cpp \
+	cgtprelay.hpp \
+	cgtprelay.cpp \
 	crelay.hpp \
 	crelay.cpp \
 	cterm.hpp \
@@ -21,6 +23,7 @@ librofgtpcore_la_LIBADD= -lrt
 library_includedir=$(includedir)/rofl/common
 library_include_HEADERS= \
 	cgtpcore.hpp \
+	cgtprelay.hpp \
 	crelay.hpp \
 	cterm.hpp \
 	cport.hpp \

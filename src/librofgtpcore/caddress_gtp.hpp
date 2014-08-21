@@ -121,7 +121,7 @@ public:
 	 */
 	bool
 	operator< (const caddress_gtp_in4& addr) const {
-		return ((this->addr < addr.addr) && (caddress_gtp::operator< (addr)));
+		return ((this->addr < addr.addr) || (caddress_gtp::operator< (addr)));
 	};
 
 public:
@@ -190,7 +190,7 @@ public:
 	 */
 	bool
 	operator< (const caddress_gtp_in6& addr) const {
-		return ((this->addr < addr.addr) && (caddress_gtp::operator< (addr)));
+		return ((this->addr < addr.addr) || (caddress_gtp::operator< (addr)));
 	};
 
 public:

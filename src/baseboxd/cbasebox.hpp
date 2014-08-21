@@ -21,6 +21,7 @@
 #include "clogging.h"
 #include "cconfig.hpp"
 #include "cnetlink.h"
+#include "cgtprelay.hpp"
 
 namespace basebox {
 
@@ -387,6 +388,8 @@ private:
 	static std::string script_path_port_down;
 
 	std::map<uint32_t, rofcore::ctapdev*>	devs;
+
+	rofgtp::cgtprelay gtprelay;
 };
 
 }; // end of namespace ethcore

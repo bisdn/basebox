@@ -521,6 +521,8 @@ cbasebox::handle_port_desc_stats_reply(
 				rofgtp::cteid(111111));
 		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
 	}
+
+	gtprelay.add_socket(rofgtp::caddress_gtp_in6(rofl::caddress_in6("::") , rofgtp::cport(2152)));
 }
 
 

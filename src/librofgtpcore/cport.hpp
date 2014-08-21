@@ -64,6 +64,15 @@ public:
 	uint16_t
 	get_value() const { return port; };
 
+	/**
+	 *
+	 */
+	std::string
+	str() const {
+		std::stringstream s_port; s_port << port;
+		return s_port.str();
+	};
+
 public:
 
 	friend std::ostream&
