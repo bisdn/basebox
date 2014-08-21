@@ -376,10 +376,10 @@ private:
 private:
 
 	rofl::cdptid dptid;
-	static const std::string ROFCORE_LOG_FILE;
-	static const std::string ROFCORE_PID_FILE;
-	static const std::string ROFCORE_CONFIG_FILE;
-	static const std::string ROFCORE_CONFIG_DPT_LIST;
+	static const std::string BASEBOX_LOG_FILE;
+	static const std::string BASEBOX_PID_FILE;
+	static const std::string BASEBOX_CONFIG_FILE;
+	static const std::string BASEBOX_CONFIG_DPT_LIST;
 
 	static std::string script_path_dpt_open;
 	static std::string script_path_dpt_close;

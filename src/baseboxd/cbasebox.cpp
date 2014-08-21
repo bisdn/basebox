@@ -10,10 +10,10 @@
 using namespace basebox;
 
 /*static*/cbasebox* cbasebox::rofbase = (cbasebox*)0;
-/*static*/const std::string cbasebox::ROFCORE_LOG_FILE = std::string("/var/log/rofcored.log");
-/*static*/const std::string cbasebox::ROFCORE_PID_FILE = std::string("/var/run/rofcored.pid");
-/*static*/const std::string cbasebox::ROFCORE_CONFIG_FILE = std::string("/usr/local/etc/rofcored.conf");
-/*static*/const std::string cbasebox::ROFCORE_CONFIG_DPT_LIST = std::string("rofcored.datapaths");
+/*static*/const std::string cbasebox::BASEBOX_LOG_FILE = std::string("/var/log/baseboxd.log");
+/*static*/const std::string cbasebox::BASEBOX_PID_FILE = std::string("/var/run/baseboxd.pid");
+/*static*/const std::string cbasebox::BASEBOX_CONFIG_FILE = std::string("/usr/local/etc/baseboxd.conf");
+/*static*/const std::string cbasebox::BASEBOX_CONFIG_DPT_LIST = std::string("baseboxd.datapaths");
 
 /*static*/std::string cbasebox::script_path_dpt_open 	= std::string("/var/lib/basebox/dpath-open.sh");
 /*static*/std::string cbasebox::script_path_dpt_close 	= std::string("/var/lib/basebox/dpath-close.sh");
@@ -30,9 +30,9 @@ cbasebox::run(int argc, char** argv)
 	//env_parser.update_default_option("logfile", ETHCORE_LOG_FILE);
 	//env_parser.update_default_option("config-file", ETHCORE_CONFIG_FILE);
 	env_parser.add_option(rofl::coption(true, NO_ARGUMENT,'D',"daemonize","daemonize",""));
-	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'l', "logfile", "set log-file", std::string(ROFCORE_LOG_FILE)));
-	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'c', "config-file", "set config-file", std::string(ROFCORE_CONFIG_FILE)));
-	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(ROFCORE_PID_FILE)));
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'l', "logfile", "set log-file", std::string(BASEBOX_LOG_FILE)));
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'c', "config-file", "set config-file", std::string(BASEBOX_CONFIG_FILE)));
+	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(BASEBOX_PID_FILE)));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'p', "port", "set port", ""+6653));
 
 	// command line arguments
@@ -46,12 +46,12 @@ cbasebox::run(int argc, char** argv)
 	 * extract debug level
 	 */
 	int rofl_debug = 0;
-	if (ethcore::cconfig::get_instance().exists("rofcored.daemon.logging.rofl.debug")) {
-		rofl_debug = (int)ethcore::cconfig::get_instance().lookup("rofcored.daemon.logging.rofl.debug");
+	if (ethcore::cconfig::get_instance().exists("baseboxd.daemon.logging.rofl.debug")) {
+		rofl_debug = (int)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.logging.rofl.debug");
 	}
 	int core_debug = 0;
-	if (ethcore::cconfig::get_instance().exists("rofcored.daemon.logging.core.debug")) {
-		core_debug = (int)ethcore::cconfig::get_instance().lookup("rofcored.daemon.logging.core.debug");
+	if (ethcore::cconfig::get_instance().exists("baseboxd.daemon.logging.core.debug")) {
+		core_debug = (int)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.logging.core.debug");
 	}
 	if (env_parser.is_arg_set("debug")) {
 		rofl_debug = core_debug = atoi(env_parser.get_arg("debug").c_str());
@@ -63,10 +63,10 @@ cbasebox::run(int argc, char** argv)
 	std::string logfile;
 	if (env_parser.is_arg_set("logfile")) {
 		logfile = env_parser.get_arg("logfile");
-	} else if (ethcore::cconfig::get_instance().exists("rofcored.daemon.logfile")) {
-		logfile = (const char*)ethcore::cconfig::get_instance().lookup("rofcored.daemon.logfile");
+	} else if (ethcore::cconfig::get_instance().exists("baseboxd.daemon.logfile")) {
+		logfile = (const char*)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.logfile");
 	} else {
-		logfile = std::string(ROFCORE_LOG_FILE); // default
+		logfile = std::string(BASEBOX_LOG_FILE); // default
 	}
 
 	/*
@@ -75,10 +75,10 @@ cbasebox::run(int argc, char** argv)
 	std::string pidfile;
 	if (env_parser.is_arg_set("pidfile")) {
 		pidfile = env_parser.get_arg("pidfile");
-	} else if (ethcore::cconfig::get_instance().exists("rofcored.daemon.pidfile")) {
-		pidfile = (const char*)ethcore::cconfig::get_instance().lookup("rofcored.daemon.pidfile");
+	} else if (ethcore::cconfig::get_instance().exists("baseboxd.daemon.pidfile")) {
+		pidfile = (const char*)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.pidfile");
 	} else {
-		pidfile = std::string(ROFCORE_PID_FILE); // default
+		pidfile = std::string(BASEBOX_PID_FILE); // default
 	}
 
 	/*
@@ -87,8 +87,8 @@ cbasebox::run(int argc, char** argv)
 	bool daemonize = true;
 	if (env_parser.is_arg_set("daemonize")) {
 		daemonize = atoi(env_parser.get_arg("pidfile").c_str());
-	} else if (ethcore::cconfig::get_instance().exists("rofcored.daemon.daemonize")) {
-		daemonize = (bool)ethcore::cconfig::get_instance().lookup("rofcored.daemon.daemonize");
+	} else if (ethcore::cconfig::get_instance().exists("baseboxd.daemon.daemonize")) {
+		daemonize = (bool)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.daemonize");
 	} else {
 		daemonize = true; // default
 	}
@@ -105,7 +105,7 @@ cbasebox::run(int argc, char** argv)
 	rofcore::logging::set_debug_level(core_debug);
 
 	if (daemonize) {
-		rofcore::logging::notice << "[ethcored][main] daemonizing successful" << std::endl;
+		rofcore::logging::notice << "[baseboxd][main] daemonizing successful" << std::endl;
 	}
 
 
@@ -118,10 +118,10 @@ cbasebox::run(int argc, char** argv)
 	ethcore::cconfig& config = ethcore::cconfig::get_instance();
 
 #if 0
-	if (config.exists(ROFCORE_CONFIG_DPT_LIST)) {
-		for (int i = 0; i < config.lookup(ROFCORE_CONFIG_DPT_LIST).getLength(); i++) {
+	if (config.exists(BASEBOX_CONFIG_DPT_LIST)) {
+		for (int i = 0; i < config.lookup(BASEBOX_CONFIG_DPT_LIST).getLength(); i++) {
 			try {
-				libconfig::Setting& datapath = config.lookup(ROFCORE_CONFIG_DPT_LIST)[i];
+				libconfig::Setting& datapath = config.lookup(BASEBOX_CONFIG_DPT_LIST)[i];
 
 				// get data path dpid
 				if (not datapath.exists("dpid")) {
@@ -215,30 +215,30 @@ cbasebox::run(int argc, char** argv)
 	 * prepare OpenFlow socket for listening
 	 */
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-	if (ethcore::cconfig::get_instance().exists("rofcored.openflow.version")) {
-		int ofp_version = (int)ethcore::cconfig::get_instance().lookup("rofcored.openflow.version");
+	if (ethcore::cconfig::get_instance().exists("baseboxd.openflow.version")) {
+		int ofp_version = (int)ethcore::cconfig::get_instance().lookup("baseboxd.openflow.version");
 		ofp_version = (ofp_version < rofl::openflow13::OFP_VERSION) ? rofl::openflow13::OFP_VERSION : ofp_version;
 		versionbitmap.add_ofp_version(ofp_version);
 	} else {
 		versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
 	}
 
-	rofcore::logging::notice << "[ethcored][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
+	rofcore::logging::notice << "[baseboxd][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
 	basebox::cbasebox& rofbase = basebox::cbasebox::get_instance(versionbitmap);
 
 	//base.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
 
 	std::stringstream portno;
-	if (ethcore::cconfig::get_instance().exists("rofcored.openflow.bindport")) {
-		portno << (int)ethcore::cconfig::get_instance().lookup("rofcored.openflow.bindport");
+	if (ethcore::cconfig::get_instance().exists("baseboxd.openflow.bindport")) {
+		portno << (int)ethcore::cconfig::get_instance().lookup("baseboxd.openflow.bindport");
 	} else {
 		portno << (int)6653;
 	}
 
 	std::stringstream bindaddr;
-	if (ethcore::cconfig::get_instance().exists("rofcored.openflow.bindaddr")) {
-		bindaddr << (const char*)ethcore::cconfig::get_instance().lookup("rofcored.openflow.bindaddr");
+	if (ethcore::cconfig::get_instance().exists("baseboxd.openflow.bindaddr")) {
+		bindaddr << (const char*)ethcore::cconfig::get_instance().lookup("baseboxd.openflow.bindaddr");
 	} else {
 		bindaddr << "::";
 	}
