@@ -26,7 +26,7 @@ clink::clink() :
 
 
 clink::clink(
-		const rofl::cdptid& dptid,
+		const rofl::cdpid& dpid,
 		int ifindex,
 		const std::string& devname,
 		const rofl::caddress_ll& hwaddr,
@@ -38,7 +38,7 @@ clink::clink(
 				devname(devname),
 				hwaddr(hwaddr),
 				ifindex(ifindex),
-				dptid(dptid),
+				dpid(dpid),
 				in_ofp_table_id(in_ofp_table_id),
 				out_ofp_table_id(out_ofp_table_id),
 				tagged(tagged),
@@ -53,7 +53,7 @@ clink::~clink()
 {
 	try {
 		if (STATE_ATTACHED == state) {
-			handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 		}
 	} catch (rofl::eRofDptNotFound& e) {};
 }

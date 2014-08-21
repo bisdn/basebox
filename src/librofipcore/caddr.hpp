@@ -31,8 +31,8 @@ public:
 	/**
 	 *
 	 */
-	caddr(int ifindex, uint16_t adindex, const rofl::cdptid& dptid, uint8_t in_ofp_table_id = 0) :
-		state(STATE_DETACHED), ifindex(ifindex), adindex(adindex), dptid(dptid), in_ofp_table_id(in_ofp_table_id) {};
+	caddr(int ifindex, uint16_t adindex, const rofl::cdpid& dpid, uint8_t in_ofp_table_id = 0) :
+		state(STATE_DETACHED), ifindex(ifindex), adindex(adindex), dpid(dpid), in_ofp_table_id(in_ofp_table_id) {};
 
 	/**
 	 *
@@ -55,7 +55,7 @@ public:
 		if (this == &addr)
 			return *this;
 		state	 = addr.state;
-		dptid	 = addr.dptid;
+		dpid	 = addr.dpid;
 		in_ofp_table_id = addr.in_ofp_table_id;
 		ifindex	 = addr.ifindex;
 		adindex	 = addr.adindex;
@@ -67,14 +67,14 @@ public:
 	/**
 	 *
 	 */
-	const rofl::cdptid&
-	get_dptid() const { return dptid; };
+	const rofl::cdpid&
+	get_dpid() const { return dpid; };
 
 	/**
 	 *
 	 */
 	void
-	set_dptid(const rofl::cdptid& dptid) { this->dptid = dptid; };
+	set_dpid(const rofl::cdpid& dpid) { this->dpid = dpid; };
 
 	/**
 	 *
@@ -134,7 +134,7 @@ protected:
 	enum ofp_state_t			state;
 	int							ifindex;
 	uint16_t					adindex;
-	rofl::cdptid				dptid;
+	rofl::cdpid				dpid;
 	uint8_t						in_ofp_table_id;
 
 };
@@ -153,8 +153,8 @@ public:
 	 *
 	 */
 	caddr_in4(
-			int ifindex, uint16_t adindex, const rofl::cdptid& dptid, uint8_t table_id) :
-				caddr(ifindex, adindex, dptid, table_id) {};
+			int ifindex, uint16_t adindex, const rofl::cdpid& dpid, uint8_t table_id) :
+				caddr(ifindex, adindex, dpid, table_id) {};
 
 	/**
 	 *
@@ -180,7 +180,7 @@ public:
 	~caddr_in4() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};
@@ -232,8 +232,8 @@ public:
 	 *
 	 */
 	caddr_in6(
-			int ifindex, uint16_t adindex, const rofl::cdptid& dptid, uint8_t table_id) :
-				caddr(ifindex, adindex, dptid, table_id) {};
+			int ifindex, uint16_t adindex, const rofl::cdpid& dpid, uint8_t table_id) :
+				caddr(ifindex, adindex, dpid, table_id) {};
 
 	/**
 	 *
@@ -259,7 +259,7 @@ public:
 	~caddr_in6() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};

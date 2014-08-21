@@ -27,7 +27,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
 		const rofip::clink& dpl =
-				cipcore::get_instance().get_link(rtn.get_ifindex());
+				cipcore::get_ip_core(dpid).get_link(rtn.get_ifindex());
 
 
 
@@ -197,7 +197,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
 		const rofip::clink& dpl =
-				cipcore::get_instance().get_link(rtn.get_ifindex());
+				cipcore::get_ip_core(dpid).get_link(rtn.get_ifindex());
 
 
 

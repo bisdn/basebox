@@ -10,9 +10,9 @@
 using namespace rofip;
 
 croute_in4::croute_in4(
-		uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid,
+		uint8_t rttblid, unsigned int rtindex, const rofl::cdpid& dpid,
 		uint8_t out_ofp_table_id) :
-			croute(rttblid, rtindex, dptid, out_ofp_table_id)
+			croute(rttblid, rtindex, dpid, out_ofp_table_id)
 {
 	const rofcore::crtroute_in4& rtroute =
 			rofcore::cnetlink::get_instance().get_routes_in4(rttblid).get_route(rtindex);
@@ -21,7 +21,7 @@ croute_in4::croute_in4(
 			it = rtroute.get_nexthops_in4().get_nexthops_in4().begin();
 					it != rtroute.get_nexthops_in4().get_nexthops_in4().end(); ++it) {
 		unsigned int nhindex = it->first;
-		add_nexthop_in4(nhindex) = cnexthop_in4(rttblid, rtindex, nhindex, dptid, out_ofp_table_id);
+		add_nexthop_in4(nhindex) = cnexthop_in4(rttblid, rtindex, nhindex, dpid, out_ofp_table_id);
 	}
 }
 
@@ -99,9 +99,9 @@ croute_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 croute_in6::croute_in6(
-		uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid,
+		uint8_t rttblid, unsigned int rtindex, const rofl::cdpid& dpid,
 		uint8_t out_ofp_table_id) :
-			croute(rttblid, rtindex, dptid, out_ofp_table_id)
+			croute(rttblid, rtindex, dpid, out_ofp_table_id)
 {
 	const rofcore::crtroute_in6& rtroute =
 			rofcore::cnetlink::get_instance().get_routes_in6(rttblid).get_route(rtindex);
@@ -110,7 +110,7 @@ croute_in6::croute_in6(
 			it = rtroute.get_nexthops_in6().get_nexthops_in6().begin();
 					it != rtroute.get_nexthops_in6().get_nexthops_in6().end(); ++it) {
 		unsigned int nhindex = it->first;
-		add_nexthop_in6(nhindex) = cnexthop_in6(rttblid, rtindex, nhindex, dptid, out_ofp_table_id);
+		add_nexthop_in6(nhindex) = cnexthop_in6(rttblid, rtindex, nhindex, dpid, out_ofp_table_id);
 	}
 }
 

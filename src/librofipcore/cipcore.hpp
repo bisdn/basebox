@@ -45,7 +45,15 @@ class eIpCoreBase			: public std::runtime_error {
 public:
 	eIpCoreBase(const std::string& __arg) : std::runtime_error(__arg) {};
 };
+class eIpCoreNotFound : public eIpCoreBase {
+public:
+	eIpCoreNotFound(const std::string& __arg) : eIpCoreBase(__arg) {};
+};
 
+/**
+ * local-table: default=3
+ * out-table: default=4
+ */
 class cipcore : public rofcore::cnetlink_common_observer {
 public:
 
@@ -53,10 +61,88 @@ public:
 	 *
 	 */
 	static cipcore&
-	get_instance(
-			const rofl::cdptid& dptid = rofl::cdptid(),
+	add_ip_core(const rofl::cdpid& dpid, uint8_t local_ofp_table_id, uint8_t out_ofp_table_id) {
+		if (cipcore::ipcores.find(dpid) != cipcore::ipcores.end()) {
+			delete cipcore::ipcores[dpid];
+			cipcore::ipcores.erase(dpid);
+		}
+		cipcore::ipcores[dpid] = new cipcore(dpid, local_ofp_table_id, out_ofp_table_id);
+		return *(cipcore::ipcores[dpid]);
+	};
+
+	/**
+	 *
+	 */
+	static cipcore&
+	set_ip_core(const rofl::cdpid& dpid, uint8_t local_ofp_table_id, uint8_t out_ofp_table_id) {
+		if (cipcore::ipcores.find(dpid) == cipcore::ipcores.end()) {
+			cipcore::ipcores[dpid] = new cipcore(dpid, local_ofp_table_id, out_ofp_table_id);
+		}
+		return *(cipcore::ipcores[dpid]);
+	};
+
+
+	/**
+	 *
+	 */
+	static cipcore&
+	set_ip_core(const rofl::cdpid& dpid) {
+		if (cipcore::ipcores.find(dpid) == cipcore::ipcores.end()) {
+			throw eIpCoreNotFound("cipcore::set_ip_core() dpt not found");
+		}
+		return *(cipcore::ipcores[dpid]);
+	};
+
+	/**
+	 *
+	 */
+	static const cipcore&
+	get_ip_core(const rofl::cdpid& dpid) {
+		if (cipcore::ipcores.find(dpid) == cipcore::ipcores.end()) {
+			throw eIpCoreNotFound("cipcore::get_ip_core() dptid not found");
+		}
+		return *(cipcore::ipcores.at(dpid));
+	};
+
+	/**
+	 *
+	 */
+	static void
+	drop_ip_core(const rofl::cdpid& dpid) {
+		if (cipcore::ipcores.find(dpid) == cipcore::ipcores.end()) {
+			return;
+		}
+		delete cipcore::ipcores[dpid];
+		cipcore::ipcores.erase(dpid);
+	}
+
+	/**
+	 *
+	 */
+	static bool
+	has_ip_core(const rofl::cdpid& dpid) {
+		return (not (cipcore::ipcores.find(dpid) == cipcore::ipcores.end()));
+	};
+
+private:
+
+	/**
+	 *
+	 */
+	cipcore(const rofl::cdpid& dpid,
 			uint8_t local_ofp_table_id = 3,
-			uint8_t out_ofp_table_id = 4);
+			uint8_t out_ofp_table_id = 4) :
+		state(STATE_DETACHED), dpid(dpid),
+		local_ofp_table_id(local_ofp_table_id),
+		out_ofp_table_id(out_ofp_table_id) {};
+
+
+	/**
+	 *
+	 */
+	virtual
+	~cipcore()
+		{};
 
 public:
 
@@ -81,11 +167,10 @@ public:
 			delete links[ifindex];
 			links.erase(ifindex);
 		}
-		links[ifindex] = new clink(dptid, ifindex, devname, hwaddr, local_ofp_table_id, out_ofp_table_id, tagged, vid);
+		links[ifindex] = new clink(dpid, ifindex, devname, hwaddr, local_ofp_table_id, out_ofp_table_id, tagged, vid);
 		if (STATE_ATTACHED == state) {
-			links[ifindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			links[ifindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
-		hook_port_up(devname);
 		return *(links[ifindex]);
 	};
 
@@ -95,11 +180,10 @@ public:
 	clink&
 	set_link(int ifindex, const std::string& devname, const rofl::caddress_ll& hwaddr, bool tagged = false, uint16_t vid = 1) {
 		if (links.find(ifindex) == links.end()) {
-			links[ifindex] = new clink(dptid, ifindex, devname, hwaddr, local_ofp_table_id, out_ofp_table_id, tagged, vid);
+			links[ifindex] = new clink(dpid, ifindex, devname, hwaddr, local_ofp_table_id, out_ofp_table_id, tagged, vid);
 			if (STATE_ATTACHED == state) {
-				links[ifindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				links[ifindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
-			hook_port_up(devname);
 		}
 		return *(links[ifindex]);
 	};
@@ -134,9 +218,8 @@ public:
 		if (links.find(ifindex) == links.end()) {
 			return;
 		}
-		hook_port_down(get_link(ifindex).get_devname());
 		if (STATE_ATTACHED == state) {
-			links[ifindex]->handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			links[ifindex]->handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 		}
 		delete links[ifindex];
 		links.erase(ifindex);
@@ -205,9 +288,9 @@ public:
 		if (rtables.find(rttblid) != rtables.end()) {
 			rtables.erase(rttblid);
 		}
-		rtables[rttblid] = croutetable(rttblid, dptid, local_ofp_table_id, out_ofp_table_id);
+		rtables[rttblid] = croutetable(rttblid, dpid, local_ofp_table_id, out_ofp_table_id);
 		if (STATE_ATTACHED == state) {
-			rtables[rttblid].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			rtables[rttblid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
 		return rtables[rttblid];
 	};
@@ -218,9 +301,9 @@ public:
 	croutetable&
 	set_table(unsigned int rttblid) {
 		if (rtables.find(rttblid) == rtables.end()) {
-			rtables[rttblid] = croutetable(rttblid, dptid, local_ofp_table_id, out_ofp_table_id);
+			rtables[rttblid] = croutetable(rttblid, dpid, local_ofp_table_id, out_ofp_table_id);
 			if (STATE_ATTACHED == state) {
-				rtables[rttblid].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+				rtables[rttblid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		}
 		return rtables[rttblid];
@@ -246,7 +329,7 @@ public:
 			return;
 		}
 		if (STATE_ATTACHED == state) {
-			rtables[rttblid].handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			rtables[rttblid].handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 		}
 		rtables.erase(rttblid);
 	};
@@ -265,10 +348,10 @@ public:
 	operator<< (std::ostream& os, const cipcore& ipcore) {
 		try {
 			os << rofcore::indent(0) << "<cipcore dpid: "
-					<< rofl::crofdpt::get_dpt(ipcore.dptid).get_dpid().str() << " >" << std::endl;
+					<< rofl::crofdpt::get_dpt(ipcore.dpid).get_dpid().str() << " >" << std::endl;
 		} catch (rofl::eRofDptNotFound& e) {
 			os << rofcore::indent(0) << "<cipcore dptid: >" << std::endl;
-			os << rofcore::indent(2) << ipcore.dptid;
+			os << rofcore::indent(2) << ipcore.dpid;
 		}
 		rofcore::indent i(2);
 		for (std::map<int, clink*>::const_iterator
@@ -286,46 +369,25 @@ private:
 
 	static const unsigned int __ETH_FRAME_LEN = 9018; // including jumbo frames
 
-	static std::string script_path_dpt_open;
-	static std::string script_path_dpt_close;
-	static std::string script_path_port_up;
-	static std::string script_path_port_down;
-
 	enum ofp_core_state_t {
 		STATE_DETACHED = 1,
 		STATE_ATTACHED = 2,
 	};
 
 	ofp_core_state_t					state;
-	rofl::cdptid 						dptid;
+	rofl::cdpid 						dpid;
 	std::map<int, clink*> 				links;	// key: ifindex, value: ptr to clink
 	std::map<unsigned int, croutetable>	rtables;
 	uint8_t								local_ofp_table_id;
 	uint8_t								out_ofp_table_id;
 
-	static cipcore* sipcore;	// singleton
+	static std::map<rofl::cdpid, cipcore*>		ipcores;
+
 
 private:
 
-	/**
-	 *
-	 */
-	cipcore(const rofl::cdptid& dptid,
-			uint8_t local_ofp_table_id = 3,
-			uint8_t out_ofp_table_id = 4) :
-		state(STATE_DETACHED), dptid(dptid),
-		local_ofp_table_id(local_ofp_table_id),
-		out_ofp_table_id(out_ofp_table_id) {};
-
-
-	/**
-	 *
-	 */
-	virtual
-	~cipcore()
-		{};
-
-private:
+	void
+	set_forwarding(bool forward = true);
 
 	void
 	purge_dpt_entries();
@@ -342,30 +404,6 @@ private:
 	void
 	redirect_ipv6_multicast();
 
-
-	/*
-	 * event specific hooks
-	 */
-	void
-	hook_dpt_attach();
-
-	void
-	hook_dpt_detach();
-
-	void
-	hook_port_up(std::string const& devname);
-
-	void
-	hook_port_down(std::string const& devname);
-
-	void
-	set_forwarding(bool forward = true);
-
-	static void
-	execute(
-			std::string const& executable,
-			std::vector<std::string> argv,
-			std::vector<std::string> envp);
 
 public:
 

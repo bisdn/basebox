@@ -69,7 +69,7 @@ public:
 		if (this == &nexthop)
 			return *this;
 		state				= nexthop.state;
-		dptid	 			= nexthop.dptid;
+		dpid	 			= nexthop.dpid;
 		rttblid 			= nexthop.rttblid;
 		rtindex	 			= nexthop.rtindex;
 		nhindex	 			= nexthop.nhindex;
@@ -81,9 +81,9 @@ public:
 	 *
 	 */
 	cnexthop(
-			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid, uint8_t out_ofp_table_id = 2) :
+			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdpid& dpid, uint8_t out_ofp_table_id = 2) :
 				state(STATE_DETACHED),
-				dptid(dptid),
+				dpid(dpid),
 				rttblid(rttableid),
 				rtindex(rtindex),
 				nhindex(nhindex),
@@ -94,8 +94,8 @@ public:
 	/**
 	 *
 	 */
-	const rofl::cdptid&
-	get_dptid() const { return dptid; };
+	const rofl::cdpid&
+	get_dpid() const { return dpid; };
 
 	/**
 	 *
@@ -139,7 +139,7 @@ protected:
 	};
 
 	enum ofp_state_t			state;
-	rofl::cdptid				dptid;
+	rofl::cdpid				dpid;
 	uint8_t						rttblid; // routing table id, not OFP related
 	unsigned int				rtindex;
 	unsigned int				nhindex;
@@ -179,8 +179,8 @@ public:
 	 *
 	 */
 	cnexthop_in4(
-			uint8_t rttblid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid, uint8_t out_ofp_table_id = 2) :
-				cnexthop(rttblid, rtindex, nhindex, dptid, out_ofp_table_id) {};
+			uint8_t rttblid, unsigned int rtindex, unsigned int nhindex, const rofl::cdpid& dpid, uint8_t out_ofp_table_id = 2) :
+				cnexthop(rttblid, rtindex, nhindex, dpid, out_ofp_table_id) {};
 
 public:
 
@@ -201,19 +201,19 @@ private:
 	virtual void
 	neigh_in4_created(unsigned int ifindex, uint16_t nbindex) {
 		if (STATE_DETACHED == state) {
-			handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
 	};
 
 	virtual void
 	neigh_in4_updated(unsigned int ifindex, uint16_t nbindex) {
-		handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+		handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 	};
 
 	virtual void
 	neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex) {
 		if (STATE_ATTACHED == state) {
-			handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 		}
 	};
 
@@ -271,8 +271,8 @@ public:
 	 *
 	 */
 	cnexthop_in6(
-			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdptid& dptid, uint8_t out_ofp_table_id = 2) :
-				cnexthop(rttableid, rtindex, nhindex, dptid, out_ofp_table_id) {};
+			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdpid& dpid, uint8_t out_ofp_table_id = 2) :
+				cnexthop(rttableid, rtindex, nhindex, dpid, out_ofp_table_id) {};
 
 
 public:
@@ -294,19 +294,19 @@ private:
 	virtual void
 	neigh_in6_created(unsigned int ifindex, uint16_t nbindex) {
 		if (STATE_DETACHED == state) {
-			handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+			handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
 	};
 
 	virtual void
 	neigh_in6_updated(unsigned int ifindex, uint16_t nbindex) {
-		handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
+		handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 	};
 
 	virtual void
 	neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex) {
 		if (STATE_ATTACHED == state) {
-			handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 		}
 	};
 

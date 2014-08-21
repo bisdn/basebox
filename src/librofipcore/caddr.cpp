@@ -44,7 +44,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		// redirect ARP packets to control plane
 		fe.set_match().clear();
 
-		uint32_t ofp_port_no = dpt.get_ports().get_port(cipcore::get_instance().get_link(ifindex).get_devname()).get_port_no();
+		uint32_t ofp_port_no = dpt.get_ports().get_port(cipcore::get_ip_core(dpid).get_link(ifindex).get_devname()).get_port_no();
 		fe.set_match().set_in_port(ofp_port_no); // only for ARP (bound to Ethernet segment)
 		fe.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
 		fe.set_match().set_arp_tpa(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
@@ -95,7 +95,7 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		// redirect ARP packets to control plane
 		fe.set_match().clear();
 
-		uint32_t ofp_port_no = dpt.get_ports().get_port(cipcore::get_instance().get_link(ifindex).get_devname()).get_port_no();
+		uint32_t ofp_port_no = dpt.get_ports().get_port(cipcore::get_ip_core(dpid).get_link(ifindex).get_devname()).get_port_no();
 		fe.set_match().set_in_port(ofp_port_no); // only for ARP (bound to Ethernet segment)
 		fe.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
 		fe.set_match().set_arp_tpa(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());

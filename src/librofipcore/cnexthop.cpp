@@ -34,7 +34,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data ...
 		const rofip::clink& dpl =
-				cipcore::get_instance().get_link(rtn.get_ifindex());
+				cipcore::get_ip_core(dpid).get_link(rtn.get_ifindex());
 
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in4& rtb =
@@ -58,7 +58,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		switch (state) {
@@ -136,7 +136,7 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -196,7 +196,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data ...
 		const rofip::clink& dpl =
-				cipcore::get_instance().get_link(rtn.get_ifindex());
+				cipcore::get_ip_core(dpid).get_link(rtn.get_ifindex());
 
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in6& rtb =
@@ -220,7 +220,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		//uint32_t out_portno 			= dpl.get_ofp_port_no();
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		switch (state) {
@@ -297,7 +297,7 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dptid());
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);

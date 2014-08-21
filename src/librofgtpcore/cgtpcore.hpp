@@ -100,7 +100,7 @@ public:
 		return (not (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()));
 	};
 
-public:
+private:
 
 	/**
 	 *

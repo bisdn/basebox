@@ -45,9 +45,9 @@ public:
 	 *
 	 */
 	croute(
-			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid,
+			uint8_t rttblid, unsigned int rtindex, const rofl::cdpid& dpid,
 			uint8_t out_ofp_table_id = 4) :
-				state(STATE_DETACHED), rttblid(rttblid), rtindex(rtindex), dptid(dptid),
+				state(STATE_DETACHED), rttblid(rttblid), rtindex(rtindex), dpid(dpid),
 				out_ofp_table_id(out_ofp_table_id) {};
 
 	/**
@@ -63,7 +63,7 @@ public:
 		if (this == &route)
 			return *this;
 		state			= route.state;
-		dptid			= route.dptid;
+		dpid			= route.dpid;
 		rttblid			= route.rttblid;
 		rtindex			= route.rtindex;
 		out_ofp_table_id		= route.out_ofp_table_id;
@@ -87,11 +87,11 @@ public:
 		if (STATE_ATTACHED == state) {
 			for (std::map<uint32_t, cnexthop_in4>::iterator
 					it = nexthops_in4.begin(); it != nexthops_in4.end(); ++it) {
-				it->second.handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+				it->second.handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 			for (std::map<uint32_t, cnexthop_in6>::iterator
 					it = nexthops_in6.begin(); it != nexthops_in6.end(); ++it) {
-				it->second.handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+				it->second.handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		}
 	};
@@ -101,8 +101,8 @@ public:
 	/**
 	 *
 	 */
-	const rofl::cdptid&
-	get_dptid() const { return dptid; };
+	const rofl::cdpid&
+	get_dpid() const { return dpid; };
 
 	/**
 	 *
@@ -138,7 +138,7 @@ public:
 		if (nexthops_in4.find(nhindex) != nexthops_in4.end()) {
 			nexthops_in4.erase(nhindex);
 		}
-		//nexthops_in4[nhindex] = cdptnexthop_in4(dptid);
+		//nexthops_in4[nhindex] = cdptnexthop_in4(dpid);
 		return nexthops_in4[nhindex];
 	};
 
@@ -148,7 +148,7 @@ public:
 	cnexthop_in4&
 	set_nexthop_in4(unsigned int nhindex) {
 		if (nexthops_in4.find(nhindex) == nexthops_in4.end()) {
-			//nexthops_in4[nhindex] = cdptnexthop_in4(dptid);
+			//nexthops_in4[nhindex] = cdptnexthop_in4(dpid);
 		}
 		return nexthops_in4[nhindex];
 	};
@@ -192,7 +192,7 @@ public:
 		if (nexthops_in6.find(nhindex) != nexthops_in6.end()) {
 			nexthops_in6.erase(nhindex);
 		}
-		//nexthops_in6[nhindex].set_dptid(dptid);
+		//nexthops_in6[nhindex].set_dpid(dpid);
 		return nexthops_in6[nhindex];
 	};
 
@@ -202,7 +202,7 @@ public:
 	cnexthop_in6&
 	set_nexthop_in6(unsigned int nhindex) {
 		if (nexthops_in6.find(nhindex) == nexthops_in6.end()) {
-			//nexthops_in6[nhindex].set_dptid(dptid);
+			//nexthops_in6[nhindex].set_dpid(dpid);
 		}
 		return nexthops_in6[nhindex];
 	};
@@ -261,7 +261,7 @@ protected:
 	enum ofp_state_t			state;
 	uint8_t					 	rttblid;
 	unsigned int			 	rtindex;
-	rofl::cdptid				dptid;
+	rofl::cdpid				dpid;
 	uint8_t						out_ofp_table_id;	// openflow table-id for output stage
 
 	/* we make here one assumption: only one nexthop exists per neighbor and route
@@ -285,7 +285,7 @@ public:
 	 *
 	 */
 	croute_in4(
-			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid,
+			uint8_t rttblid, unsigned int rtindex, const rofl::cdpid& dpid,
 			uint8_t out_ofp_table_id);
 
 	/**
@@ -313,7 +313,7 @@ public:
 	~croute_in4() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};
@@ -371,7 +371,7 @@ public:
 	 *
 	 */
 	croute_in6(
-			uint8_t rttblid, unsigned int rtindex, const rofl::cdptid& dptid,
+			uint8_t rttblid, unsigned int rtindex, const rofl::cdpid& dpid,
 			uint8_t out_ofp_table_id);
 
 	/**
@@ -399,7 +399,7 @@ public:
 	~croute_in6() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};

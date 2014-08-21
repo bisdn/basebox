@@ -2,34 +2,14 @@
 
 using namespace rofip;
 
-std::string cipcore::script_path_dpt_open 	= std::string("/var/lib/ipcore/dpath-open.sh");
-std::string cipcore::script_path_dpt_close 	= std::string("/var/lib/ipcore/dpath-close.sh");
-std::string cipcore::script_path_port_up 	= std::string("/var/lib/ipcore/port-up.sh");
-std::string cipcore::script_path_port_down 	= std::string("/var/lib/ipcore/port-down.sh");
-
-
-/*static*/cipcore* cipcore::sipcore = (cipcore*)NULL;
-
-
-/*static*/
-cipcore&
-cipcore::get_instance(
-		const rofl::cdptid& dptid, uint8_t local_ofp_table_id, uint8_t out_ofp_table_id)
-{
-	if (NULL == cipcore::sipcore) {
-		cipcore::sipcore = new cipcore(dptid, local_ofp_table_id, out_ofp_table_id);
-	}
-	return *(cipcore::sipcore);
-}
-
-
+/*static*/std::map<rofl::cdpid, cipcore*> cipcore::ipcores;
 
 void
 cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	state = STATE_ATTACHED;
 
-	dptid = dpt.get_dptid();
+	dpid = dpt.get_dpid();
 
 	//purge_dpt_entries();
 	//block_stp_frames();
@@ -45,9 +25,6 @@ cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 			it = rtables.begin(); it != rtables.end(); ++it) {
 		it->second.handle_dpt_open(dpt);
 	}
-
-	// call external scripting hook
-	hook_dpt_attach();
 }
 
 
@@ -55,14 +32,11 @@ cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 void
 cipcore::handle_dpt_close(rofl::crofdpt& dpt)
 {
-	if (dptid != dpt.get_dptid()) {
+	if (dpid != dpt.get_dpid()) {
 		return;
 	}
 
 	state = STATE_DETACHED;
-
-	// call external scripting hook
-	hook_dpt_detach();
 
 	for (std::map<unsigned int, croutetable>::iterator
 			it = rtables.begin(); it != rtables.end(); ++it) {
@@ -83,33 +57,14 @@ cipcore::handle_port_status(
 		rofl::openflow::cofmsg_port_status& msg)
 {
 
-	if (dpt.get_dptid() != dptid) {
+	if (dpt.get_dpid() != dpid) {
 		rofcore::logging::debug << "[cipcore] received PortStatus from invalid data path, ignoring" << std::endl;
 		return;
 	}
 
 	rofcore::logging::debug << "[cipcore] Port-Status message rcvd:" << std::endl << msg;
 
-	try {
-		switch (msg.get_reason()) {
-		case rofl::openflow::OFPPR_ADD: {
-			hook_port_up(msg.get_port().get_name());
-		} break;
-		case rofl::openflow::OFPPR_MODIFY: {
-			hook_port_up(msg.get_port().get_name());
-		} break;
-		case rofl::openflow::OFPPR_DELETE: {
-			drop_link(msg.get_port().get_name());
-			hook_port_down(msg.get_port().get_name());
-		} break;
-		default: {
-			rofcore::logging::debug << "[cipcore] received PortStatus with unknown reason code received, ignoring" << std::endl;
-		};
-		}
-
-	} catch (rofcore::eNetDevCritical& e) {
-		rofcore::logging::debug << "[cipcore] new port created: unable to create tap device: " << msg.get_port().get_name() << std::endl;
-	}
+	// nothing to do, link creation/destruction is seen via netlink interface
 }
 
 
@@ -142,7 +97,7 @@ void
 cipcore::set_forwarding(bool forward)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
 		rofl::openflow::cofflowmod fed = rofl::openflow::cofflowmod(dpt.get_version());
 		if (forward == true) {
@@ -171,7 +126,7 @@ cipcore::set_forwarding(bool forward)
 
 	} catch (rofl::eRofDptNotFound& e) {
 
-		rofcore::logging::debug << "[cipcore] enable forwarding: dptid not found: " << dptid << std::endl;
+		rofcore::logging::debug << "[cipcore] enable forwarding: dpid not found: " << dpid << std::endl;
 
 	}
 }
@@ -623,7 +578,7 @@ void
 cipcore::purge_dpt_entries()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
 		// all wildcard matches with non-strict deletion => removes all state from data path
 		rofl::openflow::cofflowmod fe(dpt.get_version());
@@ -642,7 +597,7 @@ void
 cipcore::block_stp_frames()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
@@ -663,7 +618,7 @@ void
 cipcore::unblock_stp_frames()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
@@ -684,7 +639,7 @@ void
 cipcore::redirect_ipv4_multicast()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
@@ -714,7 +669,7 @@ void
 cipcore::redirect_ipv6_multicast()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
@@ -737,146 +692,5 @@ cipcore::redirect_ipv6_multicast()
 
 	}
 }
-
-
-
-void
-cipcore::hook_dpt_attach()
-{
-	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-
-		std::vector<std::string> argv;
-		std::vector<std::string> envp;
-
-		std::stringstream s_dpid;
-		s_dpid << "DPID=" << dpt.get_dpid();
-		envp.push_back(s_dpid.str());
-
-		cipcore::execute(cipcore::script_path_dpt_open, argv, envp);
-
-	} catch (rofl::eRofDptNotFound& e) {
-
-	}
-}
-
-
-
-void
-cipcore::hook_dpt_detach()
-{
-	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-
-		std::vector<std::string> argv;
-		std::vector<std::string> envp;
-
-		std::stringstream s_dpid;
-		s_dpid << "DPID=" << dpt.get_dpid();
-		envp.push_back(s_dpid.str());
-
-		cipcore::execute(cipcore::script_path_dpt_close, argv, envp);
-
-	} catch (rofl::eRofDptNotFound& e) {
-
-	}
-}
-
-
-
-void
-cipcore::hook_port_up(std::string const& devname)
-{
-	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-
-		std::vector<std::string> argv;
-		std::vector<std::string> envp;
-
-		std::stringstream s_dpid;
-		s_dpid << "DPID=" << dpt.get_dpid();
-		envp.push_back(s_dpid.str());
-
-		std::stringstream s_devname;
-		s_devname << "DEVNAME=" << devname;
-		envp.push_back(s_devname.str());
-
-		cipcore::execute(cipcore::script_path_port_up, argv, envp);
-
-	} catch (rofl::eRofDptNotFound& e) {
-
-	}
-}
-
-
-
-void
-cipcore::hook_port_down(std::string const& devname)
-{
-	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-
-		std::vector<std::string> argv;
-		std::vector<std::string> envp;
-
-		std::stringstream s_dpid;
-		s_dpid << "DPID=" << dpt.get_dpid();
-		envp.push_back(s_dpid.str());
-
-		std::stringstream s_devname;
-		s_devname << "DEVNAME=" << devname;
-		envp.push_back(s_devname.str());
-
-		cipcore::execute(cipcore::script_path_port_down, argv, envp);
-
-	} catch (rofl::eRofDptNotFound& e) {
-
-	}
-}
-
-
-
-void
-cipcore::execute(
-		std::string const& executable,
-		std::vector<std::string> argv,
-		std::vector<std::string> envp)
-{
-	pid_t pid = 0;
-
-	if ((pid = fork()) < 0) {
-		fprintf(stderr, "syscall error fork(): %d (%s)\n", errno, strerror(errno));
-		return;
-	}
-
-	if (pid > 0) { // father process
-		return;
-	}
-
-
-	// child process
-
-	std::vector<const char*> vctargv;
-	for (std::vector<std::string>::iterator
-			it = argv.begin(); it != argv.end(); ++it) {
-		vctargv.push_back((*it).c_str());
-	}
-	vctargv.push_back(NULL);
-
-
-	std::vector<const char*> vctenvp;
-	for (std::vector<std::string>::iterator
-			it = envp.begin(); it != envp.end(); ++it) {
-		vctenvp.push_back((*it).c_str());
-	}
-	vctenvp.push_back(NULL);
-
-
-	execvpe(executable.c_str(), (char*const*)&vctargv[0], (char*const*)&vctenvp[0]);
-
-	exit(1); // just in case execvpe fails
-}
-
-
 
 
