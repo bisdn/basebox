@@ -75,15 +75,7 @@ crelay_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 
-		switch (state) {
-		case STATE_DETACHED: {
-			fm.set_command(rofl::openflow::OFPFC_ADD);
-		} break;
-		case STATE_ATTACHED: {
-			fm.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
-		} break;
-		}
-
+		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
@@ -176,15 +168,7 @@ crelay_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 
-		switch (state) {
-		case STATE_DETACHED: {
-			fm.set_command(rofl::openflow::OFPFC_ADD);
-		} break;
-		case STATE_ATTACHED: {
-			fm.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
-		} break;
-		}
-
+		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
