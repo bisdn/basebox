@@ -102,7 +102,7 @@ AC_CONFIG_FILES([
 	Makefile
 	src/Makefile
 	src/dhcpv6snoop/Makefile
-	src/rofcore/Makefile
+	src/baseboxd/Makefile
 	src/librofnetlink/Makefile
 	src/librofipcore/Makefile
 	src/librofethcore/Makefile
