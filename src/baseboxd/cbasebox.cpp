@@ -288,7 +288,7 @@ cbasebox::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 				rofl::openflow::base::get_ofpp_controller_port(rofl::crofdpt::get_dpt(dptid).get_version()),
 				actions,
 				pkt->soframe(),
-				pkt->framelen());
+				pkt->length());
 
 	} catch (eLinkNoDptAttached& e) {
 		rofcore::logging::warn << "[cbasebox][enqueue] no data path attached, dropping outgoing packet" << std::endl;
@@ -318,6 +318,10 @@ void
 cbasebox::handle_dpt_open(
 		rofl::crofdpt& dpt) {
 	dptid = dpt.get_dptid();
+
+	std::cerr << "CCCC[1]: " << (int)dpt.get_version() << " dpid:" << dpt.get_dpid() << std::endl;
+	std::cerr << "CCCC[2]: " << (int)dpt.get_version() << " dptid:" << dpt.get_dptid() << std::endl;
+
 	rofip::cipcore::set_ip_core(dpt.get_dpid(), /*local-stage=*/3, /*out-stage=*/4);
 	rofeth::cethcore::set_eth_core(dpt.get_dpid(), /*default_vid=*/1, 0, 1, 5);
 	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid(), /*gtp-stage=*/3); // yes, same as local for cipcore

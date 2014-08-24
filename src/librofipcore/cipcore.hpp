@@ -26,6 +26,8 @@ extern "C" {
 #include <exception>
 
 #include <rofl/common/crofbase.h>
+#include <rofl/common/protocols/fipv4frame.h>
+#include <rofl/common/protocols/fipv6frame.h>
 #include <rofl/common/openflow/cofhelloelemversionbitmap.h>
 
 #include "ctapdev.h"

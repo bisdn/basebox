@@ -22,6 +22,7 @@ extern "C" {
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
 #include <rofl/common/cdpid.h>
+#include <rofl/common/protocols/fvlanframe.h>
 
 #include "crtneigh.h"
 #include "cnetlink.h"

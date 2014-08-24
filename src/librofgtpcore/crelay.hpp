@@ -13,6 +13,8 @@
 
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/cdptid.h>
+#include <rofl/common/protocols/fipv4frame.h>
+#include <rofl/common/protocols/fudpframe.h>
 
 #include "clabel.hpp"
 #include "clogging.h"

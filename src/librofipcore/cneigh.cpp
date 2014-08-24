@@ -109,20 +109,19 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_open] unable to find link" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_open] unable to find neighbour" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] unable to find neighbour" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_open] unable to find address" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_open] unable to find data path" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] unable to find data path" << e.what() << std::endl;
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_open] unexpected error" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] unexpected error" << std::endl;
 	}
 }
 
@@ -159,20 +158,19 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unable to find link" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unable to find neighbour" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] unable to find neighbour" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unable to find address" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unable to find data path" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] unable to find data path" << e.what() << std::endl;
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[cipcore][cneigh_in4][handle_dpt_close] unexpected error" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] unexpected error" << std::endl;
 	}
 
 	state = STATE_DETACHED;
@@ -271,20 +269,19 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_open] unable to find link" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_open] unable to find neighbour" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] unable to find neighbour" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_open] unable to find address" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_open] unable to find data path" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] unable to find data path" << e.what() << std::endl;
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_open] unexpected error" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] unexpected error" << std::endl;
 	}
 }
 
@@ -321,20 +318,19 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unable to find link" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unable to find neighbour" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] unable to find neighbour" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unable to find address" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unable to find data path" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] unable to find data path" << e.what() << std::endl;
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[cipcore][cneigh_in6][handle_dpt_close] unexpected error" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] unexpected error" << std::endl;
 	}
 
 	state = STATE_DETACHED;

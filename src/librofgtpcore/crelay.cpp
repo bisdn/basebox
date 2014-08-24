@@ -58,6 +58,8 @@ crelay_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[crelay_in4][handle_dpt_open] dpt not found" << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[crelay_in4][handle_dpt_open] control channel is down" << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
 		rofcore::logging::error << "[crelay_in4][handle_dpt_open] control channel congested" << std::endl;
 	} catch (rofl::RoflException& e) {
@@ -92,9 +94,11 @@ crelay_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[crelay_in4][handle_dpt_open] dpt not found" << std::endl;
+		rofcore::logging::error << "[crelay_in4][handle_dpt_close] dpt not found" << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[crelay_in4][handle_dpt_close] control channel is down" << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[crelay_in4][handle_dpt_open] control channel congested" << std::endl;
+		rofcore::logging::error << "[crelay_in4][handle_dpt_close] control channel congested" << std::endl;
 	}
 }
 
@@ -153,6 +157,8 @@ crelay_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[crelay_in6][handle_dpt_open] dpt not found" << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[crelay_in6][handle_dpt_open] control channel is down" << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
 		rofcore::logging::error << "[crelay_in6][handle_dpt_open] control channel congested" << std::endl;
 	}
@@ -186,8 +192,10 @@ crelay_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[crelay_in6][handle_dpt_open] dpt not found" << std::endl;
+		rofcore::logging::error << "[crelay_in6][handle_dpt_close] dpt not found" << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[crelay_in6][handle_dpt_close] control channel is down" << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[crelay_in6][handle_dpt_open] control channel congested" << std::endl;
+		rofcore::logging::error << "[crelay_in6][handle_dpt_close] control channel congested" << std::endl;
 	}
 }

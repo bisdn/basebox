@@ -88,13 +88,11 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in4][flow_mod_add] unable to find link" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_open] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in4][flow_mod_add] unable to find address" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_open] unable to find address" << e.what() << std::endl;
 	} catch (eNeighNotFound& e) {
-		rofcore::logging::debug << "[cnexthop_in4][flow_mod_add] unable to find dst neighbour" << std::endl << *this;
+		rofcore::logging::debug << "[rofip][cnexthop_in4][handle_dpt_open] unable to find dst neighbour" << e.what() << std::endl;
 
 		/* non-critical error: just indicating that the kernel has not yet resolved (via ARP or NDP)
 		 * the neighbour carrying this next-hops's destination address.
@@ -107,11 +105,13 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		 */
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in4][flow_mod_add] unable to find data path" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_open] unable to find data path" << e.what() << std::endl;
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_open] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_open] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[cnexthop_in4][flow_mod_add] unexpected error" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_open] unexpected error" << std::endl;
 	}
 }
 
@@ -157,17 +157,17 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in4][flow_mod_delete] unable to find data path" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_close] unable to find data path" << e.what() << std::endl;
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in4][flow_mod_delete] unable to find link" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_close] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in4][flow_mod_delete] unable to find address" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_close] unable to find address" << e.what() << std::endl;
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_close] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_close] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[cnexthop_in4][flow_mod_delete] unexpected error" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_close] unexpected error" << std::endl;
 	}
 }
 
@@ -249,13 +249,11 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in6][flow_mod_add] unable to find link" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_open] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in6][flow_mod_add] unable to find address" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_open] unable to find address" << e.what() << std::endl;
 	} catch (eNeighNotFound& e) {
-		rofcore::logging::debug << "[cnexthop_in6][flow_mod_add] unable to find dst neighbour" << std::endl << *this;
+		rofcore::logging::debug << "[rofip][cnexthop_in6][handle_dpt_open] unable to find dst neighbour" << e.what() << std::endl;
 
 		/* non-critical error: just indicating that the kernel has not yet resolved (via ARP or NDP)
 		 * the neighbour carrying this next-hops's destination address.
@@ -268,11 +266,15 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		 */
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in6][flow_mod_add] unable to find data path" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_open] unable to find data path" << e.what() << std::endl;
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_open] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_open] control channel is down" << e.what() << std::endl;
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_open] runtime error: " << e.what() << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[cnexthop_in6][flow_mod_add] unexpected error" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_open] unexpected error" << std::endl;
 	}
 }
 
@@ -315,17 +317,19 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in6][flow_mod_delete] unable to find data path" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_close] unable to find data path" << e.what() << std::endl;
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in6][flow_mod_delete] unable to find link" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_close] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[cnexthop_in6][flow_mod_delete] unable to find address" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_close] unable to find address" << e.what() << std::endl;
+	} catch (rofl::eRofSockTxAgain& e) {
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_close] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_close] control channel is down" << e.what() << std::endl;
+	} catch (std::runtime_error& e) {
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_close] runtime error: " << e.what() << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[cnexthop_in6][flow_mod_delete] unexpected error" << std::endl << *this;
-
+		rofcore::logging::error << "[rofip][cnexthop_in6][handle_dpt_close] unexpected error" << std::endl;
 	}
 }
 

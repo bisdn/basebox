@@ -43,20 +43,17 @@ croute_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::debug << "[cipcore][route_in4] route create - dpt instance not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in4][handle_dpt_open] dpt instance not found: " << e.what() << std::endl;
 	} catch (std::out_of_range& e) {
-		rofcore::logging::debug << "[cipcore][route_in4] route create - routing table not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in4][handle_dpt_open] routing table not found: " << e.what() << std::endl;
 	} catch (rofcore::crtroute::eRtRouteNotFound& e) {
-		rofcore::logging::debug << "[cipcore][route_in4] route create - route index not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in4][handle_dpt_open] route index not found: " << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::debug << "[cipcore][route_in4] route create - OFP channel congested: " << e.what() << std::endl;
-
+		rofcore::logging::error << "[rofip][croute_in4][handle_dpt_open] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][croute_in4][handle_dpt_open] control channel is down" << e.what() << std::endl;
 	} catch (std::runtime_error& e) {
-		rofcore::logging::debug << "[cipcore][route_in4] route create - generic error caught: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in4][handle_dpt_open] generic error caught: " << e.what() << std::endl;
 	}
 }
 
@@ -78,20 +75,17 @@ croute_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::debug << "[cipcore][route_in4] route delete - dpt instance not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in4][handle_dpt_close] dpt instance not found: " << e.what() << std::endl;
 	} catch (std::out_of_range& e) {
-		rofcore::logging::debug << "[cipcore][route_in4] route delete - routing table not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in4][handle_dpt_close] routing table not found: " << e.what() << std::endl;
 	} catch (rofcore::crtroute::eRtRouteNotFound& e) {
-		rofcore::logging::debug << "[cipcore][route_in4] route delete - route index not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in4][handle_dpt_close] route index not found: " << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::debug << "[cipcore][route_in4] route delete - OFP channel congested: " << e.what() << std::endl;
-
+		rofcore::logging::error << "[rofip][croute_in4][handle_dpt_close] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][croute_in4][handle_dpt_close] control channel is down" << e.what() << std::endl;
 	} catch (std::runtime_error& e) {
-		rofcore::logging::debug << "[cipcore][route_in4] route delete - generic error caught: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in4][handle_dpt_close] generic error caught: " << e.what() << std::endl;
 	}
 }
 
@@ -132,20 +126,17 @@ croute_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::debug << "[cipcore][route_in6] route create - dpt instance not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in6][handle_dpt_open] dpt instance not found: " << e.what() << std::endl;
 	} catch (std::out_of_range& e) {
-		rofcore::logging::debug << "[cipcore][route_in6] route create - routing table not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in6][handle_dpt_open] routing table not found: " << e.what() << std::endl;
 	} catch (rofcore::crtroute::eRtRouteNotFound& e) {
-		rofcore::logging::debug << "[cipcore][route_in6] route create - route index not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in6][handle_dpt_open] route index not found: " << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::debug << "[cipcore][route_in6] route create - OFP channel congested: " << e.what() << std::endl;
-
+		rofcore::logging::error << "[rofip][croute_in6][handle_dpt_open] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][croute_in6][handle_dpt_open] control channel is down" << e.what() << std::endl;
 	} catch (std::runtime_error& e) {
-		rofcore::logging::debug << "[cipcore][route_in6] route create - generic error caught: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in6][handle_dpt_open] generic error caught: " << e.what() << std::endl;
 	}
 }
 
@@ -167,20 +158,17 @@ croute_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::debug << "[cipcore][route_in6] route delete - dpt instance not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in6][handle_dpt_close] dpt instance not found: " << e.what() << std::endl;
 	} catch (std::out_of_range& e) {
-		rofcore::logging::debug << "[cipcore][route_in6] route delete - routing table not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in6][handle_dpt_close] routing table not found: " << e.what() << std::endl;
 	} catch (rofcore::crtroute::eRtRouteNotFound& e) {
-		rofcore::logging::debug << "[cipcore][route_in6] route delete - route index not found: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in6][handle_dpt_close] route index not found: " << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::debug << "[cipcore][route_in6] route delete - OFP channel congested: " << e.what() << std::endl;
-
+		rofcore::logging::error << "[rofip][croute_in6][handle_dpt_close] control channel congested" << e.what() << std::endl;
+	} catch (rofl::eRofBaseNotConnected& e) {
+		rofcore::logging::error << "[rofip][croute_in6][handle_dpt_close] control channel is down" << e.what() << std::endl;
 	} catch (std::runtime_error& e) {
-		rofcore::logging::debug << "[cipcore][route_in6] route delete - generic error caught: " << e.what() << std::endl;
-
+		rofcore::logging::debug << "[rofip][croute_in6][handle_dpt_close] generic error caught: " << e.what() << std::endl;
 	}
 }
 

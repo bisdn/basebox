@@ -186,7 +186,7 @@ ctapdev::handle_revent(int fd)
 		} else {
 			pkt = cpacketpool::get_instance().acquire_pkt();
 
-			pkt->unpack(/*ignore port_no*/0, mem.somem(), rc);
+			pkt->unpack(mem.somem(), rc);
 
 			netdev_owner->enqueue(this, pkt);
 		}
@@ -225,7 +225,7 @@ ctapdev::handle_wevent(int fd)
 
 			pkt = pout_queue.front();
 			int rc = 0;
-			if ((rc = write(fd, pkt->soframe(), pkt->framelen())) < 0) {
+			if ((rc = write(fd, pkt->soframe(), pkt->length())) < 0) {
 				switch (errno) {
 				case EAGAIN: 	throw eNetDevAgain();
 				default:		throw eNetDevCritical();

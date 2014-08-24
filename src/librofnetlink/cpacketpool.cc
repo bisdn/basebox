@@ -16,7 +16,7 @@ cpacketpool::cpacketpool(
 		unsigned int pkt_size)
 {
 	for (int i = 0; i < n_pkts; ++i) {
-		rofl::cpacket *pkt = new rofl::cpacket(rofl::openflow::OFP_VERSION_UNKNOWN, pkt_size, /* in_port = */0, /* do_classify = */false);
+		rofl::cpacket *pkt = new rofl::cpacket(pkt_size);
 		pktpool.push_back(pkt);
 		idlepool.insert(pkt);
 	}

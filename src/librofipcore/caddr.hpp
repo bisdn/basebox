@@ -12,6 +12,9 @@
 #include <rofl/common/logging.h>
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
+#include <rofl/common/protocols/farpv4frame.h>
+#include <rofl/common/protocols/ficmpv4frame.h>
+#include <rofl/common/protocols/ficmpv6frame.h>
 
 #include "crtaddr.h"
 #include "cnetlink.h"
