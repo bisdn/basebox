@@ -22,6 +22,7 @@
 #include "cconfig.hpp"
 #include "cnetlink.h"
 #include "cgtprelay.hpp"
+#include "ctundev.h"
 
 namespace basebox {
 
@@ -189,7 +190,7 @@ private:
 	rofcore::ctapdev&
 	set_tap_dev(uint32_t ofp_port_no) {
 		if (devs.find(ofp_port_no) == devs.end()) {
-			throw rofcore::eTapDevNotFound();
+			throw rofcore::eTunDevNotFound();
 		}
 		return *(devs[ofp_port_no]);
 	};
@@ -202,7 +203,7 @@ private:
 		std::map<uint32_t, rofcore::ctapdev*>::iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
-			throw rofcore::eTapDevNotFound();
+			throw rofcore::eTunDevNotFound();
 		}
 		return *(it->second);
 	};
@@ -215,7 +216,7 @@ private:
 		std::map<uint32_t, rofcore::ctapdev*>::iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_devname(devname))) == devs.end()) {
-			throw rofcore::eTapDevNotFound();
+			throw rofcore::eTunDevNotFound();
 		}
 		return *(it->second);
 	};
@@ -226,7 +227,7 @@ private:
 	const rofcore::ctapdev&
 	get_tap_dev(uint32_t ofp_port_no) const {
 		if (devs.find(ofp_port_no) == devs.end()) {
-			throw rofcore::eTapDevNotFound();
+			throw rofcore::eTunDevNotFound();
 		}
 		return *(devs.at(ofp_port_no));
 	};
@@ -239,7 +240,7 @@ private:
 		std::map<uint32_t, rofcore::ctapdev*>::const_iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
-			throw rofcore::eTapDevNotFound();
+			throw rofcore::eTunDevNotFound();
 		}
 		return *(it->second);
 	};
@@ -252,7 +253,7 @@ private:
 		std::map<uint32_t, rofcore::ctapdev*>::const_iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_devname(devname))) == devs.end()) {
-			throw rofcore::eTapDevNotFound();
+			throw rofcore::eTunDevNotFound();
 		}
 		return *(it->second);
 	};

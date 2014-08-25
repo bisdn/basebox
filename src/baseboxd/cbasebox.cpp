@@ -507,23 +507,23 @@ cbasebox::handle_port_desc_stats_reply(
 	 */
 	if (true) {
 		rofgtp::clabel_in4 label_in(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(2152)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(2152)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::cteid(111111));
 		rofgtp::clabel_in4 label_out(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(2152)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(2152)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::cteid(222222));
 		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
 	}
 	if (true) {
 		rofgtp::clabel_in4 label_in(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(2152)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(2152)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::cteid(222222));
 		rofgtp::clabel_in4 label_out(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(2152)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(2152)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::cteid(111111));
 		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
 	}
@@ -685,7 +685,8 @@ cbasebox::addr_in4_created(unsigned int ifindex, uint16_t adindex)
 				get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex);
 
 		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
-				add_socket(rofgtp::caddress_gtp_in4(addr.get_local_addr() , rofgtp::cport(2152)));
+				add_socket(rofgtp::caddress_gtp_in4(addr.get_local_addr(),
+						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in4_created] link not found" << std::endl;
@@ -706,7 +707,8 @@ cbasebox::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
 				get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex);
 
 		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
-				drop_socket(rofgtp::caddress_gtp_in4(addr.get_local_addr() , rofgtp::cport(2152)));
+				drop_socket(rofgtp::caddress_gtp_in4(addr.get_local_addr(),
+						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in4_deleted] link not found" << std::endl;
@@ -727,7 +729,8 @@ cbasebox::addr_in6_created(unsigned int ifindex, uint16_t adindex)
 				get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex);
 
 		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
-				add_socket(rofgtp::caddress_gtp_in6(addr.get_local_addr() , rofgtp::cport(2152)));
+				add_socket(rofgtp::caddress_gtp_in6(addr.get_local_addr(),
+						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in6_created] link not found" << std::endl;
@@ -748,7 +751,8 @@ cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 				get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex);
 
 		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
-				drop_socket(rofgtp::caddress_gtp_in6(addr.get_local_addr() , rofgtp::cport(2152)));
+				drop_socket(rofgtp::caddress_gtp_in6(addr.get_local_addr(),
+						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] link not found" << std::endl;

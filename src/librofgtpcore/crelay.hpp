@@ -5,8 +5,8 @@
  *      Author: andreas
  */
 
-#ifndef CBEARER_HPP_
-#define CBEARER_HPP_
+#ifndef CRELAY_HPP_
+#define CRELAY_HPP_
 
 #include <ostream>
 #include <exception>
@@ -72,7 +72,7 @@ public:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const crelay& bearer) {
+	operator<< (std::ostream& os, const crelay& relay) {
 		os << rofcore::indent(0) << "<crelay >" << std::endl;
 		return os;
 	};
@@ -295,4 +295,4 @@ private:
 
 }; // end of namespace rofgtp
 
-#endif /* CBEARER_HPP_ */
+#endif /* CRELAY_HPP_ */

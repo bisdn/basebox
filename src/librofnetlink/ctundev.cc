@@ -1,57 +1,54 @@
 /*
- * ctapdev.cc
+ * ctundev.cc
  *
- *  Created on: 24.06.2013
+ *  Created on: 25.08.2014
  *      Author: andreas
  */
 
-#include "ctapdev.h"
+
+#include "ctundev.h"
 
 using namespace rofcore;
 
 extern int errno;
 
 
-ctapdev::ctapdev(
+ctundev::ctundev(
 		cnetdev_owner *netdev_owner,
-		std::string const& devname,
-		rofl::cmacaddr const& hwaddr,
-		uint32_t ofp_port_no) :
+		std::string const& devname) :
 		cnetdev(netdev_owner, devname),
 		fd(-1),
-		devname(devname),
-		hwaddr(hwaddr),
-		ofp_port_no(ofp_port_no)
+		devname(devname)
 {
 	try {
-		tap_open(devname, hwaddr);
+		tun_open(devname);
 	} catch (...) {
-		port_open_timer_id = register_timer(CTAPDEV_TIMER_OPEN_PORT, 1);
+		port_open_timer_id = register_timer(CTUNDEV_TIMER_OPEN_PORT, 1);
 	}
 }
 
 
 
-ctapdev::~ctapdev()
+ctundev::~ctundev()
 {
-	tap_close();
+	tun_close();
 }
 
 
 
 void
-ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
+ctundev::tun_open(std::string const& devname)
 {
 	try {
 		struct ifreq ifr;
 		int rc;
 
 		if (fd > -1) {
-			tap_close();
+			tun_close();
 		}
 
 		if ((fd = open("/dev/net/tun", O_RDWR|O_NONBLOCK)) < 0) {
-			throw eTapDevOpenFailed();
+			throw rofl::eSysCall("[ctundev][tun_open] open()");
 		}
 
 		memset(&ifr, 0, sizeof(ifr));
@@ -61,50 +58,27 @@ ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
 		 *
 		 *        IFF_NO_PI - Do not provide packet information
 		 */
-		ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
-		strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
+		ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+		//strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
 
 		if ((rc = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0) {
 			close(fd);
-			throw eTapDevIoctlFailed();
+			throw rofl::eSysCall("[ctundev][tun_open] ioctl()");
 		}
-
-		set_hwaddr(hwaddr);
 
 		enable_interface();
 
-		//netdev_owner->netdev_open(this);
-
 		register_filedesc_r(fd);
 
-
-	} catch (eTapDevOpenFailed& e) {
-
-		fprintf(stderr, "ctapdev::tap_open() open() failed: dev[%s] (%d:%s)\n",
-				devname.c_str(), errno, strerror(errno));
-
-		throw eNetDevCritical();
-
-	} catch (eTapDevIoctlFailed& e) {
-
-		fprintf(stderr, "ctapdev::tap_open() ioctl() failed: dev[%s] (%d:%s)\n",
-				devname.c_str(), errno, strerror(errno));
-
-		throw eNetDevCritical();
-
-	} catch (eNetDevIoctl& e) {
-
-		fprintf(stderr, "ctapdev::tap_open() ioctl() failed: dev[%s] (%d:%s)\n",
-				devname.c_str(), errno, strerror(errno));
-
-		throw eNetDevCritical();
-
+	} catch (rofl::eSysCall& e) {
+		rofcore::logging::debug << "[ctundev][tun_open] exception caught: " << e << std::endl;
+		throw;
 	}
 }
 
 
 void
-ctapdev::tap_close()
+ctundev::tun_close()
 {
 	try {
 		if (fd == -1) {
@@ -118,7 +92,7 @@ ctapdev::tap_close()
 		deregister_filedesc_r(fd);
 
 	} catch (eNetDevIoctl& e) {
-		fprintf(stderr, "ctapdev::tap_close() ioctl() failed: dev[%s] (%d:%s)\n",
+		fprintf(stderr, "ctundev::tun_close() ioctl() failed: dev[%s] (%d:%s)\n",
 				devname.c_str(), errno, strerror(errno));
 	}
 
@@ -130,7 +104,7 @@ ctapdev::tap_close()
 
 
 void
-ctapdev::enqueue(rofl::cpacket *pkt)
+ctundev::enqueue(rofl::cpacket *pkt)
 {
 	if (fd == -1) {
 		cpacketpool::get_instance().release_pkt(pkt);
@@ -146,7 +120,7 @@ ctapdev::enqueue(rofl::cpacket *pkt)
 
 
 void
-ctapdev::enqueue(std::vector<rofl::cpacket*> pkts)
+ctundev::enqueue(std::vector<rofl::cpacket*> pkts)
 {
 	if (fd == -1) {
 		for (std::vector<rofl::cpacket*>::iterator
@@ -168,7 +142,7 @@ ctapdev::enqueue(std::vector<rofl::cpacket*> pkts)
 
 
 void
-ctapdev::handle_revent(int fd)
+ctundev::handle_revent(int fd)
 {
 	rofl::cpacket *pkt = (rofl::cpacket*)0;
 	try {
@@ -193,18 +167,18 @@ ctapdev::handle_revent(int fd)
 
 	} catch (ePacketPoolExhausted& e) {
 
-		fprintf(stderr, "ctapdev::handle_revent() packet pool exhausted, no idle slots available\n");
+		fprintf(stderr, "ctundev::handle_revent() packet pool exhausted, no idle slots available\n");
 
 	} catch (eNetDevAgain& e) {
 
-		fprintf(stderr, "ctapdev::handle_revent() (%d:%s) => "
+		fprintf(stderr, "ctundev::handle_revent() (%d:%s) => "
 				"retry later\n", errno, strerror(errno));
 
 		cpacketpool::get_instance().release_pkt(pkt);
 
 	} catch (eNetDevCritical& e) {
 
-		fprintf(stderr, "ctapdev::handle_revent() critical error (%d:%s): "
+		fprintf(stderr, "ctundev::handle_revent() critical error (%d:%s): "
 				"calling self-destruction\n", errno, strerror(errno));
 
 		cpacketpool::get_instance().release_pkt(pkt);
@@ -216,7 +190,7 @@ ctapdev::handle_revent(int fd)
 
 
 void
-ctapdev::handle_wevent(int fd)
+ctundev::handle_wevent(int fd)
 {
 	rofl::cpacket * pkt = (rofl::cpacket*)0;
 	try {
@@ -245,12 +219,12 @@ ctapdev::handle_wevent(int fd)
 	} catch (eNetDevAgain& e) {
 
 		// keep fd in wfds
-		fprintf(stderr, "ctapdev::handle_wevent() (%d:%s) => "
+		fprintf(stderr, "ctundev::handle_wevent() (%d:%s) => "
 				"retry later\n", errno, strerror(errno));
 
 	} catch (eNetDevCritical& e) {
 
-		fprintf(stderr, "ctapdev::handle_wevent() critical error (%d:%s): "
+		fprintf(stderr, "ctundev::handle_wevent() critical error (%d:%s): "
 				"calling self-destruction\n", errno, strerror(errno));
 
 		cpacketpool::get_instance().release_pkt(pkt);
@@ -262,17 +236,19 @@ ctapdev::handle_wevent(int fd)
 
 
 void
-ctapdev::handle_timeout(int opaque, void* data)
+ctundev::handle_timeout(int opaque, void* data)
 {
 	switch (opaque) {
-	case CTAPDEV_TIMER_OPEN_PORT: {
+	case CTUNDEV_TIMER_OPEN_PORT: {
 		try {
-			tap_open(devname, hwaddr);
+			tun_open(devname);
 		} catch (...) {
-			port_open_timer_id = register_timer(CTAPDEV_TIMER_OPEN_PORT, 1);
+			port_open_timer_id = register_timer(CTUNDEV_TIMER_OPEN_PORT, 1);
 		}
 	} break;
 	}
 }
+
+
 
 

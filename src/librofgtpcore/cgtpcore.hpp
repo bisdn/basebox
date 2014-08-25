@@ -330,50 +330,184 @@ public:
 
 public:
 
-	/**
-	 *
-	 */
-	void
-	clear_terms();
-
-	/**
-	 *
-	 */
-	cterm&
-	add_term() {
-
-	};
-
-	/**
-	 *
-	 */
-	cterm&
-	set_term() {
-
-	};
-
-	/**
-	 *
-	 */
-	const cterm&
-	get_term() const {
-
-	};
 
 	/**
 	 *
 	 */
 	void
-	drop_term() {
+	clear_terms_in4() {
+		for (std::map<clabel_in4, cterm_in4*>::iterator
+				it = terms_in4.begin(); it != terms_in4.end(); ++it) {
+			delete it->second;
+		}
+		terms_in4.clear();
+	};
 
+	/**
+	 *
+	 */
+	cterm_in4&
+	add_term_in4(const clabel_in4& gtp_label, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in4.find(gtp_label) != terms_in4.end()) {
+			delete terms_in4[gtp_label];
+			terms_in4.erase(gtp_label);
+		}
+		terms_in4[gtp_label] = new cterm_in4(dpid, gtp_table_id, gtp_label, tft_match);
+		try {
+			if (STATE_ATTACHED == state) {
+				terms_in4[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+		return *(terms_in4[gtp_label]);
+	};
+
+	/**
+	 *
+	 */
+	cterm_in4&
+	set_term_in4(const clabel_in4& gtp_label, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in4.find(gtp_label) == terms_in4.end()) {
+			terms_in4[gtp_label] = new cterm_in4(dpid, gtp_table_id, gtp_label, tft_match);
+		}
+		try {
+			if (STATE_ATTACHED == state) {
+				terms_in4[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+		return *(terms_in4[gtp_label]);
+	};
+
+	/**
+	 *
+	 */
+	cterm_in4&
+	set_term_in4(const clabel_in4& gtp_label) {
+		if (terms_in4.find(gtp_label) == terms_in4.end()) {
+			throw eRelayNotFound("cgtpcore::get_term_in4() label not found");
+		}
+		return *(terms_in4[gtp_label]);
+	};
+
+	/**
+	 *
+	 */
+	const cterm_in4&
+	get_term_in4(const clabel_in4& gtp_label) const {
+		if (terms_in4.find(gtp_label) == terms_in4.end()) {
+			throw eRelayNotFound("cgtpcore::get_term_in4() label not found");
+		}
+		return *(terms_in4.at(gtp_label));
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_term_in4(const clabel_in4& gtp_label) {
+		if (terms_in4.find(gtp_label) == terms_in4.end()) {
+			return;
+		}
+		delete terms_in4[gtp_label];
+		terms_in4.erase(gtp_label);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_term() const {
+	has_term_in4(const clabel_in4& gtp_label) const {
+		return (not (terms_in4.find(gtp_label) == terms_in4.end()));
+	};
 
+
+
+
+	/**
+	 *
+	 */
+	void
+	clear_terms_in6() {
+		for (std::map<clabel_in6, cterm_in6*>::iterator
+				it = terms_in6.begin(); it != terms_in6.end(); ++it) {
+			delete it->second;
+		}
+		terms_in6.clear();
+	};
+
+	/**
+	 *
+	 */
+	cterm_in6&
+	add_term_in6(const clabel_in6& gtp_label, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in6.find(gtp_label) != terms_in6.end()) {
+			delete terms_in6[gtp_label];
+			terms_in6.erase(gtp_label);
+		}
+		terms_in6[gtp_label] = new cterm_in6(dpid, gtp_table_id, gtp_label, tft_match);
+		try {
+			if (STATE_ATTACHED == state) {
+				terms_in6[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+		return *(terms_in6[gtp_label]);
+	};
+
+	/**
+	 *
+	 */
+	cterm_in6&
+	set_term_in6(const clabel_in6& gtp_label, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in6.find(gtp_label) == terms_in6.end()) {
+			terms_in6[gtp_label] = new cterm_in6(dpid, gtp_table_id, gtp_label, tft_match);
+		}
+		try {
+			if (STATE_ATTACHED == state) {
+				terms_in6[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+		return *(terms_in6[gtp_label]);
+	};
+
+	/**
+	 *
+	 */
+	cterm_in6&
+	set_term_in6(const clabel_in6& gtp_label) {
+		if (terms_in6.find(gtp_label) == terms_in6.end()) {
+			throw eRelayNotFound("cgtpcore::get_term_in6() label not found");
+		}
+		return *(terms_in6[gtp_label]);
+	};
+
+	/**
+	 *
+	 */
+	const cterm_in6&
+	get_term_in6(const clabel_in6& gtp_label) const {
+		if (terms_in6.find(gtp_label) == terms_in6.end()) {
+			throw eRelayNotFound("cgtpcore::get_term_in6() label not found");
+		}
+		return *(terms_in6.at(gtp_label));
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_term_in6(const clabel_in6& gtp_label) {
+		if (terms_in6.find(gtp_label) == terms_in6.end()) {
+			return;
+		}
+		delete terms_in6[gtp_label];
+		terms_in6.erase(gtp_label);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_term_in6(const clabel_in6& gtp_label) const {
+		return (not (terms_in6.find(gtp_label) == terms_in6.end()));
 	};
 
 public:
@@ -394,6 +528,8 @@ public:
 		return os;
 	};
 
+	static const uint16_t DEFAULT_GTPU_PORT = 2152;
+
 private:
 
 	enum ofp_state_t {
@@ -406,6 +542,8 @@ private:
 	uint8_t										gtp_table_id;
 	std::map<clabel_in4, crelay_in4*>			relays_in4;
 	std::map<clabel_in6, crelay_in6*>			relays_in6;
+	std::map<clabel_in4, cterm_in4*>			terms_in4;
+	std::map<clabel_in6, cterm_in6*>			terms_in6;
 	static std::map<rofl::cdpid, cgtpcore*>		gtpcores;
 };
 

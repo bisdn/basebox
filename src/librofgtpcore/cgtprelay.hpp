@@ -290,7 +290,17 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cgtprelay& relay) {
-
+		os << rofcore::indent(0) << "<cgtprelay "
+				<< " #in4: " << (int)relay.sockets_in4.size() << " "
+				<< " #in6: " << (int)relay.sockets_in6.size() << " >" << std::endl;
+		for (std::map<caddress_gtp_in4, rofl::csocket*>::const_iterator
+				it = relay.sockets_in4.begin(); it != relay.sockets_in4.end(); ++it) {
+			rofcore::indent i(2); os << rofl::indent(0) << *(it->second);
+		}
+		for (std::map<caddress_gtp_in6, rofl::csocket*>::const_iterator
+				it = relay.sockets_in6.begin(); it != relay.sockets_in6.end(); ++it) {
+			rofcore::indent i(2); os << rofl::indent(0) << *(it->second);
+		}
 		return os;
 	};
 

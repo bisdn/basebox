@@ -1,12 +1,12 @@
 /*
- * ctapdev.h
+ * ctundev.h
  *
- *  Created on: 24.06.2013
+ *  Created on: 25.08.2014
  *      Author: andreas
  */
 
-#ifndef CTAPDEV_H_
-#define CTAPDEV_H_ 1
+#ifndef CTUNDEV_H_
+#define CTUNDEV_H_
 
 
 #ifdef __cplusplus
@@ -29,28 +29,26 @@ extern "C" {
 #include <list>
 
 #include "cnetdev.h"
-
-
+#include "clogging.h"
 
 namespace rofcore {
 
-class eTapDevBase 			: public eNetDevBase {};
-class eTapDevSysCallFailed 	: public eTapDevBase {};
-class eTapDevOpenFailed		: public eTapDevSysCallFailed {};
-class eTapDevIoctlFailed	: public eTapDevSysCallFailed {};
-class eTapDevNotFound		: public eTapDevBase {};
+class eTunDevBase 			: public eNetDevBase {};
+class eTunDevSysCallFailed 	: public eTunDevBase {};
+class eTunDevOpenFailed		: public eTunDevSysCallFailed {};
+class eTunDevIoctlFailed	: public eTunDevSysCallFailed {};
+class eTunDevNotFound		: public eTunDevBase {};
 
-class ctapdev : public cnetdev
+class ctundev : public cnetdev
 {
 	int 							fd; 			// tap device file descriptor
 	std::list<rofl::cpacket*> 		pout_queue;		// queue of outgoing packets
 	std::string						devname;
-	rofl::cmacaddr					hwaddr;
 	rofl::ctimerid					port_open_timer_id;
 	uint32_t						ofp_port_no;
 
-	enum ctapdev_timer_t {
-		CTAPDEV_TIMER_OPEN_PORT = 1,
+	enum ctundev_timer_t {
+		CTUNDEV_TIMER_OPEN_PORT = 1,
 	};
 
 public:
@@ -62,17 +60,15 @@ public:
 	 * @param devname
 	 * @param hwaddr
 	 */
-	ctapdev(
+	ctundev(
 			cnetdev_owner *netdev_owner,
-			std::string const& devname,
-			rofl::cmacaddr const& hwaddr,
-			uint32_t ofp_port_no);
+			std::string const& devname);
 
 
 	/**
 	 *
 	 */
-	virtual ~ctapdev();
+	virtual ~ctundev();
 
 
 	/**
@@ -97,7 +93,7 @@ protected:
 	 * @brief	open tapX device
 	 */
 	void
-	tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr);
+	tun_open(std::string const& devname);
 
 
 	/**
@@ -105,7 +101,7 @@ protected:
 	 *
 	 */
 	void
-	tap_close();
+	tun_close();
 
 
 	/**
@@ -131,32 +127,22 @@ private:
 
 public:
 
-	class ctapdev_find_by_devname {
+	class ctundev_find_by_devname {
 		std::string devname;
 	public:
-		ctapdev_find_by_devname(const std::string& devname) :
+		ctundev_find_by_devname(const std::string& devname) :
 			devname(devname) {};
-		bool operator() (const std::pair<uint32_t, ctapdev*>& p) const {
+		bool operator() (const std::pair<uint32_t, ctundev*>& p) const {
 			return (p.second->devname == devname);
 		};
 	};
 
-	class ctapdev_find_by_hwaddr {
-		rofl::caddress_ll hwaddr;
-	public:
-		ctapdev_find_by_hwaddr(const rofl::caddress_ll& hwaddr) :
-			hwaddr(hwaddr) {};
-		bool operator() (const std::pair<uint32_t, ctapdev*>& p) const {
-			return (p.second->hwaddr == hwaddr);
-		};
-	};
-
-	class ctapdev_find_by_ofp_port_no {
+	class ctundev_find_by_ofp_port_no {
 		uint32_t ofp_port_no;
 	public:
-		ctapdev_find_by_ofp_port_no(uint32_t ofp_port_no) :
+		ctundev_find_by_ofp_port_no(uint32_t ofp_port_no) :
 			ofp_port_no(ofp_port_no) {};
-		bool operator() (const std::pair<uint32_t, ctapdev*>& p) const {
+		bool operator() (const std::pair<uint32_t, ctundev*>& p) const {
 			return (p.second->ofp_port_no == ofp_port_no);
 		};
 	};
@@ -165,4 +151,4 @@ public:
 
 }; // end of namespace rofcore
 
-#endif /* CTAPDEV_H_ */
+#endif /* CTUNDEV_H_ */

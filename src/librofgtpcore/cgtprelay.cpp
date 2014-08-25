@@ -63,8 +63,10 @@ cgtprelay::handle_read(
 
 		} catch (eGtpCoreNotFound& e) {
 			rofcore::logging::debug << "[cgtprelay][handle_read] gtpcore not found" << std::endl;
+			delete mem;
 		} catch (eRelayNotFound& e) {
 			rofcore::logging::debug << "[cgtprelay][handle_read] relay_in4 not found" << std::endl;
+			delete mem;
 		} break;
 		case AF_INET6: try {
 
@@ -100,11 +102,13 @@ cgtprelay::handle_read(
 
 		} catch (eGtpCoreNotFound& e) {
 			rofcore::logging::debug << "[cgtprelay][handle_read] gtpcore not found" << std::endl;
+			delete mem;
 		} catch (eRelayNotFound& e) {
 			rofcore::logging::debug << "[cgtprelay][handle_read] relay_in6 not found" << std::endl;
+			delete mem;
 		} break;
 		default: {
-
+			delete mem;
 		};
 		}
 
