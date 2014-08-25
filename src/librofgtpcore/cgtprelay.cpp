@@ -62,9 +62,9 @@ cgtprelay::handle_read(
 			cgtpcore::set_gtp_core(dpid).set_relay_in4(label_in).handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 
 		} catch (eGtpCoreNotFound& e) {
-
+			rofcore::logging::debug << "[cgtprelay][handle_read] gtpcore not found" << std::endl;
 		} catch (eRelayNotFound& e) {
-
+			rofcore::logging::debug << "[cgtprelay][handle_read] relay_in4 not found" << std::endl;
 		} break;
 		case AF_INET6: try {
 
@@ -99,9 +99,9 @@ cgtprelay::handle_read(
 			cgtpcore::set_gtp_core(dpid).set_relay_in6(label_in).handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 
 		} catch (eGtpCoreNotFound& e) {
-
+			rofcore::logging::debug << "[cgtprelay][handle_read] gtpcore not found" << std::endl;
 		} catch (eRelayNotFound& e) {
-
+			rofcore::logging::debug << "[cgtprelay][handle_read] relay_in6 not found" << std::endl;
 		} break;
 		default: {
 
