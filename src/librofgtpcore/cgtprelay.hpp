@@ -14,6 +14,7 @@
 
 #include <rofl/common/csocket.h>
 #include <rofl/common/protocols/fgtpuframe.h>
+#include <rofl/common/cdpid.h>
 
 #include "clogging.h"
 #include "caddress_gtp.hpp"
@@ -35,7 +36,64 @@ public:
 	/**
 	 *
 	 */
-	cgtprelay() : mem((size_t)1526) {};
+	static cgtprelay&
+	add_gtp_relay(const rofl::cdpid& dpid) {
+		if (cgtprelay::gtprelays.find(dpid) != cgtprelay::gtprelays.end()) {
+			delete cgtprelay::gtprelays[dpid];
+			cgtprelay::gtprelays.erase(dpid);
+		}
+		cgtprelay::gtprelays[dpid] = new cgtprelay(dpid);
+		return *(cgtprelay::gtprelays[dpid]);
+	};
+
+	/**
+	 *
+	 */
+	static cgtprelay&
+	set_gtp_relay(const rofl::cdpid& dpid) {
+		if (cgtprelay::gtprelays.find(dpid) == cgtprelay::gtprelays.end()) {
+			cgtprelay::gtprelays[dpid] = new cgtprelay(dpid);
+		}
+		return *(cgtprelay::gtprelays[dpid]);
+	};
+
+	/**
+	 *
+	 */
+	static const cgtprelay&
+	get_gtp_relay(const rofl::cdpid& dpid) {
+		if (cgtprelay::gtprelays.find(dpid) == cgtprelay::gtprelays.end()) {
+			throw eGtpRelayNotFound("cgtprelay::get_gtp_relay() dpt not found");
+		}
+		return *(cgtprelay::gtprelays.at(dpid));
+	};
+
+	/**
+	 *
+	 */
+	static void
+	drop_gtp_relay(const rofl::cdpid& dpid) {
+		if (cgtprelay::gtprelays.find(dpid) == cgtprelay::gtprelays.end()) {
+			return;
+		}
+		delete cgtprelay::gtprelays[dpid];
+		cgtprelay::gtprelays.erase(dpid);
+	}
+
+	/**
+	 *
+	 */
+	static bool
+	has_gtp_relay(const rofl::cdpid& dpid) {
+		return (not (cgtprelay::gtprelays.find(dpid) == cgtprelay::gtprelays.end()));
+	};
+
+private:
+
+	/**
+	 *
+	 */
+	cgtprelay(const rofl::cdpid& dpid) : dpid(dpid) {};
 
 	/**
 	 *
@@ -238,10 +296,10 @@ public:
 
 private:
 
+	rofl::cdpid 								dpid;
 	std::map<caddress_gtp_in4, rofl::csocket*>	sockets_in4;
 	std::map<caddress_gtp_in6, rofl::csocket*>	sockets_in6;
-
-	rofl::cmemory mem;
+	static std::map<rofl::cdpid, cgtprelay*>	gtprelays;
 };
 
 }; // end of namespace rofgtp

@@ -88,7 +88,7 @@ protected:
 	rofl::cdpid dpid;
 	uint8_t ofp_table_id;
 
-	static const int DEFAULT_IDLE_TIMEOUT = 60; // seconds
+	static const int DEFAULT_IDLE_TIMEOUT = 15; // seconds
 
 	int idle_timeout;
 };

@@ -75,7 +75,7 @@ public:
 	static const cgtpcore&
 	get_gtp_core(const rofl::cdpid& dpid) {
 		if (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()) {
-			throw eGtpCoreNotFound("cgtpcore::get_gtp_core() dptid not found");
+			throw eGtpCoreNotFound("cgtpcore::get_gtp_core() dpt not found");
 		}
 		return *(cgtpcore::gtpcores.at(dpid));
 	};

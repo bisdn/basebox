@@ -410,8 +410,6 @@ private:
 	static std::string script_path_port_down;
 
 	std::map<uint32_t, rofcore::ctapdev*>	devs;
-
-	rofgtp::cgtprelay gtprelay;
 };
 
 }; // end of namespace ethcore

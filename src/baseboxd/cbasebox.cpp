@@ -684,7 +684,8 @@ cbasebox::addr_in4_created(unsigned int ifindex, uint16_t adindex)
 		const rofcore::crtaddr_in4& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex);
 
-		gtprelay.add_socket(rofgtp::caddress_gtp_in4(addr.get_local_addr() , rofgtp::cport(2152)));
+		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
+				add_socket(rofgtp::caddress_gtp_in4(addr.get_local_addr() , rofgtp::cport(2152)));
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in4_created] link not found" << std::endl;
@@ -704,7 +705,8 @@ cbasebox::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
 		const rofcore::crtaddr_in4& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex);
 
-		gtprelay.drop_socket(rofgtp::caddress_gtp_in4(addr.get_local_addr() , rofgtp::cport(2152)));
+		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
+				drop_socket(rofgtp::caddress_gtp_in4(addr.get_local_addr() , rofgtp::cport(2152)));
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in4_deleted] link not found" << std::endl;
@@ -724,7 +726,8 @@ cbasebox::addr_in6_created(unsigned int ifindex, uint16_t adindex)
 		const rofcore::crtaddr_in6& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex);
 
-		gtprelay.add_socket(rofgtp::caddress_gtp_in6(addr.get_local_addr() , rofgtp::cport(2152)));
+		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
+				add_socket(rofgtp::caddress_gtp_in6(addr.get_local_addr() , rofgtp::cport(2152)));
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in6_created] link not found" << std::endl;
@@ -744,7 +747,8 @@ cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 		const rofcore::crtaddr_in6& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex);
 
-		gtprelay.drop_socket(rofgtp::caddress_gtp_in6(addr.get_local_addr() , rofgtp::cport(2152)));
+		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
+				drop_socket(rofgtp::caddress_gtp_in6(addr.get_local_addr() , rofgtp::cport(2152)));
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] link not found" << std::endl;
