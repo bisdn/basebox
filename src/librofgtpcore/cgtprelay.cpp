@@ -15,37 +15,75 @@ void
 cgtprelay::handle_read(
 		rofl::csocket& socket)
 {
+	rofl::cdpid dpid(256); // TODO: dpid
+
 	unsigned int pkts_rcvd_in_round = 0;
+	rofl::cmemory *mem = new rofl::cmemory(1518);
 
 	try {
+		rofcore::logging::debug << "[cgtprelay][handle_read] " << std::endl;
+		int flags = 0;
+		rofl::csockaddr from;
 
-#if 0
-		while (true) {
+		int rc = socket.recv(mem->somem(), mem->memlen(), flags, from);
+		mem->resize(rc);
+		rofl::fgtpuframe gtpu(mem->somem(), mem->memlen());
 
-			// read from socket more bytes, at most "msg_len - msg_bytes_read"
-			int rc = socket.recv((void*)(fragment->somem() + msg_bytes_read), msg_len - msg_bytes_read);
+		switch (from.get_family()) {
+		case AF_INET: try {
 
+			// create label-in for received GTP message
+			rofgtp::caddress_gtp_in4 gtp_src_addr(
+					rofl::caddress_in4(from.ca_s4addr, sizeof(struct sockaddr_in)),
+					rofgtp::cport(from.ca_s4addr, sizeof(struct sockaddr_in)));
+
+			rofgtp::caddress_gtp_in4 gtp_dst_addr(
+					rofl::caddress_in4(socket.get_laddr().ca_s4addr, sizeof(struct sockaddr_in)),
+					rofgtp::cport(socket.get_laddr().ca_s4addr, sizeof(struct sockaddr_in)));
+
+			rofgtp::clabel_in4 label_in(gtp_src_addr, gtp_dst_addr, rofgtp::cteid(gtpu.get_teid()));
+
+			rofcore::logging::debug << "[cgtprelay][handle_read] label-in: " << std::endl << label_in;
+
+			// find associated label-out for label-in
+			const rofgtp::clabel_in4& label_out =
+					cgtpcore::get_gtp_core(dpid).
+							get_relay_in4(label_in).get_label_out();
+
+			rofcore::logging::debug << "[cgtprelay][handle_read] label-out: " << std::endl << label_out;
+
+			// set TEID for outgoing packet
+			gtpu.set_teid(label_out.get_teid().get_value());
+
+			// forward GTP message
+			set_socket(label_out.get_saddr()).send(mem,
+					rofl::csockaddr(label_out.get_daddr().get_addr(), label_out.get_daddr().get_port().get_value()));
+
+			// set OFP shortcut into datapath
+			cgtpcore::set_gtp_core(dpid).set_relay_in4(label_in).handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+
+		} catch (eGtpCoreNotFound& e) {
+
+		} catch (eRelayNotFound& e) {
+
+		} break;
+		case AF_INET6: {
+
+
+
+		} break;
 		}
-#endif
+
 
 	} catch (rofl::eSocketRxAgain& e) {
-
-		// more bytes are needed, keep pointer to msg in "fragment"
-		rofcore::logging::debug << "[rofl][sock] eSocketRxAgain: no further data available on socket" << std::endl;
-
+		rofcore::logging::debug << "[cgtprelay][handle_read] eSocketRxAgain: no further data available on socket" << std::endl;
+		delete mem;
 	} catch (rofl::eSysCall& e) {
-
-		rofcore::logging::warn << "[rofl][sock] failed to read from socket: " << e << std::endl;
-
-		// close socket, as it seems, we are out of sync
-		socket.close();
-
+		rofcore::logging::warn << "[cgtprelay][handle_read] failed to read from socket: " << e << std::endl;
+		delete mem;
 	} catch (rofl::RoflException& e) {
-
-		rofcore::logging::warn << "[rofl][sock] dropping invalid message: " << e << std::endl;
-
-		// close socket, as it seems, we are out of sync
-		socket.close();
+		rofcore::logging::warn << "[cgtprelay][handle_read] dropping invalid message: " << e << std::endl;
+		delete mem;
 	}
 
 }

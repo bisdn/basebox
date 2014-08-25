@@ -38,7 +38,7 @@ public:
 	eLinkTapDevNotFound(const std::string& __arg) : eBaseBoxBase(__arg) {};
 };
 
-class cbasebox : public rofl::crofbase, public rofcore::cnetdev_owner {
+class cbasebox : public rofl::crofbase, public rofcore::cnetdev_owner, public rofcore::cnetlink_common_observer {
 
 	/**
 	 * @brief	pointer to singleton
@@ -347,6 +347,28 @@ public:
 		} catch (rofl::eRofDptNotFound& e) {}
 		return os;
 	};
+
+private:
+
+	friend class cnetlink;
+
+	virtual void
+	addr_in4_created(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_in4_updated(unsigned int ifindex, uint16_t adindex) {};
+
+	virtual void
+	addr_in4_deleted(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_in6_created(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_in6_updated(unsigned int ifindex, uint16_t adindex) {};
+
+	virtual void
+	addr_in6_deleted(unsigned int ifindex, uint16_t adindex);
 
 private:
 

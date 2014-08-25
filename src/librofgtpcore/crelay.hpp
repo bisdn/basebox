@@ -37,7 +37,7 @@ public:
 	 *
 	 */
 	crelay() :
-		state(STATE_DETACHED), ofp_table_id(0) {};
+		state(STATE_DETACHED), ofp_table_id(0), idle_timeout(DEFAULT_IDLE_TIMEOUT) {};
 
 	/**
 	 *
@@ -48,7 +48,7 @@ public:
 	 *
 	 */
 	crelay(const rofl::cdpid& dpid, uint8_t ofp_table_id) :
-		state(STATE_DETACHED), dpid(dpid), ofp_table_id(ofp_table_id) {};
+		state(STATE_DETACHED), dpid(dpid), ofp_table_id(ofp_table_id), idle_timeout(DEFAULT_IDLE_TIMEOUT) {};
 
 	/**
 	 *
@@ -65,6 +65,7 @@ public:
 		state = relay.state;
 		dpid = relay.dpid;
 		ofp_table_id = relay.ofp_table_id;
+		idle_timeout = relay.idle_timeout;
 		return *this;
 	};
 
@@ -86,6 +87,10 @@ protected:
 	enum ofp_state_t state;
 	rofl::cdpid dpid;
 	uint8_t ofp_table_id;
+
+	static const int DEFAULT_IDLE_TIMEOUT = 60; // seconds
+
+	int idle_timeout;
 };
 
 

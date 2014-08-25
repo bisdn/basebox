@@ -8,10 +8,23 @@
 #ifndef CPORT_HPP_
 #define CPORT_HPP_
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #include <inttypes.h>
 #include <ostream>
+#include <exception>
 
 namespace rofgtp {
+
+class ePortBase : public std::runtime_error {
+public:
+	ePortBase(const std::string& __arg) : std::runtime_error(__arg) {};
+};
+class ePortInval : public ePortBase {
+public:
+	ePortInval(const std::string& __arg) : ePortBase(__arg) {};
+};
 
 class cport {
 public:
@@ -33,6 +46,28 @@ public:
 	explicit
 	cport(uint16_t port) :
 		port(port) {};
+
+	/**
+	 *
+	 */
+	explicit
+	cport(struct sockaddr_in* sin, socklen_t salen) {
+		if (salen < sizeof(struct sockaddr_in)) {
+			throw ePortInval("cport::cport() invalid struct sockaddr_in");
+		}
+		port = be16toh(sin->sin_port);
+	};
+
+	/**
+	 *
+	 */
+	explicit
+	cport(struct sockaddr_in6* sin6, socklen_t salen) {
+		if (salen < sizeof(struct sockaddr_in6)) {
+			throw ePortInval("cport::cport() invalid struct sockaddr_in6");
+		}
+		port = be16toh(sin6->sin6_port);
+	};
 
 	/**
 	 *

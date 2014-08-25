@@ -25,7 +25,7 @@ crelay_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		}
 
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
-		fm.set_idle_timeout(0);
+		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
 		fm.set_table_id(ofp_table_id);
@@ -79,7 +79,7 @@ crelay_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
-		fm.set_idle_timeout(0);
+		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
 		fm.set_table_id(ofp_table_id);
@@ -123,7 +123,7 @@ crelay_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		}
 
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
-		fm.set_idle_timeout(0);
+		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
 		fm.set_table_id(ofp_table_id);
@@ -176,7 +176,7 @@ crelay_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
-		fm.set_idle_timeout(0);
+		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
 		fm.set_table_id(ofp_table_id);

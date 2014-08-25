@@ -10,13 +10,24 @@
 
 #include <map>
 #include <iostream>
+#include <exception>
 
 #include <rofl/common/csocket.h>
+#include <rofl/common/protocols/fgtpuframe.h>
 
 #include "clogging.h"
 #include "caddress_gtp.hpp"
 
 namespace rofgtp {
+
+class eGtpRelayBase : public std::runtime_error {
+public:
+	eGtpRelayBase(const std::string& __arg) : std::runtime_error(__arg) {};
+};
+class eGtpRelayNotFound : public eGtpRelayBase {
+public:
+	eGtpRelayNotFound(const std::string& __arg) : eGtpRelayBase(__arg) {};
+};
 
 class cgtprelay : public rofl::csocket_owner {
 public:
@@ -24,7 +35,7 @@ public:
 	/**
 	 *
 	 */
-	cgtprelay() {};
+	cgtprelay() : mem((size_t)1526) {};
 
 	/**
 	 *
@@ -50,6 +61,28 @@ public:
 		sockparams.set_param(rofl::csocket::PARAM_KEY_LOCAL_HOSTNAME).set_string(bindaddr.get_addr().str());
 		sockparams.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string(bindaddr.get_port().str());
 		sockets_in4[bindaddr]->listen(sockparams);
+	};
+
+	/**
+	 *
+	 */
+	rofl::csocket&
+	set_socket(const caddress_gtp_in4& bindaddr) {
+		if (sockets_in4.find(bindaddr) == sockets_in4.end()) {
+			throw eGtpRelayNotFound("cgtprelay::set_socket() bindaddr_in4 not found");
+		}
+		return *(sockets_in4[bindaddr]);
+	};
+
+	/**
+	 *
+	 */
+	const rofl::csocket&
+	get_socket(const caddress_gtp_in4& bindaddr) {
+		if (sockets_in4.find(bindaddr) == sockets_in4.end()) {
+			throw eGtpRelayNotFound("cgtprelay::get_socket() bindaddr_in4 not found");
+		}
+		return *(sockets_in4.at(bindaddr));
 	};
 
 	/**
@@ -90,6 +123,28 @@ public:
 		sockparams.set_param(rofl::csocket::PARAM_KEY_LOCAL_HOSTNAME).set_string(bindaddr.get_addr().str());
 		sockparams.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string(bindaddr.get_port().str());
 		sockets_in6[bindaddr]->listen(sockparams);
+	};
+
+	/**
+	 *
+	 */
+	rofl::csocket&
+	set_socket(const caddress_gtp_in6& bindaddr) {
+		if (sockets_in6.find(bindaddr) == sockets_in6.end()) {
+			throw eGtpRelayNotFound("cgtprelay::set_socket() bindaddr_in6 not found");
+		}
+		return *(sockets_in6[bindaddr]);
+	};
+
+	/**
+	 *
+	 */
+	const rofl::csocket&
+	get_socket(const caddress_gtp_in6& bindaddr) {
+		if (sockets_in6.find(bindaddr) == sockets_in6.end()) {
+			throw eGtpRelayNotFound("cgtprelay::get_socket() bindaddr_in6 not found");
+		}
+		return *(sockets_in6.at(bindaddr));
 	};
 
 	/**
@@ -185,6 +240,8 @@ private:
 
 	std::map<caddress_gtp_in4, rofl::csocket*>	sockets_in4;
 	std::map<caddress_gtp_in6, rofl::csocket*>	sockets_in6;
+
+	rofl::cmemory mem;
 };
 
 }; // end of namespace rofgtp
