@@ -506,8 +506,15 @@ cbasebox::handle_port_desc_stats_reply(
 	 * test
 	 */
 	if (true) {
-		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).add_tundev("tun57");
-		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).add_tundev("tun58");
+		rofcore::cprefix_in4 prefix_in4_1(rofl::caddress_in4("192.168.2.0"), rofl::caddress_in4("255.255.255.0"));
+		rofcore::cprefix_in4 prefix_in4_2(rofl::caddress_in4("192.168.4.0"), rofl::caddress_in4("255.255.255.0"));
+		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).add_tundev("tun57").add_prefix_in4(prefix_in4_1);
+		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_tundev("tun57").add_prefix_in4(prefix_in4_2);
+		rofcore::cprefix_in4 prefix_in4_3(rofl::caddress_in4("192.168.11.0"), rofl::caddress_in4("255.255.255.0"));
+		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).add_tundev("tun58").add_prefix_in4(prefix_in4_3);
+
+		rofcore::logging::debug << rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).get_tundev("tun57");
+		rofcore::logging::debug << rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).get_tundev("tun58");
 	}
 	if (true) {
 		rofgtp::clabel_in4 label_in(

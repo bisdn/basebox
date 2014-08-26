@@ -27,9 +27,11 @@ extern "C" {
 #endif
 
 #include <list>
+#include <iostream>
 
 #include "cnetdev.h"
 #include "clogging.h"
+#include "cprefix.hpp"
 
 namespace rofcore {
 
@@ -39,18 +41,7 @@ class eTunDevOpenFailed		: public eTunDevSysCallFailed {};
 class eTunDevIoctlFailed	: public eTunDevSysCallFailed {};
 class eTunDevNotFound		: public eTunDevBase {};
 
-class ctundev : public cnetdev
-{
-	int 							fd; 			// tap device file descriptor
-	std::list<rofl::cpacket*> 		pout_queue;		// queue of outgoing packets
-	std::string						devname;
-	rofl::ctimerid					port_open_timer_id;
-	uint32_t						ofp_port_no;
-
-	enum ctundev_timer_t {
-		CTUNDEV_TIMER_OPEN_PORT = 1,
-	};
-
+class ctundev : public cnetdev {
 public:
 
 
@@ -68,7 +59,8 @@ public:
 	/**
 	 *
 	 */
-	virtual ~ctundev();
+	virtual
+	~ctundev();
 
 
 	/**
@@ -77,15 +69,81 @@ public:
 	 * rofl::cpacket instance must have been allocated on heap and must
 	 * be removed
 	 */
-	virtual void enqueue(rofl::cpacket *pkt);
+	virtual void
+	enqueue(rofl::cpacket *pkt);
 
-	virtual void enqueue(std::vector<rofl::cpacket*> pkts);
+	virtual void
+	enqueue(std::vector<rofl::cpacket*> pkts);
 
 	/**
 	 *
 	 */
 	uint32_t
 	get_ofp_port_no() const { return ofp_port_no; };
+
+public:
+
+	/**
+	 *
+	 */
+	void
+	add_prefix_in4(const cprefix_in4& prefix) {
+		if (prefixes_in4.find(prefix) != prefixes_in4.end()) {
+			return;
+		}
+		prefixes_in4.insert(prefix);
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_prefix_in4(const cprefix_in4& prefix) {
+		if (prefixes_in4.find(prefix) == prefixes_in4.end()) {
+			return;
+		}
+		prefixes_in4.erase(prefix);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_prefix_in4(const cprefix_in4& prefix) const {
+		return (not (prefixes_in4.find(prefix) == prefixes_in4.end()));
+	};
+
+public:
+
+	/**
+	 *
+	 */
+	void
+	add_prefix_in6(const cprefix_in6& prefix) {
+		if (prefixes_in6.find(prefix) != prefixes_in6.end()) {
+			return;
+		}
+		prefixes_in6.insert(prefix);
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_prefix_in6(const cprefix_in6& prefix) {
+		if (prefixes_in6.find(prefix) == prefixes_in6.end()) {
+			return;
+		}
+		prefixes_in6.erase(prefix);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_prefix_in6(const cprefix_in6& prefix) const {
+		return (not (prefixes_in6.find(prefix) == prefixes_in6.end()));
+	};
 
 protected:
 
@@ -127,6 +185,24 @@ private:
 
 public:
 
+	friend std::ostream&
+	operator<< (std::ostream& os, const ctundev& tundev) {
+		os << rofcore::indent(0) << "<ctundev "
+				<< "devname: " << tundev.devname << " "
+				<< "#in4-prefixes: " << (int)tundev.prefixes_in4.size() << " "
+				<< "#in6-prefixes: " << (int)tundev.prefixes_in6.size() << " >" << std::endl;
+		rofcore::indent i(2);
+		for (std::set<cprefix_in4>::const_iterator
+				it = tundev.prefixes_in4.begin(); it != tundev.prefixes_in4.end(); ++it) {
+			os << *(it);
+		}
+		for (std::set<cprefix_in6>::const_iterator
+				it = tundev.prefixes_in6.begin(); it != tundev.prefixes_in6.end(); ++it) {
+			os << *(it);
+		}
+		return os;
+	};
+
 	class ctundev_find_by_devname {
 		std::string devname;
 	public:
@@ -147,6 +223,20 @@ public:
 		};
 	};
 
+private:
+
+	int 							fd; 			// tap device file descriptor
+	std::list<rofl::cpacket*> 		pout_queue;		// queue of outgoing packets
+	std::string						devname;
+	rofl::ctimerid					port_open_timer_id;
+	uint32_t						ofp_port_no;
+
+	enum ctundev_timer_t {
+		CTUNDEV_TIMER_OPEN_PORT = 1,
+	};
+
+	std::set<cprefix_in4>			prefixes_in4;
+	std::set<cprefix_in6>			prefixes_in6;
 };
 
 }; // end of namespace rofcore

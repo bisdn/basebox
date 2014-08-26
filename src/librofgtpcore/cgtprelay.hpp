@@ -19,7 +19,6 @@
 #include "clogging.h"
 #include "caddress_gtp.hpp"
 #include "ctundev.h"
-#include "cprefix.hpp"
 
 namespace rofgtp {
 

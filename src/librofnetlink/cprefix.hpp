@@ -100,7 +100,7 @@ public:
 	 *
 	 */
 	bool
-	operator< (const cprefix_in4& prefix) {
+	operator< (const cprefix_in4& prefix) const {
 		return ((prefix.mask < mask) || (addr < prefix.addr));
 	};
 
@@ -182,7 +182,7 @@ public:
 	 *
 	 */
 	bool
-	operator< (const cprefix_in6& prefix) {
+	operator< (const cprefix_in6& prefix) const {
 		return ((prefix.mask < mask) || (addr < prefix.addr));
 	};
 
