@@ -14,6 +14,9 @@
 
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/cdptid.h>
+#include <rofl/common/protocols/fudpframe.h>
+#include <rofl/common/protocols/fipv4frame.h>
+#include <rofl/common/protocols/fipv6frame.h>
 
 #include "clogging.h"
 #include "crelay.hpp"
@@ -37,12 +40,12 @@ public:
 	 *
 	 */
 	static cgtpcore&
-	add_gtp_core(const rofl::cdpid& dpid, uint8_t gtp_table_id) {
+	add_gtp_core(const rofl::cdpid& dpid, uint8_t ip_local_table_id, uint8_t gtp_table_id) {
 		if (cgtpcore::gtpcores.find(dpid) != cgtpcore::gtpcores.end()) {
 			delete cgtpcore::gtpcores[dpid];
 			cgtpcore::gtpcores.erase(dpid);
 		}
-		cgtpcore::gtpcores[dpid] = new cgtpcore(dpid, gtp_table_id);
+		cgtpcore::gtpcores[dpid] = new cgtpcore(dpid, ip_local_table_id, gtp_table_id);
 		return *(cgtpcore::gtpcores[dpid]);
 	};
 
@@ -50,9 +53,9 @@ public:
 	 *
 	 */
 	static cgtpcore&
-	set_gtp_core(const rofl::cdpid& dpid, uint8_t gtp_table_id) {
+	set_gtp_core(const rofl::cdpid& dpid, uint8_t ip_local_table_id, uint8_t gtp_table_id) {
 		if (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()) {
-			cgtpcore::gtpcores[dpid] = new cgtpcore(dpid, gtp_table_id);
+			cgtpcore::gtpcores[dpid] = new cgtpcore(dpid, ip_local_table_id, gtp_table_id);
 		}
 		return *(cgtpcore::gtpcores[dpid]);
 	};
@@ -105,8 +108,8 @@ private:
 	/**
 	 *
 	 */
-	cgtpcore(const rofl::cdpid& dpid, uint8_t gtp_table_id = 0) :
-		state(STATE_DETACHED), dpid(dpid), gtp_table_id(gtp_table_id) {};
+	cgtpcore(const rofl::cdpid& dpid, uint8_t ip_local_table_id, uint8_t gtp_table_id = 0) :
+		state(STATE_DETACHED), dpid(dpid), ip_local_table_id(ip_local_table_id), gtp_table_id(gtp_table_id) {};
 
 	/**
 	 *
@@ -119,33 +122,13 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt) {
-		state = STATE_ATTACHED;
-		for (std::map<clabel_in4, crelay_in4*>::iterator
-				it = relays_in4.begin(); it != relays_in4.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
-		}
-		for (std::map<clabel_in6, crelay_in6*>::iterator
-				it = relays_in6.begin(); it != relays_in6.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
-		}
-	};
+	handle_dpt_open(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt) {
-		state = STATE_DETACHED;
-		for (std::map<clabel_in4, crelay_in4*>::iterator
-				it = relays_in4.begin(); it != relays_in4.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
-		}
-		for (std::map<clabel_in6, crelay_in6*>::iterator
-				it = relays_in6.begin(); it != relays_in6.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
-		}
-	};
+	handle_dpt_close(rofl::crofdpt& dpt);
 
 public:
 
@@ -171,11 +154,13 @@ public:
 			relays_in4.erase(label_in);
 		}
 		relays_in4[label_in] = new crelay_in4(dpid, gtp_table_id, label_in, label_out);
+#if 0
 		try {
 			if (STATE_ATTACHED == state) {
 				relays_in4[label_in]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
+#endif
 		return *(relays_in4[label_in]);
 	};
 
@@ -187,11 +172,13 @@ public:
 		if (relays_in4.find(label_in) == relays_in4.end()) {
 			relays_in4[label_in] = new crelay_in4(dpid, gtp_table_id, label_in, label_out);
 		}
+#if 0
 		try {
 			if (STATE_ATTACHED == state) {
 				relays_in4[label_in]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
+#endif
 		return *(relays_in4[label_in]);
 	};
 
@@ -262,11 +249,13 @@ public:
 			relays_in6.erase(label_in);
 		}
 		relays_in6[label_in] = new crelay_in6(dpid, gtp_table_id, label_in, label_out);
+#if 0
 		try {
 			if (STATE_ATTACHED == state) {
 				relays_in6[label_in]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
+#endif
 		return *(relays_in6[label_in]);
 	};
 
@@ -278,11 +267,13 @@ public:
 		if (relays_in6.find(label_in) == relays_in6.end()) {
 			relays_in6[label_in] = new crelay_in6(dpid, gtp_table_id, label_in, label_out);
 		}
+#if 0
 		try {
 			if (STATE_ATTACHED == state) {
 				relays_in6[label_in]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
+#endif
 		return *(relays_in6[label_in]);
 	};
 
@@ -353,11 +344,13 @@ public:
 			terms_in4.erase(gtp_label);
 		}
 		terms_in4[gtp_label] = new cterm_in4(dpid, gtp_table_id, gtp_label, tft_match);
+#if 0
 		try {
 			if (STATE_ATTACHED == state) {
 				terms_in4[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
+#endif
 		return *(terms_in4[gtp_label]);
 	};
 
@@ -369,11 +362,13 @@ public:
 		if (terms_in4.find(gtp_label) == terms_in4.end()) {
 			terms_in4[gtp_label] = new cterm_in4(dpid, gtp_table_id, gtp_label, tft_match);
 		}
+#if 0
 		try {
 			if (STATE_ATTACHED == state) {
 				terms_in4[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
+#endif
 		return *(terms_in4[gtp_label]);
 	};
 
@@ -444,11 +439,13 @@ public:
 			terms_in6.erase(gtp_label);
 		}
 		terms_in6[gtp_label] = new cterm_in6(dpid, gtp_table_id, gtp_label, tft_match);
+#if 0
 		try {
 			if (STATE_ATTACHED == state) {
 				terms_in6[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
+#endif
 		return *(terms_in6[gtp_label]);
 	};
 
@@ -460,11 +457,13 @@ public:
 		if (terms_in6.find(gtp_label) == terms_in6.end()) {
 			terms_in6[gtp_label] = new cterm_in6(dpid, gtp_table_id, gtp_label, tft_match);
 		}
+#if 0
 		try {
 			if (STATE_ATTACHED == state) {
 				terms_in6[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
+#endif
 		return *(terms_in6[gtp_label]);
 	};
 
@@ -539,6 +538,7 @@ private:
 
 	enum ofp_state_t							state;
 	rofl::cdpid									dpid;
+	uint8_t										ip_local_table_id;
 	uint8_t										gtp_table_id;
 	std::map<clabel_in4, crelay_in4*>			relays_in4;
 	std::map<clabel_in6, crelay_in6*>			relays_in6;

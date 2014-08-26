@@ -322,9 +322,9 @@ cbasebox::handle_dpt_open(
 	std::cerr << "CCCC[1]: " << (int)dpt.get_version() << " dpid:" << dpt.get_dpid() << std::endl;
 	std::cerr << "CCCC[2]: " << (int)dpt.get_version() << " dptid:" << dpt.get_dptid() << std::endl;
 
-	rofip::cipcore::set_ip_core(dpt.get_dpid(), /*local-stage=*/3, /*out-stage=*/4);
-	rofeth::cethcore::set_eth_core(dpt.get_dpid(), /*default_vid=*/1, 0, 1, 5);
-	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid(), /*gtp-stage=*/3); // yes, same as local for cipcore
+	rofip::cipcore::set_ip_core(dpt.get_dpid(), /*local-stage=*/3, /*out-stage=*/5);
+	rofeth::cethcore::set_eth_core(dpt.get_dpid(), /*default_vid=*/1, /*port-membership=*/0, /*src-table=*/1, /*dst-table=*/6);
+	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid(), /*ip-local-stage=*/3, /*gtp-stage=*/4); // yes, same as local for cipcore
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
 	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
@@ -500,7 +500,7 @@ cbasebox::handle_port_desc_stats_reply(
 
 	rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	//rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
 
 	/*
 	 * test

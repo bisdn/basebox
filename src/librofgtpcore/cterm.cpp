@@ -7,9 +7,6 @@
 
 #include "cterm.hpp"
 
-
-#include "cterm.hpp"
-
 using namespace rofgtp;
 
 void
