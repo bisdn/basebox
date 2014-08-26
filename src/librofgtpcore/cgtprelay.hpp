@@ -18,6 +18,8 @@
 
 #include "clogging.h"
 #include "caddress_gtp.hpp"
+#include "ctundev.h"
+#include "cprefix.hpp"
 
 namespace rofgtp {
 
@@ -30,7 +32,7 @@ public:
 	eGtpRelayNotFound(const std::string& __arg) : eGtpRelayBase(__arg) {};
 };
 
-class cgtprelay : public rofl::csocket_owner {
+class cgtprelay : public rofl::csocket_owner, public rofcore::cnetdev_owner {
 public:
 
 	/**
@@ -107,9 +109,9 @@ public:
 	 *
 	 */
 	void
-	add_socket(const caddress_gtp_in4& bindaddr) {
+	add_socket_in4(const caddress_gtp_in4& bindaddr) {
 		if (sockets_in4.find(bindaddr) != sockets_in4.end()) {
-			drop_socket(bindaddr);
+			drop_socket_in4(bindaddr);
 		}
 		sockets_in4[bindaddr] = rofl::csocket::csocket_factory(rofl::csocket::SOCKET_TYPE_PLAIN, this);
 		rofl::cparams sockparams = rofl::csocket::get_default_params(rofl::csocket::SOCKET_TYPE_PLAIN);
@@ -125,7 +127,7 @@ public:
 	 *
 	 */
 	rofl::csocket&
-	set_socket(const caddress_gtp_in4& bindaddr) {
+	set_socket_in4(const caddress_gtp_in4& bindaddr) {
 		if (sockets_in4.find(bindaddr) == sockets_in4.end()) {
 			throw eGtpRelayNotFound("cgtprelay::set_socket() bindaddr_in4 not found");
 		}
@@ -136,7 +138,7 @@ public:
 	 *
 	 */
 	const rofl::csocket&
-	get_socket(const caddress_gtp_in4& bindaddr) {
+	get_socket_in4(const caddress_gtp_in4& bindaddr) {
 		if (sockets_in4.find(bindaddr) == sockets_in4.end()) {
 			throw eGtpRelayNotFound("cgtprelay::get_socket() bindaddr_in4 not found");
 		}
@@ -147,7 +149,7 @@ public:
 	 *
 	 */
 	void
-	drop_socket(const caddress_gtp_in4& bindaddr) {
+	drop_socket_in4(const caddress_gtp_in4& bindaddr) {
 		if (sockets_in4.find(bindaddr) == sockets_in4.end()) {
 			return;
 		}
@@ -160,18 +162,19 @@ public:
 	 *
 	 */
 	bool
-	has_socket(const caddress_gtp_in4& bindaddr) {
+	has_socket_in4(const caddress_gtp_in4& bindaddr) {
 		return (not (sockets_in4.find(bindaddr) == sockets_in4.end()));
 	};
 
+public:
 
 	/**
 	 *
 	 */
 	void
-	add_socket(const caddress_gtp_in6& bindaddr) {
+	add_socket_in6(const caddress_gtp_in6& bindaddr) {
 		if (sockets_in6.find(bindaddr) != sockets_in6.end()) {
-			drop_socket(bindaddr);
+			drop_socket_in6(bindaddr);
 		}
 		sockets_in6[bindaddr] = rofl::csocket::csocket_factory(rofl::csocket::SOCKET_TYPE_PLAIN, this);
 		rofl::cparams sockparams = rofl::csocket::get_default_params(rofl::csocket::SOCKET_TYPE_PLAIN);
@@ -187,7 +190,7 @@ public:
 	 *
 	 */
 	rofl::csocket&
-	set_socket(const caddress_gtp_in6& bindaddr) {
+	set_socket_in6(const caddress_gtp_in6& bindaddr) {
 		if (sockets_in6.find(bindaddr) == sockets_in6.end()) {
 			throw eGtpRelayNotFound("cgtprelay::set_socket() bindaddr_in6 not found");
 		}
@@ -198,7 +201,7 @@ public:
 	 *
 	 */
 	const rofl::csocket&
-	get_socket(const caddress_gtp_in6& bindaddr) {
+	get_socket_in6(const caddress_gtp_in6& bindaddr) {
 		if (sockets_in6.find(bindaddr) == sockets_in6.end()) {
 			throw eGtpRelayNotFound("cgtprelay::get_socket() bindaddr_in6 not found");
 		}
@@ -209,7 +212,7 @@ public:
 	 *
 	 */
 	void
-	drop_socket(const caddress_gtp_in6& bindaddr) {
+	drop_socket_in6(const caddress_gtp_in6& bindaddr) {
 		if (sockets_in6.find(bindaddr) == sockets_in6.end()) {
 			return;
 		}
@@ -222,12 +225,66 @@ public:
 	 *
 	 */
 	bool
-	has_socket(const caddress_gtp_in6& bindaddr) {
+	has_socket_in6(const caddress_gtp_in6& bindaddr) {
 		return (not (sockets_in6.find(bindaddr) == sockets_in6.end()));
 	};
 
+public:
 
+	/**
+	 *
+	 */
+	rofcore::ctundev&
+	add_tundev(const std::string& devname) {
+		if (tundevs.find(devname) != tundevs.end()) {
+			delete tundevs[devname];
+			tundevs.erase(devname);
+		}
+		tundevs[devname] = new rofcore::ctundev(this, devname);
+		return *(tundevs[devname]);
+	};
 
+	/**
+	 *
+	 */
+	rofcore::ctundev&
+	set_tundev(const std::string& devname) {
+		if (tundevs.find(devname) == tundevs.end()) {
+			tundevs[devname] = new rofcore::ctundev(this, devname);
+		}
+		return *(tundevs[devname]);
+	};
+
+	/**
+	 *
+	 */
+	const rofcore::ctundev&
+	get_tundev(const std::string& devname) const {
+		if (tundevs.find(devname) == tundevs.end()) {
+			throw rofcore::eTunDevNotFound();
+		}
+		return *(tundevs.at(devname));
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_tundev(const std::string& devname) {
+		if (tundevs.find(devname) == tundevs.end()) {
+			return;
+		}
+		delete tundevs[devname];
+		tundevs.erase(devname);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_tundev(const std::string& devname) {
+		return (not (tundevs.find(devname) == tundevs.end()));
+	};
 
 private:
 
@@ -286,6 +343,23 @@ private:
 	virtual void
 	handle_closed(rofl::csocket& socket) {};
 
+private:
+
+	friend class rofcore::cnetdev;
+
+	/**
+	 *
+	 */
+	virtual void
+	enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt) { /* TODO */ };
+
+	/**
+	 *
+	 */
+	virtual void
+	enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts) { /* TODO */ };
+
+
 public:
 
 	friend std::ostream&
@@ -309,6 +383,7 @@ private:
 	rofl::cdpid 								dpid;
 	std::map<caddress_gtp_in4, rofl::csocket*>	sockets_in4;
 	std::map<caddress_gtp_in6, rofl::csocket*>	sockets_in6;
+	std::map<std::string, rofcore::ctundev*>	tundevs;
 	static std::map<rofl::cdpid, cgtprelay*>	gtprelays;
 };
 

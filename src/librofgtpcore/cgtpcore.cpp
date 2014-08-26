@@ -71,29 +71,7 @@ cgtpcore::handle_dpt_open(rofl::crofdpt& dpt)
 				set_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
-
-#if 0
-		// trigger relays
-		for (std::map<clabel_in4, crelay_in4*>::iterator
-				it = relays_in4.begin(); it != relays_in4.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
-		}
-		for (std::map<clabel_in6, crelay_in6*>::iterator
-				it = relays_in6.begin(); it != relays_in6.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
-		}
-
-		// trigger termination points
-		for (std::map<clabel_in4, cterm_in4*>::iterator
-				it = terms_in4.begin(); it != terms_in4.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
-		}
-		for (std::map<clabel_in6, cterm_in6*>::iterator
-				it = terms_in6.begin(); it != terms_in6.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
-		}
-#endif
-
+		// relays and termination points are handled by the relaying and termination application, not here!
 
 		state = STATE_ATTACHED;
 
@@ -152,25 +130,8 @@ cgtpcore::handle_dpt_close(rofl::crofdpt& dpt)
 		fm.set_match().set_udp_dst(DEFAULT_GTPU_PORT);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
-#if 0
-		for (std::map<clabel_in4, crelay_in4*>::iterator
-				it = relays_in4.begin(); it != relays_in4.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
-		}
-		for (std::map<clabel_in6, crelay_in6*>::iterator
-				it = relays_in6.begin(); it != relays_in6.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
-		}
+		// relays and termination points are handled by the relaying and termination application, not here!
 
-		for (std::map<clabel_in4, cterm_in4*>::iterator
-				it = terms_in4.begin(); it != terms_in4.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
-		}
-		for (std::map<clabel_in6, cterm_in6*>::iterator
-				it = terms_in6.begin(); it != terms_in6.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
-		}
-#endif
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[rofgtp][cgtpcore][handle_dpt_open] unable to find data path" << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {

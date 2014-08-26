@@ -13,6 +13,8 @@ librofnetlink_la_SOURCES = \
 	ctapdev.cc \
 	ctundev.h \
 	ctundev.cc \
+	cprefix.hpp \
+	cprefix.cpp \
 	cpacketpool.h \
 	cpacketpool.cc \
 	crtroute.h \
@@ -31,6 +33,7 @@ library_include_HEADERS= \
 	cnetdev.h \
 	ctapdev.h \
 	ctundev.h \
+	cprefix.hpp \
 	cpacketpool.h \
 	crtroute.h \
 	crtaddr.h \

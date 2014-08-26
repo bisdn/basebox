@@ -59,7 +59,7 @@ ctundev::tun_open(std::string const& devname)
 		 *        IFF_NO_PI - Do not provide packet information
 		 */
 		ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-		//strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
+		strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
 
 		if ((rc = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0) {
 			close(fd);

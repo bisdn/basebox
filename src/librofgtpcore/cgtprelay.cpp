@@ -55,7 +55,7 @@ cgtprelay::handle_read(
 			gtpu.set_teid(label_out.get_teid().get_value());
 
 			// forward GTP message
-			set_socket(label_out.get_saddr()).send(mem,
+			set_socket_in4(label_out.get_saddr()).send(mem,
 					rofl::csockaddr(label_out.get_daddr().get_addr(), label_out.get_daddr().get_port().get_value()));
 
 			// set OFP shortcut into datapath
@@ -94,7 +94,7 @@ cgtprelay::handle_read(
 			gtpu.set_teid(label_out.get_teid().get_value());
 
 			// forward GTP message
-			set_socket(label_out.get_saddr()).send(mem,
+			set_socket_in6(label_out.get_saddr()).send(mem,
 					rofl::csockaddr(label_out.get_daddr().get_addr(), label_out.get_daddr().get_port().get_value()));
 
 			// set OFP shortcut into datapath
