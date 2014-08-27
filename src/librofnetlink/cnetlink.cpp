@@ -698,3 +698,186 @@ cnetlink::notify_route_in6_deleted(uint8_t table_id, unsigned int adindex) {
 
 
 
+void
+cnetlink::add_addr_in4(int ifindex, const rofl::caddress_in4& laddr, int prefixlen)
+{
+	int rc = 0;
+
+	struct nl_sock *sk = (struct nl_sock*)0;
+	if ((sk = nl_socket_alloc()) == NULL) {
+		throw eNetLinkFailed();
+	}
+
+	int sd = 0;
+
+	if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	struct rtnl_addr* addr = (struct rtnl_addr*)0;
+	if ((addr = rtnl_addr_alloc()) == NULL) {
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	struct nl_addr* local = (struct nl_addr*)0;
+	nl_addr_parse(laddr.str().c_str(), AF_INET, &local);
+	rtnl_addr_set_local(addr, local);
+
+	rtnl_addr_set_family(addr, AF_INET);
+	rtnl_addr_set_ifindex(addr, ifindex);
+	rtnl_addr_set_prefixlen(addr, prefixlen);
+	rtnl_addr_set_flags(addr, 0);
+
+	if ((rc = rtnl_addr_add(sk, addr, 0)) < 0) {
+		rtnl_addr_put(addr);
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	nl_addr_put(local);
+	rtnl_addr_put(addr);
+	nl_close(sk);
+	nl_socket_free(sk);
+};
+
+
+
+void
+cnetlink::drop_addr_in4(int ifindex, const rofl::caddress_in4& laddr, int prefixlen)
+{
+	int rc = 0;
+
+	struct nl_sock *sk = (struct nl_sock*)0;
+	if ((sk = nl_socket_alloc()) == NULL) {
+		throw eNetLinkFailed();
+	}
+
+	int sd = 0;
+
+	if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	struct rtnl_addr* addr = (struct rtnl_addr*)0;
+	if ((addr = rtnl_addr_alloc()) == NULL) {
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	struct nl_addr* local = (struct nl_addr*)0;
+	nl_addr_parse(laddr.str().c_str(), AF_INET, &local);
+	rtnl_addr_set_local(addr, local);
+
+	rtnl_addr_set_family(addr, AF_INET);
+	rtnl_addr_set_ifindex(addr, ifindex);
+	rtnl_addr_set_prefixlen(addr, prefixlen);
+	rtnl_addr_set_flags(addr, 0);
+
+	if ((rc = rtnl_addr_delete(sk, addr, 0)) < 0) {
+		rtnl_addr_put(addr);
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	nl_addr_put(local);
+	rtnl_addr_put(addr);
+	nl_close(sk);
+	nl_socket_free(sk);
+};
+
+
+
+void
+cnetlink::add_addr_in6(int ifindex, const rofl::caddress_in6& laddr, int prefixlen)
+{
+	int rc = 0;
+
+	struct nl_sock *sk = (struct nl_sock*)0;
+	if ((sk = nl_socket_alloc()) == NULL) {
+		throw eNetLinkFailed();
+	}
+
+	int sd = 0;
+
+	if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	struct rtnl_addr* addr = (struct rtnl_addr*)0;
+	if ((addr = rtnl_addr_alloc()) == NULL) {
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	struct nl_addr* local = (struct nl_addr*)0;
+	nl_addr_parse(laddr.str().c_str(), AF_INET6, &local);
+	rtnl_addr_set_local(addr, local);
+
+	rtnl_addr_set_family(addr, AF_INET6);
+	rtnl_addr_set_ifindex(addr, ifindex);
+	rtnl_addr_set_prefixlen(addr, prefixlen);
+	rtnl_addr_set_flags(addr, 0);
+
+	if ((rc = rtnl_addr_add(sk, addr, 0)) < 0) {
+		rtnl_addr_put(addr);
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	nl_addr_put(local);
+	rtnl_addr_put(addr);
+	nl_close(sk);
+	nl_socket_free(sk);
+};
+
+
+
+void
+cnetlink::drop_addr_in6(int ifindex, const rofl::caddress_in6& laddr, int prefixlen)
+{
+	int rc = 0;
+
+	struct nl_sock *sk = (struct nl_sock*)0;
+	if ((sk = nl_socket_alloc()) == NULL) {
+		throw eNetLinkFailed();
+	}
+
+	int sd = 0;
+
+	if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	struct rtnl_addr* addr = (struct rtnl_addr*)0;
+	if ((addr = rtnl_addr_alloc()) == NULL) {
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	struct nl_addr* local = (struct nl_addr*)0;
+	nl_addr_parse(laddr.str().c_str(), AF_INET6, &local);
+	rtnl_addr_set_local(addr, local);
+
+	rtnl_addr_set_family(addr, AF_INET6);
+	rtnl_addr_set_ifindex(addr, ifindex);
+	rtnl_addr_set_prefixlen(addr, prefixlen);
+	rtnl_addr_set_flags(addr, 0);
+
+	if ((rc = rtnl_addr_delete(sk, addr, 0)) < 0) {
+		rtnl_addr_put(addr);
+		nl_socket_free(sk);
+		throw eNetLinkFailed();
+	}
+
+	nl_addr_put(local);
+	rtnl_addr_put(addr);
+	nl_close(sk);
+	nl_socket_free(sk);
+};
+
+

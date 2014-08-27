@@ -22,6 +22,10 @@ extern "C" {
 #include <unistd.h>
 #include <errno.h>
 
+#include <assert.h>
+#include <netlink/object.h>
+#include <netlink/route/addr.h>
+
 #ifdef __cplusplus
 }
 #endif
@@ -32,6 +36,7 @@ extern "C" {
 #include "cnetdev.hpp"
 #include "clogging.hpp"
 #include "cprefix.hpp"
+#include "cnetlink.hpp"
 
 namespace rofcore {
 
@@ -88,10 +93,15 @@ public:
 	 */
 	void
 	add_prefix_in4(const cprefix_in4& prefix) {
-		if (prefixes_in4.find(prefix) != prefixes_in4.end()) {
-			return;
+		try {
+			if (prefixes_in4.find(prefix) != prefixes_in4.end()) {
+				return;
+			}
+			cnetlink::get_instance().add_addr_in4(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
+			prefixes_in4.insert(prefix);
+		} catch (rofcore::eNetLinkFailed& e) {
+			rofcore::logging::debug << "[rofcore][ctundev][add_prefix_in4] failed to set address via netlink" << std::endl;
 		}
-		prefixes_in4.insert(prefix);
 	};
 
 	/**
@@ -99,10 +109,15 @@ public:
 	 */
 	void
 	drop_prefix_in4(const cprefix_in4& prefix) {
-		if (prefixes_in4.find(prefix) == prefixes_in4.end()) {
-			return;
+		try {
+			if (prefixes_in4.find(prefix) == prefixes_in4.end()) {
+				return;
+			}
+			cnetlink::get_instance().drop_addr_in4(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
+			prefixes_in4.erase(prefix);
+		} catch (rofcore::eNetLinkFailed& e) {
+			rofcore::logging::debug << "[rofcore][ctundev][drop_prefix_in4] failed to set address via netlink" << std::endl;
 		}
-		prefixes_in4.erase(prefix);
 	};
 
 	/**
@@ -120,10 +135,15 @@ public:
 	 */
 	void
 	add_prefix_in6(const cprefix_in6& prefix) {
-		if (prefixes_in6.find(prefix) != prefixes_in6.end()) {
-			return;
+		try {
+			if (prefixes_in6.find(prefix) != prefixes_in6.end()) {
+				return;
+			}
+			cnetlink::get_instance().add_addr_in6(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
+			prefixes_in6.insert(prefix);
+		} catch (rofcore::eNetLinkFailed& e) {
+			rofcore::logging::debug << "[rofcore][ctundev][add_prefix_in6] failed to set address via netlink" << std::endl;
 		}
-		prefixes_in6.insert(prefix);
 	};
 
 	/**
@@ -131,10 +151,15 @@ public:
 	 */
 	void
 	drop_prefix_in6(const cprefix_in6& prefix) {
-		if (prefixes_in6.find(prefix) == prefixes_in6.end()) {
-			return;
+		try {
+			if (prefixes_in6.find(prefix) == prefixes_in6.end()) {
+				return;
+			}
+			cnetlink::get_instance().drop_addr_in6(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
+			prefixes_in6.erase(prefix);
+		} catch (rofcore::eNetLinkFailed& e) {
+			rofcore::logging::debug << "[rofcore][ctundev][drop_prefix_in6] failed to set address via netlink" << std::endl;
 		}
-		prefixes_in6.erase(prefix);
 	};
 
 	/**

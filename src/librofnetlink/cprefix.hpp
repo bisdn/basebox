@@ -20,7 +20,7 @@ public:
 	/**
 	 *
 	 */
-	cprefix() {};
+	cprefix(int prefixlen = 0) : prefixlen(prefixlen) {};
 
 	/**
 	 *
@@ -40,9 +40,17 @@ public:
 	operator= (const cprefix& prefix) {
 		if (this == &prefix)
 			return *this;
-		// do nothing (so far)
+		prefixlen = prefix.prefixlen;
 		return *this;
 	};
+
+public:
+
+	/**
+	 *
+	 */
+	int
+	get_prefixlen() const { return prefixlen; };
 
 public:
 
@@ -54,7 +62,7 @@ public:
 
 protected:
 
-
+	int prefixlen;
 };
 
 
@@ -76,8 +84,8 @@ public:
 	/**
 	 *
 	 */
-	cprefix_in4(const rofl::caddress_in4& addr, const rofl::caddress_in4& mask) :
-		addr(addr), mask(mask) {};
+	cprefix_in4(const rofl::caddress_in4& addr, int prefixlen) :
+		cprefix(prefixlen), addr(addr) {};
 
 	/**
 	 *
@@ -91,8 +99,8 @@ public:
 	operator= (const cprefix_in4& prefix) {
 		if (this == &prefix)
 			return *this;
+		cprefix::operator= (prefix);
 		addr = prefix.addr;
-		mask = prefix.mask;
 		return *this;
 	};
 
@@ -101,7 +109,7 @@ public:
 	 */
 	bool
 	operator< (const cprefix_in4& prefix) const {
-		return ((prefix.mask < mask) || (addr < prefix.addr));
+		return ((prefix.prefixlen < prefixlen) || (addr < prefix.addr));
 	};
 
 public:
@@ -112,12 +120,6 @@ public:
 	const rofl::caddress_in4&
 	get_addr() const { return addr; };
 
-	/**
-	 *
-	 */
-	const rofl::caddress_in4&
-	get_mask() const { return mask; };
-
 public:
 
 	/**
@@ -125,18 +127,15 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, const cprefix_in4& prefix) {
-		os << rofcore::indent(0) << "<cprefix_in4 >" << std::endl;
+		os << rofcore::indent(0) << "<cprefix_in4 prefixlen: " << prefix.get_prefixlen() << " >" << std::endl;
 		os << rofcore::indent(2) << "<addr: >" << std::endl;
 		{ rofcore::indent i(2); os << prefix.addr; };
-		os << rofcore::indent(2) << "<mask: >" << std::endl;
-		{ rofcore::indent i(2); os << prefix.mask; };
 		return os;
 	};
 
 private:
 
 	rofl::caddress_in4 addr;
-	rofl::caddress_in4 mask;
 };
 
 
@@ -158,8 +157,8 @@ public:
 	/**
 	 *
 	 */
-	cprefix_in6(const rofl::caddress_in6& addr, const rofl::caddress_in6& mask) :
-		addr(addr), mask(mask) {};
+	cprefix_in6(const rofl::caddress_in6& addr, int prefixlen) :
+		cprefix(prefixlen), addr(addr) {};
 
 	/**
 	 *
@@ -173,8 +172,8 @@ public:
 	operator= (const cprefix_in6& prefix) {
 		if (this == &prefix)
 			return *this;
+		cprefix::operator= (prefix);
 		addr = prefix.addr;
-		mask = prefix.mask;
 		return *this;
 	};
 
@@ -183,7 +182,7 @@ public:
 	 */
 	bool
 	operator< (const cprefix_in6& prefix) const {
-		return ((prefix.mask < mask) || (addr < prefix.addr));
+		return ((prefix.prefixlen < prefixlen) || (addr < prefix.addr));
 	};
 
 public:
@@ -194,12 +193,6 @@ public:
 	const rofl::caddress_in6&
 	get_addr() const { return addr; };
 
-	/**
-	 *
-	 */
-	const rofl::caddress_in6&
-	get_mask() const { return mask; };
-
 public:
 
 	/**
@@ -207,18 +200,15 @@ public:
 	 */
 	friend std::ostream&
 	operator<< (std::ostream& os, const cprefix_in6& prefix) {
-		os << rofcore::indent(0) << "<cprefix_in6 >" << std::endl;
+		os << rofcore::indent(0) << "<cprefix_in6 prefixlen: " << prefix.get_prefixlen() << " >" << std::endl;
 		os << rofcore::indent(2) << "<addr: >" << std::endl;
 		{ rofcore::indent i(2); os << prefix.addr; };
-		os << rofcore::indent(2) << "<mask: >" << std::endl;
-		{ rofcore::indent i(2); os << prefix.mask; };
 		return os;
 	};
 
 private:
 
 	rofl::caddress_in6 addr;
-	rofl::caddress_in6 mask;
 };
 
 }; // end of namespace rofcore

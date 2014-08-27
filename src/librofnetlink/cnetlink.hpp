@@ -34,6 +34,7 @@ extern "C" {
 
 #include "crtlinks.hpp"
 #include "crtroutes.hpp"
+#include "cprefix.hpp"
 #include "clogging.hpp"
 
 namespace rofcore {
@@ -41,6 +42,7 @@ namespace rofcore {
 class eNetLinkBase 			: public std::exception {};
 class eNetLinkCritical		: public eNetLinkBase {};
 class eNetLinkNotFound		: public eNetLinkBase {};
+class eNetLinkFailed		: public eNetLinkBase {};
 
 class cnetlink_common_observer;
 class cnetlink_neighbour_observer;
@@ -412,6 +414,32 @@ public:
 	 */
 	void
 	notify_route_in6_deleted(uint8_t table_id, unsigned int adindex);
+
+public:
+
+	/**
+	 *
+	 */
+	void
+	add_addr_in4(int ifindex, const rofl::caddress_in4& local, int prefixlen);
+
+	/**
+	 *
+	 */
+	void
+	drop_addr_in4(int ifindex, const rofl::caddress_in4& local, int prefixlen);
+
+	/**
+	 *
+	 */
+	void
+	add_addr_in6(int ifindex, const rofl::caddress_in6& local, int prefixlen);
+
+	/**
+	 *
+	 */
+	void
+	drop_addr_in6(int ifindex, const rofl::caddress_in6& local, int prefixlen);
 };
 
 
