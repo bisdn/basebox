@@ -519,16 +519,21 @@ cbasebox::handle_port_desc_stats_reply(
 		rofcore::logging::debug << rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).get_tundev("tun57");
 	}
 	if (true) {
-		rofgtp::clabel_in4 gtp_label(
+		rofgtp::clabel_in4 label_egress(
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::cteid(0x11111111));
+				rofgtp::cteid(111111));
+
+		rofgtp::clabel_in4 label_ingress(
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				rofgtp::cteid(111111));
 
 		rofl::openflow::cofmatch tft_match(dpt.get_version());
-		tft_match.set_ipv4_src(rofl::caddress_in4("192.168.4.1"));
+		tft_match.set_ipv4_src(rofl::caddress_in4("10.2.2.20"));
 		tft_match.set_ipv4_dst(rofl::caddress_in4("192.168.4.33"));
 
-		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_term_in4(gtp_label, tft_match);
+		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_term_in4(label_egress, label_ingress, tft_match);
 	}
 	if (true) {
 		rofgtp::clabel_in4 label_in(

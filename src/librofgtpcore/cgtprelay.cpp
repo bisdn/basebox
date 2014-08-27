@@ -64,7 +64,7 @@ cgtprelay::handle_read(
 					cgtpcore::set_gtp_core(dpid).set_relay_in4(label_in).handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 
 				} else
-				if (cgtpcore::get_gtp_core(dpid).has_term_in4(label_in)) {
+				if (cgtpcore::get_gtp_core(dpid).has_term_in4(/*egress label*/label_in)) {
 
 					// find associated tft-match for label-in
 					const rofgtp::cterm_in4& term =
@@ -81,6 +81,9 @@ cgtprelay::handle_read(
 					/*
 					 * TODO: instruct term to install its flowmods
 					 */
+					// set OFP shortcut into datapath
+					cgtpcore::set_gtp_core(dpid).set_term_in4(label_in).handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+
 				}
 
 			} catch (eGtpCoreNotFound& e) {
@@ -130,7 +133,7 @@ cgtprelay::handle_read(
 
 					// find associated tft-match for label-in
 					const rofgtp::cterm_in6& term =
-							cgtpcore::get_gtp_core(dpid).get_term_in6(label_in);
+							cgtpcore::get_gtp_core(dpid).get_term_in6(/*egress label*/label_in);
 
 					rofl::cpacket* pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 
@@ -143,6 +146,9 @@ cgtprelay::handle_read(
 					/*
 					 * TODO: instruct term to install its flowmods
 					 */
+					// set OFP shortcut into datapath
+					cgtpcore::set_gtp_core(dpid).set_term_in6(label_in).handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+
 				}
 
 			} catch (eGtpCoreNotFound& e) {
@@ -231,7 +237,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		tft_match.set_ipv4_src(ipv4.get_ipv4_src());
 
 		if (cgtpcore::get_gtp_core(dpid).has_term_in4(tft_match)) {
-			const cterm_in4& term = cgtpcore::get_gtp_core(dpid).get_term_in4(tft_match);
+			cterm_in4& term = cgtpcore::set_gtp_core(dpid).set_term_in4(tft_match);
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] cterm_in4 (src->dst) found" << std::endl << term;
 
 			size_t orig_len = pkt->length();
@@ -242,7 +248,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
 			gtpu.set_msg_type(255);
-			gtpu.set_teid(term.get_gtp_label().get_teid().get_value());
+			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
 			gtpu.set_length(orig_len);
 
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] tagged frame" << std::endl << *pkt;
@@ -251,14 +257,13 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 			pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-			rofl::csockaddr to(term.get_gtp_label().get_saddr().get_addr(),
-									term.get_gtp_label().get_saddr().get_port().get_value());
+			rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
+									term.get_label_ingress().get_daddr().get_port().get_value());
 
-			set_socket_in4(term.get_gtp_label().get_daddr()).send(mem, to);
+			set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
 
-			/*
-			 * TODO: instruct term to install its flowmods
-			 */
+			// set OFP shortcut into datapath
+			term.handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 
 			return;
 		}
@@ -267,7 +272,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		tft_match.set_ipv4_dst(ipv4.get_ipv4_dst());
 
 		if (cgtpcore::get_gtp_core(dpid).has_term_in4(tft_match)) {
-			const cterm_in4& term = cgtpcore::get_gtp_core(dpid).get_term_in4(tft_match);
+			cterm_in4& term = cgtpcore::set_gtp_core(dpid).set_term_in4(tft_match);
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] cterm_in4 (dst only) found" << std::endl << term;
 
 			size_t orig_len = pkt->length();
@@ -278,7 +283,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
 			gtpu.set_msg_type(255);
-			gtpu.set_teid(term.get_gtp_label().get_teid().get_value());
+			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
 			gtpu.set_length(orig_len);
 
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] tagged frame" << std::endl << *pkt;
@@ -287,14 +292,13 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 			pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-			rofl::csockaddr to(term.get_gtp_label().get_saddr().get_addr(),
-									term.get_gtp_label().get_saddr().get_port().get_value());
+			rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
+									term.get_label_ingress().get_daddr().get_port().get_value());
 
-			set_socket_in4(term.get_gtp_label().get_daddr()).send(mem, to);
+			set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
 
-			/*
-			 * TODO: instruct term to install its flowmods
-			 */
+			// set OFP shortcut into datapath
+			term.handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 
 			return;
 		}
@@ -331,7 +335,7 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		tft_match.set_ipv6_src(ipv6.get_ipv6_src());
 
 		if (cgtpcore::get_gtp_core(dpid).has_term_in6(tft_match)) {
-			const cterm_in6& term = cgtpcore::get_gtp_core(dpid).get_term_in6(tft_match);
+			cterm_in6& term = cgtpcore::set_gtp_core(dpid).set_term_in6(tft_match);
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] cterm_in6 (src->dst) found" << std::endl << term;
 
 			size_t orig_len = pkt->length();
@@ -342,7 +346,7 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
 			gtpu.set_msg_type(255);
-			gtpu.set_teid(term.get_gtp_label().get_teid().get_value());
+			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
 			gtpu.set_length(orig_len);
 
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] tagged frame" << std::endl << *pkt;
@@ -351,14 +355,13 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 			pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-			rofl::csockaddr to(term.get_gtp_label().get_saddr().get_addr(),
-									term.get_gtp_label().get_saddr().get_port().get_value());
+			rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
+									term.get_label_ingress().get_daddr().get_port().get_value());
 
-			set_socket_in6(term.get_gtp_label().get_daddr()).send(mem, to);
+			set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
 
-			/*
-			 * TODO: instruct term to install its flowmods
-			 */
+			// set OFP shortcut into datapath
+			term.handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 
 			return;
 		}
@@ -367,7 +370,7 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		tft_match.set_ipv6_dst(ipv6.get_ipv6_dst());
 
 		if (cgtpcore::get_gtp_core(dpid).has_term_in6(tft_match)) {
-			const cterm_in6& term = cgtpcore::get_gtp_core(dpid).get_term_in6(tft_match);
+			cterm_in6& term = cgtpcore::set_gtp_core(dpid).set_term_in6(tft_match);
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] cterm_in6 (dst only) found" << std::endl << term;
 
 			size_t orig_len = pkt->length();
@@ -378,7 +381,7 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
 			gtpu.set_msg_type(255);
-			gtpu.set_teid(term.get_gtp_label().get_teid().get_value());
+			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
 			gtpu.set_length(orig_len);
 
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] tagged frame" << std::endl << *pkt;
@@ -387,14 +390,13 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 			pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-			rofl::csockaddr to(term.get_gtp_label().get_saddr().get_addr(),
-									term.get_gtp_label().get_saddr().get_port().get_value());
+			rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
+									term.get_label_ingress().get_daddr().get_port().get_value());
 
-			set_socket_in6(term.get_gtp_label().get_daddr()).send(mem, to);
+			set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
 
-			/*
-			 * TODO: instruct term to install its flowmods
-			 */
+			// set OFP shortcut into datapath
+			term.handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 
 			return;
 		}

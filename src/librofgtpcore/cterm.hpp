@@ -120,8 +120,8 @@ public:
 	 *
 	 */
 	cterm_in4(const rofl::cdpid& dpid, uint8_t ofp_table_id,
-			const clabel_in4& gtp_label, const rofl::openflow::cofmatch& tft_match) :
-		cterm(dpid, ofp_table_id), gtp_label(gtp_label), tft_match(tft_match) {};
+			const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) :
+		cterm(dpid, ofp_table_id), label_egress(label_egress), label_ingress(label_ingress), tft_match(tft_match) {};
 
 	/**
 	 *
@@ -136,7 +136,8 @@ public:
 		if (this == &term)
 			return *this;
 		cterm::operator= (term);
-		gtp_label = term.gtp_label;
+		label_egress = term.label_egress;
+		label_ingress = term.label_ingress;
 		tft_match = term.tft_match;
 		return *this;
 	};
@@ -146,7 +147,7 @@ public:
 	 */
 	bool
 	operator< (const cterm_in4& term) const {
-		return (gtp_label < term.gtp_label);
+		return (label_ingress < term.label_ingress);
 	};
 
 public:
@@ -155,7 +156,13 @@ public:
 	 *
 	 */
 	const clabel_in4&
-	get_gtp_label() const { return gtp_label; };
+	get_label_egress() const { return label_egress; };
+
+	/**
+	 *
+	 */
+	const clabel_in4&
+	get_label_ingress() const { return label_ingress; };
 
 	/**
 	 *
@@ -182,8 +189,10 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const cterm_in4& term) {
 		os << rofcore::indent(0) << "<cterm_in4 >" << std::endl;
-		os << rofcore::indent(2) << "<gtp-label >" << std::endl;
-		{ rofcore::indent i(4); os << term.get_gtp_label(); };
+		os << rofcore::indent(2) << "<gtp-label-ingress >" << std::endl;
+		{ rofcore::indent i(4); os << term.get_label_ingress(); };
+		os << rofcore::indent(2) << "<gtp-label-egress >" << std::endl;
+		{ rofcore::indent i(4); os << term.get_label_egress(); };
 		os << rofcore::indent(2) << "<tft-match >" << std::endl;
 		{ rofcore::indent i(4); os << term.get_tft_match(); };
 		return os;
@@ -201,7 +210,8 @@ public:
 
 private:
 
-	clabel_in4 gtp_label;
+	clabel_in4 label_egress;
+	clabel_in4 label_ingress;
 	rofl::openflow::cofmatch tft_match;
 };
 
@@ -230,8 +240,8 @@ public:
 	 *
 	 */
 	cterm_in6(const rofl::cdpid& dpid, uint8_t ofp_table_id,
-			const clabel_in6& gtp_label, const rofl::openflow::cofmatch& tft_match) :
-		cterm(dpid, ofp_table_id), gtp_label(gtp_label), tft_match(tft_match) {};
+			const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) :
+		cterm(dpid, ofp_table_id), label_egress(label_egress), label_ingress(label_ingress), tft_match(tft_match) {};
 
 	/**
 	 *
@@ -246,7 +256,8 @@ public:
 		if (this == &term)
 			return *this;
 		cterm::operator= (term);
-		gtp_label = term.gtp_label;
+		label_egress = term.label_egress;
+		label_ingress = term.label_ingress;
 		tft_match = term.tft_match;
 		return *this;
 	};
@@ -256,7 +267,7 @@ public:
 	 */
 	bool
 	operator< (const cterm_in6& term) const {
-		return (gtp_label < term.gtp_label);
+		return (label_ingress < term.label_ingress);
 	};
 
 public:
@@ -265,7 +276,13 @@ public:
 	 *
 	 */
 	const clabel_in6&
-	get_gtp_label() const { return gtp_label; };
+	get_label_egress() const { return label_egress; };
+
+	/**
+	 *
+	 */
+	const clabel_in6&
+	get_label_ingress() const { return label_ingress; };
 
 	/**
 	 *
@@ -292,8 +309,10 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const cterm_in6& term) {
 		os << rofcore::indent(0) << "<cterm_in6 >" << std::endl;
-		os << rofcore::indent(2) << "<gtp-label >" << std::endl;
-		{ rofcore::indent i(4); os << term.get_gtp_label(); };
+		os << rofcore::indent(2) << "<gtp-label-ingress >" << std::endl;
+		{ rofcore::indent i(4); os << term.get_label_ingress(); };
+		os << rofcore::indent(2) << "<gtp-label-egress >" << std::endl;
+		{ rofcore::indent i(4); os << term.get_label_egress(); };
 		os << rofcore::indent(2) << "<tft-match >" << std::endl;
 		{ rofcore::indent i(4); os << term.get_tft_match(); };
 		return os;
@@ -311,7 +330,8 @@ public:
 
 private:
 
-	clabel_in6 gtp_label;
+	clabel_in6 label_egress;
+	clabel_in6 label_ingress;
 	rofl::openflow::cofmatch tft_match;
 };
 

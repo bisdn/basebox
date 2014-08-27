@@ -338,60 +338,73 @@ public:
 	 *
 	 */
 	cterm_in4&
-	add_term_in4(const clabel_in4& gtp_label, const rofl::openflow::cofmatch& tft_match) {
-		if (terms_in4.find(gtp_label) != terms_in4.end()) {
-			delete terms_in4[gtp_label];
-			terms_in4.erase(gtp_label);
+	add_term_in4(const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in4.find(label_egress) != terms_in4.end()) {
+			delete terms_in4[label_egress];
+			terms_in4.erase(label_egress);
 		}
-		terms_in4[gtp_label] = new cterm_in4(dpid, gtp_table_id, gtp_label, tft_match);
+		terms_in4[label_egress] = new cterm_in4(dpid, gtp_table_id, label_egress, label_ingress, tft_match);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in4[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in4[label_ingress]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(terms_in4[gtp_label]);
+		return *(terms_in4[label_egress]);
 	};
 
 	/**
 	 *
 	 */
 	cterm_in4&
-	set_term_in4(const clabel_in4& gtp_label, const rofl::openflow::cofmatch& tft_match) {
-		if (terms_in4.find(gtp_label) == terms_in4.end()) {
-			terms_in4[gtp_label] = new cterm_in4(dpid, gtp_table_id, gtp_label, tft_match);
+	set_term_in4(const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in4.find(label_egress) == terms_in4.end()) {
+			terms_in4[label_egress] = new cterm_in4(dpid, gtp_table_id, label_egress, label_ingress, tft_match);
 		}
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in4[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in4[label_egress]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(terms_in4[gtp_label]);
+		return *(terms_in4[label_egress]);
 	};
 
 	/**
 	 *
 	 */
 	cterm_in4&
-	set_term_in4(const clabel_in4& gtp_label) {
-		if (terms_in4.find(gtp_label) == terms_in4.end()) {
+	set_term_in4(const clabel_in4& label_egress) {
+		if (terms_in4.find(label_egress) == terms_in4.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in4() label not found");
 		}
-		return *(terms_in4[gtp_label]);
+		return *(terms_in4[label_egress]);
+	};
+
+	/**
+	 *
+	 */
+	cterm_in4&
+	set_term_in4(const rofl::openflow::cofmatch& tft_match) {
+		std::map<clabel_in4, cterm_in4*>::iterator it;
+		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
+				cterm_in4::cterm_in4_find_by_tft_match(tft_match))) == terms_in4.end()) {
+			throw eRelayNotFound("cgtpcore::set_term_in4() match not found");
+		}
+		return *(it->second);
 	};
 
 	/**
 	 *
 	 */
 	const cterm_in4&
-	get_term_in4(const clabel_in4& gtp_label) const {
-		if (terms_in4.find(gtp_label) == terms_in4.end()) {
+	get_term_in4(const clabel_in4& label_egress) const {
+		if (terms_in4.find(label_egress) == terms_in4.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in4() label not found");
 		}
-		return *(terms_in4.at(gtp_label));
+		return *(terms_in4.at(label_egress));
 	};
 
 	/**
@@ -411,20 +424,20 @@ public:
 	 *
 	 */
 	void
-	drop_term_in4(const clabel_in4& gtp_label) {
-		if (terms_in4.find(gtp_label) == terms_in4.end()) {
+	drop_term_in4(const clabel_in4& label_egress) {
+		if (terms_in4.find(label_egress) == terms_in4.end()) {
 			return;
 		}
-		delete terms_in4[gtp_label];
-		terms_in4.erase(gtp_label);
+		delete terms_in4[label_egress];
+		terms_in4.erase(label_egress);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_term_in4(const clabel_in4& gtp_label) const {
-		return (not (terms_in4.find(gtp_label) == terms_in4.end()));
+	has_term_in4(const clabel_in4& label_egress) const {
+		return (not (terms_in4.find(label_egress) == terms_in4.end()));
 	};
 
 	/**
@@ -437,8 +450,7 @@ public:
 				cterm_in4::cterm_in4_find_by_tft_match(tft_match)) == terms_in4.end()));
 	};
 
-
-
+public:
 
 	/**
 	 *
@@ -456,60 +468,73 @@ public:
 	 *
 	 */
 	cterm_in6&
-	add_term_in6(const clabel_in6& gtp_label, const rofl::openflow::cofmatch& tft_match) {
-		if (terms_in6.find(gtp_label) != terms_in6.end()) {
-			delete terms_in6[gtp_label];
-			terms_in6.erase(gtp_label);
+	add_term_in6(const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in6.find(label_egress) != terms_in6.end()) {
+			delete terms_in6[label_egress];
+			terms_in6.erase(label_egress);
 		}
-		terms_in6[gtp_label] = new cterm_in6(dpid, gtp_table_id, gtp_label, tft_match);
+		terms_in6[label_egress] = new cterm_in6(dpid, gtp_table_id, label_egress, label_ingress, tft_match);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in6[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in6[label_ingress]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(terms_in6[gtp_label]);
+		return *(terms_in6[label_egress]);
 	};
 
 	/**
 	 *
 	 */
 	cterm_in6&
-	set_term_in6(const clabel_in6& gtp_label, const rofl::openflow::cofmatch& tft_match) {
-		if (terms_in6.find(gtp_label) == terms_in6.end()) {
-			terms_in6[gtp_label] = new cterm_in6(dpid, gtp_table_id, gtp_label, tft_match);
+	set_term_in6(const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in6.find(label_egress) == terms_in6.end()) {
+			terms_in6[label_egress] = new cterm_in6(dpid, gtp_table_id, label_egress, label_ingress, tft_match);
 		}
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in6[gtp_label]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in6[label_egress]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(terms_in6[gtp_label]);
+		return *(terms_in6[label_egress]);
 	};
 
 	/**
 	 *
 	 */
 	cterm_in6&
-	set_term_in6(const clabel_in6& gtp_label) {
-		if (terms_in6.find(gtp_label) == terms_in6.end()) {
+	set_term_in6(const clabel_in6& label_egress) {
+		if (terms_in6.find(label_egress) == terms_in6.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in6() label not found");
 		}
-		return *(terms_in6[gtp_label]);
+		return *(terms_in6[label_egress]);
+	};
+
+	/**
+	 *
+	 */
+	cterm_in6&
+	set_term_in6(const rofl::openflow::cofmatch& tft_match) {
+		std::map<clabel_in6, cterm_in6*>::iterator it;
+		if ((it = find_if(terms_in6.begin(), terms_in6.end(),
+				cterm_in6::cterm_in6_find_by_tft_match(tft_match))) == terms_in6.end()) {
+			throw eRelayNotFound("cgtpcore::set_term_in6() match not found");
+		}
+		return *(it->second);
 	};
 
 	/**
 	 *
 	 */
 	const cterm_in6&
-	get_term_in6(const clabel_in6& gtp_label) const {
-		if (terms_in6.find(gtp_label) == terms_in6.end()) {
+	get_term_in6(const clabel_in6& label_egress) const {
+		if (terms_in6.find(label_egress) == terms_in6.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in6() label not found");
 		}
-		return *(terms_in6.at(gtp_label));
+		return *(terms_in6.at(label_egress));
 	};
 
 	/**
@@ -529,20 +554,20 @@ public:
 	 *
 	 */
 	void
-	drop_term_in6(const clabel_in6& gtp_label) {
-		if (terms_in6.find(gtp_label) == terms_in6.end()) {
+	drop_term_in6(const clabel_in6& label_egress) {
+		if (terms_in6.find(label_egress) == terms_in6.end()) {
 			return;
 		}
-		delete terms_in6[gtp_label];
-		terms_in6.erase(gtp_label);
+		delete terms_in6[label_egress];
+		terms_in6.erase(label_egress);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_term_in6(const clabel_in6& gtp_label) const {
-		return (not (terms_in6.find(gtp_label) == terms_in6.end()));
+	has_term_in6(const clabel_in6& label_egress) const {
+		return (not (terms_in6.find(label_egress) == terms_in6.end()));
 	};
 
 	/**
