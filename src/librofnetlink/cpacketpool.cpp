@@ -76,6 +76,7 @@ cpacketpool::release_pkt(
 	if (0 == pkt) {
 		throw ePacketPoolInvalPkt();
 	}
+	pkt->clear();
 	idlepool.insert(pkt);
 }
 

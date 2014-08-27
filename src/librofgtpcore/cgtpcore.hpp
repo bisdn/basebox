@@ -397,6 +397,19 @@ public:
 	/**
 	 *
 	 */
+	const cterm_in4&
+	get_term_in4(const rofl::openflow::cofmatch& tft_match) const {
+		std::map<clabel_in4, cterm_in4*>::const_iterator it;
+		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
+				cterm_in4::cterm_in4_find_by_tft_match(tft_match))) == terms_in4.end()) {
+			throw eRelayNotFound("cgtpcore::get_term_in4() match not found");
+		}
+		return *(it->second);
+	};
+
+	/**
+	 *
+	 */
 	void
 	drop_term_in4(const clabel_in4& gtp_label) {
 		if (terms_in4.find(gtp_label) == terms_in4.end()) {
@@ -412,6 +425,16 @@ public:
 	bool
 	has_term_in4(const clabel_in4& gtp_label) const {
 		return (not (terms_in4.find(gtp_label) == terms_in4.end()));
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_term_in4(const rofl::openflow::cofmatch& tft_match) const {
+		std::map<clabel_in4, cterm_in4*>::const_iterator it;
+		 return (not (find_if(terms_in4.begin(), terms_in4.end(),
+				cterm_in4::cterm_in4_find_by_tft_match(tft_match)) == terms_in4.end()));
 	};
 
 
@@ -492,6 +515,19 @@ public:
 	/**
 	 *
 	 */
+	const cterm_in6&
+	get_term_in6(const rofl::openflow::cofmatch& tft_match) const {
+		std::map<clabel_in6, cterm_in6*>::const_iterator it;
+		if ((it = find_if(terms_in6.begin(), terms_in6.end(),
+				cterm_in6::cterm_in6_find_by_tft_match(tft_match))) == terms_in6.end()) {
+			throw eRelayNotFound("cgtpcore::get_term_in6() match not found");
+		}
+		return *(it->second);
+	};
+
+	/**
+	 *
+	 */
 	void
 	drop_term_in6(const clabel_in6& gtp_label) {
 		if (terms_in6.find(gtp_label) == terms_in6.end()) {
@@ -509,13 +545,25 @@ public:
 		return (not (terms_in6.find(gtp_label) == terms_in6.end()));
 	};
 
+	/**
+	 *
+	 */
+	bool
+	has_term_in6(const rofl::openflow::cofmatch& tft_match) const {
+		std::map<clabel_in6, cterm_in6*>::const_iterator it;
+		 return (not (find_if(terms_in6.begin(), terms_in6.end(),
+				cterm_in6::cterm_in6_find_by_tft_match(tft_match)) == terms_in6.end()));
+	};
+
 public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cgtpcore& gtpcore) {
 		os << rofcore::indent(0) << "<cgtpcore "
-				<< "#in4: " << gtpcore.relays_in4.size() << " "
-				<< "#in6: " << gtpcore.relays_in6.size() << " >" << std::endl;
+				<< "#in4-relay(s): " << gtpcore.relays_in4.size() << " "
+				<< "#in6-relay(s): " << gtpcore.relays_in6.size() << " "
+				<< "#in4-term(s): " << gtpcore.terms_in4.size() << " "
+				<< "#in6-term(s): " << gtpcore.terms_in6.size() << " >" << std::endl;
 		for (std::map<clabel_in4, crelay_in4*>::const_iterator
 				it = gtpcore.relays_in4.begin(); it != gtpcore.relays_in4.end(); ++it) {
 			rofcore::indent i(2); os << *(it->second);

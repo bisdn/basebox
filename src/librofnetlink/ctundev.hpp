@@ -214,8 +214,8 @@ public:
 	operator<< (std::ostream& os, const ctundev& tundev) {
 		os << rofcore::indent(0) << "<ctundev "
 				<< "devname: " << tundev.devname << " "
-				<< "#in4-prefixes: " << (int)tundev.prefixes_in4.size() << " "
-				<< "#in6-prefixes: " << (int)tundev.prefixes_in6.size() << " >" << std::endl;
+				<< "#in4-prefix(es): " << (int)tundev.prefixes_in4.size() << " "
+				<< "#in6-prefix(es): " << (int)tundev.prefixes_in6.size() << " >" << std::endl;
 		rofcore::indent i(2);
 		for (std::set<cprefix_in4>::const_iterator
 				it = tundev.prefixes_in4.begin(); it != tundev.prefixes_in4.end(); ++it) {

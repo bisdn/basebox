@@ -519,6 +519,18 @@ cbasebox::handle_port_desc_stats_reply(
 		rofcore::logging::debug << rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).get_tundev("tun57");
 	}
 	if (true) {
+		rofgtp::clabel_in4 gtp_label(
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				rofgtp::cteid(0x11111111));
+
+		rofl::openflow::cofmatch tft_match(dpt.get_version());
+		tft_match.set_ipv4_src(rofl::caddress_in4("192.168.4.1"));
+		tft_match.set_ipv4_dst(rofl::caddress_in4("192.168.4.33"));
+
+		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_term_in4(gtp_label, tft_match);
+	}
+	if (true) {
 		rofgtp::clabel_in4 label_in(
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
@@ -539,6 +551,8 @@ cbasebox::handle_port_desc_stats_reply(
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::cteid(111111));
 		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
+
+		rofcore::logging::debug << rofgtp::cgtpcore::get_gtp_core(dpt.get_dpid());
 	}
 }
 
@@ -694,6 +708,8 @@ void
 cbasebox::addr_in4_created(unsigned int ifindex, uint16_t adindex)
 {
 	try {
+		(void)rofip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
+
 		const rofcore::crtaddr_in4& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex);
 
@@ -701,6 +717,8 @@ cbasebox::addr_in4_created(unsigned int ifindex, uint16_t adindex)
 				add_socket_in4(rofgtp::caddress_gtp_in4(addr.get_local_addr(),
 						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
+	} catch (rofip::eLinkNotFound& e) {
+		// ignore addresses assigned to non-datapath ports
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in4_created] link not found" << std::endl;
 	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
@@ -716,6 +734,8 @@ void
 cbasebox::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
 {
 	try {
+		(void)rofip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
+
 		const rofcore::crtaddr_in4& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex);
 
@@ -723,6 +743,8 @@ cbasebox::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
 				drop_socket_in4(rofgtp::caddress_gtp_in4(addr.get_local_addr(),
 						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
+	} catch (rofip::eLinkNotFound& e) {
+		// ignore addresses assigned to non-datapath ports
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in4_deleted] link not found" << std::endl;
 	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
@@ -738,6 +760,8 @@ void
 cbasebox::addr_in6_created(unsigned int ifindex, uint16_t adindex)
 {
 	try {
+		(void)rofip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
+
 		const rofcore::crtaddr_in6& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex);
 
@@ -745,6 +769,8 @@ cbasebox::addr_in6_created(unsigned int ifindex, uint16_t adindex)
 				add_socket_in6(rofgtp::caddress_gtp_in6(addr.get_local_addr(),
 						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
+	} catch (rofip::eLinkNotFound& e) {
+		// ignore addresses assigned to non-datapath ports
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in6_created] link not found" << std::endl;
 	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
@@ -760,6 +786,8 @@ void
 cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 {
 	try {
+		(void)rofip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
+
 		const rofcore::crtaddr_in6& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex);
 
@@ -767,6 +795,8 @@ cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 				drop_socket_in6(rofgtp::caddress_gtp_in6(addr.get_local_addr(),
 						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
+	} catch (rofip::eLinkNotFound& e) {
+		// ignore addresses assigned to non-datapath ports
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] link not found" << std::endl;
 	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {

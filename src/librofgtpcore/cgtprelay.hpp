@@ -14,6 +14,8 @@
 
 #include <rofl/common/csocket.h>
 #include <rofl/common/protocols/fgtpuframe.h>
+#include <rofl/common/protocols/fipv4frame.h>
+#include <rofl/common/protocols/fipv6frame.h>
 #include <rofl/common/cdpid.h>
 
 #include "clogging.hpp"
@@ -350,14 +352,25 @@ private:
 	 *
 	 */
 	virtual void
-	enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt) { /* TODO */ };
+	enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt);
 
 	/**
 	 *
 	 */
 	virtual void
-	enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts) { /* TODO */ };
+	enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts);
 
+	/**
+	 *
+	 */
+	void
+	enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt);
+
+	/**
+	 *
+	 */
+	void
+	enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt);
 
 public:
 
@@ -378,6 +391,9 @@ public:
 	};
 
 private:
+
+	static const int IP_VERSION_4 = 4;
+	static const int IP_VERSION_6 = 6;
 
 	rofl::cdpid 								dpid;
 	std::map<caddress_gtp_in4, rofl::csocket*>	sockets_in4;

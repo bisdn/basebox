@@ -189,6 +189,16 @@ public:
 		return os;
 	};
 
+	class cterm_in4_find_by_tft_match {
+		rofl::openflow::cofmatch tft_match;
+	public:
+		cterm_in4_find_by_tft_match(const rofl::openflow::cofmatch& tft_match) :
+			tft_match(tft_match) {};
+		bool operator() (const std::pair<clabel_in4, cterm_in4*>& p) {
+			return (p.second->tft_match == tft_match);
+		};
+	};
+
 private:
 
 	clabel_in4 gtp_label;
@@ -287,6 +297,16 @@ public:
 		os << rofcore::indent(2) << "<tft-match >" << std::endl;
 		{ rofcore::indent i(4); os << term.get_tft_match(); };
 		return os;
+	};
+
+	class cterm_in6_find_by_tft_match {
+		rofl::openflow::cofmatch tft_match;
+	public:
+		cterm_in6_find_by_tft_match(const rofl::openflow::cofmatch& tft_match) :
+			tft_match(tft_match) {};
+		bool operator() (const std::pair<clabel_in6, cterm_in6*>& p) {
+			return (p.second->tft_match == tft_match);
+		};
 	};
 
 private:
