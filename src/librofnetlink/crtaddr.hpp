@@ -24,7 +24,7 @@ extern "C" {
 }
 #endif
 
-#include "clogging.h"
+#include "clogging.hpp"
 
 namespace rofcore {
 

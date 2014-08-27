@@ -33,7 +33,7 @@ extern "C" {
 #include <rofl/common/ciosrv.h>
 #include <rofl/common/caddress.h>
 
-#include "cpacketpool.h"
+#include "cpacketpool.hpp"
 
 namespace rofcore
 {

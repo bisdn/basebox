@@ -25,7 +25,7 @@ extern "C" {
 #include <rofl/common/logging.h>
 #include <rofl/common/caddress.h>
 
-#include "crtnexthops.h"
+#include "crtnexthops.hpp"
 
 
 namespace rofcore {

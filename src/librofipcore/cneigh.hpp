@@ -24,8 +24,8 @@ extern "C" {
 #include <rofl/common/cdpid.h>
 #include <rofl/common/protocols/fvlanframe.h>
 
-#include "crtneigh.h"
-#include "cnetlink.h"
+#include "crtneigh.hpp"
+#include "cnetlink.hpp"
 
 namespace rofip {
 

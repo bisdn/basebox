@@ -28,7 +28,7 @@ extern "C" {
 
 #include <list>
 
-#include "cnetdev.h"
+#include "cnetdev.hpp"
 
 
 

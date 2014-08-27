@@ -19,7 +19,8 @@ extern "C" {
 #endif
 
 #include <rofl/common/caddress.h>
-#include <rofl/common/logging.h>
+
+#include "clogging.hpp"
 
 namespace rofcore {
 

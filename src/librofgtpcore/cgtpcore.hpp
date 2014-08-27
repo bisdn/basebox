@@ -18,7 +18,7 @@
 #include <rofl/common/protocols/fipv4frame.h>
 #include <rofl/common/protocols/fipv6frame.h>
 
-#include "clogging.h"
+#include "clogging.hpp"
 #include "crelay.hpp"
 #include "cterm.hpp"
 
@@ -522,6 +522,14 @@ public:
 		}
 		for (std::map<clabel_in6, crelay_in6*>::const_iterator
 				it = gtpcore.relays_in6.begin(); it != gtpcore.relays_in6.end(); ++it) {
+			rofcore::indent i(2); os << *(it->second);
+		}
+		for (std::map<clabel_in4, cterm_in4*>::const_iterator
+				it = gtpcore.terms_in4.begin(); it != gtpcore.terms_in4.end(); ++it) {
+			rofcore::indent i(2); os << *(it->second);
+		}
+		for (std::map<clabel_in6, cterm_in6*>::const_iterator
+				it = gtpcore.terms_in6.begin(); it != gtpcore.terms_in6.end(); ++it) {
 			rofcore::indent i(2); os << *(it->second);
 		}
 		return os;

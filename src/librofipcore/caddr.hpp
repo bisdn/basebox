@@ -16,9 +16,9 @@
 #include <rofl/common/protocols/ficmpv4frame.h>
 #include <rofl/common/protocols/ficmpv6frame.h>
 
-#include "crtaddr.h"
-#include "cnetlink.h"
-#include "clogging.h"
+#include "crtaddr.hpp"
+#include "cnetlink.hpp"
+#include "clogging.hpp"
 
 namespace rofip {
 

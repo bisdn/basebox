@@ -30,10 +30,10 @@ extern "C" {
 #include <rofl/common/protocols/fipv6frame.h>
 #include <rofl/common/openflow/cofhelloelemversionbitmap.h>
 
-#include "ctapdev.h"
-#include "clogging.h"
+#include "ctapdev.hpp"
+#include "clogging.hpp"
 #include "clink.hpp"
-#include "cnetlink.h"
+#include "cnetlink.hpp"
 #include "croutetable.hpp"
 
 namespace rofip {

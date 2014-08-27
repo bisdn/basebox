@@ -11,7 +11,7 @@
 #include <ostream>
 #include <inttypes.h>
 
-#include "clogging.h"
+#include "clogging.hpp"
 
 namespace rofgtp {
 

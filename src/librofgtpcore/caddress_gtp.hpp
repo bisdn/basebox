@@ -12,7 +12,7 @@
 #include <rofl/common/caddress.h>
 
 #include "cport.hpp"
-#include "clogging.h"
+#include "clogging.hpp"
 
 namespace rofgtp {
 

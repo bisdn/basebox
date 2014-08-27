@@ -16,7 +16,7 @@
 #include <rofl/common/cdptid.h>
 #include <rofl/common/protocols/fvlanframe.h>
 
-#include "clogging.h"
+#include "clogging.hpp"
 
 namespace rofeth {
 

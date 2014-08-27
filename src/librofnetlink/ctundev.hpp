@@ -29,8 +29,8 @@ extern "C" {
 #include <list>
 #include <iostream>
 
-#include "cnetdev.h"
-#include "clogging.h"
+#include "cnetdev.hpp"
+#include "clogging.hpp"
 #include "cprefix.hpp"
 
 namespace rofcore {

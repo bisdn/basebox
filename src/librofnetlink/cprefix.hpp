@@ -10,7 +10,7 @@
 
 #include <iostream>
 #include <rofl/common/caddress.h>
-#include "clogging.h"
+#include "clogging.hpp"
 
 namespace rofcore {
 

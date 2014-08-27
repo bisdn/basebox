@@ -5,7 +5,7 @@
  *      Author: andreas
  */
 
-#include <cnetdev.h>
+#include "cnetdev.hpp"
 
 using namespace rofcore;
 

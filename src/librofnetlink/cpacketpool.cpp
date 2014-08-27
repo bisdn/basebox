@@ -5,7 +5,7 @@
  *      Author: andreas
  */
 
-#include <cpacketpool.h>
+#include "cpacketpool.hpp"
 
 using namespace rofcore;
 

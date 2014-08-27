@@ -13,8 +13,8 @@
 #include <map>
 #include <rofl/common/crofdpt.h>
 
-#include "cnetlink.h"
-#include "clogging.h"
+#include "cnetlink.hpp"
+#include "clogging.hpp"
 #include "cvlan.hpp"
 
 namespace rofeth {

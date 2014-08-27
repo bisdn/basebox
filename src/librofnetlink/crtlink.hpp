@@ -29,8 +29,8 @@ extern "C" {
 }
 #endif
 
-#include "crtaddrs.h"
-#include "crtneighs.h"
+#include "crtaddrs.hpp"
+#include "crtneighs.hpp"
 
 namespace rofcore {
 

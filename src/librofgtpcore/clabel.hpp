@@ -14,7 +14,7 @@
 
 #include "caddress_gtp.hpp"
 #include "cteid.hpp"
-#include "clogging.h"
+#include "clogging.hpp"
 
 namespace rofgtp {
 

@@ -11,8 +11,8 @@
 #include <iostream>
 #include <map>
 
-#include "crtnexthop.h"
-#include "clogging.h"
+#include "crtnexthop.hpp"
+#include "clogging.hpp"
 
 namespace rofcore {
 

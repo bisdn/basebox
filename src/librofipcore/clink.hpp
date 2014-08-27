@@ -17,7 +17,7 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
 
-#include "cnetlink.h"
+#include "cnetlink.hpp"
 #include "caddr.hpp"
 #include "cneigh.hpp"
 

@@ -11,8 +11,8 @@
 #include <iostream>
 #include <map>
 
-#include "crtlink.h"
-#include "clogging.h"
+#include "crtlink.hpp"
+#include "clogging.hpp"
 
 namespace rofcore {
 

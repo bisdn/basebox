@@ -12,8 +12,8 @@
 #include <iostream>
 #include <map>
 
-#include "crtaddr.h"
-#include "clogging.h"
+#include "crtaddr.hpp"
+#include "clogging.hpp"
 
 namespace rofcore {
 

@@ -18,7 +18,7 @@
 #include <rofl/common/protocols/fudpframe.h>
 
 #include "clabel.hpp"
-#include "clogging.h"
+#include "clogging.hpp"
 
 
 namespace rofgtp {

@@ -32,9 +32,9 @@ extern "C" {
 
 #include <rofl/common/ciosrv.h>
 
-#include "crtlinks.h"
-#include "crtroutes.h"
-#include "clogging.h"
+#include "crtlinks.hpp"
+#include "crtroutes.hpp"
+#include "clogging.hpp"
 
 namespace rofcore {
 

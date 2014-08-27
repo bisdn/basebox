@@ -19,7 +19,7 @@
 #include <rofl/common/cdpid.h>
 #include <rofl/common/logging.h>
 
-#include "clogging.h"
+#include "clogging.hpp"
 
 namespace rofeth {
 

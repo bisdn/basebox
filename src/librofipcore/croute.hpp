@@ -25,8 +25,8 @@ extern "C" {
 #include <rofl/common/openflow/cofflowmod.h>
 #include <rofl/common/croflexception.h>
 
-#include "cnetlink.h"
-#include "crtroute.h"
+#include "cnetlink.hpp"
+#include "crtroute.hpp"
 #include "clink.hpp"
 #include "cnexthop.hpp"
 

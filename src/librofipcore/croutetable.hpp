@@ -12,7 +12,7 @@
 #include <iostream>
 
 #include "croute.hpp"
-#include "clogging.h"
+#include "clogging.hpp"
 
 namespace rofip {
 

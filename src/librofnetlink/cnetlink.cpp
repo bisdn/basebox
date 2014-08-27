@@ -5,7 +5,7 @@
  *      Author: andreas
  */
 
-#include "cnetlink.h"
+#include "cnetlink.hpp"
 
 using namespace rofcore;
 

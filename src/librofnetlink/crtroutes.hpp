@@ -13,8 +13,8 @@
 #include <iostream>
 #include <map>
 
-#include "crtroute.h"
-#include "clogging.h"
+#include "crtroute.hpp"
+#include "clogging.hpp"
 
 namespace rofcore {
 

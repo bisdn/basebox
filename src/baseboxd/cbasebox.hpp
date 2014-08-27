@@ -18,11 +18,11 @@
 #include "cethcore.hpp"
 #include "cipcore.hpp"
 #include "cgtpcore.hpp"
-#include "clogging.h"
+#include "clogging.hpp"
 #include "cconfig.hpp"
-#include "cnetlink.h"
+#include "cnetlink.hpp"
 #include "cgtprelay.hpp"
-#include "ctundev.h"
+#include "ctundev.hpp"
 
 namespace basebox {
 

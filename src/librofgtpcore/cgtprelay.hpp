@@ -16,9 +16,9 @@
 #include <rofl/common/protocols/fgtpuframe.h>
 #include <rofl/common/cdpid.h>
 
-#include "clogging.h"
+#include "clogging.hpp"
 #include "caddress_gtp.hpp"
-#include "ctundev.h"
+#include "ctundev.hpp"
 
 namespace rofgtp {
 

@@ -5,41 +5,41 @@ SUBDIRS =
 noinst_LTLIBRARIES = librofnetlink.la
 
 librofnetlink_la_SOURCES = \
-	cnetlink.h \
-	cnetlink.cc \
-	cnetdev.h \
-	cnetdev.cc \
-	ctapdev.h \
-	ctapdev.cc \
-	ctundev.h \
-	ctundev.cc \
+	cnetlink.hpp \
+	cnetlink.cpp \
+	cnetdev.hpp \
+	cnetdev.cpp \
+	ctapdev.hpp \
+	ctapdev.cpp \
+	ctundev.hpp \
+	ctundev.cpp \
 	cprefix.hpp \
 	cprefix.cpp \
-	cpacketpool.h \
-	cpacketpool.cc \
-	crtroute.h \
-	crtaddr.h \
-	crtlink.h \
-	crtneigh.h \
-	crtnexthop.h \
-	clogging.cc \
-	clogging.h
+	cpacketpool.hpp \
+	cpacketpool.cpp \
+	crtroute.hpp \
+	crtaddr.hpp \
+	crtlink.hpp \
+	crtneigh.hpp \
+	crtnexthop.hpp \
+	clogging.cpp \
+	clogging.hpp
 
 librofnetlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
 library_includedir=$(includedir)/rofl/common
 library_include_HEADERS= \
-	cnetlink.h \
-	cnetdev.h \
-	ctapdev.h \
-	ctundev.h \
+	cnetlink.hpp \
+	cnetdev.hpp \
+	ctapdev.hpp \
+	ctundev.hpp \
 	cprefix.hpp \
-	cpacketpool.h \
-	crtroute.h \
-	crtaddr.h \
-	crtlink.h \
-	crtneigh.h \
-	crtnexthop.h \
-	clogging.h
+	cpacketpool.hpp \
+	crtroute.hpp \
+	crtaddr.hpp \
+	crtlink.hpp \
+	crtneigh.hpp \
+	crtnexthop.hpp \
+	clogging.hpp
 
 AM_CPPFLAGS=-fPIC
