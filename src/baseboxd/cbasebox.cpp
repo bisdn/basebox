@@ -530,6 +530,7 @@ cbasebox::handle_port_desc_stats_reply(
 				rofgtp::cteid(111111));
 
 		rofl::openflow::cofmatch tft_match(dpt.get_version());
+		tft_match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		tft_match.set_ipv4_src(rofl::caddress_in4("10.2.2.20"));
 		tft_match.set_ipv4_dst(rofl::caddress_in4("192.168.4.33"));
 

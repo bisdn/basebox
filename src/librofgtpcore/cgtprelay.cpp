@@ -78,11 +78,8 @@ cgtprelay::handle_read(
 
 					set_tundev("tun57").enqueue(pkt); // TODO
 
-					/*
-					 * TODO: instruct term to install its flowmods
-					 */
 					// set OFP shortcut into datapath
-					cgtpcore::set_gtp_core(dpid).set_term_in4(label_in).handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+					cgtpcore::set_gtp_core(dpid).set_term_in4(label_in).handle_dpt_open_egress(rofl::crofdpt::get_dpt(dpid));
 
 				}
 
@@ -143,11 +140,8 @@ cgtprelay::handle_read(
 
 					set_tundev("tun57").enqueue(pkt); // TODO
 
-					/*
-					 * TODO: instruct term to install its flowmods
-					 */
 					// set OFP shortcut into datapath
-					cgtpcore::set_gtp_core(dpid).set_term_in6(label_in).handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+					cgtpcore::set_gtp_core(dpid).set_term_in6(label_in).handle_dpt_open_egress(rofl::crofdpt::get_dpt(dpid));
 
 				}
 
@@ -263,7 +257,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
 
 			// set OFP shortcut into datapath
-			term.handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			term.handle_dpt_open_ingress(rofl::crofdpt::get_dpt(dpid));
 
 			return;
 		}
@@ -298,7 +292,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
 
 			// set OFP shortcut into datapath
-			term.handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			term.handle_dpt_open_ingress(rofl::crofdpt::get_dpt(dpid));
 
 			return;
 		}
@@ -361,7 +355,7 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
 
 			// set OFP shortcut into datapath
-			term.handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			term.handle_dpt_open_ingress(rofl::crofdpt::get_dpt(dpid));
 
 			return;
 		}
@@ -396,7 +390,7 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
 
 			// set OFP shortcut into datapath
-			term.handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			term.handle_dpt_open_ingress(rofl::crofdpt::get_dpt(dpid));
 
 			return;
 		}

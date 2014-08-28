@@ -8,6 +8,7 @@
 #ifndef CTERM_HPP_
 #define CTERM_HPP_
 
+#include <bitset>
 #include <ostream>
 #include <exception>
 
@@ -15,6 +16,7 @@
 #include <rofl/common/cdptid.h>
 #include <rofl/common/openflow/cofmatch.h>
 #include <rofl/common/protocols/fipv4frame.h>
+#include <rofl/common/protocols/fipv6frame.h>
 #include <rofl/common/protocols/fudpframe.h>
 
 #include "clabel.hpp"
@@ -32,6 +34,11 @@ public:
 	eTermNotFound(const std::string& __arg) : eTermBase(__arg) {};
 };
 
+
+/*
+ * -ingress- means: send traffic into the tunnel
+ * -egress-  means: strip the tunnel and send traffic to the external world
+ */
 class cterm {
 public:
 
@@ -85,10 +92,14 @@ protected:
 		STATE_DETACHED = 1,
 		STATE_ATTACHED = 2,
 	};
-
-	enum ofp_state_t state;
-	rofl::cdpid dpid;
-	uint8_t ofp_table_id;
+	enum ofp_state_t 	state;
+	enum cterm_flags_t {
+		FLAG_INGRESS_FM_INSTALLED 	= (1 << 0),
+		FLAG_EGRESS_FM_INSTALLED 	= (1 << 1),
+	};
+	std::bitset<32>		flags;
+	rofl::cdpid 		dpid;
+	uint8_t 			ofp_table_id;
 
 	static const int DEFAULT_IDLE_TIMEOUT = 15; // seconds
 
@@ -176,13 +187,34 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt);
+	handle_dpt_open_egress(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt);
+	handle_dpt_close_egress(rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_open_ingress(rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_close_ingress(rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_close(rofl::crofdpt& dpt) {
+		handle_dpt_close_egress(dpt);
+		handle_dpt_close_ingress(dpt);
+	};
 
 public:
 
@@ -296,13 +328,34 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt);
+	handle_dpt_open_egress(rofl::crofdpt& dpt);
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt);
+	handle_dpt_close_egress(rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_open_ingress(rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_close_ingress(rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_close(rofl::crofdpt& dpt) {
+		handle_dpt_close_egress(dpt);
+		handle_dpt_close_ingress(dpt);
+	};
 
 public:
 
