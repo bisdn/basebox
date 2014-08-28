@@ -200,6 +200,7 @@ ctundev::handle_wevent(int fd)
 			pkt = pout_queue.front();
 			int rc = 0;
 			if ((rc = write(fd, pkt->soframe(), pkt->length())) < 0) {
+				fprintf(stderr, "[rofcore][ctundev][handle_wevent] error: %d (%s)\n", errno, strerror(errno));
 				switch (errno) {
 				case EAGAIN: 	throw eNetDevAgain();
 				default:		throw eNetDevCritical();
@@ -228,8 +229,6 @@ ctundev::handle_wevent(int fd)
 				"calling self-destruction\n", errno, strerror(errno));
 
 		cpacketpool::get_instance().release_pkt(pkt);
-
-		delete this; return;
 	}
 }
 

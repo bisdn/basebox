@@ -399,6 +399,14 @@ private:
 
 private:
 
+	/**
+	 *
+	 */
+	void
+	test_workflow();
+
+private:
+
 	rofl::cdptid dptid;
 	static const std::string BASEBOX_LOG_FILE;
 	static const std::string BASEBOX_PID_FILE;
