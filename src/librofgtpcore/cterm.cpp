@@ -193,7 +193,7 @@ cterm_in4::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
-		flags.set(FLAG_INGRESS_FM_INSTALLED);
+		flags.reset(FLAG_INGRESS_FM_INSTALLED);
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[cterm_in4][handle_dpt_close_egress] dpt not found" << std::endl;
@@ -392,7 +392,7 @@ cterm_in6::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
-		flags.set(FLAG_INGRESS_FM_INSTALLED);
+		flags.reset(FLAG_INGRESS_FM_INSTALLED);
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[cterm_in6][handle_dpt_close_egress] dpt not found" << std::endl;
