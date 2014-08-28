@@ -49,12 +49,8 @@ class eTunDevNotFound		: public eTunDevBase {};
 class ctundev : public cnetdev {
 public:
 
-
 	/**
 	 *
-	 * @param netdev_owner
-	 * @param devname
-	 * @param hwaddr
 	 */
 	ctundev(
 			cnetdev_owner *netdev_owner,
@@ -79,96 +75,6 @@ public:
 
 	virtual void
 	enqueue(std::vector<rofl::cpacket*> pkts);
-
-	/**
-	 *
-	 */
-	uint32_t
-	get_ofp_port_no() const { return ofp_port_no; };
-
-public:
-
-	/**
-	 *
-	 */
-	void
-	add_prefix_in4(const cprefix_in4& prefix) {
-		try {
-			if (prefixes_in4.find(prefix) != prefixes_in4.end()) {
-				return;
-			}
-			cnetlink::get_instance().add_addr_in4(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
-			prefixes_in4.insert(prefix);
-		} catch (rofcore::eNetLinkFailed& e) {
-			rofcore::logging::debug << "[rofcore][ctundev][add_prefix_in4] failed to set address via netlink" << std::endl;
-		}
-	};
-
-	/**
-	 *
-	 */
-	void
-	drop_prefix_in4(const cprefix_in4& prefix) {
-		try {
-			if (prefixes_in4.find(prefix) == prefixes_in4.end()) {
-				return;
-			}
-			cnetlink::get_instance().drop_addr_in4(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
-			prefixes_in4.erase(prefix);
-		} catch (rofcore::eNetLinkFailed& e) {
-			rofcore::logging::debug << "[rofcore][ctundev][drop_prefix_in4] failed to set address via netlink" << std::endl;
-		}
-	};
-
-	/**
-	 *
-	 */
-	bool
-	has_prefix_in4(const cprefix_in4& prefix) const {
-		return (not (prefixes_in4.find(prefix) == prefixes_in4.end()));
-	};
-
-public:
-
-	/**
-	 *
-	 */
-	void
-	add_prefix_in6(const cprefix_in6& prefix) {
-		try {
-			if (prefixes_in6.find(prefix) != prefixes_in6.end()) {
-				return;
-			}
-			cnetlink::get_instance().add_addr_in6(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
-			prefixes_in6.insert(prefix);
-		} catch (rofcore::eNetLinkFailed& e) {
-			rofcore::logging::debug << "[rofcore][ctundev][add_prefix_in6] failed to set address via netlink" << std::endl;
-		}
-	};
-
-	/**
-	 *
-	 */
-	void
-	drop_prefix_in6(const cprefix_in6& prefix) {
-		try {
-			if (prefixes_in6.find(prefix) == prefixes_in6.end()) {
-				return;
-			}
-			cnetlink::get_instance().drop_addr_in6(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
-			prefixes_in6.erase(prefix);
-		} catch (rofcore::eNetLinkFailed& e) {
-			rofcore::logging::debug << "[rofcore][ctundev][drop_prefix_in6] failed to set address via netlink" << std::endl;
-		}
-	};
-
-	/**
-	 *
-	 */
-	bool
-	has_prefix_in6(const cprefix_in6& prefix) const {
-		return (not (prefixes_in6.find(prefix) == prefixes_in6.end()));
-	};
 
 protected:
 
@@ -213,18 +119,7 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const ctundev& tundev) {
 		os << rofcore::indent(0) << "<ctundev "
-				<< "devname: " << tundev.devname << " "
-				<< "#in4-prefix(es): " << (int)tundev.prefixes_in4.size() << " "
-				<< "#in6-prefix(es): " << (int)tundev.prefixes_in6.size() << " >" << std::endl;
-		rofcore::indent i(2);
-		for (std::set<cprefix_in4>::const_iterator
-				it = tundev.prefixes_in4.begin(); it != tundev.prefixes_in4.end(); ++it) {
-			os << *(it);
-		}
-		for (std::set<cprefix_in6>::const_iterator
-				it = tundev.prefixes_in6.begin(); it != tundev.prefixes_in6.end(); ++it) {
-			os << *(it);
-		}
+				<< "devname: " << tundev.devname << " >" << std::endl;
 		return os;
 	};
 
@@ -238,30 +133,16 @@ public:
 		};
 	};
 
-	class ctundev_find_by_ofp_port_no {
-		uint32_t ofp_port_no;
-	public:
-		ctundev_find_by_ofp_port_no(uint32_t ofp_port_no) :
-			ofp_port_no(ofp_port_no) {};
-		bool operator() (const std::pair<uint32_t, ctundev*>& p) const {
-			return (p.second->ofp_port_no == ofp_port_no);
-		};
-	};
-
 private:
 
 	int 							fd; 			// tap device file descriptor
 	std::list<rofl::cpacket*> 		pout_queue;		// queue of outgoing packets
 	std::string						devname;
 	rofl::ctimerid					port_open_timer_id;
-	uint32_t						ofp_port_no;
 
 	enum ctundev_timer_t {
 		CTUNDEV_TIMER_OPEN_PORT = 1,
 	};
-
-	std::set<cprefix_in4>			prefixes_in4;
-	std::set<cprefix_in6>			prefixes_in6;
 };
 
 }; // end of namespace rofcore

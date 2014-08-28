@@ -8,6 +8,8 @@
 #ifndef CGTPRELAY_HPP_
 #define CGTPRELAY_HPP_
 
+#include <inttypes.h>
+
 #include <map>
 #include <iostream>
 #include <exception>
@@ -20,7 +22,7 @@
 
 #include "clogging.hpp"
 #include "caddress_gtp.hpp"
-#include "ctundev.hpp"
+#include "ctermdev.hpp"
 
 namespace rofgtp {
 
@@ -40,12 +42,23 @@ public:
 	 *
 	 */
 	static cgtprelay&
-	add_gtp_relay(const rofl::cdpid& dpid) {
+	add_gtp_relay(const rofl::cdpid& dpid, uint8_t ofp_table_id) {
 		if (cgtprelay::gtprelays.find(dpid) != cgtprelay::gtprelays.end()) {
 			delete cgtprelay::gtprelays[dpid];
 			cgtprelay::gtprelays.erase(dpid);
 		}
-		cgtprelay::gtprelays[dpid] = new cgtprelay(dpid);
+		cgtprelay::gtprelays[dpid] = new cgtprelay(dpid, ofp_table_id);
+		return *(cgtprelay::gtprelays[dpid]);
+	};
+
+	/**
+	 *
+	 */
+	static cgtprelay&
+	set_gtp_relay(const rofl::cdpid& dpid, uint8_t ofp_table_id) {
+		if (cgtprelay::gtprelays.find(dpid) == cgtprelay::gtprelays.end()) {
+			cgtprelay::gtprelays[dpid] = new cgtprelay(dpid, ofp_table_id);
+		}
 		return *(cgtprelay::gtprelays[dpid]);
 	};
 
@@ -55,7 +68,7 @@ public:
 	static cgtprelay&
 	set_gtp_relay(const rofl::cdpid& dpid) {
 		if (cgtprelay::gtprelays.find(dpid) == cgtprelay::gtprelays.end()) {
-			cgtprelay::gtprelays[dpid] = new cgtprelay(dpid);
+			throw eGtpRelayNotFound("cgtprelay::set_gtp_relay() dpt not found");
 		}
 		return *(cgtprelay::gtprelays[dpid]);
 	};
@@ -96,7 +109,8 @@ private:
 	/**
 	 *
 	 */
-	cgtprelay(const rofl::cdpid& dpid) : dpid(dpid) {};
+	cgtprelay(const rofl::cdpid& dpid, uint8_t ofp_table_id) :
+		state(STATE_DETACHED), dpid(dpid), ofp_table_id(ofp_table_id) {};
 
 	/**
 	 *
@@ -235,56 +249,92 @@ public:
 	/**
 	 *
 	 */
-	rofcore::ctundev&
-	add_tundev(const std::string& devname) {
-		if (tundevs.find(devname) != tundevs.end()) {
-			delete tundevs[devname];
-			tundevs.erase(devname);
+	ctermdev&
+	add_termdev(const std::string& devname) {
+		if (termdevs.find(devname) != termdevs.end()) {
+			delete termdevs[devname];
+			termdevs.erase(devname);
 		}
-		tundevs[devname] = new rofcore::ctundev(this, devname);
-		return *(tundevs[devname]);
+		termdevs[devname] = new ctermdev(this, devname, dpid, ofp_table_id);
+		try {
+			if (STATE_ATTACHED == state) {
+				termdevs[devname]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+		return *(termdevs[devname]);
 	};
 
 	/**
 	 *
 	 */
-	rofcore::ctundev&
-	set_tundev(const std::string& devname) {
-		if (tundevs.find(devname) == tundevs.end()) {
-			tundevs[devname] = new rofcore::ctundev(this, devname);
+	ctermdev&
+	set_termdev(const std::string& devname) {
+		if (termdevs.find(devname) == termdevs.end()) {
+			termdevs[devname] = new ctermdev(this, devname, dpid, ofp_table_id);
+			try {
+				if (STATE_ATTACHED == state) {
+					termdevs[devname]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				}
+			} catch (rofl::eRofDptNotFound& e) {};
 		}
-		return *(tundevs[devname]);
+		return *(termdevs[devname]);
 	};
 
 	/**
 	 *
 	 */
-	const rofcore::ctundev&
-	get_tundev(const std::string& devname) const {
-		if (tundevs.find(devname) == tundevs.end()) {
-			throw rofcore::eTunDevNotFound();
+	const ctermdev&
+	get_termdev(const std::string& devname) const {
+		if (termdevs.find(devname) == termdevs.end()) {
+			throw eTermDevNotFound("cgtprelay::get_termdev() devname not found");
 		}
-		return *(tundevs.at(devname));
+		return *(termdevs.at(devname));
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_tundev(const std::string& devname) {
-		if (tundevs.find(devname) == tundevs.end()) {
+	drop_termdev(const std::string& devname) {
+		if (termdevs.find(devname) == termdevs.end()) {
 			return;
 		}
-		delete tundevs[devname];
-		tundevs.erase(devname);
+		delete termdevs[devname];
+		termdevs.erase(devname);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_tundev(const std::string& devname) {
-		return (not (tundevs.find(devname) == tundevs.end()));
+	has_termdev(const std::string& devname) {
+		return (not (termdevs.find(devname) == termdevs.end()));
+	};
+
+public:
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_open(rofl::crofdpt& dpt) {
+		state = STATE_ATTACHED;
+		for (std::map<std::string, ctermdev*>::iterator
+				it = termdevs.begin(); it != termdevs.end(); ++it) {
+			it->second->handle_dpt_open(dpt);
+		}
+	};
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_close(rofl::crofdpt& dpt) {
+		state = STATE_DETACHED;
+		for (std::map<std::string, ctermdev*>::iterator
+				it = termdevs.begin(); it != termdevs.end(); ++it) {
+			it->second->handle_dpt_close(dpt);
+		}
 	};
 
 private:
@@ -395,10 +445,17 @@ private:
 	static const int IP_VERSION_4 = 4;
 	static const int IP_VERSION_6 = 6;
 
+	enum ofp_state_t {
+		STATE_DETACHED = 1,
+		STATE_ATTACHED = 2,
+	};
+
+	enum ofp_state_t							state;
 	rofl::cdpid 								dpid;
+	uint8_t										ofp_table_id;
 	std::map<caddress_gtp_in4, rofl::csocket*>	sockets_in4;
 	std::map<caddress_gtp_in6, rofl::csocket*>	sockets_in6;
-	std::map<std::string, rofcore::ctundev*>	tundevs;
+	std::map<std::string, ctermdev*>			termdevs;
 	static std::map<rofl::cdpid, cgtprelay*>	gtprelays;
 };
 

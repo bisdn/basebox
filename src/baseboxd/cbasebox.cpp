@@ -319,12 +319,10 @@ cbasebox::handle_dpt_open(
 		rofl::crofdpt& dpt) {
 	dptid = dpt.get_dptid();
 
-	std::cerr << "CCCC[1]: " << (int)dpt.get_version() << " dpid:" << dpt.get_dpid() << std::endl;
-	std::cerr << "CCCC[2]: " << (int)dpt.get_version() << " dptid:" << dpt.get_dptid() << std::endl;
-
 	rofip::cipcore::set_ip_core(dpt.get_dpid(), /*local-stage=*/3, /*out-stage=*/5);
 	rofeth::cethcore::set_eth_core(dpt.get_dpid(), /*default_vid=*/1, /*port-membership=*/0, /*src-table=*/1, /*dst-table=*/6);
 	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid(), /*ip-local-stage=*/3, /*gtp-stage=*/4); // yes, same as local for cipcore
+	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid(), /*ip-local-stage=*/3);
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
 	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
@@ -341,6 +339,7 @@ cbasebox::handle_dpt_close(
 	// call external scripting hook
 	hook_dpt_detach();
 
+	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
 	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
@@ -501,6 +500,7 @@ cbasebox::handle_port_desc_stats_reply(
 	rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
 
 	test_workflow();
 }
@@ -769,16 +769,16 @@ cbasebox::test_workflow()
 	 */
 	if (true) {
 
-		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_tundev("tun57").
+		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_termdev("tun57").
 				add_prefix_in4(rofcore::cprefix_in4(rofl::caddress_in4("192.168.2.1"), 24));
 
-		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_tundev("tun57").
+		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_termdev("tun57").
 				add_prefix_in4(rofcore::cprefix_in4(rofl::caddress_in4("192.168.4.1"), 24));
 
-		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_tundev("tun57").
+		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_termdev("tun57").
 				add_prefix_in6(rofcore::cprefix_in6(rofl::caddress_in6("3000::1"), 64));
 
-		rofcore::logging::debug << rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).get_tundev("tun57");
+		rofcore::logging::debug << rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).get_termdev("tun57");
 	}
 	if (true) {
 		rofgtp::clabel_in4 label_egress(

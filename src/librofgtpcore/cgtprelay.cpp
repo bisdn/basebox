@@ -76,7 +76,7 @@ cgtprelay::handle_read(
 
 					pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-					set_tundev("tun57").enqueue(pkt); // TODO
+					set_termdev("tun57").enqueue(pkt); // TODO
 
 					// set OFP shortcut into datapath
 					cgtpcore::set_gtp_core(dpid).set_term_in4(label_in).handle_dpt_open_egress(rofl::crofdpt::get_dpt(dpid));
@@ -138,7 +138,7 @@ cgtprelay::handle_read(
 
 					pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-					set_tundev("tun57").enqueue(pkt); // TODO
+					set_termdev("tun57").enqueue(pkt); // TODO
 
 					// set OFP shortcut into datapath
 					cgtpcore::set_gtp_core(dpid).set_term_in6(label_in).handle_dpt_open_egress(rofl::crofdpt::get_dpt(dpid));

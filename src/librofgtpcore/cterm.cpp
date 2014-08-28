@@ -23,7 +23,7 @@ cterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)
 
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
 
 		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -70,7 +70,7 @@ cterm_in4::handle_dpt_close_egress(rofl::crofdpt& dpt)
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
 
 		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -113,7 +113,7 @@ cterm_in4::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id - 1); // TODO: check ofp_table_id - 1
 
 		fm.set_match().set_eth_type(tft_match.get_eth_type());
@@ -180,7 +180,7 @@ cterm_in4::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id - 1); // TODO: check ofp_table_id - 1
 
 		fm.set_match().set_eth_type(tft_match.get_eth_type());
@@ -222,7 +222,7 @@ cterm_in6::handle_dpt_open_egress(rofl::crofdpt& dpt)
 
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
 
 		fm.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
@@ -269,7 +269,7 @@ cterm_in6::handle_dpt_close_egress(rofl::crofdpt& dpt)
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
 
 		fm.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
@@ -312,7 +312,7 @@ cterm_in6::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id - 1); // TODO: check ofp_table_id - 1
 
 		fm.set_match().set_eth_type(tft_match.get_eth_type());
@@ -379,7 +379,7 @@ cterm_in6::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id - 1); // TODO: check ofp_table_id - 1
 
 		fm.set_match().set_eth_type(tft_match.get_eth_type());

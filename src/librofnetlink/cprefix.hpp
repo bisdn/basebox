@@ -85,7 +85,9 @@ public:
 	 *
 	 */
 	cprefix_in4(const rofl::caddress_in4& addr, int prefixlen) :
-		cprefix(prefixlen), addr(addr) {};
+		cprefix(prefixlen), addr(addr) {
+		mask.set_addr_hbo(~((1 << (32 - prefixlen)) - 1));
+	};
 
 	/**
 	 *
@@ -101,6 +103,7 @@ public:
 			return *this;
 		cprefix::operator= (prefix);
 		addr = prefix.addr;
+		mask = prefix.mask;
 		return *this;
 	};
 
@@ -120,6 +123,12 @@ public:
 	const rofl::caddress_in4&
 	get_addr() const { return addr; };
 
+	/**
+	 *
+	 */
+	const rofl::caddress_in4&
+	get_mask() const { return mask; };
+
 public:
 
 	/**
@@ -130,12 +139,15 @@ public:
 		os << rofcore::indent(0) << "<cprefix_in4 prefixlen: " << prefix.get_prefixlen() << " >" << std::endl;
 		os << rofcore::indent(2) << "<addr: >" << std::endl;
 		{ rofcore::indent i(2); os << prefix.addr; };
+		os << rofcore::indent(2) << "<mask: >" << std::endl;
+		{ rofcore::indent i(2); os << prefix.mask; };
 		return os;
 	};
 
 private:
 
 	rofl::caddress_in4 addr;
+	rofl::caddress_in4 mask;
 };
 
 
@@ -158,7 +170,19 @@ public:
 	 *
 	 */
 	cprefix_in6(const rofl::caddress_in6& addr, int prefixlen) :
-		cprefix(prefixlen), addr(addr) {};
+		cprefix(prefixlen), addr(addr) {
+		int segment 	= prefixlen / 8;
+		int t_prefixlen = prefixlen % 8;
+		for (int i = 0; i < 16; i++) {
+			if (segment == i) {
+				mask[i] = ~((1 << (8 - t_prefixlen)) - 1);
+			} else if (i > segment) {
+				mask[i] = 0;
+			} else if (i < segment) {
+				mask[i] = 0xff;
+			}
+		}
+	};
 
 	/**
 	 *
@@ -174,6 +198,7 @@ public:
 			return *this;
 		cprefix::operator= (prefix);
 		addr = prefix.addr;
+		mask = prefix.mask;
 		return *this;
 	};
 
@@ -193,6 +218,12 @@ public:
 	const rofl::caddress_in6&
 	get_addr() const { return addr; };
 
+	/**
+	 *
+	 */
+	const rofl::caddress_in6&
+	get_mask() const { return mask; };
+
 public:
 
 	/**
@@ -203,12 +234,15 @@ public:
 		os << rofcore::indent(0) << "<cprefix_in6 prefixlen: " << prefix.get_prefixlen() << " >" << std::endl;
 		os << rofcore::indent(2) << "<addr: >" << std::endl;
 		{ rofcore::indent i(2); os << prefix.addr; };
+		os << rofcore::indent(2) << "<mask: >" << std::endl;
+		{ rofcore::indent i(2); os << prefix.mask; };
 		return os;
 	};
 
 private:
 
 	rofl::caddress_in6 addr;
+	rofl::caddress_in6 mask;
 };
 
 }; // end of namespace rofcore

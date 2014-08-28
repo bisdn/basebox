@@ -16,7 +16,9 @@ librofgtpcore_la_SOURCES = \
 	cport.hpp \
 	cteid.hpp \
 	clabel.hpp \
-	caddress_gtp.hpp
+	caddress_gtp.hpp \
+	ctermdev.hpp \
+	ctermdev.cpp
 
 librofgtpcore_la_LIBADD= -lrt 
 
@@ -29,7 +31,8 @@ library_include_HEADERS= \
 	cport.hpp \
 	cteid.hpp \
 	clabel.hpp \
-	caddress_gtp.hpp
+	caddress_gtp.hpp \
+	ctermdev.hpp
 
 AM_CPPFLAGS=-fPIC
 AM_LDFLAGS=
