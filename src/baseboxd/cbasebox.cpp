@@ -767,7 +767,7 @@ cbasebox::test_workflow()
 	/*
 	 * test
 	 */
-	if (true) {
+	if (false) {
 
 		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_termdev("tun57").
 				add_prefix_in4(rofcore::cprefix_in4(rofl::caddress_in4("192.168.2.1"), 24));
@@ -780,7 +780,7 @@ cbasebox::test_workflow()
 
 		rofcore::logging::debug << rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).get_termdev("tun57");
 	}
-	if (true) {
+	if (false) {
 		rofgtp::clabel_in4 label_egress(
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
@@ -798,7 +798,7 @@ cbasebox::test_workflow()
 
 		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_term_in4(label_egress, label_ingress, tft_match);
 	}
-	if (false) {
+	if (true) {
 		rofgtp::clabel_in4 label_in(
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
@@ -809,7 +809,7 @@ cbasebox::test_workflow()
 				rofgtp::cteid(222222));
 		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
 	}
-	if (false) {
+	if (true) {
 		rofgtp::clabel_in4 label_in(
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),

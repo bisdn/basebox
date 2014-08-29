@@ -35,4 +35,5 @@ library_include_HEADERS= \
 	ctermdev.hpp
 
 AM_CPPFLAGS=-fPIC
-AM_LDFLAGS=
+AM_LDFLAGS=-L../librofnetlink -lrofnetlink
+
