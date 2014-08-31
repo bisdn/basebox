@@ -242,6 +242,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			rofl::fgtpuframe gtpu(pkt->soframe(), pkt->length());
 
 			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
+			gtpu.set_pt_flag(true);
 			gtpu.set_msg_type(255);
 			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
 			gtpu.set_length(orig_len);
@@ -278,6 +279,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			rofl::fgtpuframe gtpu(pkt->soframe(), pkt->length());
 
 			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
+			gtpu.set_pt_flag(true);
 			gtpu.set_msg_type(255);
 			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
 			gtpu.set_length(orig_len);
@@ -342,6 +344,7 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			rofl::fgtpuframe gtpu(pkt->soframe(), pkt->length());
 
 			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
+			gtpu.set_pt_flag(true);
 			gtpu.set_msg_type(255);
 			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
 			gtpu.set_length(orig_len);
@@ -378,6 +381,7 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			rofl::fgtpuframe gtpu(pkt->soframe(), pkt->length());
 
 			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
+			gtpu.set_pt_flag(true);
 			gtpu.set_msg_type(255);
 			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
 			gtpu.set_length(orig_len);
