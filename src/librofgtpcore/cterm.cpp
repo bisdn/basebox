@@ -41,6 +41,9 @@ cterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)
 				set_exp_id(rofl::openflow::experimental::gtp::GTP_EXP_ID);
 		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_experimenter(rofl::cindex(0)).
 				set_exp_body(rofl::openflow::experimental::gtp::cofaction_exp_body_pop_gtp(rofl::fipv4frame::IPV4_ETHER));
+		// decrement IPv4 TTL for inner frame
+		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_dec_nw_ttl(rofl::cindex(1));
+
 		// Goto Next Table ofp_table_id + 1
 		fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
 
@@ -136,6 +139,9 @@ cterm_in4::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 		// set field IPv4 src
 		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_set_field(++index).
 				set_oxm(rofl::openflow::coxmatch_ofb_ipv4_src(label_ingress.get_saddr().get_addr()));
+		// decrement IPv4 TTL
+		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_dec_nw_ttl(++index);
+
 		// set field IP proto
 		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_set_field(++index).
 				set_oxm(rofl::openflow::coxmatch_ofb_ip_proto(rofl::fudpframe::UDP_IP_PROTO));
@@ -240,6 +246,9 @@ cterm_in6::handle_dpt_open_egress(rofl::crofdpt& dpt)
 				set_exp_id(rofl::openflow::experimental::gtp::GTP_EXP_ID);
 		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_experimenter(rofl::cindex(0)).
 				set_exp_body(rofl::openflow::experimental::gtp::cofaction_exp_body_pop_gtp(rofl::fipv6frame::IPV6_ETHER));
+		// decrement IPv6 hop limit for inner frame
+		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_dec_nw_ttl(rofl::cindex(1));
+
 		// Goto Next Table ofp_table_id + 1
 		fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
 
@@ -335,6 +344,9 @@ cterm_in6::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 		// set field IPv6 src
 		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_set_field(++index).
 				set_oxm(rofl::openflow::coxmatch_ofb_ipv6_src(label_ingress.get_saddr().get_addr()));
+		// decrement IPv6 hop limit
+		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_dec_nw_ttl(++index);
+
 		// set field IP proto
 		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_set_field(++index).
 				set_oxm(rofl::openflow::coxmatch_ofb_ip_proto(rofl::fudpframe::UDP_IP_PROTO));
