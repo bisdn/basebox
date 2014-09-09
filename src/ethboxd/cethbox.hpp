@@ -20,7 +20,6 @@
 #include "cconfig.hpp"
 #include "cnetlink.hpp"
 #include "ctapdev.hpp"
-#include "ctundev.hpp"
 
 namespace ethbox {
 
@@ -188,7 +187,7 @@ private:
 	rofcore::ctapdev&
 	set_tap_dev(uint32_t ofp_port_no) {
 		if (devs.find(ofp_port_no) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
+			throw rofcore::eTapDevNotFound();
 		}
 		return *(devs[ofp_port_no]);
 	};
@@ -201,7 +200,7 @@ private:
 		std::map<uint32_t, rofcore::ctapdev*>::iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
+			throw rofcore::eTapDevNotFound();
 		}
 		return *(it->second);
 	};
@@ -214,7 +213,7 @@ private:
 		std::map<uint32_t, rofcore::ctapdev*>::iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_devname(devname))) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
+			throw rofcore::eTapDevNotFound();
 		}
 		return *(it->second);
 	};
@@ -225,7 +224,7 @@ private:
 	const rofcore::ctapdev&
 	get_tap_dev(uint32_t ofp_port_no) const {
 		if (devs.find(ofp_port_no) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
+			throw rofcore::eTapDevNotFound();
 		}
 		return *(devs.at(ofp_port_no));
 	};
@@ -238,7 +237,7 @@ private:
 		std::map<uint32_t, rofcore::ctapdev*>::const_iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
+			throw rofcore::eTapDevNotFound();
 		}
 		return *(it->second);
 	};
@@ -251,7 +250,7 @@ private:
 		std::map<uint32_t, rofcore::ctapdev*>::const_iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_devname(devname))) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
+			throw rofcore::eTapDevNotFound();
 		}
 		return *(it->second);
 	};
