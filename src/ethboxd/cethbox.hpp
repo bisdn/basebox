@@ -41,7 +41,7 @@ class cethbox : public rofl::crofbase, public rofcore::cnetdev_owner, public rof
 	/**
 	 * @brief	pointer to singleton
 	 */
-	static cethbox*	rofbase;
+	static cethbox*	sethbox;
 
 	/**
 	 *
@@ -72,10 +72,10 @@ public:
 	get_instance(
 			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap =
 					rofl::openflow::cofhello_elem_versionbitmap()) {
-		if (cethbox::rofbase == (cethbox*)0) {
-			cethbox::rofbase = new cethbox(versionbitmap);
+		if (cethbox::sethbox == (cethbox*)0) {
+			cethbox::sethbox = new cethbox(versionbitmap);
 		}
-		return *(cethbox::rofbase);
+		return *(cethbox::sethbox);
 	};
 
 	/**

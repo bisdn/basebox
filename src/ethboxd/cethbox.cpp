@@ -9,7 +9,7 @@
 
 using namespace ethbox;
 
-/*static*/cethbox* cethbox::rofbase = (cethbox*)0;
+/*static*/cethbox* cethbox::sethbox = (cethbox*)0;
 /*static*/const std::string cethbox::BASEBOX_LOG_FILE = std::string("/var/log/ethcored.log");
 /*static*/const std::string cethbox::BASEBOX_PID_FILE = std::string("/var/run/ethcored.pid");
 /*static*/const std::string cethbox::BASEBOX_CONFIG_FILE = std::string("/usr/local/etc/ethcored.conf");
