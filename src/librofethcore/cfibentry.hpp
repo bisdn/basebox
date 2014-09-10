@@ -219,7 +219,7 @@ public:
 		return os;
 	};
 
-	static const int FIB_ENTRY_DEFAULT_TIMEOUT = 20; // seconds (for idle-timeout)
+	static const int FIB_ENTRY_DEFAULT_TIMEOUT = 300; // seconds (for idle-timeout), according to IEEE 802.1D-2004, page 45
 	static const int FIB_ENTRY_PERMANENT = 0; // seconds (for idle-timeout)
 
 	/**

@@ -12,7 +12,8 @@ librofethcore_la_SOURCES = \
 	cvlan.cpp \
 	cvlan.hpp \
 	cethcore.cpp \
-	cethcore.hpp
+	cethcore.hpp \
+	crstp.h
 
 librofethcore_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
