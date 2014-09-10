@@ -167,7 +167,9 @@ void
 cfibentry::handle_flow_removed(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg)
 {
-	fib->fib_expired(*this);
+	if (not flags.test(FLAG_PERMANENT_ENTRY)) {
+		fib->fib_expired(*this);
+	}
 }
 
 

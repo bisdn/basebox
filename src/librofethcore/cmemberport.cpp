@@ -19,7 +19,7 @@ cmemberport::handle_dpt_open(
 			return;
 		}
 
-		state = STATE_ATTACHED;
+		dpt_state = STATE_ATTACHED;
 
 		// check for existence of our port on dpt
 		if (not dpt.get_ports().has_port(portno)) {
@@ -94,7 +94,7 @@ cmemberport::handle_dpt_close(
 			return;
 		}
 
-		state = STATE_DETACHED;
+		dpt_state = STATE_DETACHED;
 
 		// check for existence of our port on dpt
 		if (not dpt.get_ports().has_port(portno)) {
@@ -167,7 +167,7 @@ void
 cmemberport::handle_port_status(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg)
 {
-	if (STATE_ATTACHED != state) {
+	if (STATE_ATTACHED != dpt_state) {
 		return;
 	}
 

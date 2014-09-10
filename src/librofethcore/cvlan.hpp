@@ -94,7 +94,8 @@ public:
 		fib.clear();
 		for (std::map<rofl::caddress_ll, cfibentry>::const_iterator
 				it = vlan.fib.begin(); it != vlan.fib.end(); ++it) {
-			add_fib_entry(it->second.get_lladdr(), it->second.get_portno(), it->second.get_entry_timeout());
+			add_fib_entry(it->second.get_lladdr(), it->second.get_portno(),
+					it->second.is_permanent(), it->second.get_entry_timeout());
 		}
 		return *this;
 	};
@@ -185,14 +186,15 @@ public:
 	 *
 	 */
 	cfibentry&
-	add_fib_entry(const rofl::caddress_ll& lladdr, uint32_t portno, int entry_timeout = cfibentry::FIB_ENTRY_DEFAULT_TIMEOUT) {
+	add_fib_entry(const rofl::caddress_ll& lladdr, uint32_t portno,
+			bool permanent = false, int entry_timeout = cfibentry::FIB_ENTRY_DEFAULT_TIMEOUT) {
 		if (fib.find(lladdr) != fib.end()) {
 			fib.erase(lladdr);
 		}
 		if (not has_port(portno)) {
 			throw eFibEntryPortNotMember("cvlan::add_fib_entry() port is not member of this vlan");
 		}
-		fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr,
+		fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr, permanent,
 							entry_timeout, src_stage_table_id, dst_stage_table_id);
 		if (STATE_ATTACHED == state) {
 			fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
@@ -215,12 +217,13 @@ public:
 	 *
 	 */
 	cfibentry&
-	set_fib_entry(const rofl::caddress_ll& lladdr, uint32_t portno, int entry_timeout = cfibentry::FIB_ENTRY_DEFAULT_TIMEOUT) {
+	set_fib_entry(const rofl::caddress_ll& lladdr, uint32_t portno,
+			bool permanent = false, int entry_timeout = cfibentry::FIB_ENTRY_DEFAULT_TIMEOUT) {
 		if (fib.find(lladdr) == fib.end()) {
 			if (not has_port(portno)) {
 				throw eFibEntryPortNotMember("cvlan::set_fib_entry() port is not member of this vlan");
 			}
-			fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr,
+			fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr, permanent,
 										entry_timeout, src_stage_table_id, dst_stage_table_id);
 			if (STATE_ATTACHED == state) {
 				fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));

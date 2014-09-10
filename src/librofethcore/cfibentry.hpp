@@ -11,6 +11,7 @@
 #include <inttypes.h>
 #include <iostream>
 #include <exception>
+#include <bitset>
 
 #include <rofl/common/ciosrv.h>
 #include <rofl/common/caddress.h>
@@ -64,12 +65,15 @@ public:
 			uint32_t portno,
 			bool tagged,
 			const rofl::caddress_ll& lladdr,
+			bool permanent_entry = false,
 			int entry_timeout = FIB_ENTRY_DEFAULT_TIMEOUT,
 			uint8_t src_stage_table_id = 1,
 			uint8_t dst_stage_table_id = 2) :
 				state(STATE_IDLE), fib(fib), dpid(dpid), vid(vid), portno(portno),
 				tagged(tagged), lladdr(lladdr), entry_timeout(entry_timeout),
-				dst_stage_table_id(dst_stage_table_id), src_stage_table_id(src_stage_table_id) {};
+				dst_stage_table_id(dst_stage_table_id), src_stage_table_id(src_stage_table_id) {
+		if (permanent_entry) flags.set(FLAG_PERMANENT_ENTRY);
+	};
 
 	/**
 	 *
@@ -145,6 +149,12 @@ public:
 	 */
 	int
 	get_entry_timeout() const { return entry_timeout; };
+
+	/**
+	 *
+	 */
+	bool
+	is_permanent() const { return flags.test(FLAG_PERMANENT_ENTRY); };
 
 public:
 
@@ -234,6 +244,11 @@ private:
 
 	dpt_state_t			state;
 
+	enum fibentry_flags_t {
+		FLAG_PERMANENT_ENTRY = (1 << 0),
+	};
+
+	std::bitset<32>				flags;
 	cfibentry_owner				*fib;
 	rofl::cdpid					dpid;
 	uint16_t					vid;

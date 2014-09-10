@@ -36,7 +36,7 @@ public:
 	 *
 	 */
 	cmemberport() :
-		state(STATE_IDLE), portno(0xffffffff), vid(0xffff),
+		dpt_state(STATE_IDLE), portno(0xffffffff), vid(0xffff),
 		tagged(false), in_stage_table_id(0), out_stage_table_id(5) {};
 
 	/**
@@ -46,7 +46,7 @@ public:
 			const rofl::cdpid& dpid, uint32_t portno = 0xffffffff,
 			uint16_t vid = 0xffff, bool tagged = true,
 			uint8_t in_stage_table_id = 0, uint8_t out_stage_table_id = 5) :
-		state(STATE_IDLE), dpid(dpid), portno(portno), vid(vid),
+		dpt_state(STATE_IDLE), dpid(dpid), portno(portno), vid(vid),
 		tagged(tagged), in_stage_table_id(in_stage_table_id), out_stage_table_id(out_stage_table_id) {};
 
 	/**
@@ -54,7 +54,7 @@ public:
 	 */
 	~cmemberport() {
 		try {
-			if (STATE_ATTACHED == state) {
+			if (STATE_ATTACHED == dpt_state) {
 				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
@@ -73,7 +73,7 @@ public:
 	operator= (const cmemberport& port) {
 		if (this == &port)
 			return *this;
-		state	= port.state;
+		dpt_state	= port.dpt_state;
 		dpid 	= port.dpid;
 		portno 	= port.portno;
 		vid 	= port.vid;
@@ -160,7 +160,7 @@ private:
 		STATE_ATTACHED = 3,
 	};
 
-	dpt_state_t		state;
+	dpt_state_t		dpt_state;
 
 	rofl::cdpid		dpid;
 	uint32_t		portno;
