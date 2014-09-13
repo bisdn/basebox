@@ -48,12 +48,14 @@ public:
 		RELAY_REPLY			= 13,
 	};
 
-private:
+protected:
 
 	struct dhcpmsg_hdr_t {
 		uint8_t msg_type;
 		uint8_t data[0];
 	};
+
+private:
 
 	struct dhcpmsg_hdr_t *hdr;
 

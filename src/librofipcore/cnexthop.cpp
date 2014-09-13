@@ -73,7 +73,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
-		fe.set_priority(0xf000 + rtr.get_prefixlen() << 8 + rtn.get_weight());
+		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());
 		fe.set_table_id(out_ofp_table_id);
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
@@ -143,7 +143,7 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
-		fe.set_priority(0xf000 + rtr.get_prefixlen() << 8 + rtn.get_weight());
+		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());
 		fe.set_table_id(out_ofp_table_id);
 
 		/*
@@ -235,7 +235,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
-		fe.set_priority(0xf000 + rtr.get_prefixlen() << 8 + rtn.get_weight());
+		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());
 		fe.set_table_id(out_ofp_table_id);
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
@@ -306,7 +306,7 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
-		fe.set_priority(0xf000 + rtr.get_prefixlen() << 8 + rtn.get_weight());
+		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());
 		fe.set_table_id(out_ofp_table_id);
 
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);

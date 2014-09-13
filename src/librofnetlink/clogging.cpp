@@ -55,11 +55,7 @@ logging::set_debug_level(
 	logging::init();
 
 	// EMERG
-	if (debug_level >= EMERG) {
-		logging::emerg .rdbuf(std::cerr.rdbuf());
-	} else {
-		logging::emerg .rdbuf(&logging::devnull);
-	}
+	logging::emerg .rdbuf(std::cerr.rdbuf());
 
 	// ALERT
 	if (debug_level >= ALERT) {

@@ -31,5 +31,5 @@ library_include_HEADERS= \
 	croute.hpp \
 	cnexthop.hpp
 
-AM_CPPFLAGS=-fPIC
+AM_CPPFLAGS=-fPIC -std=c++11
 AM_LDFLAGS=-L../librofnetlink -lrofnetlink
