@@ -1,6 +1,6 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-SUBDIRS = 
+SUBDIRS = librofrstp
 
 noinst_LTLIBRARIES = librofethcore.la
 
@@ -12,8 +12,7 @@ librofethcore_la_SOURCES = \
 	cvlan.cpp \
 	cvlan.hpp \
 	cethcore.cpp \
-	cethcore.hpp \
-	crstp.h
+	cethcore.hpp
 
 librofethcore_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
@@ -25,5 +24,5 @@ library_include_HEADERS= \
 	cethcore.hpp
 
 AM_CPPFLAGS=-fPIC
-AM_LDFLAGS=-L../librofnetlink -lrofnetlink
+AM_LDFLAGS=-L../librofnetlink -lrofnetlink -Llibrofrstp -lrofrstp
 

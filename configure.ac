@@ -107,6 +107,7 @@ AC_CONFIG_FILES([
 	src/librofnetlink/Makefile
 	src/librofipcore/Makefile
 	src/librofethcore/Makefile
+	src/librofethcore/librofrstp/Makefile
 	src/librofgtpcore/Makefile
 	
 	test/Makefile
