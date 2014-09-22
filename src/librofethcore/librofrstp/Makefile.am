@@ -5,7 +5,11 @@ SUBDIRS =
 noinst_LTLIBRARIES = librofrstp.la
 
 librofrstp_la_SOURCES = \
-	crstp.h
+	crstp.h \
+	cbridgeid.hpp \
+	cportid.hpp \
+	crpcost.hpp \
+	cstpv.hpp
 
 librofrstp_la_LIBADD=
 

@@ -9,6 +9,7 @@
 #define CRSTP_HPP_
 
 namespace rofeth {
+namespace rstp {
 
 // IEEE 802.1D-2004, section 9.2.9
 enum port_role_t {
@@ -103,7 +104,7 @@ struct {
 struct
 
 
-
-};
+}; // end of namespace rstp
+}; // end of namespace rofeth
 
 #endif /* CRSTP_HPP_ */
