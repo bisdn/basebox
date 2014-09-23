@@ -11,7 +11,8 @@ librofrstp_la_SOURCES = \
 	crpcost.hpp \
 	cstpv.hpp \
 	cbridge.hpp \
-	cbridge.cpp
+	cbridge.cpp \
+	cport.hpp
 
 librofrstp_la_LIBADD=
 

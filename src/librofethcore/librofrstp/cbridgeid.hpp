@@ -10,7 +10,7 @@
 
 #include <inttypes.h>
 #include <ostream>
-#include <stringstream>
+#include <sstream>
 #include <exception>
 
 namespace rofeth {
@@ -102,7 +102,7 @@ public:
 private:
 
 	uint64_t	brid;	// bridge identifier
-}
+};
 
 }; // end of namespace rstp
 }; // end of namespace rofeth

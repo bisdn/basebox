@@ -10,7 +10,7 @@
 
 #include <inttypes.h>
 #include <ostream>
-#include <stringstream>
+#include <sstream>
 #include <exception>
 
 namespace rofeth {
