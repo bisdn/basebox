@@ -109,6 +109,7 @@ AC_CONFIG_FILES([
 	src/librofethcore/Makefile
 	src/librofethcore/librofrstp/Makefile
 	src/librofgtpcore/Makefile
+	src/librofgrecore/Makefile
 	
 	test/Makefile
 	test/ipcore/Makefile
