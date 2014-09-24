@@ -7,7 +7,7 @@
 
 #include "cgreterm.hpp"
 
-using namespace rofgre;
+using namespace roflibs::gre;
 
 void
 cgreterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)
@@ -45,7 +45,7 @@ cgreterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)
 				set_exp_body(rofl::openflow::experimental::gre::cofaction_exp_body_pop_gre(0/* not used for transparent bridging*/));
 
 		// Send decapsulated ethernet frame out via assigned port
-		fm.set_instructions().add_inst_apply_actions().set_actions().add_action_output(rofl::cindex(0)).
+		fm.set_instructions().set_inst_apply_actions().set_actions().add_action_output(rofl::cindex(1)).
 				set_port_no(gre_portno);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);

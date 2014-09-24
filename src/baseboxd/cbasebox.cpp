@@ -323,6 +323,7 @@ cbasebox::handle_dpt_open(
 	rofeth::cethcore::set_eth_core(dpt.get_dpid(), /*default_vid=*/1, /*port-membership=*/0, /*src-table=*/1, /*dst-table=*/6);
 	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid(), /*ip-local-stage=*/3, /*gtp-stage=*/4); // yes, same as local for cipcore
 	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid(), /*ip-local-stage=*/3);
+	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid(), /*eth-local*/0, /*ip-local*/3, /*gre-local*/4, /*ip-fwd*/5);
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
 	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
@@ -339,6 +340,7 @@ cbasebox::handle_dpt_close(
 	// call external scripting hook
 	hook_dpt_detach();
 
+	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
 	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
@@ -499,8 +501,9 @@ cbasebox::handle_port_desc_stats_reply(
 
 	rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
+	//rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	//rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
+	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
 
 	test_workflow();
 }
@@ -762,12 +765,29 @@ cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 void
 cbasebox::test_workflow()
 {
+	bool gre_test = true;
+	bool gtp_test = false;
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 	/*
-	 * test
+	 * GRE test
 	 */
-	if (true) {
+	if (gre_test) {
+
+		uint32_t term_id = 1;
+		uint32_t gre_portno = 3;
+		rofl::caddress_in4 laddr("10.1.1.1");
+		rofl::caddress_in4 raddr("10.1.1.10");
+		uint32_t gre_key = 0x11223344;
+
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).
+				add_gre_term_in4(term_id, gre_portno, laddr, raddr, gre_key);
+	}
+
+	/*
+	 * GTP test
+	 */
+	if (gtp_test) {
 
 		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_termdev("tun57").
 				add_prefix_in4(rofcore::cprefix_in4(rofl::caddress_in4("192.168.2.1"), 24));
@@ -780,7 +800,7 @@ cbasebox::test_workflow()
 
 		rofcore::logging::debug << rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).get_termdev("tun57");
 	}
-	if (true) {
+	if (gtp_test) {
 		rofgtp::clabel_in4 label_egress(
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
@@ -798,7 +818,7 @@ cbasebox::test_workflow()
 
 		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_term_in4(label_egress, label_ingress, tft_match);
 	}
-	if (false) {
+	if (gtp_test) {
 		rofgtp::clabel_in4 label_in(
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
@@ -809,7 +829,7 @@ cbasebox::test_workflow()
 				rofgtp::cteid(222222));
 		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
 	}
-	if (false) {
+	if (gtp_test) {
 		rofgtp::clabel_in4 label_in(
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),

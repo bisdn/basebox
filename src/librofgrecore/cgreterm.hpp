@@ -23,7 +23,8 @@
 #include "clogging.hpp"
 
 
-namespace rofgre {
+namespace roflibs {
+namespace gre {
 
 class eGreTermBase : public std::runtime_error {
 public:
@@ -403,6 +404,7 @@ private:
 	rofl::caddress_in6 raddr;
 };
 
-}; // end of namespace rofgre
+}; // end of namespace gre
+}; // end of namespace roflibs
 
 #endif /* CGRETERM_HPP_ */

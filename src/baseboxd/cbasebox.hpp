@@ -18,6 +18,7 @@
 #include "cethcore.hpp"
 #include "cipcore.hpp"
 #include "cgtpcore.hpp"
+#include "cgrecore.hpp"
 #include "clogging.hpp"
 #include "cconfig.hpp"
 #include "cnetlink.hpp"

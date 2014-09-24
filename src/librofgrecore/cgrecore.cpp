@@ -7,7 +7,7 @@
 
 #include "cgrecore.hpp"
 
-using namespace rofgre;
+using namespace roflibs::gre;
 
 /*static*/std::map<rofl::cdpid, cgrecore*> cgrecore::grecores;
 

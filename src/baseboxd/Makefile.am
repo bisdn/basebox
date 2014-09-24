@@ -16,8 +16,9 @@ baseboxd_LDADD = -lpthread -lrt \
 		-L../librofnetlink -lrofnetlink \
 		-L../librofethcore -lrofethcore \
 		-L../librofipcore -lrofipcore \
-		-L../librofgtpcore -lrofgtpcore
+		-L../librofgtpcore -lrofgtpcore \
+		-L../librofgrecore -lrofgrecore
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/librofethcore -I$(top_srcdir)/src/librofipcore -I$(top_srcdir)/src/librofgtpcore
+AM_CPPFLAGS = -I$(top_srcdir)/src/librofethcore -I$(top_srcdir)/src/librofipcore -I$(top_srcdir)/src/librofgtpcore -I$(top_srcdir)/src/librofgrecore
 AM_LDFLAGS = -static
 

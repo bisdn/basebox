@@ -21,7 +21,8 @@
 #include "clogging.hpp"
 #include "cgreterm.hpp"
 
-namespace rofgre {
+namespace roflibs {
+namespace gre {
 
 class eGreCoreBase : public std::runtime_error {
 public:
@@ -367,6 +368,7 @@ private:
 	static const uint16_t 						GRE_PROT_TYPE_TRANSPARENT_ETHERNET_BRIDGING = 0x6558;
 };
 
-}; // end of namespace rofgre
+}; // end of namespace gre
+}; // end of namespace roflibs
 
 #endif /* CGRECORE_HPP_ */
