@@ -320,7 +320,7 @@ cbasebox::handle_dpt_open(
 	dptid = dpt.get_dptid();
 
 	rofip::cipcore::set_ip_core(dpt.get_dpid(), /*local-stage=*/3, /*out-stage=*/5);
-	rofeth::cethcore::set_eth_core(dpt.get_dpid(), /*default_vid=*/1, /*port-membership=*/0, /*src-table=*/1, /*dst-table=*/6);
+	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid(), /*default_vid=*/1, /*port-membership=*/0, /*src-table=*/1, /*dst-table=*/6);
 	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid(), /*ip-local-stage=*/3, /*gtp-stage=*/4); // yes, same as local for cipcore
 	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid(), /*ip-local-stage=*/3);
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid(), /*eth-local*/0, /*ip-local*/3, /*gre-local*/4, /*ip-fwd*/5);
@@ -343,7 +343,7 @@ cbasebox::handle_dpt_close(
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
 	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
 }
 
@@ -373,8 +373,8 @@ cbasebox::handle_packet_in(
 			rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 		} break;
 		default: {
-			if (rofeth::cethcore::has_eth_core(dpt.get_dpid())) {
-				rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+			if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
+				roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 			}
 		};
 		}
@@ -400,8 +400,8 @@ cbasebox::handle_flow_removed(
 		rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
 	} break;
 	default: {
-		if (rofeth::cethcore::has_eth_core(dpt.get_dpid())) {
-			rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
+		if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
+			roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
 		}
 	};
 	}
@@ -453,8 +453,8 @@ cbasebox::handle_port_status(
 		}
 
 		rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
-		if (rofeth::cethcore::has_eth_core(dpt.get_dpid())) {
-			rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
+		if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
+			roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
 		}
 
 	} catch (rofl::openflow::ePortNotFound& e) {
@@ -470,8 +470,8 @@ void
 cbasebox::handle_error_message(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
 	rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
-	if (rofeth::cethcore::has_eth_core(dpt.get_dpid())) {
-		rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
+	if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
+		roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
 	}
 }
 
@@ -487,7 +487,7 @@ cbasebox::handle_port_desc_stats_reply(
 			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
 		const rofl::openflow::cofport& port = *(it->second);
 
-		rofeth::cethcore::set_eth_core(dpt.get_dpid()).set_vlan(/*default_vid=*/1).add_port(port.get_port_no(), /*tagged=*/false);
+		roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).set_vlan(/*default_vid=*/1).add_port(port.get_port_no(), /*tagged=*/false);
 	}
 
 	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
@@ -499,7 +499,7 @@ cbasebox::handle_port_desc_stats_reply(
 		}
 	}
 
-	rofeth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	//rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	//rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);

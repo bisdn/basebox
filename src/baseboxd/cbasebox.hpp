@@ -345,7 +345,7 @@ public:
 		}
 		os << rofip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
 		try {
-			os << rofeth::cethcore::get_eth_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
+			os << roflibs::ethernet::cethcore::get_eth_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
 		} catch (rofl::eRofDptNotFound& e) {}
 		return os;
 	};

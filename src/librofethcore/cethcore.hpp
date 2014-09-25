@@ -17,7 +17,8 @@
 #include "clogging.hpp"
 #include "cvlan.hpp"
 
-namespace rofeth {
+namespace roflibs {
+namespace ethernet {
 
 class cethcore : public rofcore::cnetlink_common_observer {
 public:
@@ -282,6 +283,7 @@ public:
 	link_deleted(unsigned int ifindex);
 };
 
-}; // end of namespace
+}; // end of namespace ethernet
+}; // end of namespace roflibs
 
 #endif /* CETHCORE_HPP_ */

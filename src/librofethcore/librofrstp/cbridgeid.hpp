@@ -13,7 +13,8 @@
 #include <sstream>
 #include <exception>
 
-namespace rofeth {
+namespace roflibs {
+namespace ethernet {
 namespace rstp {
 
 class cbridgeid {
@@ -105,6 +106,7 @@ private:
 };
 
 }; // end of namespace rstp
-}; // end of namespace rofeth
+}; // end of namespace ethernet
+}; // end of namespace roflibs
 
 #endif /* CBRIDGEID_HPP_ */

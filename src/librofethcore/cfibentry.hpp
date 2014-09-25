@@ -22,7 +22,8 @@
 
 #include "clogging.hpp"
 
-namespace rofeth {
+namespace roflibs {
+namespace ethernet {
 
 class eFibEntryBase : public std::runtime_error {
 public:
@@ -261,6 +262,7 @@ private:
 	int							entry_timeout;
 };
 
-}; // end of namespace ethcore
+}; // end of namespace ethernet
+}; // end of namespace roflibs
 
 #endif /* CFIBENTRY_HPP_ */

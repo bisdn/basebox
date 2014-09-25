@@ -18,7 +18,8 @@
 
 #include "clogging.hpp"
 
-namespace rofeth {
+namespace roflibs {
+namespace ethernet {
 
 class eMemberPortBase : public std::runtime_error {
 public:
@@ -170,6 +171,7 @@ private:
 	uint8_t			out_stage_table_id;
 };
 
-}; // end of namespace ethcore
+}; // end of namespace ethernet
+}; // end of namespace roflibs
 
 #endif /* CMEMBERPORT_HPP_ */

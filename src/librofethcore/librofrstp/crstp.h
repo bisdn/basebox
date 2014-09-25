@@ -8,7 +8,8 @@
 #ifndef CRSTP_HPP_
 #define CRSTP_HPP_
 
-namespace rofeth {
+namespace roflibs {
+namespace ethernet {
 namespace rstp {
 
 // IEEE 802.1D-2004, section 9.2.9
@@ -105,6 +106,7 @@ struct
 
 
 }; // end of namespace rstp
-}; // end of namespace rofeth
+}; // end of namespace ethernet
+}; // end of namespace roflibs
 
 #endif /* CRSTP_HPP_ */

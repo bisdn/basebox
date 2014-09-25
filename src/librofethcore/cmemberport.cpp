@@ -7,7 +7,7 @@
 
 #include "cmemberport.hpp"
 
-using namespace rofeth;
+using namespace roflibs::ethernet;
 
 
 void

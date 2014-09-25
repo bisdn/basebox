@@ -19,7 +19,8 @@
 #include "crpcost.hpp"
 #include "cportid.hpp"
 
-namespace rofeth {
+namespace roflibs {
+namespace ethernet {
 namespace rstp {
 
 class cstpv {
@@ -186,6 +187,7 @@ private:
 };
 
 }; // end of namespace rstp
-}; // end of namespace rofeth
+}; // end of namespace ethernet
+}; // end of namespace roflibs
 
 #endif /* CSTPV_HPP_ */

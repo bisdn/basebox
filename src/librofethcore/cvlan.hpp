@@ -18,7 +18,8 @@
 #include "cmemberport.hpp"
 #include "cfibentry.hpp"
 
-namespace rofeth {
+namespace roflibs {
+namespace ethernet {
 
 class eVlanBase : public std::runtime_error {
 public:
@@ -386,6 +387,7 @@ private:
 	uint8_t				dst_stage_table_id;
 };
 
-}; // end of namespace
+}; // end of namespace ethernet
+}; // end of namespace roflibs
 
 #endif /* CVLAN_HPP_ */

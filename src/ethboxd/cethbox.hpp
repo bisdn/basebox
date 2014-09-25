@@ -340,7 +340,7 @@ public:
 			os << *(it->second);
 		}
 		try {
-			os << rofeth::cethcore::get_eth_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
+			os << roflibs::ethernet::cethcore::get_eth_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
 		} catch (rofl::eRofDptNotFound& e) {}
 		return os;
 	};

@@ -7,7 +7,7 @@
 
 #include "cfibentry.hpp"
 
-using namespace rofeth;
+using namespace roflibs::ethernet;
 
 void
 cfibentry::handle_dpt_open(

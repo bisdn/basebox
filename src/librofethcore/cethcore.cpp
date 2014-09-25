@@ -7,7 +7,7 @@
 
 #include "cethcore.hpp"
 
-using namespace rofeth;
+using namespace roflibs::ethernet;
 
 /*static*/std::map<rofl::cdpid, cethcore*> cethcore::ethcores;
 

@@ -20,7 +20,8 @@
 #include "cbridgeid.hpp"
 #include "cport.hpp"
 
-namespace rofeth {
+namespace roflibs {
+namespace ethernet {
 namespace rstp {
 
 class eBridgeBase : public std::runtime_error {
@@ -274,6 +275,7 @@ private:
 };
 
 }; // end of namespace rstp
-}; // end of namespace rofeth
+}; // end of namespace ethernet
+}; // end of namespace roflibs
 
 #endif /* CBRIDGE_HPP_ */

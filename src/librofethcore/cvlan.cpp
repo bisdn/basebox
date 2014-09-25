@@ -7,7 +7,7 @@
 
 #include "cvlan.hpp"
 
-using namespace rofeth;
+using namespace roflibs::ethernet;
 
 void
 cvlan::handle_dpt_open(
