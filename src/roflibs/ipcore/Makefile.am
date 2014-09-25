@@ -2,10 +2,10 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-#noinst_LTLIBRARIES = librofipcore.la
-lib_LTLIBRARIES = librofipcore.la
+#noinst_LTLIBRARIES = libroflibs_ipcore.la
+lib_LTLIBRARIES = libroflibs_ipcore.la
 
-librofipcore_la_SOURCES = \
+libroflibs_ipcore_la_SOURCES = \
 	cipcore.hpp \
 	cipcore.cpp \
 	clink.hpp \
@@ -20,8 +20,8 @@ librofipcore_la_SOURCES = \
 	cnexthop.hpp \
 	cnexthop.cpp
 
-librofipcore_la_LIBADD= 
-#librofipcore_la_LIBADD= -lrt ${LIBNL3_LIBS}
+libroflibs_ipcore_la_LIBADD= 
+#libroflibs_ipcore_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
 library_includedir=$(includedir)/roflibs/ipcore
 library_include_HEADERS= \
@@ -35,4 +35,4 @@ library_include_HEADERS= \
 
 AM_CPPFLAGS=-fPIC -std=c++11
 AM_CXXFLAGS=-I$(top_srcdir)/src
-AM_LDFLAGS=-L../netlink -lrofnetlink
+AM_LDFLAGS=-L../netlink -lroflibs_netlink

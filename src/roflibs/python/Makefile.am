@@ -2,13 +2,14 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-noinst_LTLIBRARIES = librofpython.la
+#noinst_LTLIBRARIES = libroflibs_python.la
+lib_LTLIBRARIES = libroflibs_python.la
 
-librofpython_la_SOURCES = \
+libroflibs_python_la_SOURCES = \
 	cpython.cpp \
 	cpython.hpp
 
-librofpython_la_LIBADD= -lrt 
+libroflibs_python_la_LIBADD= -lrt 
 
 library_includedir=$(includedir)/roflibs/python
 library_include_HEADERS= \

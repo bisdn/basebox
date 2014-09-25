@@ -2,10 +2,10 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-#noinst_LTLIBRARIES = librofnetlink.la
-lib_LTLIBRARIES = librofnetlink.la
+#noinst_LTLIBRARIES = libroflibs_netlink.la
+lib_LTLIBRARIES = libroflibs_netlink.la
 
-librofnetlink_la_SOURCES = \
+libroflibs_netlink_la_SOURCES = \
 	cnetlink.hpp \
 	cnetlink.cpp \
 	cnetdev.hpp \
@@ -26,7 +26,7 @@ librofnetlink_la_SOURCES = \
 	clogging.cpp \
 	clogging.hpp
 
-librofnetlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
+libroflibs_netlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
 library_includedir=$(includedir)/roflibs/netlink
 library_include_HEADERS= \

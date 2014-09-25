@@ -2,10 +2,10 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-#noinst_LTLIBRARIES = librofgtpcore.la
-lib_LTLIBRARIES = librofgtpcore.la
+#noinst_LTLIBRARIES = libroflibs_gtpcore.la
+lib_LTLIBRARIES = libroflibs_gtpcore.la
 
-librofgtpcore_la_SOURCES = \
+libroflibs_gtpcore_la_SOURCES = \
 	cgtpcore.hpp \
 	cgtpcore.cpp \
 	cgtprelay.hpp \
@@ -21,7 +21,7 @@ librofgtpcore_la_SOURCES = \
 	ctermdev.hpp \
 	ctermdev.cpp
 
-librofgtpcore_la_LIBADD= -lrt 
+libroflibs_gtpcore_la_LIBADD= -lrt 
 
 library_includedir=$(includedir)/roflibs/gtpcore
 library_include_HEADERS= \
@@ -37,4 +37,4 @@ library_include_HEADERS= \
 
 AM_CPPFLAGS=-fPIC
 AM_CXXFLAGS=-I$(top_srcdir)/src
-AM_LDFLAGS=-L../netlink -lrofnetlink 
+AM_LDFLAGS=-L../netlink -lroflibs_netlink 

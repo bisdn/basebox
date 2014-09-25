@@ -2,16 +2,16 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-#noinst_LTLIBRARIES = librofgrecore.la
-lib_LTLIBRARIES = librofgrecore.la
+#noinst_LTLIBRARIES = libroflibs_grecore.la
+lib_LTLIBRARIES = libroflibs_grecore.la
 
-librofgrecore_la_SOURCES = \
+libroflibs_grecore_la_SOURCES = \
 	cgrecore.cpp \
 	cgrecore.hpp \
 	cgreterm.cpp \
 	cgreterm.hpp
 
-librofgrecore_la_LIBADD= -lrt 
+libroflibs_grecore_la_LIBADD= -lrt 
 
 library_includedir=$(includedir)/roflibs/grecore
 library_include_HEADERS= \
@@ -20,4 +20,4 @@ library_include_HEADERS= \
 
 AM_CPPFLAGS=-fPIC
 AM_CXXFLAGS=-I$(top_srcdir)/src
-AM_LDFLAGS=-L../netlink -lrofnetlink
+AM_LDFLAGS=-L../netlink -lroflibs_netlink

@@ -2,10 +2,10 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-#noinst_LTLIBRARIES = librofrstp.la
-lib_LTLIBRARIES = librofrstp.la
+#noinst_LTLIBRARIES = libroflibs_rstp.la
+lib_LTLIBRARIES = libroflibs_rstp.la
 
-librofrstp_la_SOURCES = \
+libroflibs_rstp_la_SOURCES = \
 	crstp.h \
 	cbridgeid.hpp \
 	cportid.hpp \
@@ -15,7 +15,7 @@ librofrstp_la_SOURCES = \
 	cbridge.cpp \
 	cport.hpp
 
-librofrstp_la_LIBADD=
+libroflibs_rstp_la_LIBADD=
 
 library_includedir=$(includedir)/rofl/common
 library_include_HEADERS= 

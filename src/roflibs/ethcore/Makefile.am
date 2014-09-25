@@ -2,10 +2,10 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = rstp
 
-#noinst_LTLIBRARIES = librofethcore.la
-lib_LTLIBRARIES = librofethcore.la
+#noinst_LTLIBRARIES = libroflibs_ethcore.la
+lib_LTLIBRARIES = libroflibs_ethcore.la
 
-librofethcore_la_SOURCES = \
+libroflibs_ethcore_la_SOURCES = \
 	cfibentry.cpp \
 	cfibentry.hpp \
 	cmemberport.cpp \
@@ -15,7 +15,7 @@ librofethcore_la_SOURCES = \
 	cethcore.cpp \
 	cethcore.hpp
 
-librofethcore_la_LIBADD= -lrt ${LIBNL3_LIBS} -Lrstp -lrofrstp
+libroflibs_ethcore_la_LIBADD=-Lrstp -lroflibs_rstp
 
 library_includedir=$(includedir)/roflibs/ethcore
 library_include_HEADERS= \
@@ -26,4 +26,4 @@ library_include_HEADERS= \
 
 AM_CPPFLAGS=-fPIC
 AM_CXXFLAGS=-I$(top_srcdir)/src
-AM_LDFLAGS=-L../netlink -lrofnetlink -Lrstp -lrofrstp
+AM_LDFLAGS=-L../netlink -lroflibs_netlink 
