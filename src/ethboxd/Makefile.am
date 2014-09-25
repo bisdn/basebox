@@ -13,9 +13,8 @@ ethboxd_SOURCES = \
 
 	
 ethboxd_LDADD = -lpthread -lrt \
-		-L../librofnetlink -lrofnetlink \
-		-L../librofethcore -lrofethcore 
+		-L../roflibs -lroflibs
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/librofethcore 
-AM_LDFLAGS = -static
+AM_CPPFLAGS = -I$(top_srcdir)/src
+AM_LDFLAGS = 
 

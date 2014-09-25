@@ -1,7 +1,7 @@
 # Set application version based on the git version
 
 #Default
-ROFCORED_VERSION="Unknown (no GIT repository detected)"
+ROFLIBS_VERSION="Unknown (no GIT repository detected)"
 
 AC_CHECK_PROG(ff_git,git,yes,no)
 
@@ -14,18 +14,18 @@ else
 	
 	if test -d $srcdir/.git ; then
 		#Try to retrieve the build number
-		_ROFCORED_GIT_BUILD=`git log -1 --pretty=%H`
-		_ROFCORED_GIT_BRANCH=`git rev-parse --abbrev-ref HEAD`
-		ROFCORED_VERSION=`git describe --abbrev=0`
-		_ROFCORED_GIT_DESCRIBE=`git describe --abbrev=40`
+		_ROFLIBS_GIT_BUILD=`git log -1 --pretty=%H`
+		_ROFLIBS_GIT_BRANCH=`git rev-parse --abbrev-ref HEAD`
+		ROFLIBS_VERSION=`git describe --abbrev=0`
+		_ROFLIBS_GIT_DESCRIBE=`git describe --abbrev=40`
 
-		AC_DEFINE_UNQUOTED([ROFCORED_BUILD],["$_ROFCORED_GIT_BUILD"])
-		AC_DEFINE_UNQUOTED([ROFCORED_BRANCH],["$_ROFCORED_GIT_BRANCH"])
-		AC_DEFINE_UNQUOTED([ROFCORED_DESCRIBE],["$_ROFCORED_GIT_DESCRIBE"])
+		AC_DEFINE_UNQUOTED([ROFLIBS_BUILD],["$_ROFLIBS_GIT_BUILD"])
+		AC_DEFINE_UNQUOTED([ROFLIBS_BRANCH],["$_ROFLIBS_GIT_BRANCH"])
+		AC_DEFINE_UNQUOTED([ROFLIBS_DESCRIBE],["$_ROFLIBS_GIT_DESCRIBE"])
 
 	fi
 
-	AC_MSG_RESULT($ROFCORED_VERSION)
+	AC_MSG_RESULT($ROFLIBS_VERSION)
 fi
 
-AC_DEFINE_UNQUOTED([ROFCORED_VERSION],["$ROFCORED_VERSION"])
+AC_DEFINE_UNQUOTED([ROFLIBS_VERSION],["$ROFLIBS_VERSION"])

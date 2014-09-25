@@ -1,8 +1,5 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-export INCLUDES += -I$(abs_srcdir)/librofnetlink
-
-SUBDIRS = librofpython librofnetlink librofipcore librofethcore librofgtpcore librofgrecore dhcpv6snoop ethboxd baseboxd
-LIBS_ROFCORE=librofpython/librofpython.la librofnetlink/librofnetlink.la librofipcore/librofipcore.la librofethcore/librofethcore.la librofgtpcore/librofgtpcore.la librofgrecore/librofgrecore.la
+SUBDIRS = roflibs dhcpv6snoop ethboxd baseboxd
 
 

@@ -106,13 +106,14 @@ AC_CONFIG_FILES([
 	src/dhcpv6snoop/Makefile
 	src/baseboxd/Makefile
 	src/ethboxd/Makefile
-	src/librofpython/Makefile
-	src/librofnetlink/Makefile
-	src/librofipcore/Makefile
-	src/librofethcore/Makefile
-	src/librofethcore/librofrstp/Makefile
-	src/librofgtpcore/Makefile
-	src/librofgrecore/Makefile
+	src/roflibs/Makefile
+	src/roflibs/python/Makefile
+	src/roflibs/netlink/Makefile
+	src/roflibs/ipcore/Makefile
+	src/roflibs/ethcore/Makefile
+	src/roflibs/ethcore/rstp/Makefile
+	src/roflibs/gtpcore/Makefile
+	src/roflibs/grecore/Makefile
 	
 	test/Makefile
 	test/ipcore/Makefile

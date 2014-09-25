@@ -15,11 +15,12 @@
 #include <rofl/platform/unix/cdaemon.h>
 #include <rofl/platform/unix/cunixenv.h>
 
-#include "cethcore.hpp"
-#include "clogging.hpp"
+#include <roflibs/ethcore/cethcore.hpp>
+#include <roflibs/netlink/clogging.hpp>
+#include <roflibs/netlink/cnetlink.hpp>
+#include <roflibs/netlink/ctapdev.hpp>
+
 #include "cconfig.hpp"
-#include "cnetlink.hpp"
-#include "ctapdev.hpp"
 
 namespace ethbox {
 
