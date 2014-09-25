@@ -21,7 +21,7 @@ cgreterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)
 			fm.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
 		}
 
-		fm.set_idle_timeout(idle_timeout);
+		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(gre_ofp_table_id);
@@ -72,7 +72,7 @@ cgreterm_in4::handle_dpt_close_egress(rofl::crofdpt& dpt)
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fm.set_idle_timeout(idle_timeout);
+		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(gre_ofp_table_id);
@@ -117,7 +117,7 @@ cgreterm_in4::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 			fm.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
 		}
 
-		fm.set_idle_timeout(idle_timeout);
+		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(eth_ofp_table_id);
@@ -178,7 +178,7 @@ cgreterm_in4::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fm.set_idle_timeout(idle_timeout);
+		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(eth_ofp_table_id);
@@ -214,7 +214,7 @@ cgreterm_in6::handle_dpt_open_egress(rofl::crofdpt& dpt)
 			fm.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
 		}
 
-		fm.set_idle_timeout(idle_timeout);
+		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(gre_ofp_table_id);
@@ -265,7 +265,7 @@ cgreterm_in6::handle_dpt_close_egress(rofl::crofdpt& dpt)
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fm.set_idle_timeout(idle_timeout);
+		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(gre_ofp_table_id);
@@ -310,7 +310,7 @@ cgreterm_in6::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 			fm.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
 		}
 
-		fm.set_idle_timeout(idle_timeout);
+		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(eth_ofp_table_id);
@@ -371,7 +371,7 @@ cgreterm_in6::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fm.set_idle_timeout(idle_timeout);
+		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(eth_ofp_table_id);
