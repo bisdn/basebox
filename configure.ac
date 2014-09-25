@@ -91,6 +91,8 @@ fi
 # version
 m4_include([config/versioning.m4])
 
+AM_PATH_PYTHON([2.7])
+
 
 #Check libs used
 #AC_CHECK_LIB(pthread, pthread_create)

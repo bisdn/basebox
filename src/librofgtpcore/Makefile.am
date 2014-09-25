@@ -22,7 +22,7 @@ librofgtpcore_la_SOURCES = \
 
 librofgtpcore_la_LIBADD= -lrt 
 
-library_includedir=$(includedir)/rofl/common
+library_includedir=$(includedir)/roflibs/gtpcore
 library_include_HEADERS= \
 	cgtpcore.hpp \
 	cgtprelay.hpp \

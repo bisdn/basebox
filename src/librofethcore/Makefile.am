@@ -16,7 +16,7 @@ librofethcore_la_SOURCES = \
 
 librofethcore_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
-library_includedir=$(includedir)/rofl/common
+library_includedir=$(includedir)/roflibs/ethcore
 library_include_HEADERS= \
 	cfibentry.hpp \
 	cmemberport.hpp \

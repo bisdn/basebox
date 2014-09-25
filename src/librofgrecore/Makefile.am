@@ -2,7 +2,8 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-noinst_LTLIBRARIES = librofgrecore.la
+#noinst_LTLIBRARIES = librofgrecore.la
+lib_LTLIBRARIES = librofgrecore.la
 
 librofgrecore_la_SOURCES = \
 	cgrecore.cpp \
@@ -12,7 +13,7 @@ librofgrecore_la_SOURCES = \
 
 librofgrecore_la_LIBADD= -lrt 
 
-library_includedir=$(includedir)/rofl/common
+library_includedir=$(includedir)/roflibs/grecore
 library_include_HEADERS= \
 	cgrecore.hpp \
 	cgreterm.hpp

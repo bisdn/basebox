@@ -21,7 +21,7 @@ librofipcore_la_SOURCES = \
 
 librofipcore_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
-library_includedir=$(includedir)/rofl/common
+library_includedir=$(includedir)/roflibs/ipcore
 library_include_HEADERS= \
 	cipcore.hpp \
 	clink.hpp \

@@ -27,7 +27,7 @@ librofnetlink_la_SOURCES = \
 
 librofnetlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
-library_includedir=$(includedir)/rofl/common
+library_includedir=$(includedir)/roflibs/netlink
 library_include_HEADERS= \
 	cnetlink.hpp \
 	cnetdev.hpp \

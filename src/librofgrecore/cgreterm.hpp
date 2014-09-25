@@ -49,7 +49,7 @@ public:
 	cgreterm() :
 		state(STATE_DETACHED), eth_ofp_table_id(0), gre_ofp_table_id(0), ip_fwd_ofp_table_id(0),
 		idle_timeout(DEFAULT_IDLE_TIMEOUT),
-		gre_key(0), gre_portno(0) {};
+		gre_portno(0), gre_key(0) {};
 
 	/**
 	 *
