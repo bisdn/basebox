@@ -44,6 +44,16 @@ cgrecore::handle_dpt_open(rofl::crofdpt& dpt)
 
 		state = STATE_ATTACHED;
 
+		for (std::map<uint32_t, cgreterm_in4*>::iterator
+				it = terms_in4.begin(); it != terms_in4.end(); ++it) {
+			(*(it->second)).handle_dpt_open(dpt);
+		}
+
+		for (std::map<uint32_t, cgreterm_in6*>::iterator
+				it = terms_in6.begin(); it != terms_in6.end(); ++it) {
+			(*(it->second)).handle_dpt_open(dpt);
+		}
+
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[rofgre][cgrecore][handle_dpt_open] unable to find data path" << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
@@ -79,6 +89,16 @@ cgrecore::handle_dpt_close(rofl::crofdpt& dpt)
 				rofl::openflow::experimental::gre::coxmatch_ofx_gre_prot_type(GRE_PROT_TYPE_TRANSPARENT_ETHERNET_BRIDGING));
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+		for (std::map<uint32_t, cgreterm_in4*>::iterator
+				it = terms_in4.begin(); it != terms_in4.end(); ++it) {
+			(*(it->second)).handle_dpt_close(dpt);
+		}
+
+		for (std::map<uint32_t, cgreterm_in6*>::iterator
+				it = terms_in6.begin(); it != terms_in6.end(); ++it) {
+			(*(it->second)).handle_dpt_close(dpt);
+		}
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[rofgre][cgrecore][handle_dpt_open] unable to find data path" << e.what() << std::endl;

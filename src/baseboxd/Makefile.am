@@ -15,6 +15,6 @@ baseboxd_SOURCES = \
 baseboxd_LDADD = -lpthread -lrt \
 		-L../roflibs -lroflibs
 
-AM_CPPFLAGS = -I$(top_srcdir)/src
+AM_CPPFLAGS = -I$(top_srcdir)/src -I/usr/include/python2.7
 AM_LDFLAGS = 
 

@@ -17,6 +17,7 @@
 #include <rofl/common/protocols/fudpframe.h>
 #include <rofl/common/protocols/fipv4frame.h>
 #include <rofl/common/protocols/fipv6frame.h>
+#include <rofl/common/thread_helper.h>
 
 #include <roflibs/netlink/clogging.hpp>
 #include <roflibs/grecore/cgreterm.hpp>
@@ -147,6 +148,7 @@ public:
 	 */
 	void
 	clear_gre_terms_in4() {
+		rofl::RwLock rwlock(rwlock_in4, rofl::RwLock::RWLOCK_WRITE);
 		for (std::map<uint32_t, cgreterm_in4*>::iterator
 				it = terms_in4.begin(); it != terms_in4.end(); ++it) {
 			delete it->second;
@@ -160,6 +162,7 @@ public:
 	cgreterm_in4&
 	add_gre_term_in4(uint32_t term_id, uint32_t gre_portno,
 			const rofl::caddress_in4& laddr, const rofl::caddress_in4& raddr, uint32_t gre_key) {
+		rofl::RwLock rwlock(rwlock_in4, rofl::RwLock::RWLOCK_WRITE);
 		if (terms_in4.find(term_id) != terms_in4.end()) {
 			delete terms_in4[term_id];
 			terms_in4.erase(term_id);
@@ -180,6 +183,7 @@ public:
 	cgreterm_in4&
 	set_gre_term_in4(uint32_t term_id, uint32_t gre_portno,
 			const rofl::caddress_in4& laddr, const rofl::caddress_in4& raddr, uint32_t gre_key) {
+		rofl::RwLock rwlock(rwlock_in4, rofl::RwLock::RWLOCK_WRITE);
 		if (terms_in4.find(term_id) == terms_in4.end()) {
 			terms_in4[term_id] = new cgreterm_in4(dpid, eth_local_table_id, gre_local_table_id, ip_fwd_table_id,
 													laddr, raddr, gre_portno, gre_key);
@@ -197,6 +201,7 @@ public:
 	 */
 	cgreterm_in4&
 	set_gre_term_in4(uint32_t term_id) {
+		rofl::RwLock rwlock(rwlock_in4, rofl::RwLock::RWLOCK_READ);
 		if (terms_in4.find(term_id) == terms_in4.end()) {
 			throw eGreTermNotFound("cgrecore::get_gre_term_in4() term_id not found");
 		}
@@ -208,6 +213,7 @@ public:
 	 */
 	const cgreterm_in4&
 	get_gre_term_in4(uint32_t term_id) const {
+		rofl::RwLock rwlock(rwlock_in4, rofl::RwLock::RWLOCK_READ);
 		if (terms_in4.find(term_id) == terms_in4.end()) {
 			throw eGreTermNotFound("cgrecore::get_term_in4() term_id not found");
 		}
@@ -219,6 +225,7 @@ public:
 	 */
 	void
 	drop_gre_term_in4(uint32_t term_id) {
+		rofl::RwLock rwlock(rwlock_in4, rofl::RwLock::RWLOCK_WRITE);
 		if (terms_in4.find(term_id) == terms_in4.end()) {
 			return;
 		}
@@ -231,6 +238,7 @@ public:
 	 */
 	bool
 	has_gre_term_in4(uint32_t term_id) const {
+		rofl::RwLock rwlock(rwlock_in4, rofl::RwLock::RWLOCK_READ);
 		return (not (terms_in4.find(term_id) == terms_in4.end()));
 	};
 
@@ -241,6 +249,7 @@ public:
 	 */
 	void
 	clear_gre_terms_in6() {
+		rofl::RwLock rwlock(rwlock_in6, rofl::RwLock::RWLOCK_WRITE);
 		for (std::map<uint32_t, cgreterm_in6*>::iterator
 				it = terms_in6.begin(); it != terms_in6.end(); ++it) {
 			delete it->second;
@@ -254,6 +263,7 @@ public:
 	cgreterm_in6&
 	add_gre_term_in6(uint32_t term_id, uint32_t gre_portno,
 			const rofl::caddress_in6& laddr, const rofl::caddress_in6& raddr, uint32_t gre_key) {
+		rofl::RwLock rwlock(rwlock_in6, rofl::RwLock::RWLOCK_WRITE);
 		if (terms_in6.find(term_id) != terms_in6.end()) {
 			delete terms_in6[term_id];
 			terms_in6.erase(term_id);
@@ -274,6 +284,7 @@ public:
 	cgreterm_in6&
 	set_gre_term_in6(uint32_t term_id, uint32_t gre_portno,
 			const rofl::caddress_in6& laddr, const rofl::caddress_in6& raddr, uint32_t gre_key) {
+		rofl::RwLock rwlock(rwlock_in6, rofl::RwLock::RWLOCK_WRITE);
 		if (terms_in6.find(term_id) == terms_in6.end()) {
 			terms_in6[term_id] = new cgreterm_in6(dpid, eth_local_table_id, gre_local_table_id, ip_fwd_table_id,
 													laddr, raddr, gre_portno, gre_key);
@@ -291,6 +302,7 @@ public:
 	 */
 	cgreterm_in6&
 	set_gre_term_in6(uint32_t term_id) {
+		rofl::RwLock rwlock(rwlock_in6, rofl::RwLock::RWLOCK_READ);
 		if (terms_in6.find(term_id) == terms_in6.end()) {
 			throw eGreTermNotFound("cgrecore::get_gre_term_in6() term_id not found");
 		}
@@ -302,6 +314,7 @@ public:
 	 */
 	const cgreterm_in6&
 	get_gre_term_in6(uint32_t term_id) const {
+		rofl::RwLock rwlock(rwlock_in6, rofl::RwLock::RWLOCK_READ);
 		if (terms_in6.find(term_id) == terms_in6.end()) {
 			throw eGreTermNotFound("cgrecore::get_term_in6() term_id not found");
 		}
@@ -313,6 +326,7 @@ public:
 	 */
 	void
 	drop_gre_term_in6(uint32_t term_id) {
+		rofl::RwLock rwlock(rwlock_in6, rofl::RwLock::RWLOCK_WRITE);
 		if (terms_in6.find(term_id) == terms_in6.end()) {
 			return;
 		}
@@ -325,6 +339,7 @@ public:
 	 */
 	bool
 	has_gre_term_in6(uint32_t term_id) const {
+		rofl::RwLock rwlock(rwlock_in6, rofl::RwLock::RWLOCK_READ);
 		return (not (terms_in6.find(term_id) == terms_in6.end()));
 	};
 
@@ -361,7 +376,9 @@ private:
 	uint8_t										gre_local_table_id;
 	uint8_t										ip_fwd_table_id;
 	std::map<uint32_t, cgreterm_in4*>			terms_in4;
+	mutable rofl::PthreadRwLock					rwlock_in4;
 	std::map<uint32_t, cgreterm_in6*>			terms_in6;
+	mutable rofl::PthreadRwLock					rwlock_in6;
 	static std::map<rofl::cdpid, cgrecore*>		grecores;
 
 	static const uint8_t						GRE_IP_PROTO = 47;

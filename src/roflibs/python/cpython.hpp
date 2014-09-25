@@ -9,6 +9,7 @@
 #define CPYTHON_HPP_
 
 #include <Python.h>
+#include <string>
 
 namespace roflibs {
 namespace python {
@@ -46,7 +47,7 @@ public:
 	 *
 	 */
 	void
-	run();
+	run(const std::string& python_script);
 
 	/**
 	 *

@@ -534,7 +534,9 @@ cbasebox::handle_port_desc_stats_reply(
 	//rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
 
-	test_workflow();
+	//test_workflow();
+
+	roflibs::python::cpython::get_instance().run("./test.py");
 }
 
 

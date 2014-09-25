@@ -23,6 +23,7 @@
 #include <roflibs/netlink/clogging.hpp>
 #include <roflibs/netlink/cnetlink.hpp>
 #include <roflibs/netlink/ctundev.hpp>
+#include <roflibs/python/cpython.hpp>
 
 #include "cconfig.hpp"
 
