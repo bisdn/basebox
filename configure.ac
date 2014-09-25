@@ -104,6 +104,7 @@ AC_CONFIG_FILES([
 	src/dhcpv6snoop/Makefile
 	src/baseboxd/Makefile
 	src/ethboxd/Makefile
+	src/librofpython/Makefile
 	src/librofnetlink/Makefile
 	src/librofipcore/Makefile
 	src/librofethcore/Makefile
