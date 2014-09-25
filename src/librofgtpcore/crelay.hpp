@@ -19,7 +19,8 @@
 #include "clabel.hpp"
 #include "clogging.hpp"
 
-namespace rofgtp {
+namespace roflibs {
+namespace gtp {
 
 class eRelayBase : public std::runtime_error {
 public:
@@ -292,7 +293,7 @@ private:
 	clabel_in6 label_out;
 };
 
-
-}; // end of namespace rofgtp
+}; // end of namespace gtp
+}; // end of namespace roflibs
 
 #endif /* CRELAY_HPP_ */

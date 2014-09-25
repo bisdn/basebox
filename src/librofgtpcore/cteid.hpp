@@ -13,7 +13,8 @@
 
 #include "clogging.hpp"
 
-namespace rofgtp {
+namespace roflibs {
+namespace gtp {
 
 class cteid {
 public:
@@ -81,6 +82,7 @@ private:
 	uint32_t teid;
 };
 
-}; // end of namespace rofgtp
+}; // end of namespace gtp
+}; // end of namespace roflibs
 
 #endif /* CTEID_HPP_ */

@@ -16,7 +16,8 @@
 #include "cteid.hpp"
 #include "clogging.hpp"
 
-namespace rofgtp {
+namespace roflibs {
+namespace gtp {
 
 class clabel {
 public:
@@ -245,6 +246,7 @@ private:
 	caddress_gtp_in6	daddr;
 };
 
-}; // end of namespace rofgtp
+}; // end of namespace gtp
+}; // end of namespace roflibs
 
 #endif /* CLABEL_HPP_ */

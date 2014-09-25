@@ -15,7 +15,8 @@
 #include <ostream>
 #include <exception>
 
-namespace rofgtp {
+namespace roflibs {
+namespace gtp {
 
 class ePortBase : public std::runtime_error {
 public:
@@ -121,6 +122,7 @@ private:
 	uint16_t port;
 };
 
-}; // end of namespace rofgtp
+}; // end of namespace gtp
+}; // end of namespace roflibs
 
 #endif /* CPORT_HPP_ */

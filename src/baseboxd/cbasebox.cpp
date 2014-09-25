@@ -321,8 +321,8 @@ cbasebox::handle_dpt_open(
 
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid(), /*local-stage=*/3, /*out-stage=*/5);
 	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid(), /*default_vid=*/1, /*port-membership=*/0, /*src-table=*/1, /*dst-table=*/6);
-	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid(), /*ip-local-stage=*/3, /*gtp-stage=*/4); // yes, same as local for cipcore
-	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid(), /*ip-local-stage=*/3);
+	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid(), /*ip-local-stage=*/3, /*gtp-stage=*/4); // yes, same as local for cipcore
+	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid(), /*ip-local-stage=*/3);
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid(), /*eth-local*/0, /*ip-local*/3, /*gre-local*/4, /*ip-fwd*/5);
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
@@ -341,8 +341,8 @@ cbasebox::handle_dpt_close(
 	hook_dpt_detach();
 
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
-	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
+	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
 }
@@ -665,9 +665,9 @@ cbasebox::addr_in4_created(unsigned int ifindex, uint16_t adindex)
 		const rofcore::crtaddr_in4& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex);
 
-		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
-				add_socket_in4(rofgtp::caddress_gtp_in4(addr.get_local_addr(),
-						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
+		roflibs::gtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
+				add_socket_in4(roflibs::gtp::caddress_gtp_in4(addr.get_local_addr(),
+						roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
 	} catch (roflibs::ip::eLinkNotFound& e) {
 		// ignore addresses assigned to non-datapath ports
@@ -691,9 +691,9 @@ cbasebox::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
 		const rofcore::crtaddr_in4& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex);
 
-		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
-				drop_socket_in4(rofgtp::caddress_gtp_in4(addr.get_local_addr(),
-						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
+		roflibs::gtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
+				drop_socket_in4(roflibs::gtp::caddress_gtp_in4(addr.get_local_addr(),
+						roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
 	} catch (roflibs::ip::eLinkNotFound& e) {
 		// ignore addresses assigned to non-datapath ports
@@ -717,9 +717,9 @@ cbasebox::addr_in6_created(unsigned int ifindex, uint16_t adindex)
 		const rofcore::crtaddr_in6& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex);
 
-		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
-				add_socket_in6(rofgtp::caddress_gtp_in6(addr.get_local_addr(),
-						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
+		roflibs::gtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
+				add_socket_in6(roflibs::gtp::caddress_gtp_in6(addr.get_local_addr(),
+						roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
 	} catch (roflibs::ip::eLinkNotFound& e) {
 		// ignore addresses assigned to non-datapath ports
@@ -743,9 +743,9 @@ cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 		const rofcore::crtaddr_in6& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex);
 
-		rofgtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
-				drop_socket_in6(rofgtp::caddress_gtp_in6(addr.get_local_addr(),
-						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
+		roflibs::gtp::cgtprelay::set_gtp_relay(rofl::crofdpt::get_dpt(dptid).get_dpid()).
+				drop_socket_in6(roflibs::gtp::caddress_gtp_in6(addr.get_local_addr(),
+						roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
 	} catch (roflibs::ip::eLinkNotFound& e) {
 		// ignore addresses assigned to non-datapath ports
@@ -789,58 +789,58 @@ cbasebox::test_workflow()
 	 */
 	if (gtp_test) {
 
-		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_termdev("tun57").
+		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_termdev("tun57").
 				add_prefix_in4(rofcore::cprefix_in4(rofl::caddress_in4("192.168.2.1"), 24));
 
-		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_termdev("tun57").
+		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_termdev("tun57").
 				add_prefix_in4(rofcore::cprefix_in4(rofl::caddress_in4("192.168.4.1"), 24));
 
-		rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_termdev("tun57").
+		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).set_termdev("tun57").
 				add_prefix_in6(rofcore::cprefix_in6(rofl::caddress_in6("3000::1"), 64));
 
-		rofcore::logging::debug << rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).get_termdev("tun57");
+		rofcore::logging::debug << roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).get_termdev("tun57");
 	}
 	if (gtp_test) {
-		rofgtp::clabel_in4 label_egress(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::cteid(111111));
+		roflibs::gtp::clabel_in4 label_egress(
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::cteid(111111));
 
-		rofgtp::clabel_in4 label_ingress(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::cteid(111111));
+		roflibs::gtp::clabel_in4 label_ingress(
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::cteid(111111));
 
 		rofl::openflow::cofmatch tft_match(dpt.get_version());
 		tft_match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		tft_match.set_ipv4_src(rofl::caddress_in4("10.2.2.20"));
 		tft_match.set_ipv4_dst(rofl::caddress_in4("192.168.4.33"));
 
-		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_term_in4(label_egress, label_ingress, tft_match);
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_term_in4(label_egress, label_ingress, tft_match);
 	}
 	if (gtp_test) {
-		rofgtp::clabel_in4 label_in(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::cteid(111111));
-		rofgtp::clabel_in4 label_out(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::cteid(222222));
-		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
+		roflibs::gtp::clabel_in4 label_in(
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::cteid(111111));
+		roflibs::gtp::clabel_in4 label_out(
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::cteid(222222));
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
 	}
 	if (gtp_test) {
-		rofgtp::clabel_in4 label_in(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::cteid(222222));
-		rofgtp::clabel_in4 label_out(
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)),
-				rofgtp::cteid(111111));
-		rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
+		roflibs::gtp::clabel_in4 label_in(
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::cteid(222222));
+		roflibs::gtp::clabel_in4 label_out(
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::cteid(111111));
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).add_relay_in4(label_in, label_out);
 
-		rofcore::logging::debug << rofgtp::cgtpcore::get_gtp_core(dpt.get_dpid());
+		rofcore::logging::debug << roflibs::gtp::cgtpcore::get_gtp_core(dpt.get_dpid());
 	}
 }
 

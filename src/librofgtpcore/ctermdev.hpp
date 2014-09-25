@@ -24,7 +24,8 @@
 #include "cnetlink.hpp"
 #include "clogging.hpp"
 
-namespace rofgtp {
+namespace roflibs {
+namespace gtp {
 
 class eTermDevBase : public std::runtime_error {
 public:
@@ -251,6 +252,7 @@ private:
 	std::set<rofcore::cprefix_in6>			prefixes_in6;
 };
 
-}; // end of namespace rofgtp
+}; // end of namespace gtp
+}; // end of namespace roflibs
 
 #endif /* CTERMDEV_HPP_ */

@@ -22,7 +22,8 @@
 #include "crelay.hpp"
 #include "cterm.hpp"
 
-namespace rofgtp {
+namespace roflibs {
+namespace gtp {
 
 class eGtpCoreBase : public std::runtime_error {
 public:
@@ -628,6 +629,7 @@ private:
 	static std::map<rofl::cdpid, cgtpcore*>		gtpcores;
 };
 
-}; // end of namespace rofgtp
+}; // end of namespace gtp
+}; // end of namespace roflibs
 
 #endif /* CGTPCORE_HPP_ */

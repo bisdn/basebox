@@ -7,7 +7,7 @@
 
 #include "ctermdev.hpp"
 
-using namespace rofgtp;
+using namespace roflibs::gtp;
 
 void
 ctermdev::handle_dpt_open(rofl::crofdpt& dpt, const rofcore::cprefix_in4& prefix)

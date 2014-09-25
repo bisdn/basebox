@@ -24,7 +24,8 @@
 #include "caddress_gtp.hpp"
 #include "ctermdev.hpp"
 
-namespace rofgtp {
+namespace roflibs {
+namespace gtp {
 
 class eGtpRelayBase : public std::runtime_error {
 public:
@@ -459,6 +460,7 @@ private:
 	static std::map<rofl::cdpid, cgtprelay*>	gtprelays;
 };
 
-}; // end of namespace rofgtp
+}; // end of namespace gtp
+}; // end of namespace roflibs
 
 #endif /* CGTPRELAY_HPP_ */

@@ -14,7 +14,8 @@
 #include "cport.hpp"
 #include "clogging.hpp"
 
-namespace rofgtp {
+namespace roflibs {
+namespace gtp {
 
 class caddress_gtp {
 public:
@@ -216,6 +217,7 @@ private:
 	rofl::caddress_in6		addr;
 };
 
-}; // end of namespace rofgtp
+}; // end of namespace gtp
+}; // end of namespace roflibs
 
 #endif /* CTRSPADDR_HPP_ */

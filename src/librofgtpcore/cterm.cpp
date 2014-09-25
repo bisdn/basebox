@@ -7,7 +7,7 @@
 
 #include "cterm.hpp"
 
-using namespace rofgtp;
+using namespace roflibs::gtp;
 
 void
 cterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)

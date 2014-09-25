@@ -8,7 +8,7 @@
 #include "cgtprelay.hpp"
 #include "cgtpcore.hpp"
 
-using namespace rofgtp;
+using namespace roflibs::gtp;
 
 /*static*/std::map<rofl::cdpid, cgtprelay*> cgtprelay::gtprelays;
 
@@ -32,22 +32,22 @@ cgtprelay::handle_read(
 		case AF_INET: {
 			try {
 				// create label-in for received GTP message
-				rofgtp::caddress_gtp_in4 gtp_src_addr(
+				roflibs::gtp::caddress_gtp_in4 gtp_src_addr(
 						rofl::caddress_in4(from.ca_s4addr, sizeof(struct sockaddr_in)),
-						rofgtp::cport(from.ca_s4addr, sizeof(struct sockaddr_in)));
+						roflibs::gtp::cport(from.ca_s4addr, sizeof(struct sockaddr_in)));
 
-				rofgtp::caddress_gtp_in4 gtp_dst_addr(
+				roflibs::gtp::caddress_gtp_in4 gtp_dst_addr(
 						rofl::caddress_in4(socket.get_laddr().ca_s4addr, sizeof(struct sockaddr_in)),
-						rofgtp::cport(socket.get_laddr().ca_s4addr, sizeof(struct sockaddr_in)));
+						roflibs::gtp::cport(socket.get_laddr().ca_s4addr, sizeof(struct sockaddr_in)));
 
-				rofgtp::clabel_in4 label_in(gtp_src_addr, gtp_dst_addr, rofgtp::cteid(gtpu.get_teid()));
+				roflibs::gtp::clabel_in4 label_in(gtp_src_addr, gtp_dst_addr, roflibs::gtp::cteid(gtpu.get_teid()));
 
 				rofcore::logging::debug << "[cgtprelay][handle_read] label-in: " << std::endl << label_in;
 
 				if (cgtpcore::get_gtp_core(dpid).has_relay_in4(label_in)) {
 
 					// find associated label-out for label-in
-					const rofgtp::clabel_in4& label_out =
+					const roflibs::gtp::clabel_in4& label_out =
 							cgtpcore::get_gtp_core(dpid).
 									get_relay_in4(label_in).get_label_out();
 
@@ -67,7 +67,7 @@ cgtprelay::handle_read(
 				if (cgtpcore::get_gtp_core(dpid).has_term_in4(/*egress label*/label_in)) {
 
 					// find associated tft-match for label-in
-					const rofgtp::cterm_in4& term =
+					const roflibs::gtp::cterm_in4& term =
 							cgtpcore::get_gtp_core(dpid).get_term_in4(label_in);
 
 					rofl::cpacket* pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
@@ -94,22 +94,22 @@ cgtprelay::handle_read(
 		case AF_INET6: {
 			try {
 				// create label-in for received GTP message
-				rofgtp::caddress_gtp_in6 gtp_src_addr(
+				roflibs::gtp::caddress_gtp_in6 gtp_src_addr(
 						rofl::caddress_in6(from.ca_s6addr, sizeof(struct sockaddr_in6)),
-						rofgtp::cport(from.ca_s6addr, sizeof(struct sockaddr_in6)));
+						roflibs::gtp::cport(from.ca_s6addr, sizeof(struct sockaddr_in6)));
 
-				rofgtp::caddress_gtp_in6 gtp_dst_addr(
+				roflibs::gtp::caddress_gtp_in6 gtp_dst_addr(
 						rofl::caddress_in6(socket.get_laddr().ca_s6addr, sizeof(struct sockaddr_in6)),
-						rofgtp::cport(socket.get_laddr().ca_s6addr, sizeof(struct sockaddr_in6)));
+						roflibs::gtp::cport(socket.get_laddr().ca_s6addr, sizeof(struct sockaddr_in6)));
 
-				rofgtp::clabel_in6 label_in(gtp_src_addr, gtp_dst_addr, rofgtp::cteid(gtpu.get_teid()));
+				roflibs::gtp::clabel_in6 label_in(gtp_src_addr, gtp_dst_addr, roflibs::gtp::cteid(gtpu.get_teid()));
 
 				rofcore::logging::debug << "[cgtprelay][handle_read] label-in: " << std::endl << label_in;
 
 				if (cgtpcore::get_gtp_core(dpid).has_relay_in6(label_in)) {
 
 					// find associated label-out for label-in
-					const rofgtp::clabel_in6& label_out =
+					const roflibs::gtp::clabel_in6& label_out =
 							cgtpcore::get_gtp_core(dpid).
 									get_relay_in6(label_in).get_label_out();
 
@@ -129,7 +129,7 @@ cgtprelay::handle_read(
 				if (cgtpcore::get_gtp_core(dpid).has_term_in6(label_in)) {
 
 					// find associated tft-match for label-in
-					const rofgtp::cterm_in6& term =
+					const roflibs::gtp::cterm_in6& term =
 							cgtpcore::get_gtp_core(dpid).get_term_in6(/*egress label*/label_in);
 
 					rofl::cpacket* pkt = rofcore::cpacketpool::get_instance().acquire_pkt();

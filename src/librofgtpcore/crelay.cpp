@@ -7,7 +7,7 @@
 
 #include "crelay.hpp"
 
-using namespace rofgtp;
+using namespace roflibs::gtp;
 
 void
 crelay_in4::handle_dpt_open(rofl::crofdpt& dpt)

@@ -23,7 +23,8 @@
 #include "clogging.hpp"
 
 
-namespace rofgtp {
+namespace roflibs {
+namespace gtp {
 
 class eTermBase : public std::runtime_error {
 public:
@@ -388,6 +389,7 @@ private:
 	rofl::openflow::cofmatch tft_match;
 };
 
-}; // end of namespace rofgtp
+}; // end of namespace gtp
+}; // end of namespace roflibs
 
 #endif /* CTERM_HPP_ */
