@@ -343,7 +343,7 @@ public:
 				it = box.devs.begin(); it != box.devs.end(); ++it) {
 			os << *(it->second);
 		}
-		os << rofip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
+		os << roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
 		try {
 			os << roflibs::ethernet::cethcore::get_eth_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
 		} catch (rofl::eRofDptNotFound& e) {}

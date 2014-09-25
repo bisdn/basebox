@@ -26,7 +26,8 @@ extern "C" {
 
 #include "cnetlink.hpp"
 
-namespace rofip {
+namespace roflibs {
+namespace ip {
 
 class eNextHopBase : public std::runtime_error {
 public:
@@ -327,8 +328,8 @@ public:
 	};
 };
 
-
-}; // end of namespace
+}; // end of namespace ip
+}; // end of namespace roflibs
 
 #endif /* DPTNEIGH_H_ */
 

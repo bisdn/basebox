@@ -20,7 +20,8 @@
 #include "cnetlink.hpp"
 #include "clogging.hpp"
 
-namespace rofip {
+namespace roflibs {
+namespace ip {
 
 class caddr {
 public:
@@ -300,9 +301,7 @@ public:
 	};
 };
 
-
-
-
-}; // end of namespace
+}; // end of namespace ip
+}; // end of namespace roflibs
 
 #endif /* DPTADDR_H_ */

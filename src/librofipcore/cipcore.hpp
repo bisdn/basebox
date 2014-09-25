@@ -36,7 +36,8 @@ extern "C" {
 #include "cnetlink.hpp"
 #include "croutetable.hpp"
 
-namespace rofip {
+namespace roflibs {
+namespace ip {
 
 class eVmCoreBase 			: public std::exception {};
 class eVmCoreCritical 		: public eVmCoreBase {};
@@ -502,7 +503,7 @@ public:
 
 };
 
-}; // end of namespace vmcore
-
+}; // end of namespace ip
+}; // end of namespace roflibs
 
 #endif /* VMCORE_H_ */

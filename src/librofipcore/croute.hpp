@@ -30,7 +30,8 @@ extern "C" {
 #include "clink.hpp"
 #include "cnexthop.hpp"
 
-namespace rofip {
+namespace roflibs {
+namespace ip {
 
 class croute {
 public:
@@ -443,6 +444,7 @@ public:
 	};
 };
 
-};
+}; // end of namespace ip
+}; // end of namespace roflibs
 
 #endif /* CROUTE_HPP_ */

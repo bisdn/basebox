@@ -319,7 +319,7 @@ cbasebox::handle_dpt_open(
 		rofl::crofdpt& dpt) {
 	dptid = dpt.get_dptid();
 
-	rofip::cipcore::set_ip_core(dpt.get_dpid(), /*local-stage=*/3, /*out-stage=*/5);
+	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid(), /*local-stage=*/3, /*out-stage=*/5);
 	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid(), /*default_vid=*/1, /*port-membership=*/0, /*src-table=*/1, /*dst-table=*/6);
 	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid(), /*ip-local-stage=*/3, /*gtp-stage=*/4); // yes, same as local for cipcore
 	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid(), /*ip-local-stage=*/3);
@@ -344,7 +344,7 @@ cbasebox::handle_dpt_close(
 	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
 	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
 }
 
 
@@ -370,7 +370,7 @@ cbasebox::handle_packet_in(
 		switch (msg.get_table_id()) {
 		case 3:
 		case 4: {
-			rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+			roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 		} break;
 		default: {
 			if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
@@ -397,7 +397,7 @@ cbasebox::handle_flow_removed(
 	switch (msg.get_table_id()) {
 	case 3:
 	case 4: {
-		rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
+		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
 	} break;
 	default: {
 		if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
@@ -452,7 +452,7 @@ cbasebox::handle_port_status(
 		} return;
 		}
 
-		rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
+		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
 		if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
 			roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
 		}
@@ -469,7 +469,7 @@ cbasebox::handle_port_status(
 void
 cbasebox::handle_error_message(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
-	rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
+	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
 	if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
 		roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
 	}
@@ -500,7 +500,7 @@ cbasebox::handle_port_desc_stats_reply(
 	}
 
 	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	rofip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	//rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	//rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
@@ -660,7 +660,7 @@ void
 cbasebox::addr_in4_created(unsigned int ifindex, uint16_t adindex)
 {
 	try {
-		(void)rofip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
+		(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
 
 		const rofcore::crtaddr_in4& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex);
@@ -669,7 +669,7 @@ cbasebox::addr_in4_created(unsigned int ifindex, uint16_t adindex)
 				add_socket_in4(rofgtp::caddress_gtp_in4(addr.get_local_addr(),
 						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
-	} catch (rofip::eLinkNotFound& e) {
+	} catch (roflibs::ip::eLinkNotFound& e) {
 		// ignore addresses assigned to non-datapath ports
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in4_created] link not found" << std::endl;
@@ -686,7 +686,7 @@ void
 cbasebox::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
 {
 	try {
-		(void)rofip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
+		(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
 
 		const rofcore::crtaddr_in4& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex);
@@ -695,7 +695,7 @@ cbasebox::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
 				drop_socket_in4(rofgtp::caddress_gtp_in4(addr.get_local_addr(),
 						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
-	} catch (rofip::eLinkNotFound& e) {
+	} catch (roflibs::ip::eLinkNotFound& e) {
 		// ignore addresses assigned to non-datapath ports
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in4_deleted] link not found" << std::endl;
@@ -712,7 +712,7 @@ void
 cbasebox::addr_in6_created(unsigned int ifindex, uint16_t adindex)
 {
 	try {
-		(void)rofip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
+		(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
 
 		const rofcore::crtaddr_in6& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex);
@@ -721,7 +721,7 @@ cbasebox::addr_in6_created(unsigned int ifindex, uint16_t adindex)
 				add_socket_in6(rofgtp::caddress_gtp_in6(addr.get_local_addr(),
 						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
-	} catch (rofip::eLinkNotFound& e) {
+	} catch (roflibs::ip::eLinkNotFound& e) {
 		// ignore addresses assigned to non-datapath ports
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in6_created] link not found" << std::endl;
@@ -738,7 +738,7 @@ void
 cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 {
 	try {
-		(void)rofip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
+		(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
 
 		const rofcore::crtaddr_in6& addr = rofcore::cnetlink::get_instance().
 				get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex);
@@ -747,7 +747,7 @@ cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 				drop_socket_in6(rofgtp::caddress_gtp_in6(addr.get_local_addr(),
 						rofgtp::cport(rofgtp::cgtpcore::DEFAULT_GTPU_PORT)));
 
-	} catch (rofip::eLinkNotFound& e) {
+	} catch (roflibs::ip::eLinkNotFound& e) {
 		// ignore addresses assigned to non-datapath ports
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] link not found" << std::endl;

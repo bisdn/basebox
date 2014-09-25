@@ -27,7 +27,8 @@ extern "C" {
 #include "crtneigh.hpp"
 #include "cnetlink.hpp"
 
-namespace rofip {
+namespace roflibs {
+namespace ip {
 
 class cneigh {
 public:
@@ -353,8 +354,8 @@ public:
 	};
 };
 
-
-}; // end of namespace
+}; // end of namespace ip
+}; // end of namespace roflibs
 
 #endif /* CNEIGH_HPP_ */
 

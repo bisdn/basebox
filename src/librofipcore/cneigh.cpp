@@ -8,7 +8,7 @@
 #include "cneigh.hpp"
 #include "cipcore.hpp"
 
-using namespace rofip;
+using namespace roflibs::ip;
 
 
 void
@@ -26,7 +26,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 				netlink.get_links().get_link(rtn.get_ifindex());
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
-		const rofip::clink& dpl =
+		const roflibs::ip::clink& dpl =
 				cipcore::get_ip_core(dpid).get_link(rtn.get_ifindex());
 
 
@@ -194,7 +194,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 				netlink.get_links().get_link(rtn.get_ifindex());
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
-		const rofip::clink& dpl =
+		const roflibs::ip::clink& dpl =
 				cipcore::get_ip_core(dpid).get_link(rtn.get_ifindex());
 
 

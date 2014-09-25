@@ -1,6 +1,6 @@
 #include "cipcore.hpp"
 
-using namespace rofip;
+using namespace roflibs::ip;
 
 /*static*/std::map<rofl::cdpid, cipcore*> cipcore::ipcores;
 

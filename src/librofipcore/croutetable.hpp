@@ -14,7 +14,8 @@
 #include "croute.hpp"
 #include "clogging.hpp"
 
-namespace rofip {
+namespace roflibs {
+namespace ip {
 
 class eRtTableBase		: public std::runtime_error {
 public:
@@ -312,6 +313,7 @@ private:
 	std::map<unsigned int, croute_in6> 	rib6;
 };
 
-}; // end of namespace cr4table
+}; // end of namespace ip
+}; // end of namespace roflibs
 
 #endif /* CR4TABLE_H_ */

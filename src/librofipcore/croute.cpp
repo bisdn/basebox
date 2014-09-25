@@ -7,7 +7,7 @@
 
 #include "croute.hpp"
 
-using namespace rofip;
+using namespace roflibs::ip;
 
 croute_in4::croute_in4(
 		uint8_t rttblid, unsigned int rtindex, const rofl::cdpid& dpid,

@@ -21,7 +21,8 @@
 #include "caddr.hpp"
 #include "cneigh.hpp"
 
-namespace rofip {
+namespace roflibs {
+namespace ip {
 
 class eLinkBase 				: public std::runtime_error {
 public:
@@ -534,6 +535,7 @@ private:
 	std::map<unsigned int, cneigh_in6*>	neighs_in6;		// key: neigh ofp port-no
 };
 
-}; // end of namespace
+}; // end of namespace ip
+}; // end of namespace roflibs
 
 #endif /* DPTPORT_H_ */
