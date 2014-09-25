@@ -47,15 +47,18 @@ public:
 	 */
 	cvlan() :
 		state(STATE_IDLE), vid(VID_NO_VLAN), group_id(0),
-		in_stage_table_id(0), src_stage_table_id(1), dst_stage_table_id(2) {};
+		table_id_eth_in(0), table_id_eth_src(0), table_id_eth_local(0), table_id_eth_dst(0) {};
 
 	/**
 	 *
 	 */
-	cvlan(const rofl::cdpid& dpid, uint16_t vid = VID_NO_VLAN,
-			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 2) :
+	cvlan(const rofl::cdpid& dpid,
+			uint8_t table_id_eth_in, uint8_t table_id_eth_src,
+			uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
+			uint16_t vid) :
 		state(STATE_IDLE), dpid(dpid), vid(vid), group_id(0),
-		in_stage_table_id(in_stage_table_id), src_stage_table_id(src_stage_table_id), dst_stage_table_id(dst_stage_table_id) {};
+		table_id_eth_in(table_id_eth_in), table_id_eth_src(table_id_eth_src),
+		table_id_eth_local(table_id_eth_local), table_id_eth_dst(table_id_eth_dst) {};
 
 	/**
 	 *
@@ -84,9 +87,10 @@ public:
 		dpid 		= vlan.dpid;
 		vid 		= vlan.vid;
 		group_id 	= vlan.group_id;
-		in_stage_table_id  = vlan.in_stage_table_id;
-		src_stage_table_id = vlan.src_stage_table_id;
-		dst_stage_table_id = vlan.dst_stage_table_id;
+		table_id_eth_in  	= vlan.table_id_eth_in;
+		table_id_eth_src 	= vlan.table_id_eth_src;
+		table_id_eth_local 	= vlan.table_id_eth_local;
+		table_id_eth_dst 	= vlan.table_id_eth_dst;
 		ports.clear();
 		for (std::map<uint32_t, cmemberport>::const_iterator
 				it = vlan.ports.begin(); it != vlan.ports.end(); ++it) {
@@ -111,7 +115,7 @@ public:
 		if (ports.find(portno) != ports.end()) {
 			ports.erase(portno);
 		}
-		ports[portno] = cmemberport(dpid, portno, vid, tagged, in_stage_table_id, dst_stage_table_id);
+		ports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, vid, tagged);
 		if (STATE_ATTACHED == state) {
 			ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
@@ -136,7 +140,7 @@ public:
 	cmemberport&
 	set_port(uint32_t portno, bool tagged) {
 		if (ports.find(portno) == ports.end()) {
-			ports[portno] = cmemberport(dpid, portno, vid, tagged, in_stage_table_id, dst_stage_table_id);
+			ports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, vid, tagged);
 			update_group_entry_buckets();
 			if (STATE_ATTACHED == state) {
 				ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
@@ -196,7 +200,7 @@ public:
 			throw eFibEntryPortNotMember("cvlan::add_fib_entry() port is not member of this vlan");
 		}
 		fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr, permanent,
-							entry_timeout, src_stage_table_id, dst_stage_table_id);
+							entry_timeout, table_id_eth_src, table_id_eth_dst);
 		if (STATE_ATTACHED == state) {
 			fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
@@ -225,7 +229,7 @@ public:
 				throw eFibEntryPortNotMember("cvlan::set_fib_entry() port is not member of this vlan");
 			}
 			fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr, permanent,
-										entry_timeout, src_stage_table_id, dst_stage_table_id);
+										entry_timeout, table_id_eth_src, table_id_eth_dst);
 			if (STATE_ATTACHED == state) {
 				fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
@@ -382,9 +386,10 @@ private:
 
 	std::map<uint32_t, cmemberport>			ports;
 	std::map<rofl::caddress_ll, cfibentry>	fib;
-	uint8_t				in_stage_table_id;
-	uint8_t 			src_stage_table_id;
-	uint8_t				dst_stage_table_id;
+	uint8_t				table_id_eth_in;
+	uint8_t 			table_id_eth_src;
+	uint8_t				table_id_eth_local;
+	uint8_t				table_id_eth_dst;
 };
 
 }; // end of namespace ethernet

@@ -319,7 +319,7 @@ cethbox::handle_dpt_open(
 		rofl::crofdpt& dpt) {
 	dptid = dpt.get_dptid();
 
-	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid(), /*default_vid=*/1, /*port-membership=*/0, /*src-table=*/1, /*dst-table=*/6);
+	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid(), /*port-membership=*/0, /*src-table=*/1, /*local-table=*/2, /*dst-table=*/6, /*default_vid=*/1);
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
 	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);

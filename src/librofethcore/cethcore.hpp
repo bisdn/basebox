@@ -27,12 +27,14 @@ public:
 	 *
 	 */
 	static cethcore&
-	add_eth_core(const rofl::cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
-			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 3) {
+	add_eth_core(const rofl::cdpid& dpid,
+			uint8_t table_id_eth_in, uint8_t table_id_eth_src,
+			uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
+			uint16_t default_pvid = DEFAULT_PVID) {
 		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
 			delete cethcore::ethcores[dpid];
 		}
-		new cethcore(dpid, default_pvid, in_stage_table_id, src_stage_table_id, dst_stage_table_id);
+		new cethcore(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
 		return *(cethcore::ethcores[dpid]);
 	};
 
@@ -40,10 +42,23 @@ public:
 	 *
 	 */
 	static cethcore&
-	set_eth_core(const rofl::cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
-			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 3) {
+	set_eth_core(const rofl::cdpid& dpid,
+			uint8_t table_id_eth_in, uint8_t table_id_eth_src,
+			uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
+			uint16_t default_pvid = DEFAULT_PVID) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
-			new cethcore(dpid, default_pvid, in_stage_table_id, src_stage_table_id, dst_stage_table_id);
+			new cethcore(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
+		}
+		return *(cethcore::ethcores[dpid]);
+	};
+
+	/**
+	 *
+	 */
+	static cethcore&
+	set_eth_core(const rofl::cdpid& dpid) {
+		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
+			throw eVlanNotFound("cethcore::get_vtable() dpid not found");
 		}
 		return *(cethcore::ethcores[dpid]);
 	};
@@ -83,12 +98,15 @@ public:
 	/**
 	 *
 	 */
-	cethcore(const rofl::cdpid& dpid, uint16_t default_pvid = DEFAULT_PVID,
-			uint8_t in_stage_table_id = 0, uint8_t src_stage_table_id = 1, uint8_t dst_stage_table_id = 3) :
+	cethcore(const rofl::cdpid& dpid,
+			uint8_t table_id_eth_in, uint8_t table_id_eth_src,
+			uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
+			uint16_t default_pvid = DEFAULT_PVID) :
 		state(STATE_IDLE), dpid(dpid), default_pvid(default_pvid),
-		in_stage_table_id(in_stage_table_id),
-		src_stage_table_id(src_stage_table_id),
-		dst_stage_table_id(dst_stage_table_id) {
+		table_id_eth_in(table_id_eth_in),
+		table_id_eth_src(table_id_eth_src),
+		table_id_eth_local(table_id_eth_local),
+		table_id_eth_dst(table_id_eth_dst) {
 		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
 			throw eVlanExists("cethcore::cethcore() dptid already exists");
 		}
@@ -135,7 +153,7 @@ public:
 		if (vlans.find(vid) != vlans.end()) {
 			vlans.erase(vid);
 		}
-		vlans[vid] = cvlan(dpid, vid, in_stage_table_id, src_stage_table_id, dst_stage_table_id);
+		vlans[vid] = cvlan(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, vid);
 		if (STATE_ATTACHED == state) {
 			vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
@@ -148,7 +166,7 @@ public:
 	cvlan&
 	set_vlan(uint16_t vid) {
 		if (vlans.find(vid) == vlans.end()) {
-			vlans[vid] = cvlan(dpid, vid, in_stage_table_id, src_stage_table_id, dst_stage_table_id);
+			vlans[vid] = cvlan(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, vid);
 			if (STATE_ATTACHED == state) {
 				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
@@ -264,9 +282,10 @@ private:
 	uint16_t							default_pvid;
 	std::map<uint16_t, cvlan>			vlans;
 	std::set<uint32_t>					group_ids;
-	uint8_t								in_stage_table_id;
-	uint8_t								src_stage_table_id;
-	uint8_t								dst_stage_table_id;
+	uint8_t								table_id_eth_in;
+	uint8_t								table_id_eth_src;
+	uint8_t								table_id_eth_local;
+	uint8_t								table_id_eth_dst;
 
 	static std::map<rofl::cdpid, cethcore*> 	ethcores;
 

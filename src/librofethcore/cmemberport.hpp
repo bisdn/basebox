@@ -38,17 +38,18 @@ public:
 	 */
 	cmemberport() :
 		dpt_state(STATE_IDLE), portno(0xffffffff), vid(0xffff),
-		tagged(false), in_stage_table_id(0), out_stage_table_id(5) {};
+		tagged(false), table_id_eth_in(0), table_id_eth_local(0), table_id_eth_out(0) {};
 
 	/**
 	 *
 	 */
 	cmemberport(
-			const rofl::cdpid& dpid, uint32_t portno = 0xffffffff,
-			uint16_t vid = 0xffff, bool tagged = true,
-			uint8_t in_stage_table_id = 0, uint8_t out_stage_table_id = 5) :
+			const rofl::cdpid& dpid, uint8_t in_stage_table_id, uint8_t local_stage_table_id, uint8_t out_stage_table_id,
+			uint32_t portno = 0xffffffff,
+			uint16_t vid = 0xffff, bool tagged = true) :
 		dpt_state(STATE_IDLE), dpid(dpid), portno(portno), vid(vid),
-		tagged(tagged), in_stage_table_id(in_stage_table_id), out_stage_table_id(out_stage_table_id) {};
+		tagged(tagged), table_id_eth_in(in_stage_table_id),
+		table_id_eth_local(local_stage_table_id), table_id_eth_out(out_stage_table_id) {};
 
 	/**
 	 *
@@ -79,8 +80,9 @@ public:
 		portno 	= port.portno;
 		vid 	= port.vid;
 		tagged 	= port.tagged;
-		in_stage_table_id = port.in_stage_table_id;
-		out_stage_table_id = port.out_stage_table_id;
+		table_id_eth_in = port.table_id_eth_in;
+		table_id_eth_local = port.table_id_eth_local;
+		table_id_eth_out = port.table_id_eth_out;
 		return *this;
 	};
 
@@ -167,8 +169,9 @@ private:
 	uint32_t		portno;
 	uint16_t 		vid;
 	bool 			tagged;
-	uint8_t			in_stage_table_id;
-	uint8_t			out_stage_table_id;
+	uint8_t			table_id_eth_in;
+	uint8_t			table_id_eth_local; // MAC addresses assigned to local host
+	uint8_t			table_id_eth_out;
 };
 
 }; // end of namespace ethernet

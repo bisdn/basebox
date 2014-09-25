@@ -23,7 +23,7 @@ cvlan::handle_dpt_open(
 		// set redirecting entry for this vlan's flooding group entry
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 		fm.set_command(rofl::openflow::OFPFC_ADD);
-		fm.set_table_id(dst_stage_table_id);
+		fm.set_table_id(table_id_eth_dst);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
@@ -34,9 +34,9 @@ cvlan::handle_dpt_open(
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		// set broadcast entry in src stage
-		fm.set_table_id(src_stage_table_id);
+		fm.set_table_id(table_id_eth_src);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
-		fm.set_instructions().set_inst_goto_table().set_table_id(src_stage_table_id+1);
+		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_src+1);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		// send notification to all member ports
@@ -80,7 +80,7 @@ cvlan::handle_dpt_close(
 		// remove redirecting entry for this vlan's flooding group entry
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fm.set_table_id(dst_stage_table_id);
+		fm.set_table_id(table_id_eth_dst);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
@@ -89,7 +89,7 @@ cvlan::handle_dpt_close(
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		// remove broadcast entry in src stage
-		fm.set_table_id(src_stage_table_id);
+		fm.set_table_id(table_id_eth_src);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
