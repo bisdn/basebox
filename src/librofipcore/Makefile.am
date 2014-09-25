@@ -2,7 +2,8 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-noinst_LTLIBRARIES = librofipcore.la
+#noinst_LTLIBRARIES = librofipcore.la
+lib_LTLIBRARIES = librofipcore.la
 
 librofipcore_la_SOURCES = \
 	cipcore.hpp \

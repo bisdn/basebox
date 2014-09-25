@@ -2,7 +2,8 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-noinst_LTLIBRARIES = librofnetlink.la
+#noinst_LTLIBRARIES = librofnetlink.la
+lib_LTLIBRARIES = librofnetlink.la
 
 librofnetlink_la_SOURCES = \
 	cnetlink.hpp \

@@ -2,7 +2,8 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = librofrstp
 
-noinst_LTLIBRARIES = librofethcore.la
+#noinst_LTLIBRARIES = librofethcore.la
+lib_LTLIBRARIES = librofethcore.la
 
 librofethcore_la_SOURCES = \
 	cfibentry.cpp \

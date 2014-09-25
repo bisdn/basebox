@@ -2,7 +2,8 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-noinst_LTLIBRARIES = librofgtpcore.la
+#noinst_LTLIBRARIES = librofgtpcore.la
+lib_LTLIBRARIES = librofgtpcore.la
 
 librofgtpcore_la_SOURCES = \
 	cgtpcore.hpp \

@@ -10,7 +10,7 @@ librofpython_la_SOURCES = \
 
 librofpython_la_LIBADD= -lrt 
 
-library_includedir=$(includedir)/rofl/common
+library_includedir=$(includedir)/roflibs/python
 library_include_HEADERS= \
 	cpython.hpp
 
