@@ -1,4 +1,4 @@
-#include "rofgrecoremodule.hpp"
+#include "grecoremodule.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,12 +21,12 @@ static PyMethodDef RofGREcoreMethods[] = {
 };
 
 PyMODINIT_FUNC
-initrofgrecore(void)
+initgrecore(void)
 {
 	if (not PyEval_ThreadsInitialized()) {
 		PyEval_InitThreads();
 	}
-    (void) Py_InitModule("rofgrecore", RofGREcoreMethods);
+    (void) Py_InitModule("grecore", RofGREcoreMethods);
 }
 
 

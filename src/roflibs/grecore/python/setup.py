@@ -15,12 +15,12 @@ import platform
 
 
 if platform.system() == 'Linux':
-    doc_dir = '/home/andreas/local/share/doc/rofgrecore'
+    doc_dir = '/home/andreas/local/share/doc/grecore'
 else:
     try:
         from win32com.shell import shellcon, shell
         homedir = shell.SHGetFolderPath(0, shellcon.CSIDL_APPDATA, 0, 0)
-        appdir = 'rofgrecore'
+        appdir = 'grecore'
         doc_dir = os.path.join(homedir, appdir)
     except:
         pass
@@ -29,23 +29,23 @@ long_desc = \
 """
 """
 
-sgwumgt = Extension('rofgrecore',
+sgwumgt = Extension('grecore',
                     define_macros = [('MAJOR_VERSION', '0'),
                                      ('MINOR_VERSION', '5')],
-                    include_dirs = ['..', '/home/andreas/local/include', '/home/andreas/local/include/roflibs/netlink'],
-                    libraries = ['rofgrecore', 'rofl'],
+                    include_dirs = ['..', '/home/andreas/local/include'],
+                    libraries = ['roflibs_grecore', 'rofl'],
                     library_dirs = ['..', '/home/andreas/local/lib'],
 		    extra_compile_args = ['-Wno-write-strings'],
-                    sources = ['rofgrecoremodule.cpp'])
+                    sources = ['grecoremodule.cpp'])
 
-setup(name='rofgrecore',
+setup(name='grecore',
       version='0.5',
       author='Andreas Koepsel',
       author_email='rofl@bisdn.de',
       maintainer='',
       maintainer_email='',
       url='ssh://git.bisdn.de:2222/vmcore',
-      description="""pythonized version of librofgrecore for control and management""",
+      description="""pythonized version of libroflibs_grecore for control and management""",
       long_description=long_desc,
       download_url='',
       classifiers=[''],
