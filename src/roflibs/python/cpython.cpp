@@ -14,15 +14,21 @@ cpython* cpython::instance = (cpython*)0;
 int
 cpython::run(std::string python_script)
 {
-	Py_SetProgramName((char*)"/home/andreas/local/sbin/baseboxd");  /* optional but recommended */
+	Py_SetProgramName((char*)"/usr/bin/python2.7");  /* optional but recommended */
 	Py_Initialize();
+	int argc = 1;
+	char* argv[] = {
+			const_cast<char*>( python_script.c_str() ),
+	};
+	PySys_SetArgv(argc, argv);
 
+#if 0
 	PyObject* argv_list = PyList_New(0);
 	PyList_Append(argv_list, Py_BuildValue("s", ""));
-
+#endif
 	// Get a reference to the main module.
 	PyObject* main_module = PyImport_AddModule("__main__");
-	PyModule_AddObject(main_module, "argv", argv_list);
+	//PyModule_AddObject(main_module, "argv", argv_list);
 
 	PyObject * sys_module = PyImport_ImportModule("sys");
 	PyModule_AddObject(main_module, "sys", sys_module);
@@ -39,11 +45,6 @@ cpython::run(std::string python_script)
 	if (NULL == fp) {
 		return -1;
 	}
-	int argc = 1;
-	char* argv[] = {
-			(char*)python_script.c_str(),
-	};
-	PySys_SetArgv(argc, argv);
 	PyRun_File(fp, python_script.c_str(), Py_file_input, main_dict, main_dict);
 	fclose(fp);
 

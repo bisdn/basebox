@@ -30,7 +30,7 @@ cconfig::open(std::string const& confpath)
 		this->confpath = confpath;
 		Config::readFile(confpath.c_str());
 	} catch (FileIOException& e) {
-		std::cerr << "[ethcore][config] unable to find config file \"" << confpath << "\", continuing with defaults." << std::endl;
+		std::cerr << "[baseboxd][config] unable to find config file \"" << confpath << "\", continuing with defaults." << std::endl;
 	}
 }
 
