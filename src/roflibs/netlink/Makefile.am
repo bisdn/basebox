@@ -19,10 +19,15 @@ libroflibs_netlink_la_SOURCES = \
 	cpacketpool.hpp \
 	cpacketpool.cpp \
 	crtroute.hpp \
+	crtroutes.hpp \
 	crtaddr.hpp \
+	crtaddrs.hpp \
 	crtlink.hpp \
+	crtlinks.hpp \
 	crtneigh.hpp \
+	crtneighs.hpp \
 	crtnexthop.hpp \
+	crtnexthops.hpp \
 	clogging.cpp \
 	clogging.hpp
 
@@ -37,10 +42,15 @@ library_include_HEADERS= \
 	cprefix.hpp \
 	cpacketpool.hpp \
 	crtroute.hpp \
+	crtroutes.hpp \
 	crtaddr.hpp \
+	crtaddrs.hpp \
 	crtlink.hpp \
+	crtlinks.hpp \
 	crtneigh.hpp \
+	crtneighs.hpp \
 	crtnexthop.hpp \
+	crtnexthops.hpp \
 	clogging.hpp
 
 AM_CPPFLAGS=-fPIC

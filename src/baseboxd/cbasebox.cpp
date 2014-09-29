@@ -536,7 +536,7 @@ cbasebox::handle_port_desc_stats_reply(
 
 	//test_workflow();
 
-	roflibs::python::cpython::get_instance().run("./test.py");
+	roflibs::python::cpython::get_instance().run_as_thread("./test.py");
 }
 
 

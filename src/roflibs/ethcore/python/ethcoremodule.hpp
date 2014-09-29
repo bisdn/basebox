@@ -1,5 +1,5 @@
 /*
- * rofgrecoremodule.hpp
+ * rofethcoremodule.hpp
  *
  *  Created on: 25.09.2014
  *      Author: andreas
@@ -10,7 +10,6 @@
 
 #include <Python.h>
 #include <bitset.h>
-#include <roflibs/grecore/cgrecore.hpp>
-#include <roflibs/grecore/cgreterm.hpp>
+#include <roflibs/ethcore/cethcore.hpp>
 
 #endif /* ROFGRECOREMODULE_H_ */

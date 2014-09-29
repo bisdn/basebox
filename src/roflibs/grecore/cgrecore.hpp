@@ -347,7 +347,8 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cgrecore& grecore) {
-		os << rofcore::indent(0) << "<cgrecore "
+		os << rofcore::indent(0) << "<cgrecore dpid:" << (unsigned long long)grecore.dpid.get_uint64_t() << " "
+				<< " 0x" << std::hex << &grecore << std::dec << " "
 				<< "#in4-term(s): " << grecore.terms_in4.size() << " "
 				<< "#in6-term(s): " << grecore.terms_in6.size() << " >" << std::endl;
 		for (std::map<uint32_t, cgreterm_in4*>::const_iterator

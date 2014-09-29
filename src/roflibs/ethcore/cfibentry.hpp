@@ -54,7 +54,7 @@ public:
 	 */
 	cfibentry() :
 		state(STATE_IDLE), fib(0), vid(0), portno(0), tagged(true),
-		entry_timeout(0), dst_stage_table_id(2), src_stage_table_id(1) {};
+		src_stage_table_id(1), dst_stage_table_id(2), entry_timeout(0) {};
 
 	/**
 	 *
@@ -71,8 +71,9 @@ public:
 			uint8_t src_stage_table_id = 1,
 			uint8_t dst_stage_table_id = 2) :
 				state(STATE_IDLE), fib(fib), dpid(dpid), vid(vid), portno(portno),
-				tagged(tagged), lladdr(lladdr), entry_timeout(entry_timeout),
-				dst_stage_table_id(dst_stage_table_id), src_stage_table_id(src_stage_table_id) {
+				tagged(tagged), lladdr(lladdr),
+				src_stage_table_id(src_stage_table_id), dst_stage_table_id(dst_stage_table_id),
+				entry_timeout(entry_timeout) {
 		if (permanent_entry) flags.set(FLAG_PERMANENT_ENTRY);
 	};
 

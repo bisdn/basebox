@@ -6,19 +6,18 @@
  */
 
 #include "cpython.hpp"
-//#include "../grecore/python/grecoremodule.hpp"
 
 using namespace roflibs::python;
 
 cpython* cpython::instance = (cpython*)0;
 
-void
+int
 cpython::run(const std::string& python_script)
 {
 	FILE* fp = fopen(python_script.c_str(), "r");
 
 	if (NULL == fp) {
-		return;
+		return -1;
 	}
 
 	Py_SetProgramName(const_cast<char*>( python_script.c_str() ));  /* optional but recommended */
@@ -28,78 +27,75 @@ cpython::run(const std::string& python_script)
 
 	fclose(fp);
 
-#if 0
-    PyObject *pName, *pModule, *pDict, *pFunc;
-    PyObject *pArgs, *pValue;
-    int i;
-
-    if (argc < 3) {
-        fprintf(stderr,"Usage: call pythonfile funcname [args]\n");
-        return 1;
-    }
-
-    Py_Initialize();
-
-    pName = PyString_FromString(argv[1]);
-    /* Error checking of pName left out */
-
-    pModule = PyImport_Import(pName);
-    Py_DECREF(pName);
-
-    if (pModule != NULL) {
-        pFunc = PyObject_GetAttrString(pModule, argv[2]);
-        /* pFunc is a new reference */
-
-        if (pFunc && PyCallable_Check(pFunc)) {
-            pArgs = PyTuple_New(argc - 3);
-            for (i = 0; i < argc - 3; ++i) {
-                pValue = PyInt_FromLong(atoi(argv[i + 3]));
-                if (!pValue) {
-                    Py_DECREF(pArgs);
-                    Py_DECREF(pModule);
-                    fprintf(stderr, "Cannot convert argument\n");
-                    return 1;
-                }
-                /* pValue reference stolen here: */
-                PyTuple_SetItem(pArgs, i, pValue);
-            }
-            pValue = PyObject_CallObject(pFunc, pArgs);
-            Py_DECREF(pArgs);
-            if (pValue != NULL) {
-                printf("Result of call: %ld\n", PyInt_AsLong(pValue));
-                Py_DECREF(pValue);
-            }
-            else {
-                Py_DECREF(pFunc);
-                Py_DECREF(pModule);
-                PyErr_Print();
-                fprintf(stderr,"Call failed\n");
-                return 1;
-            }
-        }
-        else {
-            if (PyErr_Occurred())
-                PyErr_Print();
-            fprintf(stderr, "Cannot find function \"%s\"\n", argv[2]);
-        }
-        Py_XDECREF(pFunc);
-        Py_DECREF(pModule);
-    }
-    else {
-        PyErr_Print();
-        fprintf(stderr, "Failed to load \"%s\"\n", argv[1]);
-        return 1;
-    }
-    Py_Finalize();
-    return 0;
-#endif
+	return 0;
 }
 
 
-void
-cpython::stop()
+pthread_t
+cpython::run_as_thread(const std::string& python_script)
 {
+	pthread_t tid = 0;
+	int rc = 0;
 
+	rofl::RwLock rwlock(threads_rwlock, rofl::RwLock::RWLOCK_WRITE);
+
+	if ((rc = pthread_create(&tid, NULL, cpython::run_script, NULL)) < 0) {
+		return 0;
+	}
+
+	threads[tid] = python_script;
+
+	return tid;
 }
+
+
+int
+cpython::stop_thread(pthread_t tid)
+{
+	rofl::RwLock rwlock(threads_rwlock, rofl::RwLock::RWLOCK_WRITE);
+
+	if (threads.find(tid) == threads.end()) {
+		throw ePythonNotFound("cpython::stop_thread()");
+	}
+	pthread_cancel(tid);
+	int* retval = (int*)NULL;
+	pthread_join(tid, (void**)&retval);
+	threads.erase(tid);
+	return 0;
+}
+
+
+const std::string&
+cpython::get_thread_arg(pthread_t tid) const
+{
+	rofl::RwLock rwlock(threads_rwlock, rofl::RwLock::RWLOCK_READ);
+
+	if (threads.find(tid) == threads.end()) {
+		throw ePythonNotFound("cpython::get_thread_arg()");
+	}
+	return threads.at(tid);
+}
+
+
+bool
+cpython::has_thread_arg(pthread_t tid) const
+{
+	rofl::RwLock rwlock(threads_rwlock, rofl::RwLock::RWLOCK_READ);
+	return (not (threads.find(tid) == threads.end()));
+}
+
+
+/*static*/
+void*
+cpython::run_script(void* arg)
+{
+	while (not cpython::get_instance().has_thread_arg(pthread_self())) {
+		sleep(1);
+	}
+	cpython::get_instance().run(cpython::get_instance().get_thread_arg(pthread_self()));
+
+	return NULL;
+}
+
 
 

@@ -108,7 +108,8 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cgreterm& greterm) {
-		os << rofcore::indent(0) << "<cgreterm key:" << (unsigned int)greterm.get_gre_key() << " >" << std::endl;
+		os << rofcore::indent(0) << "<cgreterm key:0x"
+				<< std::hex << (unsigned int)greterm.get_gre_key() << std::dec << " >" << std::endl;
 		return os;
 	};
 
@@ -232,7 +233,7 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cgreterm_in4& greterm) {
-		os << rofcore::indent(0) << dynamic_cast<const cgreterm&>( greterm ) << std::endl;
+		os << rofcore::indent(0) << dynamic_cast<const cgreterm&>( greterm );
 		os << rofcore::indent(2) << "<cgreterm_in4 >" << std::endl;
 		os << rofcore::indent(4) << "<laddr " << greterm.get_local_addr().str() << " >" << std::endl;
 		os << rofcore::indent(4) << "<raddr " << greterm.get_remote_addr().str() << " >" << std::endl;
@@ -365,7 +366,7 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cgreterm_in6& greterm) {
-		os << rofcore::indent(0) << dynamic_cast<const cgreterm&>( greterm ) << std::endl;
+		os << rofcore::indent(0) << dynamic_cast<const cgreterm&>( greterm );
 		os << rofcore::indent(2) << "<cgreterm_in6 >" << std::endl;
 		os << rofcore::indent(4) << "<laddr " << greterm.get_local_addr().str() << " >" << std::endl;
 		os << rofcore::indent(4) << "<raddr " << greterm.get_remote_addr().str() << " >" << std::endl;

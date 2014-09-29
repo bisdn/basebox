@@ -20,6 +20,16 @@
 namespace roflibs {
 namespace ethernet {
 
+class eEthCoreBase : public std::runtime_error {
+public:
+	eEthCoreBase(const std::string& __arg) : std::runtime_error(__arg) {};
+};
+class eEthCoreNotFound : public eEthCoreBase {
+public:
+	eEthCoreNotFound(const std::string& __arg) : eEthCoreBase(__arg) {};
+};
+
+
 class cethcore : public rofcore::cnetlink_common_observer {
 public:
 
@@ -58,7 +68,7 @@ public:
 	static cethcore&
 	set_eth_core(const rofl::cdpid& dpid) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
-			throw eVlanNotFound("cethcore::get_vtable() dpid not found");
+			throw eEthCoreNotFound("cethcore::get_vtable() dpid not found");
 		}
 		return *(cethcore::ethcores[dpid]);
 	};
@@ -69,7 +79,7 @@ public:
 	static const cethcore&
 	get_eth_core(const rofl::cdpid& dpid) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
-			throw eVlanNotFound("cethcore::get_vtable() dpid not found");
+			throw eEthCoreNotFound("cethcore::get_vtable() dpid not found");
 		}
 		return *(cethcore::ethcores.at(dpid));
 	};
@@ -93,7 +103,7 @@ public:
 		return (not (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()));
 	};
 
-public:
+private:
 
 	/**
 	 *

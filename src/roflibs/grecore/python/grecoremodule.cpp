@@ -1,5 +1,7 @@
 #include "grecoremodule.hpp"
 
+using namespace roflibs::gre;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
