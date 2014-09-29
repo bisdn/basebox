@@ -225,7 +225,7 @@ cbasebox::run(int argc, char** argv)
 
 	rofcore::logging::notice << "[baseboxd][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
-	basebox::cbasebox& rofbase = basebox::cbasebox::get_instance(versionbitmap);
+	basebox::cbasebox& box = basebox::cbasebox::get_instance(versionbitmap);
 
 	//base.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
 
@@ -248,8 +248,15 @@ cbasebox::run(int argc, char** argv)
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string(portno.str());
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_HOSTNAME).set_string(bindaddr.str());
 
-	rofbase.rpc_listen_for_dpts(socket_type, socket_params);
+	box.rpc_listen_for_dpts(socket_type, socket_params);
 
+
+	/*
+	 * extract python script to execute as business/use case specific logic
+	 */
+	if (ethcore::cconfig::get_instance().exists("baseboxd.usecase.script")) {
+		box.set_python_script((const char*)ethcore::cconfig::get_instance().lookup("baseboxd.usecase.script"));
+	}
 
 	/*
 	 * start main loop, does not return
@@ -512,12 +519,14 @@ cbasebox::handle_port_desc_stats_reply(
 
 	dpt.set_ports() = msg.get_ports();
 
+#if 0
 	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
 			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
 		const rofl::openflow::cofport& port = *(it->second);
 
 		roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).set_vlan(/*default_vid=*/1).add_port(port.get_port_no(), /*tagged=*/false);
 	}
+#endif
 
 	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
 			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
@@ -530,13 +539,24 @@ cbasebox::handle_port_desc_stats_reply(
 
 	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	//rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	//rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
+#if 0
+	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
+#endif
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
 
 	//test_workflow();
 
-	roflibs::python::cpython::get_instance().run_as_thread("./test.py");
+	if (not python_script.empty()) {
+		roflibs::python::cpython::get_instance().run_as_thread(python_script);
+		sleep(2);
+	}
+
+	std::cerr << "=====================================" << std::endl;
+	std::cerr << roflibs::ethernet::cethcore::get_eth_core(dpt.get_dpid());
+	std::cerr << roflibs::ip::cipcore::get_ip_core(dpt.get_dpid());
+	std::cerr << roflibs::gre::cgrecore::get_gre_core(dpt.get_dpid());
+	std::cerr << "=====================================" << std::endl;
 }
 
 

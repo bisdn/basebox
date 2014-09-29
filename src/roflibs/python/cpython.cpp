@@ -12,20 +12,42 @@ using namespace roflibs::python;
 cpython* cpython::instance = (cpython*)0;
 
 int
-cpython::run(const std::string& python_script)
+cpython::run(std::string python_script)
 {
-	FILE* fp = fopen(python_script.c_str(), "r");
+	Py_SetProgramName((char*)"/home/andreas/local/sbin/baseboxd");  /* optional but recommended */
+	Py_Initialize();
 
+	PyObject* argv_list = PyList_New(0);
+	PyList_Append(argv_list, Py_BuildValue("s", ""));
+
+	// Get a reference to the main module.
+	PyObject* main_module = PyImport_AddModule("__main__");
+	PyModule_AddObject(main_module, "argv", argv_list);
+
+	PyObject * sys_module = PyImport_ImportModule("sys");
+	PyModule_AddObject(main_module, "sys", sys_module);
+	PyObject * grecore_module = PyImport_ImportModule("grecore");
+	PyModule_AddObject(main_module, "grecore", grecore_module);
+	PyObject * ethcore_module = PyImport_ImportModule("ethcore");
+	PyModule_AddObject(main_module, "ethcore", ethcore_module);
+
+	// Get the main module's dictionary
+	// and make a copy of it.
+	PyObject* main_dict = PyModule_GetDict(main_module);
+
+	FILE* fp = fopen(python_script.c_str(), "r");
 	if (NULL == fp) {
 		return -1;
 	}
-
-	Py_SetProgramName(const_cast<char*>( python_script.c_str() ));  /* optional but recommended */
-	Py_Initialize();
-	PyRun_SimpleFile(fp, python_script.c_str());
-	Py_Finalize();
-
+	int argc = 1;
+	char* argv[] = {
+			(char*)python_script.c_str(),
+	};
+	PySys_SetArgv(argc, argv);
+	PyRun_File(fp, python_script.c_str(), Py_file_input, main_dict, main_dict);
 	fclose(fp);
+
+	Py_Finalize();
 
 	return 0;
 }

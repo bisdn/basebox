@@ -67,7 +67,7 @@ public:
 	 *
 	 */
 	int
-	run(const std::string& python_script);
+	run(std::string python_script);
 
 	/**
 	 *

@@ -12,6 +12,7 @@
 #include <iostream>
 #include <map>
 #include <rofl/common/crofdpt.h>
+#include <rofl/common/thread_helper.h>
 
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/clogging.hpp"
@@ -160,6 +161,7 @@ public:
 	 */
 	cvlan&
 	add_vlan(uint16_t vid) {
+		rofl::RwLock rwlock(vlans_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (vlans.find(vid) != vlans.end()) {
 			vlans.erase(vid);
 		}
@@ -175,6 +177,7 @@ public:
 	 */
 	cvlan&
 	set_vlan(uint16_t vid) {
+		rofl::RwLock rwlock(vlans_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (vlans.find(vid) == vlans.end()) {
 			vlans[vid] = cvlan(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, vid);
 			if (STATE_ATTACHED == state) {
@@ -189,6 +192,7 @@ public:
 	 */
 	void
 	drop_vlan(uint16_t vid) {
+		rofl::RwLock rwlock(vlans_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (vlans.find(vid) == vlans.end()) {
 			return;
 		}
@@ -203,6 +207,7 @@ public:
 	 */
 	const cvlan&
 	get_vlan(uint16_t vid) const {
+		rofl::RwLock rwlock(vlans_rwlock, rofl::RwLock::RWLOCK_READ);
 		if (vlans.find(vid) == vlans.end()) {
 			throw eVlanNotFound("cethcore::get_vlan() vid not found");
 		}
@@ -214,6 +219,7 @@ public:
 	 */
 	bool
 	has_vlan(uint16_t vid) const {
+		rofl::RwLock rwlock(vlans_rwlock, rofl::RwLock::RWLOCK_READ);
 		return (not (vlans.find(vid) == vlans.end()));
 	};
 
@@ -266,6 +272,7 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cethcore& core) {
+		rofl::RwLock rwlock(core.vlans_rwlock, rofl::RwLock::RWLOCK_READ);
 		os << rofcore::indent(0) << "<cethcore default-pvid: " << (int)core.get_default_pvid() << " >" << std::endl;
 		rofcore::indent i(2);
 		os << core.get_dpid();
@@ -291,6 +298,7 @@ private:
 	rofl::cdpid							dpid;
 	uint16_t							default_pvid;
 	std::map<uint16_t, cvlan>			vlans;
+	mutable rofl::PthreadRwLock			vlans_rwlock;
 	std::set<uint32_t>					group_ids;
 	uint8_t								table_id_eth_in;
 	uint8_t								table_id_eth_src;

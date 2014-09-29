@@ -8,6 +8,7 @@
 #ifndef CROFBASE_HPP_
 #define CROFBASE_HPP_
 
+#include <string>
 #include <iostream>
 #include <exception>
 #include <rofl/common/crofbase.h>
@@ -160,6 +161,11 @@ public:
 	enqueue(
 			rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts);
 
+	/**
+	 *
+	 */
+	void
+	set_python_script(const std::string& python_script) { this->python_script = python_script; };
 
 
 private:
@@ -422,6 +428,7 @@ private:
 	static std::string script_path_port_down;
 
 	std::map<uint32_t, rofcore::ctapdev*>	devs;
+	std::string	python_script;
 };
 
 }; // end of namespace ethcore

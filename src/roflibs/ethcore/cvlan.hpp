@@ -13,6 +13,7 @@
 #include <exception>
 #include <map>
 #include <rofl/common/crofdpt.h>
+#include <rofl/common/thread_helper.h>
 
 #include "roflibs/netlink/clogging.hpp"
 #include "roflibs/ethcore/cmemberport.hpp"
@@ -112,6 +113,7 @@ public:
 	 */
 	cmemberport&
 	add_port(uint32_t portno, bool tagged = true) {
+		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (ports.find(portno) != ports.end()) {
 			ports.erase(portno);
 		}
@@ -128,6 +130,7 @@ public:
 	 */
 	cmemberport&
 	set_port(uint32_t portno) {
+		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_READ);
 		if (ports.find(portno) == ports.end()) {
 			throw eMemberPortNotFound("cvlan::set_port() portno not found");
 		}
@@ -139,6 +142,7 @@ public:
 	 */
 	cmemberport&
 	set_port(uint32_t portno, bool tagged) {
+		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (ports.find(portno) == ports.end()) {
 			ports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, vid, tagged);
 			update_group_entry_buckets();
@@ -154,6 +158,7 @@ public:
 	 */
 	const cmemberport&
 	get_port(uint32_t portno) const {
+		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_READ);
 		if (ports.find(portno) == ports.end()) {
 			throw eMemberPortNotFound("cvlan::get_port() portno not found");
 		}
@@ -165,6 +170,7 @@ public:
 	 */
 	void
 	drop_port(uint32_t portno) {
+		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (ports.find(portno) == ports.end()) {
 			return;
 		}
@@ -182,6 +188,7 @@ public:
 	 */
 	bool
 	has_port(uint32_t portno) const {
+		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_READ);
 		return (not (ports.find(portno) == ports.end()));
 	};
 
@@ -343,6 +350,7 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cvlan& vlan) {
+		rofl::RwLock rwlock(vlan.ports_rwlock, rofl::RwLock::RWLOCK_READ);
 		os << rofcore::indent(0) << "<cvlan "
 				<< "vid: " << (int)vlan.get_vid() << " "
 				<< "group-id: " << (int)vlan.get_group_id() << " "
@@ -385,6 +393,7 @@ private:
 	uint32_t			group_id;	// OFP group identifier for broadcasting frames for this vid
 
 	std::map<uint32_t, cmemberport>			ports;
+	mutable rofl::PthreadRwLock				ports_rwlock;
 	std::map<rofl::caddress_ll, cfibentry>	fib;
 	uint8_t				table_id_eth_in;
 	uint8_t 			table_id_eth_src;
