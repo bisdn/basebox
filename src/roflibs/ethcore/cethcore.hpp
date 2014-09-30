@@ -153,6 +153,20 @@ public:
 	/**
 	 *
 	 */
+	std::vector<uint16_t>
+	get_vlans() const {
+		rofl::RwLock rwlock(vlans_rwlock, rofl::RwLock::RWLOCK_READ);
+		std::vector<uint16_t> vids;
+		for (std::map<uint16_t, cvlan>::const_iterator
+				it = vlans.begin(); it != vlans.end(); ++it) {
+			vids.push_back(it->first);
+		}
+		return vids;
+	};
+
+	/**
+	 *
+	 */
 	void
 	clear() { vlans.clear(); };
 

@@ -33,6 +33,10 @@ class ePythonNotFound : public ePythonBase {
 public:
 	ePythonNotFound(const std::string& __arg) : ePythonBase(__arg) {};
 };
+class ePythonFailed : public ePythonBase {
+public:
+	ePythonFailed(const std::string& __arg) : ePythonBase(__arg) {};
+};
 
 class cpython {
 
@@ -41,7 +45,10 @@ class cpython {
 	/**
 	 *
 	 */
-	cpython()
+	cpython() :
+		tid(0),
+		program_name(DEFAULT_PROGRAM_NAME),
+		script(DEFAULT_SCRIPT)
 	{};
 
 	/**
@@ -66,20 +73,35 @@ public:
 	/**
 	 *
 	 */
-	int
-	run(std::string python_script);
+	void
+	run(const std::string& python_script = DEFAULT_SCRIPT,
+			const std::string& program_name = DEFAULT_PROGRAM_NAME);
 
 	/**
 	 *
 	 */
-	pthread_t
-	run_as_thread(const std::string& python_script);
+	void
+	stop();
 
 	/**
 	 *
 	 */
-	int
-	stop_thread(pthread_t tid);
+	const std::string&
+	get_program_name() const {
+		rofl::RwLock rwlock(thread_rwlock, rofl::RwLock::RWLOCK_READ);
+		return program_name;
+	};
+
+	/**
+	 *
+	 */
+	const std::string&
+	get_script() const {
+		rofl::RwLock rwlock(thread_rwlock, rofl::RwLock::RWLOCK_READ);
+		return script;
+	};
+
+private:
 
 	/**
 	 *
@@ -87,22 +109,14 @@ public:
 	static
 	void* run_script(void* arg);
 
-	/**
-	 *
-	 */
-	const std::string&
-	get_thread_arg(pthread_t tid) const;
-
-	/**
-	 *
-	 */
-	bool
-	has_thread_arg(pthread_t tid) const;
-
 private:
 
-	std::map<pthread_t, std::string>		threads; // key: tid, value: python_script
-	mutable rofl::PthreadRwLock				threads_rwlock;
+	static std::string				DEFAULT_PROGRAM_NAME;
+	std::string						program_name;
+	static std::string				DEFAULT_SCRIPT;
+	std::string						script;
+	pthread_t						tid;
+	mutable rofl::PthreadRwLock		thread_rwlock;
 };
 
 }; // end of namespace python

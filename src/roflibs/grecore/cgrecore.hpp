@@ -142,6 +142,19 @@ public:
 
 public:
 
+	/**
+	 *
+	 */
+	std::vector<uint32_t>
+	get_gre_terms_in4() const {
+		rofl::RwLock rwlock(rwlock_in4, rofl::RwLock::RWLOCK_READ);
+		std::vector<uint32_t> termids;
+		for (std::map<uint32_t, cgreterm_in4*>::const_iterator
+				it = terms_in4.begin(); it != terms_in4.end(); ++it) {
+			termids.push_back(it->first);
+		}
+		return termids;
+	};
 
 	/**
 	 *
@@ -243,6 +256,20 @@ public:
 	};
 
 public:
+
+	/**
+	 *
+	 */
+	std::vector<uint32_t>
+	get_gre_terms_in6() const {
+		rofl::RwLock rwlock(rwlock_in6, rofl::RwLock::RWLOCK_READ);
+		std::vector<uint32_t> termids;
+		for (std::map<uint32_t, cgreterm_in6*>::const_iterator
+				it = terms_in6.begin(); it != terms_in6.end(); ++it) {
+			termids.push_back(it->first);
+		}
+		return termids;
+	};
 
 	/**
 	 *

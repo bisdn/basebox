@@ -255,7 +255,10 @@ cbasebox::run(int argc, char** argv)
 	 * extract python script to execute as business/use case specific logic
 	 */
 	if (ethcore::cconfig::get_instance().exists("baseboxd.usecase.script")) {
-		box.set_python_script((const char*)ethcore::cconfig::get_instance().lookup("baseboxd.usecase.script"));
+		std::string script = (const char*)ethcore::cconfig::get_instance().lookup("baseboxd.usecase.script");
+		box.set_python_script(script);
+		roflibs::python::cpython::get_instance().run(script);
+		sleep(1);
 	}
 
 	/*
@@ -296,6 +299,9 @@ cbasebox::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 				actions,
 				pkt->soframe(),
 				pkt->length());
+
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::warn << "[cbasebox][enqueue] no data path attached, dropping outgoing packet" << std::endl;
 
 	} catch (eLinkNoDptAttached& e) {
 		rofcore::logging::warn << "[cbasebox][enqueue] no data path attached, dropping outgoing packet" << std::endl;
@@ -547,9 +553,10 @@ cbasebox::handle_port_desc_stats_reply(
 
 	//test_workflow();
 
-	if (not python_script.empty()) {
-		roflibs::python::cpython::get_instance().run_as_thread(python_script);
-		sleep(2);
+	if (ethcore::cconfig::get_instance().exists("baseboxd.usecase.script")) {
+		std::string script = (const char*)ethcore::cconfig::get_instance().lookup("baseboxd.usecase.script");
+		roflibs::python::cpython::get_instance().run(script);
+		sleep(1);
 	}
 
 	std::cerr << "=====================================" << std::endl;

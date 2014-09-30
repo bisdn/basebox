@@ -111,6 +111,20 @@ public:
 	/**
 	 *
 	 */
+	std::vector<uint32_t>
+	get_ports() const {
+		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_READ);
+		std::vector<uint32_t> portnos;
+		for (std::map<uint32_t, cmemberport>::const_iterator
+				it = ports.begin(); it != ports.end(); ++it) {
+			portnos.push_back(it->first);
+		}
+		return portnos;
+	};
+
+	/**
+	 *
+	 */
 	cmemberport&
 	add_port(uint32_t portno, bool tagged = true) {
 		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_WRITE);

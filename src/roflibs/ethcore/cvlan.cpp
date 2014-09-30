@@ -241,6 +241,8 @@ cvlan::update_group_entry_buckets(uint16_t command)
 
 		rofl::crofdpt::get_dpt(dpid).send_group_mod_message(rofl::cauxid(0), gm);
 
+	} catch (rofl::eRofBaseCongested& e) {
+		rofcore::logging::debug << "[cvlan][update_group_entry_buckets] control channel congested" << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
 		rofcore::logging::debug << "[cvlan][update_group_entry_buckets] control channel congested" << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
