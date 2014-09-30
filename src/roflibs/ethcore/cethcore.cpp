@@ -10,6 +10,7 @@
 using namespace roflibs::ethernet;
 
 /*static*/std::map<rofl::cdpid, cethcore*> cethcore::ethcores;
+/*static*/std::set<uint64_t> cethcore::dpids;
 
 void
 cethcore::handle_dpt_open(rofl::crofdpt& dpt)

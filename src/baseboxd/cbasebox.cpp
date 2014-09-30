@@ -258,7 +258,6 @@ cbasebox::run(int argc, char** argv)
 		std::string script = (const char*)ethcore::cconfig::get_instance().lookup("baseboxd.usecase.script");
 		box.set_python_script(script);
 		roflibs::python::cpython::get_instance().run(script);
-		sleep(1);
 	}
 
 	/*
@@ -553,12 +552,6 @@ cbasebox::handle_port_desc_stats_reply(
 
 	//test_workflow();
 
-	if (ethcore::cconfig::get_instance().exists("baseboxd.usecase.script")) {
-		std::string script = (const char*)ethcore::cconfig::get_instance().lookup("baseboxd.usecase.script");
-		roflibs::python::cpython::get_instance().run(script);
-		sleep(1);
-	}
-
 	std::cerr << "=====================================" << std::endl;
 	std::cerr << roflibs::ethernet::cethcore::get_eth_core(dpt.get_dpid());
 	std::cerr << roflibs::ip::cipcore::get_ip_core(dpt.get_dpid());
@@ -677,6 +670,8 @@ cbasebox::execute(
 		std::vector<std::string> argv,
 		std::vector<std::string> envp)
 {
+	return;
+
 	pid_t pid = 0;
 
 	if ((pid = fork()) < 0) {

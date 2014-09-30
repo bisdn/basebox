@@ -37,6 +37,14 @@ public:
 	/**
 	 *
 	 */
+	static std::set<uint64_t>&
+	get_eth_cores() {
+		return dpids;
+	};
+
+	/**
+	 *
+	 */
 	static cethcore&
 	add_eth_core(const rofl::cdpid& dpid,
 			uint8_t table_id_eth_in, uint8_t table_id_eth_src,
@@ -46,6 +54,7 @@ public:
 			delete cethcore::ethcores[dpid];
 		}
 		new cethcore(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
+		dpids.insert(dpid.get_uint64_t());
 		return *(cethcore::ethcores[dpid]);
 	};
 
@@ -59,6 +68,7 @@ public:
 			uint16_t default_pvid = DEFAULT_PVID) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
 			new cethcore(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
+			dpids.insert(dpid.get_uint64_t());
 		}
 		return *(cethcore::ethcores[dpid]);
 	};
@@ -93,6 +103,7 @@ public:
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
 			return;
 		}
+		dpids.erase(dpid.get_uint64_t());
 		delete cethcore::ethcores[dpid];
 	};
 
@@ -319,6 +330,7 @@ private:
 	uint8_t								table_id_eth_local;
 	uint8_t								table_id_eth_dst;
 
+	static std::set<uint64_t> 					dpids;
 	static std::map<rofl::cdpid, cethcore*> 	ethcores;
 
 public:
