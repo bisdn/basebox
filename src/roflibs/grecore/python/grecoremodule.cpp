@@ -120,10 +120,13 @@ grecore_drop_gre_term_in4(PyObject *self, PyObject *args, PyObject* kw)
 				NULL
 		};
 
+		// FIXME: workaround for demo, uint64_t does not work with PyArg_ParseTupleAndKeywords() here. Why?
+		//uint64_t dpid				= 0;
 		uint32_t dpid				= 0;
 		uint32_t term_id			= 0;
 
-		if (!PyArg_ParseTupleAndKeywords(args, kw, "Kk", kwlist,
+		//if (!PyArg_ParseTupleAndKeywords(args, kw, "Kk", kwlist,
+		if (!PyArg_ParseTupleAndKeywords(args, kw, "kk", kwlist,
 				&dpid, &term_id)) {
 			return NULL;
 		}
