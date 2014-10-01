@@ -56,6 +56,8 @@ cgreterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)
 
 		flags.set(FLAG_EGRESS_FM_INSTALLED);
 
+		state = STATE_ATTACHED;
+
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[cgreterm_in4][handle_dpt_open_egress] dpt not found" << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
@@ -95,6 +97,8 @@ cgreterm_in4::handle_dpt_close_egress(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		flags.reset(FLAG_EGRESS_FM_INSTALLED);
+
+		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[cgreterm_in4][handle_dpt_close_egress] dpt not found" << std::endl;
@@ -162,6 +166,8 @@ cgreterm_in4::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 
 		flags.set(FLAG_INGRESS_FM_INSTALLED);
 
+		state = STATE_ATTACHED;
+
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[cgreterm_in4][handle_dpt_open_egress] dpt not found" << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
@@ -192,6 +198,8 @@ cgreterm_in4::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		flags.reset(FLAG_INGRESS_FM_INSTALLED);
+
+		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[cgreterm_in4][handle_dpt_close_egress] dpt not found" << std::endl;
@@ -249,6 +257,8 @@ cgreterm_in6::handle_dpt_open_egress(rofl::crofdpt& dpt)
 
 		flags.set(FLAG_EGRESS_FM_INSTALLED);
 
+		state = STATE_ATTACHED;
+
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[cgreterm_in6][handle_dpt_open_egress] dpt not found" << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
@@ -288,6 +298,8 @@ cgreterm_in6::handle_dpt_close_egress(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		flags.reset(FLAG_EGRESS_FM_INSTALLED);
+
+		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[cgreterm_in6][handle_dpt_close_egress] dpt not found" << std::endl;
@@ -355,6 +367,8 @@ cgreterm_in6::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 
 		flags.set(FLAG_INGRESS_FM_INSTALLED);
 
+		state = STATE_ATTACHED;
+
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[cgreterm_in6][handle_dpt_open_egress] dpt not found" << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
@@ -385,6 +399,8 @@ cgreterm_in6::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		flags.reset(FLAG_INGRESS_FM_INSTALLED);
+
+		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[cgreterm_in6][handle_dpt_close_egress] dpt not found" << std::endl;
