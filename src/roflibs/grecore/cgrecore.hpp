@@ -123,7 +123,16 @@ private:
 	/**
 	 *
 	 */
-	~cgrecore() {};
+	~cgrecore() {
+		while (not terms_in4.empty()) {
+			uint32_t term_id = terms_in4.begin()->first;
+			drop_gre_term_in4(term_id);
+		}
+		while (not terms_in6.empty()) {
+			uint32_t term_id = terms_in6.begin()->first;
+			drop_gre_term_in6(term_id);
+		}
+	};
 
 public:
 

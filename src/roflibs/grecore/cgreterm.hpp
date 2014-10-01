@@ -9,6 +9,8 @@
 #define CGRETERM_HPP_
 
 #include <bitset>
+#include <vector>
+#include <string>
 #include <ostream>
 #include <exception>
 
@@ -104,6 +106,17 @@ public:
 	const uint32_t&
 	get_gre_portno() const { return gre_portno; };
 
+protected:
+
+	/**
+	 *
+	 */
+	void
+	execute(
+			std::string const& executable,
+			std::vector<std::string> argv,
+			std::vector<std::string> envp);
+
 public:
 
 	friend std::ostream&
@@ -138,6 +151,9 @@ protected:
 	uint32_t				gre_key;							// GRE key according to IETF RFC 2890
 	static const uint8_t	GRE_IP_PROTO = 47;
 	static const uint16_t 	GRE_PROT_TYPE_TRANSPARENT_ETHERNET_BRIDGING = 0x6558;
+
+	static std::string		script_path_init;
+	static std::string		script_path_term;
 };
 
 
@@ -159,6 +175,7 @@ public:
 				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
+		hook_term();
 	};
 
 	/**
@@ -167,7 +184,9 @@ public:
 	cgreterm_in4(const rofl::cdpid& dpid, uint8_t eth_ofp_table_id, uint8_t gre_ofp_table_id, uint8_t ip_fwd_ofp_table_id,
 			const rofl::caddress_in4& laddr, const rofl::caddress_in4& raddr, uint32_t gre_portno, uint32_t gre_key) :
 		cgreterm(dpid, eth_ofp_table_id, gre_ofp_table_id, ip_fwd_ofp_table_id, gre_portno, gre_key),
-		laddr(laddr), raddr(raddr) {};
+		laddr(laddr), raddr(raddr) {
+		hook_init();
+	};
 
 	/**
 	 *
@@ -265,6 +284,18 @@ private:
 	void
 	handle_dpt_close_ingress(rofl::crofdpt& dpt);
 
+	/**
+	 *
+	 */
+	void
+	hook_init();
+
+	/**
+	 *
+	 */
+	void
+	hook_term();
+
 private:
 
 	rofl::caddress_in4 laddr;
@@ -290,6 +321,7 @@ public:
 				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
+		hook_term();
 	};
 
 	/**
@@ -298,7 +330,9 @@ public:
 	cgreterm_in6(const rofl::cdpid& dpid, uint8_t eth_ofp_table_id, uint8_t gre_ofp_table_id, uint8_t ip_fwd_ofp_table_id,
 			const rofl::caddress_in6& laddr, const rofl::caddress_in6& raddr, uint32_t gre_portno, uint32_t gre_key) :
 		cgreterm(dpid, eth_ofp_table_id, gre_ofp_table_id, ip_fwd_ofp_table_id, gre_portno, gre_key),
-		laddr(laddr), raddr(raddr) {};
+		laddr(laddr), raddr(raddr) {
+		hook_init();
+	};
 
 
 	/**
@@ -396,6 +430,18 @@ private:
 	 */
 	void
 	handle_dpt_close_ingress(rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	void
+	hook_init();
+
+	/**
+	 *
+	 */
+	void
+	hook_term();
 
 private:
 

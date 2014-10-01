@@ -9,6 +9,10 @@
 
 using namespace roflibs::gre;
 
+/*static*/std::string cgreterm::script_path_init = std::string("/var/lib/basebox/greterm.sh");
+/*static*/std::string cgreterm::script_path_term = std::string("/var/lib/basebox/greterm.sh");
+
+
 void
 cgreterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)
 {
@@ -394,5 +398,209 @@ cgreterm_in6::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 }
 
 
+void
+cgreterm_in4::hook_init()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+
+		std::vector<std::string> argv;
+		std::vector<std::string> envp;
+
+		std::stringstream s_cmd;
+		s_cmd << "CMD=INIT";
+		envp.push_back(s_cmd.str());
+
+		std::stringstream s_bridge;
+		s_bridge << "BRIDGE=grebr" << gre_portno;
+		envp.push_back(s_bridge.str());
+
+		std::stringstream s_iface;
+		s_iface << "IFACE=" << dpt.get_ports().get_port(gre_portno).get_name();
+		envp.push_back(s_iface.str());
+
+		std::stringstream s_greiface;
+		s_greiface << "GREIFACE=gretap" << gre_portno;
+		envp.push_back(s_greiface.str());
+
+		std::stringstream s_local;
+		s_local << "GRELOCAL=" << laddr.str();
+		envp.push_back(s_local.str());
+
+		std::stringstream s_remote;
+		s_remote << "GREREMOTE=" << raddr.str();
+		envp.push_back(s_remote.str());
+
+		std::stringstream s_key;
+		s_key << "GREKEY=" << gre_key;
+		envp.push_back(s_key.str());
+
+		std::stringstream s_csum;
+		s_csum << "GRECSUM=yes";
+		envp.push_back(s_csum.str());
+
+		cgreterm::execute(cgreterm::script_path_init, argv, envp);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
+}
 
 
+void
+cgreterm_in4::hook_term()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+
+		std::vector<std::string> argv;
+		std::vector<std::string> envp;
+
+		std::stringstream s_cmd;
+		s_cmd << "CMD=TERM";
+		envp.push_back(s_cmd.str());
+
+		std::stringstream s_bridge;
+		s_bridge << "BRIDGE=grebr" << gre_portno;
+		envp.push_back(s_bridge.str());
+
+		std::stringstream s_iface;
+		s_iface << "IFACE=" << dpt.get_ports().get_port(gre_portno).get_name();
+		envp.push_back(s_iface.str());
+
+		std::stringstream s_greiface;
+		s_greiface << "GREIFACE=gretap" << gre_portno;
+		envp.push_back(s_greiface.str());
+
+		cgreterm::execute(cgreterm::script_path_term, argv, envp);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
+}
+
+
+void
+cgreterm_in6::hook_init()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+
+		std::vector<std::string> argv;
+		std::vector<std::string> envp;
+
+		std::stringstream s_cmd;
+		s_cmd << "CMD=INIT";
+		envp.push_back(s_cmd.str());
+
+		std::stringstream s_bridge;
+		s_bridge << "BRIDGE=grebr" << gre_portno;
+		envp.push_back(s_bridge.str());
+
+		std::stringstream s_iface;
+		s_iface << "IFACE=" << dpt.get_ports().get_port(gre_portno).get_name();
+		envp.push_back(s_iface.str());
+
+		std::stringstream s_greiface;
+		s_greiface << "GREIFACE=gretap" << gre_portno;
+		envp.push_back(s_greiface.str());
+
+		std::stringstream s_local;
+		s_local << "GRELOCAL=" << laddr.str();
+		envp.push_back(s_local.str());
+
+		std::stringstream s_remote;
+		s_remote << "GREREMOTE=" << raddr.str();
+		envp.push_back(s_remote.str());
+
+		std::stringstream s_key;
+		s_key << "GREKEY=" << gre_key;
+		envp.push_back(s_key.str());
+
+		std::stringstream s_csum;
+		s_csum << "GRECSUM=yes";
+		envp.push_back(s_csum.str());
+
+		cgreterm::execute(cgreterm::script_path_init, argv, envp);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
+}
+
+
+void
+cgreterm_in6::hook_term()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+
+		std::vector<std::string> argv;
+		std::vector<std::string> envp;
+
+		std::stringstream s_cmd;
+		s_cmd << "CMD=TERM";
+		envp.push_back(s_cmd.str());
+
+		std::stringstream s_bridge;
+		s_bridge << "BRIDGE=grebr" << gre_portno;
+		envp.push_back(s_bridge.str());
+
+		std::stringstream s_iface;
+		s_iface << "IFACE=" << dpt.get_ports().get_port(gre_portno).get_name();
+		envp.push_back(s_iface.str());
+
+		std::stringstream s_greiface;
+		s_greiface << "GREIFACE=gretap" << gre_portno;
+		envp.push_back(s_greiface.str());
+
+		cgreterm::execute(cgreterm::script_path_term, argv, envp);
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
+}
+
+
+void
+cgreterm::execute(
+		std::string const& executable,
+		std::vector<std::string> argv,
+		std::vector<std::string> envp)
+{
+	pid_t pid = 0;
+
+	if ((pid = fork()) < 0) {
+		rofcore::logging::error << "[cgreterm][execute] syscall error fork(): " << errno << ":" << strerror(errno) << std::endl;
+		return;
+	}
+
+	if (pid > 0) { // father process
+		return;
+	}
+
+
+	// child process
+
+	std::vector<const char*> vctargv;
+	for (std::vector<std::string>::iterator
+			it = argv.begin(); it != argv.end(); ++it) {
+		vctargv.push_back((*it).c_str());
+	}
+	vctargv.push_back(NULL);
+
+
+	std::vector<const char*> vctenvp;
+	for (std::vector<std::string>::iterator
+			it = envp.begin(); it != envp.end(); ++it) {
+		vctenvp.push_back((*it).c_str());
+	}
+	vctenvp.push_back(NULL);
+
+
+	execvpe(executable.c_str(), (char*const*)&vctargv[0], (char*const*)&vctenvp[0]);
+
+	std::cerr << "HAEHAEHAEHAEH => executable: " << executable << std::endl;
+
+	exit(1); // just in case execvpe fails
+}

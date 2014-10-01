@@ -98,7 +98,7 @@ grecore_add_gre_term_in4(PyObject *self, PyObject *args, PyObject* kw)
 		}
 
 		roflibs::gre::cgrecore::set_gre_core(rofl::cdpid(dpid)).
-				add_gre_term_in4(term_id, gre_portno, rofl::caddress_in4(local), rofl::caddress_in4(remote), gre_key);
+				set_gre_term_in4(term_id, gre_portno, rofl::caddress_in4(local), rofl::caddress_in4(remote), gre_key);
 
 		return Py_None;
 	} catch (eGreCoreNotFound& e) {
@@ -201,7 +201,7 @@ grecore_add_gre_term_in6(PyObject *self, PyObject *args, PyObject* kw)
 		}
 
 		roflibs::gre::cgrecore::set_gre_core(rofl::cdpid(dpid)).
-				add_gre_term_in6(term_id, gre_portno, rofl::caddress_in6(local), rofl::caddress_in6(remote), gre_key);
+				set_gre_term_in6(term_id, gre_portno, rofl::caddress_in6(local), rofl::caddress_in6(remote), gre_key);
 
 		return Py_None;
 	} catch (eGreCoreNotFound& e) {

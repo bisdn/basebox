@@ -80,7 +80,7 @@ cmemberport::handle_dpt_open(
 
 
 
-	} catch (rofl::eRofSockTxAgain& e) {
+	} catch (rofl::eRofBaseCongested& e) {
 		// TODO: handle congested control channel
 	}
 }
@@ -138,7 +138,7 @@ cmemberport::handle_dpt_close(
 
 
 
-	} catch (rofl::eRofSockTxAgain& e) {
+	} catch (rofl::eRofBaseCongested& e) {
 		// TODO: handle congested control channel
 	}
 }

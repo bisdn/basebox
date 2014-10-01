@@ -17,11 +17,11 @@ std::string cpython::DEFAULT_SCRIPT = std::string("/usr/local/sbin/baseboxd.py")
 void
 cpython::run(const std::string& script, const std::string& program_name)
 {
-	rofl::RwLock rwlock(thread_rwlock, rofl::RwLock::RWLOCK_WRITE);
-
 	if (tid != 0) {
 		stop();
 	}
+
+	rofl::RwLock rwlock(thread_rwlock, rofl::RwLock::RWLOCK_WRITE);
 
 	int rc = 0;
 	this->script = script;
