@@ -18,7 +18,8 @@ baseboxd_LDADD = -lpthread -lrt \
                 -L../roflibs/ethcore -lroflibs_ethcore \
                 -L../roflibs/ipcore -lroflibs_ipcore \
                 -L../roflibs/gtpcore -lroflibs_gtpcore \
-                -L../roflibs/grecore -lroflibs_grecore
+                -L../roflibs/grecore -lroflibs_grecore \
+                -L../roflibs/python -lroflibs_python
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I/usr/include/python2.7
