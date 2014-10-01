@@ -32,9 +32,9 @@ long_desc = \
 sgwumgt = Extension('ethcore',
                     define_macros = [('MAJOR_VERSION', '0'),
                                      ('MINOR_VERSION', '5')],
-                    include_dirs = ['..', '/home/andreas/local/include', '/home/andreas/local/include/libnl3'],
+                    include_dirs = ['..', '/usr/local/include/libnl3'],
                     libraries = ['roflibs_ethcore', 'rofl'],
-                    library_dirs = ['..', '/home/andreas/local/lib'],
+                    library_dirs = ['..', '/usr/local/lib/libnl3'],
 		    extra_compile_args = ['-Wno-write-strings'],
                     sources = ['ethcoremodule.cpp'])
 

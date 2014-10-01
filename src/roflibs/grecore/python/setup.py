@@ -32,9 +32,9 @@ long_desc = \
 sgwumgt = Extension('grecore',
                     define_macros = [('MAJOR_VERSION', '0'),
                                      ('MINOR_VERSION', '5')],
-                    include_dirs = ['..', '/home/andreas/local/include'],
+                    include_dirs = ['..'],
                     libraries = ['roflibs_grecore', 'rofl'],
-                    library_dirs = ['..', '/home/andreas/local/lib'],
+                    library_dirs = ['..'],
 		    extra_compile_args = ['-Wno-write-strings'],
                     sources = ['grecoremodule.cpp'])
 

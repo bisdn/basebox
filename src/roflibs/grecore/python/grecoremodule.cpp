@@ -120,7 +120,7 @@ grecore_drop_gre_term_in4(PyObject *self, PyObject *args, PyObject* kw)
 				NULL
 		};
 
-		uint64_t dpid				= 0;
+		uint32_t dpid				= 0;
 		uint32_t term_id			= 0;
 
 		if (!PyArg_ParseTupleAndKeywords(args, kw, "Kk", kwlist,
