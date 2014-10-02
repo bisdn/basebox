@@ -36,7 +36,7 @@ cvlan::handle_dpt_open(
 		// set broadcast entry in src stage
 		fm.set_table_id(table_id_eth_src);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
-		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_src+1);
+		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_local);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		// send notification to all member ports
