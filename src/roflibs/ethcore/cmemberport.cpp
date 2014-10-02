@@ -63,9 +63,10 @@ cmemberport::handle_dpt_open(
 
 
 
-
+#if 1
 		fm.set_table_id(table_id_eth_in+2); // local address stage
 		fm.set_match().clear();
+		fm.set_match().set_in_port(portno);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm.set_instructions().clear();
@@ -77,7 +78,7 @@ cmemberport::handle_dpt_open(
 		fm.set_instructions().set_inst_apply_actions().set_actions().
 				add_action_output(index++).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
+#endif
 
 
 	} catch (rofl::eRofBaseCongested& e) {
@@ -128,14 +129,15 @@ cmemberport::handle_dpt_close(
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 
-
+#if 1
 		fm.set_table_id(table_id_eth_in+2); // local address stage
 		fm.set_match().clear();
+		fm.set_match().set_in_port(portno);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_in+3);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
+#endif
 
 
 	} catch (rofl::eRofBaseCongested& e) {
