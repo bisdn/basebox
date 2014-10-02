@@ -43,7 +43,7 @@ cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_table_id(table_id_eth_src);
 		fm.set_instructions().set_inst_apply_actions().set_actions().
 				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
-		fm.set_instructions().set_inst_goto_table().set_table_id(2);
+		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_local/*2*/);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		// install miss entry for local address stage table (src-stage + 1)
