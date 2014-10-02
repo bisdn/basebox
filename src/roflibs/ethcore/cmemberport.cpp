@@ -64,13 +64,13 @@ cmemberport::handle_dpt_open(
 
 
 #if 1
-		fm.set_table_id(table_id_eth_in+2); // local address stage
+		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
 		fm.set_match().set_in_port(portno);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm.set_instructions().clear();
-		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_out);
+		//fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_out);
 		if (not tagged) {
 			fm.set_instructions().set_inst_apply_actions().set_actions().
 					add_action_pop_vlan(index++);
@@ -121,7 +121,7 @@ cmemberport::handle_dpt_close(
 
 
 
-		fm.set_table_id(table_id_eth_in+2); // local address stage
+		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
 		fm.set_match().set_eth_dst(dpt.get_ports().get_port(portno).get_hwaddr());
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
@@ -130,7 +130,7 @@ cmemberport::handle_dpt_close(
 
 
 #if 1
-		fm.set_table_id(table_id_eth_in+2); // local address stage
+		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
 		fm.set_match().set_in_port(portno);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
