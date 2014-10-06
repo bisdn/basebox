@@ -3,6 +3,7 @@
 using namespace roflibs::ip;
 
 /*static*/std::map<rofl::cdpid, cipcore*> cipcore::ipcores;
+/*static*/const std::string cipcore::DEFAULT_CONFIG_FILE("/usr/local/etc/roflibs.conf");
 
 void
 cipcore::handle_dpt_open(rofl::crofdpt& dpt)
@@ -143,11 +144,48 @@ cipcore::link_created(unsigned int ifindex)
 		bool tagged = false;
 
 		size_t pos = rtl.get_devname().find_first_of(".");
+		// link with vid
 		if (pos != std::string::npos) {
 			devname = rtl.get_devname().substr(0, pos);
 			std::stringstream svid(rtl.get_devname().substr(pos+1));
 			svid >> vid;
 			tagged = true;
+
+		// link without vid, check configuration file and determine assigned vid
+		} else {
+
+			libconfig::Config config;
+			config.readFile(config_file.c_str());
+
+			std::string s_ports("roflibs.ipcore.ports");
+			if (config.exists(s_ports.c_str())) {
+				for (int i = 0; i < config.lookup(s_ports.c_str()).getLength(); i++) {
+					try {
+						libconfig::Setting& port = config.lookup(s_ports.c_str())[i];
+
+						// get devname
+						if (not port.exists("devname")) {
+							continue; // device name is missing
+						}
+						std::string devname((const char*)port["devname"]);
+
+						// entry's devname must match, continue otherwise
+						if (rtl.get_devname() != devname) {
+							continue;
+						}
+
+						// get default port vid
+						if (not port.exists("pvid")) {
+							continue; // pvid is missing
+						}
+						uint16_t pvid = (int)port["pvid"];
+
+						vid = pvid;
+						tagged = false;
+
+					} catch (...) {}
+				}
+			}
 		}
 
 		add_link(ifindex, rtl.get_devname(), rtl.get_hwaddr(), tagged, vid);

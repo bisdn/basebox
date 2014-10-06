@@ -25,6 +25,8 @@ extern "C" {
 #include <iostream>
 #include <exception>
 
+#include <libconfig.h++>
+
 #include <rofl/common/crofbase.h>
 #include <rofl/common/protocols/fipv4frame.h>
 #include <rofl/common/protocols/fipv6frame.h>
@@ -137,7 +139,8 @@ private:
 			uint8_t out_ofp_table_id = 4) :
 		state(STATE_DETACHED), dpid(dpid),
 		local_ofp_table_id(local_ofp_table_id),
-		out_ofp_table_id(out_ofp_table_id) {};
+		out_ofp_table_id(out_ofp_table_id),
+		config_file(DEFAULT_CONFIG_FILE) {};
 
 
 	/**
@@ -386,6 +389,8 @@ private:
 
 	static std::map<rofl::cdpid, cipcore*>		ipcores;
 
+	static const std::string			DEFAULT_CONFIG_FILE;
+	std::string							config_file;
 
 private:
 
