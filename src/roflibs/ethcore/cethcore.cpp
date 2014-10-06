@@ -160,6 +160,8 @@ cethcore::handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, ro
 void
 cethcore::link_created(unsigned int ifindex)
 {
+	return;
+
 	try {
 		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
 
@@ -200,6 +202,8 @@ cethcore::link_created(unsigned int ifindex)
 void
 cethcore::link_updated(unsigned int ifindex)
 {
+	return;
+
 	try {
 		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
 
@@ -240,6 +244,8 @@ cethcore::link_updated(unsigned int ifindex)
 void
 cethcore::link_deleted(unsigned int ifindex)
 {
+	return;
+
 	try {
 		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
 

@@ -412,6 +412,12 @@ private:
 	 *
 	 */
 	void
+	read_vlan_config();
+
+	/**
+	 *
+	 */
+	void
 	test_workflow();
 
 private:
