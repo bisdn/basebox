@@ -157,6 +157,57 @@ cipcore::link_created(unsigned int ifindex)
 			libconfig::Config config;
 			config.readFile(config_file.c_str());
 
+
+			std::string s_dpts("roflibs.ipcore.datapaths");
+			if (config.exists(s_dpts.c_str())) {
+				for (int i = 0; i < config.lookup(s_dpts.c_str()).getLength(); i++) {
+					try {
+						libconfig::Setting& dpt = config.lookup(s_dpts.c_str())[i];
+
+						std::string s_dpid("dpid");
+						if (not dpt.exists(s_dpid.c_str())) {
+							continue; // dpid not found, invalid entry
+						}
+						uint64_t dpid = (unsigned long long)dpt[s_dpid];
+
+						std::string s_ports("ports");
+						if (not dpt.exists(s_ports)) {
+							continue; // ports not found, invalid entry
+						}
+
+						// iterate over all ports
+						for (int i = 0; i < dpt[s_ports].getLength(); i++) {
+							try {
+								libconfig::Setting& port = dpt[s_ports][i];
+
+								// get devname
+								if (not port.exists("devname")) {
+									continue; // device name is missing
+								}
+								std::string devname((const char*)port["devname"]);
+
+								// entry's devname must match, continue otherwise
+								if (rtl.get_devname() != devname) {
+									continue;
+								}
+
+								// get default port vid
+								if (not port.exists("pvid")) {
+									continue; // pvid is missing
+								}
+								uint16_t pvid = (int)port["pvid"];
+
+								vid = pvid;
+								tagged = false;
+
+							} catch (...) {}
+						}
+
+					} catch(...) {}
+				}
+			}
+
+#if 0
 			std::string s_ports("roflibs.ipcore.ports");
 			if (config.exists(s_ports.c_str())) {
 				for (int i = 0; i < config.lookup(s_ports.c_str()).getLength(); i++) {
@@ -186,6 +237,7 @@ cipcore::link_created(unsigned int ifindex)
 					} catch (...) {}
 				}
 			}
+#endif
 		}
 
 		add_link(ifindex, rtl.get_devname(), rtl.get_hwaddr(), tagged, vid);

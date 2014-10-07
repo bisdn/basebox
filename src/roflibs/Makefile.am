@@ -22,3 +22,5 @@ libroflibs_la_LIBADD = \
 	gtpcore/libroflibs_gtpcore.la \
 	grecore/libroflibs_grecore.la \
 	python/libroflibs_python.la
+
+sysconf_DATA = roflibs.conf

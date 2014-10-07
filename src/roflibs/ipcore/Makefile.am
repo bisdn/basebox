@@ -36,5 +36,3 @@ library_include_HEADERS= \
 AM_CPPFLAGS=-fPIC -std=c++11
 AM_CXXFLAGS=-I$(top_srcdir)/src
 AM_LDFLAGS=-L../netlink -lroflibs_netlink
-
-sysconf_DATA = roflibs.conf
