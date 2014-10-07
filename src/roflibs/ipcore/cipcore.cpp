@@ -168,46 +168,38 @@ cipcore::link_created(unsigned int ifindex)
 						if (not dpt.exists(s_dpid.c_str())) {
 							continue; // dpid not found, invalid entry
 						}
-						uint64_t dpid = (unsigned long long)dpt[s_dpid];
+						uint64_t dpid = (unsigned int)dpt[s_dpid];
 
 						std::string s_ports("ports");
 						if (not dpt.exists(s_ports)) {
 							continue; // ports not found, invalid entry
 						}
 
-						std::cerr << "Punkt 1" << std::endl;
-
 						// iterate over all ports
 						for (int i = 0; i < dpt[s_ports].getLength(); i++) {
 							try {
-								std::cerr << "Punkt 2" << std::endl;
-
 								libconfig::Setting& port = dpt[s_ports][i];
-								std::cerr << "Punkt 3" << std::endl;
 
 								// get devname
 								if (not port.exists("devname")) {
 									continue; // device name is missing
 								}
 								std::string devname((const char*)port["devname"]);
-								std::cerr << "Punkt 4" << std::endl;
 
 								// entry's devname must match, continue otherwise
 								if (rtl.get_devname() != devname) {
 									continue;
 								}
-								std::cerr << "Punkt 5" << std::endl;
 
 								// get default port vid
 								if (not port.exists("pvid")) {
 									continue; // pvid is missing
 								}
 								uint16_t pvid = (int)port["pvid"];
-								std::cerr << "Punkt 6" << std::endl;
 
 								vid = pvid;
 								tagged = false;
-								std::cerr << "Punkt 7 => devname:" << devname << " vid:" << (int)vid << " tagged:" << (int)tagged << std::endl;
+								break;
 
 							} catch (...) {}
 						}
@@ -215,38 +207,6 @@ cipcore::link_created(unsigned int ifindex)
 					} catch(...) {}
 				}
 			}
-
-#if 0
-			std::string s_ports("roflibs.ipcore.ports");
-			if (config.exists(s_ports.c_str())) {
-				for (int i = 0; i < config.lookup(s_ports.c_str()).getLength(); i++) {
-					try {
-						libconfig::Setting& port = config.lookup(s_ports.c_str())[i];
-
-						// get devname
-						if (not port.exists("devname")) {
-							continue; // device name is missing
-						}
-						std::string devname((const char*)port["devname"]);
-
-						// entry's devname must match, continue otherwise
-						if (rtl.get_devname() != devname) {
-							continue;
-						}
-
-						// get default port vid
-						if (not port.exists("pvid")) {
-							continue; // pvid is missing
-						}
-						uint16_t pvid = (int)port["pvid"];
-
-						vid = pvid;
-						tagged = false;
-
-					} catch (...) {}
-				}
-			}
-#endif
 		}
 
 		add_link(ifindex, rtl.get_devname(), rtl.get_hwaddr(), tagged, vid);
