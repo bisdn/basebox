@@ -44,13 +44,19 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		// local outgoing interface => OFP portno
 		//uint32_t out_portno 			= dpl.get_ofp_port_no();
 
-		// get group-id for this entry
-		group_id = dpt.get_next_idle_group_id();
+		uint8_t command = 0;
 
+		if (0 == group_id) {
+			// get group-id for this entry
+			group_id = dpt.get_next_idle_group_id();
+			command = rofl::openflow::OFPGC_ADD;
+		} else {
+			command = rofl::openflow::OFPGC_MODIFY;
+		}
 
 		// create group entry for neighbour
 		rofl::openflow::cofgroupmod gm(dpt.get_version());
-		gm.set_command(rofl::openflow::OFPGC_ADD);
+		gm.set_command(command);
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
 		rofl::cindex index(0);
@@ -212,13 +218,19 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		// local outgoing interface => OFP portno
 		//uint32_t out_portno 			= dpl.get_ofp_port_no();
 
-		// get group-id for this entry
-		group_id = dpt.get_next_idle_group_id();
+		uint8_t command = 0;
 
+		if (0 == group_id) {
+			// get group-id for this entry
+			group_id = dpt.get_next_idle_group_id();
+			command = rofl::openflow::OFPGC_ADD;
+		} else {
+			command = rofl::openflow::OFPGC_MODIFY;
+		}
 
 		// create group entry for neighbour
 		rofl::openflow::cofgroupmod gm(dpt.get_version());
-		gm.set_command(rofl::openflow::OFPGC_ADD);
+		gm.set_command(command);
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
 		rofl::cindex index(0);
