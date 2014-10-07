@@ -559,8 +559,8 @@ cipcore::neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex)
 			return;
 		}
 
-		if (get_link(ifindex).has_neigh_in6(nbindex)) {
-			set_link(ifindex).drop_neigh_in6(nbindex);
+		if (get_link(ifindex).has_neigh_in4(nbindex)) {
+			set_link(ifindex).drop_neigh_in4(nbindex);
 			rofcore::logging::debug << "[cipcore][neigh_in4_deleted] state:" << std::endl << *this;
 		}
 
