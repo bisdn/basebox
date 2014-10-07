@@ -231,6 +231,7 @@ cbasebox::enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
 void
 cbasebox::handle_dpt_open(
 		rofl::crofdpt& dpt) {
+
 	dptid = dpt.get_dptid();
 
 	uint8_t table_id_eth_port_membership 	= 0;
@@ -244,28 +245,28 @@ cbasebox::handle_dpt_open(
 
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid(),
 												table_id_ip_local,
-												table_id_ip_fwd);
+												table_id_ip_fwd).handle_dpt_close(dpt);
 
 	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid(),
 												table_id_eth_port_membership,
 												table_id_eth_src,
 												table_id_eth_local,
 												table_id_eth_dst,
-												/*default_vid=*/1);
+												/*default_vid=*/1).handle_dpt_close(dpt);
 
 	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid(),
 												table_id_ip_local,
-												table_id_gtp_local); // yes, same as local for cipcore
+												table_id_gtp_local).handle_dpt_close(dpt); // yes, same as local for cipcore
 
 	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid(),
-												table_id_ip_local); // yes, same as local for cipcore
+												table_id_ip_local).handle_dpt_close(dpt); // yes, same as local for cipcore
 
 
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid(),
 												table_id_eth_port_membership,
 												table_id_ip_local,
 												table_id_gre_local,
-												table_id_ip_fwd);
+												table_id_ip_fwd).handle_dpt_close(dpt);
 
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
