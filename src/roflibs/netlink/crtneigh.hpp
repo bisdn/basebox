@@ -123,12 +123,18 @@ public:
 	 */
 	bool
 	operator== (const crtneigh& rtneigh) {
+		return ((ifindex 	== rtneigh.ifindex) &&
+				(lladdr 	== rtneigh.lladdr) 	&&
+				(family 	== rtneigh.family) 	&&
+				(type 		== rtneigh.type));
+#if 0
 		return ((state 		== rtneigh.state) 	&&
 				(flags 		== rtneigh.flags) 	&&
 				(ifindex 	== rtneigh.ifindex) &&
 				(lladdr 	== rtneigh.lladdr) 	&&
 				(family 	== rtneigh.family) 	&&
 				(type 		== rtneigh.type));
+#endif
 	};
 
 public:
@@ -198,7 +204,7 @@ public:
 		os << rofcore::indent(2) << "<state: " 	<< neigh.state 		<< " >" << std::endl;
 		os << rofcore::indent(2) << "<flags: " 	<< neigh.flags 		<< " >" << std::endl;
 		os << rofcore::indent(2) << "<ifindex: " 	<< neigh.ifindex 	<< " >" << std::endl;
-		os << rofcore::indent(2) << "<lladdr: " 	<< neigh.lladdr 	<< " >" << std::endl;
+		os << rofcore::indent(2) << "<lladdr: " 	<< neigh.lladdr.str() 	<< " >" << std::endl;
 		os << rofcore::indent(2) << "<family: " 	<< neigh.family 	<< " >" << std::endl;
 		os << rofcore::indent(2) << "<type: " 		<< neigh.type 		<< " >" << std::endl;
 		return os;
@@ -295,8 +301,9 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtneigh_in4& neigh) {
 		os << rofcore::indent(0) << "<crtneigh_in4: >" << std::endl;
-		os << rofcore::indent(2) << "<dst: >" << std::endl;
-		rofcore::indent i(4); os << neigh.dst;
+		rofcore::indent i(2);
+		os << dynamic_cast<const crtneigh&>( neigh );
+		os << rofcore::indent(2) << "<dst: " << neigh.dst.str() << " >" << std::endl;
 		return os;
 	};
 
@@ -425,8 +432,9 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const crtneigh_in6& neigh) {
 		os << rofcore::indent(0) << "<crtneigh_in6: >" << std::endl;
-		os << rofcore::indent(2) << "<dst: >" << std::endl;
-		rofcore::indent i(4); os << neigh.dst;
+		rofcore::indent i(2);
+		os << dynamic_cast<const crtneigh&>( neigh );
+		os << rofcore::indent(2) << "<dst: " << neigh.dst.str() << " >" << std::endl;
 		return os;
 	};
 

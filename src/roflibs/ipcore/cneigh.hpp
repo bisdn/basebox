@@ -245,9 +245,15 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const cneigh_in4& neigh) {
 		os << rofcore::indent(0) << "<cneigh_in4 >" << std::endl;
-		rofcore::indent i(2);
+		try {
+			rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
+			// the neighbour ...
+			const rofcore::crtneigh_in4& rtn =
+					netlink.get_links().get_link(neigh.get_ifindex()).get_neighs_in4().get_neigh(neigh.get_nbindex());
 
+			os << rofcore::indent(2) << "<" << rtn.get_dst().str() << " at " << rtn.get_lladdr().str() << " >" << std::endl;
+		} catch(...) {}
 		return os;
 	};
 };
@@ -336,9 +342,15 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const cneigh_in6& neigh) {
 		os << rofcore::indent(0) << "<cneigh_in6 >" << std::endl;
-		rofcore::indent i(2);
+		try {
+			rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
+			// the neighbour ...
+			const rofcore::crtneigh_in6& rtn =
+					netlink.get_links().get_link(neigh.get_ifindex()).get_neighs_in6().get_neigh(neigh.get_nbindex());
 
+			os << rofcore::indent(2) << "<" << rtn.get_dst().str() << " at " << rtn.get_lladdr().str() << " >" << std::endl;
+		} catch(...) {}
 		return os;
 	};
 };

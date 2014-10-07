@@ -44,15 +44,14 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		// local outgoing interface => OFP portno
 		//uint32_t out_portno 			= dpl.get_ofp_port_no();
 
-		uint8_t command = 0;
+		uint8_t command = rofl::openflow::OFPGC_ADD;
 
-		if (0 == group_id) {
-			// get group-id for this entry
-			group_id = dpt.get_next_idle_group_id();
-			command = rofl::openflow::OFPGC_ADD;
-		} else {
-			command = rofl::openflow::OFPGC_MODIFY;
+		// synchronize state in case dpt has seen a full reset
+		if (0 != group_id) {
+			handle_dpt_close(dpt);
 		}
+
+		group_id = dpt.get_next_idle_group_id();
 
 		// create group entry for neighbour
 		rofl::openflow::cofgroupmod gm(dpt.get_version());
