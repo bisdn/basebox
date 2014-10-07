@@ -597,15 +597,17 @@ cnetlink::notify_neigh_in4_deleted(unsigned int ifindex, unsigned int nbindex) {
 	const rofl::caddress_in4& dst = cnetlink::get_instance().get_links().
 									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
 
+	// make local copy of set
+	std::set<cnetlink_common_observer*> obs(observers);
 	for (std::set<cnetlink_common_observer*>::iterator
-			it = cnetlink::get_instance().observers.begin();
-				it != cnetlink::get_instance().observers.end(); ++it) {
+			it = obs.begin(); it != obs.end(); ++it) {
 		(*it)->neigh_in4_deleted(ifindex, nbindex);
 	}
 
+	// make local copy of set
+	std::set<cnetlink_neighbour_observer*> nbobs_in4(nbobservers_in4[ifindex][dst]);
 	for (std::set<cnetlink_neighbour_observer*>::iterator
-			it = nbobservers_in4[ifindex][dst].begin();
-				it != nbobservers_in4[ifindex][dst].end(); ++it) {
+			it = nbobs_in4.begin(); it != nbobs_in4.end(); ++it) {
 		(*it)->neigh_in4_deleted(ifindex, nbindex);
 	}
 };
@@ -617,15 +619,17 @@ cnetlink::notify_neigh_in6_deleted(unsigned int ifindex, unsigned int nbindex) {
 	const rofl::caddress_in6& dst = cnetlink::get_instance().get_links().
 									get_link(ifindex).get_neighs_in6().get_neigh(nbindex).get_dst();
 
+	// make local copy of set
+	std::set<cnetlink_common_observer*> obs(observers);
 	for (std::set<cnetlink_common_observer*>::iterator
-			it = cnetlink::get_instance().observers.begin();
-				it != cnetlink::get_instance().observers.end(); ++it) {
+			it = obs.begin(); it != obs.end(); ++it) {
 		(*it)->neigh_in6_deleted(ifindex, nbindex);
 	}
 
+	// make local copy of set
+	std::set<cnetlink_neighbour_observer*> nbobs_in6(nbobservers_in6[ifindex][dst]);
 	for (std::set<cnetlink_neighbour_observer*>::iterator
-			it = nbobservers_in6[ifindex][dst].begin();
-				it != nbobservers_in6[ifindex][dst].end(); ++it) {
+			it = nbobs_in6.begin(); it != nbobs_in6.end(); ++it) {
 		(*it)->neigh_in6_deleted(ifindex, nbindex);
 	}
 };
