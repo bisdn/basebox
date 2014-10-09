@@ -209,7 +209,7 @@ cipcore::link_created(unsigned int ifindex)
 			}
 		}
 
-		add_link(ifindex, rtl.get_devname(), rtl.get_hwaddr(), tagged, vid);
+		set_link(ifindex, rtl.get_devname(), rtl.get_hwaddr(), tagged, vid);
 		rofcore::logging::debug << "[cipcore][link_created] state:" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {

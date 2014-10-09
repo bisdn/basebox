@@ -68,8 +68,10 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 	} catch (rofl::eRofDptNotFound& e) {
 		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] unable to find data path" << e.what() << std::endl;
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] unable to find link" << e.what() << std::endl;
+		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] unable to find netlink link" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] unable to find link" << e.what() << std::endl;
+	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
 		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
 		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] control channel congested" << e.what() << std::endl;
@@ -183,6 +185,8 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 	} catch (rofcore::eNetLinkNotFound& e) {
 		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_open] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_open] unable to find link" << e.what() << std::endl;
+	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
 		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_open] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
 		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_open] control channel congested" << e.what() << std::endl;
