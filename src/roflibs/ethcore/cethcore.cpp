@@ -29,7 +29,7 @@ cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 		// install 01:80:c2:xx:xx:xx entry in table 0
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 		fm.set_command(rofl::openflow::OFPFC_ADD);
-		fm.set_priority(0x1000);
+		fm.set_priority(0xf000);
 		fm.set_table_id(table_id_eth_in);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("01:80:c2:00:00:00"), rofl::caddress_ll("ff:ff:ff:00:00:00"));
 		fm.set_instructions().set_inst_apply_actions().set_actions().
@@ -76,10 +76,12 @@ cethcore::handle_dpt_close(rofl::crofdpt& dpt)
 			dpt.release_group_id(it->second.get_group_id());
 		}
 
+		// TODO: remove 01:80:c2:XX:XX:XX
+
 		// install miss entry for src stage table
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fm.set_priority(0x1000);
+		fm.set_priority(0xf000);
 		fm.set_table_id(table_id_eth_src);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
