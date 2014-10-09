@@ -23,4 +23,4 @@ libroflibs_la_LIBADD = \
 	grecore/libroflibs_grecore.la \
 	python/libroflibs_python.la
 
-sysconf_DATA = roflibs.conf
+#sysconf_DATA = roflibs.conf

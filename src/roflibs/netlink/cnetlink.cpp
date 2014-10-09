@@ -508,23 +508,19 @@ cnetlink::notify_neigh_in4_created(unsigned int ifindex, unsigned int nbindex) {
 	const rofl::caddress_in4& dst = cnetlink::get_instance().get_links().
 									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
 
+	std::cerr << "[cnetlink][notify_neigh_in4_created] sending notifications:" << std::endl;
+	std::cerr << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
+	std::cerr << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4();
+
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = cnetlink::get_instance().observers.begin();
 				it != cnetlink::get_instance().observers.end(); ++it) {
 		(*it)->neigh_in4_created(ifindex, nbindex);
 	}
 
-	std::cerr << "[cnetlink][notify_neigh_in4_created] sending notifications: TTT[0]" << std::endl;
-	std::cerr << "<ifindex " << ifindex << " >" << std::endl;
-	std::cerr << dst;
-
 	for (std::set<cnetlink_neighbour_observer*>::iterator
 			it = nbobservers_in4[ifindex][dst].begin();
 				it != nbobservers_in4[ifindex][dst].end(); ++it) {
-
-		std::cerr << "[cnetlink][notify_neigh_in4_created] sending notifications: TTT[1]" << std::endl;
-		std::cerr << "<ifindex " << ifindex << " >" << std::endl;
-		std::cerr << dst;
 
 		(*it)->neigh_in4_created(ifindex, nbindex);
 	}
@@ -556,6 +552,10 @@ void
 cnetlink::notify_neigh_in4_updated(unsigned int ifindex, unsigned int nbindex) {
 	const rofl::caddress_in4& dst = cnetlink::get_instance().get_links().
 									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
+
+	std::cerr << "[cnetlink][notify_neigh_in4_updated] sending notifications:" << std::endl;
+	std::cerr << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
+	std::cerr << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4();
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = cnetlink::get_instance().observers.begin();
@@ -596,6 +596,10 @@ void
 cnetlink::notify_neigh_in4_deleted(unsigned int ifindex, unsigned int nbindex) {
 	const rofl::caddress_in4& dst = cnetlink::get_instance().get_links().
 									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
+
+	std::cerr << "[cnetlink][notify_neigh_in4_deleted] sending notifications:" << std::endl;
+	std::cerr << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
+	std::cerr << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4();
 
 	// make local copy of set
 	std::set<cnetlink_common_observer*> obs(observers);

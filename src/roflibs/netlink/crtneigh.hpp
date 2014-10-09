@@ -124,17 +124,8 @@ public:
 	bool
 	operator== (const crtneigh& rtneigh) {
 		return ((ifindex 	== rtneigh.ifindex) &&
-				(lladdr 	== rtneigh.lladdr) 	&&
 				(family 	== rtneigh.family) 	&&
 				(type 		== rtneigh.type));
-#if 0
-		return ((state 		== rtneigh.state) 	&&
-				(flags 		== rtneigh.flags) 	&&
-				(ifindex 	== rtneigh.ifindex) &&
-				(lladdr 	== rtneigh.lladdr) 	&&
-				(family 	== rtneigh.family) 	&&
-				(type 		== rtneigh.type));
-#endif
 	};
 
 public:
