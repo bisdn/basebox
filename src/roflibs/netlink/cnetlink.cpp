@@ -439,6 +439,11 @@ cnetlink::notify_link_deleted(unsigned int ifindex) {
 
 void
 cnetlink::notify_addr_in4_created(unsigned int ifindex, unsigned int adindex) {
+
+	std::cerr << "[cnetlink][notify_addr_in4_created] sending notifications:" << std::endl;
+	std::cerr << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
+	std::cerr << cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4();
+
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = cnetlink::get_instance().observers.begin();
 				it != cnetlink::get_instance().observers.end(); ++it) {
@@ -461,6 +466,11 @@ cnetlink::notify_addr_in6_created(unsigned int ifindex, unsigned int adindex) {
 
 void
 cnetlink::notify_addr_in4_updated(unsigned int ifindex, unsigned int adindex) {
+
+	std::cerr << "[cnetlink][notify_addr_in4_updated] sending notifications:" << std::endl;
+	std::cerr << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
+	std::cerr << cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4();
+
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = cnetlink::get_instance().observers.begin();
 				it != cnetlink::get_instance().observers.end(); ++it) {
@@ -483,6 +493,11 @@ cnetlink::notify_addr_in6_updated(unsigned int ifindex, unsigned int adindex) {
 
 void
 cnetlink::notify_addr_in4_deleted(unsigned int ifindex, unsigned int adindex) {
+
+	std::cerr << "[cnetlink][notify_addr_in4_deleted] sending notifications:" << std::endl;
+	std::cerr << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
+	std::cerr << cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4();
+
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = cnetlink::get_instance().observers.begin();
 				it != cnetlink::get_instance().observers.end(); ++it) {
