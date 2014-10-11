@@ -70,6 +70,24 @@ class cnetlink :
 
 public:
 
+	friend std::ostream&
+	operator<< (std::ostream& os, const cnetlink& netlink) {
+		os << rofcore::indent(0) << "<cnetlink>" << std::endl;
+		rofcore::indent i(2);
+		os << netlink.rtlinks;
+		for (std::map<int, crtroutes_in4>::const_iterator
+				it = netlink.rtroutes_in4.begin(); it != netlink.rtroutes_in4.end(); ++it) {
+			os << it->second;
+		}
+		for (std::map<int, crtroutes_in6>::const_iterator
+				it = netlink.rtroutes_in6.begin(); it != netlink.rtroutes_in6.end(); ++it) {
+			os << it->second;
+		}
+		return os;
+	};
+
+public:
+
 
 	/**
 	 *
