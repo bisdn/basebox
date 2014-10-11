@@ -520,6 +520,9 @@ cipcore::neigh_in4_created(unsigned int ifindex, uint16_t nbindex)
 		if (not get_link(ifindex).has_neigh_in4(nbindex)) {
 			set_link(ifindex).set_neigh_in4(nbindex);
 			rofcore::logging::debug << "[cipcore][neigh_in4_created] state:" << std::endl << *this;
+		} else {
+			set_link(ifindex).set_neigh_in4(nbindex).update();
+			rofcore::logging::debug << "[cipcore][neigh_in4_created] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -540,6 +543,9 @@ cipcore::neigh_in4_updated(unsigned int ifindex, uint16_t nbindex)
 
 		if (not get_link(ifindex).has_neigh_in4(nbindex)) {
 			set_link(ifindex).set_neigh_in4(nbindex);
+			rofcore::logging::debug << "[cipcore][neigh_in4_updated] state:" << std::endl << *this;
+		} else {
+			set_link(ifindex).set_neigh_in4(nbindex).update();
 			rofcore::logging::debug << "[cipcore][neigh_in4_updated] state:" << std::endl << *this;
 		}
 
@@ -583,6 +589,9 @@ cipcore::neigh_in6_created(unsigned int ifindex, uint16_t nbindex)
 		if (not get_link(ifindex).has_neigh_in6(nbindex)) {
 			set_link(ifindex).set_neigh_in6(nbindex);
 			rofcore::logging::debug << "[cipcore][neigh_in6_created] state:" << std::endl << *this;
+		} else {
+			set_link(ifindex).set_neigh_in6(nbindex).update();
+			rofcore::logging::debug << "[cipcore][neigh_in6_created] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {
@@ -604,6 +613,9 @@ cipcore::neigh_in6_updated(unsigned int ifindex, uint16_t nbindex)
 		if (not get_link(ifindex).has_neigh_in6(nbindex)) {
 			set_link(ifindex).set_neigh_in6(nbindex);
 			rofcore::logging::debug << "[cipcore][neigh_in6_updated] state:" << std::endl << *this;
+		} else {
+			set_link(ifindex).set_neigh_in6(nbindex).update();
+			rofcore::logging::debug << "[cipcore][neigh_in6_created] state:" << std::endl << *this;
 		}
 
 	} catch (std::runtime_error& e) {

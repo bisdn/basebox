@@ -1,12 +1,12 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-export INCLUDES += \
-	-I$(abs_srcdir)/roflibs/python \
-	-I$(abs_srcdir)/roflibs/netlink \
-	-I$(abs_srcdir)/roflibs/ipcore \
-	-I$(abs_srcdir)/roflibs/ethcore \
-	-I$(abs_srcdir)/roflibs/gtpcore \
-	-I$(abs_srcdir)/roflibs/grecore
+#export INCLUDES += \
+#	-I$(abs_srcdir)/roflibs/python \
+#	-I$(abs_srcdir)/roflibs/netlink \
+#	-I$(abs_srcdir)/roflibs/ipcore \
+#	-I$(abs_srcdir)/roflibs/ethcore \
+#	-I$(abs_srcdir)/roflibs/gtpcore \
+#	-I$(abs_srcdir)/roflibs/grecore
 
 SUBDIRS = netlink ipcore ethcore gtpcore grecore python
 

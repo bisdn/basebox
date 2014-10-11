@@ -281,6 +281,9 @@ cbasebox::handle_dpt_open(
 void
 cbasebox::handle_dpt_close(
 		rofl::crofdpt& dpt) {
+
+	clear_tap_devs();
+
 	// call external scripting hook
 	hook_dpt_detach();
 

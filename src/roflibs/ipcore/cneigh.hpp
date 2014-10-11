@@ -86,7 +86,35 @@ public:
 				nbindex(nbindex),
 				dpid(dpid),
 				out_ofp_table_id(out_ofp_table_id),
-				group_id(0) {};
+				group_id(0) {
+
+		try {
+
+			rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
+
+			// the neighbour ...
+			const rofcore::crtneigh_in4& rtn =
+					netlink.get_links().get_link(get_ifindex()).get_neighs_in4().get_neigh(get_nbindex());
+
+			// neighbour mac address
+			lladdr = rtn.get_lladdr();
+
+		} catch (rofl::eRofDptNotFound& e) {
+			rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][cneigh] dpt not found" << std::endl;
+		} catch (rofcore::eNetLinkNotFound& e) {
+			rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][cneigh] unable to find link" << e.what() << std::endl;
+		} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
+			rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][cneigh] unable to find neighbour" << e.what() << std::endl;
+		} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+			rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][cneigh] unable to find address" << e.what() << std::endl;
+		}
+	};
+
+	/**
+	 *
+	 */
+	virtual void
+	update() = 0;
 
 public:
 
@@ -144,6 +172,12 @@ public:
 	uint32_t
 	get_group_id() const { return group_id; };
 
+	/**
+	 *
+	 */
+	const rofl::cmacaddr&
+	get_lladdr() const { return lladdr; };
+
 public:
 
 	friend std::ostream&
@@ -152,6 +186,7 @@ public:
 		os << "nbindex: " << (unsigned int)neigh.nbindex << " ";
 		os << "ifindex: " << (unsigned int)neigh.ifindex << " ";
 		os << "tableid: " << (unsigned int)neigh.out_ofp_table_id << " ";
+		os << "lladdr: " << neigh.lladdr.str() << " ";
 		os << ">" << std::endl;
 		return os;
 	};
@@ -166,9 +201,10 @@ protected:
 	enum ofp_state_t			state;
 	int							ifindex;
 	uint16_t					nbindex;
-	rofl::cdpid				dpid;
+	rofl::cdpid					dpid;
 	uint8_t 					out_ofp_table_id;
 	uint32_t					group_id;
+	rofl::caddress_ll			lladdr;
 };
 
 
@@ -215,6 +251,12 @@ public:
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};
+
+	/**
+	 *
+	 */
+	virtual void
+	update();
 
 public:
 
@@ -313,6 +355,12 @@ public:
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};
+
+	/**
+	 *
+	 */
+	virtual void
+	update();
 
 public:
 

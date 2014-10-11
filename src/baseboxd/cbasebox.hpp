@@ -173,6 +173,18 @@ private:
 	/**
 	 *
 	 */
+	void
+	clear_tap_devs() {
+		while (not devs.empty()) {
+			std::map<uint32_t, rofcore::ctapdev*>::iterator it = devs.begin();
+			hook_port_down(it->second->get_devname());
+			drop_tap_dev(it->first);
+		}
+	};
+
+	/**
+	 *
+	 */
 	rofcore::ctapdev&
 	add_tap_dev(uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr) {
 		if (devs.find(ofp_port_no) != devs.end()) {

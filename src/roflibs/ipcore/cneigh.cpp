@@ -12,6 +12,47 @@ using namespace roflibs::ip;
 
 
 void
+cneigh_in4::update()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+
+		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
+
+		// the neighbour ...
+		const rofcore::crtneigh_in4& rtn =
+				netlink.get_links().get_link(get_ifindex()).get_neighs_in4().get_neigh(get_nbindex());
+
+		// neighbour mac address
+		const rofl::cmacaddr& eth_dst 	= rtn.get_lladdr();
+
+		// nothing to do
+		if (lladdr == eth_dst)
+			return;
+
+		// remove old flow entries
+		if (0 != group_id) {
+			handle_dpt_close(dpt);
+		}
+
+		// create new flow entries with updated values
+		if (not eth_dst.is_null() && not eth_dst.is_multicast()) {
+			handle_dpt_open(dpt);
+		}
+
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][update] dpt not found" << std::endl;
+	} catch (rofcore::eNetLinkNotFound& e) {
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][update] unable to find link" << e.what() << std::endl;
+	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][update] unable to find neighbour" << e.what() << std::endl;
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][update] unable to find address" << e.what() << std::endl;
+	}
+}
+
+
+void
 cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
@@ -114,19 +155,19 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] unable to find link" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_open] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] unable to find neighbour" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_open] unable to find neighbour" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] unable to find address" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_open] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] unable to find data path" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_open] unable to find data path" << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] control channel congested" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_open] control channel congested" << e.what() << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] control channel is down" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_open] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_open] unexpected error" << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_open] unexpected error" << std::endl;
 	}
 }
 
@@ -163,23 +204,65 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] unable to find link" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_close] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] unable to find neighbour" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_close] unable to find neighbour" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] unable to find address" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_close] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] unable to find data path" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_close] unable to find data path" << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] control channel congested" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_close] control channel congested" << e.what() << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] control channel is down" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_close] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[rofip][cneigh_in4][handle_dpt_close] unexpected error" << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in4][handle_dpt_close] unexpected error" << std::endl;
 	}
 
 	state = STATE_DETACHED;
 	dpt.release_group_id(group_id); group_id = 0;
+}
+
+
+
+void
+cneigh_in6::update()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+
+		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
+
+		// the neighbour ...
+		const rofcore::crtneigh_in6& rtn =
+				netlink.get_links().get_link(get_ifindex()).get_neighs_in6().get_neigh(get_nbindex());
+
+		// neighbour mac address
+		const rofl::cmacaddr& eth_dst 	= rtn.get_lladdr();
+
+		// nothing to do
+		if (lladdr == eth_dst)
+			return;
+
+		// remove old flow entries
+		if (0 != group_id) {
+			handle_dpt_close(dpt);
+		}
+
+		// create new flow entries with updated values
+		if (not eth_dst.is_null() && not eth_dst.is_multicast()) {
+			handle_dpt_open(dpt);
+		}
+
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][update] dpt not found" << std::endl;
+	} catch (rofcore::eNetLinkNotFound& e) {
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][update] unable to find link" << e.what() << std::endl;
+	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][update] unable to find neighbour" << e.what() << std::endl;
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][update] unable to find address" << e.what() << std::endl;
+	}
 }
 
 
@@ -280,19 +363,19 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] unable to find link" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_open] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] unable to find neighbour" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_open] unable to find neighbour" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] unable to find address" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_open] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] unable to find data path" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_open] unable to find data path" << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] control channel congested" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_open] control channel congested" << e.what() << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] control channel is down" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_open] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_open] unexpected error" << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_open] unexpected error" << std::endl;
 	}
 }
 
@@ -329,19 +412,19 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] unable to find link" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_close] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] unable to find neighbour" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_close] unable to find neighbour" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] unable to find address" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_close] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] unable to find data path" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_close] unable to find data path" << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] control channel congested" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_close] control channel congested" << e.what() << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] control channel is down" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_close] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[rofip][cneigh_in6][handle_dpt_close] unexpected error" << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][cneigh_in6][handle_dpt_close] unexpected error" << std::endl;
 	}
 
 	state = STATE_DETACHED;

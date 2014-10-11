@@ -37,6 +37,7 @@ extern "C" {
 #include <roflibs/netlink/cnetlink.hpp>
 #include <roflibs/ipcore/croutetable.hpp>
 #include <roflibs/ipcore/clink.hpp>
+#include <roflibs/ipcore/cneigh.hpp>
 
 namespace roflibs {
 namespace ip {
