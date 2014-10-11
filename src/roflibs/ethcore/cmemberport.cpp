@@ -67,7 +67,7 @@ cmemberport::handle_dpt_open(
 		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
 		fm.set_match().set_in_port(portno);
-		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
+		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"), rofl::caddress_ll("01:00:00:00:00:00"));
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm.set_instructions().clear();
 		//fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_out);
@@ -133,7 +133,7 @@ cmemberport::handle_dpt_close(
 		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
 		fm.set_match().set_in_port(portno);
-		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"));
+		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"), rofl::caddress_ll("01:00:00:00:00:00"));
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_in+3);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
