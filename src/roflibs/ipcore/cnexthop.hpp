@@ -201,9 +201,9 @@ private:
 
 	virtual void
 	neigh_in4_created(unsigned int ifindex, uint16_t nbindex) {
-		if (STATE_DETACHED == state) {
+		//if (STATE_DETACHED == state) {
 			handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
-		}
+		//}
 	};
 
 	virtual void
@@ -213,9 +213,9 @@ private:
 
 	virtual void
 	neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex) {
-		if (STATE_ATTACHED == state) {
+		//if (STATE_ATTACHED == state) {
 			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
-		}
+		//}
 	};
 
 public:
@@ -294,9 +294,9 @@ private:
 
 	virtual void
 	neigh_in6_created(unsigned int ifindex, uint16_t nbindex) {
-		if (STATE_DETACHED == state) {
+		//if (STATE_DETACHED == state) {
 			handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
-		}
+		//}
 	};
 
 	virtual void
@@ -306,9 +306,9 @@ private:
 
 	virtual void
 	neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex) {
-		if (STATE_ATTACHED == state) {
+		//if (STATE_ATTACHED == state) {
 			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
-		}
+		//}
 	};
 
 public:
