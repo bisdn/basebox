@@ -172,6 +172,7 @@ private:
 	uint8_t			table_id_eth_in;
 	uint8_t			table_id_eth_local; // MAC addresses assigned to local host
 	uint8_t			table_id_eth_out;
+	rofl::cmacaddr  hwaddr;
 };
 
 }; // end of namespace ethernet

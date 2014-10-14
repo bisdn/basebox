@@ -370,6 +370,8 @@ cbasebox::handle_port_status(
 
 		switch (msg.get_reason()) {
 		case rofl::openflow::OFPPR_ADD: {
+			dpt.set_ports().set_port(msg.get_port().get_port_no()) = msg.get_port();
+
 			if (not has_tap_dev(ofp_port_no)) {
 				add_tap_dev(port.get_port_no(), port.get_name(), port.get_hwaddr());
 				hook_port_up(msg.get_port().get_name());
@@ -383,6 +385,8 @@ cbasebox::handle_port_status(
 
 		} break;
 		case rofl::openflow::OFPPR_MODIFY: {
+			dpt.set_ports().set_port(msg.get_port().get_port_no()) = msg.get_port();
+
 			if (not has_tap_dev(ofp_port_no)) {
 				add_tap_dev(port.get_port_no(), port.get_name(), port.get_hwaddr());
 			}
@@ -395,6 +399,8 @@ cbasebox::handle_port_status(
 
 		} break;
 		case rofl::openflow::OFPPR_DELETE: {
+			dpt.set_ports().drop_port(msg.get_port().get_port_no());
+
 			hook_port_down(msg.get_port().get_name());
 			drop_tap_dev(port.get_port_no());
 
