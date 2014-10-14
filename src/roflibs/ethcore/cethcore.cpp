@@ -76,21 +76,29 @@ cethcore::handle_dpt_close(rofl::crofdpt& dpt)
 			dpt.release_group_id(it->second.get_group_id());
 		}
 
-		// TODO: remove 01:80:c2:XX:XX:XX
-
-		// install miss entry for src stage table
+		// remove miss entry for src stage table
 		rofl::openflow::cofflowmod fm(dpt.get_version());
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_priority(0xf000);
 		fm.set_table_id(table_id_eth_src);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
-		// install miss entry for local address stage table (src-stage + 1)
+		// remove miss entry for local address stage table (src-stage + 1)
 		fm.clear();
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_priority(0x1000);
 		fm.set_table_id(table_id_eth_src+1);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+		// remove 01:80:c2:xx:xx:xx entry from table 0
+		fm.clear();
+		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
+		fm.set_priority(0xf000);
+		fm.set_table_id(table_id_eth_in);
+		fm.set_match().set_eth_dst(rofl::caddress_ll("01:80:c2:00:00:00"), rofl::caddress_ll("ff:ff:ff:00:00:00"));
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+
 
 	} catch (rofl::eRofSockTxAgain& e) {
 		rofcore::logging::debug << "[cethcore][handle_dpt_close] control channel congested" << std::endl;
