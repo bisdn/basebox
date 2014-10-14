@@ -23,6 +23,7 @@
 #include <roflibs/netlink/clogging.hpp>
 #include <roflibs/gtpcore/caddress_gtp.hpp>
 #include <roflibs/gtpcore/ctermdev.hpp>
+#include <roflibs/ipcore/cipcore.hpp>
 
 namespace roflibs {
 namespace gtp {
@@ -36,7 +37,7 @@ public:
 	eGtpRelayNotFound(const std::string& __arg) : eGtpRelayBase(__arg) {};
 };
 
-class cgtprelay : public rofl::csocket_owner, public rofcore::cnetdev_owner {
+class cgtprelay : public rofl::csocket_owner, public rofcore::cnetdev_owner, public rofcore::cnetlink_common_observer {
 public:
 
 	/**
@@ -458,6 +459,29 @@ private:
 	std::map<caddress_gtp_in6, rofl::csocket*>	sockets_in6;
 	std::map<std::string, ctermdev*>			termdevs;
 	static std::map<rofl::cdpid, cgtprelay*>	gtprelays;
+
+private:
+
+	friend class cnetlink;
+
+	virtual void
+	addr_in4_created(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_in4_updated(unsigned int ifindex, uint16_t adindex) {};
+
+	virtual void
+	addr_in4_deleted(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_in6_created(unsigned int ifindex, uint16_t adindex);
+
+	virtual void
+	addr_in6_updated(unsigned int ifindex, uint16_t adindex) {};
+
+	virtual void
+	addr_in6_deleted(unsigned int ifindex, uint16_t adindex);
+
 };
 
 }; // end of namespace gtp
