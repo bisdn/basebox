@@ -21,11 +21,6 @@ cmemberport::handle_dpt_open(
 
 		dpt_state = STATE_ATTACHED;
 
-		// check for existence of our port on dpt
-		if (not dpt.get_ports().has_port(portno)) {
-			return;
-		}
-
 		rofl::cindex index(0);
 
 		rofl::openflow::cofflowmod fm(dpt.get_version());
@@ -48,10 +43,10 @@ cmemberport::handle_dpt_open(
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 
-		hwaddr = dpt.get_ports().get_port(portno).get_hwaddr();
 		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
-		fm.set_match().set_eth_dst(dpt.get_ports().get_port(portno).get_hwaddr());
+		//fm.set_match().set_eth_dst(dpt.get_ports().get_port(portno).get_hwaddr());
+		fm.set_match().set_eth_dst(hwaddr);
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm.set_instructions().clear();
 		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_local+1);
@@ -96,11 +91,6 @@ cmemberport::handle_dpt_close(
 		}
 
 		dpt_state = STATE_DETACHED;
-
-		// check for existence of our port on dpt
-		if (not dpt.get_ports().has_port(portno)) {
-			//return;
-		}
 
 		rofl::cindex index(0);
 

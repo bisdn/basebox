@@ -95,7 +95,7 @@ public:
 		ports.clear();
 		for (std::map<uint32_t, cmemberport>::const_iterator
 				it = vlan.ports.begin(); it != vlan.ports.end(); ++it) {
-			add_port(it->second.get_port_no(), it->second.get_tagged());
+			add_port(it->second.get_port_no(), it->second.get_hwaddr(), it->second.get_tagged());
 		}
 		fib.clear();
 		for (std::map<rofl::caddress_ll, cfibentry>::const_iterator
@@ -126,12 +126,12 @@ public:
 	 *
 	 */
 	cmemberport&
-	add_port(uint32_t portno, bool tagged = true) {
+	add_port(uint32_t portno, const rofl::cmacaddr& hwaddr, bool tagged = true) {
 		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (ports.find(portno) != ports.end()) {
 			ports.erase(portno);
 		}
-		ports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, vid, tagged);
+		ports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, hwaddr, vid, tagged);
 		if (STATE_ATTACHED == state) {
 			ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
@@ -155,10 +155,10 @@ public:
 	 *
 	 */
 	cmemberport&
-	set_port(uint32_t portno, bool tagged) {
+	set_port(uint32_t portno, const rofl::cmacaddr& hwaddr, bool tagged) {
 		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (ports.find(portno) == ports.end()) {
-			ports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, vid, tagged);
+			ports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, hwaddr, vid, tagged);
 			update_group_entry_buckets();
 			if (STATE_ATTACHED == state) {
 				ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));

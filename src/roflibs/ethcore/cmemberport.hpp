@@ -45,11 +45,11 @@ public:
 	 */
 	cmemberport(
 			const rofl::cdpid& dpid, uint8_t in_stage_table_id, uint8_t local_stage_table_id, uint8_t out_stage_table_id,
-			uint32_t portno = 0xffffffff,
+			uint32_t portno, const rofl::cmacaddr& hwaddr,
 			uint16_t vid = 0xffff, bool tagged = true) :
 		dpt_state(STATE_IDLE), dpid(dpid), portno(portno), vid(vid),
 		tagged(tagged), table_id_eth_in(in_stage_table_id),
-		table_id_eth_local(local_stage_table_id), table_id_eth_out(out_stage_table_id) {};
+		table_id_eth_local(local_stage_table_id), table_id_eth_out(out_stage_table_id), hwaddr(hwaddr) {};
 
 	/**
 	 *
@@ -83,6 +83,7 @@ public:
 		table_id_eth_in = port.table_id_eth_in;
 		table_id_eth_local = port.table_id_eth_local;
 		table_id_eth_out = port.table_id_eth_out;
+		hwaddr	= port.hwaddr;
 		return *this;
 	};
 
@@ -93,6 +94,12 @@ public:
 	 */
 	uint32_t
 	get_port_no() const { return portno; };
+
+	/**
+	 *
+	 */
+	const rofl::cmacaddr&
+	get_hwaddr() const { return hwaddr; };
 
 	/**
 	 *

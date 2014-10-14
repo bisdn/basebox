@@ -162,14 +162,14 @@ cethcore::handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, ro
 void
 cethcore::link_created(unsigned int ifindex)
 {
-	return;
+	std::string devname;
+	uint16_t vid = 1;
+	bool tagged = false;
 
 	try {
 		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
 
-		std::string devname = rtl.get_devname();
-		uint16_t vid = 1;
-		bool tagged = false;
+		devname = rtl.get_devname();
 
 		size_t pos = rtl.get_devname().find_first_of(".");
 		if (pos != std::string::npos) {
@@ -181,21 +181,30 @@ cethcore::link_created(unsigned int ifindex)
 
 		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid).get_ports().get_port(devname);
 
-		if (not has_vlan(vid)) {
-			add_vlan(vid).add_port(port.get_port_no(), true);
-		} else {
-			if (not get_vlan(vid).has_port(port.get_port_no())) {
-				set_vlan(vid).add_port(port.get_port_no(), true);
-			}
+		if ((not has_vlan(vid)) || (not get_vlan(vid).has_port(port.get_port_no()))) {
+			// add port (and vlan implicitly, if not exists)
+			set_vlan(vid).add_port(port.get_port_no(), port.get_hwaddr(), true);
+			rofcore::logging::debug << "[cethcore][link_created] adding new port" << std::endl
+					<< get_vlan(vid).get_port(port.get_port_no());
+		} else
+		if (get_vlan(vid).get_port(port.get_port_no()).get_hwaddr() != port.get_hwaddr()) {
+			// hwaddr has changed => drop port and re-add (virtual links between LSIs)
+			set_vlan(vid).drop_port(port.get_port_no());
+			set_vlan(vid).add_port(port.get_port_no(), port.get_hwaddr(), true);
+			rofcore::logging::debug << "[cethcore][link_created] readding port, mac address changed" << std::endl
+					<< get_vlan(vid).get_port(port.get_port_no());
 		}
-		rofcore::logging::debug << "[cethcore][link_created] state:" << std::endl << *this;
+
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		// should (:) never happen
+		rofcore::logging::error << "[cethcore][link_created] link not found, ifindex: " << ifindex << std::endl;
 	} catch (rofl::openflow::ePortNotFound& e) {
 		// unknown interface
+		rofcore::logging::error << "[cethcore][link_created] port not found, devname: " << devname << std::endl;
 	} catch (rofl::eRofDptNotFound& e) {
 		// do nothing
+		rofcore::logging::error << "[cethcore][link_created] dpt not found, dpid: " << dpid << std::endl;
 	}
 }
 
@@ -204,14 +213,14 @@ cethcore::link_created(unsigned int ifindex)
 void
 cethcore::link_updated(unsigned int ifindex)
 {
-	return;
+	std::string devname;
+	uint16_t vid = 1;
+	bool tagged = false;
 
 	try {
 		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
 
-		std::string devname = rtl.get_devname();
-		uint16_t vid = 1;
-		bool tagged = false;
+		devname = rtl.get_devname();
 
 		size_t pos = rtl.get_devname().find_first_of(".");
 		if (pos != std::string::npos) {
@@ -223,21 +232,30 @@ cethcore::link_updated(unsigned int ifindex)
 
 		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid).get_ports().get_port(devname);
 
-		if (not has_vlan(vid)) {
-			add_vlan(vid).add_port(port.get_port_no(), true);
-		} else {
-			if (not get_vlan(vid).has_port(port.get_port_no())) {
-				set_vlan(vid).add_port(port.get_port_no(), true);
-			}
+		if ((not has_vlan(vid)) || (not get_vlan(vid).has_port(port.get_port_no()))) {
+			// add port (and vlan implicitly, if not exists)
+			set_vlan(vid).add_port(port.get_port_no(), port.get_hwaddr(), true);
+			rofcore::logging::debug << "[cethcore][link_updated] adding new port" << std::endl
+					<< get_vlan(vid).get_port(port.get_port_no());
+		} else
+		if (get_vlan(vid).get_port(port.get_port_no()).get_hwaddr() != port.get_hwaddr()) {
+			// hwaddr has changed => drop port and re-add (virtual links between LSIs)
+			set_vlan(vid).drop_port(port.get_port_no());
+			set_vlan(vid).add_port(port.get_port_no(), port.get_hwaddr(), true);
+			rofcore::logging::debug << "[cethcore][link_updated] readding port, mac address changed" << std::endl
+					<< get_vlan(vid).get_port(port.get_port_no());
 		}
 		rofcore::logging::debug << "[cethcore][link_updated] state:" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		// should (:) never happen
+		rofcore::logging::error << "[cethcore][link_updated] link not found, ifindex: " << ifindex << std::endl;
 	} catch (rofl::openflow::ePortNotFound& e) {
 		// unknown interface
+		rofcore::logging::error << "[cethcore][link_updated] port not found, devname: " << devname << std::endl;
 	} catch (rofl::eRofDptNotFound& e) {
 		// do nothing
+		rofcore::logging::error << "[cethcore][link_updated] dpt not found, dpid: " << dpid << std::endl;
 	}
 }
 
@@ -246,14 +264,14 @@ cethcore::link_updated(unsigned int ifindex)
 void
 cethcore::link_deleted(unsigned int ifindex)
 {
-	return;
+	std::string devname;
+	uint16_t vid = 1;
+	bool tagged = false;
 
 	try {
 		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
 
-		std::string devname = rtl.get_devname();
-		uint16_t vid = 1;
-		bool tagged = false;
+		devname = rtl.get_devname();
 
 		size_t pos = rtl.get_devname().find_first_of(".");
 		if (pos != std::string::npos) {
@@ -271,16 +289,21 @@ cethcore::link_deleted(unsigned int ifindex)
 		if (not get_vlan(vid).has_port(port.get_port_no())) {
 			return;
 		}
+		rofcore::logging::debug << "[cethcore][link_deleted] deleting port:" << std::endl
+				<< get_vlan(vid).get_port(port.get_port_no());
+
 		set_vlan(vid).drop_port(port.get_port_no());
 
-		rofcore::logging::debug << "[cethcore][link_deleted] state:" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
 		// should (:) never happen
+		rofcore::logging::error << "[cethcore][link_deleted] link not found, ifindex: " << ifindex << std::endl;
 	} catch (rofl::openflow::ePortNotFound& e) {
 		// unknown interface
+		rofcore::logging::error << "[cethcore][link_deleted] port not found, devname: " << devname << std::endl;
 	} catch (rofl::eRofDptNotFound& e) {
 		// do nothing
+		rofcore::logging::error << "[cethcore][link_deleted] dpt not found, dpid: " << dpid << std::endl;
 	}
 }
 
