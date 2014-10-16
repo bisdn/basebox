@@ -17,6 +17,7 @@
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/clogging.hpp"
 #include "roflibs/ethcore/cvlan.hpp"
+#include "roflibs/ethcore/cportdb.hpp"
 
 namespace roflibs {
 namespace ethernet {
@@ -123,27 +124,12 @@ private:
 	cethcore(const rofl::cdpid& dpid,
 			uint8_t table_id_eth_in, uint8_t table_id_eth_src,
 			uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
-			uint16_t default_pvid = DEFAULT_PVID) :
-		state(STATE_IDLE), dpid(dpid), default_pvid(default_pvid),
-		table_id_eth_in(table_id_eth_in),
-		table_id_eth_src(table_id_eth_src),
-		table_id_eth_local(table_id_eth_local),
-		table_id_eth_dst(table_id_eth_dst) {
-		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
-			throw eVlanExists("cethcore::cethcore() dptid already exists");
-		}
-		cethcore::ethcores[dpid] = this;
-	};
+			uint16_t default_pvid = DEFAULT_PVID);
 
 	/**
 	 *
 	 */
-	~cethcore() {
-		if (STATE_ATTACHED == state) {
-			// TODO
-		}
-		cethcore::ethcores.erase(dpid);
-	};
+	~cethcore();
 
 public:
 

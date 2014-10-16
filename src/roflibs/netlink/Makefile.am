@@ -29,7 +29,9 @@ libroflibs_netlink_la_SOURCES = \
 	crtnexthop.hpp \
 	crtnexthops.hpp \
 	clogging.cpp \
-	clogging.hpp
+	clogging.hpp \
+	cconfig.cpp \
+	cconfig.hpp
 
 libroflibs_netlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
@@ -51,7 +53,8 @@ library_include_HEADERS= \
 	crtneighs.hpp \
 	crtnexthop.hpp \
 	crtnexthops.hpp \
-	clogging.hpp
+	clogging.hpp \
+	cconfig.hpp
 
 AM_CPPFLAGS=-fPIC
 AM_CXXFLAGS=-I$(top_srcdir)/src

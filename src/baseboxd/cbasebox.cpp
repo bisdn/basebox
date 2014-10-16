@@ -13,7 +13,6 @@ using namespace basebox;
 /*static*/const std::string cbasebox::BASEBOX_LOG_FILE = std::string("/var/log/baseboxd.log");
 /*static*/const std::string cbasebox::BASEBOX_PID_FILE = std::string("/var/run/baseboxd.pid");
 /*static*/const std::string cbasebox::BASEBOX_CONFIG_FILE = std::string("/usr/local/etc/baseboxd.conf");
-/*static*/const std::string cbasebox::BASEBOX_CONFIG_DPT_LIST = std::string("baseboxd.datapaths");
 
 /*static*/std::string cbasebox::script_path_dpt_open 	= std::string("/var/lib/basebox/dpath-open.sh");
 /*static*/std::string cbasebox::script_path_dpt_close 	= std::string("/var/lib/basebox/dpath-close.sh");
@@ -202,13 +201,13 @@ cbasebox::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 				pkt->length());
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::warn << "[cbasebox][enqueue] no data path attached, dropping outgoing packet" << std::endl;
+		rofcore::logging::error << "[cbasebox][enqueue] no data path attached, dropping outgoing packet" << std::endl;
 
 	} catch (eLinkNoDptAttached& e) {
-		rofcore::logging::warn << "[cbasebox][enqueue] no data path attached, dropping outgoing packet" << std::endl;
+		rofcore::logging::error << "[cbasebox][enqueue] no data path attached, dropping outgoing packet" << std::endl;
 
 	} catch (eLinkTapDevNotFound& e) {
-		rofcore::logging::warn << "[cbasebox][enqueue] unable to find tap device" << std::endl;
+		rofcore::logging::error << "[cbasebox][enqueue] unable to find tap device" << std::endl;
 	}
 
 	rofcore::cpacketpool::get_instance().release_pkt(pkt);
@@ -234,15 +233,6 @@ cbasebox::handle_dpt_open(
 
 	dptid = dpt.get_dptid();
 
-	uint8_t table_id_eth_port_membership 	= 0;
-	uint8_t table_id_eth_src 				= 1;
-	uint8_t table_id_eth_local 				= 2;
-	uint8_t table_id_ip_local 				= 3;
-	uint8_t table_id_gre_local 				= 4;
-	uint8_t table_id_gtp_local 				= 4;
-	uint8_t table_id_ip_fwd 				= 5;
-	uint8_t table_id_eth_dst 				= 6;
-
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid(),
 												table_id_ip_local,
 												table_id_ip_fwd).handle_dpt_close(dpt);
@@ -252,7 +242,7 @@ cbasebox::handle_dpt_open(
 												table_id_eth_src,
 												table_id_eth_local,
 												table_id_eth_dst,
-												/*default_vid=*/1).handle_dpt_close(dpt);
+												default_pvid).handle_dpt_close(dpt);
 
 	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid(),
 												table_id_ip_local,
@@ -439,8 +429,6 @@ cbasebox::handle_port_desc_stats_reply(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg) {
 
 	dpt.set_ports() = msg.get_ports();
-
-	read_vlan_config();
 
 #if 0
 	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
@@ -691,9 +679,9 @@ cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 	} catch (roflibs::ip::eLinkNotFound& e) {
 		// ignore addresses assigned to non-datapath ports
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] link not found" << std::endl;
+		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] link not found" << e.what() << std::endl;
 	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] address not found" << std::endl;
+		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] address not found" << e.what() << std::endl;
 	} catch (rofl::eSysCall& e) {
 			// ...
 	}
@@ -786,105 +774,3 @@ cbasebox::test_workflow()
 }
 
 
-
-void
-cbasebox::read_vlan_config()
-{
-	/*
-	 * read configuration (for now: from libconfig++ file)
-	 */
-
-	ethcore::cconfig& config = ethcore::cconfig::get_instance();
-
-	if (config.exists(BASEBOX_CONFIG_DPT_LIST)) {
-		for (int i = 0; i < config.lookup(BASEBOX_CONFIG_DPT_LIST).getLength(); i++) {
-			try {
-				libconfig::Setting& datapath = config.lookup(BASEBOX_CONFIG_DPT_LIST)[i];
-
-				// get data path dpid
-				if (not datapath.exists("dpid")) {
-					continue; // as we do not know the data path dpid
-				}
-				rofl::cdpid dpid( (int)datapath["dpid"] );
-
-				// get default port vid
-				uint16_t default_pvid = 1;
-				if (datapath.exists("default_pvid")) {
-					default_pvid = (int)datapath["default_pvid"];
-				}
-
-				// this is the cethcore instance for this data path
-				roflibs::ethernet::cethcore& ethcore = roflibs::ethernet::cethcore::set_eth_core(dpid, default_pvid, 0, 1, 5);
-
-				// create vlan instance for default_pvid, just in case, there are no member ports defined
-				ethcore.set_vlan(default_pvid);
-
-				// extract all ports
-				if (datapath.exists("ports")) {
-					for (int j = 0; j < datapath["ports"].getLength(); ++j) {
-						libconfig::Setting& port = datapath["ports"][j];
-
-						// portno
-						uint32_t portno(0);
-						if (not port.exists("portno")) {
-							continue; // no portno, skip this port
-						} else {
-							portno = (uint32_t)port["portno"];
-						}
-
-						// pvid
-						int pvid(default_pvid);
-						if (port.exists("pvid")) {
-							pvid = (int)port["pvid"];
-						}
-
-						// add port "portno" in untagged mode to vlan pvid
-						ethcore.set_vlan(pvid).add_port(portno, false);
-					}
-				}
-
-				// extract all vlans (= tagged port memberships)
-				if (datapath.exists("vlans")) {
-					for (int j = 0; j < datapath["vlans"].getLength(); ++j) {
-						libconfig::Setting& vlan = datapath["vlans"][j];
-
-						// vid
-						uint16_t vid(0);
-						if (not vlan.exists("vid")) {
-							continue; // no vid, skip this vlan
-						} else {
-							vid = (int)vlan["vid"];
-						}
-
-						// create vlan instance, just in case, there are no member ports defined
-						ethcore.set_vlan(vid);
-
-						// tagged port memberships
-						if (vlan.exists("tagged")) {
-							for (int k = 0; k < vlan["tagged"].getLength(); ++k) {
-								libconfig::Setting& port = vlan["tagged"][k];
-
-								// portno
-								uint32_t portno = (uint32_t)port;
-
-								// check whether port already exists in vlan
-								if (ethcore.has_vlan(vid) && ethcore.get_vlan(vid).has_port(portno)) {
-									continue;
-								}
-
-								// add port "portno" in tagged mode to vlan vid
-								ethcore.set_vlan(vid).add_port(portno, true);
-							}
-						}
-					}
-				}
-
-				rofcore::logging::debug << "after config:" << std::endl << roflibs::ethernet::cethcore::get_eth_core(dpid);
-
-
-			} catch (libconfig::SettingNotFoundException& e) {
-
-			}
-		}
-	}
-}

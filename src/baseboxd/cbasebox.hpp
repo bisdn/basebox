@@ -56,7 +56,17 @@ class cbasebox : public rofl::crofbase, public rofcore::cnetdev_owner, public ro
 	cbasebox(
 			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap =
 					rofl::openflow::cofhello_elem_versionbitmap()) :
-						rofl::crofbase(versionbitmap) {};
+						rofl::crofbase(versionbitmap),
+						table_id_eth_port_membership(0),
+						table_id_eth_src(1),
+						table_id_eth_local(2),
+						table_id_ip_local(3),
+						table_id_gre_local(4),
+						table_id_gtp_local(4),
+						table_id_ip_fwd(5),
+						table_id_eth_dst(6),
+						default_pvid(1)
+						{};
 
 	/**
 	 *
@@ -424,12 +434,6 @@ private:
 	 *
 	 */
 	void
-	read_vlan_config();
-
-	/**
-	 *
-	 */
-	void
 	test_workflow();
 
 private:
@@ -438,7 +442,6 @@ private:
 	static const std::string BASEBOX_LOG_FILE;
 	static const std::string BASEBOX_PID_FILE;
 	static const std::string BASEBOX_CONFIG_FILE;
-	static const std::string BASEBOX_CONFIG_DPT_LIST;
 
 	static std::string script_path_dpt_open;
 	static std::string script_path_dpt_close;
@@ -447,6 +450,16 @@ private:
 
 	std::map<uint32_t, rofcore::ctapdev*>	devs;
 	std::string	python_script;
+
+	uint8_t table_id_eth_port_membership;
+	uint8_t table_id_eth_src;
+	uint8_t table_id_eth_local;
+	uint8_t table_id_ip_local;
+	uint8_t table_id_gre_local;
+	uint8_t table_id_gtp_local;
+	uint8_t table_id_ip_fwd;
+	uint8_t table_id_eth_dst;
+	uint16_t default_pvid;
 };
 
 }; // end of namespace ethcore

@@ -12,6 +12,52 @@ using namespace roflibs::ethernet;
 /*static*/std::map<rofl::cdpid, cethcore*> cethcore::ethcores;
 /*static*/std::set<uint64_t> cethcore::dpids;
 
+
+cethcore::cethcore(const rofl::cdpid& dpid,
+		uint8_t table_id_eth_in, uint8_t table_id_eth_src,
+		uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
+		uint16_t default_pvid) :
+	state(STATE_IDLE), dpid(dpid), default_pvid(default_pvid),
+	table_id_eth_in(table_id_eth_in),
+	table_id_eth_src(table_id_eth_src),
+	table_id_eth_local(table_id_eth_local),
+	table_id_eth_dst(table_id_eth_dst) {
+	if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
+		throw eVlanExists("cethcore::cethcore() dpid already exists");
+	}
+	cethcore::ethcores[dpid] = this;
+
+	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+
+	std::string dbname("file");
+	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
+			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
+		if (not cportdb::get_portdb(dbname).has_port_entry(dpid, it->first)) {
+			continue;
+		}
+		const rofl::openflow::cofport& ofport = *(it->second);
+		const cportentry& port = cportdb::get_portdb(dbname).get_port_entry(dpid, it->first);
+
+		// create or maintain existing vlan for port's default vid
+		set_vlan(port.get_port_vid()).add_port(port.get_portno(), /*tagged=*/false);
+
+		// add all tagged memberships of this port to the appropriate vlan
+		for (std::set<uint16_t>::const_iterator
+				jt = port.get_tagged_vids().begin(); jt != port.get_tagged_vids().end(); ++jt) {
+			set_vlan(*jt).add_port(port.get_portno(), ofport.get_hwaddr(), /*tagged=*/true);
+		}
+	}
+}
+
+
+cethcore::~cethcore() {
+	if (STATE_ATTACHED == state) {
+		// TODO
+	}
+	cethcore::ethcores.erase(dpid);
+}
+
+
 void
 cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
