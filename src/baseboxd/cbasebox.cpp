@@ -315,8 +315,7 @@ cbasebox::handle_packet_in(
 
 		rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 		*pkt = msg.get_packet();
-		rofcore::logging::debug << "[cbasebox][handle_packet_in] pkt received [1]: " << std::endl << msg.get_packet();
-		rofcore::logging::debug << "[cbasebox][handle_packet_in] pkt received [2]: " << std::endl << *pkt;
+		rofcore::logging::debug << "[cbasebox][handle_packet_in] pkt received: " << std::endl << msg.get_packet();
 		set_tap_dev(ofp_port_no).enqueue(pkt);
 
 		switch (msg.get_table_id()) {
@@ -503,7 +502,7 @@ cbasebox::hook_dpt_attach()
 		cbasebox::execute(cbasebox::script_path_dpt_open, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-
+		rofcore::logging::error << "[cbasebox][hook_dpt_attach] script execution failed" << std::endl;
 	}
 }
 
@@ -525,7 +524,7 @@ cbasebox::hook_dpt_detach()
 		cbasebox::execute(cbasebox::script_path_dpt_close, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-
+		rofcore::logging::error << "[cbasebox][hook_dpt_detach] script execution failed" << std::endl;
 	}
 }
 
@@ -551,7 +550,7 @@ cbasebox::hook_port_up(std::string const& devname)
 		cbasebox::execute(cbasebox::script_path_port_up, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-
+		rofcore::logging::error << "[cbasebox][hook_port_up] script execution failed" << std::endl;
 	}
 }
 
@@ -577,7 +576,7 @@ cbasebox::hook_port_down(std::string const& devname)
 		cbasebox::execute(cbasebox::script_path_port_down, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-
+		rofcore::logging::error << "[cbasebox][hook_port_down] script execution failed" << std::endl;
 	}
 }
 
