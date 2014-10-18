@@ -132,7 +132,15 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cportentry& port) {
-		// TODO
+		os << rofcore::indent(0) << "<cportentry ";
+		os << "portno:" << (unsigned int)port.get_portno() << " ";
+		os << "pvid:" << (int)port.get_port_vid() << " ";
+		os << "tagged:";
+		for (std::set<uint16_t>::const_iterator
+				it = port.tagged_vids.begin(); it != port.tagged_vids.end(); ++it) {
+			os << (int)(*it) << ", ";
+		}
+		os << ">" << std::endl;
 		return os;
 	};
 
@@ -240,7 +248,12 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cethentry& port) {
-		// TODO
+		os << rofcore::indent(0) << "<cethentry ";
+		os << "devname:" << port.get_devname() << " ";
+		os << "hwaddr:" << port.get_hwaddr().str() << " ";
+		os << "pvid:" << (int)port.get_port_vid() << " ";
+		os << "tagged:" << (int)port.get_tagged() << " ";
+		os << ">" << std::endl;
 		return os;
 	};
 
@@ -277,14 +290,6 @@ public:
 	const std::set<uint16_t>&
 	get_vlan_memberships(const rofl::cdpid& dpid, uint32_t portno) {
 		return get_port_entry(dpid, portno).get_tagged_vids();
-	};
-
-public:
-
-	friend std::ostream&
-	operator<< (std::ostream& os, const cportdb& portconf) {
-		// TODO
-		return os;
 	};
 
 public:
@@ -452,6 +457,33 @@ public:
 	bool
 	has_eth_entry(const rofl::cdpid& dpid, const std::string& devname) const {
 		return (not (ethentries.at(dpid).find(devname) == ethentries.at(dpid).end()));
+	};
+
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const cportdb& portdb) {
+		os << rofcore::indent(0) << "<cportdb >" << std::endl;
+		rofcore::indent i(2);
+		for (std::map<rofl::cdpid, std::map<uint32_t, cportentry> >::const_iterator
+				it = portdb.portentries.begin(); it != portdb.portentries.end(); ++it) {
+			os << rofcore::indent(2) << "<cdpid: " << it->first.str() << " >" << std::endl;
+			rofcore::indent j(2);
+			for (std::map<uint32_t, cportentry>::const_iterator
+					jt = it->second.begin(); jt != it->second.end(); ++jt) {
+				os << jt->second;
+			}
+		}
+		for (std::map<rofl::cdpid, std::map<std::string, cethentry> >::const_iterator
+				it = portdb.ethentries.begin(); it != portdb.ethentries.end(); ++it) {
+			os << rofcore::indent(2) << "<cdpid: " << it->first.str() << " >" << std::endl;
+			rofcore::indent j(2);
+			for (std::map<std::string, cethentry>::const_iterator
+					jt = it->second.begin(); jt != it->second.end(); ++jt) {
+				os << jt->second;
+			}
+		}
+		return os;
 	};
 
 private:
