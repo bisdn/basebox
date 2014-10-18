@@ -113,10 +113,10 @@ cportdb_file::parse_datapath_eth_endpnt(
 		devname = (const char*)endpnt["devname"];
 	}
 
-	// pvid
-	int pvid(default_pvid);
-	if (endpnt.exists("pvid")) {
-		pvid = (int)endpnt["pvid"];
+	// vid
+	int vid(default_pvid);
+	if (endpnt.exists("vid")) {
+		vid = (int)endpnt["vid"];
 	}
 
 	// hwaddr
@@ -134,7 +134,7 @@ cportdb_file::parse_datapath_eth_endpnt(
 		tagged = (bool)endpnt["tagged"];
 	}
 
-	add_eth_entry(dpid, devname, hwaddr, pvid, tagged);
+	add_eth_entry(dpid, devname, hwaddr, vid, tagged);
 }
 
 
