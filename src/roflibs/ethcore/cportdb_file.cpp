@@ -21,7 +21,7 @@ cportdb_file::read_config()
 
 	ethcore::cconfig& config = ethcore::cconfig::get_instance();
 
-	std::string ETHCORE_CONFIG_DPT_LIST("roflibs.ethcore.datapaths");
+	const std::string ETHCORE_CONFIG_DPT_LIST("roflibs.ethcore.datapaths");
 	if (config.exists(ETHCORE_CONFIG_DPT_LIST)) {
 		for (int i = 0; i < config.lookup(ETHCORE_CONFIG_DPT_LIST).getLength(); i++) {
 			try {
@@ -38,12 +38,6 @@ cportdb_file::read_config()
 				if (datapath.exists("default_pvid")) {
 					default_pvid = (int)datapath["default_pvid"];
 				}
-
-				// this is the cethcore instance for this data path
-				//roflibs::ethernet::cethcore& ethcore = roflibs::ethernet::cethcore::set_eth_core(dpid, default_pvid, 0, 1, 5);
-
-				// create vlan instance for default_pvid, just in case, there are no member ports defined
-				//ethcore.set_vlan(default_pvid);
 
 				// extract all ports
 				if (datapath.exists("ports")) {
@@ -96,11 +90,6 @@ cportdb_file::read_config()
 							vid = (int)vlan["vid"];
 						}
 
-#if 0
-						// create vlan instance, just in case, there are no member ports defined
-						ethcore.set_vlan(vid);
-#endif
-
 						// tagged port memberships
 						if (vlan.exists("tagged")) {
 							for (int k = 0; k < vlan["tagged"].getLength(); ++k) {
@@ -110,15 +99,6 @@ cportdb_file::read_config()
 								uint32_t portno = (uint32_t)port;
 
 								set_port_entry(dpid, portno).add_vid(vid);
-#if 0
-								// check whether port already exists in vlan
-								if (ethcore.has_vlan(vid) && ethcore.get_vlan(vid).has_port(portno)) {
-									continue;
-								}
-
-								// add port "portno" in tagged mode to vlan vid
-								ethcore.set_vlan(vid).add_port(portno, true);
-#endif
 							}
 						}
 					}

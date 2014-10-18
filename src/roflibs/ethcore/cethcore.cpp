@@ -39,7 +39,7 @@ cethcore::cethcore(const rofl::cdpid& dpid,
 		const cportentry& port = cportdb::get_portdb(dbname).get_port_entry(dpid, it->first);
 
 		// create or maintain existing vlan for port's default vid
-		set_vlan(port.get_port_vid()).add_port(port.get_portno(), /*tagged=*/false);
+		set_vlan(port.get_port_vid()).add_phy_port(port.get_portno(), /*tagged=*/false);
 
 		// if a hwaddr is specified for this port in portdb, use that one,
 		// if not, use the hwaddr reported by the data path itself
@@ -51,7 +51,7 @@ cethcore::cethcore(const rofl::cdpid& dpid,
 		// add all tagged memberships of this port to the appropriate vlan
 		for (std::set<uint16_t>::const_iterator
 				jt = port.get_tagged_vids().begin(); jt != port.get_tagged_vids().end(); ++jt) {
-			set_vlan(*jt).add_port(port.get_portno(), hwaddr, /*tagged=*/true);
+			set_vlan(*jt).add_phy_port(port.get_portno(), hwaddr, /*tagged=*/true);
 		}
 	}
 }
@@ -242,18 +242,18 @@ cethcore::link_created(unsigned int ifindex)
 
 		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid).get_ports().get_port(devname);
 
-		if ((not has_vlan(vid)) || (not get_vlan(vid).has_port(port.get_port_no()))) {
+		if ((not has_vlan(vid)) || (not get_vlan(vid).has_phy_port(port.get_port_no()))) {
 			// add port (and vlan implicitly, if not exists)
-			set_vlan(vid).add_port(port.get_port_no(), port.get_hwaddr(), true);
+			set_vlan(vid).add_phy_port(port.get_port_no(), port.get_hwaddr(), true);
 			rofcore::logging::debug << "[cethcore][link_created] adding new port" << std::endl
-					<< get_vlan(vid).get_port(port.get_port_no());
+					<< get_vlan(vid).get_phy_port(port.get_port_no());
 		} else
-		if (get_vlan(vid).get_port(port.get_port_no()).get_hwaddr() != port.get_hwaddr()) {
+		if (get_vlan(vid).get_phy_port(port.get_port_no()).get_hwaddr() != port.get_hwaddr()) {
 			// hwaddr has changed => drop port and re-add (virtual links between LSIs)
-			set_vlan(vid).drop_port(port.get_port_no());
-			set_vlan(vid).add_port(port.get_port_no(), port.get_hwaddr(), true);
+			set_vlan(vid).drop_phy_port(port.get_port_no());
+			set_vlan(vid).add_phy_port(port.get_port_no(), port.get_hwaddr(), true);
 			rofcore::logging::debug << "[cethcore][link_created] readding port, mac address changed" << std::endl
-					<< get_vlan(vid).get_port(port.get_port_no());
+					<< get_vlan(vid).get_phy_port(port.get_port_no());
 		}
 
 
@@ -293,18 +293,18 @@ cethcore::link_updated(unsigned int ifindex)
 
 		const rofl::openflow::cofport& port = rofl::crofdpt::get_dpt(dpid).get_ports().get_port(devname);
 
-		if ((not has_vlan(vid)) || (not get_vlan(vid).has_port(port.get_port_no()))) {
+		if ((not has_vlan(vid)) || (not get_vlan(vid).has_phy_port(port.get_port_no()))) {
 			// add port (and vlan implicitly, if not exists)
-			set_vlan(vid).add_port(port.get_port_no(), port.get_hwaddr(), true);
+			set_vlan(vid).add_phy_port(port.get_port_no(), port.get_hwaddr(), true);
 			rofcore::logging::debug << "[cethcore][link_updated] adding new port" << std::endl
-					<< get_vlan(vid).get_port(port.get_port_no());
+					<< get_vlan(vid).get_phy_port(port.get_port_no());
 		} else
-		if (get_vlan(vid).get_port(port.get_port_no()).get_hwaddr() != port.get_hwaddr()) {
+		if (get_vlan(vid).get_phy_port(port.get_port_no()).get_hwaddr() != port.get_hwaddr()) {
 			// hwaddr has changed => drop port and re-add (virtual links between LSIs)
-			set_vlan(vid).drop_port(port.get_port_no());
-			set_vlan(vid).add_port(port.get_port_no(), port.get_hwaddr(), true);
+			set_vlan(vid).drop_phy_port(port.get_port_no());
+			set_vlan(vid).add_phy_port(port.get_port_no(), port.get_hwaddr(), true);
 			rofcore::logging::debug << "[cethcore][link_updated] readding port, mac address changed" << std::endl
-					<< get_vlan(vid).get_port(port.get_port_no());
+					<< get_vlan(vid).get_phy_port(port.get_port_no());
 		}
 		rofcore::logging::debug << "[cethcore][link_updated] state:" << std::endl << *this;
 
@@ -347,13 +347,13 @@ cethcore::link_deleted(unsigned int ifindex)
 		if (not has_vlan(vid)) {
 			return;
 		}
-		if (not get_vlan(vid).has_port(port.get_port_no())) {
+		if (not get_vlan(vid).has_phy_port(port.get_port_no())) {
 			return;
 		}
 		rofcore::logging::debug << "[cethcore][link_deleted] deleting port:" << std::endl
-				<< get_vlan(vid).get_port(port.get_port_no());
+				<< get_vlan(vid).get_phy_port(port.get_port_no());
 
-		set_vlan(vid).drop_port(port.get_port_no());
+		set_vlan(vid).drop_phy_port(port.get_port_no());
 
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {

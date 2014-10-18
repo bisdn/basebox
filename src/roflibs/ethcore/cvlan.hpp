@@ -18,6 +18,7 @@
 #include "roflibs/netlink/clogging.hpp"
 #include "roflibs/ethcore/cmemberport.hpp"
 #include "roflibs/ethcore/cfibentry.hpp"
+#include "roflibs/ethcore/cethendpnt.hpp"
 
 namespace roflibs {
 namespace ethernet {
@@ -92,10 +93,10 @@ public:
 		table_id_eth_src 	= vlan.table_id_eth_src;
 		table_id_eth_local 	= vlan.table_id_eth_local;
 		table_id_eth_dst 	= vlan.table_id_eth_dst;
-		ports.clear();
+		phyports.clear();
 		for (std::map<uint32_t, cmemberport>::const_iterator
-				it = vlan.ports.begin(); it != vlan.ports.end(); ++it) {
-			add_port(it->second.get_port_no(), it->second.get_hwaddr(), it->second.get_tagged());
+				it = vlan.phyports.begin(); it != vlan.phyports.end(); ++it) {
+			add_phy_port(it->second.get_port_no(), it->second.get_hwaddr(), it->second.get_tagged());
 		}
 		fib.clear();
 		for (std::map<rofl::caddress_ll, cfibentry>::const_iterator
@@ -112,11 +113,11 @@ public:
 	 *
 	 */
 	std::vector<uint32_t>
-	get_ports() const {
-		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_READ);
+	get_phy_ports() const {
+		rofl::RwLock rwlock(phyports_rwlock, rofl::RwLock::RWLOCK_READ);
 		std::vector<uint32_t> portnos;
 		for (std::map<uint32_t, cmemberport>::const_iterator
-				it = ports.begin(); it != ports.end(); ++it) {
+				it = phyports.begin(); it != phyports.end(); ++it) {
 			portnos.push_back(it->first);
 		}
 		return portnos;
@@ -126,66 +127,66 @@ public:
 	 *
 	 */
 	cmemberport&
-	add_port(uint32_t portno, const rofl::cmacaddr& hwaddr, bool tagged = true) {
-		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_WRITE);
-		if (ports.find(portno) != ports.end()) {
-			ports.erase(portno);
+	add_phy_port(uint32_t portno, const rofl::cmacaddr& hwaddr, bool tagged = true) {
+		rofl::RwLock rwlock(phyports_rwlock, rofl::RwLock::RWLOCK_WRITE);
+		if (phyports.find(portno) != phyports.end()) {
+			phyports.erase(portno);
 		}
-		ports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, hwaddr, vid, tagged);
+		phyports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, hwaddr, vid, tagged);
 		if (STATE_ATTACHED == state) {
-			ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			phyports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
 		update_group_entry_buckets();
-		return ports[portno];
+		return phyports[portno];
 	};
 
 	/**
 	 *
 	 */
 	cmemberport&
-	set_port(uint32_t portno) {
-		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_READ);
-		if (ports.find(portno) == ports.end()) {
+	set_phy_port(uint32_t portno) {
+		rofl::RwLock rwlock(phyports_rwlock, rofl::RwLock::RWLOCK_READ);
+		if (phyports.find(portno) == phyports.end()) {
 			throw eMemberPortNotFound("cvlan::set_port() portno not found");
 		}
-		return ports[portno];
+		return phyports[portno];
 	};
 
 	/**
 	 *
 	 */
 	cmemberport&
-	set_port(uint32_t portno, const rofl::cmacaddr& hwaddr, bool tagged) {
-		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_WRITE);
-		if (ports.find(portno) == ports.end()) {
-			ports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, hwaddr, vid, tagged);
+	set_phy_port(uint32_t portno, const rofl::cmacaddr& hwaddr, bool tagged) {
+		rofl::RwLock rwlock(phyports_rwlock, rofl::RwLock::RWLOCK_WRITE);
+		if (phyports.find(portno) == phyports.end()) {
+			phyports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, hwaddr, vid, tagged);
 			update_group_entry_buckets();
 			if (STATE_ATTACHED == state) {
-				ports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				phyports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		}
-		return ports[portno];
+		return phyports[portno];
 	};
 
 	/**
 	 *
 	 */
 	const cmemberport&
-	get_port(uint32_t portno) const {
-		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_READ);
-		if (ports.find(portno) == ports.end()) {
+	get_phy_port(uint32_t portno) const {
+		rofl::RwLock rwlock(phyports_rwlock, rofl::RwLock::RWLOCK_READ);
+		if (phyports.find(portno) == phyports.end()) {
 			throw eMemberPortNotFound("cvlan::get_port() portno not found");
 		}
-		return ports.at(portno);
+		return phyports.at(portno);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_port(uint32_t portno) {
-		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_WRITE);
-		if (ports.find(portno) == ports.end()) {
+	drop_phy_port(uint32_t portno) {
+		rofl::RwLock rwlock(phyports_rwlock, rofl::RwLock::RWLOCK_WRITE);
+		if (phyports.find(portno) == phyports.end()) {
 			return;
 		}
 		std::map<rofl::caddress_ll, cfibentry>::iterator it;
@@ -193,7 +194,7 @@ public:
 				cfibentry::cfibentry_find_by_portno(portno))) != fib.end()) {
 			fib.erase(it);
 		}
-		ports.erase(portno);
+		phyports.erase(portno);
 		update_group_entry_buckets();
 	}
 
@@ -201,9 +202,104 @@ public:
 	 *
 	 */
 	bool
-	has_port(uint32_t portno) const {
-		rofl::RwLock rwlock(ports_rwlock, rofl::RwLock::RWLOCK_READ);
-		return (not (ports.find(portno) == ports.end()));
+	has_phy_port(uint32_t portno) const {
+		rofl::RwLock rwlock(phyports_rwlock, rofl::RwLock::RWLOCK_READ);
+		return (not (phyports.find(portno) == phyports.end()));
+	};
+
+public:
+
+	/**
+	 *
+	 */
+	std::vector<rofl::caddress_ll>
+	get_eth_endpnts() const {
+		rofl::RwLock rwlock(ethendpnts_rwlock, rofl::RwLock::RWLOCK_READ);
+		std::vector<rofl::caddress_ll> hwaddrs;
+		for (std::map<rofl::caddress_ll, cethendpnt>::const_iterator
+				it = ethendpnts.begin(); it != ethendpnts.end(); ++it) {
+			hwaddrs.push_back(it->first);
+		}
+		return hwaddrs;
+	};
+
+	/**
+	 *
+	 */
+	cethendpnt&
+	add_eth_endpnt(const rofl::caddress_ll& hwaddr, bool tagged = true) {
+		rofl::RwLock rwlock(ethendpnts_rwlock, rofl::RwLock::RWLOCK_WRITE);
+		if (ethendpnts.find(hwaddr) != ethendpnts.end()) {
+			ethendpnts.erase(hwaddr);
+		}
+		ethendpnts[hwaddr] = cethendpnt(dpid, table_id_eth_local, hwaddr, vid, tagged);
+		if (STATE_ATTACHED == state) {
+			ethendpnts[hwaddr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+		}
+		update_group_entry_buckets();
+		return ethendpnts[hwaddr];
+	};
+
+	/**
+	 *
+	 */
+	cethendpnt&
+	set_eth_endpnt(const rofl::caddress_ll& hwaddr) {
+		rofl::RwLock rwlock(ethendpnts_rwlock, rofl::RwLock::RWLOCK_READ);
+		if (ethendpnts.find(hwaddr) == ethendpnts.end()) {
+			throw eEthEndpntNotFound("cvlan::set_eth_endpnt() hwaddr not found");
+		}
+		return ethendpnts[hwaddr];
+	};
+
+	/**
+	 *
+	 */
+	cethendpnt&
+	set_eth_endpnt(const rofl::caddress_ll& hwaddr, bool tagged) {
+		rofl::RwLock rwlock(ethendpnts_rwlock, rofl::RwLock::RWLOCK_WRITE);
+		if (ethendpnts.find(hwaddr) == ethendpnts.end()) {
+			ethendpnts[hwaddr] = cethendpnt(dpid, table_id_eth_local, hwaddr, vid, tagged);
+			update_group_entry_buckets();
+			if (STATE_ATTACHED == state) {
+				ethendpnts[hwaddr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			}
+		}
+		return ethendpnts[hwaddr];
+	};
+
+	/**
+	 *
+	 */
+	const cethendpnt&
+	get_eth_endpnt(const rofl::caddress_ll& hwaddr) const {
+		rofl::RwLock rwlock(ethendpnts_rwlock, rofl::RwLock::RWLOCK_READ);
+		if (ethendpnts.find(hwaddr) == ethendpnts.end()) {
+			throw eEthEndpntNotFound("cvlan::get_eth_endpnt() portno not found");
+		}
+		return ethendpnts.at(hwaddr);
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_eth_endpnt(const rofl::caddress_ll& hwaddr) {
+		rofl::RwLock rwlock(ethendpnts_rwlock, rofl::RwLock::RWLOCK_WRITE);
+		if (ethendpnts.find(hwaddr) == ethendpnts.end()) {
+			return;
+		}
+		ethendpnts.erase(hwaddr);
+		update_group_entry_buckets();
+	}
+
+	/**
+	 *
+	 */
+	bool
+	has_eth_endpnt(const rofl::caddress_ll& hwaddr) const {
+		rofl::RwLock rwlock(ethendpnts_rwlock, rofl::RwLock::RWLOCK_READ);
+		return (not (ethendpnts.find(hwaddr) == ethendpnts.end()));
 	};
 
 public:
@@ -217,10 +313,10 @@ public:
 		if (fib.find(lladdr) != fib.end()) {
 			fib.erase(lladdr);
 		}
-		if (not has_port(portno)) {
+		if (not has_phy_port(portno)) {
 			throw eFibEntryPortNotMember("cvlan::add_fib_entry() port is not member of this vlan");
 		}
-		fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr, permanent,
+		fib[lladdr] = cfibentry(this, dpid, vid, portno, get_phy_port(portno).get_tagged(), lladdr, permanent,
 							entry_timeout, table_id_eth_src, table_id_eth_dst);
 		if (STATE_ATTACHED == state) {
 			fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
@@ -246,10 +342,10 @@ public:
 	set_fib_entry(const rofl::caddress_ll& lladdr, uint32_t portno,
 			bool permanent = false, int entry_timeout = cfibentry::FIB_ENTRY_DEFAULT_TIMEOUT) {
 		if (fib.find(lladdr) == fib.end()) {
-			if (not has_port(portno)) {
+			if (not has_phy_port(portno)) {
 				throw eFibEntryPortNotMember("cvlan::set_fib_entry() port is not member of this vlan");
 			}
-			fib[lladdr] = cfibentry(this, dpid, vid, portno, get_port(portno).get_tagged(), lladdr, permanent,
+			fib[lladdr] = cfibentry(this, dpid, vid, portno, get_phy_port(portno).get_tagged(), lladdr, permanent,
 										entry_timeout, table_id_eth_src, table_id_eth_dst);
 			if (STATE_ATTACHED == state) {
 				fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
@@ -364,14 +460,18 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cvlan& vlan) {
-		rofl::RwLock rwlock(vlan.ports_rwlock, rofl::RwLock::RWLOCK_READ);
+		rofl::RwLock rwlock(vlan.phyports_rwlock, rofl::RwLock::RWLOCK_READ);
 		os << rofcore::indent(0) << "<cvlan "
 				<< "vid: " << (int)vlan.get_vid() << " "
 				<< "group-id: " << (int)vlan.get_group_id() << " "
 				<< " >" << std::endl;
 		rofcore::indent i(2);
+		for (std::map<rofl::caddress_ll, cethendpnt>::const_iterator
+				it = vlan.ethendpnts.begin(); it != vlan.ethendpnts.end(); ++it) {
+			os << it->second;
+		}
 		for (std::map<uint32_t, cmemberport>::const_iterator
-				it = vlan.ports.begin(); it != vlan.ports.end(); ++it) {
+				it = vlan.phyports.begin(); it != vlan.phyports.end(); ++it) {
 			os << it->second;
 		}
 		for (std::map<rofl::caddress_ll, cfibentry>::const_iterator
@@ -406,8 +506,10 @@ private:
 	uint16_t			vid;
 	uint32_t			group_id;	// OFP group identifier for broadcasting frames for this vid
 
-	std::map<uint32_t, cmemberport>			ports;
-	mutable rofl::PthreadRwLock				ports_rwlock;
+	std::map<rofl::caddress_ll, cethendpnt>	ethendpnts;
+	mutable rofl::PthreadRwLock				ethendpnts_rwlock;
+	std::map<uint32_t, cmemberport>			phyports;
+	mutable rofl::PthreadRwLock				phyports_rwlock;
 	std::map<rofl::caddress_ll, cfibentry>	fib;
 	uint8_t				table_id_eth_in;
 	uint8_t 			table_id_eth_src;

@@ -10,6 +10,8 @@ libroflibs_ethcore_la_SOURCES = \
 	cfibentry.hpp \
 	cmemberport.cpp \
 	cmemberport.hpp \
+	cethendpnt.cpp \
+	cethendpnt.hpp \
 	cvlan.cpp \
 	cvlan.hpp \
 	cethcore.cpp \
@@ -25,6 +27,7 @@ library_includedir=$(includedir)/roflibs/ethcore
 library_include_HEADERS= \
 	cfibentry.hpp \
 	cmemberport.hpp \
+	cethendpnt.hpp \
 	cvlan.hpp \
 	cethcore.hpp \
 	cportdb.hpp \

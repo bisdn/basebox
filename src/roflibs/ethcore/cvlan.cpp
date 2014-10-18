@@ -42,7 +42,7 @@ cvlan::handle_dpt_open(
 
 		// send notification to all member ports
 		for (std::map<uint32_t, cmemberport>::iterator
-				it = ports.begin(); it != ports.end(); ++it) {
+				it = phyports.begin(); it != phyports.end(); ++it) {
 			it->second.handle_dpt_open(dpt);
 		}
 
@@ -74,7 +74,7 @@ cvlan::handle_dpt_close(
 
 		// send notification to all member ports
 		for (std::map<uint32_t, cmemberport>::iterator
-				it = ports.begin(); it != ports.end(); ++it) {
+				it = phyports.begin(); it != phyports.end(); ++it) {
 			it->second.handle_dpt_close(dpt);
 		}
 
@@ -188,11 +188,11 @@ cvlan::handle_port_status(
 	try {
 		uint32_t portno = msg.get_port().get_port_no();
 
-		if (not has_port(portno)) {
+		if (not has_phy_port(portno)) {
 			return;
 		}
 
-		set_port(portno).handle_port_status(dpt, auxid, msg);
+		set_phy_port(portno).handle_port_status(dpt, auxid, msg);
 
 		for (std::map<rofl::caddress_ll, cfibentry>::iterator
 				it = fib.begin(); it != fib.end(); ++it) {
@@ -230,7 +230,7 @@ cvlan::update_group_entry_buckets(uint16_t command)
 		gm.set_type(rofl::openflow::OFPGT_ALL);
 		unsigned int bucket_id = 0;
 		for (std::map<uint32_t, cmemberport>::iterator
-				it = ports.begin(); it != ports.end(); ++it) {
+				it = phyports.begin(); it != phyports.end(); ++it) {
 			rofl::cindex index(0);
 			if (not it->second.get_tagged()) {
 				gm.set_buckets().add_bucket(bucket_id).set_actions().
@@ -238,6 +238,20 @@ cvlan::update_group_entry_buckets(uint16_t command)
 			}
 			gm.set_buckets().set_bucket(bucket_id).set_actions().
 						add_action_output(index++).set_port_no(it->second.get_port_no());
+			bucket_id++;
+		}
+
+		// this sends Packet-Ins for each single ethernet endpoint
+		// TODO: rethink this strategy???
+		for (std::map<rofl::caddress_ll, cethendpnt>::iterator
+				it = ethendpnts.begin(); it != ethendpnts.end(); ++it) {
+			rofl::cindex index(0);
+			if (not it->second.get_tagged()) {
+				gm.set_buckets().add_bucket(bucket_id).set_actions().
+						add_action_pop_vlan(index++);
+			}
+			gm.set_buckets().set_bucket(bucket_id).set_actions().
+						add_action_output(index++).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 			bucket_id++;
 		}
 

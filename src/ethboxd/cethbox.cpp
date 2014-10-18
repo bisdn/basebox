@@ -161,7 +161,7 @@ cethbox::run(int argc, char** argv)
 						}
 
 						// add port "portno" in untagged mode to vlan pvid
-						ethcore.set_vlan(pvid).add_port(portno, false);
+						ethcore.set_vlan(pvid).add_phy_port(portno, false);
 					}
 				}
 
@@ -190,12 +190,12 @@ cethbox::run(int argc, char** argv)
 								uint32_t portno = (uint32_t)port;
 
 								// check whether port already exists in vlan
-								if (ethcore.has_vlan(vid) && ethcore.get_vlan(vid).has_port(portno)) {
+								if (ethcore.has_vlan(vid) && ethcore.get_vlan(vid).has_phy_port(portno)) {
 									continue;
 								}
 
 								// add port "portno" in tagged mode to vlan vid
-								ethcore.set_vlan(vid).add_port(portno, true);
+								ethcore.set_vlan(vid).add_phy_port(portno, true);
 							}
 						}
 					}
@@ -469,7 +469,7 @@ cethbox::handle_port_desc_stats_reply(
 			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
 		const rofl::openflow::cofport& port = *(it->second);
 
-		roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).set_vlan(/*default_vid=*/1).add_port(port.get_port_no(), /*tagged=*/false);
+		roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).set_vlan(/*default_vid=*/1).add_phy_port(port.get_port_no(), /*tagged=*/false);
 	}
 
 	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
