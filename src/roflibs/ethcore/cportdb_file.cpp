@@ -48,7 +48,7 @@ cportdb_file::parse_datapath(ethcore::cconfig& config, libconfig::Setting& datap
 	}
 
 	// extract all physical ports
-	const std::string phyports("phyports");
+	const std::string phyports("ports");
 	if (datapath.exists(phyports.c_str())) {
 		for (int j = 0; j < datapath[phyports.c_str()].getLength(); ++j) {
 			libconfig::Setting& port = datapath[phyports.c_str()][j];
@@ -57,7 +57,7 @@ cportdb_file::parse_datapath(ethcore::cconfig& config, libconfig::Setting& datap
 	}
 
 	// extract all predefined ethernet endpoints
-	const std::string ethendpnts("ethendpnts");
+	const std::string ethendpnts("ethernet");
 	if (datapath.exists(ethendpnts.c_str())) {
 		for (int j = 0; j < datapath[ethendpnts.c_str()].getLength(); ++j) {
 			libconfig::Setting& endpnt = datapath[ethendpnts.c_str()][j];
