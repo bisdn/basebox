@@ -60,6 +60,14 @@ private:
 			ethcore::cconfig& config, libconfig::Setting& endpnt,
 			const rofl::cdpid& dpid, uint16_t pvid);
 
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const cportdb_file& portdb) {
+		os << dynamic_cast<const cportdb&>( portdb );
+		return os;
+	};
+
 private:
 
 	static const std::string 		ETHCORE_CONFIG_DPT_LIST;
