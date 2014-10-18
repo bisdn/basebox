@@ -21,6 +21,7 @@ cportdb_file::read_config()
 	 */
 
 	ethcore::cconfig& config = ethcore::cconfig::get_instance();
+	config.open(DEFAULT_CONFIG_FILE);
 
 	if (config.exists(ETHCORE_CONFIG_DPT_LIST)) {
 		for (int i = 0; i < config.lookup(ETHCORE_CONFIG_DPT_LIST).getLength(); i++) {
