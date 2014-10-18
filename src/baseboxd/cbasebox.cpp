@@ -190,7 +190,7 @@ cbasebox::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		}
 
 		rofl::openflow::cofactions actions(rofl::crofdpt::get_dpt(dptid).get_version());
-		actions.set_action_output(rofl::cindex(0)).set_port_no(tapdev->get_ofp_port_no());
+		actions.set_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_TABLE);
 
 		rofl::crofdpt::get_dpt(dptid).send_packet_out_message(
 				rofl::cauxid(0),
@@ -361,37 +361,37 @@ cbasebox::handle_port_status(
 		case rofl::openflow::OFPPR_ADD: {
 			dpt.set_ports().set_port(msg.get_port().get_port_no()) = msg.get_port();
 
-			if (not has_tap_dev(ofp_port_no)) {
-				add_tap_dev(port.get_port_no(), port.get_name(), port.get_hwaddr());
+			if (not has_tap_dev(port.get_name())) {
+				add_tap_dev(port.get_name(), port.get_hwaddr());
 				hook_port_up(msg.get_port().get_name());
 			}
 
 			if (port.link_state_is_link_down() || port.config_is_port_down()) {
-				set_tap_dev(ofp_port_no).disable_interface();
+				set_tap_dev(port.get_name()).disable_interface();
 			} else {
-				set_tap_dev(ofp_port_no).enable_interface();
+				set_tap_dev(port.get_name()).enable_interface();
 			}
 
 		} break;
 		case rofl::openflow::OFPPR_MODIFY: {
 			dpt.set_ports().set_port(msg.get_port().get_port_no()) = msg.get_port();
 
-			if (not has_tap_dev(ofp_port_no)) {
-				add_tap_dev(port.get_port_no(), port.get_name(), port.get_hwaddr());
+			if (not has_tap_dev(port.get_name())) {
+				add_tap_dev(port.get_name(), port.get_hwaddr());
 			}
 
 			if (port.link_state_is_link_down() || port.config_is_port_down()) {
-				set_tap_dev(ofp_port_no).disable_interface();
+				set_tap_dev(port.get_name()).disable_interface();
 			} else {
-				set_tap_dev(ofp_port_no).enable_interface();
+				set_tap_dev(port.get_name()).enable_interface();
 			}
 
 		} break;
 		case rofl::openflow::OFPPR_DELETE: {
-			dpt.set_ports().drop_port(msg.get_port().get_port_no());
+			dpt.set_ports().drop_port(msg.get_port().get_name());
 
 			hook_port_down(msg.get_port().get_name());
-			drop_tap_dev(port.get_port_no());
+			drop_tap_dev(port.get_name());
 
 		} break;
 		default: {
@@ -399,7 +399,6 @@ cbasebox::handle_port_status(
 		} return;
 		}
 
-		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
 		if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
 			roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
 		}
@@ -430,24 +429,38 @@ cbasebox::handle_port_desc_stats_reply(
 
 	dpt.set_ports() = msg.get_ports();
 
-#if 0
-	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
-			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
-		const rofl::openflow::cofport& port = *(it->second);
 
-		roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).set_vlan(/*default_vid=*/1).add_port(port.get_port_no(), /*tagged=*/false);
-	}
-#endif
-
+	/*
+	 * create tap devices for physical ports
+	 */
 	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
 			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
 		const rofl::openflow::cofport& port = *(it->second);
 
 		if (not has_tap_dev(port.get_port_no())) {
-			add_tap_dev(port.get_port_no(), port.get_name(), port.get_hwaddr());
+			add_tap_dev(port.get_name(), port.get_hwaddr());
 		}
 	}
 
+	/*
+	 * create virtual ports for predefined ethernet endpoints
+	 */
+	const std::string dbname("file");
+	roflibs::ethernet::cportdb& portdb = roflibs::ethernet::cportdb::get_portdb(dbname);
+
+	// install ethernet endpoints
+	for (std::set<std::string>::const_iterator
+			it = portdb.get_eth_entries(dpt.get_dpid()).begin(); it != portdb.get_eth_entries(dpt.get_dpid()).end(); ++it) {
+		const roflibs::ethernet::cethentry& eth = portdb.get_eth_entry(dpt.get_dpid(), *it);
+
+		if (not has_tap_dev(eth.get_devname())) {
+			add_tap_dev(eth.get_devname(), eth.get_hwaddr());
+		}
+	}
+
+	/*
+	 * notify core instances
+	 */
 	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
 #if 0
@@ -455,6 +468,8 @@ cbasebox::handle_port_desc_stats_reply(
 	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
 #endif
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
+
+
 
 	//test_workflow();
 

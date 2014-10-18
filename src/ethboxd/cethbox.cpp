@@ -280,7 +280,7 @@ cethbox::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		}
 
 		rofl::openflow::cofactions actions(rofl::crofdpt::get_dpt(dptid).get_version());
-		actions.set_action_output(rofl::cindex(0)).set_port_no(tapdev->get_ofp_port_no());
+		actions.set_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_TABLE);
 
 		rofl::crofdpt::get_dpt(dptid).send_packet_out_message(
 				rofl::cauxid(0),
@@ -403,7 +403,7 @@ cethbox::handle_port_status(
 		switch (msg.get_reason()) {
 		case rofl::openflow::OFPPR_ADD: {
 			if (not has_tap_dev(ofp_port_no)) {
-				add_tap_dev(port.get_port_no(), port.get_name(), port.get_hwaddr());
+				add_tap_dev(port.get_name(), port.get_hwaddr());
 				hook_port_up(msg.get_port().get_name());
 			}
 
@@ -416,7 +416,7 @@ cethbox::handle_port_status(
 		} break;
 		case rofl::openflow::OFPPR_MODIFY: {
 			if (not has_tap_dev(ofp_port_no)) {
-				add_tap_dev(port.get_port_no(), port.get_name(), port.get_hwaddr());
+				add_tap_dev(port.get_name(), port.get_hwaddr());
 			}
 
 			if (port.link_state_is_link_down() || port.config_is_port_down()) {
@@ -477,7 +477,7 @@ cethbox::handle_port_desc_stats_reply(
 		const rofl::openflow::cofport& port = *(it->second);
 
 		if (not has_tap_dev(port.get_port_no())) {
-			add_tap_dev(port.get_port_no(), port.get_name(), port.get_hwaddr());
+			add_tap_dev(port.get_name(), port.get_hwaddr());
 		}
 	}
 

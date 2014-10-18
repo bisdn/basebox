@@ -186,7 +186,7 @@ private:
 	void
 	clear_tap_devs() {
 		while (not devs.empty()) {
-			std::map<uint32_t, rofcore::ctapdev*>::iterator it = devs.begin();
+			std::map<std::string, rofcore::ctapdev*>::iterator it = devs.begin();
 			hook_port_down(it->second->get_devname());
 			drop_tap_dev(it->first);
 		}
@@ -196,47 +196,23 @@ private:
 	 *
 	 */
 	rofcore::ctapdev&
-	add_tap_dev(uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr) {
-		if (devs.find(ofp_port_no) != devs.end()) {
-			delete devs[ofp_port_no];
+	add_tap_dev(const std::string& devname, const rofl::caddress_ll& hwaddr) {
+		if (devs.find(devname) != devs.end()) {
+			delete devs[devname];
 		}
-		devs[ofp_port_no] = new rofcore::ctapdev(this, devname, hwaddr, ofp_port_no);
-		return *(devs[ofp_port_no]);
+		devs[devname] = new rofcore::ctapdev(this, devname, hwaddr);
+		return *(devs[devname]);
 	};
 
 	/**
 	 *
 	 */
 	rofcore::ctapdev&
-	set_tap_dev(uint32_t ofp_port_no, const std::string& devname, const rofl::caddress_ll& hwaddr) {
-		if (devs.find(ofp_port_no) == devs.end()) {
-			devs[ofp_port_no] = new rofcore::ctapdev(this, devname, hwaddr, ofp_port_no);
+	set_tap_dev(const std::string& devname, const rofl::caddress_ll& hwaddr) {
+		if (devs.find(devname) == devs.end()) {
+			devs[devname] = new rofcore::ctapdev(this, devname, hwaddr);
 		}
-		return *(devs[ofp_port_no]);
-	};
-
-	/**
-	 *
-	 */
-	rofcore::ctapdev&
-	set_tap_dev(uint32_t ofp_port_no) {
-		if (devs.find(ofp_port_no) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
-		}
-		return *(devs[ofp_port_no]);
-	};
-
-	/**
-	 *
-	 */
-	rofcore::ctapdev&
-	set_tap_dev(const rofl::caddress_ll& hwaddr) {
-		std::map<uint32_t, rofcore::ctapdev*>::iterator it;
-		if ((it = find_if(devs.begin(), devs.end(),
-				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
-		}
-		return *(it->second);
+		return *(devs[devname]);
 	};
 
 	/**
@@ -244,31 +220,18 @@ private:
 	 */
 	rofcore::ctapdev&
 	set_tap_dev(const std::string& devname) {
-		std::map<uint32_t, rofcore::ctapdev*>::iterator it;
-		if ((it = find_if(devs.begin(), devs.end(),
-				rofcore::ctapdev::ctapdev_find_by_devname(devname))) == devs.end()) {
+		if (devs.find(devname) == devs.end()) {
 			throw rofcore::eTunDevNotFound();
 		}
-		return *(it->second);
+		return *(devs[devname]);
 	};
 
 	/**
 	 *
 	 */
-	const rofcore::ctapdev&
-	get_tap_dev(uint32_t ofp_port_no) const {
-		if (devs.find(ofp_port_no) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
-		}
-		return *(devs.at(ofp_port_no));
-	};
-
-	/**
-	 *
-	 */
-	const rofcore::ctapdev&
-	get_tap_dev(const rofl::caddress_ll& hwaddr) const {
-		std::map<uint32_t, rofcore::ctapdev*>::const_iterator it;
+	rofcore::ctapdev&
+	set_tap_dev(const rofl::caddress_ll& hwaddr) {
+		std::map<std::string, rofcore::ctapdev*>::iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
 			throw rofcore::eTunDevNotFound();
@@ -281,9 +244,20 @@ private:
 	 */
 	const rofcore::ctapdev&
 	get_tap_dev(const std::string& devname) const {
-		std::map<uint32_t, rofcore::ctapdev*>::const_iterator it;
+		if (devs.find(devname) == devs.end()) {
+			throw rofcore::eTunDevNotFound();
+		}
+		return *(devs.at(devname));
+	};
+
+	/**
+	 *
+	 */
+	const rofcore::ctapdev&
+	get_tap_dev(const rofl::caddress_ll& hwaddr) const {
+		std::map<std::string, rofcore::ctapdev*>::const_iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
-				rofcore::ctapdev::ctapdev_find_by_devname(devname))) == devs.end()) {
+				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
 			throw rofcore::eTunDevNotFound();
 		}
 		return *(it->second);
@@ -293,12 +267,12 @@ private:
 	 *
 	 */
 	void
-	drop_tap_dev(uint32_t ofp_port_no) {
-		if (devs.find(ofp_port_no) == devs.end()) {
+	drop_tap_dev(const std::string& devname) {
+		if (devs.find(devname) == devs.end()) {
 			return;
 		}
-		delete devs[ofp_port_no];
-		devs.erase(ofp_port_no);
+		delete devs[devname];
+		devs.erase(devname);
 	};
 
 	/**
@@ -306,48 +280,13 @@ private:
 	 */
 	void
 	drop_tap_dev(const rofl::caddress_ll& hwaddr) {
-		std::map<uint32_t, rofcore::ctapdev*>::const_iterator it;
+		std::map<std::string, rofcore::ctapdev*>::const_iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
 			return;
 		}
 		delete it->second;
 		devs.erase(it->first);
-	};
-
-	/**
-	 *
-	 */
-	void
-	drop_tap_dev(const std::string& devname) {
-		std::map<uint32_t, rofcore::ctapdev*>::const_iterator it;
-		if ((it = find_if(devs.begin(), devs.end(),
-				rofcore::ctapdev::ctapdev_find_by_devname(devname))) == devs.end()) {
-			return;
-		}
-		delete it->second;
-		devs.erase(it->first);
-	};
-
-	/**
-	 *
-	 */
-	bool
-	has_tap_dev(uint32_t ofp_port_no) const {
-		return (not (devs.find(ofp_port_no) == devs.end()));
-	};
-
-	/**
-	 *
-	 */
-	bool
-	has_tap_dev(const rofl::caddress_ll& hwaddr) const {
-		std::map<uint32_t, rofcore::ctapdev*>::const_iterator it;
-		if ((it = find_if(devs.begin(), devs.end(),
-				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
-			return false;
-		}
-		return true;
 	};
 
 	/**
@@ -355,9 +294,17 @@ private:
 	 */
 	bool
 	has_tap_dev(const std::string& devname) const {
-		std::map<uint32_t, rofcore::ctapdev*>::const_iterator it;
+		return (not (devs.find(devname) == devs.end()));
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_tap_dev(const rofl::caddress_ll& hwaddr) const {
+		std::map<std::string, rofcore::ctapdev*>::const_iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
-				rofcore::ctapdev::ctapdev_find_by_devname(devname))) == devs.end()) {
+				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
 			return false;
 		}
 		return true;
@@ -369,7 +316,7 @@ public:
 	operator<< (std::ostream& os, const cbasebox& box) {
 		os << rofcore::indent(0) << "<cbasebox dptid: " << box.dptid << " >" << std::endl;
 		rofcore::indent i(2);
-		for (std::map<uint32_t, rofcore::ctapdev*>::const_iterator
+		for (std::map<std::string, rofcore::ctapdev*>::const_iterator
 				it = box.devs.begin(); it != box.devs.end(); ++it) {
 			os << *(it->second);
 		}
@@ -448,7 +395,7 @@ private:
 	static std::string script_path_port_up;
 	static std::string script_path_port_down;
 
-	std::map<uint32_t, rofcore::ctapdev*>	devs;
+	std::map<std::string, rofcore::ctapdev*>	devs;
 	std::string	python_script;
 
 	uint8_t table_id_eth_port_membership;
