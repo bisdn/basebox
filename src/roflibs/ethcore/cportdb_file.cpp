@@ -30,6 +30,8 @@ cportdb_file::read_config()
 			} catch (libconfig::SettingNotFoundException& e) {}
 		}
 	}
+
+	rofcore::logging::debug << "[cportdb][file] config:" << std::endl << *this;
 }
 
 
@@ -65,8 +67,6 @@ cportdb_file::parse_datapath(ethcore::cconfig& config, libconfig::Setting& datap
 			parse_datapath_eth_endpnt(config, endpnt, dpid, default_pvid);
 		}
 	}
-
-	rofcore::logging::debug << "after config:" << std::endl << *this;
 }
 
 
