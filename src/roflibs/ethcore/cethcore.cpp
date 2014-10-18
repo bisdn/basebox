@@ -41,10 +41,17 @@ cethcore::cethcore(const rofl::cdpid& dpid,
 		// create or maintain existing vlan for port's default vid
 		set_vlan(port.get_port_vid()).add_port(port.get_portno(), /*tagged=*/false);
 
+		// if a hwaddr is specified for this port in portdb, use that one,
+		// if not, use the hwaddr reported by the data path itself
+		rofl::caddress_ll hwaddr = ofport.get_hwaddr();
+		if (not port.get_hwaddr().is_null()) {
+			hwaddr = port.get_hwaddr();
+		}
+
 		// add all tagged memberships of this port to the appropriate vlan
 		for (std::set<uint16_t>::const_iterator
 				jt = port.get_tagged_vids().begin(); jt != port.get_tagged_vids().end(); ++jt) {
-			set_vlan(*jt).add_port(port.get_portno(), ofport.get_hwaddr(), /*tagged=*/true);
+			set_vlan(*jt).add_port(port.get_portno(), hwaddr, /*tagged=*/true);
 		}
 	}
 }
