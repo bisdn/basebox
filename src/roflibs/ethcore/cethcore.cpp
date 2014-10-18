@@ -29,30 +29,36 @@ cethcore::cethcore(const rofl::cdpid& dpid,
 
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
-	std::string dbname("file");
+	const std::string dbname("file");
+	cportdb& portdb = cportdb::get_portdb(dbname);
+
+	// install physical ports
 	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
 			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
-		if (not cportdb::get_portdb(dbname).has_port_entry(dpid, it->first)) {
+
+		const rofl::openflow::cofport& ofport = *(it->second);
+		uint32_t portno = it->first;
+		if (not portdb.has_port_entry(dpid, ofport.get_port_no())) {
 			continue;
 		}
-		const rofl::openflow::cofport& ofport = *(it->second);
-		const cportentry& port = cportdb::get_portdb(dbname).get_port_entry(dpid, it->first);
+		const cportentry& port = portdb.get_port_entry(dpid, portno);
 
-		// create or maintain existing vlan for port's default vid
-		set_vlan(port.get_port_vid()).add_phy_port(port.get_portno(), /*tagged=*/false);
-
-		// if a hwaddr is specified for this port in portdb, use that one,
-		// if not, use the hwaddr reported by the data path itself
-		rofl::caddress_ll hwaddr = ofport.get_hwaddr();
-		if (not port.get_hwaddr().is_null()) {
-			hwaddr = port.get_hwaddr();
-		}
+		// create or update existing vlan for port's default vid
+		set_vlan(port.get_port_vid()).add_phy_port(portno, /*tagged=*/false);
 
 		// add all tagged memberships of this port to the appropriate vlan
 		for (std::set<uint16_t>::const_iterator
 				jt = port.get_tagged_vids().begin(); jt != port.get_tagged_vids().end(); ++jt) {
-			set_vlan(*jt).add_phy_port(port.get_portno(), hwaddr, /*tagged=*/true);
+			set_vlan(*jt).set_phy_port(portno, ofport.get_hwaddr(), /*tagged=*/true);
 		}
+	}
+
+	// install ethernet endpoints
+	for (std::set<std::string>::const_iterator
+			it = portdb.get_eth_entries(dpid).begin(); it != portdb.get_eth_entries(dpid).end(); ++it) {
+		const cethentry& eth = portdb.get_eth_entry(dpid, *it);
+
+		set_vlan(eth.get_port_vid()).add_eth_endpnt(eth.get_hwaddr(), eth.get_tagged());
 	}
 }
 

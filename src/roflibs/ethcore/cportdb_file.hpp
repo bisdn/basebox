@@ -38,8 +38,31 @@ private:
 	void
 	read_config();
 
+	/**
+	 *
+	 */
+	void
+	parse_datapath(ethcore::cconfig& config, libconfig::Setting& datapath);
+
+	/**
+	 *
+	 */
+	void
+	parse_datapath_phy_port(
+			ethcore::cconfig& config, libconfig::Setting& port,
+			const rofl::cdpid& dpid, uint16_t pvid);
+
+	/**
+	 *
+	 */
+	void
+	parse_datapath_eth_endpnt(
+			ethcore::cconfig& config, libconfig::Setting& endpnt,
+			const rofl::cdpid& dpid, uint16_t pvid);
+
 private:
 
+	static const std::string 		ETHCORE_CONFIG_DPT_LIST;
 	static const std::string 		DEFAULT_CONFIG_FILE;
 	static const uint16_t			DEFAULT_PORT_VID;
 
