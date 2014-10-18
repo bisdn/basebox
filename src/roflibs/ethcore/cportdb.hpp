@@ -138,9 +138,9 @@ public:
 		os << "tagged:";
 		for (std::set<uint16_t>::const_iterator
 				it = port.tagged_vids.begin(); it != port.tagged_vids.end(); ++it) {
-			os << (int)(*it) << ", ";
+			os << (int)(*it) << ",";
 		}
-		os << ">" << std::endl;
+		os << " >" << std::endl;
 		return os;
 	};
 
@@ -467,7 +467,7 @@ public:
 		rofcore::indent i(2);
 		for (std::map<rofl::cdpid, std::map<uint32_t, cportentry> >::const_iterator
 				it = portdb.portentries.begin(); it != portdb.portentries.end(); ++it) {
-			os << rofcore::indent(2) << "<cdpid: " << it->first.str() << " >" << std::endl;
+			os << rofcore::indent(0) << "<cdpid: " << it->first.str() << " >" << std::endl;
 			rofcore::indent j(2);
 			for (std::map<uint32_t, cportentry>::const_iterator
 					jt = it->second.begin(); jt != it->second.end(); ++jt) {
@@ -476,7 +476,7 @@ public:
 		}
 		for (std::map<rofl::cdpid, std::map<std::string, cethentry> >::const_iterator
 				it = portdb.ethentries.begin(); it != portdb.ethentries.end(); ++it) {
-			os << rofcore::indent(2) << "<cdpid: " << it->first.str() << " >" << std::endl;
+			os << rofcore::indent(0) << "<cdpid: " << it->first.str() << " >" << std::endl;
 			rofcore::indent j(2);
 			for (std::map<std::string, cethentry>::const_iterator
 					jt = it->second.begin(); jt != it->second.end(); ++jt) {

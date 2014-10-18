@@ -107,8 +107,8 @@ cportdb_file::parse_datapath_eth_endpnt(
 {
 	// devname
 	std::string devname;
-	if (endpnt.exists("devname")) {
-		// TODO: log error
+	if (not endpnt.exists("devname")) {
+		rofcore::logging::error << "[cportdb][file] no devname found for ethernet entry" << std::endl;
 		return;
 	} else {
 		devname = (const char*)endpnt["devname"];
@@ -122,8 +122,8 @@ cportdb_file::parse_datapath_eth_endpnt(
 
 	// hwaddr
 	rofl::caddress_ll hwaddr;
-	if (endpnt.exists("hwaddr")) {
-		// TODO: log error
+	if (not endpnt.exists("hwaddr")) {
+		rofcore::logging::error << "[cportdb][file] no hwaddr found for ethernet entry" << std::endl;
 		return;
 	} else {
 		hwaddr = rofl::caddress_ll((const char*)endpnt["hwaddr"]);
