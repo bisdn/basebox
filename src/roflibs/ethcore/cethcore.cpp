@@ -44,7 +44,7 @@ cethcore::cethcore(const rofl::cdpid& dpid,
 		const cportentry& port = portdb.get_port_entry(dpid, portno);
 
 		// create or update existing vlan for port's default vid
-		set_vlan(port.get_port_vid()).add_phy_port(portno, /*tagged=*/false);
+		set_vlan(port.get_port_vid()).add_phy_port(portno, ofport.get_hwaddr(), /*tagged=*/false);
 
 		// add all tagged memberships of this port to the appropriate vlan
 		for (std::set<uint16_t>::const_iterator
