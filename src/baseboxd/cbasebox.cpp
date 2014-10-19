@@ -298,11 +298,6 @@ cbasebox::handle_packet_in(
 	try {
 		uint32_t ofp_port_no = msg.get_match().get_in_port();
 
-		if (not has_tap_dev(ofp_port_no)) {
-			// TODO: handle error?
-			return;
-		}
-
 		rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 		*pkt = msg.get_packet();
 		rofcore::logging::debug << "[cbasebox][handle_packet_in] pkt received: " << std::endl << msg.get_packet();
