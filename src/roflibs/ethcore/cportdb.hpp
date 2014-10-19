@@ -161,12 +161,10 @@ public:
 	cethentry(
 			const std::string& devname = std::string(""),
 			const rofl::caddress_ll& hwaddr = rofl::caddress_ll("00:00:00:00:00:00"),
-			uint16_t port_vid = 1,
-			bool tagged = false) :
+			uint16_t port_vid = 1) :
 		devname(devname),
 		hwaddr(hwaddr),
-		port_vid(port_vid),
-		tagged(tagged) {};
+		port_vid(port_vid) {};
 
 	/**
 	 *
@@ -190,7 +188,6 @@ public:
 		devname 	= port.devname;
 		hwaddr 		= port.hwaddr;
 		port_vid 	= port.port_vid;
-		tagged 		= port.tagged;
 		return *this;
 	};
 
@@ -232,18 +229,6 @@ public:
 	uint16_t
 	get_port_vid() const { return port_vid; };
 
-	/**
-	 *
-	 */
-	void
-	set_tagged(bool tagged) { this->tagged = tagged; };
-
-	/**
-	 *
-	 */
-	bool
-	get_tagged() const { return tagged; };
-
 public:
 
 	friend std::ostream&
@@ -252,7 +237,6 @@ public:
 		os << "devname:" << port.get_devname() << " ";
 		os << "hwaddr:" << port.get_hwaddr().str() << " ";
 		os << "pvid:" << (int)port.get_port_vid() << " ";
-		os << "tagged:" << (int)port.get_tagged() << " ";
 		os << ">" << std::endl;
 		return os;
 	};
@@ -262,7 +246,6 @@ private:
 	std::string	 		devname;
 	rofl::caddress_ll	hwaddr;
 	uint16_t			port_vid;
-	bool				tagged;
 };
 
 class cportdb {
@@ -388,13 +371,12 @@ public:
 	add_eth_entry(const rofl::cdpid& dpid,
 					const std::string& devname,
 					const rofl::caddress_ll& hwaddr,
-					uint16_t port_vid,
-					bool tagged) {
+					uint16_t port_vid) {
 		if (ethentries[dpid].find(devname) != ethentries[dpid].end()) {
 			ethentries[dpid].erase(devname);
 		}
 		ethnames[dpid].insert(devname);
-		return (ethentries[dpid][devname] = cethentry(devname, hwaddr, port_vid, tagged));
+		return (ethentries[dpid][devname] = cethentry(devname, hwaddr, port_vid));
 	};
 
 	/**
@@ -404,13 +386,12 @@ public:
 	set_eth_entry(const rofl::cdpid& dpid,
 					const std::string& devname,
 					const rofl::caddress_ll& hwaddr,
-					uint16_t port_vid,
-					bool tagged) {
+					uint16_t port_vid) {
 		if (ethentries[dpid].find(devname) == ethentries[dpid].end()) {
 			(void)ethentries[dpid][devname];
 			ethnames[dpid].insert(devname);
 		}
-		return (ethentries[dpid][devname] = cethentry(devname, hwaddr, port_vid, tagged));
+		return (ethentries[dpid][devname] = cethentry(devname, hwaddr, port_vid));
 	};
 
 	/**

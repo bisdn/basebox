@@ -129,13 +129,7 @@ cportdb_file::parse_datapath_eth_endpnt(
 		hwaddr = rofl::caddress_ll((const char*)endpnt["hwaddr"]);
 	}
 
-	// tagged
-	bool tagged = false;
-	if (endpnt.exists("tagged")) {
-		tagged = (bool)endpnt["tagged"];
-	}
-
-	add_eth_entry(dpid, devname, hwaddr, vid, tagged);
+	add_eth_entry(dpid, devname, hwaddr, vid);
 }
 
 

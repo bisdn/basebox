@@ -190,7 +190,9 @@ cbasebox::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		}
 
 		rofl::openflow::cofactions actions(rofl::crofdpt::get_dpt(dptid).get_version());
-		actions.set_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_TABLE);
+		actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
+		actions.set_action_set_field(rofl::cindex(1)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(tapdev->get_pvid()));
+		actions.set_action_output(rofl::cindex(2)).set_port_no(rofl::openflow::OFPP_TABLE);
 
 		rofl::crofdpt::get_dpt(dptid).send_packet_out_message(
 				rofl::cauxid(0),
@@ -289,12 +291,12 @@ cbasebox::handle_packet_in(
 				 * instances belonging to the specified vid and clone the packet
 				 * for all of them. */
 
-				if (not msg.get_match().has_metadata()) {
+				if (not msg.get_match().has_vlan_vid()) {
 					// no VLAN related metadata found, ignore packet
 					return;
 				}
 
-				uint16_t vid = msg.get_match().get_metadata() & 0x0fff;
+				uint16_t vid = msg.get_match().get_vlan_vid() & 0x0fff;
 
 				for (std::map<std::string, rofcore::ctapdev*>::iterator
 						it = devs.begin(); it != devs.end(); ++it) {
@@ -304,6 +306,7 @@ cbasebox::handle_packet_in(
 					}
 					rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 					*pkt = msg.get_packet();
+					pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
 					tapdev.enqueue(pkt);
 				}
 			}

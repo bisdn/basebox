@@ -58,7 +58,7 @@ cethcore::cethcore(const rofl::cdpid& dpid,
 			it = portdb.get_eth_entries(dpid).begin(); it != portdb.get_eth_entries(dpid).end(); ++it) {
 		const cethentry& eth = portdb.get_eth_entry(dpid, *it);
 
-		set_vlan(eth.get_port_vid()).add_eth_endpnt(eth.get_hwaddr(), eth.get_tagged());
+		set_vlan(eth.get_port_vid()).add_eth_endpnt(eth.get_hwaddr(), /*tagged=*/false);
 	}
 }
 
