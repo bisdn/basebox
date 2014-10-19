@@ -15,10 +15,12 @@ extern int errno;
 ctapdev::ctapdev(
 		cnetdev_owner *netdev_owner,
 		std::string const& devname,
+		uint16_t pvid,
 		rofl::cmacaddr const& hwaddr) :
 		cnetdev(netdev_owner, devname),
 		fd(-1),
 		devname(devname),
+		pvid(pvid),
 		hwaddr(hwaddr)
 {
 	try {

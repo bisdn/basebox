@@ -45,6 +45,7 @@ class ctapdev : public cnetdev
 	int 							fd; 			// tap device file descriptor
 	std::list<rofl::cpacket*> 		pout_queue;		// queue of outgoing packets
 	std::string						devname;
+	uint16_t						pvid;
 	rofl::cmacaddr					hwaddr;
 	rofl::ctimerid					port_open_timer_id;
 
@@ -64,6 +65,7 @@ public:
 	ctapdev(
 			cnetdev_owner *netdev_owner,
 			std::string const& devname,
+			uint16_t pvid,
 			rofl::cmacaddr const& hwaddr);
 
 
@@ -82,6 +84,12 @@ public:
 	virtual void enqueue(rofl::cpacket *pkt);
 
 	virtual void enqueue(std::vector<rofl::cpacket*> pkts);
+
+	/**
+	 *
+	 */
+	uint16_t
+	get_pvid() const { return pvid; };
 
 protected:
 
@@ -140,6 +148,16 @@ public:
 			hwaddr(hwaddr) {};
 		bool operator() (const std::pair<std::string, ctapdev*>& p) const {
 			return (p.second->hwaddr == hwaddr);
+		};
+	};
+
+	class ctapdev_find_by_pvid {
+		uint16_t pvid;
+	public:
+		ctapdev_find_by_pvid(uint16_t pvid) :
+			pvid(pvid) {};
+		bool operator() (const std::pair<std::string, ctapdev*>& p) const {
+			return (p.second->pvid == pvid);
 		};
 	};
 

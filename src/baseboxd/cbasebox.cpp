@@ -296,31 +296,49 @@ cbasebox::handle_packet_in(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {
 
 	try {
-		uint32_t ofp_port_no = msg.get_match().get_in_port();
+		//uint32_t ofp_port_no = msg.get_match().get_in_port();
 
-		rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
-		*pkt = msg.get_packet();
 		rofcore::logging::debug << "[cbasebox][handle_packet_in] pkt received: " << std::endl << msg.get_packet();
 
-		if (not msg.get_match().get_eth_dst().is_multicast()) {
-			set_tap_dev(msg.get_match().get_eth_dst()).enqueue(pkt);
-		} else {
-			// FIXME: deal with multicast destination addresses based on VLAN information
-			// a multicast frame received on VLAN vid must be sent to all ethernet
-			// endpoints member of this particular VLAN
+		switch (msg.get_table_id()) {
+		case 0:
+		case 1:
+		case 2: {
+			if (not msg.get_match().get_eth_dst().is_multicast()) {
+				/* non-multicast frames are directly injected into a tapdev */
+				rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
+				*pkt = msg.get_packet();
+				set_tap_dev(msg.get_match().get_eth_dst()).enqueue(pkt);
 
-			if (not msg.get_match().has_vlan_vid()) {
-				// no VLAN vid found, ignore packet
-				return;
+			} else {
+				/* multicast frames carry a metadata field with the VLAN id
+				 * for both tagged and untagged frames. Lookup all tapdev
+				 * instances belonging to the specified vid and clone the packet
+				 * for all of them. */
+
+				if (not msg.get_match().has_metadata()) {
+					// no VLAN related metadata found, ignore packet
+					return;
+				}
+
+				uint16_t vid = msg.get_match().get_metadata() & 0x0fff;
+
+				for (std::map<std::string, rofcore::ctapdev*>::iterator
+						it = devs.begin(); it != devs.end(); ++it) {
+					rofcore::ctapdev& tapdev = *(it->second);
+					if (tapdev.get_pvid() != vid) {
+						continue;
+					}
+					rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
+					*pkt = msg.get_packet();
+					tapdev.enqueue(pkt);
+				}
 			}
 
-			uint16_t vid = msg.get_match().get_vlan_vid();
-			(void)vid;
-		}
-
-		switch (msg.get_table_id()) {
+		} break;
 		case 3:
-		case 4: {
+		case 4:
+		case 5: {
 			roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 		} break;
 		default: {
@@ -370,10 +388,11 @@ cbasebox::handle_port_status(
 		switch (msg.get_reason()) {
 		case rofl::openflow::OFPPR_ADD: {
 			dpt.set_ports().set_port(msg.get_port().get_port_no()) = msg.get_port();
+			hook_port_up(msg.get_port().get_name());
 
+#if 0
 			if (not has_tap_dev(port.get_name())) {
-				add_tap_dev(port.get_name(), port.get_hwaddr());
-				hook_port_up(msg.get_port().get_name());
+				add_tap_dev(port.get_name(), 0, port.get_hwaddr());
 			}
 
 			if (port.link_state_is_link_down() || port.config_is_port_down()) {
@@ -381,13 +400,15 @@ cbasebox::handle_port_status(
 			} else {
 				set_tap_dev(port.get_name()).enable_interface();
 			}
+#endif
 
 		} break;
 		case rofl::openflow::OFPPR_MODIFY: {
 			dpt.set_ports().set_port(msg.get_port().get_port_no()) = msg.get_port();
 
+#if 0
 			if (not has_tap_dev(port.get_name())) {
-				add_tap_dev(port.get_name(), port.get_hwaddr());
+				add_tap_dev(port.get_name(), 0, port.get_hwaddr());
 			}
 
 			if (port.link_state_is_link_down() || port.config_is_port_down()) {
@@ -395,13 +416,15 @@ cbasebox::handle_port_status(
 			} else {
 				set_tap_dev(port.get_name()).enable_interface();
 			}
+#endif
 
 		} break;
 		case rofl::openflow::OFPPR_DELETE: {
 			dpt.set_ports().drop_port(msg.get_port().get_name());
-
 			hook_port_down(msg.get_port().get_name());
+#if 0
 			drop_tap_dev(port.get_name());
+#endif
 
 		} break;
 		default: {
@@ -439,7 +462,7 @@ cbasebox::handle_port_desc_stats_reply(
 
 	dpt.set_ports() = msg.get_ports();
 
-
+#if 0
 	/*
 	 * create tap devices for physical ports
 	 */
@@ -451,6 +474,7 @@ cbasebox::handle_port_desc_stats_reply(
 			add_tap_dev(port.get_name(), port.get_hwaddr());
 		}
 	}
+#endif
 
 	/*
 	 * create virtual ports for predefined ethernet endpoints
@@ -464,7 +488,7 @@ cbasebox::handle_port_desc_stats_reply(
 		const roflibs::ethernet::cethentry& eth = portdb.get_eth_entry(dpt.get_dpid(), *it);
 
 		if (not has_tap_dev(eth.get_devname())) {
-			add_tap_dev(eth.get_devname(), eth.get_hwaddr());
+			add_tap_dev(eth.get_devname(), eth.get_port_vid(), eth.get_hwaddr());
 		}
 	}
 

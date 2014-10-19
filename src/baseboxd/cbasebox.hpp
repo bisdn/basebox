@@ -196,11 +196,11 @@ private:
 	 *
 	 */
 	rofcore::ctapdev&
-	add_tap_dev(const std::string& devname, const rofl::caddress_ll& hwaddr) {
+	add_tap_dev(const std::string& devname, uint16_t pvid, const rofl::caddress_ll& hwaddr) {
 		if (devs.find(devname) != devs.end()) {
 			delete devs[devname];
 		}
-		devs[devname] = new rofcore::ctapdev(this, devname, hwaddr);
+		devs[devname] = new rofcore::ctapdev(this, devname, pvid, hwaddr);
 		return *(devs[devname]);
 	};
 
@@ -208,9 +208,9 @@ private:
 	 *
 	 */
 	rofcore::ctapdev&
-	set_tap_dev(const std::string& devname, const rofl::caddress_ll& hwaddr) {
+	set_tap_dev(const std::string& devname, uint16_t pvid, const rofl::caddress_ll& hwaddr) {
 		if (devs.find(devname) == devs.end()) {
-			devs[devname] = new rofcore::ctapdev(this, devname, hwaddr);
+			devs[devname] = new rofcore::ctapdev(this, devname, pvid, hwaddr);
 		}
 		return *(devs[devname]);
 	};
