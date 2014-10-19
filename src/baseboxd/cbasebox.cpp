@@ -306,7 +306,22 @@ cbasebox::handle_packet_in(
 		rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 		*pkt = msg.get_packet();
 		rofcore::logging::debug << "[cbasebox][handle_packet_in] pkt received: " << std::endl << msg.get_packet();
-		set_tap_dev(ofp_port_no).enqueue(pkt);
+
+		if (not msg.get_match().get_eth_dst().is_multicast()) {
+			set_tap_dev(msg.get_match().get_eth_dst()).enqueue(pkt);
+		} else {
+			// FIXME: deal with multicast destination addresses based on VLAN information
+			// a multicast frame received on VLAN vid must be sent to all ethernet
+			// endpoints member of this particular VLAN
+
+			if (not msg.get_match().has_vlan_vid()) {
+				// no VLAN vid found, ignore packet
+				return;
+			}
+
+			uint16_t vid = msg.get_match().get_vlan_vid();
+			(void)vid;
+		}
 
 		switch (msg.get_table_id()) {
 		case 3:
