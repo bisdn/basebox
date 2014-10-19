@@ -40,6 +40,12 @@ cvlan::handle_dpt_open(
 		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_local);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
+		// send notification to all ethernet endpoints
+		for (std::map<rofl::caddress_ll, cethendpnt>::iterator
+				it = ethendpnts.begin(); it != ethendpnts.end(); ++it) {
+			it->second.handle_dpt_open(dpt);
+		}
+
 		// send notification to all member ports
 		for (std::map<uint32_t, cmemberport>::iterator
 				it = phyports.begin(); it != phyports.end(); ++it) {
@@ -75,6 +81,12 @@ cvlan::handle_dpt_close(
 		// send notification to all member ports
 		for (std::map<uint32_t, cmemberport>::iterator
 				it = phyports.begin(); it != phyports.end(); ++it) {
+			it->second.handle_dpt_close(dpt);
+		}
+
+		// send notification to all ethernet endpoints
+		for (std::map<rofl::caddress_ll, cethendpnt>::iterator
+				it = ethendpnts.begin(); it != ethendpnts.end(); ++it) {
 			it->second.handle_dpt_close(dpt);
 		}
 
