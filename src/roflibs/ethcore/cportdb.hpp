@@ -297,14 +297,9 @@ public:
 	/**
 	 *
 	 */
-	std::set<uint32_t>
+	const std::set<uint32_t>&
 	get_port_entries(const rofl::cdpid& dpid) const {
-		std::set<uint32_t> result;
-		for (std::map<uint32_t, cportentry>::const_iterator
-				it = portentries.at(dpid).begin(); it != portentries.at(dpid).end(); ++it) {
-			result.insert(it->first);
-		}
-		return result;
+		return portnames[dpid];
 	};
 
 	/**
@@ -315,6 +310,7 @@ public:
 		if (portentries[dpid].find(portno) != portentries[dpid].end()) {
 			portentries[dpid].erase(portno);
 		}
+		portnames[dpid].insert(portno);
 		return (portentries[dpid][portno] = cportentry(portno, port_vid));
 	};
 
@@ -328,6 +324,7 @@ public:
 					uint16_t port_vid) {
 		if (portentries[dpid].find(portno) == portentries[dpid].end()) {
 			(void)portentries[dpid][portno];
+			portnames[dpid].insert(portno);
 		}
 		return (portentries[dpid][portno] = cportentry(portno, port_vid));
 	};
@@ -362,6 +359,7 @@ public:
 		if (portentries[dpid].find(portno) == portentries[dpid].end()) {
 			return;
 		}
+		portnames[dpid].erase(portno);
 		portentries[dpid].erase(portno);
 	};
 
@@ -378,14 +376,9 @@ public:
 	/**
 	 *
 	 */
-	std::set<std::string>
+	const std::set<std::string>&
 	get_eth_entries(const rofl::cdpid& dpid) const {
-		std::set<std::string> result;
-		for (std::map<std::string, cethentry>::const_iterator
-				it = ethentries.at(dpid).begin(); it != ethentries.at(dpid).end(); ++it) {
-			result.insert(it->first);
-		}
-		return result;
+		return ethnames[dpid];
 	};
 
 	/**
@@ -400,6 +393,7 @@ public:
 		if (ethentries[dpid].find(devname) != ethentries[dpid].end()) {
 			ethentries[dpid].erase(devname);
 		}
+		ethnames[dpid].insert(devname);
 		return (ethentries[dpid][devname] = cethentry(devname, hwaddr, port_vid, tagged));
 	};
 
@@ -414,6 +408,7 @@ public:
 					bool tagged) {
 		if (ethentries[dpid].find(devname) == ethentries[dpid].end()) {
 			(void)ethentries[dpid][devname];
+			ethnames[dpid].insert(devname);
 		}
 		return (ethentries[dpid][devname] = cethentry(devname, hwaddr, port_vid, tagged));
 	};
@@ -448,6 +443,7 @@ public:
 		if (ethentries[dpid].find(devname) == ethentries[dpid].end()) {
 			return;
 		}
+		ethnames[dpid].erase(devname);
 		ethentries[dpid].erase(devname);
 	};
 
@@ -489,7 +485,9 @@ public:
 private:
 
 	std::map<rofl::cdpid, std::map<uint32_t, cportentry> >		portentries;
+	mutable std::map<rofl::cdpid, std::set<uint32_t> >			portnames;
 	std::map<rofl::cdpid, std::map<std::string, cethentry> >	ethentries;
+	mutable std::map<rofl::cdpid, std::set<std::string> >		ethnames;
 	static std::map<std::string, cportdb*> 						portdbs;
 };
 
