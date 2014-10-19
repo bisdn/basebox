@@ -55,7 +55,6 @@ cethendpnt::handle_dpt_open(
 			fm.set_instructions().set_inst_apply_actions().set_actions().
 					add_action_pop_vlan(index++);
 		}
-		fm.set_instructions().set_inst_write_metadata().set_metadata(vid);
 		fm.set_instructions().set_inst_apply_actions().set_actions().
 				add_action_output(index++).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);

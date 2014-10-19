@@ -39,6 +39,7 @@ cmemberport::handle_dpt_open(
 			fm.set_instructions().set_inst_apply_actions().set_actions().
 					add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
 		}
+		fm.set_instructions().set_inst_write_metadata().set_metadata(vid);
 		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_in+1);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 

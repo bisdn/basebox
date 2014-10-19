@@ -296,8 +296,6 @@ cbasebox::handle_packet_in(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {
 
 	try {
-		//uint32_t ofp_port_no = msg.get_match().get_in_port();
-
 		rofcore::logging::debug << "[cbasebox][handle_packet_in] pkt received: " << std::endl << msg.get_packet();
 
 		switch (msg.get_table_id()) {
