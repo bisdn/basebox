@@ -113,6 +113,13 @@ cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_dst);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
+		// forward packets received from special port OFPP_CONTROLLER to table_id_eth_dst
+		fm.set_table_id(table_id_eth_in);
+		fm.set_priority(0x8200);
+		fm.set_match().clear();
+		fm.set_match().set_in_port(rofl::openflow::OFPP_CONTROLLER);
+		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_dst);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 	} catch (rofl::eRofSockTxAgain& e) {
 		rofcore::logging::debug << "[cethcore][handle_dpt_open] control channel congested" << std::endl;
@@ -157,6 +164,12 @@ cethcore::handle_dpt_close(rofl::crofdpt& dpt)
 		fm.set_match().set_eth_dst(rofl::caddress_ll("01:80:c2:00:00:00"), rofl::caddress_ll("ff:ff:ff:00:00:00"));
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
+		// forward packets received from special port OFPP_CONTROLLER to table_id_eth_dst
+		fm.set_table_id(table_id_eth_in);
+		fm.set_priority(0x8200);
+		fm.set_match().clear();
+		fm.set_match().set_in_port(rofl::openflow::OFPP_CONTROLLER);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 
 	} catch (rofl::eRofSockTxAgain& e) {
