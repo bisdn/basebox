@@ -40,6 +40,13 @@ cvlan::handle_dpt_open(
 		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_local);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
+		// forward packets received from special port OFPP_CONTROLLER to table_id_eth_dst
+		fm.set_table_id(table_id_eth_in);
+		fm.set_priority(0x8200);
+		fm.set_match().set_in_port(rofl::openflow::OFPP_CONTROLLER);
+		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_dst);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
 		// send notification to all ethernet endpoints
 		for (std::map<rofl::caddress_ll, cethendpnt>::iterator
 				it = ethendpnts.begin(); it != ethendpnts.end(); ++it) {
@@ -105,6 +112,12 @@ cvlan::handle_dpt_close(
 		fm.set_table_id(table_id_eth_src);
 		fm.set_priority(0x8100);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("ff:ff:ff:ff:ff:ff"), rofl::caddress_ll("01:00:00:00:00:00"));
+		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+
+		// forward packets received from special port OFPP_CONTROLLER to table_id_eth_dst
+		fm.set_table_id(table_id_eth_in);
+		fm.set_priority(0x8200);
+		fm.set_match().set_in_port(rofl::openflow::OFPP_CONTROLLER);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		// remove flooding group entry itself

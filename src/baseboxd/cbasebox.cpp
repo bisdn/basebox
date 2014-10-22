@@ -306,7 +306,8 @@ cbasebox::handle_packet_in(
 					}
 					rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 					*pkt = msg.get_packet();
-					pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
+					// offset: 12 bytes (eth-hdr without type), nbytes: 4 bytes
+					pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t)-sizeof(uint16_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
 					tapdev.enqueue(pkt);
 				}
 			}
