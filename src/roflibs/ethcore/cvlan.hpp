@@ -236,7 +236,7 @@ public:
 		if (STATE_ATTACHED == state) {
 			ethendpnts[hwaddr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		}
-		update_group_entry_buckets();
+		//update_group_entry_buckets(); // NO!!!
 		return ethendpnts[hwaddr];
 	};
 
@@ -260,7 +260,7 @@ public:
 		rofl::RwLock rwlock(ethendpnts_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (ethendpnts.find(hwaddr) == ethendpnts.end()) {
 			ethendpnts[hwaddr] = cethendpnt(dpid, table_id_eth_local, hwaddr, vid, tagged);
-			update_group_entry_buckets();
+			//update_group_entry_buckets(); // NO!!!
 			if (STATE_ATTACHED == state) {
 				ethendpnts[hwaddr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
@@ -290,7 +290,7 @@ public:
 			return;
 		}
 		ethendpnts.erase(hwaddr);
-		update_group_entry_buckets();
+		//update_group_entry_buckets(); // NO!!!
 	}
 
 	/**

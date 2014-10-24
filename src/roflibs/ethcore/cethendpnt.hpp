@@ -99,6 +99,12 @@ public:
 	bool
 	get_tagged() const { return tagged; };
 
+	/**
+	 *
+	 */
+	uint16_t
+	get_vid() const { return vid; };
+
 public:
 
 	/**

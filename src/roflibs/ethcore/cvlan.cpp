@@ -254,6 +254,9 @@ cvlan::update_group_entry_buckets(uint16_t command)
 			bucket_id++;
 		}
 
+#if 0
+		// NO!!!
+
 		// this sends Packet-Ins for each single ethernet endpoint
 		// TODO: rethink this strategy???
 		for (std::map<rofl::caddress_ll, cethendpnt>::iterator
@@ -267,6 +270,7 @@ cvlan::update_group_entry_buckets(uint16_t command)
 						add_action_output(index++).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 			bucket_id++;
 		}
+#endif
 
 		rofl::crofdpt::get_dpt(dpid).send_group_mod_message(rofl::cauxid(0), gm);
 

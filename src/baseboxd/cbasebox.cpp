@@ -276,13 +276,22 @@ cbasebox::handle_packet_in(
 		rofcore::logging::debug << "[cbasebox][handle_packet_in] pkt received: " << std::endl << msg.get_packet();
 
 		switch (msg.get_table_id()) {
-		case 0:
-		case 1:
-		case 2: {
+		case 1: {
+			if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
+				roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+			}
+
+		} break;
+		case 2:
+		case 3:
+		case 4:
+		case 5: {
+
 			if (not msg.get_match().get_eth_dst().is_multicast()) {
 				/* non-multicast frames are directly injected into a tapdev */
 				rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 				*pkt = msg.get_packet();
+				pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t)-sizeof(uint16_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
 				set_tap_dev(msg.get_match().get_eth_dst()).enqueue(pkt);
 
 			} else {
@@ -312,16 +321,10 @@ cbasebox::handle_packet_in(
 				}
 			}
 
-		} break;
-		case 3:
-		case 4:
-		case 5: {
 			roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 		} break;
 		default: {
-			if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
-				roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
-			}
+
 		};
 		}
 

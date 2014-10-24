@@ -44,14 +44,26 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		// redirect ARP packets to control plane
 		fe.set_match().clear();
 
+
+		// ... and the link's dpt representation (clink) needed for OFP related data
+		const roflibs::ip::clink& dpl =
+				cipcore::get_ip_core(dpid).get_link(ifindex);
+
+		// local VLAN associated with interface
+		uint16_t vid = dpl.get_vlan_vid();
+
+#if 0
 		uint32_t ofp_port_no = dpt.get_ports().get_port(cipcore::get_ip_core(dpid).get_link(ifindex).get_devname()).get_port_no();
 		fe.set_match().set_in_port(ofp_port_no); // only for ARP (bound to Ethernet segment)
+#endif
+		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
 		fe.set_match().set_arp_tpa(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		// redirect ICMPv4 packets to control plane
 		fe.set_match().clear();
+		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		fe.set_match().set_ip_proto(rofl::ficmpv4frame::ICMPV4_IP_PROTO);
@@ -59,6 +71,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// redirect IPv4 packets to control plane
 		fe.set_match().clear();
+		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
@@ -97,14 +110,25 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		// redirect ARP packets to control plane
 		fe.set_match().clear();
 
+		// ... and the link's dpt representation (clink) needed for OFP related data
+		const roflibs::ip::clink& dpl =
+				cipcore::get_ip_core(dpid).get_link(ifindex);
+
+		// local VLAN associated with interface
+		uint16_t vid = dpl.get_vlan_vid();
+
+#if 0
 		uint32_t ofp_port_no = dpt.get_ports().get_port(cipcore::get_ip_core(dpid).get_link(ifindex).get_devname()).get_port_no();
 		fe.set_match().set_in_port(ofp_port_no); // only for ARP (bound to Ethernet segment)
+#endif
+		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
 		fe.set_match().set_arp_tpa(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		// redirect ICMPv4 packets to control plane
 		fe.set_match().clear();
+		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		fe.set_match().set_ip_proto(rofl::ficmpv4frame::ICMPV4_IP_PROTO);
@@ -112,6 +136,7 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 		// redirect IPv4 packets to control plane
 		fe.set_match().clear();
+		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
@@ -165,8 +190,16 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_instructions().set_inst_apply_actions().set_actions().
 				set_action_output(index).set_max_len(1518);
 
+		// ... and the link's dpt representation (clink) needed for OFP related data
+		const roflibs::ip::clink& dpl =
+				cipcore::get_ip_core(dpid).get_link(ifindex);
+
+		// local VLAN associated with interface
+		uint16_t vid = dpl.get_vlan_vid();
+
 		// redirect ICMPv6 packets to control plane
 		fe.set_match().clear();
+		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
 		fe.set_match().set_ip_proto(rofl::ficmpv6frame::ICMPV6_IP_PROTO);
@@ -174,6 +207,7 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// redirect IPv6 packets to control plane
 		fe.set_match().clear();
+		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
@@ -209,8 +243,16 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_priority(0x7000);
 		fe.set_table_id(in_ofp_table_id);
 
+		// ... and the link's dpt representation (clink) needed for OFP related data
+		const roflibs::ip::clink& dpl =
+				cipcore::get_ip_core(dpid).get_link(ifindex);
+
+		// local VLAN associated with interface
+		uint16_t vid = dpl.get_vlan_vid();
+
 		// redirect ICMPv6 packets to control plane
 		fe.set_match().clear();
+		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
 		fe.set_match().set_ip_proto(rofl::ficmpv6frame::ICMPV6_IP_PROTO);
@@ -218,6 +260,7 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 		// redirect IPv6 packets to control plane
 		fe.set_match().clear();
+		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
