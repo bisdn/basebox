@@ -63,7 +63,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// redirect ICMPv4 packets to control plane
 		fe.set_match().clear();
-		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		fe.set_match().set_ip_proto(rofl::ficmpv4frame::ICMPV4_IP_PROTO);
@@ -71,7 +71,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// redirect IPv4 packets to control plane
 		fe.set_match().clear();
-		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
@@ -128,7 +128,7 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 		// redirect ICMPv4 packets to control plane
 		fe.set_match().clear();
-		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		fe.set_match().set_ip_proto(rofl::ficmpv4frame::ICMPV4_IP_PROTO);
@@ -136,7 +136,7 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 		// redirect IPv4 packets to control plane
 		fe.set_match().clear();
-		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
@@ -199,7 +199,7 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// redirect ICMPv6 packets to control plane
 		fe.set_match().clear();
-		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
 		fe.set_match().set_ip_proto(rofl::ficmpv6frame::ICMPV6_IP_PROTO);
@@ -207,7 +207,7 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// redirect IPv6 packets to control plane
 		fe.set_match().clear();
-		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
@@ -252,7 +252,7 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 		// redirect ICMPv6 packets to control plane
 		fe.set_match().clear();
-		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
 		fe.set_match().set_ip_proto(rofl::ficmpv6frame::ICMPV6_IP_PROTO);
@@ -260,7 +260,7 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 		// redirect IPv6 packets to control plane
 		fe.set_match().clear();
-		fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
