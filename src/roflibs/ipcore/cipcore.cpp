@@ -132,7 +132,7 @@ cipcore::set_forwarding(bool forward)
 	}
 }
 
-
+#if 0
 void
 cipcore::link_created(unsigned int ifindex)
 {
@@ -208,6 +208,34 @@ cipcore::link_created(unsigned int ifindex)
 				}
 			}
 		}
+
+		set_link(ifindex, rtl.get_devname(), rtl.get_hwaddr(), tagged, vid);
+		rofcore::logging::debug << "[cipcore][link_created] state:" << std::endl << *this;
+
+	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		// should (:) never happen
+	}
+}
+#endif
+
+void
+cipcore::link_created(unsigned int ifindex)
+{
+	try {
+		const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+
+		std::string devname = rtl.get_devname();
+		uint16_t vid = 1;
+		bool tagged = false;
+
+		const std::string dbname("file");
+		roflibs::ethernet::cportdb& portdb = roflibs::ethernet::cportdb::get_portdb(dbname);
+
+		if (not portdb.has_eth_entry(dpid, devname)) {
+			return;
+		}
+
+		vid = portdb.get_eth_entry(dpid, devname).get_port_vid();
 
 		set_link(ifindex, rtl.get_devname(), rtl.get_hwaddr(), tagged, vid);
 		rofcore::logging::debug << "[cipcore][link_created] state:" << std::endl << *this;

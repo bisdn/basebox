@@ -38,6 +38,7 @@ extern "C" {
 #include <roflibs/ipcore/croutetable.hpp>
 #include <roflibs/ipcore/clink.hpp>
 #include <roflibs/ipcore/cneigh.hpp>
+#include <roflibs/ethcore/cportdb.hpp>
 
 namespace roflibs {
 namespace ip {
