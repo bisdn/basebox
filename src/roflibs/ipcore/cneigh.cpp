@@ -100,12 +100,17 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
 		rofl::cindex index(0);
+#if 0
 		if (tagged) {
 			gm.set_buckets().set_bucket(0).set_actions().
 					add_action_push_vlan(index++).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
 			gm.set_buckets().set_bucket(0).set_actions().
 					add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
 		}
+#endif
+		gm.set_buckets().set_bucket(0).set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
+
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		gm.set_buckets().set_bucket(0).set_actions().
@@ -316,12 +321,16 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
 		rofl::cindex index(0);
+#if 0
 		if (tagged) {
 			gm.set_buckets().set_bucket(0).set_actions().
 					add_action_push_vlan(index++).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
 			gm.set_buckets().set_bucket(0).set_actions().
 					add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
 		}
+#endif
+		gm.set_buckets().set_bucket(0).set_actions().
+				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		gm.set_buckets().set_bucket(0).set_actions().
