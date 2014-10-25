@@ -82,8 +82,6 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		bool tagged = dpl.get_vlan_tagged();
 		uint16_t vid = dpl.get_vlan_vid();
 
-		// local outgoing interface => OFP portno
-		//uint32_t out_portno 			= dpl.get_ofp_port_no();
 
 		uint8_t command = rofl::openflow::OFPGC_ADD;
 
@@ -100,33 +98,12 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
 		rofl::cindex index(0);
-#if 0
-		if (tagged) {
-			gm.set_buckets().set_bucket(0).set_actions().
-					add_action_push_vlan(index++).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
-			gm.set_buckets().set_bucket(0).set_actions().
-					add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
-		}
-#endif
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
-
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-#if 0
-		// vlan
-		gm.set_buckets().set_bucket(0).set_actions().
-				add_action_push_vlan(index++).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
-		gm.set_buckets().set_bucket(0).set_actions().
-				add_action_set_field(index++).set_oxm(
-						rofl::openflow::coxmatch_ofb_vlan_vid(dpl.get_vlan_vid()));
-#endif
-
-		//gm.set_buckets().set_bucket(0).set_actions().
-		//		add_action_output(index++).set_port_no(out_portno);
-
 		dpt.send_group_mod_message(rofl::cauxid(0), gm);
 
 
@@ -304,8 +281,6 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		bool tagged = dpl.get_vlan_tagged();
 		uint16_t vid = dpl.get_vlan_vid();
 
-		// local outgoing interface => OFP portno
-		//uint32_t out_portno 			= dpl.get_ofp_port_no();
 
 		uint8_t command = 0;
 
@@ -323,22 +298,12 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
 		rofl::cindex index(0);
-#if 0
-		if (tagged) {
-			gm.set_buckets().set_bucket(0).set_actions().
-					add_action_push_vlan(index++).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
-			gm.set_buckets().set_bucket(0).set_actions().
-					add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
-		}
-#endif
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid));
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
-//		gm.set_buckets().set_bucket(0).set_actions().
-	//			add_action_output(index++).set_port_no(out_portno);
 
 		dpt.send_group_mod_message(rofl::cauxid(0), gm);
 
