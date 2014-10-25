@@ -115,12 +115,14 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_src(eth_src));
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(rofl::openflow::coxmatch_ofb_eth_dst(eth_dst));
+#if 0
 		// vlan
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_push_vlan(index++).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
 		gm.set_buckets().set_bucket(0).set_actions().
 				add_action_set_field(index++).set_oxm(
 						rofl::openflow::coxmatch_ofb_vlan_vid(dpl.get_vlan_vid()));
+#endif
 
 		//gm.set_buckets().set_bucket(0).set_actions().
 		//		add_action_output(index++).set_port_no(out_portno);
