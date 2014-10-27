@@ -38,7 +38,7 @@ public:
 	 *
 	 */
 	void
-	read_config(const std::string& config_file);
+	read_config(const std::string& config_file, const std::string& prefix = std::string(""));
 
 private:
 

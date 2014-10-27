@@ -14,7 +14,7 @@ using namespace roflibs::ethernet;
 /*static*/const  std::string cportdb_file::ETHCORE_CONFIG_DPT_LIST("roflibs.ethcore.datapaths");
 
 void
-cportdb_file::read_config(const std::string& config_file)
+cportdb_file::read_config(const std::string& config_file, const std::string& prefix)
 {
 	if (config_file.empty()) {
 		this->config_file = cportdb_file::DEFAULT_CONFIG_FILE;
@@ -29,10 +29,11 @@ cportdb_file::read_config(const std::string& config_file)
 	ethcore::cconfig& config = ethcore::cconfig::get_instance();
 	config.open(this->config_file);
 
-	if (config.exists(ETHCORE_CONFIG_DPT_LIST)) {
-		for (int i = 0; i < config.lookup(ETHCORE_CONFIG_DPT_LIST).getLength(); i++) {
+	std::string path = prefix + cportdb_file::ETHCORE_CONFIG_DPT_LIST;
+	if (config.exists(path)) {
+		for (int i = 0; i < config.lookup(path).getLength(); i++) {
 			try {
-				parse_datapath(config, config.lookup(ETHCORE_CONFIG_DPT_LIST)[i]);
+				parse_datapath(config, config.lookup(path)[i]);
 			} catch (libconfig::SettingNotFoundException& e) {}
 		}
 	}

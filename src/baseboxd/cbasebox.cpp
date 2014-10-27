@@ -46,7 +46,7 @@ cbasebox::run(int argc, char** argv)
 	 */
 	roflibs::ethernet::cportdb_file& portdb =
 			dynamic_cast<roflibs::ethernet::cportdb_file&>( roflibs::ethernet::cportdb::get_portdb("file") );
-	portdb.read_config(env_parser.get_arg("config-file"));
+	portdb.read_config(env_parser.get_arg("config-file"), std::string("baseboxd"));
 
 	/*
 	 * extract debug level
