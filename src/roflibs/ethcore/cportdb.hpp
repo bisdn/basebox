@@ -257,6 +257,12 @@ public:
 	static cportdb&
 	get_portdb(const std::string& name);
 
+	/**
+	 *
+	 */
+	virtual
+	~cportdb() {};
+
 public:
 
 	/**

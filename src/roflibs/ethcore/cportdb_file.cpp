@@ -14,14 +14,20 @@ using namespace roflibs::ethernet;
 /*static*/const  std::string cportdb_file::ETHCORE_CONFIG_DPT_LIST("roflibs.ethcore.datapaths");
 
 void
-cportdb_file::read_config()
+cportdb_file::read_config(const std::string& config_file)
 {
+	if (config_file.empty()) {
+		this->config_file = cportdb_file::DEFAULT_CONFIG_FILE;
+	} else {
+		this->config_file = config_file;
+	}
+
 	/*
 	 * read configuration (here: from libconfig++ file)
 	 */
 
 	ethcore::cconfig& config = ethcore::cconfig::get_instance();
-	config.open(DEFAULT_CONFIG_FILE);
+	config.open(this->config_file);
 
 	if (config.exists(ETHCORE_CONFIG_DPT_LIST)) {
 		for (int i = 0; i < config.lookup(ETHCORE_CONFIG_DPT_LIST).getLength(); i++) {

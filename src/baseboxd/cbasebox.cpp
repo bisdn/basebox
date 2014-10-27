@@ -42,6 +42,13 @@ cbasebox::run(int argc, char** argv)
 
 
 	/*
+	 * read configuration file for roflibs related configuration
+	 */
+	roflibs::ethernet::cportdb_file& portdb =
+			dynamic_cast<roflibs::ethernet::cportdb_file&>( roflibs::ethernet::cportdb::get_portdb("file") );
+	portdb.read_config(env_parser.get_arg("config-file"));
+
+	/*
 	 * extract debug level
 	 */
 	int rofl_debug = 0;
@@ -485,8 +492,7 @@ cbasebox::handle_port_desc_stats_reply(
 	/*
 	 * create virtual ports for predefined ethernet endpoints
 	 */
-	const std::string dbname("file");
-	roflibs::ethernet::cportdb& portdb = roflibs::ethernet::cportdb::get_portdb(dbname);
+	roflibs::ethernet::cportdb& portdb = roflibs::ethernet::cportdb::get_portdb("file");
 
 	// install ethernet endpoints
 	for (std::set<std::string>::const_iterator

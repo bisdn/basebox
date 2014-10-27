@@ -23,20 +23,24 @@ public:
 	/**
 	 *
 	 */
-	cportdb_file() { read_config(); };
+	cportdb_file() :
+		config_file(cportdb_file::DEFAULT_CONFIG_FILE),
+		port_vid(cportdb_file::DEFAULT_PORT_VID) {};
 
 	/**
 	 *
 	 */
 	virtual ~cportdb_file() {};
 
-private:
+public:
 
 	/**
 	 *
 	 */
 	void
-	read_config();
+	read_config(const std::string& config_file);
+
+private:
 
 	/**
 	 *
