@@ -29,7 +29,7 @@ cportdb_file::read_config(const std::string& config_file, const std::string& pre
 	ethcore::cconfig& config = ethcore::cconfig::get_instance();
 	config.open(this->config_file);
 
-	std::string path = prefix + cportdb_file::ETHCORE_CONFIG_DPT_LIST;
+	std::string path = prefix + std::string(".") + cportdb_file::ETHCORE_CONFIG_DPT_LIST;
 	if (config.exists(path)) {
 		for (int i = 0; i < config.lookup(path).getLength(); i++) {
 			try {
