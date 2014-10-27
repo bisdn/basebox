@@ -168,10 +168,18 @@ cbasebox::run(int argc, char** argv)
 		}
 	}
 
-	/*
-	 * start main loop, does not return
-	 */
-	rofl::cioloop::run();
+	bool keep_on_running = true;
+	while (keep_on_running) {
+		try {
+			/*
+			 * start main loop, does not return
+			 */
+			rofl::cioloop::run();
+
+		} catch (std::runtime_error& e) {
+			rofcore::logging::error << "[cbasebox][run] caught exception in main loop, e.what() " << e.what() << std::endl;
+		}
+	}
 
 	rofl::cioloop::shutdown();
 
