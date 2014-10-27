@@ -10,6 +10,7 @@
 using namespace basebox;
 
 /*static*/cbasebox* cbasebox::rofbase = (cbasebox*)0;
+/*static*/bool cbasebox::keep_on_running = true;
 /*static*/const std::string cbasebox::BASEBOX_LOG_FILE = std::string("/var/log/baseboxd.log");
 /*static*/const std::string cbasebox::BASEBOX_PID_FILE = std::string("/var/run/baseboxd.pid");
 /*static*/const std::string cbasebox::BASEBOX_CONFIG_FILE = std::string("/usr/local/etc/baseboxd.conf");
@@ -168,8 +169,8 @@ cbasebox::run(int argc, char** argv)
 		}
 	}
 
-	bool keep_on_running = true;
-	while (keep_on_running) {
+	cbasebox::keep_on_running = true;
+	while (cbasebox::keep_on_running) {
 		try {
 			/*
 			 * start main loop, does not return
@@ -187,7 +188,12 @@ cbasebox::run(int argc, char** argv)
 }
 
 
-
+/*static*/
+void
+cbasebox::stop()
+{
+	cbasebox::keep_on_running = false;
+}
 
 
 

@@ -51,6 +51,8 @@ class cbasebox : public rofl::crofbase, public rofcore::cnetdev_owner, public ro
 	 */
 	static cbasebox*	rofbase;
 
+	static bool keep_on_running;
+
 	/**
 	 *
 	 */
@@ -101,6 +103,12 @@ public:
 	 */
 	static int
 	run(int argc, char** argv);
+
+	/**
+	 *
+	 */
+	static void
+	stop();
 
 protected:
 
