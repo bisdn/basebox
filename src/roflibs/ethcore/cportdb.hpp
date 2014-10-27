@@ -334,7 +334,8 @@ public:
 	 */
 	const cportentry&
 	get_port_entry(const rofl::cdpid& dpid, uint32_t portno) const {
-		if (portentries.at(dpid).find(portno) == portentries.at(dpid).end()) {
+		if ((portentries.find(dpid) == portentries.end()) ||
+				(portentries.at(dpid).find(portno) == portentries.at(dpid).end())) {
 			throw ePortDBNotFound("cportdb::get_port_entry() portno not found");
 		}
 		return portentries.at(dpid).at(portno);
@@ -345,7 +346,8 @@ public:
 	 */
 	void
 	drop_port_entry(const rofl::cdpid& dpid, uint32_t portno) {
-		if (portentries[dpid].find(portno) == portentries[dpid].end()) {
+		if ((portentries.find(dpid) == portentries.end()) ||
+				(portentries.at(dpid).find(portno) == portentries.at(dpid).end())) {
 			return;
 		}
 		portnames[dpid].erase(portno);
@@ -357,6 +359,9 @@ public:
 	 */
 	bool
 	has_port_entry(const rofl::cdpid& dpid, uint32_t portno) const {
+		if (portentries.find(dpid) == portentries.end()) {
+			return false;
+		}
 		return (not (portentries.at(dpid).find(portno) == portentries.at(dpid).end()));
 	};
 
@@ -416,7 +421,8 @@ public:
 	 */
 	const cethentry&
 	get_eth_entry(const rofl::cdpid& dpid, const std::string& devname) const {
-		if (ethentries.at(dpid).find(devname) == ethentries.at(dpid).end()) {
+		if ((ethentries.find(dpid) == ethentries.end()) ||
+				(ethentries.at(dpid).find(devname) == ethentries.at(dpid).end())) {
 			throw ePortDBNotFound("cethdb::get_eth_entry() devname not found");
 		}
 		return ethentries.at(dpid).at(devname);
@@ -427,7 +433,8 @@ public:
 	 */
 	void
 	drop_eth_entry(const rofl::cdpid& dpid, const std::string& devname) {
-		if (ethentries[dpid].find(devname) == ethentries[dpid].end()) {
+		if ((ethentries.find(dpid) == ethentries.end()) ||
+				(ethentries.at(dpid).find(devname) == ethentries.at(dpid).end())) {
 			return;
 		}
 		ethnames[dpid].erase(devname);
@@ -439,6 +446,9 @@ public:
 	 */
 	bool
 	has_eth_entry(const rofl::cdpid& dpid, const std::string& devname) const {
+		if (ethentries.find(dpid) == ethentries.end()) {
+			return false;
+		}
 		return (not (ethentries.at(dpid).find(devname) == ethentries.at(dpid).end()));
 	};
 
