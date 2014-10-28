@@ -103,9 +103,7 @@ AM_PATH_PYTHON([2.7])
 AC_CONFIG_FILES([
 	Makefile
 	src/Makefile
-#	src/dhcpv6snoop/Makefile
 	src/baseboxd/Makefile
-#	src/ethboxd/Makefile
 	src/roflibs/Makefile
 	src/roflibs/python/Makefile
 	src/roflibs/netlink/Makefile
