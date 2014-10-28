@@ -66,18 +66,18 @@ fi
 
 
 # libpcap include and libs
-AC_ARG_WITH([pcap-include],
-  [AS_HELP_STRING([--with-pcap-include],
-    [location of pcap header, defaults to /usr/include])],
-  [PCAP_CFLAGS="-I$withval"],
-  [PCAP_CFLAGS='-I/usr/include'])
-AC_SUBST([PCAP_CFLAGS])
+#AC_ARG_WITH([pcap-include],
+#  [AS_HELP_STRING([--with-pcap-include],
+#    [location of pcap header, defaults to /usr/include])],
+#  [PCAP_CFLAGS="-I$withval"],
+#  [PCAP_CFLAGS='-I/usr/include'])
+#AC_SUBST([PCAP_CFLAGS])
 
-AC_ARG_WITH([pcap-lib],
-  [AS_HELP_STRING([--with-pcap-lib], [location of pcap library])],
-  [PCAP_LIBS="-L$withval -lpcap"],
-  [PCAP_LIBS='-lpcap'])
-AC_SUBST([PCAP_LIBS])
+#AC_ARG_WITH([pcap-lib],
+#  [AS_HELP_STRING([--with-pcap-lib], [location of pcap library])],
+#  [PCAP_LIBS="-L$withval -lpcap"],
+#  [PCAP_LIBS='-lpcap'])
+#AC_SUBST([PCAP_LIBS])
 
 
 
@@ -103,9 +103,9 @@ AM_PATH_PYTHON([2.7])
 AC_CONFIG_FILES([
 	Makefile
 	src/Makefile
-	src/dhcpv6snoop/Makefile
+#	src/dhcpv6snoop/Makefile
 	src/baseboxd/Makefile
-	src/ethboxd/Makefile
+#	src/ethboxd/Makefile
 	src/roflibs/Makefile
 	src/roflibs/python/Makefile
 	src/roflibs/netlink/Makefile

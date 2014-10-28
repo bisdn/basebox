@@ -1,5 +1,5 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-SUBDIRS = roflibs dhcpv6snoop ethboxd baseboxd
+SUBDIRS = roflibs baseboxd
 
 
