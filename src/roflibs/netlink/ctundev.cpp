@@ -48,7 +48,7 @@ ctundev::tun_open(std::string const& devname)
 		}
 
 		if ((fd = open("/dev/net/tun", O_RDWR|O_NONBLOCK)) < 0) {
-			throw rofl::eSysCall("[ctundev][tun_open] open()");
+			throw eTunDevSysCallFailed("[ctundev][tun_open] open()");
 		}
 
 		memset(&ifr, 0, sizeof(ifr));
@@ -63,15 +63,15 @@ ctundev::tun_open(std::string const& devname)
 
 		if ((rc = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0) {
 			close(fd);
-			throw rofl::eSysCall("[ctundev][tun_open] ioctl()");
+			throw eTunDevSysCallFailed("[ctundev][tun_open] ioctl()");
 		}
 
 		enable_interface();
 
 		register_filedesc_r(fd);
 
-	} catch (rofl::eSysCall& e) {
-		rofcore::logging::debug << "[ctundev][tun_open] exception caught: " << e << std::endl;
+	} catch (std::runtime_error& e) {
+		rofcore::logging::debug << "[ctundev][tun_open] exception caught: " << e.what() << std::endl;
 		throw;
 	}
 }
@@ -91,9 +91,9 @@ ctundev::tun_close()
 
 		deregister_filedesc_r(fd);
 
-	} catch (eNetDevIoctl& e) {
-		fprintf(stderr, "ctundev::tun_close() ioctl() failed: dev[%s] (%d:%s)\n",
-				devname.c_str(), errno, strerror(errno));
+	} catch (std::runtime_error& e) {
+		rofcore::logging::debug << "[ctundev][tun_close] exception caught: " << e.what() << std::endl;
+
 	}
 
 	close(fd);
@@ -154,8 +154,8 @@ ctundev::handle_revent(int fd)
 		// error occured (or non-blocking)
 		if (rc < 0) {
 			switch (errno) {
-			case EAGAIN: 	throw eNetDevAgain();
-			default: 		throw eNetDevCritical();
+			case EAGAIN: 	throw eNetDevAgain("ctundev::handle_revent() EAGAIN, retrying later");
+			default: 		throw eNetDevCritical("ctundev::handle_revent() error occured");
 			}
 		} else {
 			pkt = cpacketpool::get_instance().acquire_pkt();
@@ -167,23 +167,21 @@ ctundev::handle_revent(int fd)
 
 	} catch (ePacketPoolExhausted& e) {
 
-		fprintf(stderr, "ctundev::handle_revent() packet pool exhausted, no idle slots available\n");
+		rofcore::logging::debug << "[ctundev][handle_revent] packet pool exhausted, no idle slots available" << std::endl;
 
 	} catch (eNetDevAgain& e) {
 
-		fprintf(stderr, "ctundev::handle_revent() (%d:%s) => "
-				"retry later\n", errno, strerror(errno));
+		rofcore::logging::debug << "[ctundev][handle_revent] EAGAIN, retrying later" << std::endl;
 
 		cpacketpool::get_instance().release_pkt(pkt);
 
 	} catch (eNetDevCritical& e) {
 
-		fprintf(stderr, "ctundev::handle_revent() critical error (%d:%s): "
-				"calling self-destruction\n", errno, strerror(errno));
+		rofcore::logging::debug << "[ctundev][handle_revent] error occured" << std::endl;
 
 		cpacketpool::get_instance().release_pkt(pkt);
 
-		delete this; return;
+		//delete this; return;
 	}
 }
 
@@ -202,8 +200,8 @@ ctundev::handle_wevent(int fd)
 			if ((rc = write(fd, pkt->soframe(), pkt->length())) < 0) {
 				fprintf(stderr, "[rofcore][ctundev][handle_wevent] error: %d (%s)\n", errno, strerror(errno));
 				switch (errno) {
-				case EAGAIN: 	throw eNetDevAgain();
-				default:		throw eNetDevCritical();
+				case EAGAIN: 	throw eNetDevAgain("ctundev::handle_wevent() EAGAIN, retrying later");
+				default:		throw eNetDevCritical("ctundev::handle_wevent() error occured");
 				}
 			}
 
@@ -220,13 +218,11 @@ ctundev::handle_wevent(int fd)
 	} catch (eNetDevAgain& e) {
 
 		// keep fd in wfds
-		fprintf(stderr, "ctundev::handle_wevent() (%d:%s) => "
-				"retry later\n", errno, strerror(errno));
+		rofcore::logging::debug << "[ctundev][handle_wevent] EAGAIN, retrying later" << std::endl;
 
 	} catch (eNetDevCritical& e) {
 
-		fprintf(stderr, "ctundev::handle_wevent() critical error (%d:%s): "
-				"calling self-destruction\n", errno, strerror(errno));
+		rofcore::logging::debug << "[ctundev][handle_wevent] error occured" << std::endl;
 
 		cpacketpool::get_instance().release_pkt(pkt);
 	}

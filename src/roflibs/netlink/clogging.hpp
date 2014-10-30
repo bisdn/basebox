@@ -10,11 +10,9 @@
 #include <iomanip>
 #include <string>
 
-namespace rofcore
-{
+namespace rofcore {
 
-class logging
-{
+class logging {
 public:
 
 	static std::filebuf devnull;

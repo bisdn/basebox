@@ -35,21 +35,62 @@ extern "C" {
 
 #include <roflibs/netlink/cpacketpool.hpp>
 
-namespace rofcore
-{
+namespace rofcore {
 
 class cnetdev; // forward declaration, see below
 
-class eNetDevBase 			: public std::exception {};
-class eNetDevInval 			: public eNetDevBase {};
-class eNetDevInvalOwner 	: public eNetDevInval {};
-class eNetDevInvalNetDev	: public eNetDevInval {};
-class eNetDevExists			: public eNetDevInval {};
-class eNetDevSysCallFailed	: public eNetDevBase {};
-class eNetDevSocket			: public eNetDevSysCallFailed {};
-class eNetDevIoctl			: public eNetDevSysCallFailed {};
-class eNetDevAgain			: public eNetDevSysCallFailed {};
-class eNetDevCritical		: public eNetDevBase {};
+class eNetDevBase 			: public std::runtime_error {
+public:
+	eNetDevBase(const std::string& __arg) : std::runtime_error(__arg) {};
+};
+class eNetDevInval 			: public eNetDevBase {
+public:
+	eNetDevInval(const std::string& __arg) : eNetDevBase(__arg) {};
+};
+class eNetDevInvalOwner 	: public eNetDevInval {
+public:
+	eNetDevInvalOwner(const std::string& __arg) : eNetDevInval(__arg) {};
+};
+class eNetDevInvalNetDev	: public eNetDevInval {
+public:
+	eNetDevInvalNetDev(const std::string& __arg) : eNetDevInval(__arg) {};
+};
+class eNetDevExists			: public eNetDevInval {
+public:
+	eNetDevExists(const std::string& __arg) : eNetDevInval(__arg) {};
+};
+class eNetDevSysCallFailed	: public eNetDevBase {
+	std::string s_error;
+public:
+	eNetDevSysCallFailed(const std::string& __arg) : eNetDevBase(__arg) {
+		std::stringstream ss;
+		ss << __arg << " syscall failed (";
+		ss << "errno:" << errno << " ";
+		ss << strerror(errno)<< ")";
+		s_error = ss.str();
+	};
+	virtual
+	~eNetDevSysCallFailed() throw() {};
+	virtual const char* what() const throw() {
+		return s_error.c_str();
+	};
+};
+class eNetDevSocket			: public eNetDevSysCallFailed {
+public:
+	eNetDevSocket(const std::string& __arg) : eNetDevSysCallFailed(__arg) {};
+};
+class eNetDevIoctl			: public eNetDevSysCallFailed {
+public:
+	eNetDevIoctl(const std::string& __arg) : eNetDevSysCallFailed(__arg) {};
+};
+class eNetDevAgain			: public eNetDevSysCallFailed {
+public:
+	eNetDevAgain(const std::string& __arg) : eNetDevSysCallFailed(__arg) {};
+};
+class eNetDevCritical		: public eNetDevBase {
+public:
+	eNetDevCritical(const std::string& __arg) : eNetDevBase(__arg) {};
+};
 
 
 
@@ -64,23 +105,6 @@ protected:
 public:
 
 	virtual ~cnetdev_owner() {};
-
-#if 0
-	/**
-	 * @brief	Signals a cnetdev open message to owner.
-	 *
-	 * @param netdev cnetdev instance that opened its associated system port.
-	 */
-	virtual void netdev_open(cnetdev *netdev) {};
-
-
-	/**
-	 * @brief	Signals a cnetdev close message to owner.
-	 *
-	 * @param netdev cnetdev instance that closed its associated system port.
-	 */
-	virtual void netdev_close(cnetdev *netdev) {};
-#endif
 
 	/**
 	 * @brief	Enqeues a packet received on a cnetdevice to this cnetdevice_owner

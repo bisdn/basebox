@@ -40,11 +40,26 @@ extern "C" {
 
 namespace rofcore {
 
-class eTunDevBase 			: public eNetDevBase {};
-class eTunDevSysCallFailed 	: public eTunDevBase {};
-class eTunDevOpenFailed		: public eTunDevSysCallFailed {};
-class eTunDevIoctlFailed	: public eTunDevSysCallFailed {};
-class eTunDevNotFound		: public eTunDevBase {};
+class eTunDevBase 			: public eNetDevBase {
+public:
+	eTunDevBase(const std::string& __arg) : eNetDevBase(__arg) {};
+};
+class eTunDevSysCallFailed 	: public eNetDevSysCallFailed {
+public:
+	eTunDevSysCallFailed(const std::string& __arg) : eNetDevSysCallFailed(__arg) {};
+};
+class eTunDevOpenFailed		: public eTunDevSysCallFailed {
+public:
+	eTunDevOpenFailed(const std::string& __arg) : eTunDevSysCallFailed(__arg) {};
+};
+class eTunDevIoctlFailed	: public eTunDevSysCallFailed {
+public:
+	eTunDevIoctlFailed(const std::string& __arg) : eTunDevSysCallFailed(__arg) {};
+};
+class eTunDevNotFound		: public eTunDevBase {
+public:
+	eTunDevNotFound(const std::string& __arg) : eTunDevBase(__arg) {};
+};
 
 class ctundev : public cnetdev {
 public:

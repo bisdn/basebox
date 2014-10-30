@@ -29,16 +29,34 @@ extern "C" {
 #include <list>
 
 #include <roflibs/netlink/cnetdev.hpp>
+#include <roflibs/netlink/clogging.hpp>
 
 
 
 namespace rofcore {
 
-class eTapDevBase 			: public eNetDevBase {};
-class eTapDevSysCallFailed 	: public eTapDevBase {};
-class eTapDevOpenFailed		: public eTapDevSysCallFailed {};
-class eTapDevIoctlFailed	: public eTapDevSysCallFailed {};
-class eTapDevNotFound		: public eTapDevBase {};
+class eTapDevBase 			: public eNetDevBase {
+public:
+	eTapDevBase(const std::string& __arg) : eNetDevBase(__arg) {};
+};
+class eTapDevSysCallFailed 	: public eTapDevBase {
+public:
+	eTapDevSysCallFailed(const std::string& __arg) : eTapDevBase(__arg) {};
+};
+class eTapDevOpenFailed		: public eTapDevSysCallFailed {
+public:
+	eTapDevOpenFailed(const std::string& __arg) : eTapDevSysCallFailed(__arg) {};
+};
+class eTapDevIoctlFailed	: public eTapDevSysCallFailed {
+public:
+	eTapDevIoctlFailed(const std::string& __arg) : eTapDevSysCallFailed(__arg) {};
+};
+class eTapDevNotFound		: public eTapDevBase {
+public:
+	eTapDevNotFound(const std::string& __arg) : eTapDevBase(__arg) {};
+};
+
+
 
 class ctapdev : public cnetdev
 {

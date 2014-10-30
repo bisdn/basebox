@@ -230,7 +230,7 @@ private:
 	rofcore::ctapdev&
 	set_tap_dev(const std::string& devname) {
 		if (devs.find(devname) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
+			throw rofcore::eTunDevNotFound("cbasebox::set_tap_dev() devname not found");
 		}
 		return *(devs[devname]);
 	};
@@ -243,7 +243,7 @@ private:
 		std::map<std::string, rofcore::ctapdev*>::iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
+			throw rofcore::eTunDevNotFound("cbasebox::set_tap_dev() hwaddr not found");
 		}
 		return *(it->second);
 	};
@@ -254,7 +254,7 @@ private:
 	const rofcore::ctapdev&
 	get_tap_dev(const std::string& devname) const {
 		if (devs.find(devname) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
+			throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() devname not found");
 		}
 		return *(devs.at(devname));
 	};
@@ -267,7 +267,7 @@ private:
 		std::map<std::string, rofcore::ctapdev*>::const_iterator it;
 		if ((it = find_if(devs.begin(), devs.end(),
 				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
-			throw rofcore::eTunDevNotFound();
+			throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() hwaddr not found");
 		}
 		return *(it->second);
 	};

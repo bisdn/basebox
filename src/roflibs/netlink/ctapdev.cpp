@@ -51,7 +51,7 @@ ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
 		}
 
 		if ((fd = open("/dev/net/tun", O_RDWR|O_NONBLOCK)) < 0) {
-			throw eTapDevOpenFailed();
+			throw eTapDevOpenFailed("ctapdev::tap_open() opening /dev/net/tun failed");
 		}
 
 		memset(&ifr, 0, sizeof(ifr));
@@ -66,7 +66,7 @@ ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
 
 		if ((rc = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0) {
 			close(fd);
-			throw eTapDevIoctlFailed();
+			throw eTapDevIoctlFailed("ctapdev::tap_open() setting flags IFF_TAP | IFF_NO_PI on /dev/net/tun failed");
 		}
 
 		set_hwaddr(hwaddr);
@@ -80,24 +80,21 @@ ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
 
 	} catch (eTapDevOpenFailed& e) {
 
-		fprintf(stderr, "ctapdev::tap_open() open() failed: dev[%s] (%d:%s)\n",
-				devname.c_str(), errno, strerror(errno));
+		rofcore::logging::error << "ctapdev::tap_open() open() failed: dev:" << devname << std::endl;
 
-		throw eNetDevCritical();
+		throw eNetDevCritical(e.what());
 
 	} catch (eTapDevIoctlFailed& e) {
 
-		fprintf(stderr, "ctapdev::tap_open() ioctl() failed: dev[%s] (%d:%s)\n",
-				devname.c_str(), errno, strerror(errno));
+		rofcore::logging::error << "ctapdev::tap_open() open() failed: dev:" << devname << std::endl;
 
-		throw eNetDevCritical();
+		throw eNetDevCritical(e.what());
 
 	} catch (eNetDevIoctl& e) {
 
-		fprintf(stderr, "ctapdev::tap_open() ioctl() failed: dev[%s] (%d:%s)\n",
-				devname.c_str(), errno, strerror(errno));
+		rofcore::logging::error << "ctapdev::tap_open() open() failed: dev:" << devname << std::endl;
 
-		throw eNetDevCritical();
+		throw eNetDevCritical(e.what());
 
 	}
 }
@@ -118,8 +115,7 @@ ctapdev::tap_close()
 		deregister_filedesc_r(fd);
 
 	} catch (eNetDevIoctl& e) {
-		fprintf(stderr, "ctapdev::tap_close() ioctl() failed: dev[%s] (%d:%s)\n",
-				devname.c_str(), errno, strerror(errno));
+		rofcore::logging::error << "ctapdev::tap_close() failed: dev:" << devname << std::endl;
 	}
 
 	close(fd);
@@ -180,8 +176,8 @@ ctapdev::handle_revent(int fd)
 		// error occured (or non-blocking)
 		if (rc < 0) {
 			switch (errno) {
-			case EAGAIN: 	throw eNetDevAgain();
-			default: 		throw eNetDevCritical();
+			case EAGAIN: 	throw eNetDevAgain("ctapdev::handle_revent() EAGAIN when reading from /dev/net/tun");
+			default: 		throw eNetDevCritical("ctapdev::handle_revent() error when reading from /dev/net/tun");
 			}
 		} else {
 			pkt = cpacketpool::get_instance().acquire_pkt();
@@ -192,20 +188,16 @@ ctapdev::handle_revent(int fd)
 		}
 
 	} catch (ePacketPoolExhausted& e) {
-
-		fprintf(stderr, "ctapdev::handle_revent() packet pool exhausted, no idle slots available\n");
+		rofcore::logging::error << "ctapdev::handle_revent() packet pool exhausted, no idle slots available" << std::endl;
 
 	} catch (eNetDevAgain& e) {
 
-		fprintf(stderr, "ctapdev::handle_revent() (%d:%s) => "
-				"retry later\n", errno, strerror(errno));
+		rofcore::logging::error << "ctapdev::handle_revent() EAGAIN, retrying later" << std::endl;
 
 		cpacketpool::get_instance().release_pkt(pkt);
 
 	} catch (eNetDevCritical& e) {
-
-		fprintf(stderr, "ctapdev::handle_revent() critical error (%d:%s): "
-				"calling self-destruction\n", errno, strerror(errno));
+		rofcore::logging::error << "ctapdev::handle_revent() error occured" << std::endl;
 
 		cpacketpool::get_instance().release_pkt(pkt);
 
@@ -227,8 +219,8 @@ ctapdev::handle_wevent(int fd)
 			int rc = 0;
 			if ((rc = write(fd, pkt->soframe(), pkt->length())) < 0) {
 				switch (errno) {
-				case EAGAIN: 	throw eNetDevAgain();
-				default:		throw eNetDevCritical();
+				case EAGAIN: 	throw eNetDevAgain("ctapdev::handle_wevent() EAGAIN");
+				default:		throw eNetDevCritical("ctapdev::handle_wevent() error occured");
 				}
 			}
 
@@ -245,17 +237,15 @@ ctapdev::handle_wevent(int fd)
 	} catch (eNetDevAgain& e) {
 
 		// keep fd in wfds
-		fprintf(stderr, "ctapdev::handle_wevent() (%d:%s) => "
-				"retry later\n", errno, strerror(errno));
+		rofcore::logging::error << "ctapdev::handle_wevent() EAGAIN, retrying later" << std::endl;
 
 	} catch (eNetDevCritical& e) {
 
-		fprintf(stderr, "ctapdev::handle_wevent() critical error (%d:%s): "
-				"calling self-destruction\n", errno, strerror(errno));
-
+		rofcore::logging::error << "ctapdev::handle_wevent() critical error occured" << std::endl;
 		cpacketpool::get_instance().release_pkt(pkt);
 
-		delete this; return;
+		throw;
+		//delete this; return;
 	}
 }
 

@@ -13,10 +13,10 @@ void
 cnetdev_owner::netdev_created(cnetdev* netdev)
 {
 	if (0 == netdev) {
-		throw eNetDevInvalNetDev();
+		throw eNetDevInvalNetDev("cnetdev_owner::netdev_created() 0 == netdev");
 	}
 	if (devs.find(netdev->get_devname()) != devs.end()) {
-		throw eNetDevExists();
+		throw eNetDevExists("cnetdev_owner::netdev_created() devname exists");
 	}
 	devs[netdev->get_devname()] = netdev;
 }
@@ -27,7 +27,7 @@ void
 cnetdev_owner::netdev_removed(cnetdev* netdev)
 {
 	if (0 == netdev) {
-		throw eNetDevInvalNetDev();
+		throw eNetDevInvalNetDev("cnetdev_owner::netdev_removed() 0 == netdev");
 	}
 	if (devs.find(netdev->get_devname()) == devs.end()) {
 		return;
@@ -61,10 +61,11 @@ cnetdev_owner::enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
 
 cnetdev::cnetdev(cnetdev_owner *netdev_owner, std::string const& devname) :
 	devname(devname),
-	netdev_owner(netdev_owner)
+	netdev_owner(netdev_owner),
+	ifindex(0)
 {
 	if (0 == netdev_owner) {
-		throw eNetDevInvalOwner();
+		throw eNetDevInvalOwner("cnetdev::cnetdev() no netdev_owner");
 	}
 	netdev_owner->netdev_created(this);
 }
@@ -114,24 +115,24 @@ void cnetdev::enable_interface()
 	int sd, rc;
 
 	if ((sd = socket(AF_PACKET, SOCK_RAW, 0)) < 0)
-		throw eNetDevSocket();
+		throw eNetDevSocket("cnetdev::enable_interface() socket() syscall failed");
 
 	memset(&ifr, 0, sizeof(struct ifreq));
 	strcpy(ifr.ifr_name, devname.c_str());
 
 	if ((rc = ioctl(sd, SIOCGIFINDEX, &ifr)) < 0)
-		throw eNetDevIoctl();
+		throw eNetDevIoctl("cnetdev::enable_interface() ioctl() syscall SIOCGIFINDEX failed");
 
 	if ((rc = ioctl(sd, SIOCGIFFLAGS, &ifr)) < 0) {
 		close(sd);
-		throw eNetDevIoctl();
+		throw eNetDevIoctl("cnetdev::enable_interface() ioctl() syscall SIOCGIFFLAGS failed");
 	}
 
 	ifr.ifr_flags |= IFF_UP;
 
 	if ((rc = ioctl(sd, SIOCSIFFLAGS, &ifr)) < 0) {
 		close(sd);
-		throw eNetDevIoctl();
+		throw eNetDevIoctl("cnetdev::enable_interface() ioctl() syscall SIOCSIFFLAGS failed");
 	}
 
 	close(sd);
@@ -146,24 +147,24 @@ cnetdev::disable_interface()
 	int sd, rc;
 
 	if ((sd = socket(AF_PACKET, SOCK_RAW, 0)) < 0)
-		throw eNetDevSocket();
+		throw eNetDevSocket("cnetdev::disable_interface() socket() syscall failed");
 
 	memset(&ifr, 0, sizeof(struct ifreq));
 	strcpy(ifr.ifr_name, devname.c_str());
 
 	if ((rc = ioctl(sd, SIOCGIFINDEX, &ifr)) < 0)
-		throw eNetDevIoctl();
+		throw eNetDevIoctl("cnetdev::disable_interface() ioctl() syscall SIOCGIFINDEX failed");
 
 	if ((rc = ioctl(sd, SIOCGIFFLAGS, &ifr)) < 0) {
 		close(sd);
-		throw eNetDevIoctl();
+		throw eNetDevIoctl("cnetdev::disable_interface() ioctl() syscall SIOCGIFFLAGS failed");
 	}
 
 	ifr.ifr_flags &= ~IFF_UP;
 
 	if ((rc = ioctl(sd, SIOCSIFFLAGS, &ifr)) < 0) {
 		close(sd);
-		throw eNetDevIoctl();
+		throw eNetDevIoctl("cnetdev::disable_interface() ioctl() syscall SIOCSIFFLAGS failed");
 	}
 
 	close(sd);
@@ -177,14 +178,14 @@ cnetdev::get_ifindex()
 	// get ifindex for devname
 	int sd, rc;
 	if ((sd = socket(AF_PACKET, SOCK_RAW, 0)) < 0)
-		throw eNetDevSocket();
+		throw eNetDevSocket("cnetdev::get_ifindex() socket() syscall failed");
 
 	struct ifreq ifr;
 	bzero(&ifr, sizeof(ifr));
 	strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
 
 	if ((rc = ioctl(sd, SIOCGIFINDEX, &ifr)) < 0)
-		throw eNetDevIoctl();
+		throw eNetDevIoctl("cnetdev::get_ifindex() ioctl() syscall SIOCGIFINDEX failed");
 
 	close(sd);
 
@@ -201,14 +202,14 @@ cnetdev::get_hwaddr()
 	// get ifr_ifhwaddr for devname
 	int sd, rc;
 	if ((sd = socket(AF_PACKET, SOCK_RAW, 0)) < 0)
-		throw eNetDevSocket();
+		throw eNetDevSocket("cnetdev::get_hwaddr() socket() syscall failed");
 
 	struct ifreq ifr;
 	bzero(&ifr, sizeof(ifr));
 	strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
 
 	if ((rc = ioctl(sd, SIOCGIFHWADDR, &ifr)) < 0)
-		throw eNetDevIoctl();
+		throw eNetDevIoctl("cnetdev::get_hwaddr() ioctl() syscall SIOCGIFHWADDR failed");
 
 	memcpy(hwaddr.somem(), ifr.ifr_hwaddr.sa_data, OFP_ETH_ALEN);
 
@@ -225,7 +226,7 @@ cnetdev::set_hwaddr(rofl::cmacaddr const& hwaddr)
 	// get ifr_ifhwaddr for devname
 	int sd, rc;
 	if ((sd = socket(AF_PACKET, SOCK_RAW, 0)) < 0)
-		throw eNetDevSocket();
+		throw eNetDevSocket("cnetdev::set_hwaddr() socket() syscall failed");
 
 	struct ifreq ifr;
 	bzero(&ifr, sizeof(ifr));
@@ -235,7 +236,7 @@ cnetdev::set_hwaddr(rofl::cmacaddr const& hwaddr)
 	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr.somem(), OFP_ETH_ALEN);
 
 	if ((rc = ioctl(sd, SIOCSIFHWADDR, &ifr)) < 0) {
-		throw eNetDevIoctl();
+		throw eNetDevIoctl("cnetdev::set_hwaddr() ioctl() syscall SIOCSIFHWADDR failed");
 	}
 
 	this->hwaddr = hwaddr;
