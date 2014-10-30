@@ -106,7 +106,7 @@ cbasebox::run(int argc, char** argv)
 	 * daemonize
 	 */
 	if (daemonize) {
-		rofl::cdaemon::daemonize(env_parser.get_arg("pidfile"), env_parser.get_arg("logfile"));
+		rofl::cdaemon::daemonize(pidfile, logfile);
 	}
 	rofl::logging::set_debug_level(rofl_debug);
 	rofcore::logging::set_debug_level(core_debug);
