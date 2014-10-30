@@ -43,11 +43,6 @@ extern "C" {
 namespace roflibs {
 namespace ip {
 
-class eVmCoreBase 			: public std::exception {};
-class eVmCoreCritical 		: public eVmCoreBase {};
-class eVmCoreNoDptAttached	: public eVmCoreBase {};
-class eVmCoreNotFound		: public eVmCoreBase {};
-
 class eIpCoreBase			: public std::runtime_error {
 public:
 	eIpCoreBase(const std::string& __arg) : std::runtime_error(__arg) {};

@@ -17,10 +17,22 @@
 namespace rofcore
 {
 
-class ePacketPoolBase 			: public std::exception {};
-class ePacketPoolExhausted	 	: public ePacketPoolBase {};
-class ePacketPoolInval			: public ePacketPoolBase {};
-class ePacketPoolInvalPkt		: public ePacketPoolInval {};
+class ePacketPoolBase 			: public std::runtime_error {
+public:
+	ePacketPoolBase(const std::string& __arg) : std::runtime_error(__arg) {};
+};
+class ePacketPoolExhausted	 	: public ePacketPoolBase {
+public:
+	ePacketPoolExhausted(const std::string& __arg) : ePacketPoolBase(__arg) {};
+};
+class ePacketPoolInval			: public ePacketPoolBase {
+public:
+	ePacketPoolInval(const std::string& __arg) : ePacketPoolBase(__arg) {};
+};
+class ePacketPoolInvalPkt		: public ePacketPoolInval {
+public:
+	ePacketPoolInvalPkt(const std::string& __arg) : ePacketPoolInval(__arg) {};
+};
 
 class cpacketpool
 {

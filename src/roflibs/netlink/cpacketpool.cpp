@@ -60,7 +60,7 @@ rofl::cpacket*
 cpacketpool::acquire_pkt()
 {
 	if (idlepool.empty()) {
-		throw ePacketPoolExhausted();
+		throw ePacketPoolExhausted("cpacketpool::acquire_pkt() packetpool exhausted");
 	}
 	rofl::cpacket *pkt = *(idlepool.begin());
 	idlepool.erase(pkt);
@@ -74,7 +74,7 @@ cpacketpool::release_pkt(
 			rofl::cpacket* pkt)
 {
 	if (0 == pkt) {
-		throw ePacketPoolInvalPkt();
+		return;
 	}
 	pkt->clear();
 	idlepool.insert(pkt);
