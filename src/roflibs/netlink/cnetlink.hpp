@@ -39,10 +39,22 @@ extern "C" {
 
 namespace rofcore {
 
-class eNetLinkBase 			: public std::exception {};
-class eNetLinkCritical		: public eNetLinkBase {};
-class eNetLinkNotFound		: public eNetLinkBase {};
-class eNetLinkFailed		: public eNetLinkBase {};
+class eNetLinkBase 			: public std::runtime_error {
+public:
+	eNetLinkBase(const std::string& __arg) : std::runtime_error(__arg) {};
+};
+class eNetLinkCritical		: public eNetLinkBase {
+public:
+	eNetLinkCritical(const std::string& __arg) : eNetLinkBase(__arg) {};
+};
+class eNetLinkNotFound		: public eNetLinkBase {
+public:
+	eNetLinkNotFound(const std::string& __arg) : eNetLinkBase(__arg) {};
+};
+class eNetLinkFailed		: public eNetLinkBase {
+public:
+	eNetLinkFailed(const std::string& __arg) : eNetLinkBase(__arg) {};
+};
 
 class cnetlink_common_observer;
 class cnetlink_neighbour_observer;

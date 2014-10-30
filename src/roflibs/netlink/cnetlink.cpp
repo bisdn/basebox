@@ -46,7 +46,7 @@ cnetlink::init_caches()
 	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
 	if (rc < 0) {
 		rofcore::logging::debug << "clinkcache::clinkcache() failed to allocate netlink cache manager" << std::endl;
-		throw eNetLinkCritical();
+		throw eNetLinkCritical("cnetlink::init_caches()");
 	}
 
 	rc = nl_cache_mngr_add(mngr, "route/link", (change_func_t)&route_link_cb, NULL, &caches[NL_LINK_CACHE]);
@@ -749,20 +749,20 @@ cnetlink::add_addr_in4(int ifindex, const rofl::caddress_in4& laddr, int prefixl
 
 	struct nl_sock *sk = (struct nl_sock*)0;
 	if ((sk = nl_socket_alloc()) == NULL) {
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::add_addr_in4() nl_socket_alloc()");
 	}
 
 	int sd = 0;
 
 	if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::add_addr_in4() nl_connect()");
 	}
 
 	struct rtnl_addr* addr = (struct rtnl_addr*)0;
 	if ((addr = rtnl_addr_alloc()) == NULL) {
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::add_addr_in4() rtnl_addr_alloc()");
 	}
 
 	struct nl_addr* local = (struct nl_addr*)0;
@@ -777,7 +777,7 @@ cnetlink::add_addr_in4(int ifindex, const rofl::caddress_in4& laddr, int prefixl
 	if ((rc = rtnl_addr_add(sk, addr, 0)) < 0) {
 		rtnl_addr_put(addr);
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::add_addr_in4() rtnl_addr_add()");
 	}
 
 	nl_addr_put(local);
@@ -795,20 +795,20 @@ cnetlink::drop_addr_in4(int ifindex, const rofl::caddress_in4& laddr, int prefix
 
 	struct nl_sock *sk = (struct nl_sock*)0;
 	if ((sk = nl_socket_alloc()) == NULL) {
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::drop_addr_in4() nl_socket_alloc()");
 	}
 
 	int sd = 0;
 
 	if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::drop_addr_in4() nl_connect()");
 	}
 
 	struct rtnl_addr* addr = (struct rtnl_addr*)0;
 	if ((addr = rtnl_addr_alloc()) == NULL) {
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::drop_addr_in4() rtnl_addr_alloc()");
 	}
 
 	struct nl_addr* local = (struct nl_addr*)0;
@@ -823,7 +823,7 @@ cnetlink::drop_addr_in4(int ifindex, const rofl::caddress_in4& laddr, int prefix
 	if ((rc = rtnl_addr_delete(sk, addr, 0)) < 0) {
 		rtnl_addr_put(addr);
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::drop_addr_in4() rtnl_addr_delete()");
 	}
 
 	nl_addr_put(local);
@@ -841,20 +841,20 @@ cnetlink::add_addr_in6(int ifindex, const rofl::caddress_in6& laddr, int prefixl
 
 	struct nl_sock *sk = (struct nl_sock*)0;
 	if ((sk = nl_socket_alloc()) == NULL) {
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::add_addr_in6() nl_socket_alloc()");
 	}
 
 	int sd = 0;
 
 	if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::add_addr_in6() nl_connect()");
 	}
 
 	struct rtnl_addr* addr = (struct rtnl_addr*)0;
 	if ((addr = rtnl_addr_alloc()) == NULL) {
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::add_addr_in6() rtnl_addr_alloc()");
 	}
 
 	struct nl_addr* local = (struct nl_addr*)0;
@@ -869,7 +869,7 @@ cnetlink::add_addr_in6(int ifindex, const rofl::caddress_in6& laddr, int prefixl
 	if ((rc = rtnl_addr_add(sk, addr, 0)) < 0) {
 		rtnl_addr_put(addr);
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::add_addr_in6() rtnl_addr_add()");
 	}
 
 	nl_addr_put(local);
@@ -887,20 +887,20 @@ cnetlink::drop_addr_in6(int ifindex, const rofl::caddress_in6& laddr, int prefix
 
 	struct nl_sock *sk = (struct nl_sock*)0;
 	if ((sk = nl_socket_alloc()) == NULL) {
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::drop_addr_in6() nl_socket_alloc()");
 	}
 
 	int sd = 0;
 
 	if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::drop_addr_in6() nl_connect()");
 	}
 
 	struct rtnl_addr* addr = (struct rtnl_addr*)0;
 	if ((addr = rtnl_addr_alloc()) == NULL) {
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::drop_addr_in6() rtnl_addr_alloc()");
 	}
 
 	struct nl_addr* local = (struct nl_addr*)0;
@@ -915,7 +915,7 @@ cnetlink::drop_addr_in6(int ifindex, const rofl::caddress_in6& laddr, int prefix
 	if ((rc = rtnl_addr_delete(sk, addr, 0)) < 0) {
 		rtnl_addr_put(addr);
 		nl_socket_free(sk);
-		throw eNetLinkFailed();
+		throw eNetLinkFailed("cnetlink::drop_addr_in6() rtnl_addr_delete()");
 	}
 
 	nl_addr_put(local);
