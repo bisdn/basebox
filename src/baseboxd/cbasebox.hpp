@@ -8,6 +8,9 @@
 #ifndef CROFBASE_HPP_
 #define CROFBASE_HPP_
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #include <string>
 #include <iostream>
 #include <exception>

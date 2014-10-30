@@ -659,6 +659,8 @@ cbasebox::execute(
 	}
 
 	if (pid > 0) { // father process
+		int status;
+		waitpid(pid, &status, 0);
 		return;
 	}
 
