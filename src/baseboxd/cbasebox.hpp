@@ -196,11 +196,13 @@ private:
 	 *
 	 */
 	void
-	clear_tap_devs() {
-		while (not devs.empty()) {
-			std::map<std::string, rofcore::ctapdev*>::iterator it = devs.begin();
-			hook_port_down(it->second->get_devname());
-			drop_tap_dev(it->first);
+	clear_tap_devs(const rofl::cdpid& dpid) {
+		while (not devs[dpid].empty()) {
+			std::map<std::string, rofcore::ctapdev*>::iterator it = devs[dpid].begin();
+			try {
+				hook_port_down(rofl::crofdpt::get_dpt(it->second->get_dpid()), it->second->get_devname());
+			} catch (rofl::eRofDptNotFound& e) {}
+			drop_tap_dev(it->second->get_dpid(), it->first);
 		}
 	};
 
@@ -208,44 +210,44 @@ private:
 	 *
 	 */
 	rofcore::ctapdev&
-	add_tap_dev(const std::string& devname, uint16_t pvid, const rofl::caddress_ll& hwaddr) {
-		if (devs.find(devname) != devs.end()) {
-			delete devs[devname];
+	add_tap_dev(const rofl::cdpid& dpid, const std::string& devname, uint16_t pvid, const rofl::caddress_ll& hwaddr) {
+		if (devs[dpid].find(devname) != devs[dpid].end()) {
+			delete devs[dpid][devname];
 		}
-		devs[devname] = new rofcore::ctapdev(this, devname, pvid, hwaddr);
-		return *(devs[devname]);
+		devs[dpid][devname] = new rofcore::ctapdev(this, dpid, devname, pvid, hwaddr);
+		return *(devs[dpid][devname]);
 	};
 
 	/**
 	 *
 	 */
 	rofcore::ctapdev&
-	set_tap_dev(const std::string& devname, uint16_t pvid, const rofl::caddress_ll& hwaddr) {
-		if (devs.find(devname) == devs.end()) {
-			devs[devname] = new rofcore::ctapdev(this, devname, pvid, hwaddr);
+	set_tap_dev(const rofl::cdpid& dpid, const std::string& devname, uint16_t pvid, const rofl::caddress_ll& hwaddr) {
+		if (devs[dpid].find(devname) == devs[dpid].end()) {
+			devs[dpid][devname] = new rofcore::ctapdev(this, dpid, devname, pvid, hwaddr);
 		}
-		return *(devs[devname]);
+		return *(devs[dpid][devname]);
 	};
 
 	/**
 	 *
 	 */
 	rofcore::ctapdev&
-	set_tap_dev(const std::string& devname) {
-		if (devs.find(devname) == devs.end()) {
+	set_tap_dev(const rofl::cdpid& dpid, const std::string& devname) {
+		if (devs[dpid].find(devname) == devs[dpid].end()) {
 			throw rofcore::eTunDevNotFound("cbasebox::set_tap_dev() devname not found");
 		}
-		return *(devs[devname]);
+		return *(devs[dpid][devname]);
 	};
 
 	/**
 	 *
 	 */
 	rofcore::ctapdev&
-	set_tap_dev(const rofl::caddress_ll& hwaddr) {
+	set_tap_dev(const rofl::cdpid& dpid, const rofl::caddress_ll& hwaddr) {
 		std::map<std::string, rofcore::ctapdev*>::iterator it;
-		if ((it = find_if(devs.begin(), devs.end(),
-				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
+		if ((it = find_if(devs[dpid].begin(), devs[dpid].end(),
+				rofcore::ctapdev::ctapdev_find_by_hwaddr(dpid, hwaddr))) == devs[dpid].end()) {
 			throw rofcore::eTunDevNotFound("cbasebox::set_tap_dev() hwaddr not found");
 		}
 		return *(it->second);
@@ -255,21 +257,27 @@ private:
 	 *
 	 */
 	const rofcore::ctapdev&
-	get_tap_dev(const std::string& devname) const {
-		if (devs.find(devname) == devs.end()) {
+	get_tap_dev(const rofl::cdpid& dpid, const std::string& devname) const {
+		if (devs.find(dpid) == devs.end()) {
+			throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() dpid not found");
+		}
+		if (devs.at(dpid).find(devname) == devs.at(dpid).end()) {
 			throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() devname not found");
 		}
-		return *(devs.at(devname));
+		return *(devs.at(dpid).at(devname));
 	};
 
 	/**
 	 *
 	 */
 	const rofcore::ctapdev&
-	get_tap_dev(const rofl::caddress_ll& hwaddr) const {
+	get_tap_dev(const rofl::cdpid& dpid, const rofl::caddress_ll& hwaddr) const {
+		if (devs.find(dpid) == devs.end()) {
+			throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() dpid not found");
+		}
 		std::map<std::string, rofcore::ctapdev*>::const_iterator it;
-		if ((it = find_if(devs.begin(), devs.end(),
-				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
+		if ((it = find_if(devs.at(dpid).begin(), devs.at(dpid).end(),
+				rofcore::ctapdev::ctapdev_find_by_hwaddr(dpid, hwaddr))) == devs.at(dpid).end()) {
 			throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() hwaddr not found");
 		}
 		return *(it->second);
@@ -279,44 +287,50 @@ private:
 	 *
 	 */
 	void
-	drop_tap_dev(const std::string& devname) {
-		if (devs.find(devname) == devs.end()) {
+	drop_tap_dev(const rofl::cdpid& dpid, const std::string& devname) {
+		if (devs[dpid].find(devname) == devs[dpid].end()) {
 			return;
 		}
-		delete devs[devname];
-		devs.erase(devname);
+		delete devs[dpid][devname];
+		devs[dpid].erase(devname);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_tap_dev(const rofl::caddress_ll& hwaddr) {
+	drop_tap_dev(const rofl::cdpid& dpid, const rofl::caddress_ll& hwaddr) {
 		std::map<std::string, rofcore::ctapdev*>::const_iterator it;
-		if ((it = find_if(devs.begin(), devs.end(),
-				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
+		if ((it = find_if(devs[dpid].begin(), devs[dpid].end(),
+				rofcore::ctapdev::ctapdev_find_by_hwaddr(dpid, hwaddr))) == devs[dpid].end()) {
 			return;
 		}
 		delete it->second;
-		devs.erase(it->first);
+		devs[dpid].erase(it->first);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_tap_dev(const std::string& devname) const {
-		return (not (devs.find(devname) == devs.end()));
+	has_tap_dev(const rofl::cdpid& dpid, const std::string& devname) const {
+		if (devs.find(dpid) == devs.end()) {
+			return false;
+		}
+		return (not (devs.at(dpid).find(devname) == devs.at(dpid).end()));
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_tap_dev(const rofl::caddress_ll& hwaddr) const {
+	has_tap_dev(const rofl::cdpid& dpid, const rofl::caddress_ll& hwaddr) const {
+		if (devs.find(dpid) == devs.end()) {
+			return false;
+		}
 		std::map<std::string, rofcore::ctapdev*>::const_iterator it;
-		if ((it = find_if(devs.begin(), devs.end(),
-				rofcore::ctapdev::ctapdev_find_by_hwaddr(hwaddr))) == devs.end()) {
+		if ((it = find_if(devs.at(dpid).begin(), devs.at(dpid).end(),
+				rofcore::ctapdev::ctapdev_find_by_hwaddr(dpid, hwaddr))) == devs.at(dpid).end()) {
 			return false;
 		}
 		return true;
@@ -326,16 +340,15 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cbasebox& box) {
-		os << rofcore::indent(0) << "<cbasebox dptid: " << box.dptid << " >" << std::endl;
+		os << rofcore::indent(0) << "<cbasebox>" << std::endl;
 		rofcore::indent i(2);
-		for (std::map<std::string, rofcore::ctapdev*>::const_iterator
+		for (std::map<rofl::cdpid, std::map<std::string, rofcore::ctapdev*> >::const_iterator
 				it = box.devs.begin(); it != box.devs.end(); ++it) {
-			os << *(it->second);
+			for (std::map<std::string, rofcore::ctapdev*>::const_iterator
+					jt = it->second.begin(); jt != it->second.end(); ++jt) {
+				os << *(jt->second);
+			}
 		}
-		os << roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
-		try {
-			os << roflibs::ethernet::cethcore::get_eth_core(rofl::crofdpt::get_dpt(box.dptid).get_dpid());
-		} catch (rofl::eRofDptNotFound& e) {}
 		return os;
 	};
 
@@ -367,16 +380,16 @@ private:
 	 * event specific hooks
 	 */
 	void
-	hook_dpt_attach();
+	hook_dpt_attach(const rofl::crofdpt& dpt);
 
 	void
-	hook_dpt_detach();
+	hook_dpt_detach(const rofl::crofdpt& dpt);
 
 	void
-	hook_port_up(std::string const& devname);
+	hook_port_up(const rofl::crofdpt& dpt, std::string const& devname);
 
 	void
-	hook_port_down(std::string const& devname);
+	hook_port_down(const rofl::crofdpt& dpt, std::string const& devname);
 
 	void
 	set_forwarding(bool forward = true);
@@ -393,11 +406,10 @@ private:
 	 *
 	 */
 	void
-	test_workflow();
+	test_workflow(rofl::crofdpt& dpt);
 
 private:
 
-	rofl::cdptid dptid;
 	static const std::string BASEBOX_LOG_FILE;
 	static const std::string BASEBOX_PID_FILE;
 	static const std::string BASEBOX_CONFIG_FILE;
@@ -407,7 +419,7 @@ private:
 	static std::string script_path_port_up;
 	static std::string script_path_port_down;
 
-	std::map<std::string, rofcore::ctapdev*>	devs;
+	std::map<rofl::cdpid, std::map<std::string, rofcore::ctapdev*> > devs;
 	std::string	python_script;
 
 	uint8_t table_id_eth_port_membership;

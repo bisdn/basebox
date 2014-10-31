@@ -201,24 +201,26 @@ void
 cbasebox::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 {
 	try {
-		if (not rofl::crofdpt::get_dpt(dptid).get_channel().is_established()) {
-			throw eLinkNoDptAttached("cbasebox::enqueue() dpt not found");
-		}
-
 		rofcore::ctapdev* tapdev = dynamic_cast<rofcore::ctapdev*>( netdev );
 		if (0 == tapdev) {
 			throw eLinkTapDevNotFound("cbasebox::enqueue() tap device not found");
 		}
 
-		rofl::openflow::cofactions actions(rofl::crofdpt::get_dpt(dptid).get_version());
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(tapdev->get_dpid());
+
+		if (not dpt.get_channel().is_established()) {
+			throw eLinkNoDptAttached("cbasebox::enqueue() dpt not found");
+		}
+
+		rofl::openflow::cofactions actions(dpt.get_version());
 		actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
 		actions.set_action_set_field(rofl::cindex(1)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(tapdev->get_pvid()));
 		actions.set_action_output(rofl::cindex(2)).set_port_no(rofl::openflow::OFPP_TABLE);
 
-		rofl::crofdpt::get_dpt(dptid).send_packet_out_message(
+		dpt.send_packet_out_message(
 				rofl::cauxid(0),
-				rofl::openflow::base::get_ofp_no_buffer(rofl::crofdpt::get_dpt(dptid).get_version()),
-				rofl::openflow::base::get_ofpp_controller_port(rofl::crofdpt::get_dpt(dptid).get_version()),
+				rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()),
+				rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()),
 				actions,
 				pkt->soframe(),
 				pkt->length());
@@ -254,14 +256,12 @@ void
 cbasebox::handle_dpt_open(
 		rofl::crofdpt& dpt) {
 
-	dptid = dpt.get_dptid();
-
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
 	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 
 	// call external scripting hook
-	hook_dpt_attach();
+	hook_dpt_attach(dpt);
 }
 
 
@@ -270,10 +270,10 @@ void
 cbasebox::handle_dpt_close(
 		rofl::crofdpt& dpt) {
 
-	clear_tap_devs();
+	clear_tap_devs(dpt.get_dpid());
 
 	// call external scripting hook
-	hook_dpt_detach();
+	hook_dpt_detach(dpt);
 
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
@@ -313,7 +313,7 @@ cbasebox::handle_packet_in(
 				rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 				*pkt = msg.get_packet();
 				pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t)-sizeof(uint16_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
-				set_tap_dev(msg.get_match().get_eth_dst()).enqueue(pkt);
+				set_tap_dev(dpt.get_dpid(), msg.get_match().get_eth_dst()).enqueue(pkt);
 
 			} else {
 				/* multicast frames carry a metadata field with the VLAN id
@@ -329,7 +329,7 @@ cbasebox::handle_packet_in(
 				uint16_t vid = msg.get_match().get_vlan_vid() & 0x0fff;
 
 				for (std::map<std::string, rofcore::ctapdev*>::iterator
-						it = devs.begin(); it != devs.end(); ++it) {
+						it = devs[dpt.get_dpid()].begin(); it != devs[dpt.get_dpid()].end(); ++it) {
 					rofcore::ctapdev& tapdev = *(it->second);
 					if (tapdev.get_pvid() != vid) {
 						continue;
@@ -389,7 +389,7 @@ cbasebox::handle_port_status(
 		switch (msg.get_reason()) {
 		case rofl::openflow::OFPPR_ADD: {
 			dpt.set_ports().set_port(msg.get_port().get_port_no()) = msg.get_port();
-			hook_port_up(msg.get_port().get_name());
+			hook_port_up(dpt, msg.get_port().get_name());
 
 #if 0
 			if (not has_tap_dev(port.get_name())) {
@@ -422,7 +422,7 @@ cbasebox::handle_port_status(
 		} break;
 		case rofl::openflow::OFPPR_DELETE: {
 			dpt.set_ports().drop_port(msg.get_port().get_name());
-			hook_port_down(msg.get_port().get_name());
+			hook_port_down(dpt, msg.get_port().get_name());
 #if 0
 			drop_tap_dev(port.get_name());
 #endif
@@ -513,8 +513,8 @@ cbasebox::handle_port_desc_stats_reply(
 			it = portdb.get_eth_entries(dpt.get_dpid()).begin(); it != portdb.get_eth_entries(dpt.get_dpid()).end(); ++it) {
 		const roflibs::ethernet::cethentry& eth = portdb.get_eth_entry(dpt.get_dpid(), *it);
 
-		if (not has_tap_dev(eth.get_devname())) {
-			add_tap_dev(eth.get_devname(), eth.get_port_vid(), eth.get_hwaddr());
+		if (not has_tap_dev(dpt.get_dpid(), eth.get_devname())) {
+			add_tap_dev(dpt.get_dpid(), eth.get_devname(), eth.get_port_vid(), eth.get_hwaddr());
 		}
 	}
 
@@ -550,10 +550,9 @@ cbasebox::handle_port_desc_stats_reply_timeout(rofl::crofdpt& dpt, uint32_t xid)
 
 
 void
-cbasebox::hook_dpt_attach()
+cbasebox::hook_dpt_attach(const rofl::crofdpt& dpt)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
@@ -572,10 +571,9 @@ cbasebox::hook_dpt_attach()
 
 
 void
-cbasebox::hook_dpt_detach()
+cbasebox::hook_dpt_detach(const rofl::crofdpt& dpt)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
@@ -594,10 +592,9 @@ cbasebox::hook_dpt_detach()
 
 
 void
-cbasebox::hook_port_up(std::string const& devname)
+cbasebox::hook_port_up(const rofl::crofdpt& dpt, std::string const& devname)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
@@ -620,10 +617,9 @@ cbasebox::hook_port_up(std::string const& devname)
 
 
 void
-cbasebox::hook_port_down(std::string const& devname)
+cbasebox::hook_port_down(const rofl::crofdpt& dpt, std::string const& devname)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
@@ -769,11 +765,10 @@ cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 
 
 void
-cbasebox::test_workflow()
+cbasebox::test_workflow(rofl::crofdpt& dpt)
 {
 	bool gre_test = true;
 	bool gtp_test = false;
-	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 	/*
 	 * GRE test
