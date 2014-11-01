@@ -247,6 +247,13 @@ public:
 		return (not (flows.find(flow_id) == flows.end()));
 	};
 
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const cflowcore& flowcore) {
+
+		return os;
+	};
 
 private:
 
