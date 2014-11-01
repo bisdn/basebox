@@ -17,6 +17,7 @@ library_includedir=$(includedir)
 libroflibs_la_SOURCES = 
 libroflibs_la_LIBADD = \
 	netlink/libroflibs_netlink.la \
+	flowcore/libroflibs_flowcore.la \
 	ipcore/libroflibs_ipcore.la \
 	ethcore/libroflibs_ethcore.la \
 	gtpcore/libroflibs_gtpcore.la \

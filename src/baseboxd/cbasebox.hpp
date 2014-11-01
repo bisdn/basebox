@@ -19,6 +19,7 @@
 #include <rofl/platform/unix/cdaemon.h>
 #include <rofl/platform/unix/cunixenv.h>
 
+#include <roflibs/flowcore/cflowcore.hpp>
 #include <roflibs/ethcore/cethcore.hpp>
 #include <roflibs/ipcore/cipcore.hpp>
 #include <roflibs/gtpcore/cgtpcore.hpp>
@@ -63,14 +64,15 @@ class cbasebox : public rofl::crofbase, public rofcore::cnetdev_owner, public ro
 			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap =
 					rofl::openflow::cofhello_elem_versionbitmap()) :
 						rofl::crofbase(versionbitmap),
-						table_id_eth_port_membership(0),
-						table_id_eth_src(1),
-						table_id_eth_local(2),
-						table_id_ip_local(3),
-						table_id_gre_local(4),
-						table_id_gtp_local(4),
-						table_id_ip_fwd(5),
-						table_id_eth_dst(6),
+						table_id_svc_flows(0),
+						table_id_eth_port_membership(1),
+						table_id_eth_src(2),
+						table_id_eth_local(3),
+						table_id_ip_local(4),
+						table_id_gre_local(5),
+						table_id_gtp_local(5),
+						table_id_ip_fwd(6),
+						table_id_eth_dst(7),
 						default_pvid(1)
 						{};
 
@@ -422,6 +424,7 @@ private:
 	std::map<rofl::cdpid, std::map<std::string, rofcore::ctapdev*> > devs;
 	std::string	python_script;
 
+	uint8_t table_id_svc_flows;
 	uint8_t table_id_eth_port_membership;
 	uint8_t table_id_eth_src;
 	uint8_t table_id_eth_local;
