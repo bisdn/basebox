@@ -39,25 +39,28 @@ public:
 	 *
 	 */
 	cflow() :
-		state(STATE_DETACHED), flow_table_id(0) {};
+		state(STATE_DETACHED)
+	{};
 
 	/**
 	 *
 	 */
-	~cflow() {};
+	~cflow()
+	{};
 
 	/**
 	 *
 	 */
-	cflow(const rofl::cdpid& dpid, uint8_t flow_table_id,
+	cflow(const rofl::cdpid& dpid,
 			const rofl::openflow::cofflowmod& flowmod) :
-		state(STATE_DETACHED), dpid(dpid), flow_table_id(flow_table_id),
-		flowmod(flowmod) {};
+		state(STATE_DETACHED), dpid(dpid), flowmod(flowmod)
+	{};
 
 	/**
 	 *
 	 */
-	cflow(const cflow& flow) { *this = flow; };
+	cflow(const cflow& flow)
+	{ *this = flow; };
 
 	/**
 	 *
@@ -111,7 +114,6 @@ protected:
 	enum ofp_state_t 			state;
 
 	rofl::cdpid 				dpid;
-	uint8_t						flow_table_id;
 	rofl::openflow::cofflowmod 	flowmod;
 };
 

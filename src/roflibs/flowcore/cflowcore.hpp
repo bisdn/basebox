@@ -44,7 +44,7 @@ public:
 			delete cflowcore::flowcores[dpid];
 			cflowcore::flowcores.erase(dpid);
 		}
-		cflowcore::flowcores[dpid] = new cflowcore(dpid, flow_table_id);
+		cflowcore::flowcores[dpid] = new cflowcore(dpid);
 		return *(cflowcore::flowcores[dpid]);
 	};
 
@@ -54,7 +54,7 @@ public:
 	static cflowcore&
 	set_flow_core(const rofl::cdpid& dpid, uint8_t flow_table_id) {
 		if (cflowcore::flowcores.find(dpid) == cflowcore::flowcores.end()) {
-			cflowcore::flowcores[dpid] = new cflowcore(dpid, flow_table_id);
+			cflowcore::flowcores[dpid] = new cflowcore(dpid);
 		}
 		return *(cflowcore::flowcores[dpid]);
 	};
@@ -107,10 +107,9 @@ private:
 	/**
 	 *
 	 */
-	cflowcore(const rofl::cdpid& dpid,
-			uint8_t flow_table_id) :
-		state(STATE_DETACHED), dpid(dpid),
-		flow_table_id(flow_table_id) {};
+	cflowcore(const rofl::cdpid& dpid) :
+		state(STATE_DETACHED), dpid(dpid)
+	{};
 
 	/**
 	 *
@@ -128,14 +127,23 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt) {};
+	handle_dpt_open(rofl::crofdpt& dpt) {
+		for (std::map<uint32_t, cflow*>::iterator
+				it = flows.begin(); it != flows.end(); ++it) {
+			it->second->handle_dpt_open(dpt);
+		}
+	};
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt) {};
-
+	handle_dpt_close(rofl::crofdpt& dpt) {
+		for (std::map<uint32_t, cflow*>::iterator
+				it = flows.begin(); it != flows.end(); ++it) {
+			it->second->handle_dpt_close(dpt);
+		}
+	};
 
 public:
 
@@ -170,13 +178,14 @@ public:
 	 *
 	 */
 	cflow&
-	add_svc_flow(uint32_t flow_id, const rofl::openflow::cofflowmod& flowmod) {
+	add_svc_flow(uint32_t flow_id, uint8_t flow_table_id,
+			const rofl::openflow::cofflowmod& flowmod) {
 		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (flows.find(flow_id) != flows.end()) {
 			delete flows[flow_id];
 			flows.erase(flow_id);
 		}
-		flows[flow_id] = new cflow(dpid, flow_table_id, flowmod);
+		flows[flow_id] = new cflow(dpid, flowmod);
 		try {
 			if (STATE_ATTACHED == state) {
 				flows[flow_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
@@ -189,10 +198,11 @@ public:
 	 *
 	 */
 	cflow&
-	set_svc_flow(uint32_t flow_id, const rofl::openflow::cofflowmod& flowmod) {
+	set_svc_flow(uint32_t flow_id,
+			const rofl::openflow::cofflowmod& flowmod) {
 		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (flows.find(flow_id) == flows.end()) {
-			flows[flow_id] = new cflow(dpid, flow_table_id, flowmod);
+			flows[flow_id] = new cflow(dpid, flowmod);
 		}
 		try {
 			if (STATE_ATTACHED == state) {
@@ -260,7 +270,6 @@ private:
 
 	enum ofp_state_t				state;
 	rofl::cdpid						dpid;
-	uint8_t							flow_table_id;
 
 	std::map<uint32_t, cflow*>		flows;
 	mutable rofl::PthreadRwLock		rwlock;
