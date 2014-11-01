@@ -464,6 +464,8 @@ cbasebox::handle_port_desc_stats_reply(
 
 	dpt.set_ports() = msg.get_ports();
 
+	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
+
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid(),
 												table_id_ip_local,
 												table_id_ip_fwd).handle_dpt_close(dpt);
@@ -490,20 +492,6 @@ cbasebox::handle_port_desc_stats_reply(
 												table_id_ip_fwd).handle_dpt_close(dpt);
 
 
-#if 0
-	/*
-	 * create tap devices for physical ports
-	 */
-	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
-			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
-		const rofl::openflow::cofport& port = *(it->second);
-
-		if (not has_tap_dev(port.get_port_no())) {
-			add_tap_dev(port.get_name(), port.get_hwaddr());
-		}
-	}
-#endif
-
 	/*
 	 * create virtual ports for predefined ethernet endpoints
 	 */
@@ -522,17 +510,15 @@ cbasebox::handle_port_desc_stats_reply(
 	/*
 	 * notify core instances
 	 */
+	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
-#if 0
-	rofgtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	rofgtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
-#endif
+	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
 
 
-
-	//test_workflow();
+	//test_workflow(dpt);
 
 	std::cerr << "=====================================" << std::endl;
 	std::cerr << roflibs::ethernet::cethcore::get_eth_core(dpt.get_dpid());

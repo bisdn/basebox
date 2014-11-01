@@ -39,7 +39,7 @@ public:
 	 *
 	 */
 	static cflowcore&
-	add_flow_core(const rofl::cdpid& dpid, uint8_t flow_table_id) {
+	add_flow_core(const rofl::cdpid& dpid) {
 		if (cflowcore::flowcores.find(dpid) != cflowcore::flowcores.end()) {
 			delete cflowcore::flowcores[dpid];
 			cflowcore::flowcores.erase(dpid);
@@ -52,7 +52,7 @@ public:
 	 *
 	 */
 	static cflowcore&
-	set_flow_core(const rofl::cdpid& dpid, uint8_t flow_table_id) {
+	set_flow_core(const rofl::cdpid& dpid) {
 		if (cflowcore::flowcores.find(dpid) == cflowcore::flowcores.end()) {
 			cflowcore::flowcores[dpid] = new cflowcore(dpid);
 		}
