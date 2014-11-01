@@ -8,7 +8,7 @@ MAINTAINERCLEANFILES = Makefile.in
 #	-I$(abs_srcdir)/roflibs/gtpcore \
 #	-I$(abs_srcdir)/roflibs/grecore
 
-SUBDIRS = netlink ipcore ethcore gtpcore grecore python
+SUBDIRS = netlink flowcore ethcore ipcore gtpcore grecore python
 
 #noinst_LTLIBRARIES = libroflibs.la
 lib_LTLIBRARIES = libroflibs.la

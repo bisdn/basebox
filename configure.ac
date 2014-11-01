@@ -1,4 +1,4 @@
-AC_INIT(vmcore, 0.1.0, rofl@bisdn.de, vmcore)
+AC_INIT(vmcore, 0.6.0, rofl@bisdn.de, vmcore)
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_MACRO_DIR([m4])
 AC_GNU_SOURCE
@@ -65,21 +65,6 @@ if (test "${have_rofl}" = "yes"); then
 fi
 
 
-# libpcap include and libs
-#AC_ARG_WITH([pcap-include],
-#  [AS_HELP_STRING([--with-pcap-include],
-#    [location of pcap header, defaults to /usr/include])],
-#  [PCAP_CFLAGS="-I$withval"],
-#  [PCAP_CFLAGS='-I/usr/include'])
-#AC_SUBST([PCAP_CFLAGS])
-
-#AC_ARG_WITH([pcap-lib],
-#  [AS_HELP_STRING([--with-pcap-lib], [location of pcap library])],
-#  [PCAP_LIBS="-L$withval -lpcap"],
-#  [PCAP_LIBS='-lpcap'])
-#AC_SUBST([PCAP_LIBS])
-
-
 
 PKG_CHECK_MODULES([LIBCONFIGXX], [libconfig++ >= 1.4], [have_libconfig=yes], AC_MSG_ERROR([libconfig++ 1.4 or newer not found.]))
 if (test "${have_libconfig}" = "yes"); then
@@ -94,11 +79,6 @@ m4_include([config/versioning.m4])
 AM_PATH_PYTHON([2.7])
 
 
-#Check libs used
-#AC_CHECK_LIB(pthread, pthread_create)
-#AC_CHECK_LIB(rt, shm_open)
-#AC_CHECK_LIB(cli, ???)
-
 # AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_FILES([
 	Makefile
@@ -107,9 +87,10 @@ AC_CONFIG_FILES([
 	src/roflibs/Makefile
 	src/roflibs/python/Makefile
 	src/roflibs/netlink/Makefile
-	src/roflibs/ipcore/Makefile
+	src/roflibs/flowcore/Makefile
 	src/roflibs/ethcore/Makefile
 	src/roflibs/ethcore/rstp/Makefile
+	src/roflibs/ipcore/Makefile
 	src/roflibs/gtpcore/Makefile
 	src/roflibs/grecore/Makefile
 	
