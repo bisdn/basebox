@@ -8,7 +8,7 @@
 #include "cportdb.hpp"
 #include "roflibs/ethcore/cportdb_file.hpp"
 
-using namespace roflibs::ethernet;
+using namespace roflibs::eth;
 
 /*static*/std::map<std::string, cportdb*> cportdb::portdbs;
 

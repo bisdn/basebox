@@ -7,7 +7,7 @@
 
 #include "cethendpnt.hpp"
 
-using namespace roflibs::ethernet;
+using namespace roflibs::eth;
 
 
 void

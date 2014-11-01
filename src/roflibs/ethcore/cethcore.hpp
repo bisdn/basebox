@@ -20,7 +20,7 @@
 #include "roflibs/ethcore/cportdb.hpp"
 
 namespace roflibs {
-namespace ethernet {
+namespace eth {
 
 class eEthCoreBase : public std::runtime_error {
 public:

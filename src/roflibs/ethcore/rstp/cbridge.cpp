@@ -7,7 +7,7 @@
 
 #include "cbridge.hpp"
 
-using namespace roflibs::ethernet::rstp;
+using namespace roflibs::eth::rstp;
 
 std::map<cbridgeid, cbridge*>	cbridge::bridges;
 

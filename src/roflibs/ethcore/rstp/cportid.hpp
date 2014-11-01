@@ -14,7 +14,7 @@
 #include <exception>
 
 namespace roflibs {
-namespace ethernet {
+namespace eth {
 namespace rstp {
 
 class cportid {

@@ -15,7 +15,7 @@
 #include <roflibs/netlink/cconfig.hpp>
 
 namespace roflibs {
-namespace ethernet {
+namespace eth {
 
 class cportdb_file : public cportdb {
 public:

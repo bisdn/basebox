@@ -63,17 +63,6 @@ public:
 	/**
 	 *
 	 */
-	static cflowcore&
-	set_flow_core(const rofl::cdpid& dpid) {
-		if (cflowcore::flowcores.find(dpid) == cflowcore::flowcores.end()) {
-			throw eFlowCoreNotFound("cflowcore::set_flow_core() dpt not found");
-		}
-		return *(cflowcore::flowcores[dpid]);
-	};
-
-	/**
-	 *
-	 */
 	static const cflowcore&
 	get_flow_core(const rofl::cdpid& dpid) {
 		if (cflowcore::flowcores.find(dpid) == cflowcore::flowcores.end()) {

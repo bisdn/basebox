@@ -19,7 +19,7 @@
 #include <roflibs/netlink/clogging.hpp>
 
 namespace roflibs {
-namespace ethernet {
+namespace eth {
 
 
 class ePortDBBase : public std::runtime_error {

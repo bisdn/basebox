@@ -21,7 +21,7 @@
 #include "roflibs/ethcore/cethendpnt.hpp"
 
 namespace roflibs {
-namespace ethernet {
+namespace eth {
 
 class eVlanBase : public std::runtime_error {
 public:

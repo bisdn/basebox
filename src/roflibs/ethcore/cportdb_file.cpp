@@ -7,7 +7,7 @@
 
 #include "cportdb_file.hpp"
 
-using namespace roflibs::ethernet;
+using namespace roflibs::eth;
 
 /*static*/const  std::string cportdb_file::DEFAULT_CONFIG_FILE = std::string("/usr/local/etc/roflibs.conf");
 /*static*/const 	uint16_t cportdb_file::DEFAULT_PORT_VID = 1;

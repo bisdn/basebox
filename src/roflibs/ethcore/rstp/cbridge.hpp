@@ -21,7 +21,7 @@
 #include "cport.hpp"
 
 namespace roflibs {
-namespace ethernet {
+namespace eth {
 namespace rstp {
 
 class eBridgeBase : public std::runtime_error {

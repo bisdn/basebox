@@ -144,7 +144,7 @@ cipcore::link_created(unsigned int ifindex)
 		bool tagged = false;
 
 		const std::string dbname("file");
-		roflibs::ethernet::cportdb& portdb = roflibs::ethernet::cportdb::get_portdb(dbname);
+		roflibs::eth::cportdb& portdb = roflibs::eth::cportdb::get_portdb(dbname);
 
 		if (not portdb.has_eth_entry(dpid, devname)) {
 			return;

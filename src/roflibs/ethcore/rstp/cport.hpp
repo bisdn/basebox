@@ -16,7 +16,7 @@
 #include "cportid.hpp"
 
 namespace roflibs {
-namespace ethernet {
+namespace eth {
 namespace rstp {
 
 class ePortBase : public std::runtime_error {

@@ -9,7 +9,7 @@
 #define CRSTP_HPP_
 
 namespace roflibs {
-namespace ethernet {
+namespace eth {
 namespace rstp {
 
 // IEEE 802.1D-2004, section 9.2.9

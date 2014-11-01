@@ -45,8 +45,8 @@ cbasebox::run(int argc, char** argv)
 	/*
 	 * read configuration file for roflibs related configuration
 	 */
-	roflibs::ethernet::cportdb_file& portdb =
-			dynamic_cast<roflibs::ethernet::cportdb_file&>( roflibs::ethernet::cportdb::get_portdb("file") );
+	roflibs::eth::cportdb_file& portdb =
+			dynamic_cast<roflibs::eth::cportdb_file&>( roflibs::eth::cportdb::get_portdb("file") );
 	portdb.read_config(env_parser.get_arg("config-file"), std::string("baseboxd"));
 
 	/*
@@ -279,7 +279,7 @@ cbasebox::handle_dpt_close(
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
 	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
 
 #if 0
@@ -299,8 +299,8 @@ cbasebox::handle_packet_in(
 
 		switch (msg.get_table_id()) {
 		case 1: {
-			if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
-				roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+			if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+				roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 			}
 
 		} break;
@@ -371,8 +371,8 @@ cbasebox::handle_flow_removed(
 		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
 	} break;
 	default: {
-		if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
-			roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
+		if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
 		}
 	};
 	}
@@ -434,8 +434,8 @@ cbasebox::handle_port_status(
 		} return;
 		}
 
-		if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
-			roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
+		if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
 		}
 
 	} catch (rofl::openflow::ePortNotFound& e) {
@@ -451,8 +451,8 @@ void
 cbasebox::handle_error_message(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
-	if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
-		roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
+	if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
 	}
 }
 
@@ -470,7 +470,7 @@ cbasebox::handle_port_desc_stats_reply(
 												table_id_ip_local,
 												table_id_ip_fwd).handle_dpt_close(dpt);
 
-	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid(),
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid(),
 												table_id_eth_port_membership,
 												table_id_eth_src,
 												table_id_eth_local,
@@ -495,12 +495,12 @@ cbasebox::handle_port_desc_stats_reply(
 	/*
 	 * create virtual ports for predefined ethernet endpoints
 	 */
-	roflibs::ethernet::cportdb& portdb = roflibs::ethernet::cportdb::get_portdb("file");
+	roflibs::eth::cportdb& portdb = roflibs::eth::cportdb::get_portdb("file");
 
 	// install ethernet endpoints
 	for (std::set<std::string>::const_iterator
 			it = portdb.get_eth_entries(dpt.get_dpid()).begin(); it != portdb.get_eth_entries(dpt.get_dpid()).end(); ++it) {
-		const roflibs::ethernet::cethentry& eth = portdb.get_eth_entry(dpt.get_dpid(), *it);
+		const roflibs::eth::cethentry& eth = portdb.get_eth_entry(dpt.get_dpid(), *it);
 
 		if (not has_tap_dev(dpt.get_dpid(), eth.get_devname())) {
 			add_tap_dev(dpt.get_dpid(), eth.get_devname(), eth.get_port_vid(), eth.get_hwaddr());
@@ -511,7 +511,7 @@ cbasebox::handle_port_desc_stats_reply(
 	 * notify core instances
 	 */
 	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
@@ -521,7 +521,7 @@ cbasebox::handle_port_desc_stats_reply(
 	//test_workflow(dpt);
 
 	std::cerr << "=====================================" << std::endl;
-	std::cerr << roflibs::ethernet::cethcore::get_eth_core(dpt.get_dpid());
+	std::cerr << roflibs::eth::cethcore::get_eth_core(dpt.get_dpid());
 	std::cerr << roflibs::ip::cipcore::get_ip_core(dpt.get_dpid());
 	std::cerr << roflibs::gre::cgrecore::get_gre_core(dpt.get_dpid());
 	std::cerr << "=====================================" << std::endl;

@@ -19,7 +19,7 @@
 #include "roflibs/netlink/clogging.hpp"
 
 namespace roflibs {
-namespace ethernet {
+namespace eth {
 
 class eEthEndpntBase : public std::runtime_error {
 public:

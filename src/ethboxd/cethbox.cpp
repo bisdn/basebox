@@ -136,7 +136,7 @@ cethbox::run(int argc, char** argv)
 				}
 
 				// this is the cethbox instance for this data path
-				roflibs::ethernet::cethcore& ethcore = roflibs::ethernet::cethcore::set_eth_core(dpid, default_pvid, 0, 1, 5);
+				roflibs::eth::cethcore& ethcore = roflibs::eth::cethcore::set_eth_core(dpid, default_pvid, 0, 1, 5);
 
 				// create vlan instance for default_pvid, just in case, there are no member ports defined
 				ethcore.set_vlan(default_pvid);
@@ -201,7 +201,7 @@ cethbox::run(int argc, char** argv)
 					}
 				}
 
-				rofcore::logging::debug << "after config:" << std::endl << roflibs::ethernet::cethcore::get_eth_core(dpid);
+				rofcore::logging::debug << "after config:" << std::endl << roflibs::eth::cethcore::get_eth_core(dpid);
 
 
 			} catch (libconfig::SettingNotFoundException& e) {
@@ -319,7 +319,7 @@ cethbox::handle_dpt_open(
 		rofl::crofdpt& dpt) {
 	dptid = dpt.get_dptid();
 
-	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid(), /*port-membership=*/0, /*src-table=*/1, /*local-table=*/2, /*dst-table=*/6, /*default_vid=*/1);
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid(), /*port-membership=*/0, /*src-table=*/1, /*local-table=*/2, /*dst-table=*/6, /*default_vid=*/1);
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
 	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
@@ -336,7 +336,7 @@ cethbox::handle_dpt_close(
 	// call external scripting hook
 	hook_dpt_detach();
 
-	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
 }
 
 
@@ -361,8 +361,8 @@ cethbox::handle_packet_in(
 
 		switch (msg.get_table_id()) {
 		default: {
-			if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
-				roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+			if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+				roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 			}
 		};
 		}
@@ -384,8 +384,8 @@ cethbox::handle_flow_removed(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {
 	switch (msg.get_table_id()) {
 	default: {
-		if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
-			roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
+		if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
 		}
 	};
 	}
@@ -436,8 +436,8 @@ cethbox::handle_port_status(
 		} return;
 		}
 
-		if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
-			roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
+		if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
 		}
 
 	} catch (rofl::openflow::ePortNotFound& e) {
@@ -452,8 +452,8 @@ cethbox::handle_port_status(
 void
 cethbox::handle_error_message(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
-	if (roflibs::ethernet::cethcore::has_eth_core(dpt.get_dpid())) {
-		roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
+	if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
 	}
 }
 
@@ -469,7 +469,7 @@ cethbox::handle_port_desc_stats_reply(
 			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
 		const rofl::openflow::cofport& port = *(it->second);
 
-		roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).set_vlan(/*default_vid=*/1).add_phy_port(port.get_port_no(), /*tagged=*/false);
+		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).set_vlan(/*default_vid=*/1).add_phy_port(port.get_port_no(), /*tagged=*/false);
 	}
 
 	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
@@ -481,7 +481,7 @@ cethbox::handle_port_desc_stats_reply(
 		}
 	}
 
-	roflibs::ethernet::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
 }
 
 

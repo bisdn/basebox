@@ -1,6 +1,6 @@
 #include "ethcoremodule.hpp"
 
-using namespace roflibs::ethernet;
+using namespace roflibs::eth;
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,7 +48,7 @@ ethcore_get_switches(PyObject *self, PyObject *args)
 		std::cerr << "UUUUUU [1]" << std::endl;
 
 		std::set<uint64_t> dpids =
-				roflibs::ethernet::cethcore::get_eth_cores();
+				roflibs::eth::cethcore::get_eth_cores();
 
 		std::cerr << "UUUUUU [2] size:" << dpids.size() << std::endl;
 
@@ -89,7 +89,7 @@ ethcore_get_vlans(PyObject *self, PyObject *args, PyObject* kw)
 		PyObject* py_vids = PyList_New(0);
 
 		std::vector<uint16_t> vids =
-				roflibs::ethernet::cethcore::get_eth_core(rofl::cdpid(dpid)).get_vlans();
+				roflibs::eth::cethcore::get_eth_core(rofl::cdpid(dpid)).get_vlans();
 
 		for (std::vector<uint16_t>::const_iterator
 				it = vids.begin(); it != vids.end(); ++it) {
@@ -126,7 +126,7 @@ ethcore_add_vlan(PyObject *self, PyObject *args, PyObject* kw)
 			return NULL;
 		}
 
-		roflibs::ethernet::cethcore::set_eth_core(rofl::cdpid(dpid)).add_vlan(vid);
+		roflibs::eth::cethcore::set_eth_core(rofl::cdpid(dpid)).add_vlan(vid);
 
 		return Py_None;
 	} catch (eEthCoreNotFound& e) {
@@ -158,7 +158,7 @@ ethcore_drop_vlan(PyObject *self, PyObject *args, PyObject* kw)
 			return NULL;
 		}
 
-		roflibs::ethernet::cethcore::set_eth_core(rofl::cdpid(dpid)).drop_vlan(vid);
+		roflibs::eth::cethcore::set_eth_core(rofl::cdpid(dpid)).drop_vlan(vid);
 
 		return Py_None;
 	} catch (eEthCoreNotFound& e) {
@@ -188,7 +188,7 @@ ethcore_has_vlan(PyObject *self, PyObject *args, PyObject* kw)
 			return NULL;
 		}
 
-		return Py_BuildValue("i", roflibs::ethernet::cethcore::set_eth_core(rofl::cdpid(dpid)).has_vlan(vid));
+		return Py_BuildValue("i", roflibs::eth::cethcore::set_eth_core(rofl::cdpid(dpid)).has_vlan(vid));
 	} catch (eEthCoreNotFound& e) {
 		PyErr_SetString(PyExc_RuntimeError, "dpid not found");
 	} catch (eVlanNotFound& e) {
@@ -223,7 +223,7 @@ ethcore_add_port(PyObject *self, PyObject *args, PyObject* kw)
 			return NULL;
 		}
 
-		roflibs::ethernet::cethcore::set_eth_core(rofl::cdpid(dpid)).set_vlan(vid).add_phy_port(portno, tagged);
+		roflibs::eth::cethcore::set_eth_core(rofl::cdpid(dpid)).set_vlan(vid).add_phy_port(portno, tagged);
 
 		return Py_None;
 	} catch (eEthCoreNotFound& e) {
@@ -258,7 +258,7 @@ ethcore_drop_port(PyObject *self, PyObject *args, PyObject* kw)
 			return NULL;
 		}
 
-		roflibs::ethernet::cethcore::set_eth_core(rofl::cdpid(dpid)).set_vlan(vid).drop_phy_port(portno);
+		roflibs::eth::cethcore::set_eth_core(rofl::cdpid(dpid)).set_vlan(vid).drop_phy_port(portno);
 
 		return Py_None;
 	} catch (eEthCoreNotFound& e) {
@@ -292,7 +292,7 @@ ethcore_has_port(PyObject *self, PyObject *args, PyObject* kw)
 			return NULL;
 		}
 
-		return Py_BuildValue("i", roflibs::ethernet::cethcore::set_eth_core(rofl::cdpid(dpid)).get_vlan(vid).has_phy_port(portno));
+		return Py_BuildValue("i", roflibs::eth::cethcore::set_eth_core(rofl::cdpid(dpid)).get_vlan(vid).has_phy_port(portno));
 	} catch (eEthCoreNotFound& e) {
 		PyErr_SetString(PyExc_RuntimeError, "dpid not found");
 	} catch (eVlanNotFound& e) {
