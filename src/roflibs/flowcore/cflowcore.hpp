@@ -15,11 +15,13 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/cdptid.h>
 #include <rofl/common/thread_helper.h>
+#include <rofl/common/openflow/cofflowmod.h>
 
-#include <roflibs/netlink/clogging.hpp>
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/flowcore/cflow.hpp"
 
 namespace roflibs {
-namespace flow {
+namespace svc {
 
 class eFlowCoreBase : public std::runtime_error {
 public:
@@ -114,13 +116,138 @@ private:
 	 *
 	 */
 	~cflowcore() {
-#if 0
-		while (not terms_in4.empty()) {
-			uint32_t term_id = terms_in4.begin()->first;
-			drop_gre_term_in4(term_id);
+		while (not flows.empty()) {
+			uint32_t flow_id = flows.begin()->first;
+			drop_svc_flow(flow_id);
 		}
-#endif
 	};
+
+public:
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_open(rofl::crofdpt& dpt) {};
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_close(rofl::crofdpt& dpt) {};
+
+
+public:
+
+	/**
+	 *
+	 */
+	std::vector<uint32_t>
+	get_svc_flows() const {
+		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_READ);
+		std::vector<uint32_t> termids;
+		for (std::map<uint32_t, cflow*>::const_iterator
+				it = flows.begin(); it != flows.end(); ++it) {
+			termids.push_back(it->first);
+		}
+		return termids;
+	};
+
+	/**
+	 *
+	 */
+	void
+	clear_svc_flows() {
+		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_WRITE);
+		for (std::map<uint32_t, cflow*>::iterator
+				it = flows.begin(); it != flows.end(); ++it) {
+			delete it->second;
+		}
+		flows.clear();
+	};
+
+	/**
+	 *
+	 */
+	cflow&
+	add_svc_flow(uint32_t flow_id, const rofl::openflow::cofflowmod& flowmod) {
+		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_WRITE);
+		if (flows.find(flow_id) != flows.end()) {
+			delete flows[flow_id];
+			flows.erase(flow_id);
+		}
+		flows[flow_id] = new cflow(dpid, flow_table_id, flowmod);
+		try {
+			if (STATE_ATTACHED == state) {
+				flows[flow_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+		return *(flows[flow_id]);
+	};
+
+	/**
+	 *
+	 */
+	cflow&
+	set_svc_flow(uint32_t flow_id, const rofl::openflow::cofflowmod& flowmod) {
+		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_WRITE);
+		if (flows.find(flow_id) == flows.end()) {
+			flows[flow_id] = new cflow(dpid, flow_table_id, flowmod);
+		}
+		try {
+			if (STATE_ATTACHED == state) {
+				flows[flow_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			}
+		} catch (rofl::eRofDptNotFound& e) {};
+		return *(flows[flow_id]);
+	};
+
+	/**
+	 *
+	 */
+	cflow&
+	set_svc_flow(uint32_t flow_id) {
+		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_READ);
+		if (flows.find(flow_id) == flows.end()) {
+			throw eFlowNotFound("cgrecore::get_svc_flow() flow_id not found");
+		}
+		return *(flows[flow_id]);
+	};
+
+	/**
+	 *
+	 */
+	const cflow&
+	get_svc_flow(uint32_t flow_id) const {
+		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_READ);
+		if (flows.find(flow_id) == flows.end()) {
+			throw eFlowNotFound("cgrecore::get_term_in4() flow_id not found");
+		}
+		return *(flows.at(flow_id));
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_svc_flow(uint32_t flow_id) {
+		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_WRITE);
+		if (flows.find(flow_id) == flows.end()) {
+			return;
+		}
+		delete flows[flow_id];
+		flows.erase(flow_id);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_svc_flow(uint32_t flow_id) const {
+		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_READ);
+		return (not (flows.find(flow_id) == flows.end()));
+	};
+
 
 private:
 
@@ -135,8 +262,8 @@ private:
 	rofl::cdpid						dpid;
 	uint8_t							flow_table_id;
 
-	//std::map<uint32_t, cgreterm_in4*>			terms_in4;
-	mutable rofl::PthreadRwLock					rwlock_in4;
+	std::map<uint32_t, cflow*>		flows;
+	mutable rofl::PthreadRwLock		rwlock;
 };
 
 }; // end of namespace flow

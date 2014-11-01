@@ -7,13 +7,16 @@ lib_LTLIBRARIES = libroflibs_flowcore.la
 
 libroflibs_flowcore_la_SOURCES = \
 	cflowcore.cpp \
-	cflowcore.hpp
+	cflowcore.hpp \
+	cflow.cpp \
+	cflow.hpp
 
 libroflibs_flowcore_la_LIBADD=
 
 library_includedir=$(includedir)/roflibs/flowcore
 library_include_HEADERS= \
-	cflowcore.hpp
+	cflowcore.hpp \
+	cflow.hpp
 
 AM_CPPFLAGS=-fPIC
 AM_CXXFLAGS=-I$(top_srcdir)/src
