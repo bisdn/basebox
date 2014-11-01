@@ -167,7 +167,7 @@ public:
 	 *
 	 */
 	cflow&
-	add_svc_flow(uint32_t flow_id, uint8_t flow_table_id,
+	add_svc_flow(uint32_t flow_id,
 			const rofl::openflow::cofflowmod& flowmod) {
 		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (flows.find(flow_id) != flows.end()) {

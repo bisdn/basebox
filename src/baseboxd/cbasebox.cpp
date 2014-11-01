@@ -507,10 +507,16 @@ cbasebox::handle_port_desc_stats_reply(
 		}
 	}
 
+	rofl::openflow::cofflowmod fm(dpt.get_version());
+	fm.set_table_id(table_id_svc_flows);
+	fm.set_priority(0);
+	fm.set_instructions().set_inst_goto_table().set_table_id(table_id_svc_flows+1);
+	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).add_svc_flow(0xff000000, fm);
+
 	/*
 	 * notify core instances
 	 */
-	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
