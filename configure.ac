@@ -1,4 +1,5 @@
-AC_INIT(vmcore, 0.6.0, rofl@bisdn.de, vmcore)
+AC_INIT(baseboxd, m4_esyscmd_s(cat VERSION), baseboxd-devel@roflibs.org, baseboxd, http://www.roflibs.org)
+
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_MACRO_DIR([m4])
 AC_GNU_SOURCE
