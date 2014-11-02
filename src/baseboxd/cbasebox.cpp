@@ -297,17 +297,14 @@ cbasebox::handle_packet_in(
 	try {
 		rofcore::logging::debug << "[cbasebox][handle_packet_in] pkt received: " << std::endl << msg.get_packet();
 
-		switch (msg.get_table_id()) {
-		case 1: {
+		if (msg.get_table_id() == table_id_eth_src) {
+
 			if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
 				roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 			}
-
-		} break;
-		case 2:
-		case 3:
-		case 4:
-		case 5: {
+		} else
+		if ((msg.get_table_id() >= table_id_eth_local) &&
+			(msg.get_table_id() <= table_id_ip_fwd)) {
 
 			if (not msg.get_match().get_eth_dst().is_multicast()) {
 				/* non-multicast frames are directly injected into a tapdev */
@@ -343,12 +340,8 @@ cbasebox::handle_packet_in(
 				}
 			}
 
-			roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
-		} break;
-		default: {
-
-		};
 		}
+
 
 	} catch (rofl::openflow::eOxmNotFound& e) {
 		// TODO: log error
