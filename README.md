@@ -28,8 +28,11 @@ of baseboxd.
 - [optional] if you want to run automatic tests (make check), libcunit and libcppunit are required.
 
 [1] http://www.roflibs.org/ 
+
 [2] https://github.com/bisdn/rofl-core 
+
 [3] http://www.hyperrealm.com/libconfig/ 
+
 [4] http://www.infradead.org/~tgr/libnl/ 
 
 # Installation
