@@ -42,6 +42,7 @@ cethcore::cethcore(const rofl::cdpid& dpid,
 		const rofl::openflow::cofport& ofport = *(it->second);
 		uint32_t portno = it->first;
 		if (not portdb.has_port_entry(dpid, ofport.get_port_no())) {
+			set_vlan(default_pvid).add_phy_port(portno, ofport.get_hwaddr(), /*tagged*/false);
 			continue;
 		}
 		const cportentry& port = portdb.get_port_entry(dpid, portno);
