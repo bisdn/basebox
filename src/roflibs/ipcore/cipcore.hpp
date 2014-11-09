@@ -139,7 +139,6 @@ private:
 		out_ofp_table_id(out_ofp_table_id),
 		config_file(DEFAULT_CONFIG_FILE) {};
 
-
 	/**
 	 *
 	 */

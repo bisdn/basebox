@@ -32,6 +32,9 @@ cethcore::cethcore(const rofl::cdpid& dpid,
 	const std::string dbname("file");
 	cportdb& portdb = cportdb::get_portdb(dbname);
 
+	default_pvid = portdb.get_default_pvid(dpid);
+	add_vlan(default_pvid);
+
 	// install physical ports
 	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
 			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {

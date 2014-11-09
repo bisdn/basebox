@@ -56,6 +56,7 @@ cportdb_file::parse_datapath(ethcore::cconfig& config, libconfig::Setting& datap
 	if (datapath.exists("default_pvid")) {
 		default_pvid = (int)datapath["default_pvid"];
 	}
+	set_default_pvid(dpid, default_pvid);
 
 	// extract all physical ports
 	const std::string phyports("ports");

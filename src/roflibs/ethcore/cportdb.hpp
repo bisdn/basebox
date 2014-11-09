@@ -266,6 +266,22 @@ public:
 public:
 
 	/**
+	 * @brief	Set default portvid assigned to a dpid
+	 */
+	void
+	set_default_pvid(const rofl::cdpid& dpid, uint16_t default_pvid) {
+		portvids[dpid] = default_pvid;
+	};
+
+	/**
+	 * @brief	return default pvid assigned to the port for untagged traffic
+	 */
+	uint16_t
+	get_default_pvid(const rofl::cdpid& dpid) {
+		return portvids[dpid];
+	};
+
+	/**
 	 * @brief	return default pvid assigned to the port for untagged traffic
 	 */
 	uint16_t
@@ -481,6 +497,7 @@ public:
 
 private:
 
+	std::map<rofl::cdpid, uint16_t>								portvids;
 	std::map<rofl::cdpid, std::map<uint32_t, cportentry> >		portentries;
 	mutable std::map<rofl::cdpid, std::set<uint32_t> >			portnames;
 	std::map<rofl::cdpid, std::map<std::string, cethentry> >	ethentries;

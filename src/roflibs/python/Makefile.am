@@ -16,6 +16,5 @@ library_include_HEADERS= \
 	cpython.hpp
 
 AM_CPPFLAGS=-fPIC 
-AM_CXXFLAGS=${PYTHON_INCLUDES} -I/usr/include/python2.7
-AM_LDFLAGS=-L/usr/lib64 -lpython2.7
-
+AM_CXXFLAGS=${PYTHON_INCLUDES} -I/usr/include/python2.7 -I$(top_srcdir)/src
+AM_LDFLAGS=-L/usr/lib64 -lpython2.7 -L../netlink -lroflibs_netlink 
