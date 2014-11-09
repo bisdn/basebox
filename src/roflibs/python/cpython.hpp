@@ -22,6 +22,8 @@ extern "C" {
 #include <map>
 #include <rofl/common/thread_helper.h>
 
+#include <roflibs/netlink/clogging.hpp>
+
 namespace roflibs {
 namespace python {
 

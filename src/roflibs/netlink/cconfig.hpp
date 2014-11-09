@@ -22,6 +22,8 @@ extern "C" {
 
 #include <libconfig.h++>
 
+#include <roflibs/netlink/clogging.hpp>
+
 using namespace libconfig;
 
 namespace ethcore {

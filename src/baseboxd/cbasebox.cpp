@@ -519,11 +519,11 @@ cbasebox::handle_port_desc_stats_reply(
 
 	//test_workflow(dpt);
 
-	std::cerr << "=====================================" << std::endl;
-	std::cerr << roflibs::eth::cethcore::get_eth_core(dpt.get_dpid());
-	std::cerr << roflibs::ip::cipcore::get_ip_core(dpt.get_dpid());
-	std::cerr << roflibs::gre::cgrecore::get_gre_core(dpt.get_dpid());
-	std::cerr << "=====================================" << std::endl;
+	rofcore::logging::debug << "=====================================" << std::endl;
+	rofcore::logging::debug << roflibs::eth::cethcore::get_eth_core(dpt.get_dpid());
+	rofcore::logging::debug << roflibs::ip::cipcore::get_ip_core(dpt.get_dpid());
+	rofcore::logging::debug << roflibs::gre::cgrecore::get_gre_core(dpt.get_dpid());
+	rofcore::logging::debug << "=====================================" << std::endl;
 }
 
 

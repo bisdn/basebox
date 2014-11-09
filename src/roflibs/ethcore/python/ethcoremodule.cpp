@@ -45,19 +45,13 @@ ethcore_get_switches(PyObject *self, PyObject *args)
 	try {
 		PyObject* py_switches = PyList_New(0);
 
-		std::cerr << "UUUUUU [1]" << std::endl;
-
 		std::set<uint64_t> dpids =
 				roflibs::eth::cethcore::get_eth_cores();
-
-		std::cerr << "UUUUUU [2] size:" << dpids.size() << std::endl;
 
 		for (std::set<uint64_t>::const_iterator
 				it = dpids.begin(); it != dpids.end(); ++it) {
 			PyList_Append(py_switches, Py_BuildValue("K", *it));
 		}
-
-		std::cerr << "UUUUUU [3]" << std::endl;
 
 		return py_switches;
 	} catch (eEthCoreNotFound& e) {

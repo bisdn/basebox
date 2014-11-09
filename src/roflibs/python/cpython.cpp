@@ -27,13 +27,13 @@ cpython::run(const std::string& script, const std::string& program_name)
 	this->script = script;
 	this->program_name = program_name;
 
-	std::cerr << "THREAD STARTING" << std::endl;
+	rofcore::logging::debug << "THREAD STARTING" << std::endl;
 
 	if ((rc = pthread_create(&tid, NULL, cpython::run_script, NULL)) < 0) {
 		throw ePythonFailed("cpython::run() unable to create thread for python interpreter");
 	}
 
-	std::cerr << "THREAD STARTED" << std::endl;
+	rofcore::logging::debug << "THREAD STARTED" << std::endl;
 }
 
 
@@ -46,14 +46,14 @@ cpython::stop()
 		return;
 	}
 
-	std::cerr << "THREAD STOPPING" << std::endl;
+	rofcore::logging::debug << "THREAD STOPPING" << std::endl;
 
 	pthread_cancel(tid);
 
 	int* retval = (int*)NULL;
 	pthread_join(tid, (void**)&retval);
 
-	std::cerr << "THREAD STOPPED" << std::endl;
+	rofcore::logging::debug << "THREAD STOPPED" << std::endl;
 
 	tid = 0;
 }

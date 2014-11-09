@@ -5,8 +5,8 @@
  *      Author: andreas
  */
 
-#ifndef CCONFIG_HPP_
-#define CCONFIG_HPP_
+#ifndef BCONFIG_HPP_
+#define BCONFIG_HPP_
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,9 +22,11 @@ extern "C" {
 
 #include <libconfig.h++>
 
+#include <roflibs/netlink/clogging.hpp>
+
 using namespace libconfig;
 
-namespace ethcore {
+namespace basebox {
 
 class cconfig : public Config {
 private:

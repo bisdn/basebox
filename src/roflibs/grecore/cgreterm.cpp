@@ -616,7 +616,5 @@ cgreterm::execute(
 
 	execvpe(executable.c_str(), (char*const*)&vctargv[0], (char*const*)&vctenvp[0]);
 
-	std::cerr << "HAEHAEHAEHAEH => executable: " << executable << std::endl;
-
 	exit(1); // just in case execvpe fails
 }

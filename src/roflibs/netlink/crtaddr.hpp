@@ -355,7 +355,6 @@ public:
 			local(local) {};
 		bool
 		operator() (const std::pair<uint16_t, crtaddr_in4>& p) {
-			std::cerr << "crtaddr_find_by_local_addr => local: " << local << " p.local: " << p.second.local << std::endl;
 			return (local == p.second.local);
 		};
 	};
@@ -537,7 +536,6 @@ public:
 			local(local) {};
 		bool
 		operator() (const std::pair<uint16_t, crtaddr_in6>& p) {
-			std::cerr << "crtaddr_find_by_local_addr => local: " << local << " p.local: " << p.second.local << std::endl;
 			return (local == p.second.local);
 		};
 	};

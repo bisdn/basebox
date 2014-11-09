@@ -7,7 +7,7 @@
 
 #include "cconfig.hpp"
 
-using namespace ethcore;
+using namespace basebox;
 
 std::string const cconfig::CONFPATH = std::string("./ethcored.conf");
 
@@ -30,7 +30,7 @@ cconfig::open(std::string const& confpath)
 		this->confpath = confpath;
 		Config::readFile(confpath.c_str());
 	} catch (FileIOException& e) {
-		std::cerr << "[baseboxd][config] unable to find config file \"" << confpath << "\", continuing with defaults." << std::endl;
+		rofcore::logging::error << "[baseboxd][config] unable to find config file \"" << confpath << "\", continuing with defaults." << std::endl;
 	}
 }
 

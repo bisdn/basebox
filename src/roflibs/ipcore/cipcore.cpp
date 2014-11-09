@@ -378,7 +378,7 @@ cipcore::route_in6_created(uint8_t table_id, unsigned int rtindex)
 		// ignore local route table and unspecified table_id
 		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-			std::cerr << "ipcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			rofcore::logging::debug << "ipcore::route_created() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 			return;
 		}
 
@@ -432,7 +432,7 @@ cipcore::route_in6_deleted(uint8_t table_id, unsigned int rtindex)
 		// ignore local route table and unspecified table_id
 		if ((RT_TABLE_LOCAL/*255*/ == table_id) || (RT_TABLE_UNSPEC/*0*/ == table_id)) {
 		//if ((RT_TABLE_UNSPEC/*0*/ == table_id)) {
-			std::cerr << "ipcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
+			rofcore::logging::debug << "ipcore::route_deleted() => suppressing table_id=" << (unsigned int)table_id << std::endl;
 			return;
 		}
 
