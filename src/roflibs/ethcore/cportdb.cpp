@@ -11,6 +11,7 @@
 using namespace roflibs::eth;
 
 /*static*/std::map<std::string, cportdb*> cportdb::portdbs;
+/*static*/const uint16_t cportdb::DEFAULT_PVID = 1;
 
 /*static*/
 cportdb&

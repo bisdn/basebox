@@ -278,6 +278,9 @@ public:
 	 */
 	uint16_t
 	get_default_pvid(const rofl::cdpid& dpid) {
+		if (portvids.find(dpid) == portvids.end()) {
+			portvids[dpid] = cportdb::DEFAULT_PVID;
+		}
 		return portvids[dpid];
 	};
 
@@ -497,6 +500,7 @@ public:
 
 private:
 
+	static const uint16_t										DEFAULT_PVID;
 	std::map<rofl::cdpid, uint16_t>								portvids;
 	std::map<rofl::cdpid, std::map<uint32_t, cportentry> >		portentries;
 	mutable std::map<rofl::cdpid, std::set<uint32_t> >			portnames;
