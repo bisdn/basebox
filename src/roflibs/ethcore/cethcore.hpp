@@ -30,6 +30,10 @@ class eEthCoreNotFound : public eEthCoreBase {
 public:
 	eEthCoreNotFound(const std::string& __arg) : eEthCoreBase(__arg) {};
 };
+class eEthCoreExists : public eEthCoreBase {
+public:
+	eEthCoreExists(const std::string& __arg) : eEthCoreBase(__arg) {};
+};
 
 
 class cethcore : public rofcore::cnetlink_common_observer {
@@ -54,7 +58,7 @@ public:
 		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
 			delete cethcore::ethcores[dpid];
 		}
-		new cethcore(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
+		cethcore::ethcores[dpid] = new cethcore(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
 		dpids.insert(dpid.get_uint64_t());
 		return *(cethcore::ethcores[dpid]);
 	};
@@ -68,7 +72,7 @@ public:
 			uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
 			uint16_t default_pvid = DEFAULT_PVID) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
-			new cethcore(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
+			cethcore::ethcores[dpid] = new cethcore(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
 			dpids.insert(dpid.get_uint64_t());
 		}
 		return *(cethcore::ethcores[dpid]);
@@ -80,7 +84,7 @@ public:
 	static cethcore&
 	set_eth_core(const rofl::cdpid& dpid) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
-			throw eEthCoreNotFound("cethcore::get_vtable() dpid not found");
+			throw eEthCoreNotFound("cethcore::set_eth_core() dpid not found");
 		}
 		return *(cethcore::ethcores[dpid]);
 	};
@@ -91,7 +95,7 @@ public:
 	static const cethcore&
 	get_eth_core(const rofl::cdpid& dpid) {
 		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
-			throw eEthCoreNotFound("cethcore::get_vtable() dpid not found");
+			throw eEthCoreNotFound("cethcore::get_eth_core() dpid not found");
 		}
 		return *(cethcore::ethcores.at(dpid));
 	};
@@ -106,6 +110,7 @@ public:
 		}
 		dpids.erase(dpid.get_uint64_t());
 		delete cethcore::ethcores[dpid];
+		cethcore::ethcores.erase(dpid);
 	};
 
 	/**
@@ -330,6 +335,26 @@ public:
 
 	virtual void
 	link_deleted(unsigned int ifindex);
+
+private:
+
+	/**
+	 *
+	 */
+	void
+	add_eth_endpnts();
+
+	/**
+	 *
+	 */
+	void
+	add_phy_ports();
+
+	/**
+	 *
+	 */
+	void
+	clear_phy_ports();
 };
 
 }; // end of namespace ethernet

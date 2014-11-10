@@ -17,61 +17,106 @@ cethcore::cethcore(const rofl::cdpid& dpid,
 		uint8_t table_id_eth_in, uint8_t table_id_eth_src,
 		uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
 		uint16_t default_pvid) :
-	state(STATE_IDLE), dpid(dpid), default_pvid(default_pvid),
-	table_id_eth_in(table_id_eth_in),
-	table_id_eth_src(table_id_eth_src),
-	table_id_eth_local(table_id_eth_local),
-	table_id_eth_dst(table_id_eth_dst) {
+			state(STATE_IDLE), dpid(dpid), default_pvid(default_pvid),
+			table_id_eth_in(table_id_eth_in),
+			table_id_eth_src(table_id_eth_src),
+			table_id_eth_local(table_id_eth_local),
+			table_id_eth_dst(table_id_eth_dst) {
+
 	if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
-		throw eVlanExists("cethcore::cethcore() dpid already exists");
-	}
-	cethcore::ethcores[dpid] = this;
-
-	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
-
-	const std::string dbname("file");
-	cportdb& portdb = cportdb::get_portdb(dbname);
-
-	default_pvid = portdb.get_default_pvid(dpid);
-	add_vlan(default_pvid);
-
-	// install physical ports
-	for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
-			it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
-
-		const rofl::openflow::cofport& ofport = *(it->second);
-		uint32_t portno = it->first;
-		if (not portdb.has_port_entry(dpid, ofport.get_port_no())) {
-			set_vlan(default_pvid).add_phy_port(portno, ofport.get_hwaddr(), /*tagged*/false);
-			continue;
-		}
-		const cportentry& port = portdb.get_port_entry(dpid, portno);
-
-		// create or update existing vlan for port's default vid
-		set_vlan(port.get_port_vid()).add_phy_port(portno, ofport.get_hwaddr(), /*tagged=*/false);
-
-		// add all tagged memberships of this port to the appropriate vlan
-		for (std::set<uint16_t>::const_iterator
-				jt = port.get_tagged_vids().begin(); jt != port.get_tagged_vids().end(); ++jt) {
-			set_vlan(*jt).set_phy_port(portno, ofport.get_hwaddr(), /*tagged=*/true);
-		}
+		throw eEthCoreExists("cethcore::cethcore() dpid already exists");
 	}
 
-	// install ethernet endpoints
-	for (std::set<std::string>::const_iterator
-			it = portdb.get_eth_entries(dpid).begin(); it != portdb.get_eth_entries(dpid).end(); ++it) {
-		const cethentry& eth = portdb.get_eth_entry(dpid, *it);
-
-		set_vlan(eth.get_port_vid()).add_eth_endpnt(eth.get_hwaddr(), /*tagged=*/false);
-	}
+	// deploy pre-defined ethernet endpoints
+	add_eth_endpnts();
 }
 
 
 cethcore::~cethcore() {
-	if (STATE_ATTACHED == state) {
-		// TODO
+	try {
+		if (STATE_ATTACHED == state) {
+			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+		}
+	} catch (rofl::eRofDptNotFound& e) {}
+}
+
+
+void
+cethcore::add_eth_endpnts()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+
+		cportdb& portdb = cportdb::get_portdb(std::string("file"));
+
+		default_pvid = portdb.get_default_pvid(dpid);
+		add_vlan(default_pvid);
+
+		// install ethernet endpoints
+		for (std::set<std::string>::const_iterator
+				it = portdb.get_eth_entries(dpid).begin(); it != portdb.get_eth_entries(dpid).end(); ++it) {
+			const cethentry& eth = portdb.get_eth_entry(dpid, *it);
+
+			set_vlan(eth.get_port_vid()).add_eth_endpnt(eth.get_hwaddr(), /*tagged=*/false);
+		}
+
+	} catch (rofl::eRofDptNotFound& e) {
+
 	}
-	cethcore::ethcores.erase(dpid);
+}
+
+
+void
+cethcore::add_phy_ports()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+
+		cportdb& portdb = cportdb::get_portdb(std::string("file"));
+
+		// install physical ports
+		for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
+				it = dpt.get_ports().get_ports().begin(); it != dpt.get_ports().get_ports().end(); ++it) {
+
+			const rofl::openflow::cofport& ofport = *(it->second);
+			uint32_t portno = it->first;
+			if (not portdb.has_port_entry(dpid, ofport.get_port_no())) {
+				set_vlan(default_pvid).add_phy_port(portno, ofport.get_hwaddr(), /*tagged*/false);
+				continue;
+			}
+			const cportentry& port = portdb.get_port_entry(dpid, portno);
+
+			// create or update existing vlan for port's default vid
+			set_vlan(port.get_port_vid()).add_phy_port(portno, ofport.get_hwaddr(), /*tagged=*/false);
+
+			// add all tagged memberships of this port to the appropriate vlan
+			for (std::set<uint16_t>::const_iterator
+					jt = port.get_tagged_vids().begin(); jt != port.get_tagged_vids().end(); ++jt) {
+				set_vlan(*jt).set_phy_port(portno, ofport.get_hwaddr(), /*tagged=*/true);
+			}
+		}
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
+}
+
+
+void
+cethcore::clear_phy_ports()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+
+		cportdb& portdb = cportdb::get_portdb(std::string("file"));
+
+		// install physical ports
+		for (std::map<uint16_t, cvlan>::iterator
+				it = vlans.begin(); it != vlans.end(); ++it) {
+			it->second.clear_phy_ports();
+		}
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
 }
 
 
@@ -79,6 +124,9 @@ void
 cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
+		// deploy physical port vlan memberships
+		add_phy_ports();
+
 		state = STATE_ATTACHED;
 
 		for (std::map<uint16_t, cvlan>::iterator
@@ -138,6 +186,9 @@ void
 cethcore::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
+		// remove physical ports
+		clear_phy_ports();
+
 		state = STATE_DETACHED;
 
 		for (std::map<uint16_t, cvlan>::iterator

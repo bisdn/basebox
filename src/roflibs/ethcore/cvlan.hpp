@@ -112,6 +112,18 @@ public:
 	/**
 	 *
 	 */
+	void
+	clear_phy_ports() {
+		std::vector<uint32_t> phy_ports = get_phy_ports();
+		for (std::vector<uint32_t>::const_iterator
+				it = phy_ports.begin(); it != phy_ports.end(); ++it) {
+			drop_phy_port(*it);
+		}
+	};
+
+	/**
+	 *
+	 */
 	std::vector<uint32_t>
 	get_phy_ports() const {
 		rofl::RwLock rwlock(phyports_rwlock, rofl::RwLock::RWLOCK_READ);
