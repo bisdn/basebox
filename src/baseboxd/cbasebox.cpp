@@ -172,9 +172,7 @@ cbasebox::run(int argc, char** argv)
 	cbasebox::keep_on_running = true;
 	while (cbasebox::keep_on_running) {
 		try {
-			/*
-			 * start main loop, does not return
-			 */
+			// start main loop, does not return
 			rofl::cioloop::run();
 
 		} catch (std::runtime_error& e) {
