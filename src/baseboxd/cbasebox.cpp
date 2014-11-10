@@ -270,10 +270,10 @@ void
 cbasebox::handle_dpt_close(
 		rofl::crofdpt& dpt) {
 
-	clear_tap_devs(dpt.get_dpid());
-
 	// call external scripting hook
 	hook_dpt_detach(dpt);
+
+	clear_tap_devs(dpt.get_dpid());
 
 	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
