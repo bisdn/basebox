@@ -256,12 +256,16 @@ void
 cbasebox::handle_dpt_open(
 		rofl::crofdpt& dpt) {
 
+	if (rofl::openflow13::OFP_VERSION < dpt.get_version()) {
+		rofcore::logging::error << "[cbasebox][handle_dpt_open] datapath "
+				<< "attached with invalid OpenFlow protocol version: " << (int)dpt.get_version() << std::endl;
+		return;
+	}
+
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
-	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 
-	// call external scripting hook
-	hook_dpt_attach(dpt);
+	dpt.send_features_request(rofl::cauxid(0));
 }
 
 
@@ -269,6 +273,12 @@ cbasebox::handle_dpt_open(
 void
 cbasebox::handle_dpt_close(
 		rofl::crofdpt& dpt) {
+
+	if (rofl::openflow13::OFP_VERSION < dpt.get_version()) {
+		rofcore::logging::error << "[cbasebox][handle_dpt_close] datapath "
+				<< "detached with invalid OpenFlow protocol version: " << (int)dpt.get_version() << std::endl;
+		return;
+	}
 
 	// call external scripting hook
 	hook_dpt_detach(dpt);
@@ -286,6 +296,22 @@ cbasebox::handle_dpt_close(
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in4();
 	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in6();
 #endif
+}
+
+
+
+void
+cbasebox::handle_features_reply(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_features_reply& msg)
+{
+	if (msg.get_n_tables() < (table_id_eth_dst + 1)) {
+		rofcore::logging::error << "[cbasebox][handle_features_reply] datapath does not support "
+				<< "sufficient number of tables in pipeline, need " << (int)(table_id_eth_dst+1) << ", found "
+				<< msg.get_n_tables() << std::endl;
+		return;
+	}
+
+	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 }
 
 
@@ -524,6 +550,10 @@ cbasebox::handle_port_desc_stats_reply(
 	rofcore::logging::debug << roflibs::ip::cipcore::get_ip_core(dpt.get_dpid());
 	rofcore::logging::debug << roflibs::gre::cgrecore::get_gre_core(dpt.get_dpid());
 	rofcore::logging::debug << "=====================================" << std::endl;
+
+
+	// call external scripting hook
+	hook_dpt_attach(dpt);
 }
 
 
