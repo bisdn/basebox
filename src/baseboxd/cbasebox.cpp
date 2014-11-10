@@ -409,43 +409,18 @@ cbasebox::handle_port_status(
 		switch (msg.get_reason()) {
 		case rofl::openflow::OFPPR_ADD: {
 			dpt.set_ports().set_port(msg.get_port().get_port_no()) = msg.get_port();
-			hook_port_up(dpt, msg.get_port().get_name());
-
-#if 0
-			if (not has_tap_dev(port.get_name())) {
-				add_tap_dev(port.get_name(), 0, port.get_hwaddr());
-			}
-
-			if (port.link_state_is_link_down() || port.config_is_port_down()) {
-				set_tap_dev(port.get_name()).disable_interface();
-			} else {
-				set_tap_dev(port.get_name()).enable_interface();
-			}
-#endif
+			// shall we do this? port-hooks refer refer to ethernet endpoints, not physical ports
+			//hook_port_up(dpt, msg.get_port().get_name());
 
 		} break;
 		case rofl::openflow::OFPPR_MODIFY: {
 			dpt.set_ports().set_port(msg.get_port().get_port_no()) = msg.get_port();
 
-#if 0
-			if (not has_tap_dev(port.get_name())) {
-				add_tap_dev(port.get_name(), 0, port.get_hwaddr());
-			}
-
-			if (port.link_state_is_link_down() || port.config_is_port_down()) {
-				set_tap_dev(port.get_name()).disable_interface();
-			} else {
-				set_tap_dev(port.get_name()).enable_interface();
-			}
-#endif
-
 		} break;
 		case rofl::openflow::OFPPR_DELETE: {
 			dpt.set_ports().drop_port(msg.get_port().get_name());
-			hook_port_down(dpt, msg.get_port().get_name());
-#if 0
-			drop_tap_dev(port.get_name());
-#endif
+			// shall we do this? port-hooks refer to ethernet endpoints, not physical ports
+			//hook_port_down(dpt, msg.get_port().get_name());
 
 		} break;
 		default: {
