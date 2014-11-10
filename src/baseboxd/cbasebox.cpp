@@ -434,8 +434,6 @@ cbasebox::handle_port_status(
 
 	} catch (rofl::openflow::ePortNotFound& e) {
 		// TODO: log error
-	} catch (rofcore::eNetDevCritical& e) {
-		rofcore::logging::debug << "[cbasebox] new port created: unable to create tap device: " << msg.get_port().get_name() << std::endl;
 	}
 }
 
