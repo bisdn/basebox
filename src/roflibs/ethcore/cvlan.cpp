@@ -236,6 +236,10 @@ cvlan::update_group_entry_buckets(uint16_t command)
 			return;
 		}
 
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == rofl::crofdpt::get_dpt(dpid).get_version()) {
+			return;
+		}
+
 		// update flooding group entry
 		rofl::openflow::cofgroupmod gm(rofl::crofdpt::get_dpt(dpid).get_version());
 		gm.set_command(command);
