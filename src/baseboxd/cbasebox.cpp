@@ -307,7 +307,7 @@ cbasebox::handle_features_reply(
 	if (msg.get_n_tables() < (table_id_eth_dst + 1)) {
 		rofcore::logging::error << "[cbasebox][handle_features_reply] datapath does not support "
 				<< "sufficient number of tables in pipeline, need " << (int)(table_id_eth_dst+1) << ", found "
-				<< msg.get_n_tables() << std::endl;
+				<< (int)msg.get_n_tables() << std::endl;
 		return;
 	}
 
