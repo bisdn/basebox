@@ -147,6 +147,7 @@ protected:
 	static const int 		DEFAULT_IDLE_TIMEOUT = 15; 		// seconds
 	int 					idle_timeout;
 
+	std::string				gre_portname;
 	uint32_t				gre_portno; 					// portno of ethernet port
 	uint32_t				gre_key;							// GRE key according to IETF RFC 2890
 	static const uint8_t	GRE_IP_PROTO = 47;

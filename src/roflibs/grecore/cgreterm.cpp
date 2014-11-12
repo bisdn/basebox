@@ -419,6 +419,7 @@ cgreterm_in4::hook_init()
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
@@ -432,7 +433,7 @@ cgreterm_in4::hook_init()
 		envp.push_back(s_bridge.str());
 
 		std::stringstream s_iface;
-		s_iface << "IFACE=" << dpt.get_ports().get_port(gre_portno).get_name();
+		s_iface << "IFACE=" << gre_portname;
 		envp.push_back(s_iface.str());
 
 		std::stringstream s_greiface;
@@ -458,7 +459,9 @@ cgreterm_in4::hook_init()
 		cgreterm::execute(cgreterm::script_path_init, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-
+		rofcore::logging::error << "[cgreterm_in4][hook_init] datapath not found, dpid: " << dpid.str() << std::endl;
+	} catch (rofl::openflow::ePortNotFound& e) {
+		rofcore::logging::error << "[cgreterm_in4][hook_init] unable to find portno: " << (unsigned int)gre_portno << std::endl;
 	}
 }
 
@@ -481,7 +484,7 @@ cgreterm_in4::hook_term()
 		envp.push_back(s_bridge.str());
 
 		std::stringstream s_iface;
-		s_iface << "IFACE=" << dpt.get_ports().get_port(gre_portno).get_name();
+		s_iface << "IFACE=" << gre_portname;
 		envp.push_back(s_iface.str());
 
 		std::stringstream s_greiface;
@@ -491,7 +494,7 @@ cgreterm_in4::hook_term()
 		cgreterm::execute(cgreterm::script_path_term, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-
+		rofcore::logging::error << "[cgreterm_in4][hook_term] datapath not found, dpid: " << dpid.str() << std::endl;
 	}
 }
 
@@ -501,6 +504,7 @@ cgreterm_in6::hook_init()
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
@@ -514,7 +518,7 @@ cgreterm_in6::hook_init()
 		envp.push_back(s_bridge.str());
 
 		std::stringstream s_iface;
-		s_iface << "IFACE=" << dpt.get_ports().get_port(gre_portno).get_name();
+		s_iface << "IFACE=" << gre_portname;
 		envp.push_back(s_iface.str());
 
 		std::stringstream s_greiface;
@@ -540,7 +544,9 @@ cgreterm_in6::hook_init()
 		cgreterm::execute(cgreterm::script_path_init, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-
+		rofcore::logging::error << "[cgreterm_in6][hook_init] datapath not found, dpid: " << dpid.str() << std::endl;
+	} catch (rofl::openflow::ePortNotFound& e) {
+		rofcore::logging::error << "[cgreterm_in6][hook_init] unable to find portno: " << (unsigned int)gre_portno << std::endl;
 	}
 }
 
@@ -563,7 +569,7 @@ cgreterm_in6::hook_term()
 		envp.push_back(s_bridge.str());
 
 		std::stringstream s_iface;
-		s_iface << "IFACE=" << dpt.get_ports().get_port(gre_portno).get_name();
+		s_iface << "IFACE=" << gre_portname;
 		envp.push_back(s_iface.str());
 
 		std::stringstream s_greiface;
@@ -573,7 +579,7 @@ cgreterm_in6::hook_term()
 		cgreterm::execute(cgreterm::script_path_term, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-
+		rofcore::logging::error << "[cgreterm_in6][hook_term] datapath not found, dpid: " << dpid.str() << std::endl;
 	}
 }
 
