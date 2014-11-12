@@ -297,6 +297,8 @@ cethcore::handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, ro
 void
 cethcore::link_created(unsigned int ifindex)
 {
+	return;
+
 	std::string devname;
 	uint16_t vid = 1;
 	bool tagged = false;
@@ -348,6 +350,8 @@ cethcore::link_created(unsigned int ifindex)
 void
 cethcore::link_updated(unsigned int ifindex)
 {
+	return;
+
 	std::string devname;
 	uint16_t vid = 1;
 	bool tagged = false;
@@ -399,6 +403,8 @@ cethcore::link_updated(unsigned int ifindex)
 void
 cethcore::link_deleted(unsigned int ifindex)
 {
+	return;
+
 	std::string devname;
 	uint16_t vid = 1;
 	bool tagged = false;

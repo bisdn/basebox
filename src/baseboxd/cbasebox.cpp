@@ -191,6 +191,7 @@ void
 cbasebox::stop()
 {
 	cbasebox::keep_on_running = false;
+	rofl::cioloop::stop();
 }
 
 
