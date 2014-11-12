@@ -383,6 +383,23 @@ cbasebox::handle_packet_in(
 void
 cbasebox::handle_flow_removed(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {
+
+
+	if (msg.get_table_id() == table_id_eth_src) {
+
+		if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
+		}
+	} else
+	if ((msg.get_table_id() >= table_id_ip_local) &&
+		(msg.get_table_id() <= table_id_ip_fwd)) {
+		if (roflibs::ip::cipcore::has_ip_core(dpt.get_dpid())) {
+			roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
+		}
+
+	}
+
+#if 0
 	switch (msg.get_table_id()) {
 	case 3:
 	case 4: {
@@ -394,6 +411,7 @@ cbasebox::handle_flow_removed(
 		}
 	};
 	}
+#endif
 }
 
 
