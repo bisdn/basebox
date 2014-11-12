@@ -52,10 +52,10 @@ cgtpcore::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_match().set_ip_proto(rofl::fudpframe::UDP_IP_PROTO);
 		fm.set_match().set_udp_dst(DEFAULT_GTPU_PORT);
 		fm.set_instructions().drop_inst_goto_table();
-		fm.set_instructions().add_inst_apply_actions().set_actions().
-				set_action_output(rofl::cindex(0)).set_max_len(1518);
 		fm.set_instructions().set_inst_apply_actions().set_actions().
-				set_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+		fm.set_instructions().add_inst_apply_actions().set_actions().
+				set_action_output(rofl::cindex(0)).set_max_len(1526);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		// install GTP UDP dst rule in GTP local-stage-table (ActionOutput Controller) IPv6
@@ -65,10 +65,10 @@ cgtpcore::handle_dpt_open(rofl::crofdpt& dpt)
 		fm.set_match().set_ip_proto(rofl::fudpframe::UDP_IP_PROTO);
 		fm.set_match().set_udp_dst(DEFAULT_GTPU_PORT);
 		fm.set_instructions().drop_inst_goto_table();
-		fm.set_instructions().add_inst_apply_actions().set_actions().
-				set_action_output(rofl::cindex(0)).set_max_len(1518);
 		fm.set_instructions().set_inst_apply_actions().set_actions().
-				set_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+		fm.set_instructions().add_inst_apply_actions().set_actions().
+				set_action_output(rofl::cindex(0)).set_max_len(1526);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		// relays and termination points are handled by the relaying and termination application, not here!

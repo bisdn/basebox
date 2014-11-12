@@ -271,7 +271,9 @@ cvlan::update_group_entry_buckets(uint16_t command)
 						add_action_pop_vlan(index++);
 			}
 			gm.set_buckets().set_bucket(bucket_id).set_actions().
-						add_action_output(index++).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+						add_action_output(index).set_max_len(1526);
+			gm.set_buckets().set_bucket(bucket_id).set_actions().
+						set_action_output(index++).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 			bucket_id++;
 		}
 #endif

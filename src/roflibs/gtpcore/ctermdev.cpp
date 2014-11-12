@@ -32,7 +32,7 @@ ctermdev::handle_dpt_open(rofl::crofdpt& dpt, const rofcore::cprefix_in4& prefix
 		fe.set_instructions().set_inst_apply_actions().set_actions().
 				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 		fe.set_instructions().set_inst_apply_actions().set_actions().
-				set_action_output(rofl::cindex(0)).set_max_len(1518);
+				set_action_output(rofl::cindex(0)).set_max_len(1526);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
@@ -108,7 +108,7 @@ ctermdev::handle_dpt_open(rofl::crofdpt& dpt, const rofcore::cprefix_in6& prefix
 		fe.set_instructions().set_inst_apply_actions().set_actions().
 				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 		fe.set_instructions().set_inst_apply_actions().set_actions().
-				set_action_output(rofl::cindex(0)).set_max_len(1518);
+				set_action_output(rofl::cindex(0)).set_max_len(1526);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 

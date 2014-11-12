@@ -118,7 +118,7 @@ cipcore::set_forwarding(bool forward)
 		fed.set_instructions().set_inst_apply_actions().set_actions().
 				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 		fed.set_instructions().set_inst_apply_actions().set_actions().
-				set_action_output(rofl::cindex(0)).set_max_len(1518);
+				set_action_output(rofl::cindex(0)).set_max_len(1526);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fed);
 
 	} catch (rofl::eSocketTxAgain& e) {
