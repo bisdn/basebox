@@ -176,7 +176,6 @@ public:
 				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
-		hook_term();
 	};
 
 	/**
@@ -186,7 +185,6 @@ public:
 			const rofl::caddress_in4& laddr, const rofl::caddress_in4& raddr, uint32_t gre_portno, uint32_t gre_key) :
 		cgreterm(dpid, eth_ofp_table_id, gre_ofp_table_id, ip_fwd_ofp_table_id, gre_portno, gre_key),
 		laddr(laddr), raddr(raddr) {
-		hook_init();
 	};
 
 	/**
@@ -238,6 +236,7 @@ public:
 	handle_dpt_open(rofl::crofdpt& dpt) {
 		handle_dpt_open_egress(dpt);
 		handle_dpt_open_ingress(dpt);
+		hook_init();
 	};
 
 	/**
@@ -245,6 +244,7 @@ public:
 	 */
 	void
 	handle_dpt_close(rofl::crofdpt& dpt) {
+		hook_term();
 		handle_dpt_close_egress(dpt);
 		handle_dpt_close_ingress(dpt);
 	};
@@ -322,7 +322,6 @@ public:
 				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
-		hook_term();
 	};
 
 	/**
@@ -332,7 +331,6 @@ public:
 			const rofl::caddress_in6& laddr, const rofl::caddress_in6& raddr, uint32_t gre_portno, uint32_t gre_key) :
 		cgreterm(dpid, eth_ofp_table_id, gre_ofp_table_id, ip_fwd_ofp_table_id, gre_portno, gre_key),
 		laddr(laddr), raddr(raddr) {
-		hook_init();
 	};
 
 
@@ -385,6 +383,7 @@ public:
 	handle_dpt_open(rofl::crofdpt& dpt) {
 		handle_dpt_open_egress(dpt);
 		handle_dpt_open_ingress(dpt);
+		hook_init();
 	};
 
 	/**
@@ -392,6 +391,7 @@ public:
 	 */
 	void
 	handle_dpt_close(rofl::crofdpt& dpt) {
+		hook_term();
 		handle_dpt_close_egress(dpt);
 		handle_dpt_close_ingress(dpt);
 	};
