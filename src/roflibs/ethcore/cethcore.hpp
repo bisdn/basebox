@@ -324,17 +324,6 @@ private:
 	static std::set<uint64_t> 					dpids;
 	static std::map<rofl::cdpid, cethcore*> 	ethcores;
 
-public:
-
-	// links
-	virtual void
-	link_created(unsigned int ifindex);
-
-	virtual void
-	link_updated(unsigned int ifindex);
-
-	virtual void
-	link_deleted(unsigned int ifindex);
 
 private:
 
