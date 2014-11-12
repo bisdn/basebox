@@ -160,6 +160,17 @@ public:
 
 public:
 
+	/**
+	 *
+	 */
+	cstpv&
+	add_rpc(const crpcost& cost) {
+		rpcost_D += cost;
+		return *this;
+	};
+
+public:
+
 	friend std::ostream&
 	operator<< (std::ostream& os, const cstpv& stpv) {
 		os << "<cstpv "

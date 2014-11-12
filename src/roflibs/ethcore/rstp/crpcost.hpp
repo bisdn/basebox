@@ -20,6 +20,21 @@ namespace rstp {
 class crpcost {
 public:
 
+	// recommended values according to IEEE 802.1D-2004
+	enum port_path_cost_t {
+		PORT_PATH_COST_100K = 200000000,
+		PORT_PATH_COST_1M 	= 20000000,
+		PORT_PATH_COST_10M 	= 2000000,
+		PORT_PATH_COST_100M = 200000,
+		PORT_PATH_COST_1G	= 20000,
+		PORT_PATH_COST_10G	= 2000,
+		PORT_PATH_COST_100G	= 200,
+		PORT_PATH_COST_1T	= 20,
+		PORT_PATH_COST_10T	= 2,
+	};
+
+public:
+
 	/**
 	 *
 	 */
@@ -89,6 +104,16 @@ public:
 	operator+= (const crpcost& rpcost) {
 		rpc += rpcost.rpc;
 		return *this;
+	};
+
+	/**
+	 *
+	 */
+	crpcost
+	operator+ (const crpcost& rpcost) {
+		crpcost cost(this->rpc);
+		cost += rpcost.rpc;
+		return cost;
 	};
 
 public:
