@@ -202,6 +202,8 @@ cvlan::handle_port_status(
 		uint32_t portno = msg.get_port().get_port_no();
 
 		if (not has_phy_port(portno)) {
+			rofcore::logging::debug << "[cvlan][handle_port_status] no entry for portno:" << (unsigned int)portno
+					<< " found in portdb" << std::endl << msg;
 			return;
 		}
 
