@@ -182,6 +182,7 @@ cipcore::addr_in4_created(unsigned int ifindex, uint16_t adindex)
 {
 	try {
 		if (not has_link(ifindex)) {
+			rofcore::logging::debug << "[cipcore][addr_in4_created] ignoring ifindex:" << ifindex << std::endl << *this;
 			return; // ignore address events for unknown interfaces
 		}
 
@@ -201,6 +202,7 @@ cipcore::addr_in4_updated(unsigned int ifindex, uint16_t adindex)
 	try {
 
 		if (not has_link(ifindex)) {
+			rofcore::logging::debug << "[cipcore][addr_in4_updated] ignoring ifindex:" << ifindex << std::endl << *this;
 			return; // ignore address events for unknown interfaces
 		}
 
@@ -220,6 +222,7 @@ cipcore::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
 	try {
 
 		if (not has_link(ifindex)) {
+			rofcore::logging::debug << "[cipcore][addr_in4_deleted] ignoring ifindex:" << ifindex << std::endl << *this;
 			return; // ignore address events for unknown interfaces
 		}
 
@@ -239,6 +242,7 @@ cipcore::addr_in6_created(unsigned int ifindex, uint16_t adindex)
 	try {
 
 		if (not has_link(ifindex)) {
+			rofcore::logging::debug << "[cipcore][addr_in6_created] ignoring ifindex:" << ifindex << std::endl << *this;
 			return; // ignore address events for unknown interfaces
 		}
 
@@ -258,6 +262,7 @@ cipcore::addr_in6_updated(unsigned int ifindex, uint16_t adindex)
 	try {
 
 		if (not has_link(ifindex)) {
+			rofcore::logging::debug << "[cipcore][addr_in6_updated] ignoring ifindex:" << ifindex << std::endl << *this;
 			return; // ignore address events for unknown interfaces
 		}
 
@@ -277,6 +282,7 @@ cipcore::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 	try {
 
 		if (not has_link(ifindex)) {
+			rofcore::logging::debug << "[cipcore][addr_in6_deleted] ignoring ifindex:" << ifindex << std::endl << *this;
 			return; // ignore address events for unknown interfaces
 		}
 
