@@ -96,8 +96,9 @@ public:
 	};
 
 	const std::string
-	str() {
-		std::stringstream ss; ss << *this; return ss.str();
+	str() const {
+		std::stringstream ss; ss << std::hex << "0x" << pid << std::dec; return ss.str();
+		//std::stringstream ss; ss << *this; return ss.str();
 	};
 
 private:

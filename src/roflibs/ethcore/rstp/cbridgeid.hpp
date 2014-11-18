@@ -24,14 +24,14 @@ public:
 	 *
 	 */
 	cbridgeid() :
-		brid(0)
+		priority(0), system_id(0), braddr(rofl::caddress_ll("00:00:00:00:00:00"))
 	{};
 
 	/**
 	 *
 	 */
-	cbridgeid(uint64_t brid) :
-		brid(brid)
+	cbridgeid(uint8_t priority, uint16_t system_id, const rofl::caddress_ll& braddr) :
+		priority(priority), system_id(system_id), braddr(braddr)
 	{};
 
 	/**
@@ -54,7 +54,9 @@ public:
 	operator= (const cbridgeid& bridgeid) {
 		if (this == &bridgeid)
 			return *this;
-		brid = bridgeid.brid;
+		priority 	= bridgeid.priority;
+		system_id 	= bridgeid.system_id;
+		braddr 		= bridgeid.braddr;
 		return *this;
 	};
 
@@ -63,7 +65,9 @@ public:
 	 */
 	bool
 	operator< (const cbridgeid& bridgeid) const {
-		return (brid < bridgeid.brid);
+		return ((priority 	< bridgeid.priority) ||
+				(system_id 	< bridgeid.system_id) ||
+				(braddr 	< bridgeid.braddr));
 	};
 
 	/**
@@ -71,7 +75,9 @@ public:
 	 */
 	bool
 	operator== (const cbridgeid& bridgeid) const {
-		return (brid == bridgeid.brid);
+		return ((priority == bridgeid.priority) &&
+				(system_id == bridgeid.system_id) &&
+				(braddr == bridgeid.braddr));
 	};
 
 	/**
@@ -79,30 +85,76 @@ public:
 	 */
 	bool
 	operator!= (const cbridgeid& bridgeid) const {
-		return (brid != bridgeid.brid);
+		return not operator== (bridgeid);
 	};
 
 public:
 
 	const uint64_t&
-	get_bridge_id() const { return brid; };
+	get_bridge_id() const {
+		uint64_t brid(0);
+		brid = (brid & ~((0x4ULL) << 60)) | ((uint64_t)(priority & 0xf0) << 60);
+		brid = (brid & ~((0x0fffULL) << 48)) | ((uint64_t)(system_id & 0x0fff) << 48);
+		((uint8_t*)&brid)[2] = braddr[0];
+		((uint8_t*)&brid)[3] = braddr[1];
+		((uint8_t*)&brid)[4] = braddr[2];
+		((uint8_t*)&brid)[5] = braddr[3];
+		((uint8_t*)&brid)[6] = braddr[4];
+		((uint8_t*)&brid)[7] = braddr[5];
+		return brid;
+	};
+
+	void
+	set_bridge_id(uint64_t brid) {
+		priority 	= ((brid & ((0x4ULL) << 60)) >> 60);
+		system_id 	= ((brid & ((0x0fffULL) << 48)) >> 48);
+		braddr[0] 	= ((uint8_t*)&brid)[2];
+		braddr[1] 	= ((uint8_t*)&brid)[3];
+		braddr[2] 	= ((uint8_t*)&brid)[4];
+		braddr[3] 	= ((uint8_t*)&brid)[5];
+		braddr[4] 	= ((uint8_t*)&brid)[6];
+		braddr[5] 	= ((uint8_t*)&brid)[7];
+	};
+
+	uint8_t
+	get_priority() const { return priority; };
+
+	void
+	set_priority(uint8_t priority) { this->priority = (priority & 0x000f) };
+
+	uint16_t
+	get_system_id() const { return system_id; };
+
+	void
+	set_system_id(uint16_t system_id) { this->system_id = (system_id & 0x0fff) };
+
+	rofl::caddress_ll
+	get_bridge_address() const { return braddr; };
+
+	void
+	set_bridge_address(const rofl::caddress_ll& braddr) { this->braddr = braddr; };
+
+	// 7.12.5 and 9.2.5
 
 public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cbridgeid& bridgeid) {
-		os << "<cbridgeid rid:" << (unsigned long long)bridgeid.brid << " >";
+		os << "<cbridgeid rid:" << (unsigned long long)bridgeid.get_bridge_id() << " >";
 		return os;
 	};
 
 	const std::string
-	str() {
-		std::stringstream ss; ss << *this; return ss.str();
+	str() const {
+		std::stringstream ss; ss << std::hex << "0x" << get_bridge_id() << std::dec; return ss.str();
+		//std::stringstream ss; ss << *this; return ss.str();
 	};
 
 private:
 
-	uint64_t	brid;	// bridge identifier
+	uint8_t				priority;
+	uint16_t			system_id;
+	rofl::caddress_ll	braddr;
 };
 
 }; // end of namespace rstp

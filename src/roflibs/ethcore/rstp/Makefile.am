@@ -13,7 +13,8 @@ libroflibs_rstp_la_SOURCES = \
 	cstpv.hpp \
 	cbridge.hpp \
 	cbridge.cpp \
-	cport.hpp
+	cport.hpp \
+	cpriovect.hpp
 
 libroflibs_rstp_la_LIBADD=
 

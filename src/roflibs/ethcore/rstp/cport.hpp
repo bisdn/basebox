@@ -37,10 +37,21 @@ public:
 class cport {
 public:
 
+	enum info_is_t {
+		INFO_IS_RECEIVED 	= 1,
+		INFO_IS_MINE 		= 2,
+		INFO_IS_AGED 		= 3,
+		INFO_IS_DISABLED	= 4,
+	};
+
+public:
+
 	/**
 	 *
 	 */
 	cport() :
+		ageingTime(300),
+		designatedPriority(0),
 		env(NULL)
 	{};
 
@@ -48,6 +59,8 @@ public:
 	 *
 	 */
 	cport(cport_env* env, const cportid& pid) :
+		ageingTime(300),
+		designatedPriority(0),
 		env(env),
 		pid(pid)
 	{};
@@ -96,6 +109,19 @@ public:
 	 */
 	void
 	send_bpdu_rst() {};
+
+public:
+
+	/**
+	 * @brief	IEEE802.1D-2004 17.19.7 Remove all filtering database entries for this port
+	 */
+	void
+	fdbFlush();
+
+protected:
+
+	uint32_t	ageingTime;			// IEEE802.1D-2004 7.9.2 (default: 300s, range: 10s-1e7s)
+	uint16_t	designatedPriority;	// IEEE802.1D-2004 17.19.4
 
 private:
 
