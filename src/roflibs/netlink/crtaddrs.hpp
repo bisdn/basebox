@@ -58,6 +58,12 @@ public:
 	/**
 	 *
 	 */
+	bool
+	empty() const { return rtaddrs.empty(); };
+
+	/**
+	 *
+	 */
 	void
 	clear() { rtaddrs.clear(); };
 
@@ -229,6 +235,12 @@ public:
 	};
 
 public:
+
+	/**
+	 *
+	 */
+	bool
+	empty() const { return rtaddrs.empty(); };
 
 	/**
 	 *

@@ -58,6 +58,12 @@ public:
 	/**
 	 *
 	 */
+	bool
+	empty() const { return rtneighs.empty(); };
+
+	/**
+	 *
+	 */
 	void
 	clear() { rtneighs.clear(); };
 
@@ -227,6 +233,12 @@ public:
 	};
 
 public:
+
+	/**
+	 *
+	 */
+	bool
+	empty() const { return rtneighs.empty(); };
 
 	/**
 	 *

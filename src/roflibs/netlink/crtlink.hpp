@@ -303,11 +303,15 @@ public:
 			ss << "ether ";
 		else
 			ss << "unknown ";
-		ss << maddr.str() << " brd " << bcast.str();
-		ss << addrs_in4.str() << std::endl;
-		ss << addrs_in6.str() << std::endl;
-		ss << neighs_in4.str() << std::endl;
-		ss << neighs_in6.str() << std::endl;
+		ss << maddr.str() << " brd " << bcast.str() << std::endl;
+		if (not addrs_in4.empty())
+			ss << addrs_in4.str() << std::endl;
+		if (not addrs_in6.empty())
+			ss << addrs_in6.str() << std::endl;
+		if (not neighs_in4.empty())
+			ss << neighs_in4.str() << std::endl;
+		if (not neighs_in6.empty())
+			ss << neighs_in6.str() << std::endl;
 		return ss.str();
 	};
 
