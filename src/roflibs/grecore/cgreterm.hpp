@@ -17,6 +17,7 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/cdptid.h>
 #include <rofl/common/openflow/cofmatch.h>
+#include <rofl/common/protocols/fvlanframe.h>
 #include <rofl/common/protocols/fipv4frame.h>
 #include <rofl/common/protocols/fipv6frame.h>
 #include <rofl/common/protocols/fudpframe.h>
