@@ -122,6 +122,8 @@ cmemberport::handle_port_status(
 		handle_dpt_open(dpt);
 	} break;
 	case rofl::openflow::OFPPR_MODIFY: {
+		handle_dpt_close(dpt);
+		handle_dpt_open(dpt);
 		// TODO: port up/down?
 	} break;
 	case rofl::openflow::OFPPR_DELETE: {
