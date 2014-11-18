@@ -45,9 +45,9 @@ cgreterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)
 		// pop VLAN header
 		fm.set_instructions().add_inst_apply_actions().set_actions().add_action_pop_vlan(++index);
 		// pop header GRE (removes outer ETHERNET/IPV4/GRE)
-		fm.set_instructions().set_inst_apply_actions().set_actions().add_action_experimenter(index).
+		fm.set_instructions().set_inst_apply_actions().set_actions().add_action_experimenter(++index).
 				set_exp_id(rofl::openflow::experimental::gre::GRE_EXP_ID);
-		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_experimenter(++index).
+		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_experimenter(index).
 				set_exp_body(rofl::openflow::experimental::gre::cofaction_exp_body_pop_gre(0/* not used for transparent bridging*/));
 
 		// Send decapsulated ethernet frame out via assigned port
@@ -250,9 +250,9 @@ cgreterm_in6::handle_dpt_open_egress(rofl::crofdpt& dpt)
 		// pop VLAN header
 		fm.set_instructions().add_inst_apply_actions().set_actions().add_action_pop_vlan(++index);
 		// pop header GRE (removes outer ETHERNET/IPV4/GRE)
-		fm.set_instructions().set_inst_apply_actions().set_actions().add_action_experimenter(index).
+		fm.set_instructions().set_inst_apply_actions().set_actions().add_action_experimenter(++index).
 				set_exp_id(rofl::openflow::experimental::gre::GRE_EXP_ID);
-		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_experimenter(++index).
+		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_experimenter(index).
 				set_exp_body(rofl::openflow::experimental::gre::cofaction_exp_body_pop_gre(0/* not used for transparent bridging*/));
 
 		// Send decapsulated ethernet frame out via assigned port
