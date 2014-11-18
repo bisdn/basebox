@@ -306,7 +306,11 @@ public:
 		192.168.133.1 dev wlp3s0 lladdr 00:90:0b:30:3a:e3 STALE
 		 */
 		std::stringstream ss;
+<<<<<<< HEAD
 		ss << "neigh/inet " << dst.str() << " via lladdr " << get_lladdr().str() << " ";
+=======
+		ss << "@" << get_ifindex() << ": " << dst.str() << " lladdr " << get_lladdr().str() << " ";
+>>>>>>> ea449f0c36d76340de8fc6fa3436650eeb7ffe38
 		if (get_flags() & NUD_INCOMPLETE) 	ss << "INCOMPLETE";
 		if (get_flags() & NUD_REACHABLE) 	ss << "REACHABLE";
 		if (get_flags() & NUD_STALE) 		ss << "STALE";
@@ -454,7 +458,11 @@ public:
 		192.168.133.1 dev wlp3s0 lladdr 00:90:0b:30:3a:e3 STALE
 		 */
 		std::stringstream ss;
+<<<<<<< HEAD
 		ss << "neigh/inet6 " << dst.str() << " via lladdr " << get_lladdr().str() << " ";
+=======
+		ss << "@" << get_ifindex() << ": " << dst.str() << " lladdr " << get_lladdr().str() << " ";
+>>>>>>> ea449f0c36d76340de8fc6fa3436650eeb7ffe38
 		if (get_flags() & NUD_INCOMPLETE) 	ss << "INCOMPLETE";
 		if (get_flags() & NUD_REACHABLE) 	ss << "REACHABLE";
 		if (get_flags() & NUD_STALE) 		ss << "STALE";
