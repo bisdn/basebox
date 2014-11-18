@@ -500,10 +500,11 @@ public:
 	std::string
 	str() const {
 		std::stringstream ss;
-		ss << "route " << dst.str() << "/" << get_prefixlen() << " scope " << get_scope_s() << " src " << src.str() << std::endl;
+		ss << "route " << dst.str() << "/" << get_prefixlen() << " scope " << get_scope_s()
+				<< " src " << src.str() << " pref-src " << pref_src.str();
 		switch (get_scope()) {
 		case RT_SCOPE_UNIVERSE: {
-			ss << nxthops.str() << std::endl;
+			ss << std::endl << nxthops.str();
 		} break;
 		}
 		return ss.str();
@@ -750,10 +751,11 @@ public:
 	std::string
 	str() const {
 		std::stringstream ss;
-		ss << "route " << dst.str() << "/" << get_prefixlen() << " scope " << get_scope_s() << " src " << src.str() << std::endl;
+		ss << "route " << dst.str() << "/" << get_prefixlen() << " scope " << get_scope_s()
+				<< " src " << src.str() << " pref-src " << pref_src.str();
 		switch (get_scope()) {
 		case RT_SCOPE_UNIVERSE: {
-			ss << nxthops.str() << std::endl;
+			ss << std::endl << nxthops.str();
 		} break;
 		}
 		return ss.str();

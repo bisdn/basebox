@@ -285,7 +285,7 @@ public:
          *	   link/ether 52:54:00:b5:b4:e2 brd ff:ff:ff:ff:ff:ff
 		 */
 		std::stringstream ss;
-		ss << ifindex << ": " << devname << ": <";
+		ss << "@" << ifindex << ": " << devname << ": <";
 		// flags
 		if (flags & IFF_UP) 		ss << "UP,";
 		if (flags & IFF_BROADCAST) 	ss << "BROADCAST,";

@@ -353,8 +353,7 @@ public:
 			   valid_lft forever preferred_lft forever
 	 */
 		std::stringstream ss;
-		ss << "@" << get_ifindex() << ":";
-		ss << " inet " << local.str() << "/" << get_prefixlen() << " brd " << bcast.str();
+		ss << "addr/inet " << local.str() << "/" << get_prefixlen() << " brd " << bcast.str();
 		ss << " scope " << get_scope() << " ";
 		return ss.str();
 	};
@@ -550,8 +549,7 @@ public:
 			   valid_lft forever preferred_lft forever
 	 */
 		std::stringstream ss;
-		ss << "@" << get_ifindex() << ":";
-		ss << " inet6 " << local.str() << "/" << get_prefixlen() << " brd " << bcast.str();
+		ss << "addr/inet6 " << local.str() << "/" << get_prefixlen() << " brd " << bcast.str();
 		ss << " scope " << get_scope() << " ";
 		return ss.str();
 	};
