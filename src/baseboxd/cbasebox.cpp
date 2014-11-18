@@ -11,6 +11,7 @@ using namespace basebox;
 
 /*static*/cbasebox* cbasebox::rofbase = (cbasebox*)0;
 /*static*/bool cbasebox::keep_on_running = true;
+/*static*/std::bitset<64> cbasebox::flags;
 /*static*/const std::string cbasebox::BASEBOX_LOG_FILE = std::string("/var/log/baseboxd.log");
 /*static*/const std::string cbasebox::BASEBOX_PID_FILE = std::string("/var/run/baseboxd.pid");
 /*static*/const std::string cbasebox::BASEBOX_CONFIG_FILE = std::string("/usr/local/etc/baseboxd.conf");
@@ -169,6 +170,51 @@ cbasebox::run(int argc, char** argv)
 		}
 	}
 
+	/*
+	 * extract flags for enabling/disabling the various roflibs
+	 */
+	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.flowcore.enable")) {
+		if ((bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.flowcore.enable")) {
+			flags.set(FLAG_FLOWCORE);
+		}
+	}
+	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.ethcore.enable")) {
+		if ((bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.ethcore.enable")) {
+			if (not flags.test(FLAG_FLOWCORE)) {
+				rofcore::logging::crit << "[baseboxd][main] must enable flowcore for using ethcore, aborting." << std::endl;
+				exit(1);
+			}
+			flags.set(FLAG_ETHCORE);
+		}
+	}
+	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.ipcore.enable")) {
+		if ((bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.ipcore.enable")) {
+			if (not flags.test(FLAG_ETHCORE)) {
+				rofcore::logging::crit << "[baseboxd][main] must enable ethcore for using ipcore, aborting." << std::endl;
+				exit(1);
+			}
+			flags.set(FLAG_IPCORE);
+		}
+	}
+	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.grecore.enable")) {
+		if ((bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.grecore.enable")) {
+			if (not flags.test(FLAG_IPCORE)) {
+				rofcore::logging::crit << "[baseboxd][main] must enable ipcore for using grecore, aborting." << std::endl;
+				exit(1);
+			}
+			flags.set(FLAG_GRECORE);
+		}
+	}
+	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.gtpcore.enable")) {
+		if ((bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.gtpcore.enable")) {
+			if (not flags.test(FLAG_IPCORE)) {
+				rofcore::logging::crit << "[baseboxd][main] must enable ipcore for using gtpcore, aborting." << std::endl;
+				exit(1);
+			}
+			flags.set(FLAG_GTPCORE);
+		}
+	}
+
 	cbasebox::keep_on_running = true;
 	while (cbasebox::keep_on_running) {
 		try {
@@ -284,16 +330,28 @@ cbasebox::handle_dpt_close(
 
 	clear_tap_devs(dpt.get_dpid());
 
-	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	if (flags.test(FLAG_FLOWCORE)) {
+		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
+	if (flags.test(FLAG_GRECORE)) {
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
+	if (flags.test(FLAG_GTPCORE)) {
+		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
+	if (flags.test(FLAG_ETHCORE)) {
+		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
+	if (flags.test(FLAG_IPCORE)) {
+		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
 
 #if 0
-	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in4();
-	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in6();
+	if (flags.test(FLAG_GRECORE)) {
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in4();
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in6();
+	}
 #endif
 }
 
@@ -324,7 +382,7 @@ cbasebox::handle_packet_in(
 
 		if (msg.get_table_id() == table_id_eth_src) {
 
-			if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+			if (flags.test(FLAG_ETHCORE) && roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
 				roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 			}
 		} else
@@ -387,31 +445,17 @@ cbasebox::handle_flow_removed(
 
 	if (msg.get_table_id() == table_id_eth_src) {
 
-		if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+		if (flags.test(FLAG_ETHCORE) && roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
 			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
 		}
 	} else
 	if ((msg.get_table_id() >= table_id_ip_local) &&
 		(msg.get_table_id() <= table_id_ip_fwd)) {
-		if (roflibs::ip::cipcore::has_ip_core(dpt.get_dpid())) {
+		if (flags.test(FLAG_IPCORE) && roflibs::ip::cipcore::has_ip_core(dpt.get_dpid())) {
 			roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
 		}
 
 	}
-
-#if 0
-	switch (msg.get_table_id()) {
-	case 3:
-	case 4: {
-		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
-	} break;
-	default: {
-		if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
-			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
-		}
-	};
-	}
-#endif
 }
 
 
@@ -445,7 +489,7 @@ cbasebox::handle_port_status(
 		} return;
 		}
 
-		if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+		if (flags.test(FLAG_ETHCORE) && roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
 			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
 		}
 
@@ -459,8 +503,10 @@ cbasebox::handle_port_status(
 void
 cbasebox::handle_error_message(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
-	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
-	if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+	if (flags.test(FLAG_IPCORE) && roflibs::ip::cipcore::has_ip_core(dpt.get_dpid())) {
+		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
+	}
+	if (flags.test(FLAG_ETHCORE) && roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
 		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
 	}
 }
@@ -473,32 +519,41 @@ cbasebox::handle_port_desc_stats_reply(
 
 	dpt.set_ports() = msg.get_ports();
 
-	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	if (flags.test(FLAG_FLOWCORE)) {
+		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
 
-	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid(),
+	if (flags.test(FLAG_IPCORE)) {
+		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid(),
 												table_id_ip_local,
 												table_id_ip_fwd).handle_dpt_close(dpt);
+	}
 
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid(),
+	if (flags.test(FLAG_ETHCORE)) {
+		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid(),
 												table_id_eth_port_membership,
 												table_id_eth_src,
 												table_id_eth_local,
 												table_id_eth_dst,
 												default_pvid).handle_dpt_close(dpt);
+	}
 
-	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid(),
+	if (flags.test(FLAG_GTPCORE)) {
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid(),
 												table_id_ip_local,
 												table_id_gtp_local).handle_dpt_close(dpt); // yes, same as local for cipcore
 
-	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid(),
+		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid(),
 												table_id_ip_local).handle_dpt_close(dpt); // yes, same as local for cipcore
+	}
 
-
-	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid(),
+	if (flags.test(FLAG_GRECORE)) {
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid(),
 												table_id_eth_port_membership,
 												table_id_ip_local,
 												table_id_gre_local,
 												table_id_ip_fwd).handle_dpt_close(dpt);
+	}
 
 
 	/*
@@ -516,23 +571,36 @@ cbasebox::handle_port_desc_stats_reply(
 		}
 	}
 
-	rofl::openflow::cofflowmod fm(dpt.get_version());
-	fm.set_table_id(table_id_svc_flows);
-	fm.set_priority(0);
-	fm.set_instructions().set_inst_goto_table().set_table_id(table_id_svc_flows+1);
-	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).add_svc_flow(0xff000000, fm);
+	if (flags.test(FLAG_FLOWCORE)) {
+		rofl::openflow::cofflowmod fm(dpt.get_version());
+		fm.set_table_id(table_id_svc_flows);
+		fm.set_priority(0);
+		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_svc_flows+1);
+		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).add_svc_flow(0xff000000, fm);
+	}
 
 	/*
 	 * notify core instances
 	 */
-	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
-	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	if (flags.test(FLAG_FLOWCORE)) {
+		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	}
+	if (flags.test(FLAG_ETHCORE)) {
+		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	}
+	if (flags.test(FLAG_IPCORE)) {
+		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	}
+	if (flags.test(FLAG_GTPCORE)) {
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
+		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
+	}
+	if (flags.test(FLAG_GRECORE)) {
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	}
 
 
+#if 0
 	//test_workflow(dpt);
 
 	rofcore::logging::debug << "=====================================" << std::endl;
@@ -540,7 +608,7 @@ cbasebox::handle_port_desc_stats_reply(
 	rofcore::logging::debug << roflibs::ip::cipcore::get_ip_core(dpt.get_dpid());
 	rofcore::logging::debug << roflibs::gre::cgrecore::get_gre_core(dpt.get_dpid());
 	rofcore::logging::debug << "=====================================" << std::endl;
-
+#endif
 
 	// call external scripting hook
 	hook_dpt_attach(dpt);

@@ -441,6 +441,16 @@ private:
 	uint8_t table_id_ip_fwd;
 	uint8_t table_id_eth_dst;
 	uint16_t default_pvid;
+
+	enum cbasebox_flag_t {
+		FLAG_FLOWCORE		= 1,
+		FLAG_ETHCORE		= 2,
+		FLAG_IPCORE			= 3,
+		FLAG_GRECORE		= 4,
+		FLAG_GTPCORE		= 5,
+	};
+
+	static std::bitset<64>		flags;
 };
 
 }; // end of namespace ethcore
