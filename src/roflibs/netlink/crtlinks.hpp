@@ -204,6 +204,16 @@ public:
 		return os;
 	};
 
+	std::string
+	str() const {
+		std::stringstream ss;
+		for (std::map<unsigned int, crtlink>::const_iterator
+				it = rtlinks.begin(); it != rtlinks.end(); ++it) {
+			ss << it->second.str() << std::endl;
+		}
+		return ss.str();
+	};
+
 private:
 
 	std::map<unsigned int, crtlink> rtlinks;

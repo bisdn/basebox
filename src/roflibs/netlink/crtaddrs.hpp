@@ -177,6 +177,16 @@ public:
 		return os;
 	};
 
+	std::string
+	str() const {
+		std::stringstream ss;
+		for (std::map<unsigned int, crtaddr_in4>::const_iterator
+				it = rtaddrs.begin(); it != rtaddrs.end(); ++it) {
+			ss << it->second.str() << std::endl;
+		}
+		return ss.str();
+	};
+
 private:
 
 	std::map<unsigned int, crtaddr_in4> rtaddrs;
@@ -341,6 +351,16 @@ public:
 			os << it->second;
 		}
 		return os;
+	};
+
+	std::string
+	str() const {
+		std::stringstream ss;
+		for (std::map<unsigned int, crtaddr_in6>::const_iterator
+				it = rtaddrs.begin(); it != rtaddrs.end(); ++it) {
+			ss << it->second.str() << std::endl;
+		}
+		return ss.str();
 	};
 
 private:

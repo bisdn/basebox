@@ -178,6 +178,16 @@ public:
 		return os;
 	};
 
+	std::string
+	str() const {
+		std::stringstream ss;
+		for (std::map<unsigned int, crtroute_in4>::const_iterator
+				it = rtroutes.begin(); it != rtroutes.end(); ++it) {
+			ss << it->second.str() << std::endl;
+		}
+		return ss.str();
+	};
+
 private:
 
 	std::map<unsigned int, crtroute_in4> rtroutes;
@@ -342,6 +352,16 @@ public:
 			os << it->second;
 		}
 		return os;
+	};
+
+	std::string
+	str() const {
+		std::stringstream ss;
+		for (std::map<unsigned int, crtroute_in6>::const_iterator
+				it = rtroutes.begin(); it != rtroutes.end(); ++it) {
+			ss << it->second.str() << std::endl;
+		}
+		return ss.str();
 	};
 
 private:

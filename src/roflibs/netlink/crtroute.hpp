@@ -497,6 +497,17 @@ public:
 		return os;
 	};
 
+	std::string
+	str() const {
+		std::stringstream ss;
+		ss << "route " << dst.str() << "/" << get_prefixlen() << " scope " << get_scope_s() << " src " << src.str() << std::endl;
+		switch (get_scope()) {
+		case RT_SCOPE_UNIVERSE: {
+			ss << nxthops.str() << std::endl;
+		} break;
+		}
+		return ss.str();
+	};
 
 	/**
 	 *
@@ -736,6 +747,17 @@ public:
 		return os;
 	};
 
+	std::string
+	str() const {
+		std::stringstream ss;
+		ss << "route " << dst.str() << "/" << get_prefixlen() << " scope " << get_scope_s() << " src " << src.str() << std::endl;
+		switch (get_scope()) {
+		case RT_SCOPE_UNIVERSE: {
+			ss << nxthops.str() << std::endl;
+		} break;
+		}
+		return ss.str();
+	};
 
 	/**
 	 *

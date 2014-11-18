@@ -202,18 +202,21 @@ private:
 	virtual void
 	neigh_in4_created(unsigned int ifindex, uint16_t nbindex) {
 		//if (STATE_DETACHED == state) {
+		rofcore::logging::debug << "[cnexthop_in4][neigh_in4_created] neighbour resolved" << std::endl;
 			handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		//}
 	};
 
 	virtual void
 	neigh_in4_updated(unsigned int ifindex, uint16_t nbindex) {
+		rofcore::logging::debug << "[cnexthop_in4][neigh_in4_updated] neighbour updated" << std::endl;
 		handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 	};
 
 	virtual void
 	neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex) {
 		//if (STATE_ATTACHED == state) {
+		rofcore::logging::debug << "[cnexthop_in4][neigh_in4_deleted] neighbour removed" << std::endl;
 			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 		//}
 	};
@@ -295,18 +298,21 @@ private:
 	virtual void
 	neigh_in6_created(unsigned int ifindex, uint16_t nbindex) {
 		//if (STATE_DETACHED == state) {
+		rofcore::logging::debug << "[cnexthop_in6][neigh_in6_created] neighbour resolved" << std::endl;
 			handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		//}
 	};
 
 	virtual void
 	neigh_in6_updated(unsigned int ifindex, uint16_t nbindex) {
+		rofcore::logging::debug << "[cnexthop_in6][neigh_in6_created] neighbour updated" << std::endl;
 		handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 	};
 
 	virtual void
 	neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex) {
 		//if (STATE_ATTACHED == state) {
+		rofcore::logging::debug << "[cnexthop_in6][neigh_in6_created] neighbour deleted" << std::endl;
 			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 		//}
 	};

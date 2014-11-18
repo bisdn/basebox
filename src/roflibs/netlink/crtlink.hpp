@@ -25,6 +25,7 @@ extern "C" {
 #include <netlink/object.h>
 #include <netlink/route/link.h>
 #include <inttypes.h>
+#include <linux/if_arp.h>
 #ifdef __cplusplus
 }
 #endif
@@ -271,6 +272,43 @@ public:
 		{ rofcore::indent i(2); os << rtlink.neighs_in6; };
 
 		return os;
+	};
+
+
+	/**
+	 *
+	 */
+	std::string
+	str() const {
+		/*
+		 * 2: mgt0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP mode DEFAULT qlen 1000
+         *	   link/ether 52:54:00:b5:b4:e2 brd ff:ff:ff:ff:ff:ff
+		 */
+		std::stringstream ss;
+		ss << ifindex << ": " << devname << ": <";
+		// flags
+		if (flags & IFF_UP) 		ss << "UP,";
+		if (flags & IFF_BROADCAST) 	ss << "BROADCAST,";
+		if (flags & IFF_POINTOPOINT) ss << "POINTOPOINT,";
+		if (flags & IFF_RUNNING) 	ss << "RUNNING,";
+		if (flags & IFF_NOARP) 		ss << "NOARP,";
+		if (flags & IFF_PROMISC) 	ss << "PROMISC,";
+		if (flags & IFF_MASTER) 	ss << "MASTER,";
+		if (flags & IFF_SLAVE) 		ss << "SLAVE,";
+		if (flags & IFF_MULTICAST) 	ss << "MULTICAST,";
+		if (flags & IFF_LOWER_UP) 	ss << "LOWRR_UP,";
+		ss << "> mtu: " << mtu << std::endl;
+		ss << "link/";
+		if (arptype == ARPHRD_ETHER)
+			ss << "ether ";
+		else
+			ss << "unknown ";
+		ss << maddr.str() << " brd " << bcast.str();
+		ss << addrs_in4.str() << std::endl;
+		ss << addrs_in6.str() << std::endl;
+		ss << neighs_in4.str() << std::endl;
+		ss << neighs_in6.str() << std::endl;
+		return ss.str();
 	};
 
 

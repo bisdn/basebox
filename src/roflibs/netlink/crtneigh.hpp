@@ -15,6 +15,7 @@ extern "C" {
 #endif
 #include <inttypes.h>
 #include <netlink/route/neighbour.h>
+#include <linux/neighbour.h>
 #ifdef __cplusplus
 }
 #endif
@@ -299,6 +300,23 @@ public:
 	};
 
 
+	std::string
+	str() const {
+		/*
+		192.168.133.1 dev wlp3s0 lladdr 00:90:0b:30:3a:e3 STALE
+		 */
+		std::stringstream ss;
+		ss << "@" << get_ifindex() << ":" << dst.str() << " lladdr " << get_lladdr() << " ";
+		if (get_flags() & NUD_INCOMPLETE) 	ss << "INCOMPLETE";
+		if (get_flags() & NUD_REACHABLE) 	ss << "REACHABLE";
+		if (get_flags() & NUD_STALE) 		ss << "STALE";
+		if (get_flags() & NUD_DELAY) 		ss << "DELAY";
+		if (get_flags() & NUD_PROBE) 		ss << "PROBE";
+		if (get_flags() & NUD_FAILED) 		ss << "FAILED";
+		return ss.str();
+	};
+
+
 	/**
 	 *
 	 */
@@ -427,6 +445,23 @@ public:
 		os << dynamic_cast<const crtneigh&>( neigh );
 		os << rofcore::indent(2) << "<dst: " << neigh.dst.str() << " >" << std::endl;
 		return os;
+	};
+
+
+	std::string
+	str() const {
+		/*
+		192.168.133.1 dev wlp3s0 lladdr 00:90:0b:30:3a:e3 STALE
+		 */
+		std::stringstream ss;
+		ss << "@" << get_ifindex() << ":" << dst.str() << " lladdr " << get_lladdr() << " ";
+		if (get_flags() & NUD_INCOMPLETE) 	ss << "INCOMPLETE";
+		if (get_flags() & NUD_REACHABLE) 	ss << "REACHABLE";
+		if (get_flags() & NUD_STALE) 		ss << "STALE";
+		if (get_flags() & NUD_DELAY) 		ss << "DELAY";
+		if (get_flags() & NUD_PROBE) 		ss << "PROBE";
+		if (get_flags() & NUD_FAILED) 		ss << "FAILED";
+		return ss.str();
 	};
 
 
