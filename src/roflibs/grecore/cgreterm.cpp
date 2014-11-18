@@ -163,6 +163,8 @@ cgreterm_in4::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 				set_oxm(rofl::openflow::experimental::gre::coxmatch_ofx_gre_key(gre_key));
 		// push vlan, all IP traffic within the datapath carries one
 		fm.set_instructions().set_inst_apply_actions().set_actions().add_action_push_vlan(++index);
+		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_push_vlan(index).
+				set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
 		// Goto Next Table: ofp_table_id + 1
 		fm.set_instructions().add_inst_goto_table().set_table_id(ip_fwd_ofp_table_id);
 
@@ -368,6 +370,8 @@ cgreterm_in6::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 				set_oxm(rofl::openflow::experimental::gre::coxmatch_ofx_gre_key(gre_key));
 		// push vlan, all IP traffic within the datapath carries one
 		fm.set_instructions().set_inst_apply_actions().set_actions().add_action_push_vlan(++index);
+		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_push_vlan(index).
+				set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
 		// Goto Next Table: IP forwarding table
 		fm.set_instructions().add_inst_goto_table().set_table_id(ip_fwd_ofp_table_id);
 
