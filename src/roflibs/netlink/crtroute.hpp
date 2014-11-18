@@ -504,7 +504,8 @@ public:
 				<< " src " << src.str() << " pref-src " << pref_src.str();
 		switch (get_scope()) {
 		case RT_SCOPE_UNIVERSE: {
-			ss << std::endl << nxthops.str();
+			if (not nxthops.empty())
+				ss << std::endl << nxthops.str();
 		} break;
 		}
 		return ss.str();
@@ -755,7 +756,8 @@ public:
 				<< " src " << src.str() << " pref-src " << pref_src.str();
 		switch (get_scope()) {
 		case RT_SCOPE_UNIVERSE: {
-			ss << std::endl << nxthops.str();
+			if (not nxthops.empty())
+				ss << std::endl << nxthops.str();
 		} break;
 		}
 		return ss.str();

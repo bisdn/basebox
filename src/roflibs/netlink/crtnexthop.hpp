@@ -270,7 +270,7 @@ public:
 	std::string
 	str() const {
 		std::stringstream ss;
-		ss << "@" << get_ifindex() << ": nexthop " << gateway.str() << " weight " << (int)get_weight() << " ";
+		ss << "nexthop/inet " << gateway.str() << " weight " << (int)get_weight() << " ";
 		return ss.str();
 	};
 
@@ -389,7 +389,7 @@ public:
 	std::string
 	str() const {
 		std::stringstream ss;
-		ss << "@" << get_ifindex() << ": nexthop " << gateway.str() << " weight " << (int)get_weight() << " ";
+		ss << "nexthop/inet6 " << gateway.str() << " weight " << (int)get_weight() << " ";
 		return ss.str();
 	};
 

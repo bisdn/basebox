@@ -71,6 +71,13 @@ public:
 	/**
 	 *
 	 */
+	bool
+	empty() const { return rtnexthops.empty(); };
+
+
+	/**
+	 *
+	 */
 	void
 	clear() { rtnexthops.clear(); };
 
@@ -254,6 +261,13 @@ public:
 	 */
 	std::map<unsigned int, crtnexthop_in6>&
 	set_nexthops_in6() { return rtnexthops; };
+
+
+	/**
+	 *
+	 */
+	bool
+	empty() const { return rtnexthops.empty(); };
 
 
 	/**
