@@ -279,6 +279,58 @@ cethcore::handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rof
 void
 cethcore::handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg)
 {
+	cportdb& portdb = cportdb::get_portdb(std::string("file"));
+
+	switch (msg.get_reason()) {
+	case rofl::openflow::OFPPR_ADD:
+	case rofl::openflow::OFPPR_MODIFY: {
+		// no configuration for this port => add to default vlan
+		if (not portdb.has_port_entry(dpid, msg.get_port().get_port_no())) {
+			set_vlan(default_pvid).add_phy_port(msg.get_port().get_port_no(), msg.get_port().get_hwaddr(), /*tagged*/false);
+
+		// configuration for this port found => add port vid and tagged memberships
+		} else {
+			const cportentry& port = portdb.get_port_entry(dpid, msg.get_port().get_port_no());
+
+			// create or update existing vlan for port's default vid
+			set_vlan(port.get_port_vid()).add_phy_port(msg.get_port().get_port_no(), msg.get_port().get_hwaddr(), /*tagged=*/false);
+
+			// add all tagged memberships of this port to the appropriate vlan
+			for (std::set<uint16_t>::const_iterator
+					jt = port.get_tagged_vids().begin(); jt != port.get_tagged_vids().end(); ++jt) {
+				set_vlan(*jt).set_phy_port(msg.get_port().get_port_no(), msg.get_port().get_hwaddr(), /*tagged=*/true);
+			}
+		}
+
+	} break;
+	case rofl::openflow::OFPPR_DELETE: {
+
+		// no configuration for this port => drop port from default vlan
+		if (not portdb.has_port_entry(dpid, msg.get_port().get_port_no())) {
+			set_vlan(default_pvid).drop_phy_port(msg.get_port().get_port_no());
+
+		// configuration for this port found => drop port vid and tagged memberships
+		} else {
+			const cportentry& port = portdb.get_port_entry(dpid, msg.get_port().get_port_no());
+
+			// drop port from port's default vid
+			set_vlan(port.get_port_vid()).drop_phy_port(msg.get_port().get_port_no());
+
+			// drop all tagged memberships of this port from the appropriate vlan
+			for (std::set<uint16_t>::const_iterator
+					jt = port.get_tagged_vids().begin(); jt != port.get_tagged_vids().end(); ++jt) {
+				set_vlan(*jt).drop_phy_port(msg.get_port().get_port_no());
+			}
+		}
+
+	} break;
+	default: {
+
+		rofcore::logging::error << "[cethcore][handle_port_status] unknown reason" << std::endl;
+	} return;
+	}
+
+
 	for (std::map<uint16_t, cvlan>::iterator
 			it = vlans.begin(); it != vlans.end(); ++it) {
 		it->second.handle_port_status(dpt, auxid, msg);
