@@ -304,14 +304,10 @@ public:
 		else
 			ss << "unknown ";
 		ss << maddr.str() << " brd " << bcast.str() << std::endl;
-		if (not addrs_in4.empty())
-			ss << addrs_in4.str() << std::endl;
-		if (not addrs_in6.empty())
-			ss << addrs_in6.str() << std::endl;
-		if (not neighs_in4.empty())
-			ss << neighs_in4.str() << std::endl;
-		if (not neighs_in6.empty())
-			ss << neighs_in6.str() << std::endl;
+		if (not addrs_in4.empty())  ss << addrs_in4.str();
+		if (not addrs_in6.empty())  ss << addrs_in6.str();
+		if (not neighs_in4.empty()) ss << neighs_in4.str();
+		if (not neighs_in6.empty()) ss << neighs_in6.str();
 		return ss.str();
 	};
 
