@@ -16,6 +16,8 @@
 #include <rofl/common/openflow/messages/cofmsg_packet_in.h>
 #include <rofl/common/openflow/messages/cofmsg_flow_removed.h>
 
+#include "roflibs/netlink/clogging.hpp"
+
 namespace roflibs {
 namespace common {
 namespace openflow {
@@ -107,6 +109,8 @@ public:
 	handle_packet_in(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {
 		if (cookiestore.find(msg.get_cookie()) == cookiestore.end()) {
+			rofcore::logging::debug << "[ccookiebox][handle_packet_in] cookie:" << (unsigned long long)msg.get_cookie()
+					<< " not found, dropping packet" << std::endl;
 			return;
 		}
 		cookiestore[msg.get_cookie()]->handle_packet_in(dpt, auxid, msg);
@@ -119,6 +123,8 @@ public:
 	handle_flow_removed(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {
 		if (cookiestore.find(msg.get_cookie()) == cookiestore.end()) {
+			rofcore::logging::debug << "[ccookiebox][handle_flow_removed] cookie:" << (unsigned long long)msg.get_cookie()
+					<< " not found, dropping packet" << std::endl;
 			return;
 		}
 		cookiestore[msg.get_cookie()]->handle_flow_removed(dpt, auxid, msg);
