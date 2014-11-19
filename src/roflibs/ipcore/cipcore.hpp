@@ -32,13 +32,14 @@ extern "C" {
 #include <rofl/common/protocols/fipv6frame.h>
 #include <rofl/common/openflow/cofhelloelemversionbitmap.h>
 
-#include <roflibs/netlink/ctapdev.hpp>
-#include <roflibs/netlink/clogging.hpp>
-#include <roflibs/netlink/cnetlink.hpp>
-#include <roflibs/ipcore/croutetable.hpp>
-#include <roflibs/ipcore/clink.hpp>
-#include <roflibs/ipcore/cneigh.hpp>
-#include <roflibs/ethcore/cportdb.hpp>
+#include "roflibs/netlink/ctapdev.hpp"
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/cnetlink.hpp"
+#include "roflibs/ipcore/croutetable.hpp"
+#include "roflibs/ipcore/clink.hpp"
+#include "roflibs/ipcore/cneigh.hpp"
+#include "roflibs/ethcore/cportdb.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace ip {
@@ -56,7 +57,9 @@ public:
  * local-table: default=3
  * out-table: default=4
  */
-class cipcore : public rofcore::cnetlink_common_observer {
+class cipcore :
+		public rofcore::cnetlink_common_observer,
+		public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
@@ -134,7 +137,12 @@ private:
 	cipcore(const rofl::cdpid& dpid,
 			uint8_t local_ofp_table_id = 3,
 			uint8_t out_ofp_table_id = 4) :
-		state(STATE_DETACHED), dpid(dpid),
+		state(STATE_DETACHED),
+		dpid(dpid),
+		cookie_fwd_local(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_no_route(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_multicast_ipv4(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_multicast_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		local_ofp_table_id(local_ofp_table_id),
 		out_ofp_table_id(out_ofp_table_id),
 		config_file(DEFAULT_CONFIG_FILE) {};
@@ -378,6 +386,10 @@ private:
 
 	ofp_core_state_t					state;
 	rofl::cdpid 						dpid;
+	uint64_t							cookie_fwd_local; // forwarding enabled flow table entry in local table
+	uint64_t							cookie_no_route; // no appropriate routing entry found in fwd table
+	uint64_t							cookie_multicast_ipv4;
+	uint64_t							cookie_multicast_ipv6;
 	std::map<int, clink*> 				links;	// key: ifindex, value: ptr to clink
 	std::map<unsigned int, croutetable>	rtables;
 	uint8_t								local_ofp_table_id;
@@ -507,4 +519,4 @@ public:
 }; // end of namespace ip
 }; // end of namespace roflibs
 
-#endif /* VMCORE_H_ */
+#endif /* CIPCORE_H_ */

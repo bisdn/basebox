@@ -110,9 +110,11 @@ cipcore::set_forwarding(bool forward)
 		fed.set_idle_timeout(0);
 		fed.set_hard_timeout(0);
 		fed.set_priority(0); // lowest priority
+		fed.set_cookie(cookie_fwd_local);
 		fed.set_instructions().add_inst_goto_table().set_table_id(out_ofp_table_id);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fed);
 
+		fed.set_cookie(cookie_no_route);
 		fed.set_table_id(out_ofp_table_id);
 		fed.set_instructions().clear();
 		fed.set_instructions().set_inst_apply_actions().set_actions().
@@ -664,6 +666,7 @@ cipcore::redirect_ipv4_multicast()
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_ADD);
+		fe.set_cookie(cookie_multicast_ipv4);
 		fe.set_table_id(local_ofp_table_id);
 
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -694,6 +697,7 @@ cipcore::redirect_ipv6_multicast()
 		rofl::openflow::cofflowmod fe(dpt.get_version());
 
 		fe.set_command(rofl::openflow::OFPFC_ADD);
+		fe.set_cookie(cookie_multicast_ipv6);
 		fe.set_table_id(local_ofp_table_id);
 
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);

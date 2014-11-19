@@ -16,9 +16,9 @@
 #include <rofl/common/protocols/ficmpv4frame.h>
 #include <rofl/common/protocols/ficmpv6frame.h>
 
-#include <roflibs/netlink/crtaddr.hpp>
-#include <roflibs/netlink/cnetlink.hpp>
-#include <roflibs/netlink/clogging.hpp>
+#include "roflibs/netlink/crtaddr.hpp"
+#include "roflibs/netlink/cnetlink.hpp"
+#include "roflibs/netlink/clogging.hpp"
 
 namespace roflibs {
 namespace ip {
