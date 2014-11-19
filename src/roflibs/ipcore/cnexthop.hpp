@@ -24,7 +24,8 @@ extern "C" {
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
 
-#include <roflibs/netlink/cnetlink.hpp>
+#include "roflibs/netlink/cnetlink.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace ip {
@@ -150,13 +151,17 @@ protected:
 
 
 
-class cnexthop_in4 : public cnexthop {
+class cnexthop_in4 :
+		public cnexthop,
+		public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
 	 *
 	 */
-	cnexthop_in4() {};
+	cnexthop_in4() :
+		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
@@ -181,7 +186,9 @@ public:
 	 */
 	cnexthop_in4(
 			uint8_t rttblid, unsigned int rtindex, unsigned int nhindex, const rofl::cdpid& dpid, uint8_t out_ofp_table_id = 2) :
-				cnexthop(rttblid, rtindex, nhindex, dpid, out_ofp_table_id) {};
+				cnexthop(rttblid, rtindex, nhindex, dpid, out_ofp_table_id),
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 public:
 
@@ -196,6 +203,20 @@ public:
 	 */
 	void
 	handle_dpt_close(rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
 
 private:
 
@@ -237,21 +258,26 @@ public:
 		return os;
 	};
 
-protected:
+private:
 
+	uint64_t 	cookie;
 };
 
 
 
 
 
-class cnexthop_in6 : public cnexthop {
+class cnexthop_in6 :
+		public cnexthop,
+		public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
 	 *
 	 */
-	cnexthop_in6() {};
+	cnexthop_in6() :
+		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
@@ -276,7 +302,9 @@ public:
 	 */
 	cnexthop_in6(
 			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdpid& dpid, uint8_t out_ofp_table_id = 2) :
-				cnexthop(rttableid, rtindex, nhindex, dpid, out_ofp_table_id) {};
+				cnexthop(rttableid, rtindex, nhindex, dpid, out_ofp_table_id),
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 
 public:
@@ -292,6 +320,20 @@ public:
 	 */
 	void
 	handle_dpt_close(rofl::crofdpt& dpt);
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
 
 private:
 
@@ -332,6 +374,10 @@ public:
 		}
 		return os;
 	};
+
+private:
+
+	uint64_t 	cookie;
 };
 
 }; // end of namespace ip
