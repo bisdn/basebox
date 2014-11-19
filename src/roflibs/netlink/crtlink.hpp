@@ -296,7 +296,7 @@ public:
 		if (flags & IFF_MASTER) 	ss << "MASTER,";
 		if (flags & IFF_SLAVE) 		ss << "SLAVE,";
 		if (flags & IFF_MULTICAST) 	ss << "MULTICAST,";
-		if (flags & IFF_LOWER_UP) 	ss << "LOWRR_UP,";
+		if (flags & IFF_LOWER_UP) 	ss << "LOWER_UP,";
 		ss << "> mtu: " << mtu << std::endl;
 		ss << "link/";
 		if (arptype == ARPHRD_ETHER)
