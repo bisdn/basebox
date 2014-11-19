@@ -134,6 +134,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 				add_action_group(rofl::cindex(0)).set_group_id(group_id);
 		fe.set_instructions().set_inst_goto_table().set_table_id(out_ofp_table_id+1);
 
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_ATTACHED;
@@ -177,6 +178,7 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_table_id(get_table_id());
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rtn.get_dst());
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 
@@ -334,6 +336,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_instructions().set_inst_apply_actions().set_actions().
 				add_action_group(rofl::cindex(0)).set_group_id(group_id);
 
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_ATTACHED;
@@ -377,6 +380,7 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_priority(0xfffe);
 		fe.set_table_id(get_table_id());
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 

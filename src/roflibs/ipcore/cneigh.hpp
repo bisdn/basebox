@@ -24,8 +24,9 @@ extern "C" {
 #include <rofl/common/cdpid.h>
 #include <rofl/common/protocols/fvlanframe.h>
 
-#include <roflibs/netlink/crtneigh.hpp>
-#include <roflibs/netlink/cnetlink.hpp>
+#include "roflibs/netlink/crtneigh.hpp"
+#include "roflibs/netlink/cnetlink.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace ip {
@@ -208,20 +209,26 @@ protected:
 };
 
 
-class cneigh_in4 : public cneigh {
+class cneigh_in4 :
+		public cneigh,
+		public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
 	 *
 	 */
-	cneigh_in4() {};
+	cneigh_in4() :
+		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
 	 */
 	cneigh_in4(
 			int ifindex, uint16_t nbindex, const rofl::cdpid& dpid, uint8_t out_ofp_table_id) :
-				cneigh(ifindex, nbindex, dpid, out_ofp_table_id) {};
+				cneigh(ifindex, nbindex, dpid, out_ofp_table_id),
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
@@ -281,6 +288,19 @@ public:
 	void
 	handle_dpt_close(rofl::crofdpt& dpt);
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
 
 public:
 
@@ -298,6 +318,10 @@ public:
 		} catch(...) {}
 		return os;
 	};
+
+private:
+
+	uint64_t	cookie;
 };
 
 
@@ -312,20 +336,26 @@ public:
 };
 
 
-class cneigh_in6 : public cneigh {
+class cneigh_in6 :
+		public cneigh,
+		public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
 	 *
 	 */
-	cneigh_in6() {};
+	cneigh_in6() :
+		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
 	 */
 	cneigh_in6(
 			int ifindex, uint16_t nbindex, const rofl::cdpid& dpid, uint8_t out_ofp_table_id) :
-				cneigh(ifindex, nbindex, dpid, out_ofp_table_id) {};
+				cneigh(ifindex, nbindex, dpid, out_ofp_table_id),
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
@@ -385,6 +415,20 @@ public:
 	void
 	handle_dpt_close(rofl::crofdpt& dpt);
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
+
 public:
 
 	friend std::ostream&
@@ -401,6 +445,10 @@ public:
 		} catch(...) {}
 		return os;
 	};
+
+private:
+
+	uint64_t	cookie;
 };
 
 
