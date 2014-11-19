@@ -616,48 +616,6 @@ cipcore::purge_dpt_entries()
 
 
 void
-cipcore::block_stp_frames()
-{
-	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
-
-		rofl::openflow::cofflowmod fe(dpt.get_version());
-
-		fe.set_command(rofl::openflow::OFPFC_ADD);
-		fe.set_table_id(0);
-		fe.set_match().set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
-
-		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
-
-	} catch (rofl::eRofDptNotFound& e) {
-
-	}
-}
-
-
-
-void
-cipcore::unblock_stp_frames()
-{
-	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
-
-		rofl::openflow::cofflowmod fe(dpt.get_version());
-
-		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fe.set_table_id(0);
-		fe.set_match().set_eth_dst(rofl::cmacaddr("01:80:c2:00:00:00"), rofl::cmacaddr("ff:ff:ff:00:00:00"));
-
-		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
-
-	} catch (rofl::eRofDptNotFound& e) {
-
-	}
-}
-
-
-
-void
 cipcore::redirect_ipv4_multicast()
 {
 	try {

@@ -409,12 +409,6 @@ private:
 	purge_dpt_entries();
 
 	void
-	block_stp_frames();
-
-	void
-	unblock_stp_frames();
-
-	void
 	redirect_ipv4_multicast();
 
 	void
