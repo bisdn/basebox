@@ -8,6 +8,9 @@
 #ifndef CETHCORE_HPP_
 #define CETHCORE_HPP_
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #include <inttypes.h>
 #include <iostream>
 #include <map>
@@ -19,6 +22,7 @@
 #include "roflibs/ethcore/cvlan.hpp"
 #include "roflibs/ethcore/cportdb.hpp"
 #include "roflibs/netlink/ctundev.hpp"
+#include "roflibs/netlink/ctapdev.hpp"
 
 namespace roflibs {
 namespace eth {

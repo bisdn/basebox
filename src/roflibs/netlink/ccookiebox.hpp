@@ -98,6 +98,30 @@ public:
 		return *(ccookiebox::cookiebox);
 	};
 
+	/**
+	 *
+	 */
+	void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {
+		if (cookiestore.find(msg.get_cookie()) == cookiestore.end()) {
+			return;
+		}
+		cookiestore[msg.get_cookie()]->handle_packet_in(dpt, auxid, msg);
+	};
+
+	/**
+	 *
+	 */
+	void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {
+		if (cookiestore.find(msg.get_cookie()) == cookiestore.end()) {
+			return;
+		}
+		cookiestore[msg.get_cookie()]->handle_flow_removed(dpt, auxid, msg);
+	};
+
 private:
 
 	friend class ccookie_owner;
@@ -138,30 +162,6 @@ private:
 			return;
 		}
 		cookiestore.erase(cookie);
-	};
-
-	/**
-	 *
-	 */
-	void
-	handle_packet_in(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {
-		if (cookiestore.find(msg.get_cookie()) == cookiestore.end()) {
-			return;
-		}
-		cookiestore[msg.get_cookie()]->handle_packet_in(dpt, auxid, msg);
-	};
-
-	/**
-	 *
-	 */
-	void
-	handle_flow_removed(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {
-		if (cookiestore.find(msg.get_cookie()) == cookiestore.end()) {
-			return;
-		}
-		cookiestore[msg.get_cookie()]->handle_flow_removed(dpt, auxid, msg);
 	};
 };
 
