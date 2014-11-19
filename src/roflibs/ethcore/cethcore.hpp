@@ -23,6 +23,7 @@
 #include "roflibs/ethcore/cportdb.hpp"
 #include "roflibs/netlink/ctundev.hpp"
 #include "roflibs/netlink/ctapdev.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace eth {
@@ -49,7 +50,10 @@ public:
 };
 
 
-class cethcore : public rofcore::cnetdev_owner, public rofcore::cnetlink_common_observer {
+class cethcore :
+		public rofcore::cnetdev_owner,
+		public rofcore::cnetlink_common_observer,
+		public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
@@ -147,6 +151,7 @@ private:
 	/**
 	 *
 	 */
+	virtual
 	~cethcore();
 
 public:
@@ -271,14 +276,14 @@ public:
 	/**
 	 *
 	 */
-	void
+	virtual void
 	handle_packet_in(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
 
 	/**
 	 *
 	 */
-	void
+	virtual void
 	handle_flow_removed(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg);
 
@@ -513,6 +518,10 @@ private:
 
 	cethcore_state_t					state;
 	rofl::cdpid							dpid;
+	uint64_t							cookie_grp_addr;
+	uint64_t							cookie_miss_entry_src;
+	uint64_t							cookie_miss_entry_local;
+	uint64_t							cookie_redirect_inject;
 	uint16_t							default_pvid;
 	std::map<uint16_t, cvlan>			vlans;
 	mutable rofl::PthreadRwLock			vlans_rwlock;
