@@ -28,6 +28,7 @@ cmemberport::handle_dpt_open(
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
+		fm.set_cookie(cookie);
 		fm.set_table_id(table_id_eth_in);
 		fm.set_match().set_in_port(portno);
 		if (tagged) {
@@ -70,6 +71,7 @@ cmemberport::handle_dpt_close(
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
+		fm.set_cookie(cookie);
 		fm.set_table_id(table_id_eth_in);
 		fm.set_match().set_in_port(portno);
 		if (tagged) {

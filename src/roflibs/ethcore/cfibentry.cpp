@@ -32,6 +32,7 @@ cfibentry::handle_dpt_open(
 		fm_src_table.set_command(rofl::openflow::OFPFC_ADD);
 		fm_src_table.set_table_id(src_stage_table_id);
 		fm_src_table.set_priority(0x8000);
+		fm_src_table.set_cookie(cookie_src);
 		fm_src_table.set_idle_timeout(entry_timeout);
 		fm_src_table.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm_src_table.set_match().set_in_port(portno);
@@ -45,6 +46,7 @@ cfibentry::handle_dpt_open(
 		fm_dst_table.set_command(rofl::openflow::OFPFC_ADD);
 		fm_dst_table.set_table_id(dst_stage_table_id);
 		fm_dst_table.set_priority(0x8000);
+		fm_dst_table.set_cookie(cookie_dst);
 		fm_dst_table.set_idle_timeout(entry_timeout);
 		fm_dst_table.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm_dst_table.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
@@ -86,6 +88,7 @@ cfibentry::handle_dpt_close(
 		fm_src_table.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm_src_table.set_table_id(src_stage_table_id);
 		fm_src_table.set_priority(0x8000);
+		fm_src_table.set_cookie(cookie_src);
 		fm_src_table.set_idle_timeout(entry_timeout);
 		fm_src_table.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm_src_table.set_match().set_in_port(portno);
@@ -98,6 +101,7 @@ cfibentry::handle_dpt_close(
 		fm_dst_table.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm_dst_table.set_table_id(dst_stage_table_id);
 		fm_dst_table.set_priority(0x8000);
+		fm_dst_table.set_cookie(cookie_dst);
 		fm_dst_table.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm_dst_table.set_idle_timeout(entry_timeout);
 		fm_dst_table.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);

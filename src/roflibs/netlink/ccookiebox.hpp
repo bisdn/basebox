@@ -52,13 +52,15 @@ protected:
 	/**
 	 *
 	 */
-	virtual void handle_packet_in(
+	virtual void
+	handle_packet_in(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) = 0;
 
 	/**
 	 *
 	 */
-	virtual void handle_flow_removed(
+	virtual void
+	handle_flow_removed(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) = 0;
 };
 

@@ -28,6 +28,7 @@ cvlan::handle_dpt_open(
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
+		fm.set_cookie(cookie_flooding);
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fm.set_instructions().set_inst_apply_actions().
 				set_actions().add_action_group(rofl::cindex(0)).set_group_id(group_id);
@@ -36,6 +37,7 @@ cvlan::handle_dpt_open(
 		// set broadcast entry in src stage
 		fm.set_table_id(table_id_eth_src);
 		fm.set_priority(0x8100);
+		fm.set_cookie(cookie_multicast);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("01:00:00:00:00:00"), rofl::caddress_ll("01:00:00:00:00:00"));
 		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_local);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
@@ -99,12 +101,14 @@ cvlan::handle_dpt_close(
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
+		fm.set_cookie(cookie_flooding);
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		// remove broadcast entry in src stage
 		fm.set_table_id(table_id_eth_src);
 		fm.set_priority(0x8100);
+		fm.set_cookie(cookie_multicast);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("01:00:00:00:00:00"), rofl::caddress_ll("01:00:00:00:00:00"));
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 

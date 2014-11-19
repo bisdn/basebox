@@ -6,6 +6,7 @@
  */
 
 #include "cethendpnt.hpp"
+#include "cethcore.hpp"
 
 using namespace roflibs::eth;
 
@@ -31,6 +32,7 @@ cethendpnt::handle_dpt_open(
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
+		fm.set_cookie(cookie_endpoint);
 		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
 		//fm.set_match().set_eth_dst(dpt.get_ports().get_port(portno).get_hwaddr());
@@ -51,6 +53,7 @@ cethendpnt::handle_dpt_open(
 		/*
 		 * multicast frames
 		 */
+		fm.set_cookie(cookie_multicast);
 		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
 		//fm.set_match().set_in_port(portno);
@@ -97,6 +100,7 @@ cethendpnt::handle_dpt_close(
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
+		fm.set_cookie(cookie_endpoint);
 		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
 		fm.set_match().set_eth_dst(hwaddr);
@@ -109,6 +113,7 @@ cethendpnt::handle_dpt_close(
 		/*
 		 * multicast frames
 		 */
+		fm.set_cookie(cookie_multicast);
 		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
 		//fm.set_match().set_in_port(portno);
@@ -128,7 +133,8 @@ void
 cethendpnt::handle_packet_in(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
-	// nothing to do
+	// store packet in ethcore and thus, tap devices
+	cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 }
 
 

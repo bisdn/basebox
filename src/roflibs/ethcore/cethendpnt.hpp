@@ -17,6 +17,7 @@
 #include <rofl/common/protocols/fvlanframe.h>
 
 #include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace eth {
@@ -30,15 +31,17 @@ public:
 	eEthEndpntNotFound(const std::string& __arg) : eEthEndpntBase(__arg) {};
 };
 
-class cethendpnt {
+class cethendpnt : public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
 	 *
 	 */
 	cethendpnt() :
-		dpt_state(STATE_IDLE), vid(0xffff),
-		tagged(false), table_id_eth_local(0) {};
+		dpt_state(STATE_IDLE),
+		cookie_endpoint(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		vid(0xffff), tagged(false), table_id_eth_local(0) {};
 
 	/**
 	 *
@@ -48,13 +51,17 @@ public:
 			const rofl::cmacaddr& hwaddr,
 			uint16_t vid = 0xffff, bool tagged = true) :
 		dpt_state(STATE_IDLE),
-		dpid(dpid), vid(vid), tagged(tagged),
+		dpid(dpid),
+		cookie_endpoint(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		vid(vid), tagged(tagged),
 		table_id_eth_local(local_stage_table_id),
 		hwaddr(hwaddr) {};
 
 	/**
 	 *
 	 */
+	virtual
 	~cethendpnt() {
 		try {
 			if (STATE_ATTACHED == dpt_state) {
@@ -77,11 +84,12 @@ public:
 		if (this == &port)
 			return *this;
 		dpt_state	= port.dpt_state;
-		dpid 	= port.dpid;
-		vid 	= port.vid;
-		tagged 	= port.tagged;
+		dpid 		= port.dpid;
+		// do not copy cookies here!
+		vid 		= port.vid;
+		tagged 		= port.tagged;
 		table_id_eth_local = port.table_id_eth_local;
-		hwaddr	= port.hwaddr;
+		hwaddr		= port.hwaddr;
 		return *this;
 	};
 
@@ -124,14 +132,14 @@ public:
 	/**
 	 *
 	 */
-	void
+	virtual void
 	handle_packet_in(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
 
 	/**
 	 *
 	 */
-	void
+	virtual void
 	handle_flow_removed(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg);
 
@@ -171,6 +179,8 @@ private:
 	dpt_state_t		dpt_state;
 
 	rofl::cdpid		dpid;
+	uint64_t		cookie_endpoint;
+	uint64_t		cookie_multicast;
 	uint16_t 		vid;
 	bool 			tagged;
 	uint8_t			table_id_eth_local; // MAC addresses assigned to local host
