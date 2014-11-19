@@ -11,7 +11,8 @@ using namespace roflibs::eth;
 
 /*static*/std::map<rofl::cdpid, cethcore*> cethcore::ethcores;
 /*static*/std::set<uint64_t> cethcore::dpids;
-
+/*static*/std::string cethcore::script_path_port_up 	= std::string("/var/lib/basebox/port-up.sh");
+/*static*/std::string cethcore::script_path_port_down 	= std::string("/var/lib/basebox/port-down.sh");
 
 cethcore::cethcore(const rofl::cdpid& dpid,
 		uint8_t table_id_eth_in, uint8_t table_id_eth_src,
@@ -44,6 +45,23 @@ cethcore::~cethcore() {
 void
 cethcore::add_eth_endpnts()
 {
+#if 0
+	/*
+	 * create virtual ports for predefined ethernet endpoints
+	 */
+	roflibs::eth::cportdb& portdb = roflibs::eth::cportdb::get_portdb("file");
+
+	// install ethernet endpoints
+	for (std::set<std::string>::const_iterator
+			it = portdb.get_eth_entries(dpt.get_dpid()).begin(); it != portdb.get_eth_entries(dpt.get_dpid()).end(); ++it) {
+		const roflibs::eth::cethentry& eth = portdb.get_eth_entry(dpt.get_dpid(), *it);
+
+		if (not has_tap_dev(dpt.get_dpid(), eth.get_devname())) {
+			add_tap_dev(dpt.get_dpid(), eth.get_devname(), eth.get_port_vid(), eth.get_hwaddr());
+		}
+	}
+#endif
+
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
@@ -58,6 +76,10 @@ cethcore::add_eth_endpnts()
 			const cethentry& eth = portdb.get_eth_entry(dpid, *it);
 
 			set_vlan(eth.get_port_vid()).add_eth_endpnt(eth.get_hwaddr(), /*tagged=*/false);
+
+			if (not has_tap_dev(dpt.get_dpid(), eth.get_devname())) {
+				add_tap_dev(dpt.get_dpid(), eth.get_devname(), eth.get_port_vid(), eth.get_hwaddr());
+			}
 		}
 
 	} catch (rofl::eRofDptNotFound& e) {
@@ -236,6 +258,8 @@ cethcore::handle_dpt_close(rofl::crofdpt& dpt)
 	} catch (rofl::eRofBaseNotConnected& e) {
 		rofcore::logging::debug << "[cethcore][handle_dpt_close] control channel not connected" << std::endl;
 	}
+
+	clear_tap_devs(dpt.get_dpid());
 }
 
 
@@ -244,13 +268,63 @@ void
 cethcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
 	try {
-		uint16_t vid = msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT);
 
-		if (has_vlan(vid)) {
-			set_vlan(vid).handle_packet_in(dpt, auxid, msg);
+		// yet unknown source address found in eth-src stage
+		if (msg.get_table_id() == table_id_eth_src) {
+
+			uint16_t vid = msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT);
+
+			if (has_vlan(vid)) {
+				set_vlan(vid).handle_packet_in(dpt, auxid, msg);
+			} else {
+				dpt.drop_buffer(auxid, msg.get_buffer_id());
+			}
+
+		// all other stages: send frame to tap devices
 		} else {
-			dpt.drop_buffer(auxid, msg.get_buffer_id());
+
+			if (not msg.get_match().has_vlan_vid()) {
+				// no VLAN related metadata found, ignore packet
+				rofcore::logging::debug << "[cethcore][handle_packet_in] frame without VLAN tag received, dropping" << std::endl;
+				dpt.drop_buffer(auxid, msg.get_buffer_id());
+				return;
+			}
+
+			if (not msg.get_match().get_eth_dst().is_multicast()) {
+				/* non-multicast frames are directly injected into a tapdev */
+				rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
+				*pkt = msg.get_packet();
+				pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t)-sizeof(uint16_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
+				set_tap_dev(dpt.get_dpid(), msg.get_match().get_eth_dst()).enqueue(pkt);
+
+			} else {
+				/* multicast frames carry a metadata field with the VLAN id
+				 * for both tagged and untagged frames. Lookup all tapdev
+				 * instances belonging to the specified vid and clone the packet
+				 * for all of them. */
+
+				uint16_t vid = msg.get_match().get_vlan_vid() & 0x0fff;
+
+				for (std::map<std::string, rofcore::ctapdev*>::iterator
+						it = devs[dpt.get_dpid()].begin(); it != devs[dpt.get_dpid()].end(); ++it) {
+					rofcore::ctapdev& tapdev = *(it->second);
+					if (tapdev.get_pvid() != vid) {
+						continue;
+					}
+					rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
+					*pkt = msg.get_packet();
+					// offset: 12 bytes (eth-hdr without type), nbytes: 4 bytes
+					pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t)-sizeof(uint16_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
+					tapdev.enqueue(pkt);
+				}
+			}
+
+			// drop buffer on data path, if the packet was stored there, as it is consumed entirely by the underlying kernel
+			if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()) != msg.get_buffer_id()) {
+				dpt.drop_buffer(auxid, msg.get_buffer_id());
+			}
 		}
+
 
 	} catch (rofl::openflow::eOxmNotFound& e) {
 		rofcore::logging::debug << "[cethcore][handle_packet_in] no VID match found" << std::endl;
@@ -346,6 +420,155 @@ cethcore::handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, ro
 			it = vlans.begin(); it != vlans.end(); ++it) {
 		it->second.handle_error_message(dpt, auxid, msg);
 	}
+}
+
+
+void
+cethcore::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
+{
+	try {
+		rofcore::ctapdev* tapdev = dynamic_cast<rofcore::ctapdev*>( netdev );
+		if (0 == tapdev) {
+			throw eLinkTapDevNotFound("cethcore::enqueue() tap device not found");
+		}
+
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(tapdev->get_dpid());
+
+		if (not dpt.get_channel().is_established()) {
+			throw eLinkNoDptAttached("cethcore::enqueue() dpt not found");
+		}
+
+		rofl::openflow::cofactions actions(dpt.get_version());
+		actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
+		actions.set_action_set_field(rofl::cindex(1)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(tapdev->get_pvid()));
+		actions.set_action_output(rofl::cindex(2)).set_port_no(rofl::openflow::OFPP_TABLE);
+
+		dpt.send_packet_out_message(
+				rofl::cauxid(0),
+				rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()),
+				rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()),
+				actions,
+				pkt->soframe(),
+				pkt->length());
+
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::error << "[cethcore][enqueue] no data path attached, dropping outgoing packet" << std::endl;
+
+	} catch (eLinkNoDptAttached& e) {
+		rofcore::logging::error << "[cethcore][enqueue] no data path attached, dropping outgoing packet" << std::endl;
+
+	} catch (eLinkTapDevNotFound& e) {
+		rofcore::logging::error << "[cethcore][enqueue] unable to find tap device" << std::endl;
+	}
+
+	rofcore::cpacketpool::get_instance().release_pkt(pkt);
+}
+
+
+
+void
+cethcore::enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
+{
+	for (std::vector<rofl::cpacket*>::iterator
+			it = pkts.begin(); it != pkts.end(); ++it) {
+		enqueue(netdev, *it);
+	}
+}
+
+
+
+
+void
+cethcore::hook_port_up(const rofl::crofdpt& dpt, std::string const& devname)
+{
+	try {
+
+		std::vector<std::string> argv;
+		std::vector<std::string> envp;
+
+		std::stringstream s_dpid;
+		s_dpid << "DPID=" << dpt.get_dpid();
+		envp.push_back(s_dpid.str());
+
+		std::stringstream s_devname;
+		s_devname << "DEVNAME=" << devname;
+		envp.push_back(s_devname.str());
+
+		cethcore::execute(cethcore::script_path_port_up, argv, envp);
+
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::error << "[cbasebox][hook_port_up] script execution failed" << std::endl;
+	}
+}
+
+
+
+void
+cethcore::hook_port_down(const rofl::crofdpt& dpt, std::string const& devname)
+{
+	try {
+
+		std::vector<std::string> argv;
+		std::vector<std::string> envp;
+
+		std::stringstream s_dpid;
+		s_dpid << "DPID=" << dpt.get_dpid();
+		envp.push_back(s_dpid.str());
+
+		std::stringstream s_devname;
+		s_devname << "DEVNAME=" << devname;
+		envp.push_back(s_devname.str());
+
+		cethcore::execute(cethcore::script_path_port_down, argv, envp);
+
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::error << "[cbasebox][hook_port_down] script execution failed" << std::endl;
+	}
+}
+
+
+
+void
+cethcore::execute(
+		std::string const& executable,
+		std::vector<std::string> argv,
+		std::vector<std::string> envp)
+{
+	pid_t pid = 0;
+
+	if ((pid = fork()) < 0) {
+		rofcore::logging::error << "[cbasebox][execute] syscall error fork(): " << errno << ":" << strerror(errno) << std::endl;
+		return;
+	}
+
+	if (pid > 0) { // father process
+		int status;
+		waitpid(pid, &status, 0);
+		return;
+	}
+
+
+	// child process
+
+	std::vector<const char*> vctargv;
+	for (std::vector<std::string>::iterator
+			it = argv.begin(); it != argv.end(); ++it) {
+		vctargv.push_back((*it).c_str());
+	}
+	vctargv.push_back(NULL);
+
+
+	std::vector<const char*> vctenvp;
+	for (std::vector<std::string>::iterator
+			it = envp.begin(); it != envp.end(); ++it) {
+		vctenvp.push_back((*it).c_str());
+	}
+	vctenvp.push_back(NULL);
+
+
+	execvpe(executable.c_str(), (char*const*)&vctargv[0], (char*const*)&vctenvp[0]);
+
+	exit(1); // just in case execvpe fails
 }
 
 

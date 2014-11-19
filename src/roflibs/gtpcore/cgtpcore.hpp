@@ -17,10 +17,15 @@
 #include <rofl/common/protocols/fudpframe.h>
 #include <rofl/common/protocols/fipv4frame.h>
 #include <rofl/common/protocols/fipv6frame.h>
+#include <rofl/common/cauxid.h>
+#include <rofl/common/openflow/messages/cofmsg_packet_in.h>
+#include <rofl/common/openflow/messages/cofmsg_flow_removed.h>
+#include <rofl/common/openflow/messages/cofmsg_error.h>
 
-#include <roflibs/netlink/clogging.hpp>
-#include <roflibs/gtpcore/crelay.hpp>
-#include <roflibs/gtpcore/cterm.hpp>
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/gtpcore/crelay.hpp"
+#include "roflibs/gtpcore/cterm.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace gtp {
@@ -34,7 +39,7 @@ public:
 	eGtpCoreNotFound(const std::string& __arg) : eGtpCoreBase(__arg) {};
 };
 
-class cgtpcore {
+class cgtpcore : public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
@@ -115,6 +120,7 @@ private:
 	/**
 	 *
 	 */
+	virtual
 	~cgtpcore() {};
 
 public:
@@ -580,6 +586,29 @@ public:
 		 return (not (find_if(terms_in6.begin(), terms_in6.end(),
 				cterm_in6::cterm_in6_find_by_tft_match(tft_match)) == terms_in6.end()));
 	};
+
+public:
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_error_message(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {};
 
 public:
 

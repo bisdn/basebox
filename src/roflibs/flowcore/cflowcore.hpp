@@ -16,9 +16,15 @@
 #include <rofl/common/cdptid.h>
 #include <rofl/common/thread_helper.h>
 #include <rofl/common/openflow/cofflowmod.h>
+#include <rofl/common/crofdpt.h>
+#include <rofl/common/cauxid.h>
+#include <rofl/common/openflow/messages/cofmsg_packet_in.h>
+#include <rofl/common/openflow/messages/cofmsg_flow_removed.h>
+#include <rofl/common/openflow/messages/cofmsg_error.h>
 
 #include "roflibs/netlink/clogging.hpp"
 #include "roflibs/flowcore/cflow.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace svc {
@@ -32,7 +38,7 @@ public:
 	eFlowCoreNotFound(const std::string& __arg) : eFlowCoreBase(__arg) {};
 };
 
-class cflowcore {
+class cflowcore : public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
@@ -103,6 +109,7 @@ private:
 	/**
 	 *
 	 */
+	virtual
 	~cflowcore() {
 		while (not flows.empty()) {
 			uint32_t flow_id = flows.begin()->first;
@@ -246,6 +253,29 @@ public:
 		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_READ);
 		return (not (flows.find(flow_id) == flows.end()));
 	};
+
+public:
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_error_message(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {};
 
 public:
 
