@@ -109,14 +109,27 @@ cipcore::set_forwarding(bool forward)
 		} else {
 			fed.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		}
+		// local ip stage
 		fed.set_table_id(local_ofp_table_id);
 		fed.set_idle_timeout(0);
 		fed.set_hard_timeout(0);
 		fed.set_priority(0); // lowest priority
 		fed.set_cookie(cookie_fwd_local);
+		fed.set_instructions().clear();
 		fed.set_instructions().add_inst_goto_table().set_table_id(out_ofp_table_id);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fed);
 
+		// local ip stage+1
+		fed.set_cookie(cookie_app);
+		fed.set_table_id(local_ofp_table_id+1);
+		fed.set_instructions().clear();
+		fed.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+		fed.set_instructions().set_inst_apply_actions().set_actions().
+				set_action_output(rofl::cindex(0)).set_max_len(1526);
+		dpt.send_flow_mod_message(rofl::cauxid(0), fed);
+
+		// fwd ip stage
 		fed.set_cookie(cookie_no_route);
 		fed.set_table_id(out_ofp_table_id);
 		fed.set_instructions().clear();

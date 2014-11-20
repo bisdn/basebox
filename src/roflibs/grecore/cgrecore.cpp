@@ -28,7 +28,7 @@ cgrecore::handle_dpt_open(rofl::crofdpt& dpt)
 		}
 
 		// install GRE rule in IP local table
-		fm.set_table_id(ip_local_table_id);
+		fm.set_table_id(gre_local_table_id);
 		fm.set_priority(0xd000);
 
 		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -37,9 +37,10 @@ cgrecore::handle_dpt_open(rofl::crofdpt& dpt)
 				rofl::openflow::experimental::gre::coxmatch_ofx_gre_version(0));
 		fm.set_match().set_matches().add_match(
 				rofl::openflow::experimental::gre::coxmatch_ofx_gre_prot_type(GRE_PROT_TYPE_TRANSPARENT_ETHERNET_BRIDGING));
-
-		fm.set_instructions().set_inst_goto_table().set_table_id(gre_local_table_id);
-
+		fm.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+		fm.set_instructions().set_inst_apply_actions().set_actions().
+				add_action_output(rofl::cindex(0)).set_max_len(1526);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		state = STATE_ATTACHED;
@@ -78,7 +79,7 @@ cgrecore::handle_dpt_close(rofl::crofdpt& dpt)
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 
 		// remove GRE UDP dst rule in IP local-stage-table (GotoTable gre_table_id) IPv4
-		fm.set_table_id(ip_local_table_id);
+		fm.set_table_id(gre_local_table_id);
 		fm.set_priority(0xd000);
 
 		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -87,7 +88,6 @@ cgrecore::handle_dpt_close(rofl::crofdpt& dpt)
 				rofl::openflow::experimental::gre::coxmatch_ofx_gre_version(0));
 		fm.set_match().set_matches().add_match(
 				rofl::openflow::experimental::gre::coxmatch_ofx_gre_prot_type(GRE_PROT_TYPE_TRANSPARENT_ETHERNET_BRIDGING));
-
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		for (std::map<uint32_t, cgreterm_in4*>::iterator

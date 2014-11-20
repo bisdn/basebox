@@ -37,10 +37,6 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		rofl::cindex index(0);
 
-		fe.set_instructions().add_inst_apply_actions().set_actions().
-				set_action_output(index).set_port_no(rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()));
-		fe.set_instructions().set_inst_apply_actions().set_actions().
-				set_action_output(index).set_max_len(1518);
 
 		// redirect ARP packets to control plane
 		fe.set_match().clear();
@@ -61,6 +57,11 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
 		fe.set_match().set_arp_tpa(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		fe.set_cookie(cookie_arp);
+		fe.set_instructions().clear();
+		fe.set_instructions().add_inst_apply_actions().set_actions().
+				set_action_output(index).set_port_no(rofl::openflow::OFPP_CONTROLLER));
+		fe.set_instructions().set_inst_apply_actions().set_actions().
+				set_action_output(index).set_max_len(1526);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		// redirect ICMPv4 packets to control plane
@@ -70,14 +71,21 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		fe.set_match().set_ip_proto(rofl::ficmpv4frame::ICMPV4_IP_PROTO);
 		fe.set_cookie(cookie_icmpv4);
+		fe.set_instructions().clear();
+		fe.set_instructions().add_inst_apply_actions().set_actions().
+				set_action_output(index).set_port_no(rofl::openflow::OFPP_CONTROLLER));
+		fe.set_instructions().set_inst_apply_actions().set_actions().
+				set_action_output(index).set_max_len(1526);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-		// redirect IPv4 packets to control plane
+		// move IPv4 packets to next table
 		fe.set_match().clear();
 		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4().get_addr(adindex).get_local_addr());
 		fe.set_cookie(cookie_ipv4);
+		fe.set_instructions().clear();
+		fe.set_instructions().add_inst_goto_table().set_table_id(in_ofp_table_id+1);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_ATTACHED;
@@ -203,11 +211,6 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		rofl::cindex index(0);
 
-		fe.set_instructions().add_inst_apply_actions().set_actions().
-				set_action_output(index).set_port_no(rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()));
-		fe.set_instructions().set_inst_apply_actions().set_actions().
-				set_action_output(index).set_max_len(1518);
-
 		// ... and the link's dpt representation (clink) needed for OFP related data
 		const roflibs::ip::clink& dpl =
 				cipcore::get_ip_core(dpid).get_link(ifindex);
@@ -222,14 +225,21 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
 		fe.set_match().set_ip_proto(rofl::ficmpv6frame::ICMPV6_IP_PROTO);
 		fe.set_cookie(cookie_icmpv6);
+		fe.set_instructions().clear();
+		fe.set_instructions().add_inst_apply_actions().set_actions().
+				set_action_output(index).set_port_no(rofl::openflow::OFPP_CONTROLLER));
+		fe.set_instructions().set_inst_apply_actions().set_actions().
+				set_action_output(index).set_max_len(1526);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-		// redirect IPv6 packets to control plane
+		// move IPv6 packets to next table
 		fe.set_match().clear();
 		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rofcore::cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in6().get_addr(adindex).get_local_addr());
 		fe.set_cookie(cookie_ipv6);
+		fe.set_instructions().clear();
+		fe.set_instructions().add_inst_goto_table().set_table_id(in_ofp_table_id+1);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_ATTACHED;

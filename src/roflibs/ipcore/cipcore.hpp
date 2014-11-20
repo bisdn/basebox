@@ -140,6 +140,7 @@ private:
 		state(STATE_DETACHED),
 		dpid(dpid),
 		cookie_fwd_local(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_app(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		cookie_no_route(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		cookie_multicast_ipv4(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		cookie_multicast_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
@@ -387,6 +388,7 @@ private:
 	ofp_core_state_t					state;
 	rofl::cdpid 						dpid;
 	uint64_t							cookie_fwd_local; // forwarding enabled flow table entry in local table
+	uint64_t							cookie_app; // table miss in application flow table (fwd stage + 1)
 	uint64_t							cookie_no_route; // no appropriate routing entry found in fwd table
 	uint64_t							cookie_multicast_ipv4;
 	uint64_t							cookie_multicast_ipv6;
