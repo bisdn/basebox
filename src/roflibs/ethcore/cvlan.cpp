@@ -6,6 +6,7 @@
  */
 
 #include "cvlan.hpp"
+#include "cethcore.hpp"
 
 using namespace roflibs::eth;
 
