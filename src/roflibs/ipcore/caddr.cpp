@@ -31,7 +31,6 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
-		fe.set_priority(0x7000);
 		fe.set_table_id(in_ofp_table_id);
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
@@ -49,6 +48,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		// local VLAN associated with interface
 		uint16_t vid = dpl.get_vlan_vid();
 
+		fe.set_priority(0x7020);
 #if 0
 		uint32_t ofp_port_no = dpt.get_ports().get_port(cipcore::get_ip_core(dpid).get_link(ifindex).get_devname()).get_port_no();
 		fe.set_match().set_in_port(ofp_port_no); // only for ARP (bound to Ethernet segment)
@@ -65,6 +65,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		// redirect ICMPv4 packets to control plane
+		fe.set_priority(0x7010);
 		fe.set_match().clear();
 		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -79,6 +80,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		// move IPv4 packets to next table
+		fe.set_priority(0x7000);
 		fe.set_match().clear();
 		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -129,6 +131,7 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		// local VLAN associated with interface
 		uint16_t vid = dpl.get_vlan_vid();
 
+		fe.set_priority(0x7020);
 #if 0
 		uint32_t ofp_port_no = dpt.get_ports().get_port(cipcore::get_ip_core(dpid).get_link(ifindex).get_devname()).get_port_no();
 		fe.set_match().set_in_port(ofp_port_no); // only for ARP (bound to Ethernet segment)
@@ -140,6 +143,7 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		// redirect ICMPv4 packets to control plane
+		fe.set_priority(0x7010);
 		fe.set_match().clear();
 		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -149,6 +153,7 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		// redirect IPv4 packets to control plane
+		fe.set_priority(0x7000);
 		fe.set_match().clear();
 		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -205,7 +210,6 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
-		fe.set_priority(0x7000);
 		fe.set_table_id(in_ofp_table_id);
 		fe.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 
@@ -219,6 +223,7 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		uint16_t vid = dpl.get_vlan_vid();
 
 		// redirect ICMPv6 packets to control plane
+		fe.set_priority(0x7010);
 		fe.set_match().clear();
 		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
@@ -233,6 +238,7 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		// move IPv6 packets to next table
+		fe.set_priority(0x7000);
 		fe.set_match().clear();
 		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
@@ -281,6 +287,7 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		uint16_t vid = dpl.get_vlan_vid();
 
 		// redirect ICMPv6 packets to control plane
+		fe.set_priority(0x7010);
 		fe.set_match().clear();
 		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
@@ -290,6 +297,7 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		// redirect IPv6 packets to control plane
+		fe.set_priority(0x7000);
 		fe.set_match().clear();
 		//fe.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
