@@ -7,6 +7,7 @@
 
 #include "cnexthop.hpp"
 #include "cipcore.hpp"
+#include "roflibs/ethcore/cethcore.hpp"
 
 using namespace roflibs::ip;
 
@@ -176,6 +177,17 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 void
+cnexthop_in4::handle_packet_in(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::debug << "[cnexthop_in4][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+}
+
+
+
+void
 cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
@@ -337,6 +349,16 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 	}
 }
 
+
+
+void
+cnexthop_in6::handle_packet_in(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::debug << "[cnexthop_in6][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+}
 
 
 

@@ -7,6 +7,7 @@
 
 #include "cneigh.hpp"
 #include "cipcore.hpp"
+#include "roflibs/ethcore/cethcore.hpp"
 
 using namespace roflibs::ip;
 
@@ -212,6 +213,17 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 void
+cneigh_in4::handle_packet_in(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::debug << "[cneigh_in4][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+}
+
+
+
+void
 cneigh_in6::update()
 {
 	try {
@@ -410,4 +422,17 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 	state = STATE_DETACHED;
 	dpt.release_group_id(group_id); group_id = 0;
 }
+
+
+
+void
+cneigh_in6::handle_packet_in(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::debug << "[cneigh_in6][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+}
+
+
 
