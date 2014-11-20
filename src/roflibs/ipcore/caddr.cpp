@@ -8,6 +8,7 @@
 
 #include "caddr.hpp"
 #include "cipcore.hpp"
+#include "cethcore.hpp"
 
 using namespace roflibs::ip;
 
@@ -168,6 +169,17 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 void
+caddr_in4::handle_packet_in(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::debug << "[caddr_in4][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+}
+
+
+
+void
 caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
@@ -292,5 +304,15 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 	}
 }
 
+
+
+void
+caddr_in6::handle_packet_in(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::debug << "[caddr_in6][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+}
 
 
