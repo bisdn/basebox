@@ -44,6 +44,8 @@ cethcore::~cethcore() {
 			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 		}
 	} catch (rofl::eRofDptNotFound& e) {}
+
+	clear_tap_devs(dpid);
 }
 
 
@@ -271,8 +273,6 @@ cethcore::handle_dpt_close(rofl::crofdpt& dpt)
 	} catch (rofl::eRofBaseNotConnected& e) {
 		rofcore::logging::debug << "[cethcore][handle_dpt_close] control channel not connected" << std::endl;
 	}
-
-	clear_tap_devs(dpt.get_dpid());
 }
 
 
