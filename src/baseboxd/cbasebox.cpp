@@ -273,19 +273,25 @@ cbasebox::handle_dpt_close(
 
 	if (flags.test(FLAG_FLOWCORE)) {
 		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::svc::cflowcore::drop_flow_core(dpt.get_dpid());
 	}
 	if (flags.test(FLAG_GRECORE)) {
 		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::gre::cgrecore::drop_gre_core(dpt.get_dpid());
 	}
 	if (flags.test(FLAG_GTPCORE)) {
 		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::gtp::cgtprelay::drop_gtp_relay(dpt.get_dpid());
 		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::gtp::cgtpcore::drop_gtp_core(dpt.get_dpid());
 	}
 	if (flags.test(FLAG_ETHCORE)) {
 		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::eth::cethcore::drop_eth_core(dpt.get_dpid());
 	}
 	if (flags.test(FLAG_IPCORE)) {
 		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::ip::cipcore::drop_ip_core(dpt.get_dpid());
 	}
 
 #if 0
@@ -403,7 +409,7 @@ cbasebox::handle_port_desc_stats_reply(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg) {
 
 	dpt.set_ports() = msg.get_ports();
-
+#if 0
 	if (flags.test(FLAG_FLOWCORE)) {
 		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	}
@@ -439,6 +445,7 @@ cbasebox::handle_port_desc_stats_reply(
 												table_id_gre_local,
 												table_id_ip_fwd).handle_dpt_close(dpt);
 	}
+#endif
 
 	// purge all entries, definitly
 	dpt.flow_mod_reset();
