@@ -121,6 +121,7 @@ private:
 			uint8_t gre_local_table_id,
 			uint8_t ip_fwd_table_id) :
 		state(STATE_DETACHED), dpid(dpid),
+		cookie_miss_entry(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		eth_local_table_id(eth_local_table_id),
 		ip_local_table_id(ip_local_table_id),
 		gre_local_table_id(gre_local_table_id),
@@ -393,7 +394,7 @@ public:
 	 */
 	virtual void
 	handle_packet_in(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {};
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
 
 	/**
 	 *
@@ -438,6 +439,7 @@ private:
 
 	enum ofp_state_t							state;
 	rofl::cdpid									dpid;
+	uint64_t									cookie_miss_entry;
 	uint8_t										eth_local_table_id;
 	uint8_t										ip_local_table_id;
 	uint8_t										gre_local_table_id;

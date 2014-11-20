@@ -6,6 +6,7 @@
  */
 
 #include "cgrecore.hpp"
+#include "roflibs/ethcore/cethcore.hpp"
 
 using namespace roflibs::gre;
 
@@ -30,6 +31,7 @@ cgrecore::handle_dpt_open(rofl::crofdpt& dpt)
 		// install GRE rule in IP local table
 		fm.set_table_id(gre_local_table_id);
 		fm.set_priority(0xd000);
+		fm.set_cookie(cookie_miss_entry);
 
 		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fm.set_match().set_ip_proto(GRE_IP_PROTO);
@@ -81,6 +83,7 @@ cgrecore::handle_dpt_close(rofl::crofdpt& dpt)
 		// remove GRE UDP dst rule in IP local-stage-table (GotoTable gre_table_id) IPv4
 		fm.set_table_id(gre_local_table_id);
 		fm.set_priority(0xd000);
+		fm.set_cookie(cookie_miss_entry);
 
 		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fm.set_match().set_ip_proto(GRE_IP_PROTO);
@@ -110,5 +113,16 @@ cgrecore::handle_dpt_close(rofl::crofdpt& dpt)
 		rofcore::logging::error << "[rofgre][cgrecore][handle_dpt_open] unexpected error" << std::endl;
 	}
 }
+
+
+
+void
+cgrecore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::debug << "[cgrecore][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+}
+
 
 
