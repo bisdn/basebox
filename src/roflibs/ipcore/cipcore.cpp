@@ -1,4 +1,5 @@
 #include "cipcore.hpp"
+#include "roflibs/ethcore/cethcore.hpp"
 
 using namespace roflibs::ip;
 
@@ -73,7 +74,9 @@ cipcore::handle_port_status(
 void
 cipcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
-	rofcore::logging::info << "[cipcore] packet-in message rcvd:" << std::endl << msg;
+	rofcore::logging::debug << "[cipcore][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 }
 
 
