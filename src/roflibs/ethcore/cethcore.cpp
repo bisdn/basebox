@@ -281,6 +281,7 @@ void
 cethcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
 	try {
+		rofcore::logging::debug << "[cethcore][handle_packet_in] pkt received: " << std::endl << msg;
 
 		// yet unknown source address found in eth-src stage
 		if (msg.get_table_id() == table_id_eth_src) {

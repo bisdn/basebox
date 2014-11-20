@@ -133,6 +133,7 @@ void
 cethendpnt::handle_packet_in(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
+	rofcore::logging::debug << "[cethendpnt][handle_packet_in] pkt received: " << std::endl << msg;
 	// store packet in ethcore and thus, tap devices
 	cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 }
