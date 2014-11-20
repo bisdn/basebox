@@ -8,7 +8,7 @@
 
 #include "caddr.hpp"
 #include "cipcore.hpp"
-#include "cethcore.hpp"
+#include "roflibs/ethcore/cethcore.hpp"
 
 using namespace roflibs::ip;
 
