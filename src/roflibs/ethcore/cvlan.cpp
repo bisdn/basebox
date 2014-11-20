@@ -163,7 +163,7 @@ cvlan::handle_packet_in(
 
 	} else
 	if (msg.get_table_id() == table_id_eth_local) {
-		rofcore::logging::debug << "[cethendpnt][handle_packet_in] pkt received: " << std::endl << msg;
+		rofcore::logging::debug << "[cvlan][handle_packet_in] pkt received: " << std::endl << msg;
 		// store packet in ethcore and thus, tap devices
 		cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 	}
