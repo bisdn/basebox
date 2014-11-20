@@ -59,7 +59,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_cookie(cookie_arp);
 		fe.set_instructions().clear();
 		fe.set_instructions().add_inst_apply_actions().set_actions().
-				set_action_output(index).set_port_no(rofl::openflow::OFPP_CONTROLLER));
+				set_action_output(index).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 		fe.set_instructions().set_inst_apply_actions().set_actions().
 				set_action_output(index).set_max_len(1526);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
@@ -73,7 +73,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_cookie(cookie_icmpv4);
 		fe.set_instructions().clear();
 		fe.set_instructions().add_inst_apply_actions().set_actions().
-				set_action_output(index).set_port_no(rofl::openflow::OFPP_CONTROLLER));
+				set_action_output(index).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 		fe.set_instructions().set_inst_apply_actions().set_actions().
 				set_action_output(index).set_max_len(1526);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
