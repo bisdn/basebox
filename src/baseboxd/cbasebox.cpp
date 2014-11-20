@@ -422,7 +422,7 @@ cbasebox::handle_port_desc_stats_reply(
 	if (flags.test(FLAG_IPCORE)) {
 		roflibs::ip::cipcore::add_ip_core(dpt.get_dpid(),
 												table_id_ip_local,
-												table_id_ip_fwd), //.handle_dpt_close(dpt);
+												table_id_ip_fwd); //.handle_dpt_close(dpt);
 	}
 
 	if (flags.test(FLAG_ETHCORE)) {
