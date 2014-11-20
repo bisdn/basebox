@@ -74,7 +74,7 @@ public:
 	 *
 	 */
 	cethendpnt(const cethendpnt& port) :
-		cookie_endpoint(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_endpoint(roflibs::common::openflow::ccookie_owner::acquire_cookie())
 	{ *this = port; };
 
 	/**
