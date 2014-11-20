@@ -49,31 +49,6 @@ cethendpnt::handle_dpt_open(
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 
-
-		/*
-		 * multicast frames
-		 */
-		fm.set_cookie(cookie_multicast);
-		fm.set_table_id(table_id_eth_local); // local address stage
-		fm.set_match().clear();
-		//fm.set_match().set_in_port(portno);
-		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
-		fm.set_match().set_eth_dst(rofl::caddress_ll("01:00:00:00:00:00"), rofl::caddress_ll("01:00:00:00:00:00"));
-		fm.set_instructions().clear();
-		//fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_out);
-#if 0
-		if (not tagged) {
-			fm.set_instructions().set_inst_apply_actions().set_actions().
-					add_action_pop_vlan(index++);
-		}
-#endif
-		fm.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_output(index).set_max_len(1526);
-		fm.set_instructions().set_inst_apply_actions().set_actions().
-				set_action_output(index++).set_port_no(rofl::openflow::OFPP_CONTROLLER);
-		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
-
 	} catch (rofl::eRofBaseCongested& e) {
 		// TODO: handle congested control channel
 	}
@@ -107,20 +82,6 @@ cethendpnt::handle_dpt_close(
 		//fm.set_match().set_eth_dst(dpt.get_ports().get_port(portno).get_hwaddr());
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
-
-
-		/*
-		 * multicast frames
-		 */
-		fm.set_cookie(cookie_multicast);
-		fm.set_table_id(table_id_eth_local); // local address stage
-		fm.set_match().clear();
-		//fm.set_match().set_in_port(portno);
-		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
-		fm.set_match().set_eth_dst(rofl::caddress_ll("01:00:00:00:00:00"), rofl::caddress_ll("01:00:00:00:00:00"));
-		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
 
 	} catch (rofl::eRofBaseCongested& e) {
 		// TODO: handle congested control channel

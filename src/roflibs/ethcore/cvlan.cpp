@@ -34,14 +34,15 @@ cvlan::handle_dpt_open(
 				set_actions().add_action_group(rofl::cindex(0)).set_group_id(group_id);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
-		// set broadcast entry in src stage
-		fm.set_table_id(table_id_eth_src);
+		// set broadcast entry in local stage
+		fm.set_table_id(table_id_eth_local);
 		fm.set_priority(0x8100);
 		fm.set_cookie(cookie_multicast);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("01:00:00:00:00:00"), rofl::caddress_ll("01:00:00:00:00:00"));
+		fm.set_instructions().set_inst_apply_actions().
+				set_actions().add_action_output(rofl::cindex(1)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
 		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_local);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
 
 		// send notification to all ethernet endpoints
 		for (std::map<rofl::caddress_ll, cethendpnt>::iterator
@@ -105,8 +106,8 @@ cvlan::handle_dpt_close(
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
-		// remove broadcast entry in src stage
-		fm.set_table_id(table_id_eth_src);
+		// remove broadcast entry in local stage
+		fm.set_table_id(table_id_eth_local);
 		fm.set_priority(0x8100);
 		fm.set_cookie(cookie_multicast);
 		fm.set_match().set_eth_dst(rofl::caddress_ll("01:00:00:00:00:00"), rofl::caddress_ll("01:00:00:00:00:00"));
@@ -136,26 +137,34 @@ void
 cvlan::handle_packet_in(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
-	try {
-		assert(dpid == dpt.get_dpid());
-		assert(vid == (msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT)));
+	if (msg.get_table_id() == table_id_eth_src) {
+		try {
+			assert(dpid == dpt.get_dpid());
+			assert(vid == (msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT)));
 
-		uint32_t in_port = msg.get_match().get_in_port();
-		const rofl::caddress_ll& lladdr = msg.get_match().get_eth_src_addr();
-		if (lladdr.is_multicast() || lladdr.is_null()) {
-			rofcore::logging::debug << "[cvlan][handle_packet_in] invalid source lladdr found" << std::endl << msg;
+			uint32_t in_port = msg.get_match().get_in_port();
+			const rofl::caddress_ll& lladdr = msg.get_match().get_eth_src_addr();
+			if (lladdr.is_multicast() || lladdr.is_null()) {
+				rofcore::logging::debug << "[cvlan][handle_packet_in] invalid source lladdr found" << std::endl << msg;
+				dpt.drop_buffer(auxid, msg.get_buffer_id());
+				return;
+			}
+
+			set_fib_entry(lladdr, in_port).handle_packet_in(dpt, auxid, msg);
+
+		} catch (rofl::openflow::eOxmNotFound& e) {
+			rofcore::logging::debug << "[cvlan][handle_packet_in] match(es) not found" << std::endl << msg;
 			dpt.drop_buffer(auxid, msg.get_buffer_id());
-			return;
+		} catch (eFibEntryPortNotMember& e) {
+			rofcore::logging::debug << "[cvlan][handle_packet_in] packet-in on invalid port" << std::endl << msg;
+			dpt.drop_buffer(auxid, msg.get_buffer_id());
 		}
 
-		set_fib_entry(lladdr, in_port).handle_packet_in(dpt, auxid, msg);
-
-	} catch (rofl::openflow::eOxmNotFound& e) {
-		rofcore::logging::debug << "[cvlan][handle_packet_in] match(es) not found" << std::endl << msg;
-		dpt.drop_buffer(auxid, msg.get_buffer_id());
-	} catch (eFibEntryPortNotMember& e) {
-		rofcore::logging::debug << "[cvlan][handle_packet_in] packet-in on invalid port" << std::endl << msg;
-		dpt.drop_buffer(auxid, msg.get_buffer_id());
+	} else
+	if (msg.get_table_id() == table_id_eth_local) {
+		rofcore::logging::debug << "[cethendpnt][handle_packet_in] pkt received: " << std::endl << msg;
+		// store packet in ethcore and thus, tap devices
+		cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 	}
 }
 

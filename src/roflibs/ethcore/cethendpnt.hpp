@@ -40,7 +40,6 @@ public:
 	cethendpnt() :
 		dpt_state(STATE_IDLE),
 		cookie_endpoint(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		vid(0xffff), tagged(false), table_id_eth_local(0)
 	{};
 
@@ -54,7 +53,6 @@ public:
 		dpt_state(STATE_IDLE),
 		dpid(dpid),
 		cookie_endpoint(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		vid(vid), tagged(tagged),
 		table_id_eth_local(local_stage_table_id),
 		hwaddr(hwaddr)
@@ -77,7 +75,6 @@ public:
 	 */
 	cethendpnt(const cethendpnt& port) :
 		cookie_endpoint(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie())
 	{ *this = port; };
 
 	/**
@@ -184,7 +181,6 @@ private:
 
 	rofl::cdpid		dpid;
 	uint64_t		cookie_endpoint;
-	uint64_t		cookie_multicast;
 	uint16_t 		vid;
 	bool 			tagged;
 	uint8_t			table_id_eth_local; // MAC addresses assigned to local host
