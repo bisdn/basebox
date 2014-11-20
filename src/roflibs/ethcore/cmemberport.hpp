@@ -71,8 +71,9 @@ public:
 	/**
 	 *
 	 */
-	cmemberport(const cmemberport& port)
-		{ *this = port; };
+	cmemberport(const cmemberport& port) :
+		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = port; };
 
 	/**
 	 *

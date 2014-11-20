@@ -41,7 +41,8 @@ public:
 		dpt_state(STATE_IDLE),
 		cookie_endpoint(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-		vid(0xffff), tagged(false), table_id_eth_local(0) {};
+		vid(0xffff), tagged(false), table_id_eth_local(0)
+	{};
 
 	/**
 	 *
@@ -56,7 +57,8 @@ public:
 		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		vid(vid), tagged(tagged),
 		table_id_eth_local(local_stage_table_id),
-		hwaddr(hwaddr) {};
+		hwaddr(hwaddr)
+	{};
 
 	/**
 	 *
@@ -73,8 +75,10 @@ public:
 	/**
 	 *
 	 */
-	cethendpnt(const cethendpnt& port)
-		{ *this = port; };
+	cethendpnt(const cethendpnt& port) :
+		cookie_endpoint(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = port; };
 
 	/**
 	 *

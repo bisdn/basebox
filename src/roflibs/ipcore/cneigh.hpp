@@ -234,7 +234,9 @@ public:
 	 *
 	 */
 	cneigh_in4(
-			const cneigh_in4& neigh) { *this = neigh; };
+			const cneigh_in4& neigh) :
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = neigh; };
 
 	/**
 	 *
@@ -361,7 +363,9 @@ public:
 	 *
 	 */
 	cneigh_in6(
-			const cneigh_in6& neigh) { *this = neigh; };
+			const cneigh_in6& neigh) :
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = neigh; };
 
 	/**
 	 *

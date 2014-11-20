@@ -99,7 +99,10 @@ public:
 	/**
 	 *
 	 */
-	cfibentry(const cfibentry& entry) { *this = entry; };
+	cfibentry(const cfibentry& entry) :
+		cookie_src(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_dst(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = entry; };
 
 	/**
 	 *

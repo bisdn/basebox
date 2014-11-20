@@ -273,25 +273,19 @@ cbasebox::handle_dpt_close(
 
 	if (flags.test(FLAG_FLOWCORE)) {
 		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
-		roflibs::svc::cflowcore::drop_flow_core(dpt.get_dpid());
 	}
 	if (flags.test(FLAG_GRECORE)) {
 		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
-		roflibs::gre::cgrecore::drop_gre_core(dpt.get_dpid());
 	}
 	if (flags.test(FLAG_GTPCORE)) {
 		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
-		roflibs::gtp::cgtprelay::drop_gtp_relay(dpt.get_dpid());
 		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
-		roflibs::gtp::cgtpcore::drop_gtp_core(dpt.get_dpid());
 	}
 	if (flags.test(FLAG_ETHCORE)) {
 		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
-		roflibs::eth::cethcore::drop_eth_core(dpt.get_dpid());
 	}
 	if (flags.test(FLAG_IPCORE)) {
 		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
-		roflibs::ip::cipcore::drop_ip_core(dpt.get_dpid());
 	}
 
 #if 0
@@ -410,47 +404,45 @@ cbasebox::handle_port_desc_stats_reply(
 
 	dpt.set_ports() = msg.get_ports();
 
-
-	// purge all entries, definitly
-	dpt.flow_mod_reset();
-	dpt.group_mod_reset();
-
 	if (flags.test(FLAG_FLOWCORE)) {
-		roflibs::svc::cflowcore::add_flow_core(dpt.get_dpid()); //.handle_dpt_close(dpt);
+		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
 	}
 
 	if (flags.test(FLAG_IPCORE)) {
-		roflibs::ip::cipcore::add_ip_core(dpt.get_dpid(),
+		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid(),
 												table_id_ip_local,
-												table_id_ip_fwd); //.handle_dpt_close(dpt);
+												table_id_ip_fwd).handle_dpt_close(dpt);
 	}
 
 	if (flags.test(FLAG_ETHCORE)) {
-		roflibs::eth::cethcore::add_eth_core(dpt.get_dpid(),
+		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid(),
 												table_id_eth_port_membership,
 												table_id_eth_src,
 												table_id_eth_local,
 												table_id_eth_dst,
-												default_pvid); //.handle_dpt_close(dpt);
+												default_pvid).handle_dpt_close(dpt);
 	}
 
 	if (flags.test(FLAG_GTPCORE)) {
-		roflibs::gtp::cgtpcore::add_gtp_core(dpt.get_dpid(),
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid(),
 												table_id_ip_local,
-												table_id_gtp_local); //.handle_dpt_close(dpt); // yes, same as local for cipcore
+												table_id_gtp_local).handle_dpt_close(dpt); // yes, same as local for cipcore
 
-		roflibs::gtp::cgtprelay::add_gtp_relay(dpt.get_dpid(),
-												table_id_ip_local); //.handle_dpt_close(dpt); // yes, same as local for cipcore
+		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid(),
+												table_id_ip_local).handle_dpt_close(dpt); // yes, same as local for cipcore
 	}
 
 	if (flags.test(FLAG_GRECORE)) {
-		roflibs::gre::cgrecore::add_gre_core(dpt.get_dpid(),
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid(),
 												table_id_eth_port_membership,
 												table_id_ip_local,
 												table_id_gre_local,
-												table_id_ip_fwd); //.handle_dpt_close(dpt);
+												table_id_ip_fwd).handle_dpt_close(dpt);
 	}
 
+	// purge all entries, definitly
+	dpt.flow_mod_reset();
+	dpt.group_mod_reset();
 
 
 	if (flags.test(FLAG_FLOWCORE)) {

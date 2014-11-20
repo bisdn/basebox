@@ -167,7 +167,9 @@ public:
 	 *
 	 */
 	cnexthop_in4(
-			const cnexthop_in4& nexthop) { *this = nexthop; };
+			const cnexthop_in4& nexthop) :
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = nexthop; };
 
 	/**
 	 *
@@ -283,7 +285,9 @@ public:
 	 *
 	 */
 	cnexthop_in6(
-			const cnexthop_in6& nexthop) { *this = nexthop; };
+			const cnexthop_in6& nexthop) :
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = nexthop; };
 
 	/**
 	 *

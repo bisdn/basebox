@@ -84,7 +84,10 @@ public:
 	/**
 	 *
 	 */
-	cvlan(const cvlan& vlan) { *this = vlan; };
+	cvlan(const cvlan& vlan) :
+		cookie_flooding(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = vlan; };
 
 	/**
 	 *
