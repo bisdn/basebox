@@ -109,7 +109,7 @@ public:
 	handle_packet_in(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {
 		if (cookiestore.find(msg.get_cookie()) == cookiestore.end()) {
-			rofcore::logging::debug << "[ccookiebox][handle_packet_in] cookie:"
+			rofcore::logging::debug << "[ccookiebox][handle_packet_in] cookie: 0x"
 					<< std::hex << (unsigned long long)msg.get_cookie() << std::dec
 					<< " not found, dropping packet" << std::endl;
 			return;
@@ -124,7 +124,7 @@ public:
 	handle_flow_removed(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {
 		if (cookiestore.find(msg.get_cookie()) == cookiestore.end()) {
-			rofcore::logging::debug << "[ccookiebox][handle_flow_removed] cookie:"
+			rofcore::logging::debug << "[ccookiebox][handle_flow_removed] cookie: 0x"
 					<< std::hex << (unsigned long long)msg.get_cookie() << std::dec
 					<< " not found, dropping packet" << std::endl;
 			return;
