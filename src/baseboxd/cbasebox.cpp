@@ -440,6 +440,10 @@ cbasebox::handle_port_desc_stats_reply(
 												table_id_ip_fwd).handle_dpt_close(dpt);
 	}
 
+	// purge all entries, definitly
+	dpt.flow_mod_reset();
+	dpt.group_mod_reset();
+
 
 	if (flags.test(FLAG_FLOWCORE)) {
 		rofl::openflow::cofflowmod fm(dpt.get_version());
