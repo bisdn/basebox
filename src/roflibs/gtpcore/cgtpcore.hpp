@@ -115,7 +115,10 @@ private:
 	 *
 	 */
 	cgtpcore(const rofl::cdpid& dpid, uint8_t ip_local_table_id, uint8_t gtp_table_id = 0) :
-		state(STATE_DETACHED), dpid(dpid), ip_local_table_id(ip_local_table_id), gtp_table_id(gtp_table_id) {};
+		state(STATE_DETACHED), dpid(dpid),
+		cookie_miss_entry_ipv4(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_miss_entry_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		ip_local_table_id(ip_local_table_id), gtp_table_id(gtp_table_id) {};
 
 	/**
 	 *
@@ -594,7 +597,7 @@ public:
 	 */
 	virtual void
 	handle_packet_in(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {};
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
 
 	/**
 	 *
@@ -649,6 +652,8 @@ private:
 
 	enum ofp_state_t							state;
 	rofl::cdpid									dpid;
+	uint64_t									cookie_miss_entry_ipv4;
+	uint64_t									cookie_miss_entry_ipv6;
 	uint8_t										ip_local_table_id;
 	uint8_t										gtp_table_id;
 	std::map<clabel_in4, crelay_in4*>			relays_in4;
