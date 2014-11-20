@@ -159,6 +159,8 @@ private:
 			next_cookie++;
 		} while (cookiestore.find(next_cookie) != cookiestore.end());
 		cookiestore[next_cookie] = owner;
+		rofcore::logging::debug << "[ccookiebox][acquire_cookie] cookie: 0x"
+							<< std::hex << (unsigned long long)next_cookie << std::dec << std::endl;
 		return next_cookie;
 	};
 
@@ -173,6 +175,8 @@ private:
 		if (cookiestore[cookie] != owner) {
 			return;
 		}
+		rofcore::logging::debug << "[ccookiebox][release_cookie] cookie: 0x"
+							<< std::hex << (unsigned long long)cookie << std::dec << std::endl;
 		cookiestore.erase(cookie);
 	};
 
