@@ -695,6 +695,8 @@ cgreterm::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		rofl::openflow::cofactions actions(dpt.get_version());
 		actions.set_action_output(rofl::cindex(0)).set_port_no(gre_portno);
 
+		rofcore::logging::debug << "[cgreterm][enqueue] injecting pkt to GRE tap port" << std::endl;
+
 		dpt.send_packet_out_message(
 				rofl::cauxid(0),
 				rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()),
