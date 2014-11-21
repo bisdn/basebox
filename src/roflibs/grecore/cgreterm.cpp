@@ -434,9 +434,9 @@ cgreterm_in4::hook_init()
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 		//gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
-		std::stringstream ss; ss << std::string("gretap") << gre_portno:
+		std::stringstream ss; ss << std::string("gretap") << gre_portno;
 		gre_tap_portname = ss.str();
-		std::stringstream ss; ss << std::string("gretun") << gre_portno:
+		std::stringstream ss; ss << std::string("gretun") << gre_portno;
 		gre_tun_portname = ss.str();
 
 		std::vector<std::string> argv;
@@ -523,9 +523,9 @@ cgreterm_in6::hook_init()
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 		//gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
-		std::stringstream ss; ss << std::string("gretap") << gre_portno:
+		std::stringstream ss; ss << std::string("gretap") << gre_portno;
 		gre_tap_portname = ss.str();
-		std::stringstream ss; ss << std::string("gretun") << gre_portno:
+		std::stringstream ss; ss << std::string("gretun") << gre_portno;
 		gre_tun_portname = ss.str();
 
 		std::vector<std::string> argv;
