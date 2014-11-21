@@ -675,6 +675,21 @@ cbasebox::test_workflow(rofl::crofdpt& dpt)
 
 		uint32_t term_id = 1;
 		uint32_t gre_portno = 3;
+		rofl::caddress_in4 laddr("10.3.3.1");
+		rofl::caddress_in4 raddr("10.3.3.30");
+		uint32_t gre_key = 0x11223344;
+
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).
+				add_gre_term_in4(term_id, gre_portno, laddr, raddr, gre_key);
+	}
+
+	/*
+	 * GRE test
+	 */
+	if (0) {
+
+		uint32_t term_id = 1;
+		uint32_t gre_portno = 3;
 		rofl::caddress_in4 laddr("10.1.1.1");
 		rofl::caddress_in4 raddr("10.1.1.10");
 		uint32_t gre_key = 0x11223344;
