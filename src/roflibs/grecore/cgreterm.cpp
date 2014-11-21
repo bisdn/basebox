@@ -652,7 +652,7 @@ cgreterm::execute(
 void
 cgreterm::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
-	rofcore::logging::debug << "[cgreterm][handle_packet_in] pkt received: " << std::endl;
+	rofcore::logging::debug << "[cgreterm][handle_packet_in] pkt received" << std::endl;
 
 	// ethernet frames received from gre port are enqueued to our local tap device
 	if (msg.get_cookie() == cookie_gre_port_redirect) {
@@ -661,9 +661,10 @@ cgreterm::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::
 			return;
 		}
 
+		rofcore::logging::debug << "[cgreterm][handle_packet_in] pkt received from GRE tap port" << std::endl;
+
 		rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 		*pkt = msg.get_packet();
-		pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t)-sizeof(uint16_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
 		gretap->enqueue(pkt);
 
 	} else
