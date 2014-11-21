@@ -31,7 +31,7 @@ cethendpnt::handle_dpt_open(
 		fm.set_command(rofl::openflow::OFPFC_ADD);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0x8200);
 		fm.set_cookie(cookie_endpoint);
 		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
@@ -74,7 +74,7 @@ cethendpnt::handle_dpt_close(
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0x8200);
 		fm.set_cookie(cookie_endpoint);
 		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
