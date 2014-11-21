@@ -473,9 +473,8 @@ cbasebox::handle_port_desc_stats_reply(
 		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	}
 
-
+	test_workflow(dpt);
 #if 0
-	//test_workflow(dpt);
 
 	rofcore::logging::debug << "=====================================" << std::endl;
 	rofcore::logging::debug << roflibs::eth::cethcore::get_eth_core(dpt.get_dpid());
