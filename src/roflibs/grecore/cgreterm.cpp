@@ -433,7 +433,11 @@ cgreterm_in4::hook_init()
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
-		gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
+		//gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
+		std::stringstream ss; ss << std::string("gretap") << gre_portno:
+		gre_tap_portname = ss.str();
+		std::stringstream ss; ss << std::string("gretun") << gre_portno:
+		gre_tun_portname = ss.str();
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
@@ -447,11 +451,11 @@ cgreterm_in4::hook_init()
 		envp.push_back(s_bridge.str());
 
 		std::stringstream s_iface;
-		s_iface << "IFACE=" << gre_portname;
+		s_iface << "GRETAP=" << gre_tap_portname;
 		envp.push_back(s_iface.str());
 
 		std::stringstream s_greiface;
-		s_greiface << "GREIFACE=gretap" << gre_portno;
+		s_greiface << "GRETUN=" << gre_tun_portname;
 		envp.push_back(s_greiface.str());
 
 		std::stringstream s_local;
@@ -498,11 +502,11 @@ cgreterm_in4::hook_term()
 		envp.push_back(s_bridge.str());
 
 		std::stringstream s_iface;
-		s_iface << "IFACE=" << gre_portname;
+		s_iface << "GRETAP=" << gre_tap_portname;
 		envp.push_back(s_iface.str());
 
 		std::stringstream s_greiface;
-		s_greiface << "GREIFACE=gretap" << gre_portno;
+		s_greiface << "GRETUN=" << gre_tun_portname;
 		envp.push_back(s_greiface.str());
 
 		cgreterm::execute(cgreterm::script_path_term, argv, envp);
@@ -518,7 +522,11 @@ cgreterm_in6::hook_init()
 {
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
-		gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
+		//gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
+		std::stringstream ss; ss << std::string("gretap") << gre_portno:
+		gre_tap_portname = ss.str();
+		std::stringstream ss; ss << std::string("gretun") << gre_portno:
+		gre_tun_portname = ss.str();
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
@@ -532,11 +540,11 @@ cgreterm_in6::hook_init()
 		envp.push_back(s_bridge.str());
 
 		std::stringstream s_iface;
-		s_iface << "IFACE=" << gre_portname;
+		s_iface << "GRETAP=" << gre_tap_portname;
 		envp.push_back(s_iface.str());
 
 		std::stringstream s_greiface;
-		s_greiface << "GREIFACE=gretap" << gre_portno;
+		s_greiface << "GRETUN=" << gre_tun_portname;
 		envp.push_back(s_greiface.str());
 
 		std::stringstream s_local;
@@ -583,11 +591,11 @@ cgreterm_in6::hook_term()
 		envp.push_back(s_bridge.str());
 
 		std::stringstream s_iface;
-		s_iface << "IFACE=" << gre_portname;
+		s_iface << "GRETAP=" << gre_tap_portname;
 		envp.push_back(s_iface.str());
 
 		std::stringstream s_greiface;
-		s_greiface << "GREIFACE=gretap" << gre_portno;
+		s_greiface << "GRETUN=" << gre_tun_portname;
 		envp.push_back(s_greiface.str());
 
 		cgreterm::execute(cgreterm::script_path_term, argv, envp);
