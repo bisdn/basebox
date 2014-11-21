@@ -434,10 +434,10 @@ cgreterm_in4::hook_init()
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 		//gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
-		std::stringstream ss; ss << std::string("gretap") << gre_portno;
-		gre_tap_portname = ss.str();
-		std::stringstream ss; ss << std::string("gretun") << gre_portno;
-		gre_tun_portname = ss.str();
+		std::stringstream sstap; sstap << std::string("gretap") << gre_portno;
+		gre_tap_portname = sstap.str();
+		std::stringstream sstun; sstun << std::string("gretun") << gre_portno;
+		gre_tun_portname = sstun.str();
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
@@ -523,10 +523,10 @@ cgreterm_in6::hook_init()
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 		//gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
-		std::stringstream ss; ss << std::string("gretap") << gre_portno;
-		gre_tap_portname = ss.str();
-		std::stringstream ss; ss << std::string("gretun") << gre_portno;
-		gre_tun_portname = ss.str();
+		std::stringstream sstap; sstap << std::string("gretap") << gre_portno;
+		gre_tap_portname = sstap.str();
+		std::stringstream sstun; sstun << std::string("gretun") << gre_portno;
+		gre_tun_portname = sstun.str();
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
