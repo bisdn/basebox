@@ -370,7 +370,7 @@ cbasebox::handle_port_status(
 		}
 
 	} catch (rofl::openflow::ePortNotFound& e) {
-		// TODO: log error
+		rofcore::logging::debug << "[cbasebox][handle_port_status] portno not found" << std::endl;
 	}
 }
 
