@@ -83,21 +83,21 @@ ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
 
 	} catch (eTapDevOpenFailed& e) {
 
-		rofcore::logging::error << "ctapdev::tap_open() open() failed: dev:" << devname << std::endl;
+		rofcore::logging::error << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl;
 
-		throw eNetDevCritical(e.what());
+		throw eNetDevCritical(rofl::eSysCall("open"));
 
 	} catch (eTapDevIoctlFailed& e) {
 
-		rofcore::logging::error << "ctapdev::tap_open() open() failed: dev:" << devname << std::endl;
+		rofcore::logging::error << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl;
 
-		throw eNetDevCritical(e.what());
+		throw eNetDevCritical(rofl::eSysCall("ctapdev ioctl"));
 
 	} catch (eNetDevIoctl& e) {
 
-		rofcore::logging::error << "ctapdev::tap_open() open() failed: dev:" << devname << std::endl;
+		rofcore::logging::error << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl;
 
-		throw eNetDevCritical(e.what());
+		throw eNetDevCritical(rofl::eSysCall("cnetdev open"));
 
 	}
 }
