@@ -189,6 +189,8 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 	} catch (eNetLinkNotFound& e) {
 		// NL_ACT_CHANGE => ifindex not found
+	} catch (crtlink::eRtLinkNotFound& e) {
+
 	}
 }
 
