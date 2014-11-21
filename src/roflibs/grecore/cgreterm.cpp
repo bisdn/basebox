@@ -684,9 +684,7 @@ cgreterm::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		}
 
 		rofl::openflow::cofactions actions(dpt.get_version());
-		actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
-		actions.set_action_set_field(rofl::cindex(1)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(tapdev->get_pvid()));
-		actions.set_action_output(rofl::cindex(2)).set_port_no(rofl::openflow::OFPP_TABLE);
+		actions.set_action_output(rofl::cindex(0)).set_port_no(gre_portno);
 
 		dpt.send_packet_out_message(
 				rofl::cauxid(0),

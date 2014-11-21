@@ -89,10 +89,9 @@ public:
 		cookie_gre_port_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		cookie_gre_tunnel_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie())
 	{
-		uint16_t pvid = 0;
-		const rofl::caddress_ll hwaddr;
+		// FIXME: fix port-name clashes for multiple datapath elements
 		std::stringstream ss; ss << std::string("gretap") << gre_portno;
-		gretap = new rofcore::ctapdev(this, dpid, ss.str(), pvid, hwaddr);
+		gretap = new rofcore::ctapdev(this, dpid, ss.str(), /*pvid*/0, rofl::caddress_ll("00:00:00:00:00:00"));
 	};
 
 	/**
