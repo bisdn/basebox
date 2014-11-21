@@ -125,7 +125,8 @@ private:
 		eth_local_table_id(eth_local_table_id),
 		ip_local_table_id(ip_local_table_id),
 		gre_local_table_id(gre_local_table_id),
-		ip_fwd_table_id(ip_fwd_table_id) {};
+		ip_fwd_table_id(ip_fwd_table_id),
+		tid(pthread_self()) {};
 
 	/**
 	 *
@@ -410,6 +411,16 @@ public:
 	handle_error_message(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {};
 
+protected:
+
+	friend class cgreterm;
+
+	/**
+	 *
+	 */
+	pthread_t
+	get_thread_id() const { return tid; };
+
 public:
 
 	friend std::ostream&
@@ -452,6 +463,8 @@ private:
 
 	static const uint8_t						GRE_IP_PROTO = 47;
 	static const uint16_t 						GRE_PROT_TYPE_TRANSPARENT_ETHERNET_BRIDGING = 0x6558;
+
+	pthread_t									tid;
 };
 
 }; // end of namespace gre

@@ -7,11 +7,30 @@
 
 #include "cgreterm.hpp"
 #include "roflibs/ethcore/cethcore.hpp"
+#include "cgrecore.hpp"
 
 using namespace roflibs::gre;
 
 /*static*/std::string cgreterm::script_path_init = std::string("/var/lib/basebox/greterm.sh");
 /*static*/std::string cgreterm::script_path_term = std::string("/var/lib/basebox/greterm.sh");
+
+
+cgreterm::cgreterm(const rofl::cdpid& dpid, uint8_t eth_ofp_table_id,
+		uint8_t gre_ofp_table_id, uint8_t ip_fwd_ofp_table_id,
+		uint32_t gre_portno, uint32_t gre_key) :
+	state(STATE_DETACHED), dpid(dpid), eth_ofp_table_id(eth_ofp_table_id),
+	gre_ofp_table_id(gre_ofp_table_id), ip_fwd_ofp_table_id(ip_fwd_ofp_table_id),
+	idle_timeout(DEFAULT_IDLE_TIMEOUT),
+	gre_portno(gre_portno), gre_key(gre_key), gretap(0),
+	cookie_gre_port_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+	cookie_gre_tunnel_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+{
+	// FIXME: fix port-name clashes for multiple datapath elements
+	std::stringstream ss; ss << std::string("gretap") << gre_portno;
+	gretap = new rofcore::ctapdev(this, dpid, ss.str(), /*pvid*/0, rofl::caddress_ll("00:00:00:00:00:00"),
+			cgrecore::get_gre_core(dpid).get_thread_id());
+}
+
 
 
 void

@@ -173,7 +173,7 @@ public:
 	 * @param devname std::string containing name for this network device, e.g. eth0
 	 * @param netdev_owner pointer to cnetdev_owner instance attached to this network device
 	 */
-	cnetdev(cnetdev_owner *netdev_owner, std::string const& devname);
+	cnetdev(cnetdev_owner *netdev_owner, std::string const& devname, pthread_t tid = 0);
 
 	virtual ~cnetdev();
 

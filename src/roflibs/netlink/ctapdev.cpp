@@ -17,8 +17,9 @@ ctapdev::ctapdev(
 		const rofl::cdpid& dpid,
 		std::string const& devname,
 		uint16_t pvid,
-		rofl::cmacaddr const& hwaddr) :
-		cnetdev(netdev_owner, devname),
+		rofl::cmacaddr const& hwaddr,
+		pthread_t tid) :
+		cnetdev(netdev_owner, devname, tid),
 		fd(-1),
 		dpid(dpid),
 		devname(devname),
