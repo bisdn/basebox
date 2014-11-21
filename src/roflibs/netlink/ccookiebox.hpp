@@ -150,7 +150,7 @@ private:
 		}
 		rofcore::logging::debug << "[ccookiebox][deregister_cookie_owner] owner: 0x"
 				<< std::hex << (unsigned long long)owner << std::dec
-				<< std::endl << *this;
+				<< std::endl;
 	};
 
 	/**

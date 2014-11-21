@@ -23,8 +23,9 @@
 #include <rofl/common/protocols/fudpframe.h>
 #include <rofl/common/openflow/experimental/actions/gre_actions.h>
 
-#include <roflibs/netlink/clogging.hpp>
-
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
+#include "roflibs/netlink/ctapdev.hpp"
 
 namespace roflibs {
 namespace gre {
@@ -37,13 +38,22 @@ class eGreTermNotFound : public eGreTermBase {
 public:
 	eGreTermNotFound(const std::string& __arg) : eGreTermBase(__arg) {};
 };
-
+class eLinkNoDptAttached		: public eGreTermBase {
+public:
+	eLinkNoDptAttached(const std::string& __arg) : eGreTermBase(__arg) {};
+};
+class eLinkTapDevNotFound		: public eGreTermBase {
+public:
+	eLinkTapDevNotFound(const std::string& __arg) : eGreTermBase(__arg) {};
+};
 
 /*
  * -ingress- means: send traffic into the tunnel
  * -egress-  means: strip the tunnel and send traffic to the external world
  */
-class cgreterm {
+class cgreterm :
+		public rofcore::cnetdev_owner,
+		public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
@@ -52,12 +62,19 @@ public:
 	cgreterm() :
 		state(STATE_DETACHED), eth_ofp_table_id(0), gre_ofp_table_id(0), ip_fwd_ofp_table_id(0),
 		idle_timeout(DEFAULT_IDLE_TIMEOUT),
-		gre_portno(0), gre_key(0) {};
+		gre_portno(0), gre_key(0), gretap(0),
+		cookie_gre_port_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_gre_tunnel_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
 	 */
-	~cgreterm() {};
+	~cgreterm() {
+		if (gretap) {
+			delete gretap; gretap = (rofcore::ctapdev*)0;
+		}
+	};
 
 	/**
 	 *
@@ -68,12 +85,23 @@ public:
 		state(STATE_DETACHED), dpid(dpid), eth_ofp_table_id(eth_ofp_table_id),
 		gre_ofp_table_id(gre_ofp_table_id), ip_fwd_ofp_table_id(ip_fwd_ofp_table_id),
 		idle_timeout(DEFAULT_IDLE_TIMEOUT),
-		gre_portno(gre_portno), gre_key(gre_key) {};
+		gre_portno(gre_portno), gre_key(gre_key), gretap(0),
+		cookie_gre_port_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_gre_tunnel_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{
+		uint16_t pvid = 0;
+		const rofl::caddress_ll hwaddr;
+		std::stringstream ss; ss << std::string("gretap") << gre_portno;
+		gretap = new rofcore::ctapdev(this, dpid, ss.str(), pvid, hwaddr);
+	};
 
 	/**
 	 *
 	 */
-	cgreterm(const cgreterm& greterm) { *this = greterm; };
+	cgreterm(const cgreterm& greterm) :
+		cookie_gre_port_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_gre_tunnel_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = greterm; };
 
 	/**
 	 *
@@ -90,6 +118,10 @@ public:
 		idle_timeout 		= greterm.idle_timeout;
 		gre_portno 			= greterm.gre_portno;
 		gre_key 			= greterm.gre_key;
+		if (gretap) {
+			delete gretap; gretap = (rofcore::ctapdev*)0;
+		}
+		// do not copy cookies here!
 		return *this;
 	};
 
@@ -106,6 +138,36 @@ public:
 	 */
 	const uint32_t&
 	get_gre_portno() const { return gre_portno; };
+
+public:
+
+	/**
+	 *
+	 */
+	virtual void
+	enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt);
+
+	/**
+	 *
+	 */
+	virtual void
+	enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts);
+
+public:
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
 
 protected:
 
@@ -136,8 +198,10 @@ protected:
 	enum ofp_state_t 		state;
 
 	enum cgreterm_flags_t {
-		FLAG_INGRESS_FM_INSTALLED 	= (1 << 0),
-		FLAG_EGRESS_FM_INSTALLED 	= (1 << 1),
+		FLAG_GRE_PORT_REDIRECTED	= (1 << 0),
+		FLAG_GRE_TUNNEL_REDIRECTED	= (1 << 1),
+		FLAG_INGRESS_FM_INSTALLED 	= (1 << 2),
+		FLAG_EGRESS_FM_INSTALLED 	= (1 << 3),
 	};
 	std::bitset<32>			flags;
 
@@ -156,6 +220,10 @@ protected:
 
 	static std::string		script_path_init;
 	static std::string		script_path_term;
+
+	rofcore::ctapdev*		gretap;
+	uint64_t				cookie_gre_port_redirect;
+	uint64_t				cookie_gre_tunnel_redirect;
 };
 
 
@@ -235,8 +303,11 @@ public:
 	 */
 	void
 	handle_dpt_open(rofl::crofdpt& dpt) {
-		handle_dpt_open_egress(dpt);
-		handle_dpt_open_ingress(dpt);
+		//handle_dpt_open_egress(dpt);
+		//handle_dpt_open_ingress(dpt);
+		redirect_gre_port(dpt, true);
+		redirect_gre_tunnel(dpt, true);
+		state = STATE_ATTACHED;
 		hook_init();
 	};
 
@@ -246,8 +317,11 @@ public:
 	void
 	handle_dpt_close(rofl::crofdpt& dpt) {
 		hook_term();
-		handle_dpt_close_egress(dpt);
-		handle_dpt_close_ingress(dpt);
+		state = STATE_DETACHED;
+		//handle_dpt_close_egress(dpt);
+		//handle_dpt_close_ingress(dpt);
+		redirect_gre_tunnel(dpt, false);
+		redirect_gre_port(dpt, false);
 	};
 
 public:
@@ -297,6 +371,18 @@ private:
 	 */
 	void
 	hook_term();
+
+	/**
+	 *
+	 */
+	void
+	redirect_gre_port(rofl::crofdpt& dpt, bool enable);
+
+	/**
+	 *
+	 */
+	void
+	redirect_gre_tunnel(rofl::crofdpt& dpt, bool enable);
 
 private:
 
@@ -382,8 +468,11 @@ public:
 	 */
 	void
 	handle_dpt_open(rofl::crofdpt& dpt) {
-		handle_dpt_open_egress(dpt);
-		handle_dpt_open_ingress(dpt);
+		//handle_dpt_open_egress(dpt);
+		//handle_dpt_open_ingress(dpt);
+		redirect_gre_port(dpt, true);
+		redirect_gre_tunnel(dpt, true);
+		state = STATE_ATTACHED;
 		hook_init();
 	};
 
@@ -393,8 +482,11 @@ public:
 	void
 	handle_dpt_close(rofl::crofdpt& dpt) {
 		hook_term();
-		handle_dpt_close_egress(dpt);
-		handle_dpt_close_ingress(dpt);
+		state = STATE_DETACHED;
+		//handle_dpt_close_egress(dpt);
+		//handle_dpt_close_ingress(dpt);
+		redirect_gre_tunnel(dpt, false);
+		redirect_gre_port(dpt, false);
 	};
 
 public:
@@ -444,6 +536,18 @@ private:
 	 */
 	void
 	hook_term();
+
+	/**
+	 *
+	 */
+	void
+	redirect_gre_port(rofl::crofdpt& dpt, bool enable);
+
+	/**
+	 *
+	 */
+	void
+	redirect_gre_tunnel(rofl::crofdpt& dpt, bool enable);
 
 private:
 
