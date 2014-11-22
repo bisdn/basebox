@@ -15,7 +15,7 @@ import platform
 
 
 if platform.system() == 'Linux':
-    doc_dir = '/usrlocal/share/doc/ethcore'
+    doc_dir = '/usr/local/share/doc/ethcore'
 else:
     try:
         from win32com.shell import shellcon, shell
@@ -32,9 +32,9 @@ long_desc = \
 sgwumgt = Extension('ethcore',
                     define_macros = [('MAJOR_VERSION', '0'),
                                      ('MINOR_VERSION', '5')],
-                    include_dirs = ['..', '/usrlocal/include', '/usrlocal/include/libnl3'],
+                    include_dirs = ['..', '/usr/local/include', '/usr/local/include/libnl3'],
                     libraries = ['roflibs_ethcore', 'rofl'],
-                    library_dirs = ['..', '/usrlocal/lib'],
+                    library_dirs = ['..', '/usr/local/lib'],
 		    extra_compile_args = ['-Wno-write-strings'],
                     sources = ['ethcoremodule.cpp'])
 
