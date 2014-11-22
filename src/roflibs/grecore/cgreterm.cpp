@@ -680,7 +680,7 @@ cgreterm::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::
 			return;
 		}
 
-		rofcore::logging::debug << "[cgreterm][handle_packet_in] pkt received from GRE tap port" << std::endl;
+		rofcore::logging::debug << "[cgreterm][handle_packet_in] ingress pkt received and enqueuing to GRE tap port" << std::endl << msg.get_packet();
 
 		rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 		*pkt = msg.get_packet();
@@ -689,6 +689,8 @@ cgreterm::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::
 	} else
 	// ip/gre frames received from peer entity are enqueued to ethcore's tap devices
 	if (msg.get_cookie() == cookie_gre_tunnel_redirect) {
+		rofcore::logging::debug << "[cgreterm][handle_packet_in] egress pkt received" << std::endl << msg.get_packet();
+
 		// store packet in ethcore and thus, tap devices
 		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 	}
@@ -714,7 +716,7 @@ cgreterm::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		rofl::openflow::cofactions actions(dpt.get_version());
 		actions.set_action_output(rofl::cindex(0)).set_port_no(gre_portno);
 
-		rofcore::logging::debug << "[cgreterm][enqueue] injecting pkt to GRE tap port" << std::endl;
+		rofcore::logging::debug << "[cgreterm][enqueue] injecting pkt from GRE tap port" << std::endl << *pkt;
 
 		dpt.send_packet_out_message(
 				rofl::cauxid(0),

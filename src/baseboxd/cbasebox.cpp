@@ -473,7 +473,7 @@ cbasebox::handle_port_desc_stats_reply(
 		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	}
 
-	test_workflow(dpt);
+	//test_workflow(dpt);
 #if 0
 
 	rofcore::logging::debug << "=====================================" << std::endl;
@@ -664,7 +664,7 @@ cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 void
 cbasebox::test_workflow(rofl::crofdpt& dpt)
 {
-	bool gre_test = true;
+	bool gre_test = false;
 	bool gtp_test = false;
 
 	/*
