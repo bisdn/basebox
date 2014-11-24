@@ -104,12 +104,18 @@ cgreterm::handle_flow_removed(
 	} else
 	if (msg.get_cookie() == cookie_gre_port_shortcut) {
 		flags.reset(FLAG_GRE_PORT_SHORTCUT);
+		if (not flags.test(FLAG_GRE_PORT_REDIRECTED)) {
+			gre_port_redirect(dpt, true);
+		}
 	} else
 	if (msg.get_cookie() == cookie_gre_tunnel_redirect) {
 		flags.reset(FLAG_GRE_TUNNEL_REDIRECTED);
 	} else
 	if (msg.get_cookie() == cookie_gre_tunnel_shortcut) {
 		flags.reset(FLAG_GRE_TUNNEL_SHORTCUT);
+		if (not flags.test(FLAG_GRE_TUNNEL_REDIRECTED)) {
+			gre_tunnel_redirect(dpt, true);
+		}
 	}
 }
 
