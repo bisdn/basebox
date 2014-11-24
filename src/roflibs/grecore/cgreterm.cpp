@@ -105,6 +105,7 @@ cgreterm::handle_flow_removed(
 	if (msg.get_cookie() == cookie_gre_port_shortcut) {
 		flags.reset(FLAG_GRE_PORT_SHORTCUT);
 		if (not flags.test(FLAG_GRE_PORT_REDIRECTED)) {
+			rofcore::logging::debug << "[cgreterm][handle_packet_in] installing redirect rule for ingress" << std::endl;
 			gre_port_redirect(dpt, true);
 		}
 	} else
@@ -114,6 +115,7 @@ cgreterm::handle_flow_removed(
 	if (msg.get_cookie() == cookie_gre_tunnel_shortcut) {
 		flags.reset(FLAG_GRE_TUNNEL_SHORTCUT);
 		if (not flags.test(FLAG_GRE_TUNNEL_REDIRECTED)) {
+			rofcore::logging::debug << "[cgreterm][handle_packet_in] installing redirect rule for egress" << std::endl;
 			gre_tunnel_redirect(dpt, true);
 		}
 	}
