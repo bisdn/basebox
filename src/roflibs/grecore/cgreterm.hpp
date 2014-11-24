@@ -22,6 +22,7 @@
 #include <rofl/common/protocols/fipv6frame.h>
 #include <rofl/common/protocols/fudpframe.h>
 #include <rofl/common/openflow/experimental/actions/gre_actions.h>
+#include <rofl/common/crandom.h>
 
 #include "roflibs/netlink/clogging.hpp"
 #include "roflibs/netlink/ccookiebox.hpp"

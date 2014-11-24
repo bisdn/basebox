@@ -27,7 +27,25 @@ cgreterm::cgreterm(const rofl::cdpid& dpid, uint8_t eth_ofp_table_id,
 {
 	// FIXME: fix port-name clashes for multiple datapath elements
 	std::stringstream ss; ss << std::string("gretap") << gre_portno;
-	gretap = new rofcore::ctapdev(this, dpid, ss.str(), /*pvid*/0, rofl::caddress_ll("00:00:00:00:00:00"),
+
+	/*
+	 * generate a locally administered mac address in most significant byte:
+	 * => multicast bit: 0
+	 * => locally administered bit: 1
+	 * some valid ranges:
+	 * x2:xx:xx:xx:xx:xx
+	 * x6:xx:xx:xx:xx:xx
+	 * xa:xx:xx:xx:xx:xx
+	 * xe:xx:xx:xx:xx:xx
+	 */
+	// random number
+	rofl::caddress_ll hwaddr(rofl::crandom(sizeof(uint64_t)).uint64());
+	// multicast bit = 0
+	hwaddr[0] &= ~(1 << 0);
+	// locally administered bit = 1
+	hwaddr[0] |= (1 << 1);
+
+	gretap = new rofcore::ctapdev(this, dpid, ss.str(), /*pvid*/0, hwaddr,
 			cgrecore::get_gre_core(dpid).get_thread_id());
 }
 
