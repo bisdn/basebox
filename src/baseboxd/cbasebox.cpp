@@ -169,49 +169,64 @@ cbasebox::run(int argc, char** argv)
 	}
 
 	/*
+	 * enable all cores by default
+	 */
+	flags.set(FLAG_FLOWCORE);
+	flags.set(FLAG_ETHCORE);
+	flags.set(FLAG_IPCORE);
+	flags.set(FLAG_GRECORE);
+	flags.set(FLAG_GTPCORE);
+
+	/*
 	 * extract flags for enabling/disabling the various roflibs
 	 */
 	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.flowcore.enable")) {
-		if ((bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.flowcore.enable")) {
-			flags.set(FLAG_FLOWCORE);
+		if (not (bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.flowcore.enable")) {
+			flags.reset(FLAG_FLOWCORE);
 		}
 	}
 	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.ethcore.enable")) {
-		if ((bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.ethcore.enable")) {
-			if (not flags.test(FLAG_FLOWCORE)) {
-				rofcore::logging::crit << "[baseboxd][main] must enable flowcore for using ethcore, aborting." << std::endl;
-				exit(1);
-			}
-			flags.set(FLAG_ETHCORE);
+		if (not (bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.ethcore.enable")) {
+			flags.reset(FLAG_ETHCORE);
 		}
 	}
 	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.ipcore.enable")) {
-		if ((bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.ipcore.enable")) {
-			if (not flags.test(FLAG_ETHCORE)) {
-				rofcore::logging::crit << "[baseboxd][main] must enable ethcore for using ipcore, aborting." << std::endl;
-				exit(1);
-			}
-			flags.set(FLAG_IPCORE);
+		if (not (bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.ipcore.enable")) {
+			flags.reset(FLAG_IPCORE);
 		}
 	}
 	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.grecore.enable")) {
-		if ((bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.grecore.enable")) {
-			if (not flags.test(FLAG_IPCORE)) {
-				rofcore::logging::crit << "[baseboxd][main] must enable ipcore for using grecore, aborting." << std::endl;
-				exit(1);
-			}
-			flags.set(FLAG_GRECORE);
+		if (not (bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.grecore.enable")) {
+			flags.reset(FLAG_GRECORE);
 		}
 	}
 	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.gtpcore.enable")) {
-		if ((bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.gtpcore.enable")) {
-			if (not flags.test(FLAG_IPCORE)) {
-				rofcore::logging::crit << "[baseboxd][main] must enable ipcore for using gtpcore, aborting." << std::endl;
-				exit(1);
-			}
-			flags.set(FLAG_GTPCORE);
+		if (not (bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.gtpcore.enable")) {
+			flags.reset(FLAG_GTPCORE);
 		}
 	}
+
+	/*
+	 * do a brief sanity check
+	 */
+	if (flags.test(FLAG_ETHCORE) && not flags.test(FLAG_FLOWCORE)) {
+		rofcore::logging::crit << "[baseboxd][main] must enable flowcore for using ethcore, aborting." << std::endl;
+		exit(1);
+	}
+	if (flags.test(FLAG_IPCORE) && not flags.test(FLAG_ETHCORE)) {
+		rofcore::logging::crit << "[baseboxd][main] must enable ethcore for using ipcore, aborting." << std::endl;
+		exit(1);
+	}
+	if (flags.test(FLAG_GRECORE) && not flags.test(FLAG_IPCORE)) {
+		rofcore::logging::crit << "[baseboxd][main] must enable ipcore for using grecore, aborting." << std::endl;
+		exit(1);
+	}
+	if (flags.test(FLAG_GTPCORE) && not flags.test(FLAG_IPCORE)) {
+		rofcore::logging::crit << "[baseboxd][main] must enable ipcore for using gtpcore, aborting." << std::endl;
+		exit(1);
+	}
+
+
 
 	cbasebox::keep_on_running = true;
 	while (cbasebox::keep_on_running) {
