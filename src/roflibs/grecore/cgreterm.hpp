@@ -65,7 +65,9 @@ public:
 		idle_timeout(DEFAULT_IDLE_TIMEOUT),
 		gre_portno(0), gre_key(0), gretap(0),
 		cookie_gre_port_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-		cookie_gre_tunnel_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+		cookie_gre_port_shortcut(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_gre_tunnel_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_gre_tunnel_shortcut(roflibs::common::openflow::ccookie_owner::acquire_cookie())
 	{};
 
 	/**
@@ -89,7 +91,9 @@ public:
 	 */
 	cgreterm(const cgreterm& greterm) :
 		cookie_gre_port_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-		cookie_gre_tunnel_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+		cookie_gre_port_shortcut(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_gre_tunnel_redirect(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_gre_tunnel_shortcut(roflibs::common::openflow::ccookie_owner::acquire_cookie())
 	{ *this = greterm; };
 
 	/**
@@ -156,7 +160,33 @@ public:
 	 */
 	virtual void
 	handle_flow_removed(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg);
+
+private:
+
+	/**
+	 *
+	 */
+	virtual void
+	gre_port_redirect(rofl::crofdpt& dpt, bool enable) = 0;
+
+	/**
+	 *
+	 */
+	virtual void
+	gre_port_shortcut(rofl::crofdpt& dpt, bool enable) = 0;
+
+	/**
+	 *
+	 */
+	virtual void
+	gre_tunnel_redirect(rofl::crofdpt& dpt, bool enable) = 0;
+
+	/**
+	 *
+	 */
+	virtual void
+	gre_tunnel_shortcut(rofl::crofdpt& dpt, bool enable) = 0;
 
 protected:
 
@@ -189,8 +219,8 @@ protected:
 	enum cgreterm_flags_t {
 		FLAG_GRE_PORT_REDIRECTED	= (1 << 0),
 		FLAG_GRE_TUNNEL_REDIRECTED	= (1 << 1),
-		FLAG_INGRESS_FM_INSTALLED 	= (1 << 2),
-		FLAG_EGRESS_FM_INSTALLED 	= (1 << 3),
+		FLAG_GRE_PORT_SHORTCUT 		= (1 << 2),
+		FLAG_GRE_TUNNEL_SHORTCUT 	= (1 << 3),
 	};
 	std::bitset<32>			flags;
 
@@ -213,7 +243,9 @@ protected:
 
 	rofcore::ctapdev*		gretap;
 	uint64_t				cookie_gre_port_redirect;
+	uint64_t				cookie_gre_port_shortcut;
 	uint64_t				cookie_gre_tunnel_redirect;
+	uint64_t				cookie_gre_tunnel_shortcut;
 };
 
 
@@ -293,10 +325,9 @@ public:
 	 */
 	void
 	handle_dpt_open(rofl::crofdpt& dpt) {
-		//handle_dpt_open_egress(dpt);
-		//handle_dpt_open_ingress(dpt);
-		redirect_gre_port(dpt, true);
-		redirect_gre_tunnel(dpt, true);
+		gre_port_redirect(dpt, true);
+		gre_tunnel_redirect(dpt, true);
+
 		state = STATE_ATTACHED;
 		hook_init();
 	};
@@ -308,10 +339,19 @@ public:
 	handle_dpt_close(rofl::crofdpt& dpt) {
 		hook_term();
 		state = STATE_DETACHED;
-		//handle_dpt_close_egress(dpt);
-		//handle_dpt_close_ingress(dpt);
-		redirect_gre_tunnel(dpt, false);
-		redirect_gre_port(dpt, false);
+
+		if (flags.test(FLAG_GRE_PORT_REDIRECTED)) {
+			gre_port_redirect(dpt, false);
+		}
+		if (flags.test(FLAG_GRE_PORT_SHORTCUT)) {
+			gre_port_shortcut(dpt, false);
+		}
+		if (flags.test(FLAG_GRE_TUNNEL_REDIRECTED)) {
+			gre_tunnel_redirect(dpt, false);
+		}
+		if (flags.test(FLAG_GRE_TUNNEL_SHORTCUT)) {
+			gre_tunnel_shortcut(dpt, false);
+		}
 	};
 
 public:
@@ -329,26 +369,26 @@ private:
 	/**
 	 *
 	 */
-	void
-	handle_dpt_open_egress(rofl::crofdpt& dpt);
+	virtual void
+	gre_port_redirect(rofl::crofdpt& dpt, bool enable);
 
 	/**
 	 *
 	 */
-	void
-	handle_dpt_close_egress(rofl::crofdpt& dpt);
+	virtual void
+	gre_port_shortcut(rofl::crofdpt& dpt, bool enable);
 
 	/**
 	 *
 	 */
-	void
-	handle_dpt_open_ingress(rofl::crofdpt& dpt);
+	virtual void
+	gre_tunnel_redirect(rofl::crofdpt& dpt, bool enable);
 
 	/**
 	 *
 	 */
-	void
-	handle_dpt_close_ingress(rofl::crofdpt& dpt);
+	virtual void
+	gre_tunnel_shortcut(rofl::crofdpt& dpt, bool enable);
 
 	/**
 	 *
@@ -361,18 +401,6 @@ private:
 	 */
 	void
 	hook_term();
-
-	/**
-	 *
-	 */
-	void
-	redirect_gre_port(rofl::crofdpt& dpt, bool enable);
-
-	/**
-	 *
-	 */
-	void
-	redirect_gre_tunnel(rofl::crofdpt& dpt, bool enable);
 
 private:
 
@@ -458,10 +486,9 @@ public:
 	 */
 	void
 	handle_dpt_open(rofl::crofdpt& dpt) {
-		//handle_dpt_open_egress(dpt);
-		//handle_dpt_open_ingress(dpt);
-		redirect_gre_port(dpt, true);
-		redirect_gre_tunnel(dpt, true);
+		gre_port_redirect(dpt, true);
+		gre_tunnel_redirect(dpt, true);
+
 		state = STATE_ATTACHED;
 		hook_init();
 	};
@@ -473,10 +500,19 @@ public:
 	handle_dpt_close(rofl::crofdpt& dpt) {
 		hook_term();
 		state = STATE_DETACHED;
-		//handle_dpt_close_egress(dpt);
-		//handle_dpt_close_ingress(dpt);
-		redirect_gre_tunnel(dpt, false);
-		redirect_gre_port(dpt, false);
+
+		if (flags.test(FLAG_GRE_PORT_REDIRECTED)) {
+			gre_port_redirect(dpt, false);
+		}
+		if (flags.test(FLAG_GRE_PORT_SHORTCUT)) {
+			gre_port_shortcut(dpt, false);
+		}
+		if (flags.test(FLAG_GRE_TUNNEL_REDIRECTED)) {
+			gre_tunnel_redirect(dpt, false);
+		}
+		if (flags.test(FLAG_GRE_TUNNEL_SHORTCUT)) {
+			gre_tunnel_shortcut(dpt, false);
+		}
 	};
 
 public:
@@ -494,26 +530,26 @@ private:
 	/**
 	 *
 	 */
-	void
-	handle_dpt_open_egress(rofl::crofdpt& dpt);
+	virtual void
+	gre_port_redirect(rofl::crofdpt& dpt, bool enable);
 
 	/**
 	 *
 	 */
-	void
-	handle_dpt_close_egress(rofl::crofdpt& dpt);
+	virtual void
+	gre_port_shortcut(rofl::crofdpt& dpt, bool enable);
 
 	/**
 	 *
 	 */
-	void
-	handle_dpt_open_ingress(rofl::crofdpt& dpt);
+	virtual void
+	gre_tunnel_redirect(rofl::crofdpt& dpt, bool enable);
 
 	/**
 	 *
 	 */
-	void
-	handle_dpt_close_ingress(rofl::crofdpt& dpt);
+	virtual void
+	gre_tunnel_shortcut(rofl::crofdpt& dpt, bool enable);
 
 	/**
 	 *
@@ -526,18 +562,6 @@ private:
 	 */
 	void
 	hook_term();
-
-	/**
-	 *
-	 */
-	void
-	redirect_gre_port(rofl::crofdpt& dpt, bool enable);
-
-	/**
-	 *
-	 */
-	void
-	redirect_gre_tunnel(rofl::crofdpt& dpt, bool enable);
 
 private:
 
