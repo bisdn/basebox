@@ -200,6 +200,7 @@ cgreterm_in4::gre_port_redirect(rofl::crofdpt& dpt, bool enable)
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe010);
 		fm.set_cookie(cookie_gre_port_redirect);
+		fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
 		fm.set_table_id(eth_ofp_table_id);
 
 		fm.set_match().set_in_port(gre_portno);
@@ -333,6 +334,7 @@ cgreterm_in4::gre_tunnel_redirect(rofl::crofdpt& dpt, bool enable)
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe010);
 		fm.set_cookie(cookie_gre_tunnel_redirect);
+		fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
 		fm.set_table_id(gre_ofp_table_id);
 
 		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
@@ -353,7 +355,7 @@ cgreterm_in4::gre_tunnel_redirect(rofl::crofdpt& dpt, bool enable)
 			fm.set_instructions().set_inst_apply_actions().set_actions().
 					set_action_output(index).set_max_len(1526);
 		}
-
+		fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		if (enable) {
@@ -474,6 +476,7 @@ cgreterm_in6::gre_port_redirect(rofl::crofdpt& dpt, bool enable)
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe010);
 		fm.set_cookie(cookie_gre_port_redirect);
+		fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
 		fm.set_table_id(eth_ofp_table_id);
 
 		fm.set_match().set_in_port(gre_portno);
@@ -527,6 +530,7 @@ cgreterm_in6::gre_port_shortcut(rofl::crofdpt& dpt, bool enable)
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_cookie(cookie_gre_port_shortcut);
+		fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
 		fm.set_table_id(eth_ofp_table_id);
 
 		fm.set_match().set_in_port(gre_portno);
@@ -608,6 +612,7 @@ cgreterm_in6::gre_tunnel_redirect(rofl::crofdpt& dpt, bool enable)
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe010);
 		fm.set_cookie(cookie_gre_tunnel_redirect);
+		fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
 		fm.set_table_id(gre_ofp_table_id);
 
 		fm.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
@@ -670,6 +675,7 @@ cgreterm_in6::gre_tunnel_shortcut(rofl::crofdpt& dpt, bool enable)
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_cookie(cookie_gre_tunnel_shortcut);
+		fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
 		fm.set_table_id(gre_ofp_table_id);
 
 		fm.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
