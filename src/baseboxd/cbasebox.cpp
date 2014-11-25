@@ -232,14 +232,14 @@ cbasebox::run(int argc, char** argv)
 	while (cbasebox::keep_on_running) {
 		try {
 			// start main loop, does not return
-			rofl::cioloop::run();
+			rofl::cioloop::get_loop().run();
 
 		} catch (std::runtime_error& e) {
 			rofcore::logging::error << "[cbasebox][run] caught exception in main loop, e.what() " << e.what() << std::endl;
 		}
 	}
 
-	rofl::cioloop::shutdown();
+	rofl::cioloop::get_loop().shutdown();
 
 	return 0;
 }
@@ -250,7 +250,7 @@ void
 cbasebox::stop()
 {
 	cbasebox::keep_on_running = false;
-	rofl::cioloop::stop();
+	rofl::cioloop::get_loop().stop();
 }
 
 
