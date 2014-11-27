@@ -328,7 +328,8 @@ cbasebox::handle_features_reply(
 		return;
 	}
 
-	rofcore::logging::debug << "[cbasebox][handle_features_reply] dpid: " << dpt.get_dpid().str() << std::endl;
+	rofcore::logging::debug << "[cbasebox][handle_features_reply] dpid: "
+			<< dpt.get_dpid().str() << std::endl << msg;
 
 	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 }
