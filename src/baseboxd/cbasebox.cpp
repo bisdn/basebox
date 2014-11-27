@@ -265,6 +265,8 @@ cbasebox::handle_dpt_open(
 		return;
 	}
 
+	rofcore::logging::debug << "[cbasebox][handle_dpt_open] dpid: " << dpt.get_dpid().str() << std::endl;
+
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
 
@@ -282,6 +284,8 @@ cbasebox::handle_dpt_close(
 				<< "detached with invalid OpenFlow protocol version: " << (int)dpt.get_version() << std::endl;
 		return;
 	}
+
+	rofcore::logging::debug << "[cbasebox][handle_dpt_close] dpid: " << dpt.get_dpid().str() << std::endl;
 
 	// call external scripting hook
 	hook_dpt_detach(dpt);
@@ -324,6 +328,8 @@ cbasebox::handle_features_reply(
 		return;
 	}
 
+	rofcore::logging::debug << "[cbasebox][handle_features_reply] dpid: " << dpt.get_dpid().str() << std::endl;
+
 	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 }
 
@@ -333,7 +339,8 @@ void
 cbasebox::handle_packet_in(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {
 
-	rofcore::logging::debug << "[cbasebox][handle_packet_in] pkt received: " << std::endl << msg;
+	rofcore::logging::debug << "[cbasebox][handle_packet_in] dpid: " << dpt.get_dpid().str()
+			<< " pkt received: " << std::endl << msg;
 
 	roflibs::common::openflow::ccookiebox::get_instance().handle_packet_in(dpt, auxid, msg);
 }
@@ -344,7 +351,8 @@ void
 cbasebox::handle_flow_removed(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {
 
-	rofcore::logging::debug << "[cbasebox][handle_flow_removed] pkt received: " << std::endl << msg;
+	rofcore::logging::debug << "[cbasebox][handle_flow_removed] dpid: " << dpt.get_dpid().str()
+			<< " pkt received: " << std::endl << msg;
 
 	roflibs::common::openflow::ccookiebox::get_instance().handle_flow_removed(dpt, auxid, msg);
 }
@@ -355,6 +363,9 @@ void
 cbasebox::handle_port_status(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg) {
 	try {
+		rofcore::logging::debug << "[cbasebox][handle_port_status] dpid: " << dpt.get_dpid().str()
+				<< " pkt received: " << std::endl << msg;
+
 		const rofl::openflow::cofport& port = msg.get_port();
 		uint32_t ofp_port_no = msg.get_port().get_port_no();
 
@@ -394,6 +405,10 @@ cbasebox::handle_port_status(
 void
 cbasebox::handle_error_message(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
+
+	rofcore::logging::debug << "[cbasebox][handle_error_message] dpid: " << dpt.get_dpid().str()
+			<< " pkt received: " << std::endl << msg;
+
 	if (flags.test(FLAG_FLOWCORE) && roflibs::svc::cflowcore::has_flow_core(dpt.get_dpid())) {
 		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
 	}
@@ -416,6 +431,9 @@ cbasebox::handle_error_message(
 void
 cbasebox::handle_port_desc_stats_reply(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg) {
+
+	rofcore::logging::debug << "[cbasebox][handle_port_desc_stats_reply] dpid: " << dpt.get_dpid().str()
+			<< " pkt received: " << std::endl << msg;
 
 	dpt.set_ports() = msg.get_ports();
 
@@ -487,16 +505,6 @@ cbasebox::handle_port_desc_stats_reply(
 	if (flags.test(FLAG_GRECORE)) {
 		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
 	}
-
-	//test_workflow(dpt);
-#if 0
-
-	rofcore::logging::debug << "=====================================" << std::endl;
-	rofcore::logging::debug << roflibs::eth::cethcore::get_eth_core(dpt.get_dpid());
-	rofcore::logging::debug << roflibs::ip::cipcore::get_ip_core(dpt.get_dpid());
-	rofcore::logging::debug << roflibs::gre::cgrecore::get_gre_core(dpt.get_dpid());
-	rofcore::logging::debug << "=====================================" << std::endl;
-#endif
 
 	// call external scripting hook
 	hook_dpt_attach(dpt);
@@ -595,84 +603,6 @@ cbasebox::execute(
 
 	exit(1); // just in case execvpe fails
 }
-
-
-
-void
-cbasebox::addr_in4_created(unsigned int ifindex, uint16_t adindex)
-{
-	try {
-		//(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
-
-	} catch (roflibs::ip::eLinkNotFound& e) {
-		// ignore addresses assigned to non-datapath ports
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in4_created] link not found" << std::endl;
-	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in4_created] address not found" << std::endl;
-	} catch (rofl::eSysCall& e) {
-			// ...
-	}
-}
-
-
-
-void
-cbasebox::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
-{
-	try {
-		//(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
-
-	} catch (roflibs::ip::eLinkNotFound& e) {
-		// ignore addresses assigned to non-datapath ports
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in4_deleted] link not found" << std::endl;
-	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in4_deleted] address not found" << std::endl;
-	} catch (rofl::eSysCall& e) {
-			// ...
-	}
-}
-
-
-
-void
-cbasebox::addr_in6_created(unsigned int ifindex, uint16_t adindex)
-{
-	try {
-		//(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
-
-	} catch (roflibs::ip::eLinkNotFound& e) {
-		// ignore addresses assigned to non-datapath ports
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in6_created] link not found" << std::endl;
-	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in6_created] address not found" << std::endl;
-	} catch (rofl::eSysCall& e) {
-		// ...
-	}
-}
-
-
-
-void
-cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
-{
-	try {
-		//(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
-
-	} catch (roflibs::ip::eLinkNotFound& e) {
-		// ignore addresses assigned to non-datapath ports
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] link not found" << e.what() << std::endl;
-	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] address not found" << e.what() << std::endl;
-	} catch (rofl::eSysCall& e) {
-			// ...
-	}
-}
-
-
 
 
 

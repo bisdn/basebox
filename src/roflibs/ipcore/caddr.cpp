@@ -93,19 +93,19 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] unable to find data path" << e.what() << std::endl << *this;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_open] unable to find data path" << e.what() << std::endl << *this;
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] unable to find netlink link" << e.what() << std::endl << *this;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_open] unable to find netlink link" << e.what() << std::endl << *this;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] unable to find link" << e.what() << std::endl << *this;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_open] unable to find link" << e.what() << std::endl << *this;
 	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] unable to find address" << e.what() << std::endl << *this;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_open] unable to find address" << e.what() << std::endl << *this;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] control channel congested" << e.what() << std::endl << *this;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_open] control channel congested" << e.what() << std::endl << *this;
 	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] control channel is down" << e.what() << std::endl << *this;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_open] control channel is down" << e.what() << std::endl << *this;
 	} catch (...) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_open] unexpected error" << std::endl << *this;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_open] unexpected error" << std::endl << *this;
 	}
 }
 
@@ -164,17 +164,17 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_close] unable to find data path" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_close] unable to find data path" << e.what() << std::endl;
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_close] unable to find link" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_close] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_close] unable to find address" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_close] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_close] control channel congested" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_close] control channel congested" << e.what() << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_close] control channel is down" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_close] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[rofip][caddr_in4][handle_dpt_close] unexpected error" << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in4][handle_dpt_close] unexpected error" << std::endl;
 
 	}
 }
@@ -251,19 +251,19 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		state = STATE_ATTACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_open] unable to find data path" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_open] unable to find data path" << e.what() << std::endl;
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_open] unable to find link" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_open] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_open] unable to find link" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_open] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_open] unable to find address" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_open] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_open] control channel congested" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_open] control channel congested" << e.what() << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_open] control channel is down" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_open] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_open] unexpected error" << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_open] unexpected error" << std::endl;
 	}
 }
 
@@ -308,17 +308,17 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_close] unable to find data path" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_close] unable to find data path" << e.what() << std::endl;
 	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_close] unable to find link" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_close] unable to find link" << e.what() << std::endl;
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_close] unable to find address" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_close] unable to find address" << e.what() << std::endl;
 	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_close] control channel congested" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_close] control channel congested" << e.what() << std::endl;
 	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_close] control channel is down" << e.what() << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_close] control channel is down" << e.what() << std::endl;
 	} catch (...) {
-		rofcore::logging::error << "[rofip][caddr_in6][handle_dpt_close] unexpected error" << std::endl;
+		rofcore::logging::error << "[roflibs][ipcore][caddr_in6][handle_dpt_close] unexpected error" << std::endl;
 	}
 }
 
