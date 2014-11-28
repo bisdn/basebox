@@ -42,6 +42,8 @@ cvlan::handle_dpt_open(
 		fm.set_match().set_eth_dst(rofl::caddress_ll("01:00:00:00:00:00"), rofl::caddress_ll("01:00:00:00:00:00"));
 		fm.set_instructions().set_inst_apply_actions().
 				set_actions().add_action_output(rofl::cindex(1)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+		fm.set_instructions().set_inst_apply_actions().
+				set_actions().set_action_output(rofl::cindex(1)).set_max_len(1526);
 		//fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_local);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
