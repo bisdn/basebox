@@ -15,7 +15,7 @@ cmemberport::handle_dpt_open(
 		rofl::crofdpt& dpt)
 {
 	try {
-		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version_negotiated()) {
 			return;
 		}
 
@@ -23,7 +23,7 @@ cmemberport::handle_dpt_open(
 
 		rofl::cindex index(0);
 
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_ADD);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
@@ -58,7 +58,7 @@ cmemberport::handle_dpt_close(
 		rofl::crofdpt& dpt)
 {
 	try {
-		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version_negotiated()) {
 			return;
 		}
 
@@ -66,7 +66,7 @@ cmemberport::handle_dpt_close(
 
 		rofl::cindex index(0);
 
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);

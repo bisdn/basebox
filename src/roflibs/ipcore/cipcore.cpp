@@ -103,7 +103,7 @@ cipcore::set_forwarding(bool forward)
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
-		rofl::openflow::cofflowmod fed = rofl::openflow::cofflowmod(dpt.get_version());
+		rofl::openflow::cofflowmod fed = rofl::openflow::cofflowmod(dpt.get_version_negotiated());
 		if (forward == true) {
 			fed.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
 		} else {
@@ -619,9 +619,9 @@ cipcore::purge_dpt_entries()
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
 		// all wildcard matches with non-strict deletion => removes all state from data path
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 		fe.set_command(rofl::openflow::OFPFC_DELETE);
-		fe.set_table_id(rofl::openflow::base::get_ofptt_all(dpt.get_version()));
+		fe.set_table_id(rofl::openflow::base::get_ofptt_all(dpt.get_version_negotiated()));
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 	} catch (rofl::eRofDptNotFound& e) {
@@ -637,7 +637,7 @@ cipcore::redirect_ipv4_multicast()
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_ADD);
 		fe.set_cookie(cookie_multicast_ipv4);
@@ -649,7 +649,7 @@ cipcore::redirect_ipv4_multicast()
 		rofl::cindex index(0);
 
 		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(index).
-				set_port_no(rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()));
+				set_port_no(rofl::openflow::base::get_ofpp_controller_port(dpt.get_version_negotiated()));
 		fe.set_instructions().set_inst_apply_actions().set_actions().set_action_output(index).
 				set_max_len(ETH_FRAME_LEN);
 
@@ -668,7 +668,7 @@ cipcore::redirect_ipv6_multicast()
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
 
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_ADD);
 		fe.set_cookie(cookie_multicast_ipv6);
@@ -680,7 +680,7 @@ cipcore::redirect_ipv6_multicast()
 		rofl::cindex index(0);
 
 		fe.set_instructions().add_inst_apply_actions().set_actions().add_action_output(index).
-				set_port_no(rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()));
+				set_port_no(rofl::openflow::base::get_ofpp_controller_port(dpt.get_version_negotiated()));
 		fe.set_instructions().set_inst_apply_actions().set_actions().set_action_output(index).
 				set_max_len(ETH_FRAME_LEN);
 

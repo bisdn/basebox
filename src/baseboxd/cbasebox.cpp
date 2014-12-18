@@ -259,9 +259,9 @@ void
 cbasebox::handle_dpt_open(
 		rofl::crofdpt& dpt) {
 
-	if (rofl::openflow13::OFP_VERSION < dpt.get_version()) {
+	if (rofl::openflow13::OFP_VERSION < dpt.get_version_negotiated()) {
 		rofcore::logging::error << "[cbasebox][handle_dpt_open] datapath "
-				<< "attached with invalid OpenFlow protocol version: " << (int)dpt.get_version() << std::endl;
+				<< "attached with invalid OpenFlow protocol version: " << (int)dpt.get_version_negotiated() << std::endl;
 		return;
 	}
 
@@ -279,9 +279,9 @@ void
 cbasebox::handle_dpt_close(
 		rofl::crofdpt& dpt) {
 
-	if (rofl::openflow13::OFP_VERSION < dpt.get_version()) {
+	if (rofl::openflow13::OFP_VERSION < dpt.get_version_negotiated()) {
 		rofcore::logging::error << "[cbasebox][handle_dpt_close] datapath "
-				<< "detached with invalid OpenFlow protocol version: " << (int)dpt.get_version() << std::endl;
+				<< "detached with invalid OpenFlow protocol version: " << (int)dpt.get_version_negotiated() << std::endl;
 		return;
 	}
 
@@ -480,7 +480,7 @@ cbasebox::handle_port_desc_stats_reply(
 
 
 	if (flags.test(FLAG_FLOWCORE)) {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_table_id(table_id_svc_flows);
 		fm.set_priority(0);
 		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_svc_flows+1);
@@ -670,7 +670,7 @@ cbasebox::test_workflow(rofl::crofdpt& dpt)
 				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				roflibs::gtp::cteid(111111));
 
-		rofl::openflow::cofmatch tft_match(dpt.get_version());
+		rofl::openflow::cofmatch tft_match(dpt.get_version_negotiated());
 		tft_match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		tft_match.set_ipv4_src(rofl::caddress_in4("10.2.2.20"));
 		tft_match.set_ipv4_dst(rofl::caddress_in4("192.168.4.33"));

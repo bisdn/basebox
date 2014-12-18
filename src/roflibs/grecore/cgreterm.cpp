@@ -134,19 +134,19 @@ cgreterm::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(tapdev->get_dpid());
 
-		if (not dpt.get_channel().is_established()) {
+		if (not dpt.is_established()) {
 			throw eLinkNoDptAttached("cgreterm::enqueue() dpt not found");
 		}
 
-		rofl::openflow::cofactions actions(dpt.get_version());
+		rofl::openflow::cofactions actions(dpt.get_version_negotiated());
 		actions.set_action_output(rofl::cindex(0)).set_port_no(gre_portno);
 
 		rofcore::logging::debug << "[cgreterm][enqueue] injecting pkt from GRE tap port" << std::endl << *pkt;
 
 		dpt.send_packet_out_message(
 				rofl::cauxid(0),
-				rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()),
-				rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()),
+				rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()),
+				rofl::openflow::base::get_ofpp_controller_port(dpt.get_version_negotiated()),
 				actions,
 				pkt->soframe(),
 				pkt->length());
@@ -184,7 +184,7 @@ void
 cgreterm_in4::gre_port_redirect(rofl::crofdpt& dpt, bool enable)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (enable) {
 			if (not flags.test(FLAG_GRE_PORT_REDIRECTED)) {
@@ -236,7 +236,7 @@ void
 cgreterm_in4::gre_port_shortcut(rofl::crofdpt& dpt, bool enable)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (enable) {
 			if (not flags.test(FLAG_GRE_PORT_SHORTCUT)) {
@@ -318,7 +318,7 @@ void
 cgreterm_in4::gre_tunnel_redirect(rofl::crofdpt& dpt, bool enable)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (enable) {
 			if (not flags.test(FLAG_GRE_TUNNEL_REDIRECTED)) {
@@ -381,7 +381,7 @@ void
 cgreterm_in4::gre_tunnel_shortcut(rofl::crofdpt& dpt, bool enable)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (enable) {
 			if (not flags.test(FLAG_GRE_TUNNEL_SHORTCUT)) {
@@ -460,7 +460,7 @@ void
 cgreterm_in6::gre_port_redirect(rofl::crofdpt& dpt, bool enable)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (enable) {
 			if (not flags.test(FLAG_GRE_PORT_REDIRECTED)) {
@@ -514,7 +514,7 @@ void
 cgreterm_in6::gre_port_shortcut(rofl::crofdpt& dpt, bool enable)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (enable) {
 			if (not flags.test(FLAG_GRE_PORT_SHORTCUT)) {
@@ -596,7 +596,7 @@ void
 cgreterm_in6::gre_tunnel_redirect(rofl::crofdpt& dpt, bool enable)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (enable) {
 			if (not flags.test(FLAG_GRE_TUNNEL_REDIRECTED)) {
@@ -659,7 +659,7 @@ void
 cgreterm_in6::gre_tunnel_shortcut(rofl::crofdpt& dpt, bool enable)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (enable) {
 			if (not flags.test(FLAG_GRE_TUNNEL_SHORTCUT)) {

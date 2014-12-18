@@ -13,7 +13,7 @@ void
 cterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (not flags.test(FLAG_EGRESS_FM_INSTALLED)) {
 			fm.set_command(rofl::openflow::OFPFC_ADD);
@@ -68,7 +68,7 @@ void
 cterm_in4::handle_dpt_close_egress(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);
@@ -106,7 +106,7 @@ void
 cterm_in4::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (not flags.test(FLAG_INGRESS_FM_INSTALLED)) {
 			fm.set_command(rofl::openflow::OFPFC_ADD);
@@ -181,7 +181,7 @@ void
 cterm_in4::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);
@@ -218,7 +218,7 @@ void
 cterm_in6::handle_dpt_open_egress(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (not flags.test(FLAG_EGRESS_FM_INSTALLED)) {
 			fm.set_command(rofl::openflow::OFPFC_ADD);
@@ -273,7 +273,7 @@ void
 cterm_in6::handle_dpt_close_egress(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);
@@ -311,7 +311,7 @@ void
 cterm_in6::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (not flags.test(FLAG_INGRESS_FM_INSTALLED)) {
 			fm.set_command(rofl::openflow::OFPFC_ADD);
@@ -386,7 +386,7 @@ void
 cterm_in6::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);

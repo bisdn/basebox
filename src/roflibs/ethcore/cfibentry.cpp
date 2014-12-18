@@ -18,7 +18,7 @@ cfibentry::handle_dpt_open(
 
 		state = STATE_ATTACHED;
 
-		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version_negotiated()) {
 			return;
 		}
 
@@ -28,7 +28,7 @@ cfibentry::handle_dpt_open(
 		}
 
 		// src table
-		rofl::openflow::cofflowmod fm_src_table(dpt.get_version());
+		rofl::openflow::cofflowmod fm_src_table(dpt.get_version_negotiated());
 		fm_src_table.set_command(rofl::openflow::OFPFC_ADD);
 		fm_src_table.set_table_id(src_stage_table_id);
 		fm_src_table.set_priority(0x8000);
@@ -42,7 +42,7 @@ cfibentry::handle_dpt_open(
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm_src_table);
 
 		// dst table
-		rofl::openflow::cofflowmod fm_dst_table(dpt.get_version());
+		rofl::openflow::cofflowmod fm_dst_table(dpt.get_version_negotiated());
 		fm_dst_table.set_command(rofl::openflow::OFPFC_ADD);
 		fm_dst_table.set_table_id(dst_stage_table_id);
 		fm_dst_table.set_priority(0x8000);
@@ -74,7 +74,7 @@ cfibentry::handle_dpt_close(
 
 		state = STATE_DETACHED;
 
-		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version_negotiated()) {
 			return;
 		}
 
@@ -84,7 +84,7 @@ cfibentry::handle_dpt_close(
 		}
 
 		// src table
-		rofl::openflow::cofflowmod fm_src_table(dpt.get_version());
+		rofl::openflow::cofflowmod fm_src_table(dpt.get_version_negotiated());
 		fm_src_table.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm_src_table.set_table_id(src_stage_table_id);
 		fm_src_table.set_priority(0x8000);
@@ -97,7 +97,7 @@ cfibentry::handle_dpt_close(
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm_src_table);
 
 		// dst table
-		rofl::openflow::cofflowmod fm_dst_table(dpt.get_version());
+		rofl::openflow::cofflowmod fm_dst_table(dpt.get_version_negotiated());
 		fm_dst_table.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm_dst_table.set_table_id(dst_stage_table_id);
 		fm_dst_table.set_priority(0x8000);
@@ -126,7 +126,7 @@ cfibentry::handle_packet_in(
 		}
 
 		// sanity check
-		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version_negotiated()) {
 			return;
 		}
 
@@ -140,7 +140,7 @@ cfibentry::handle_packet_in(
 
 #if 0
 		// handle buffered packet
-		rofl::openflow::cofactions actions(dpt.get_version());
+		rofl::openflow::cofactions actions(dpt.get_version_negotiated());
 		rofl::cindex index(0);
 		if (not tagged) {
 			actions.add_action_pop_vlan(index++);

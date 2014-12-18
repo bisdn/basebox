@@ -18,7 +18,7 @@ cgrecore::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
 
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		switch (state) {
 		case STATE_DETACHED: {
 			fm.set_command(rofl::openflow::OFPFC_ADD);
@@ -77,7 +77,7 @@ cgrecore::handle_dpt_close(rofl::crofdpt& dpt)
 		state = STATE_DETACHED;
 
 
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 
 		// remove GRE UDP dst rule in IP local-stage-table (GotoTable gre_table_id) IPv4

@@ -83,7 +83,7 @@ public:
 	void
 	handle_dpt_open(rofl::crofdpt& dpt) {
 		try {
-			flowmod.set_version(dpt.get_version());
+			flowmod.set_version(dpt.get_version_negotiated());
 			flowmod.set_command(rofl::openflow::OFPFC_ADD);
 			dpt.send_flow_mod_message(rofl::cauxid(0), flowmod);
 
@@ -106,7 +106,7 @@ public:
 	void
 	handle_dpt_close(rofl::crofdpt& dpt) {
 		try {
-			flowmod.set_version(dpt.get_version());
+			flowmod.set_version(dpt.get_version_negotiated());
 			flowmod.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 			dpt.send_flow_mod_message(rofl::cauxid(0), flowmod);
 

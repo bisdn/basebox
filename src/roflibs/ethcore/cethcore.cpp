@@ -167,7 +167,7 @@ cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 		}
 
 		// install 01:80:c2:xx:xx:xx entry in table 0
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_ADD);
 		fm.set_priority(0xf000);
 		fm.set_cookie(cookie_grp_addr);
@@ -235,7 +235,7 @@ cethcore::handle_dpt_close(rofl::crofdpt& dpt)
 		}
 
 		// remove miss entry for src stage table
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_priority(0xf000);
 		fm.set_cookie(cookie_miss_entry_src);
@@ -334,7 +334,7 @@ cethcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::
 			}
 
 			// drop buffer on data path, if the packet was stored there, as it is consumed entirely by the underlying kernel
-			if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()) != msg.get_buffer_id()) {
+			if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()) != msg.get_buffer_id()) {
 				dpt.drop_buffer(auxid, msg.get_buffer_id());
 			}
 		}
@@ -448,19 +448,19 @@ cethcore::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(tapdev->get_dpid());
 
-		if (not dpt.get_channel().is_established()) {
+		if (not dpt.is_established()) {
 			throw eLinkNoDptAttached("cethcore::enqueue() dpt not found");
 		}
 
-		rofl::openflow::cofactions actions(dpt.get_version());
+		rofl::openflow::cofactions actions(dpt.get_version_negotiated());
 		actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
 		actions.set_action_set_field(rofl::cindex(1)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(tapdev->get_pvid()));
 		actions.set_action_output(rofl::cindex(2)).set_port_no(rofl::openflow::OFPP_TABLE);
 
 		dpt.send_packet_out_message(
 				rofl::cauxid(0),
-				rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()),
-				rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()),
+				rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()),
+				rofl::openflow::base::get_ofpp_controller_port(dpt.get_version_negotiated()),
 				actions,
 				pkt->soframe(),
 				pkt->length());

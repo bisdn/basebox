@@ -22,7 +22,7 @@ cvlan::handle_dpt_open(
 		update_group_entry_buckets(rofl::openflow::OFPGC_ADD);
 
 		// set redirecting entry for this vlan's flooding group entry
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_ADD);
 		fm.set_table_id(table_id_eth_dst);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
@@ -98,7 +98,7 @@ cvlan::handle_dpt_close(
 		}
 
 		// remove redirecting entry for this vlan's flooding group entry
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_table_id(table_id_eth_dst);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
@@ -117,7 +117,7 @@ cvlan::handle_dpt_close(
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 		// remove flooding group entry itself
-		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 		gm.set_command(rofl::openflow::OFPGC_DELETE);
 		gm.set_group_id(group_id);
 		gm.set_type(rofl::openflow::OFPGT_ALL);
@@ -254,12 +254,12 @@ cvlan::update_group_entry_buckets(uint16_t command)
 			return;
 		}
 
-		if (rofl::openflow::OFP_VERSION_UNKNOWN == rofl::crofdpt::get_dpt(dpid).get_version()) {
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == rofl::crofdpt::get_dpt(dpid).get_version_negotiated()) {
 			return;
 		}
 
 		// update flooding group entry
-		rofl::openflow::cofgroupmod gm(rofl::crofdpt::get_dpt(dpid).get_version());
+		rofl::openflow::cofgroupmod gm(rofl::crofdpt::get_dpt(dpid).get_version_negotiated());
 		gm.set_command(command);
 		gm.set_group_id(group_id);
 		gm.set_type(rofl::openflow::OFPGT_ALL);

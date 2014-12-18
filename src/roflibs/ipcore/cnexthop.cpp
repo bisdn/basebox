@@ -60,7 +60,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -71,7 +71,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		} break;
 		}
 
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());
@@ -139,10 +139,10 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());
@@ -235,7 +235,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -246,7 +246,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		} break;
 		}
 
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());
@@ -315,10 +315,10 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());

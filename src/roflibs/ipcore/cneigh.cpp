@@ -94,7 +94,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		group_id = dpt.get_next_idle_group_id();
 
 		// create group entry for neighbour
-		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 		gm.set_command(command);
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
@@ -110,7 +110,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 		// redirect traffic destined directly to neighbour to group entry
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -121,7 +121,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		} break;
 		}
 
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
@@ -170,9 +170,9 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 				netlink.get_links().get_link(get_ifindex()).get_neighs_in4().get_neigh(get_nbindex());
 
 
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
@@ -183,7 +183,7 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 
-		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 		gm.set_command(rofl::openflow::OFPGC_DELETE);
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
@@ -307,7 +307,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		}
 
 		// create group entry for neighbour
-		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 		gm.set_command(command);
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
@@ -324,7 +324,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 		// redirect traffic destined directly to neighbour to group entry
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -335,7 +335,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		} break;
 		}
 
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
@@ -383,10 +383,10 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 				netlink.get_links().get_link(get_ifindex()).get_neighs_in6().get_neigh(get_nbindex());
 
 
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
@@ -396,7 +396,7 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 
-		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 		gm.set_command(rofl::openflow::OFPGC_DELETE);
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);

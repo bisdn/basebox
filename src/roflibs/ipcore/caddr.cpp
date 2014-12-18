@@ -17,7 +17,7 @@ void
 caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -28,7 +28,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		} break;
 		}
 
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_table_id(in_ofp_table_id);
@@ -115,7 +115,7 @@ void
 caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_priority(0x7000);
@@ -196,7 +196,7 @@ void
 caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -207,7 +207,7 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		} break;
 		}
 
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_table_id(in_ofp_table_id);
@@ -273,7 +273,7 @@ void
 caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_priority(0x7000);
