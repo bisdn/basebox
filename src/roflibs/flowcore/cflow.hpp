@@ -17,6 +17,7 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/cdptid.h>
 #include <rofl/common/openflow/cofflowmod.h>
+#include <rofl/common/crofbase.h>
 
 #include "roflibs/netlink/clogging.hpp"
 

@@ -17,6 +17,7 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/protocols/fipv4frame.h>
 #include <rofl/common/protocols/fipv6frame.h>
+#include <rofl/common/crofbase.h>
 
 #include <roflibs/netlink/ctundev.hpp>
 #include <roflibs/netlink/cprefix.hpp>
