@@ -153,7 +153,7 @@ cbasebox::run(int argc, char** argv)
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string(portno.str());
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_HOSTNAME).set_string(bindaddr.str());
 
-	box.rpc_listen_for_dpts(socket_type, socket_params);
+	box.add_dpt_listening(0, socket_type, socket_params);
 
 
 	/*
