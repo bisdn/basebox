@@ -370,6 +370,7 @@ cbasebox::handle_port_status(
 		const rofl::openflow::cofport& port = msg.get_port();
 		uint32_t ofp_port_no = msg.get_port().get_port_no();
 
+#if 0
 		switch (msg.get_reason()) {
 		case rofl::openflow::OFPPR_ADD: {
 			dpt.set_ports().set_port(msg.get_port().get_port_no()) = msg.get_port();
@@ -391,6 +392,7 @@ cbasebox::handle_port_status(
 			// invalid/unknown reason
 		} return;
 		}
+#endif
 
 		if (flags.test(FLAG_ETHCORE) && roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
 			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
@@ -436,7 +438,9 @@ cbasebox::handle_port_desc_stats_reply(
 	rofcore::logging::debug << "[cbasebox][handle_port_desc_stats_reply] dpid: " << dpt.get_dpid().str()
 			<< " pkt received: " << std::endl << msg;
 
+#if 0
 	dpt.set_ports() = msg.get_ports();
+#endif
 
 	if (flags.test(FLAG_FLOWCORE)) {
 		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);

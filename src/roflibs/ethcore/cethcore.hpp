@@ -16,6 +16,7 @@
 #include <map>
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/thread_helper.h>
+#include <rofl/common/protocols/fetherframe.h>
 
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/clogging.hpp"
