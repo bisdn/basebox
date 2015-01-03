@@ -31,7 +31,7 @@ enum bpdu_type_t {
 };
 
 const unsigned int BPDU_LLC_ETH_ALEN = 6;
-const uint8_t BPDU_LLC_ADDRESS	= 0x42;
+const uint8_t BPDU_LLC_ADDRESS	= 0x42; // IEEE 802.1D-2004 section 7.12.3 table 7-9
 const uint8_t BPDU_LLC_CONTROL	= 0x03;
 const uint16_t BPDU_PROTOCOL_IDENTIFIER = 0x0000;
 const uint8_t BPDU_VERSION = 0x00;
