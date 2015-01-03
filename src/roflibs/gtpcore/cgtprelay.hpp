@@ -37,7 +37,7 @@ public:
 	eGtpRelayNotFound(const std::string& __arg) : eGtpRelayBase(__arg) {};
 };
 
-class cgtprelay : public rofl::csocket_owner, public rofcore::cnetdev_owner, public rofcore::cnetlink_common_observer {
+class cgtprelay : public rofl::csocket_env, public rofcore::cnetdev_owner, public rofcore::cnetlink_common_observer {
 public:
 
 	/**
