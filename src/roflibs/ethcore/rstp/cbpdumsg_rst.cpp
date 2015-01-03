@@ -1,29 +1,29 @@
 /*
- * cbpdumsg_cnf.cpp
+ * cbpdumsg_rst.cpp
  *
  *  Created on: 03.01.2015
  *      Author: andreas
  */
 
-#include "cbpdumsg_cnf.hpp"
+#include "cbpdumsg_rst.hpp"
 
 using namespace roflibs::eth::rstp;
 
 
 void
-cbpdumsg_cnf::pack(
+cbpdumsg_rst::pack(
 		uint8_t* buf,
 		size_t buflen)
 {
-	if (buflen < cbpdumsg_cnf::length()) {
-		throw exception::eBpduInval("cbpdumsg_cnf::pack() buflen too short");
+	if (buflen < cbpdumsg_rst::length()) {
+		throw exception::eBpduInval("cbpdumsg_rst::pack() buflen too short");
 	}
 
 	cbpdumsg::pack(buf, buflen);
 
-	set_bpdu_type(BPDU_TYPE_CONFIGURATION);
+	set_bpdu_type(BPDU_TYPE_RAPID_SPANNING_TREE);
 
-	bpdu_cnf_frame_t* hdr = (bpdu_cnf_frame_t*)buf;
+	bpdu_rst_frame_t* hdr = (bpdu_rst_frame_t*)buf;
 
 	hdr->bpdu.flags = get_flags();
 	hdr->bpdu.rootid = htobe64(get_rootid().get_bridge_id());
@@ -34,26 +34,27 @@ cbpdumsg_cnf::pack(
 	hdr->bpdu.maxage = htobe16(get_max_age());
 	hdr->bpdu.hellotime = htobe16(get_hello_time());
 	hdr->bpdu.fwddelay = htobe16(get_forward_delay());
+	hdr->bpdu.version_1_len = get_version1_length();
 }
 
 
 
 void
-cbpdumsg_cnf::unpack(
+cbpdumsg_rst::unpack(
 		uint8_t* buf,
 		size_t buflen)
 {
-	if (buflen < cbpdumsg_cnf::length()) {
-		throw exception::eBpduInval("cbpdumsg_cnf::unpack() buflen too short");
+	if (buflen < cbpdumsg_rst::length()) {
+		throw exception::eBpduInval("cbpdumsg_rst::unpack() buflen too short");
 	}
 
 	cbpdumsg::unpack(buf, buflen);
 
-	if (BPDU_TYPE_CONFIGURATION != get_bpdu_type()) {
-		throw exception::eBpduInval("cbpdumsg_cnf::unpack() invalid BPDU type");
+	if (BPDU_TYPE_RAPID_SPANNING_TREE != get_bpdu_type()) {
+		throw exception::eBpduInval("cbpdumsg_rst::unpack() invalid BPDU type");
 	}
 
-	bpdu_cnf_frame_t* hdr = (bpdu_cnf_frame_t*)buf;
+	bpdu_rst_frame_t* hdr = (bpdu_rst_frame_t*)buf;
 
 	set_flags(hdr->bpdu.flags);
 	set_rootid(cbridgeid(be64toh(hdr->bpdu.rootid)));
@@ -64,6 +65,10 @@ cbpdumsg_cnf::unpack(
 	set_max_age(be16toh(hdr->bpdu.maxage));
 	set_hello_time(be16toh(hdr->bpdu.hellotime));
 	set_forward_delay(be16toh(hdr->bpdu.fwddelay));
+	set_version1_length(hdr->bpdu.version_1_len);
 }
+
+
+
 
 

@@ -17,7 +17,10 @@ libroflibs_rstp_la_SOURCES = \
 	cbpdumsg.hpp \
 	cbpdumsg.cpp \
 	cbpdumsg_cnf.hpp \
-	cbpdumsg_cnf.cpp
+	cbpdumsg_cnf.cpp \
+	cbpdumsg_tcn.hpp \
+	cbpdumsg_rst.hpp \
+	cbpdumsg_rst.cpp
 
 libroflibs_rstp_la_LIBADD=
 
