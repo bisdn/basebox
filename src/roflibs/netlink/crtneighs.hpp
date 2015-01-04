@@ -58,6 +58,12 @@ public:
 	/**
 	 *
 	 */
+	bool
+	empty() const { return rtneighs.empty(); };
+
+	/**
+	 *
+	 */
 	void
 	clear() { rtneighs.clear(); };
 
@@ -175,6 +181,16 @@ public:
 		return os;
 	};
 
+	std::string
+	str() const {
+		std::stringstream ss;
+		for (std::map<unsigned int, crtneigh_in4>::const_iterator
+				it = rtneighs.begin(); it != rtneighs.end(); ++it) {
+			ss << it->second.str() << std::endl;
+		}
+		return ss.str();
+	};
+
 private:
 
 	std::map<unsigned int, crtneigh_in4> rtneighs;
@@ -217,6 +233,12 @@ public:
 	};
 
 public:
+
+	/**
+	 *
+	 */
+	bool
+	empty() const { return rtneighs.empty(); };
 
 	/**
 	 *
@@ -339,6 +361,16 @@ public:
 			os << it->second;
 		}
 		return os;
+	};
+
+	std::string
+	str() const {
+		std::stringstream ss;
+		for (std::map<unsigned int, crtneigh_in6>::const_iterator
+				it = rtneighs.begin(); it != rtneighs.end(); ++it) {
+			ss << it->second.str() << std::endl;
+		}
+		return ss.str();
 	};
 
 private:

@@ -19,6 +19,7 @@
 #include "roflibs/ethcore/cmemberport.hpp"
 #include "roflibs/ethcore/cfibentry.hpp"
 #include "roflibs/ethcore/cethendpnt.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace eth {
@@ -37,7 +38,7 @@ public:
 };
 
 
-class cvlan : public cfibentry_owner {
+class cvlan : public cfibentry_owner, public roflibs::common::openflow::ccookie_owner {
 public:
 
 	enum cvlan_vid_type_t {
@@ -48,8 +49,12 @@ public:
 	 *
 	 */
 	cvlan() :
-		state(STATE_IDLE), vid(VID_NO_VLAN), group_id(0),
-		table_id_eth_in(0), table_id_eth_src(0), table_id_eth_local(0), table_id_eth_dst(0) {};
+		state(STATE_IDLE),
+		cookie_flooding(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		vid(VID_NO_VLAN), group_id(0),
+		table_id_eth_in(0), table_id_eth_src(0),
+		table_id_eth_local(0), table_id_eth_dst(0) {};
 
 	/**
 	 *
@@ -58,7 +63,10 @@ public:
 			uint8_t table_id_eth_in, uint8_t table_id_eth_src,
 			uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
 			uint16_t vid) :
-		state(STATE_IDLE), dpid(dpid), vid(vid), group_id(0),
+		state(STATE_IDLE), dpid(dpid),
+		cookie_flooding(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		vid(vid), group_id(0),
 		table_id_eth_in(table_id_eth_in), table_id_eth_src(table_id_eth_src),
 		table_id_eth_local(table_id_eth_local), table_id_eth_dst(table_id_eth_dst) {};
 
@@ -76,7 +84,10 @@ public:
 	/**
 	 *
 	 */
-	cvlan(const cvlan& vlan) { *this = vlan; };
+	cvlan(const cvlan& vlan) :
+		cookie_flooding(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = vlan; };
 
 	/**
 	 *
@@ -85,10 +96,11 @@ public:
 	operator= (const cvlan& vlan) {
 		if (this == &vlan)
 			return *this;
-		state 		= vlan.state;
-		dpid 		= vlan.dpid;
-		vid 		= vlan.vid;
-		group_id 	= vlan.group_id;
+		state 				= vlan.state;
+		dpid 				= vlan.dpid;
+		// do not copy cookies here!
+		vid 				= vlan.vid;
+		group_id 			= vlan.group_id;
 		table_id_eth_in  	= vlan.table_id_eth_in;
 		table_id_eth_src 	= vlan.table_id_eth_src;
 		table_id_eth_local 	= vlan.table_id_eth_local;
@@ -435,14 +447,14 @@ public:
 	/**
 	 *
 	 */
-	void
+	virtual void
 	handle_packet_in(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
 
 	/**
 	 *
 	 */
-	void
+	virtual void
 	handle_flow_removed(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg);
 
@@ -515,6 +527,8 @@ private:
 
 	dpt_state_t			state;
 	rofl::cdpid			dpid;
+	uint64_t 			cookie_flooding; 	// cookie used for flooding flow table entry
+	uint64_t			cookie_multicast;	// cookie used for multicast flow table entry
 	uint16_t			vid;
 	uint32_t			group_id;	// OFP group identifier for broadcasting frames for this vid
 

@@ -6,6 +6,7 @@
  */
 
 #include "cethendpnt.hpp"
+#include "cethcore.hpp"
 
 using namespace roflibs::eth;
 
@@ -15,7 +16,7 @@ cethendpnt::handle_dpt_open(
 		rofl::crofdpt& dpt)
 {
 	try {
-		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version_negotiated()) {
 			return;
 		}
 
@@ -26,11 +27,12 @@ cethendpnt::handle_dpt_open(
 		/*
 		 * local unicast address
 		 */
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_ADD);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0x8200);
+		fm.set_cookie(cookie_endpoint);
 		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
 		//fm.set_match().set_eth_dst(dpt.get_ports().get_port(portno).get_hwaddr());
@@ -47,30 +49,6 @@ cethendpnt::handle_dpt_open(
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
 
-
-		/*
-		 * multicast frames
-		 */
-		fm.set_table_id(table_id_eth_local); // local address stage
-		fm.set_match().clear();
-		//fm.set_match().set_in_port(portno);
-		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
-		fm.set_match().set_eth_dst(rofl::caddress_ll("01:00:00:00:00:00"), rofl::caddress_ll("01:00:00:00:00:00"));
-		fm.set_instructions().clear();
-		//fm.set_instructions().set_inst_goto_table().set_table_id(table_id_eth_out);
-#if 0
-		if (not tagged) {
-			fm.set_instructions().set_inst_apply_actions().set_actions().
-					add_action_pop_vlan(index++);
-		}
-#endif
-		fm.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_output(index).set_max_len(1526);
-		fm.set_instructions().set_inst_apply_actions().set_actions().
-				set_action_output(index++).set_port_no(rofl::openflow::OFPP_CONTROLLER);
-		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
-
 	} catch (rofl::eRofBaseCongested& e) {
 		// TODO: handle congested control channel
 	}
@@ -81,7 +59,7 @@ cethendpnt::handle_dpt_close(
 		rofl::crofdpt& dpt)
 {
 	try {
-		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version_negotiated()) {
 			return;
 		}
 
@@ -92,30 +70,18 @@ cethendpnt::handle_dpt_close(
 		/*
 		 * local unicast address
 		 */
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
-		fm.set_priority(0x8000);
+		fm.set_priority(0x8200);
+		fm.set_cookie(cookie_endpoint);
 		fm.set_table_id(table_id_eth_local); // local address stage
 		fm.set_match().clear();
 		fm.set_match().set_eth_dst(hwaddr);
 		//fm.set_match().set_eth_dst(dpt.get_ports().get_port(portno).get_hwaddr());
 		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
-
-
-		/*
-		 * multicast frames
-		 */
-		fm.set_table_id(table_id_eth_local); // local address stage
-		fm.set_match().clear();
-		//fm.set_match().set_in_port(portno);
-		fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
-		fm.set_match().set_eth_dst(rofl::caddress_ll("01:00:00:00:00:00"), rofl::caddress_ll("01:00:00:00:00:00"));
-		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
-
 
 	} catch (rofl::eRofBaseCongested& e) {
 		// TODO: handle congested control channel
@@ -128,7 +94,9 @@ void
 cethendpnt::handle_packet_in(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
-	// nothing to do
+	rofcore::logging::debug << "[cethendpnt][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 }
 
 

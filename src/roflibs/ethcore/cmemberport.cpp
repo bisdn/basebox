@@ -15,7 +15,7 @@ cmemberport::handle_dpt_open(
 		rofl::crofdpt& dpt)
 {
 	try {
-		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version_negotiated()) {
 			return;
 		}
 
@@ -23,11 +23,12 @@ cmemberport::handle_dpt_open(
 
 		rofl::cindex index(0);
 
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_ADD);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
+		fm.set_cookie(cookie);
 		fm.set_table_id(table_id_eth_in);
 		fm.set_match().set_in_port(portno);
 		if (tagged) {
@@ -57,7 +58,7 @@ cmemberport::handle_dpt_close(
 		rofl::crofdpt& dpt)
 {
 	try {
-		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version()) {
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == dpt.get_version_negotiated()) {
 			return;
 		}
 
@@ -65,11 +66,12 @@ cmemberport::handle_dpt_close(
 
 		rofl::cindex index(0);
 
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(0);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0x8000);
+		fm.set_cookie(cookie);
 		fm.set_table_id(table_id_eth_in);
 		fm.set_match().set_in_port(portno);
 		if (tagged) {
@@ -122,6 +124,8 @@ cmemberport::handle_port_status(
 		handle_dpt_open(dpt);
 	} break;
 	case rofl::openflow::OFPPR_MODIFY: {
+		handle_dpt_close(dpt);
+		handle_dpt_open(dpt);
 		// TODO: port up/down?
 	} break;
 	case rofl::openflow::OFPPR_DELETE: {

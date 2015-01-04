@@ -17,10 +17,15 @@
 #include <rofl/common/protocols/fudpframe.h>
 #include <rofl/common/protocols/fipv4frame.h>
 #include <rofl/common/protocols/fipv6frame.h>
+#include <rofl/common/cauxid.h>
+#include <rofl/common/openflow/messages/cofmsg_packet_in.h>
+#include <rofl/common/openflow/messages/cofmsg_flow_removed.h>
+#include <rofl/common/openflow/messages/cofmsg_error.h>
 
-#include <roflibs/netlink/clogging.hpp>
-#include <roflibs/gtpcore/crelay.hpp>
-#include <roflibs/gtpcore/cterm.hpp>
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/gtpcore/crelay.hpp"
+#include "roflibs/gtpcore/cterm.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace gtp {
@@ -34,7 +39,7 @@ public:
 	eGtpCoreNotFound(const std::string& __arg) : eGtpCoreBase(__arg) {};
 };
 
-class cgtpcore {
+class cgtpcore : public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
@@ -110,11 +115,15 @@ private:
 	 *
 	 */
 	cgtpcore(const rofl::cdpid& dpid, uint8_t ip_local_table_id, uint8_t gtp_table_id = 0) :
-		state(STATE_DETACHED), dpid(dpid), ip_local_table_id(ip_local_table_id), gtp_table_id(gtp_table_id) {};
+		state(STATE_DETACHED), dpid(dpid),
+		cookie_miss_entry_ipv4(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_miss_entry_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		ip_local_table_id(ip_local_table_id), gtp_table_id(gtp_table_id) {};
 
 	/**
 	 *
 	 */
+	virtual
 	~cgtpcore() {};
 
 public:
@@ -583,6 +592,29 @@ public:
 
 public:
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_error_message(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {};
+
+public:
+
 	friend std::ostream&
 	operator<< (std::ostream& os, const cgtpcore& gtpcore) {
 		os << rofcore::indent(0) << "<cgtpcore "
@@ -620,6 +652,8 @@ private:
 
 	enum ofp_state_t							state;
 	rofl::cdpid									dpid;
+	uint64_t									cookie_miss_entry_ipv4;
+	uint64_t									cookie_miss_entry_ipv6;
 	uint8_t										ip_local_table_id;
 	uint8_t										gtp_table_id;
 	std::map<clabel_in4, crelay_in4*>			relays_in4;

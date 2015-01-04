@@ -7,6 +7,7 @@
 
 #include "cnexthop.hpp"
 #include "cipcore.hpp"
+#include "roflibs/ethcore/cethcore.hpp"
 
 using namespace roflibs::ip;
 
@@ -59,7 +60,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -70,7 +71,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		} break;
 		}
 
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());
@@ -83,6 +84,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 				add_action_group(rofl::cindex(0)).set_group_id(neigh.get_group_id());
 		fe.set_instructions().set_inst_goto_table().set_table_id(out_ofp_table_id+1);
 
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_ATTACHED;
@@ -137,10 +139,10 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());
@@ -152,6 +154,7 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rtr.get_ipv4_dst(), rtr.get_ipv4_mask());
 
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_DETACHED;
@@ -169,6 +172,17 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 	} catch (...) {
 		rofcore::logging::error << "[rofip][cnexthop_in4][handle_dpt_close] unexpected error" << std::endl;
 	}
+}
+
+
+
+void
+cnexthop_in4::handle_packet_in(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::debug << "[cnexthop_in4][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 }
 
 
@@ -221,7 +235,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -232,7 +246,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		} break;
 		}
 
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());
@@ -244,6 +258,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_instructions().set_inst_apply_actions().set_actions().
 				add_action_group(rofl::cindex(0)).set_group_id(neigh.get_group_id());
 
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_ATTACHED;
@@ -300,10 +315,10 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xf000 + (rtr.get_prefixlen() << 8) + rtn.get_weight());
@@ -312,6 +327,7 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fe.set_match().set_ipv6_dst(rtr.get_ipv6_dst(), rtr.get_ipv6_mask());
 
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_DETACHED;
@@ -333,6 +349,16 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 	}
 }
 
+
+
+void
+cnexthop_in6::handle_packet_in(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::debug << "[cnexthop_in6][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+}
 
 
 

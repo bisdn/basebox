@@ -147,7 +147,7 @@ public:
 		os << rofcore::indent(0) << "<crtnexthop: >" << std::endl;
 		os << rofcore::indent(2) << "<weight: " 	<< (int)nxthop.weight 			<< " >" << std::endl;
 		os << rofcore::indent(2) << "<ifindex: " 	<< (int)nxthop.ifindex 			<< " >" << std::endl;
-		os << rofcore::indent(2) << "<flags: " 	<< nxthop.flags 				<< " >" << std::endl;
+		os << rofcore::indent(2) << "<flags: " 		<< nxthop.flags 				<< " >" << std::endl;
 		os << rofcore::indent(2) << "<realms: " 	<< (unsigned int)nxthop.realms 	<< " >" << std::endl;
 		return os;
 	};
@@ -267,6 +267,13 @@ public:
 		return os;
 	};
 
+	std::string
+	str() const {
+		std::stringstream ss;
+		ss << "nexthop/inet " << gateway.str() << " weight " << (int)get_weight() << " ";
+		return ss.str();
+	};
+
 private:
 
 	rofl::caddress_in4	gateway;
@@ -377,6 +384,13 @@ public:
 		os << rofcore::indent(4) << "<gateway: >" << std::endl;
 		os << rofcore::indent(6) << nxthop.gateway;
 		return os;
+	};
+
+	std::string
+	str() const {
+		std::stringstream ss;
+		ss << "nexthop/inet6 " << gateway.str() << " weight " << (int)get_weight() << " ";
+		return ss.str();
 	};
 
 private:

@@ -17,8 +17,9 @@ ctapdev::ctapdev(
 		const rofl::cdpid& dpid,
 		std::string const& devname,
 		uint16_t pvid,
-		rofl::cmacaddr const& hwaddr) :
-		cnetdev(netdev_owner, devname),
+		rofl::cmacaddr const& hwaddr,
+		pthread_t tid) :
+		cnetdev(netdev_owner, devname, tid),
 		fd(-1),
 		dpid(dpid),
 		devname(devname),
@@ -82,19 +83,19 @@ ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
 
 	} catch (eTapDevOpenFailed& e) {
 
-		rofcore::logging::error << "ctapdev::tap_open() open() failed: dev:" << devname << std::endl;
+		rofcore::logging::error << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl << rofl::eSysCall("open");
 
 		throw eNetDevCritical(e.what());
 
 	} catch (eTapDevIoctlFailed& e) {
 
-		rofcore::logging::error << "ctapdev::tap_open() open() failed: dev:" << devname << std::endl;
+		rofcore::logging::error << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl << rofl::eSysCall("ctapdev ioctl");
 
 		throw eNetDevCritical(e.what());
 
 	} catch (eNetDevIoctl& e) {
 
-		rofcore::logging::error << "ctapdev::tap_open() open() failed: dev:" << devname << std::endl;
+		rofcore::logging::error << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl << rofl::eSysCall("cnetdev ioctl");
 
 		throw eNetDevCritical(e.what());
 

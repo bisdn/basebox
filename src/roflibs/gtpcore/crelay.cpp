@@ -13,7 +13,7 @@ void
 crelay_in4::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -75,7 +75,7 @@ crelay_in4::handle_dpt_close(rofl::crofdpt& dpt)
 	try {
 		state = STATE_DETACHED;
 
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);
@@ -111,7 +111,7 @@ void
 crelay_in6::handle_dpt_open(rofl::crofdpt& dpt)
 {
 	try {
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -172,7 +172,7 @@ crelay_in6::handle_dpt_close(rofl::crofdpt& dpt)
 	try {
 		state = STATE_DETACHED;
 
-		rofl::openflow::cofflowmod fm(dpt.get_version());
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_buffer_id(rofl::openflow::OFP_NO_BUFFER);

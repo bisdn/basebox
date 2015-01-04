@@ -71,6 +71,13 @@ public:
 	/**
 	 *
 	 */
+	bool
+	empty() const { return rtnexthops.empty(); };
+
+
+	/**
+	 *
+	 */
 	void
 	clear() { rtnexthops.clear(); };
 
@@ -186,6 +193,16 @@ public:
 		return os;
 	};
 
+	std::string
+	str() const {
+		std::stringstream ss;
+		for (std::map<unsigned int, crtnexthop_in4>::const_iterator
+				it = rtnexthops.begin(); it != rtnexthops.end(); ++it) {
+			ss << it->second.str() << std::endl;
+		}
+		return ss.str();
+	};
+
 private:
 
 	std::map<unsigned int, crtnexthop_in4> rtnexthops;
@@ -244,6 +261,13 @@ public:
 	 */
 	std::map<unsigned int, crtnexthop_in6>&
 	set_nexthops_in6() { return rtnexthops; };
+
+
+	/**
+	 *
+	 */
+	bool
+	empty() const { return rtnexthops.empty(); };
 
 
 	/**
@@ -363,6 +387,16 @@ public:
 			os << it->second;
 		}
 		return os;
+	};
+
+	std::string
+	str() const {
+		std::stringstream ss;
+		for (std::map<unsigned int, crtnexthop_in6>::const_iterator
+				it = rtnexthops.begin(); it != rtnexthops.end(); ++it) {
+			ss << it->second.str() << std::endl;
+		}
+		return ss.str();
 	};
 
 private:

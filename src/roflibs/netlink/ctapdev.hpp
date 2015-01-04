@@ -87,7 +87,8 @@ public:
 			const rofl::cdpid& dpid,
 			std::string const& devname,
 			uint16_t pvid,
-			rofl::cmacaddr const& hwaddr);
+			rofl::cmacaddr const& hwaddr,
+			pthread_t tid = 0);
 
 
 	/**

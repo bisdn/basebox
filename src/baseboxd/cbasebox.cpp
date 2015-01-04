@@ -11,14 +11,13 @@ using namespace basebox;
 
 /*static*/cbasebox* cbasebox::rofbase = (cbasebox*)0;
 /*static*/bool cbasebox::keep_on_running = true;
+/*static*/std::bitset<64> cbasebox::flags;
 /*static*/const std::string cbasebox::BASEBOX_LOG_FILE = std::string("/var/log/baseboxd.log");
 /*static*/const std::string cbasebox::BASEBOX_PID_FILE = std::string("/var/run/baseboxd.pid");
 /*static*/const std::string cbasebox::BASEBOX_CONFIG_FILE = std::string("/usr/local/etc/baseboxd.conf");
 
 /*static*/std::string cbasebox::script_path_dpt_open 	= std::string("/var/lib/basebox/dpath-open.sh");
 /*static*/std::string cbasebox::script_path_dpt_close 	= std::string("/var/lib/basebox/dpath-close.sh");
-/*static*/std::string cbasebox::script_path_port_up 	= std::string("/var/lib/basebox/port-up.sh");
-/*static*/std::string cbasebox::script_path_port_down 	= std::string("/var/lib/basebox/port-down.sh");
 
 /*static*/
 int
@@ -154,7 +153,7 @@ cbasebox::run(int argc, char** argv)
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string(portno.str());
 	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_HOSTNAME).set_string(bindaddr.str());
 
-	box.rpc_listen_for_dpts(socket_type, socket_params);
+	box.add_dpt_listening(0, socket_type, socket_params);
 
 
 	/*
@@ -169,18 +168,78 @@ cbasebox::run(int argc, char** argv)
 		}
 	}
 
+	/*
+	 * enable all cores by default
+	 */
+	flags.set(FLAG_FLOWCORE);
+	flags.set(FLAG_ETHCORE);
+	flags.set(FLAG_IPCORE);
+	flags.set(FLAG_GRECORE);
+	flags.set(FLAG_GTPCORE);
+
+	/*
+	 * extract flags for enabling/disabling the various roflibs
+	 */
+	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.flowcore.enable")) {
+		if (not (bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.flowcore.enable")) {
+			flags.reset(FLAG_FLOWCORE);
+		}
+	}
+	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.ethcore.enable")) {
+		if (not (bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.ethcore.enable")) {
+			flags.reset(FLAG_ETHCORE);
+		}
+	}
+	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.ipcore.enable")) {
+		if (not (bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.ipcore.enable")) {
+			flags.reset(FLAG_IPCORE);
+		}
+	}
+	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.grecore.enable")) {
+		if (not (bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.grecore.enable")) {
+			flags.reset(FLAG_GRECORE);
+		}
+	}
+	if (ethcore::cconfig::get_instance().exists("baseboxd.roflibs.gtpcore.enable")) {
+		if (not (bool)ethcore::cconfig::get_instance().lookup("baseboxd.roflibs.gtpcore.enable")) {
+			flags.reset(FLAG_GTPCORE);
+		}
+	}
+
+	/*
+	 * do a brief sanity check
+	 */
+	if (flags.test(FLAG_ETHCORE) && not flags.test(FLAG_FLOWCORE)) {
+		rofcore::logging::crit << "[baseboxd][main] must enable flowcore for using ethcore, aborting." << std::endl;
+		exit(1);
+	}
+	if (flags.test(FLAG_IPCORE) && not flags.test(FLAG_ETHCORE)) {
+		rofcore::logging::crit << "[baseboxd][main] must enable ethcore for using ipcore, aborting." << std::endl;
+		exit(1);
+	}
+	if (flags.test(FLAG_GRECORE) && not flags.test(FLAG_IPCORE)) {
+		rofcore::logging::crit << "[baseboxd][main] must enable ipcore for using grecore, aborting." << std::endl;
+		exit(1);
+	}
+	if (flags.test(FLAG_GTPCORE) && not flags.test(FLAG_IPCORE)) {
+		rofcore::logging::crit << "[baseboxd][main] must enable ipcore for using gtpcore, aborting." << std::endl;
+		exit(1);
+	}
+
+
+
 	cbasebox::keep_on_running = true;
 	while (cbasebox::keep_on_running) {
 		try {
 			// start main loop, does not return
-			rofl::cioloop::run();
+			rofl::cioloop::get_loop().run();
 
 		} catch (std::runtime_error& e) {
 			rofcore::logging::error << "[cbasebox][run] caught exception in main loop, e.what() " << e.what() << std::endl;
 		}
 	}
 
-	rofl::cioloop::shutdown();
+	rofl::cioloop::get_loop().shutdown();
 
 	return 0;
 }
@@ -191,63 +250,8 @@ void
 cbasebox::stop()
 {
 	cbasebox::keep_on_running = false;
-	rofl::cioloop::stop();
+	rofl::cioloop::get_loop().stop();
 }
-
-
-
-void
-cbasebox::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
-{
-	try {
-		rofcore::ctapdev* tapdev = dynamic_cast<rofcore::ctapdev*>( netdev );
-		if (0 == tapdev) {
-			throw eLinkTapDevNotFound("cbasebox::enqueue() tap device not found");
-		}
-
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(tapdev->get_dpid());
-
-		if (not dpt.get_channel().is_established()) {
-			throw eLinkNoDptAttached("cbasebox::enqueue() dpt not found");
-		}
-
-		rofl::openflow::cofactions actions(dpt.get_version());
-		actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
-		actions.set_action_set_field(rofl::cindex(1)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(tapdev->get_pvid()));
-		actions.set_action_output(rofl::cindex(2)).set_port_no(rofl::openflow::OFPP_TABLE);
-
-		dpt.send_packet_out_message(
-				rofl::cauxid(0),
-				rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()),
-				rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()),
-				actions,
-				pkt->soframe(),
-				pkt->length());
-
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cbasebox][enqueue] no data path attached, dropping outgoing packet" << std::endl;
-
-	} catch (eLinkNoDptAttached& e) {
-		rofcore::logging::error << "[cbasebox][enqueue] no data path attached, dropping outgoing packet" << std::endl;
-
-	} catch (eLinkTapDevNotFound& e) {
-		rofcore::logging::error << "[cbasebox][enqueue] unable to find tap device" << std::endl;
-	}
-
-	rofcore::cpacketpool::get_instance().release_pkt(pkt);
-}
-
-
-
-void
-cbasebox::enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
-{
-	for (std::vector<rofl::cpacket*>::iterator
-			it = pkts.begin(); it != pkts.end(); ++it) {
-		enqueue(netdev, *it);
-	}
-}
-
 
 
 
@@ -255,11 +259,13 @@ void
 cbasebox::handle_dpt_open(
 		rofl::crofdpt& dpt) {
 
-	if (rofl::openflow13::OFP_VERSION < dpt.get_version()) {
+	if (rofl::openflow13::OFP_VERSION < dpt.get_version_negotiated()) {
 		rofcore::logging::error << "[cbasebox][handle_dpt_open] datapath "
-				<< "attached with invalid OpenFlow protocol version: " << (int)dpt.get_version() << std::endl;
+				<< "attached with invalid OpenFlow protocol version: " << (int)dpt.get_version_negotiated() << std::endl;
 		return;
 	}
+
+	rofcore::logging::debug << "[cbasebox][handle_dpt_open] dpid: " << dpt.get_dpid().str() << std::endl;
 
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
@@ -273,27 +279,39 @@ void
 cbasebox::handle_dpt_close(
 		rofl::crofdpt& dpt) {
 
-	if (rofl::openflow13::OFP_VERSION < dpt.get_version()) {
+	if (rofl::openflow13::OFP_VERSION < dpt.get_version_negotiated()) {
 		rofcore::logging::error << "[cbasebox][handle_dpt_close] datapath "
-				<< "detached with invalid OpenFlow protocol version: " << (int)dpt.get_version() << std::endl;
+				<< "detached with invalid OpenFlow protocol version: " << (int)dpt.get_version_negotiated() << std::endl;
 		return;
 	}
+
+	rofcore::logging::debug << "[cbasebox][handle_dpt_close] dpid: " << dpt.get_dpid().str() << std::endl;
 
 	// call external scripting hook
 	hook_dpt_detach(dpt);
 
-	clear_tap_devs(dpt.get_dpid());
-
-	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
-	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	if (flags.test(FLAG_FLOWCORE)) {
+		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
+	if (flags.test(FLAG_GRECORE)) {
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
+	if (flags.test(FLAG_GTPCORE)) {
+		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
+	if (flags.test(FLAG_ETHCORE)) {
+		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
+	if (flags.test(FLAG_IPCORE)) {
+		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
 
 #if 0
-	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in4();
-	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in6();
+	if (flags.test(FLAG_GRECORE)) {
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in4();
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in6();
+	}
 #endif
 }
 
@@ -310,6 +328,9 @@ cbasebox::handle_features_reply(
 		return;
 	}
 
+	rofcore::logging::debug << "[cbasebox][handle_features_reply] dpid: "
+			<< dpt.get_dpid().str() << std::endl << msg;
+
 	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 }
 
@@ -319,63 +340,10 @@ void
 cbasebox::handle_packet_in(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {
 
-	try {
-		rofcore::logging::debug << "[cbasebox][handle_packet_in] pkt received: " << std::endl << msg.get_packet();
+	rofcore::logging::debug << "[cbasebox][handle_packet_in] dpid: " << dpt.get_dpid().str()
+			<< " pkt received: " << std::endl << msg;
 
-		if (msg.get_table_id() == table_id_eth_src) {
-
-			if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
-				roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
-			}
-		} else
-		if ((msg.get_table_id() >= table_id_eth_local) &&
-			(msg.get_table_id() <= table_id_ip_fwd)) {
-
-			if (not msg.get_match().get_eth_dst().is_multicast()) {
-				/* non-multicast frames are directly injected into a tapdev */
-				rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
-				*pkt = msg.get_packet();
-				pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t)-sizeof(uint16_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
-				set_tap_dev(dpt.get_dpid(), msg.get_match().get_eth_dst()).enqueue(pkt);
-
-			} else {
-				/* multicast frames carry a metadata field with the VLAN id
-				 * for both tagged and untagged frames. Lookup all tapdev
-				 * instances belonging to the specified vid and clone the packet
-				 * for all of them. */
-
-				if (not msg.get_match().has_vlan_vid()) {
-					// no VLAN related metadata found, ignore packet
-					return;
-				}
-
-				uint16_t vid = msg.get_match().get_vlan_vid() & 0x0fff;
-
-				for (std::map<std::string, rofcore::ctapdev*>::iterator
-						it = devs[dpt.get_dpid()].begin(); it != devs[dpt.get_dpid()].end(); ++it) {
-					rofcore::ctapdev& tapdev = *(it->second);
-					if (tapdev.get_pvid() != vid) {
-						continue;
-					}
-					rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
-					*pkt = msg.get_packet();
-					// offset: 12 bytes (eth-hdr without type), nbytes: 4 bytes
-					pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t)-sizeof(uint16_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
-					tapdev.enqueue(pkt);
-				}
-			}
-
-		}
-
-
-	} catch (rofl::openflow::eOxmNotFound& e) {
-		// TODO: log error
-	}
-
-	// drop buffer on data path, if the packet was stored there, as it is consumed entirely by the underlying kernel
-	if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()) != msg.get_buffer_id()) {
-		dpt.drop_buffer(auxid, msg.get_buffer_id());
-	}
+	roflibs::common::openflow::ccookiebox::get_instance().handle_packet_in(dpt, auxid, msg);
 }
 
 
@@ -384,34 +352,10 @@ void
 cbasebox::handle_flow_removed(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {
 
+	rofcore::logging::debug << "[cbasebox][handle_flow_removed] dpid: " << dpt.get_dpid().str()
+			<< " pkt received: " << std::endl << msg;
 
-	if (msg.get_table_id() == table_id_eth_src) {
-
-		if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
-			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
-		}
-	} else
-	if ((msg.get_table_id() >= table_id_ip_local) &&
-		(msg.get_table_id() <= table_id_ip_fwd)) {
-		if (roflibs::ip::cipcore::has_ip_core(dpt.get_dpid())) {
-			roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
-		}
-
-	}
-
-#if 0
-	switch (msg.get_table_id()) {
-	case 3:
-	case 4: {
-		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
-	} break;
-	default: {
-		if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
-			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_flow_removed(dpt, auxid, msg);
-		}
-	};
-	}
-#endif
+	roflibs::common::openflow::ccookiebox::get_instance().handle_flow_removed(dpt, auxid, msg);
 }
 
 
@@ -420,9 +364,13 @@ void
 cbasebox::handle_port_status(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg) {
 	try {
+		rofcore::logging::debug << "[cbasebox][handle_port_status] dpid: " << dpt.get_dpid().str()
+				<< " pkt received: " << std::endl << msg;
+
 		const rofl::openflow::cofport& port = msg.get_port();
 		uint32_t ofp_port_no = msg.get_port().get_port_no();
 
+#if 0
 		switch (msg.get_reason()) {
 		case rofl::openflow::OFPPR_ADD: {
 			dpt.set_ports().set_port(msg.get_port().get_port_no()) = msg.get_port();
@@ -444,13 +392,14 @@ cbasebox::handle_port_status(
 			// invalid/unknown reason
 		} return;
 		}
+#endif
 
-		if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+		if (flags.test(FLAG_ETHCORE) && roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
 			roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_port_status(dpt, auxid, msg);
 		}
 
 	} catch (rofl::openflow::ePortNotFound& e) {
-		// TODO: log error
+		rofcore::logging::debug << "[cbasebox][handle_port_status] portno not found" << std::endl;
 	}
 }
 
@@ -459,9 +408,24 @@ cbasebox::handle_port_status(
 void
 cbasebox::handle_error_message(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
-	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
-	if (roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
+
+	rofcore::logging::debug << "[cbasebox][handle_error_message] dpid: " << dpt.get_dpid().str()
+			<< " pkt received: " << std::endl << msg;
+
+	if (flags.test(FLAG_FLOWCORE) && roflibs::svc::cflowcore::has_flow_core(dpt.get_dpid())) {
+		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
+	}
+	if (flags.test(FLAG_ETHCORE) && roflibs::eth::cethcore::has_eth_core(dpt.get_dpid())) {
 		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
+	}
+	if (flags.test(FLAG_IPCORE) && roflibs::ip::cipcore::has_ip_core(dpt.get_dpid())) {
+		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
+	}
+	if (flags.test(FLAG_GRECORE) && roflibs::gre::cgrecore::has_gre_core(dpt.get_dpid())) {
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
+	}
+	if (flags.test(FLAG_GTPCORE) && roflibs::gtp::cgtpcore::has_gtp_core(dpt.get_dpid())) {
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_error_message(dpt, auxid, msg);
 	}
 }
 
@@ -471,76 +435,81 @@ void
 cbasebox::handle_port_desc_stats_reply(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_desc_stats_reply& msg) {
 
+	rofcore::logging::debug << "[cbasebox][handle_port_desc_stats_reply] dpid: " << dpt.get_dpid().str()
+			<< " pkt received: " << std::endl << msg;
+
+#if 0
 	dpt.set_ports() = msg.get_ports();
+#endif
 
-	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	if (flags.test(FLAG_FLOWCORE)) {
+		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
+	}
 
-	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid(),
+	if (flags.test(FLAG_IPCORE)) {
+		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid(),
 												table_id_ip_local,
 												table_id_ip_fwd).handle_dpt_close(dpt);
+	}
 
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid(),
+	if (flags.test(FLAG_ETHCORE)) {
+		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid(),
 												table_id_eth_port_membership,
 												table_id_eth_src,
 												table_id_eth_local,
 												table_id_eth_dst,
 												default_pvid).handle_dpt_close(dpt);
+	}
 
-	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid(),
+	if (flags.test(FLAG_GTPCORE)) {
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid(),
 												table_id_ip_local,
 												table_id_gtp_local).handle_dpt_close(dpt); // yes, same as local for cipcore
 
-	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid(),
+		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid(),
 												table_id_ip_local).handle_dpt_close(dpt); // yes, same as local for cipcore
+	}
 
-
-	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid(),
+	if (flags.test(FLAG_GRECORE)) {
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid(),
 												table_id_eth_port_membership,
 												table_id_ip_local,
 												table_id_gre_local,
 												table_id_ip_fwd).handle_dpt_close(dpt);
-
-
-	/*
-	 * create virtual ports for predefined ethernet endpoints
-	 */
-	roflibs::eth::cportdb& portdb = roflibs::eth::cportdb::get_portdb("file");
-
-	// install ethernet endpoints
-	for (std::set<std::string>::const_iterator
-			it = portdb.get_eth_entries(dpt.get_dpid()).begin(); it != portdb.get_eth_entries(dpt.get_dpid()).end(); ++it) {
-		const roflibs::eth::cethentry& eth = portdb.get_eth_entry(dpt.get_dpid(), *it);
-
-		if (not has_tap_dev(dpt.get_dpid(), eth.get_devname())) {
-			add_tap_dev(dpt.get_dpid(), eth.get_devname(), eth.get_port_vid(), eth.get_hwaddr());
-		}
 	}
 
-	rofl::openflow::cofflowmod fm(dpt.get_version());
-	fm.set_table_id(table_id_svc_flows);
-	fm.set_priority(0);
-	fm.set_instructions().set_inst_goto_table().set_table_id(table_id_svc_flows+1);
-	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).add_svc_flow(0xff000000, fm);
+	// purge all entries, definitly
+	dpt.flow_mod_reset();
+	dpt.group_mod_reset();
+
+
+	if (flags.test(FLAG_FLOWCORE)) {
+		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
+		fm.set_table_id(table_id_svc_flows);
+		fm.set_priority(0);
+		fm.set_instructions().set_inst_goto_table().set_table_id(table_id_svc_flows+1);
+		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).add_svc_flow(0xff000000, fm);
+	}
 
 	/*
 	 * notify core instances
 	 */
-	roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
-	roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
-	roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
-
-
-	//test_workflow(dpt);
-
-	rofcore::logging::debug << "=====================================" << std::endl;
-	rofcore::logging::debug << roflibs::eth::cethcore::get_eth_core(dpt.get_dpid());
-	rofcore::logging::debug << roflibs::ip::cipcore::get_ip_core(dpt.get_dpid());
-	rofcore::logging::debug << roflibs::gre::cgrecore::get_gre_core(dpt.get_dpid());
-	rofcore::logging::debug << "=====================================" << std::endl;
-
+	if (flags.test(FLAG_FLOWCORE)) {
+		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	}
+	if (flags.test(FLAG_ETHCORE)) {
+		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	}
+	if (flags.test(FLAG_IPCORE)) {
+		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	}
+	if (flags.test(FLAG_GTPCORE)) {
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_open(dpt);
+		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_open(dpt);
+	}
+	if (flags.test(FLAG_GRECORE)) {
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_open(dpt);
+	}
 
 	// call external scripting hook
 	hook_dpt_attach(dpt);
@@ -598,56 +567,6 @@ cbasebox::hook_dpt_detach(const rofl::crofdpt& dpt)
 
 
 void
-cbasebox::hook_port_up(const rofl::crofdpt& dpt, std::string const& devname)
-{
-	try {
-
-		std::vector<std::string> argv;
-		std::vector<std::string> envp;
-
-		std::stringstream s_dpid;
-		s_dpid << "DPID=" << dpt.get_dpid();
-		envp.push_back(s_dpid.str());
-
-		std::stringstream s_devname;
-		s_devname << "DEVNAME=" << devname;
-		envp.push_back(s_devname.str());
-
-		cbasebox::execute(cbasebox::script_path_port_up, argv, envp);
-
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cbasebox][hook_port_up] script execution failed" << std::endl;
-	}
-}
-
-
-
-void
-cbasebox::hook_port_down(const rofl::crofdpt& dpt, std::string const& devname)
-{
-	try {
-
-		std::vector<std::string> argv;
-		std::vector<std::string> envp;
-
-		std::stringstream s_dpid;
-		s_dpid << "DPID=" << dpt.get_dpid();
-		envp.push_back(s_dpid.str());
-
-		std::stringstream s_devname;
-		s_devname << "DEVNAME=" << devname;
-		envp.push_back(s_devname.str());
-
-		cbasebox::execute(cbasebox::script_path_port_down, argv, envp);
-
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cbasebox][hook_port_down] script execution failed" << std::endl;
-	}
-}
-
-
-
-void
 cbasebox::execute(
 		std::string const& executable,
 		std::vector<std::string> argv,
@@ -693,93 +612,30 @@ cbasebox::execute(
 
 
 void
-cbasebox::addr_in4_created(unsigned int ifindex, uint16_t adindex)
-{
-	try {
-		//(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
-
-	} catch (roflibs::ip::eLinkNotFound& e) {
-		// ignore addresses assigned to non-datapath ports
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in4_created] link not found" << std::endl;
-	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in4_created] address not found" << std::endl;
-	} catch (rofl::eSysCall& e) {
-			// ...
-	}
-}
-
-
-
-void
-cbasebox::addr_in4_deleted(unsigned int ifindex, uint16_t adindex)
-{
-	try {
-		//(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
-
-	} catch (roflibs::ip::eLinkNotFound& e) {
-		// ignore addresses assigned to non-datapath ports
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in4_deleted] link not found" << std::endl;
-	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in4_deleted] address not found" << std::endl;
-	} catch (rofl::eSysCall& e) {
-			// ...
-	}
-}
-
-
-
-void
-cbasebox::addr_in6_created(unsigned int ifindex, uint16_t adindex)
-{
-	try {
-		//(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
-
-	} catch (roflibs::ip::eLinkNotFound& e) {
-		// ignore addresses assigned to non-datapath ports
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in6_created] link not found" << std::endl;
-	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in6_created] address not found" << std::endl;
-	} catch (rofl::eSysCall& e) {
-		// ...
-	}
-}
-
-
-
-void
-cbasebox::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
-{
-	try {
-		//(void)roflibs::ip::cipcore::get_ip_core(rofl::crofdpt::get_dpt(dptid).get_dpid()).get_link(ifindex);
-
-	} catch (roflibs::ip::eLinkNotFound& e) {
-		// ignore addresses assigned to non-datapath ports
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] link not found" << e.what() << std::endl;
-	} catch (rofcore::crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][addr_in6_deleted] address not found" << e.what() << std::endl;
-	} catch (rofl::eSysCall& e) {
-			// ...
-	}
-}
-
-
-
-
-
-void
 cbasebox::test_workflow(rofl::crofdpt& dpt)
 {
-	bool gre_test = true;
+	bool gre_test = false;
 	bool gtp_test = false;
 
 	/*
 	 * GRE test
 	 */
 	if (gre_test) {
+
+		uint32_t term_id = 1;
+		uint32_t gre_portno = 3;
+		rofl::caddress_in4 laddr("10.3.3.1");
+		rofl::caddress_in4 raddr("10.3.3.30");
+		uint32_t gre_key = 0x11223344;
+
+		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).
+				add_gre_term_in4(term_id, gre_portno, laddr, raddr, gre_key);
+	}
+
+	/*
+	 * GRE test
+	 */
+	if (0) {
 
 		uint32_t term_id = 1;
 		uint32_t gre_portno = 3;
@@ -818,7 +674,7 @@ cbasebox::test_workflow(rofl::crofdpt& dpt)
 				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				roflibs::gtp::cteid(111111));
 
-		rofl::openflow::cofmatch tft_match(dpt.get_version());
+		rofl::openflow::cofmatch tft_match(dpt.get_version_negotiated());
 		tft_match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		tft_match.set_ipv4_src(rofl::caddress_in4("10.2.2.20"));
 		tft_match.set_ipv4_dst(rofl::caddress_in4("192.168.4.33"));

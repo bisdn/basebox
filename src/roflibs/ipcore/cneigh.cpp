@@ -7,6 +7,7 @@
 
 #include "cneigh.hpp"
 #include "cipcore.hpp"
+#include "roflibs/ethcore/cethcore.hpp"
 
 using namespace roflibs::ip;
 
@@ -93,7 +94,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		group_id = dpt.get_next_idle_group_id();
 
 		// create group entry for neighbour
-		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 		gm.set_command(command);
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
@@ -109,7 +110,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 		// redirect traffic destined directly to neighbour to group entry
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -120,7 +121,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 		} break;
 		}
 
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
@@ -134,6 +135,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 				add_action_group(rofl::cindex(0)).set_group_id(group_id);
 		fe.set_instructions().set_inst_goto_table().set_table_id(out_ofp_table_id+1);
 
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_ATTACHED;
@@ -168,19 +170,20 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 				netlink.get_links().get_link(get_ifindex()).get_neighs_in4().get_neigh(get_nbindex());
 
 
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
 		fe.set_table_id(get_table_id());
 		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fe.set_match().set_ipv4_dst(rtn.get_dst());
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 
-		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 		gm.set_command(rofl::openflow::OFPGC_DELETE);
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
@@ -205,6 +208,17 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 	state = STATE_DETACHED;
 	dpt.release_group_id(group_id); group_id = 0;
+}
+
+
+
+void
+cneigh_in4::handle_packet_in(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::debug << "[cneigh_in4][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
 }
 
 
@@ -293,7 +307,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		}
 
 		// create group entry for neighbour
-		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 		gm.set_command(command);
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
@@ -310,7 +324,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 		// redirect traffic destined directly to neighbour to group entry
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -321,7 +335,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		} break;
 		}
 
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
@@ -334,6 +348,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		fe.set_instructions().set_inst_apply_actions().set_actions().
 				add_action_group(rofl::cindex(0)).set_group_id(group_id);
 
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 		state = STATE_ATTACHED;
@@ -368,19 +383,20 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 				netlink.get_links().get_link(get_ifindex()).get_neighs_in6().get_neigh(get_nbindex());
 
 
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()));
+		fe.set_buffer_id(rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()));
 		fe.set_idle_timeout(0);
 		fe.set_hard_timeout(0);
 		fe.set_priority(0xfffe);
 		fe.set_table_id(get_table_id());
 		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+		fe.set_cookie(cookie);
 		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
 
-		rofl::openflow::cofgroupmod gm(dpt.get_version());
+		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 		gm.set_command(rofl::openflow::OFPGC_DELETE);
 		gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 		gm.set_group_id(group_id);
@@ -406,4 +422,17 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 	state = STATE_DETACHED;
 	dpt.release_group_id(group_id); group_id = 0;
 }
+
+
+
+void
+cneigh_in6::handle_packet_in(
+		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::debug << "[cneigh_in6][handle_packet_in] pkt received: " << std::endl << msg;
+	// store packet in ethcore and thus, tap devices
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+}
+
+
 

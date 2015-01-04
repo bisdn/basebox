@@ -10,7 +10,7 @@
 
 #include <inttypes.h>
 #include <ostream>
-#include <stringstream>
+#include <sstream>
 #include <exception>
 
 namespace roflibs {
@@ -138,7 +138,7 @@ public:
 private:
 
 	uint32_t	rpc;	// root path cost
-}
+};
 
 }; // end of namespace rstp
 }; // end of namespace ethernet

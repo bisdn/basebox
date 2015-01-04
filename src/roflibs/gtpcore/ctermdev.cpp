@@ -13,7 +13,7 @@ void
 ctermdev::handle_dpt_open(rofl::crofdpt& dpt, const rofcore::cprefix_in4& prefix)
 {
 	try {
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -57,7 +57,7 @@ void
 ctermdev::handle_dpt_close(rofl::crofdpt& dpt, const rofcore::cprefix_in4& prefix)
 {
 	try {
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_priority(0xd800);
@@ -89,7 +89,7 @@ void
 ctermdev::handle_dpt_open(rofl::crofdpt& dpt, const rofcore::cprefix_in6& prefix)
 {
 	try {
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
 		case STATE_DETACHED: {
@@ -133,7 +133,7 @@ void
 ctermdev::handle_dpt_close(rofl::crofdpt& dpt, const rofcore::cprefix_in6& prefix)
 {
 	try {
-		rofl::openflow::cofflowmod fe(dpt.get_version());
+		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fe.set_priority(0xd800);

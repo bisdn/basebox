@@ -16,9 +16,10 @@
 #include <rofl/common/protocols/ficmpv4frame.h>
 #include <rofl/common/protocols/ficmpv6frame.h>
 
-#include <roflibs/netlink/crtaddr.hpp>
-#include <roflibs/netlink/cnetlink.hpp>
-#include <roflibs/netlink/clogging.hpp>
+#include "roflibs/netlink/crtaddr.hpp"
+#include "roflibs/netlink/cnetlink.hpp"
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace ip {
@@ -145,26 +146,38 @@ protected:
 
 
 
-class caddr_in4 : public caddr {
+class caddr_in4 : public caddr, public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
 	 *
 	 */
-	caddr_in4() {};
+	caddr_in4() :
+		cookie_arp(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_icmpv4(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_ipv4(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
 	 */
 	caddr_in4(
 			int ifindex, uint16_t adindex, const rofl::cdpid& dpid, uint8_t table_id) :
-				caddr(ifindex, adindex, dpid, table_id) {};
+				caddr(ifindex, adindex, dpid, table_id),
+				cookie_arp(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+				cookie_icmpv4(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+				cookie_ipv4(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
 	 */
 	caddr_in4(
-			const caddr_in4& addr) { *this = addr; };
+			const caddr_in4& addr) :
+				cookie_arp(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+				cookie_icmpv4(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+				cookie_ipv4(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = addr; };
 
 	/**
 	 *
@@ -181,6 +194,7 @@ public:
 	/**
 	 *
 	 */
+	virtual
 	~caddr_in4() {
 		try {
 			if (STATE_ATTACHED == state) {
@@ -203,6 +217,20 @@ public:
 	void
 	handle_dpt_close(rofl::crofdpt& dpt);
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
+
 public:
 
 	friend std::ostream&
@@ -220,30 +248,45 @@ public:
 		}
 		return os;
 	};
+
+private:
+
+	uint64_t	cookie_arp;
+	uint64_t	cookie_icmpv4;
+	uint64_t	cookie_ipv4;
 };
 
 
 
-class caddr_in6 : public caddr {
+class caddr_in6 : public caddr, public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
 	 *
 	 */
-	caddr_in6() {};
+	caddr_in6() :
+		cookie_icmpv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
 	 */
 	caddr_in6(
 			int ifindex, uint16_t adindex, const rofl::cdpid& dpid, uint8_t table_id) :
-				caddr(ifindex, adindex, dpid, table_id) {};
+				caddr(ifindex, adindex, dpid, table_id),
+				cookie_icmpv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+				cookie_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
 	 */
 	caddr_in6(
-			const caddr_in6& addr) { *this = addr; };
+			const caddr_in6& addr) :
+				cookie_icmpv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+				cookie_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = addr; };
 
 	/**
 	 *
@@ -260,6 +303,7 @@ public:
 	/**
 	 *
 	 */
+	virtual
 	~caddr_in6() {
 		try {
 			if (STATE_ATTACHED == state) {
@@ -282,6 +326,20 @@ public:
 	void
 	handle_dpt_close(rofl::crofdpt& dpt);
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
+
 public:
 
 	friend std::ostream&
@@ -299,6 +357,11 @@ public:
 		}
 		return os;
 	};
+
+private:
+
+	uint64_t	cookie_icmpv6;
+	uint64_t	cookie_ipv6;
 };
 
 }; // end of namespace ip

@@ -59,10 +59,11 @@ cnetdev_owner::enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
 
 
 
-cnetdev::cnetdev(cnetdev_owner *netdev_owner, std::string const& devname) :
-	devname(devname),
-	netdev_owner(netdev_owner),
-	ifindex(0)
+cnetdev::cnetdev(cnetdev_owner *netdev_owner, std::string const& devname, pthread_t tid) :
+		rofl::ciosrv(tid),
+		devname(devname),
+		netdev_owner(netdev_owner),
+		ifindex(0)
 {
 	if (0 == netdev_owner) {
 		throw eNetDevInvalOwner("cnetdev::cnetdev() no netdev_owner");

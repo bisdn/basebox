@@ -6,7 +6,7 @@ SUBDIRS =
 lib_LTLIBRARIES = libroflibs_rstp.la
 
 libroflibs_rstp_la_SOURCES = \
-	crstp.h \
+	crstp_p.h \
 	cbridgeid.hpp \
 	cportid.hpp \
 	crpcost.hpp \
@@ -14,7 +14,14 @@ libroflibs_rstp_la_SOURCES = \
 	cbridge.hpp \
 	cbridge.cpp \
 	cport.hpp \
-	cpriovect.hpp
+	cpriovect.hpp \
+	cbpdumsg.hpp \
+	cbpdumsg.cpp \
+	cbpdumsg_cnf.hpp \
+	cbpdumsg_cnf.cpp \
+	cbpdumsg_tcn.hpp \
+	cbpdumsg_rst.hpp \
+	cbpdumsg_rst.cpp
 
 libroflibs_rstp_la_LIBADD=
 

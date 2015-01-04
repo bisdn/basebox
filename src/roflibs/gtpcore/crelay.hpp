@@ -15,6 +15,7 @@
 #include <rofl/common/cdptid.h>
 #include <rofl/common/protocols/fipv4frame.h>
 #include <rofl/common/protocols/fudpframe.h>
+#include <rofl/common/crofbase.h>
 
 #include <roflibs/gtpcore/clabel.hpp>
 #include <roflibs/netlink/clogging.hpp>

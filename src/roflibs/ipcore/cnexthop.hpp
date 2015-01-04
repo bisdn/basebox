@@ -24,7 +24,8 @@ extern "C" {
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
 
-#include <roflibs/netlink/cnetlink.hpp>
+#include "roflibs/netlink/cnetlink.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace ip {
@@ -150,19 +151,25 @@ protected:
 
 
 
-class cnexthop_in4 : public cnexthop {
+class cnexthop_in4 :
+		public cnexthop,
+		public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
 	 *
 	 */
-	cnexthop_in4() {};
+	cnexthop_in4() :
+		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
 	 */
 	cnexthop_in4(
-			const cnexthop_in4& nexthop) { *this = nexthop; };
+			const cnexthop_in4& nexthop) :
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = nexthop; };
 
 	/**
 	 *
@@ -181,7 +188,9 @@ public:
 	 */
 	cnexthop_in4(
 			uint8_t rttblid, unsigned int rtindex, unsigned int nhindex, const rofl::cdpid& dpid, uint8_t out_ofp_table_id = 2) :
-				cnexthop(rttblid, rtindex, nhindex, dpid, out_ofp_table_id) {};
+				cnexthop(rttblid, rtindex, nhindex, dpid, out_ofp_table_id),
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 public:
 
@@ -197,23 +206,40 @@ public:
 	void
 	handle_dpt_close(rofl::crofdpt& dpt);
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
+
 private:
 
 	virtual void
 	neigh_in4_created(unsigned int ifindex, uint16_t nbindex) {
 		//if (STATE_DETACHED == state) {
+		rofcore::logging::debug << "[cnexthop_in4][neigh_in4_created] neighbour resolved" << std::endl;
 			handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		//}
 	};
 
 	virtual void
 	neigh_in4_updated(unsigned int ifindex, uint16_t nbindex) {
+		rofcore::logging::debug << "[cnexthop_in4][neigh_in4_updated] neighbour updated" << std::endl;
 		handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 	};
 
 	virtual void
 	neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex) {
 		//if (STATE_ATTACHED == state) {
+		rofcore::logging::debug << "[cnexthop_in4][neigh_in4_deleted] neighbour removed" << std::endl;
 			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 		//}
 	};
@@ -234,27 +260,34 @@ public:
 		return os;
 	};
 
-protected:
+private:
 
+	uint64_t 	cookie;
 };
 
 
 
 
 
-class cnexthop_in6 : public cnexthop {
+class cnexthop_in6 :
+		public cnexthop,
+		public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
 	 *
 	 */
-	cnexthop_in6() {};
+	cnexthop_in6() :
+		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 	/**
 	 *
 	 */
 	cnexthop_in6(
-			const cnexthop_in6& nexthop) { *this = nexthop; };
+			const cnexthop_in6& nexthop) :
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = nexthop; };
 
 	/**
 	 *
@@ -273,7 +306,9 @@ public:
 	 */
 	cnexthop_in6(
 			uint8_t rttableid, unsigned int rtindex, unsigned int nhindex, const rofl::cdpid& dpid, uint8_t out_ofp_table_id = 2) :
-				cnexthop(rttableid, rtindex, nhindex, dpid, out_ofp_table_id) {};
+				cnexthop(rttableid, rtindex, nhindex, dpid, out_ofp_table_id),
+				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{};
 
 
 public:
@@ -290,23 +325,40 @@ public:
 	void
 	handle_dpt_close(rofl::crofdpt& dpt);
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
+
 private:
 
 	virtual void
 	neigh_in6_created(unsigned int ifindex, uint16_t nbindex) {
 		//if (STATE_DETACHED == state) {
+		rofcore::logging::debug << "[cnexthop_in6][neigh_in6_created] neighbour resolved" << std::endl;
 			handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 		//}
 	};
 
 	virtual void
 	neigh_in6_updated(unsigned int ifindex, uint16_t nbindex) {
+		rofcore::logging::debug << "[cnexthop_in6][neigh_in6_created] neighbour updated" << std::endl;
 		handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 	};
 
 	virtual void
 	neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex) {
 		//if (STATE_ATTACHED == state) {
+		rofcore::logging::debug << "[cnexthop_in6][neigh_in6_created] neighbour deleted" << std::endl;
 			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
 		//}
 	};
@@ -326,6 +378,10 @@ public:
 		}
 		return os;
 	};
+
+private:
+
+	uint64_t 	cookie;
 };
 
 }; // end of namespace ip

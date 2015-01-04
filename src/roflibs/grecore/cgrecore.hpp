@@ -18,9 +18,15 @@
 #include <rofl/common/protocols/fipv4frame.h>
 #include <rofl/common/protocols/fipv6frame.h>
 #include <rofl/common/thread_helper.h>
+#include <rofl/common/crofdpt.h>
+#include <rofl/common/cauxid.h>
+#include <rofl/common/openflow/messages/cofmsg_packet_in.h>
+#include <rofl/common/openflow/messages/cofmsg_flow_removed.h>
+#include <rofl/common/openflow/messages/cofmsg_error.h>
 
-#include <roflibs/netlink/clogging.hpp>
-#include <roflibs/grecore/cgreterm.hpp>
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/grecore/cgreterm.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace gre {
@@ -34,7 +40,7 @@ public:
 	eGreCoreNotFound(const std::string& __arg) : eGreCoreBase(__arg) {};
 };
 
-class cgrecore {
+class cgrecore : public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
@@ -115,14 +121,17 @@ private:
 			uint8_t gre_local_table_id,
 			uint8_t ip_fwd_table_id) :
 		state(STATE_DETACHED), dpid(dpid),
+		cookie_miss_entry(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		eth_local_table_id(eth_local_table_id),
 		ip_local_table_id(ip_local_table_id),
 		gre_local_table_id(gre_local_table_id),
-		ip_fwd_table_id(ip_fwd_table_id) {};
+		ip_fwd_table_id(ip_fwd_table_id),
+		tid(pthread_self()) {};
 
 	/**
 	 *
 	 */
+	virtual
 	~cgrecore() {
 		while (not terms_in4.empty()) {
 			uint32_t term_id = terms_in4.begin()->first;
@@ -381,6 +390,39 @@ public:
 
 public:
 
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {};
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_error_message(
+			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {};
+
+protected:
+
+	friend class cgreterm;
+
+	/**
+	 *
+	 */
+	pthread_t
+	get_thread_id() const { return tid; };
+
+public:
+
 	friend std::ostream&
 	operator<< (std::ostream& os, const cgrecore& grecore) {
 		os << rofcore::indent(0) << "<cgrecore dpid:" << (unsigned long long)grecore.dpid.get_uint64_t() << " "
@@ -408,6 +450,7 @@ private:
 
 	enum ofp_state_t							state;
 	rofl::cdpid									dpid;
+	uint64_t									cookie_miss_entry;
 	uint8_t										eth_local_table_id;
 	uint8_t										ip_local_table_id;
 	uint8_t										gre_local_table_id;
@@ -420,6 +463,8 @@ private:
 
 	static const uint8_t						GRE_IP_PROTO = 47;
 	static const uint16_t 						GRE_PROT_TYPE_TRANSPARENT_ETHERNET_BRIDGING = 0x6558;
+
+	pthread_t									tid;
 };
 
 }; // end of namespace gre

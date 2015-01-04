@@ -187,7 +187,6 @@ public:
 		return os;
 	};
 
-
 private:
 
 	std::string			label;
@@ -344,6 +343,20 @@ public:
 		return os;
 	};
 
+	std::string
+	str() const {
+	/*
+		90: ep0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UNKNOWN qlen 500
+			link/ether 00:ff:ff:11:11:11 brd ff:ff:ff:ff:ff:ff
+			inet 10.1.3.30/24 brd 10.1.3.255 scope global ep0
+			inet6 fe80::2ff:ffff:fe11:1111/64 scope link
+			   valid_lft forever preferred_lft forever
+	 */
+		std::stringstream ss;
+		ss << "addr/inet " << local.str() << "/" << get_prefixlen() << " brd " << bcast.str();
+		ss << " scope " << get_scope() << " ";
+		return ss.str();
+	};
 
 	/**
 	 *
@@ -523,6 +536,22 @@ public:
 		os << rofcore::indent(2) << "<mask: >" << std::endl;
 		os << rofcore::indent(4) << rtaddr.get_mask();
 		return os;
+	};
+
+
+	std::string
+	str() const {
+	/*
+		90: ep0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UNKNOWN qlen 500
+			link/ether 00:ff:ff:11:11:11 brd ff:ff:ff:ff:ff:ff
+			inet 10.1.3.30/24 brd 10.1.3.255 scope global ep0
+			inet6 fe80::2ff:ffff:fe11:1111/64 scope link
+			   valid_lft forever preferred_lft forever
+	 */
+		std::stringstream ss;
+		ss << "addr/inet6 " << local.str() << "/" << get_prefixlen() << " brd " << bcast.str();
+		ss << " scope " << get_scope() << " ";
+		return ss.str();
 	};
 
 

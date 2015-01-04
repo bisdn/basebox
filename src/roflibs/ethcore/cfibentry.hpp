@@ -21,6 +21,7 @@
 #include <rofl/common/logging.h>
 
 #include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace eth {
@@ -46,14 +47,17 @@ public:
 	virtual void fib_expired(cfibentry& entry) = 0;
 };
 
-class cfibentry {
+class cfibentry : public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
 	 *
 	 */
 	cfibentry() :
-		state(STATE_IDLE), fib(0), vid(0), portno(0), tagged(true),
+		state(STATE_IDLE), fib(0),
+		cookie_src(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_dst(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		vid(0), portno(0), tagged(true),
 		src_stage_table_id(1), dst_stage_table_id(2), entry_timeout(0) {};
 
 	/**
@@ -70,7 +74,10 @@ public:
 			int entry_timeout = FIB_ENTRY_DEFAULT_TIMEOUT,
 			uint8_t src_stage_table_id = 1,
 			uint8_t dst_stage_table_id = 2) :
-				state(STATE_IDLE), fib(fib), dpid(dpid), vid(vid), portno(portno),
+				state(STATE_IDLE), fib(fib), dpid(dpid),
+				cookie_src(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+				cookie_dst(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+				vid(vid), portno(portno),
 				tagged(tagged), lladdr(lladdr),
 				src_stage_table_id(src_stage_table_id), dst_stage_table_id(dst_stage_table_id),
 				entry_timeout(entry_timeout) {
@@ -92,7 +99,10 @@ public:
 	/**
 	 *
 	 */
-	cfibentry(const cfibentry& entry) { *this = entry; };
+	cfibentry(const cfibentry& entry) :
+		cookie_src(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		cookie_dst(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = entry; };
 
 	/**
 	 *
@@ -104,6 +114,7 @@ public:
 		state				= entry.state;
 		fib 				= entry.fib;
 		dpid 				= entry.dpid;
+		// do not copy cookies here!
 		vid 				= entry.vid;
 		portno 				= entry.portno;
 		tagged 				= entry.tagged;
@@ -177,14 +188,14 @@ public:
 	/**
 	 *
 	 */
-	void
+	virtual void
 	handle_packet_in(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
 
 	/**
 	 *
 	 */
-	void
+	virtual void
 	handle_flow_removed(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg);
 
@@ -253,6 +264,8 @@ private:
 	std::bitset<32>				flags;
 	cfibentry_owner				*fib;
 	rofl::cdpid					dpid;
+	uint64_t					cookie_src; // cookie used for flow table entry in src stage
+	uint64_t					cookie_dst; // cookie used for flow table entry in dst stage
 	uint16_t					vid;
 	uint32_t					portno;
 	bool						tagged;

@@ -15,8 +15,10 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/cdptid.h>
 #include <rofl/common/protocols/fvlanframe.h>
+#include <rofl/common/crofbase.h>
 
 #include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/ccookiebox.hpp"
 
 namespace roflibs {
 namespace eth {
@@ -30,14 +32,16 @@ public:
 	eMemberPortNotFound(const std::string& __arg) : eMemberPortBase(__arg) {};
 };
 
-class cmemberport {
+class cmemberport : public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
 	 *
 	 */
 	cmemberport() :
-		dpt_state(STATE_IDLE), portno(0xffffffff), vid(0xffff),
+		dpt_state(STATE_IDLE),
+		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		portno(0xffffffff), vid(0xffff),
 		tagged(false), table_id_eth_in(0), table_id_eth_local(0), table_id_eth_out(0) {};
 
 	/**
@@ -47,13 +51,16 @@ public:
 			const rofl::cdpid& dpid, uint8_t in_stage_table_id, uint8_t local_stage_table_id, uint8_t out_stage_table_id,
 			uint32_t portno, const rofl::cmacaddr& hwaddr,
 			uint16_t vid = 0xffff, bool tagged = true) :
-		dpt_state(STATE_IDLE), dpid(dpid), portno(portno), vid(vid),
+		dpt_state(STATE_IDLE), dpid(dpid),
+		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+		portno(portno), vid(vid),
 		tagged(tagged), table_id_eth_in(in_stage_table_id),
 		table_id_eth_local(local_stage_table_id), table_id_eth_out(out_stage_table_id), hwaddr(hwaddr) {};
 
 	/**
 	 *
 	 */
+	virtual
 	~cmemberport() {
 		try {
 			if (STATE_ATTACHED == dpt_state) {
@@ -65,8 +72,9 @@ public:
 	/**
 	 *
 	 */
-	cmemberport(const cmemberport& port)
-		{ *this = port; };
+	cmemberport(const cmemberport& port) :
+		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
+	{ *this = port; };
 
 	/**
 	 *
@@ -77,6 +85,7 @@ public:
 			return *this;
 		dpt_state	= port.dpt_state;
 		dpid 	= port.dpid;
+		// do not copy cookie here!
 		portno 	= port.portno;
 		vid 	= port.vid;
 		tagged 	= port.tagged;
@@ -126,14 +135,14 @@ public:
 	/**
 	 *
 	 */
-	void
+	virtual void
 	handle_packet_in(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
 
 	/**
 	 *
 	 */
-	void
+	virtual void
 	handle_flow_removed(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg);
 
@@ -173,6 +182,7 @@ private:
 	dpt_state_t		dpt_state;
 
 	rofl::cdpid		dpid;
+	uint64_t		cookie;
 	uint32_t		portno;
 	uint16_t 		vid;
 	bool 			tagged;

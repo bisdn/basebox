@@ -15,7 +15,7 @@ import platform
 
 
 if platform.system() == 'Linux':
-    doc_dir = '/home/andreas/local/share/doc/grecore'
+    doc_dir = '/usr/local/share/doc/grecore'
 else:
     try:
         from win32com.shell import shellcon, shell
@@ -32,9 +32,9 @@ long_desc = \
 sgwumgt = Extension('grecore',
                     define_macros = [('MAJOR_VERSION', '0'),
                                      ('MINOR_VERSION', '5')],
-                    include_dirs = ['..', '/home/andreas/local/include'],
+                    include_dirs = ['..', '/usr/local/include'],
                     libraries = ['roflibs_grecore', 'rofl'],
-                    library_dirs = ['..', '/home/andreas/local/lib'],
+                    library_dirs = ['..', '/usr/local/lib'],
 		    extra_compile_args = ['-Wno-write-strings'],
                     sources = ['grecoremodule.cpp'])
 
