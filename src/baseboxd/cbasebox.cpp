@@ -267,6 +267,7 @@ cbasebox::handle_dpt_open(
 
 	rofcore::logging::debug << "[cbasebox][handle_dpt_open] dpid: " << dpt.get_dpid().str() << std::endl;
 
+	dpid = dpt.get_dpid();
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
 
@@ -277,40 +278,34 @@ cbasebox::handle_dpt_open(
 
 void
 cbasebox::handle_dpt_close(
-		rofl::crofdpt& dpt) {
+		const rofl::cdptid& dptid) {
 
-	if (rofl::openflow13::OFP_VERSION < dpt.get_version_negotiated()) {
-		rofcore::logging::error << "[cbasebox][handle_dpt_close] datapath "
-				<< "detached with invalid OpenFlow protocol version: " << (int)dpt.get_version_negotiated() << std::endl;
-		return;
-	}
-
-	rofcore::logging::debug << "[cbasebox][handle_dpt_close] dpid: " << dpt.get_dpid().str() << std::endl;
+	rofcore::logging::debug << "[cbasebox][handle_dpt_close] dpid: " << dpid.str() << std::endl;
 
 	// call external scripting hook
 	hook_dpt_detach(dpt);
 
 	if (flags.test(FLAG_FLOWCORE)) {
-		roflibs::svc::cflowcore::set_flow_core(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::svc::cflowcore::set_flow_core(dpid).handle_dpt_close(dptid);
 	}
 	if (flags.test(FLAG_GRECORE)) {
-		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::gre::cgrecore::set_gre_core(dpid).handle_dpt_close(dptid);
 	}
 	if (flags.test(FLAG_GTPCORE)) {
-		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dpid()).handle_dpt_close(dpt);
-		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::gtp::cgtprelay::set_gtp_relay(dpid).handle_dpt_close(dptid);
+		roflibs::gtp::cgtpcore::set_gtp_core(dpid).handle_dpt_close(dptid);
 	}
 	if (flags.test(FLAG_ETHCORE)) {
-		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::eth::cethcore::set_eth_core(dpid).handle_dpt_close(dptid);
 	}
 	if (flags.test(FLAG_IPCORE)) {
-		roflibs::ip::cipcore::set_ip_core(dpt.get_dpid()).handle_dpt_close(dpt);
+		roflibs::ip::cipcore::set_ip_core(dpid).handle_dpt_close(dptid);
 	}
 
 #if 0
 	if (flags.test(FLAG_GRECORE)) {
-		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in4();
-		roflibs::gre::cgrecore::set_gre_core(dpt.get_dpid()).clear_gre_terms_in6();
+		roflibs::gre::cgrecore::set_gre_core(dpid).clear_gre_terms_in4();
+		roflibs::gre::cgrecore::set_gre_core(dpid).clear_gre_terms_in6();
 	}
 #endif
 }

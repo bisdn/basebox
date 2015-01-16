@@ -69,74 +69,74 @@ public:
 	 *
 	 */
 	static cethcore&
-	add_eth_core(const rofl::cdpid& dpid,
+	add_eth_core(const rofl::cdptid& dptid,
 			uint8_t table_id_eth_in, uint8_t table_id_eth_src,
 			uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
 			uint16_t default_pvid = DEFAULT_PVID) {
-		if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
-			delete cethcore::ethcores[dpid];
+		if (cethcore::ethcores.find(dptid) != cethcore::ethcores.end()) {
+			delete cethcore::ethcores[dptid];
 		}
-		cethcore::ethcores[dpid] = new cethcore(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
-		dpids.insert(dpid.get_uint64_t());
-		return *(cethcore::ethcores[dpid]);
+		cethcore::ethcores[dptid] = new cethcore(dptid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
+		dpids.insert(rofl::crofdpt::get_dpt(dptid).get_dpid().get_uint64_t());
+		return *(cethcore::ethcores[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static cethcore&
-	set_eth_core(const rofl::cdpid& dpid,
+	set_eth_core(const rofl::cdptid& dptid,
 			uint8_t table_id_eth_in, uint8_t table_id_eth_src,
 			uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
 			uint16_t default_pvid = DEFAULT_PVID) {
-		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
-			cethcore::ethcores[dpid] = new cethcore(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
-			dpids.insert(dpid.get_uint64_t());
+		if (cethcore::ethcores.find(dptid) == cethcore::ethcores.end()) {
+			cethcore::ethcores[dptid] = new cethcore(dptid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, default_pvid);
+			dpids.insert(rofl::crofdpt::get_dpt(dptid).get_dpid().get_uint64_t());
 		}
-		return *(cethcore::ethcores[dpid]);
+		return *(cethcore::ethcores[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static cethcore&
-	set_eth_core(const rofl::cdpid& dpid) {
-		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
+	set_eth_core(const rofl::cdptid& dptid) {
+		if (cethcore::ethcores.find(dptid) == cethcore::ethcores.end()) {
 			throw eEthCoreNotFound("cethcore::set_eth_core() dpid not found");
 		}
-		return *(cethcore::ethcores[dpid]);
+		return *(cethcore::ethcores[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static const cethcore&
-	get_eth_core(const rofl::cdpid& dpid) {
-		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
+	get_eth_core(const rofl::cdptid& dptid) {
+		if (cethcore::ethcores.find(dptid) == cethcore::ethcores.end()) {
 			throw eEthCoreNotFound("cethcore::get_eth_core() dpid not found");
 		}
-		return *(cethcore::ethcores.at(dpid));
+		return *(cethcore::ethcores.at(dptid));
 	};
 
 	/**
 	 *
 	 */
 	static void
-	drop_eth_core(const rofl::cdpid& dpid) {
-		if (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()) {
+	drop_eth_core(const rofl::cdptid& dptid) {
+		if (cethcore::ethcores.find(dptid) == cethcore::ethcores.end()) {
 			return;
 		}
-		dpids.erase(dpid.get_uint64_t());
-		delete cethcore::ethcores[dpid];
-		cethcore::ethcores.erase(dpid);
+		dpids.erase(rofl::crofdpt::get_dpt(dptid).get_dpid().get_uint64_t());
+		delete cethcore::ethcores[dptid];
+		cethcore::ethcores.erase(dptid);
 	};
 
 	/**
 	 *
 	 */
 	static bool
-	has_eth_core(const rofl::cdpid& dpid) {
-		return (not (cethcore::ethcores.find(dpid) == cethcore::ethcores.end()));
+	has_eth_core(const rofl::cdptid& dptid) {
+		return (not (cethcore::ethcores.find(dptid) == cethcore::ethcores.end()));
 	};
 
 private:
@@ -144,7 +144,7 @@ private:
 	/**
 	 *
 	 */
-	cethcore(const rofl::cdpid& dpid,
+	cethcore(const rofl::cdptid& dptid,
 			uint8_t table_id_eth_in, uint8_t table_id_eth_src,
 			uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
 			uint16_t default_pvid = DEFAULT_PVID);
@@ -161,7 +161,7 @@ public:
 	 *
 	 */
 	const rofl::cdpid&
-	get_dpid() const { return dpid; };
+	get_dpid() const { return rofl::crofdpt::get_dpt(dptid).get_dpid(); };
 
 	/**
 	 *
@@ -200,9 +200,9 @@ public:
 		if (vlans.find(vid) != vlans.end()) {
 			vlans.erase(vid);
 		}
-		vlans[vid] = cvlan(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, vid);
+		vlans[vid] = cvlan(rofl::crofdpt::get_dpt(dptid), table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, vid);
 		if (STATE_ATTACHED == state) {
-			vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
 		return vlans[vid];
 	};
@@ -214,9 +214,9 @@ public:
 	set_vlan(uint16_t vid) {
 		rofl::RwLock rwlock(vlans_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (vlans.find(vid) == vlans.end()) {
-			vlans[vid] = cvlan(dpid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, vid);
+			vlans[vid] = cvlan(rofl::crofdpt::get_dpt(dptid), table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, vid);
 			if (STATE_ATTACHED == state) {
-				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		}
 		return vlans[vid];
@@ -232,7 +232,7 @@ public:
 			return;
 		}
 		if (STATE_ATTACHED == state) {
-			rofl::crofdpt::get_dpt(dpid).release_group_id(vlans[vid].get_group_id());
+			rofl::crofdpt::get_dpt(dptid).release_group_id(vlans[vid].get_group_id());
 		}
 		vlans.erase(vid);
 	};
@@ -322,13 +322,13 @@ private:
 	 *
 	 */
 	void
-	clear_tap_devs(const rofl::cdpid& dpid) {
+	clear_tap_devs(const rofl::cdptid& dpid) {
 		while (not devs[dpid].empty()) {
 			std::map<std::string, rofcore::ctapdev*>::iterator it = devs[dpid].begin();
 			try {
 				hook_port_down(rofl::crofdpt::get_dpt(it->second->get_dpid()), it->second->get_devname());
 			} catch (rofl::eRofDptNotFound& e) {}
-			drop_tap_dev(it->second->get_dpid(), it->first);
+			drop_tap_dev(dpid, it->first);
 		}
 	};
 
@@ -336,7 +336,7 @@ private:
 	 *
 	 */
 	rofcore::ctapdev&
-	add_tap_dev(const rofl::cdpid& dpid, const std::string& devname, uint16_t pvid, const rofl::caddress_ll& hwaddr) {
+	add_tap_dev(const rofl::cdptid& dpid, const std::string& devname, uint16_t pvid, const rofl::caddress_ll& hwaddr) {
 		if (devs[dpid].find(devname) != devs[dpid].end()) {
 			delete devs[dpid][devname];
 		}
@@ -348,7 +348,7 @@ private:
 	 *
 	 */
 	rofcore::ctapdev&
-	set_tap_dev(const rofl::cdpid& dpid, const std::string& devname, uint16_t pvid, const rofl::caddress_ll& hwaddr) {
+	set_tap_dev(const rofl::cdptid& dpid, const std::string& devname, uint16_t pvid, const rofl::caddress_ll& hwaddr) {
 		if (devs[dpid].find(devname) == devs[dpid].end()) {
 			devs[dpid][devname] = new rofcore::ctapdev(this, dpid, devname, pvid, hwaddr);
 		}
@@ -359,7 +359,7 @@ private:
 	 *
 	 */
 	rofcore::ctapdev&
-	set_tap_dev(const rofl::cdpid& dpid, const std::string& devname) {
+	set_tap_dev(const rofl::cdptid& dpid, const std::string& devname) {
 		if (devs[dpid].find(devname) == devs[dpid].end()) {
 			throw rofcore::eTunDevNotFound("cbasebox::set_tap_dev() devname not found");
 		}
@@ -370,7 +370,7 @@ private:
 	 *
 	 */
 	rofcore::ctapdev&
-	set_tap_dev(const rofl::cdpid& dpid, const rofl::caddress_ll& hwaddr) {
+	set_tap_dev(const rofl::cdptid& dpid, const rofl::caddress_ll& hwaddr) {
 		std::map<std::string, rofcore::ctapdev*>::iterator it;
 		if ((it = find_if(devs[dpid].begin(), devs[dpid].end(),
 				rofcore::ctapdev::ctapdev_find_by_hwaddr(dpid, hwaddr))) == devs[dpid].end()) {
@@ -383,7 +383,7 @@ private:
 	 *
 	 */
 	const rofcore::ctapdev&
-	get_tap_dev(const rofl::cdpid& dpid, const std::string& devname) const {
+	get_tap_dev(const rofl::cdptid& dpid, const std::string& devname) const {
 		if (devs.find(dpid) == devs.end()) {
 			throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() dpid not found");
 		}
@@ -397,7 +397,7 @@ private:
 	 *
 	 */
 	const rofcore::ctapdev&
-	get_tap_dev(const rofl::cdpid& dpid, const rofl::caddress_ll& hwaddr) const {
+	get_tap_dev(const rofl::cdptid& dpid, const rofl::caddress_ll& hwaddr) const {
 		if (devs.find(dpid) == devs.end()) {
 			throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() dpid not found");
 		}
@@ -413,7 +413,7 @@ private:
 	 *
 	 */
 	void
-	drop_tap_dev(const rofl::cdpid& dpid, const std::string& devname) {
+	drop_tap_dev(const rofl::cdptid& dpid, const std::string& devname) {
 		if (devs[dpid].find(devname) == devs[dpid].end()) {
 			return;
 		}
@@ -425,7 +425,7 @@ private:
 	 *
 	 */
 	void
-	drop_tap_dev(const rofl::cdpid& dpid, const rofl::caddress_ll& hwaddr) {
+	drop_tap_dev(const rofl::cdptid& dpid, const rofl::caddress_ll& hwaddr) {
 		std::map<std::string, rofcore::ctapdev*>::const_iterator it;
 		if ((it = find_if(devs[dpid].begin(), devs[dpid].end(),
 				rofcore::ctapdev::ctapdev_find_by_hwaddr(dpid, hwaddr))) == devs[dpid].end()) {
@@ -439,7 +439,7 @@ private:
 	 *
 	 */
 	bool
-	has_tap_dev(const rofl::cdpid& dpid, const std::string& devname) const {
+	has_tap_dev(const rofl::cdptid& dpid, const std::string& devname) const {
 		if (devs.find(dpid) == devs.end()) {
 			return false;
 		}
@@ -450,7 +450,7 @@ private:
 	 *
 	 */
 	bool
-	has_tap_dev(const rofl::cdpid& dpid, const rofl::caddress_ll& hwaddr) const {
+	has_tap_dev(const rofl::cdptid& dpid, const rofl::caddress_ll& hwaddr) const {
 		if (devs.find(dpid) == devs.end()) {
 			return false;
 		}
@@ -511,14 +511,14 @@ private:
 		STATE_ATTACHED = 4,
 	};
 
-	std::map<rofl::cdpid, std::map<std::string, rofcore::ctapdev*> > devs;
+	std::map<rofl::cdptid, std::map<std::string, rofcore::ctapdev*> > devs;
 	static const uint16_t				DEFAULT_PVID = 1;
 
 	static std::string 					script_path_port_up;
 	static std::string 					script_path_port_down;
 
 	cethcore_state_t					state;
-	rofl::cdpid							dpid;
+	rofl::cdptid						dptid;
 	uint64_t							cookie_grp_addr;
 	uint64_t							cookie_miss_entry_src;
 	uint64_t							cookie_miss_entry_local;
@@ -533,7 +533,7 @@ private:
 	uint8_t								table_id_eth_dst;
 
 	static std::set<uint64_t> 					dpids;
-	static std::map<rofl::cdpid, cethcore*> 	ethcores;
+	static std::map<rofl::cdptid, cethcore*> 	ethcores;
 
 
 private:

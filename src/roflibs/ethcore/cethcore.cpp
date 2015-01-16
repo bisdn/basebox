@@ -14,7 +14,7 @@ using namespace roflibs::eth;
 /*static*/std::string cethcore::script_path_port_up 	= std::string("/var/lib/basebox/port-up.sh");
 /*static*/std::string cethcore::script_path_port_down 	= std::string("/var/lib/basebox/port-down.sh");
 
-cethcore::cethcore(const rofl::cdpid& dpid,
+cethcore::cethcore(const rofl::cdptid& dptid,
 		uint8_t table_id_eth_in, uint8_t table_id_eth_src,
 		uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
 		uint16_t default_pvid) :
@@ -23,13 +23,13 @@ cethcore::cethcore(const rofl::cdpid& dpid,
 			cookie_miss_entry_src(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 			cookie_miss_entry_local(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 			cookie_redirect_inject(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-			dpid(dpid), default_pvid(default_pvid),
+			dptid(dptid), default_pvid(default_pvid),
 			table_id_eth_in(table_id_eth_in),
 			table_id_eth_src(table_id_eth_src),
 			table_id_eth_local(table_id_eth_local),
 			table_id_eth_dst(table_id_eth_dst) {
 
-	if (cethcore::ethcores.find(dpid) != cethcore::ethcores.end()) {
+	if (cethcore::ethcores.find(dptid) != cethcore::ethcores.end()) {
 		throw eEthCoreExists("cethcore::cethcore() dpid already exists");
 	}
 
@@ -41,11 +41,11 @@ cethcore::cethcore(const rofl::cdpid& dpid,
 cethcore::~cethcore() {
 	try {
 		if (STATE_ATTACHED == state) {
-			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+			handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
 		}
 	} catch (rofl::eRofDptNotFound& e) {}
 
-	clear_tap_devs(dpid);
+	clear_tap_devs(dptid);
 }
 
 
@@ -70,12 +70,14 @@ cethcore::add_eth_endpnts()
 #endif
 
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		cportdb& portdb = cportdb::get_portdb(std::string("file"));
 
-		default_pvid = portdb.get_default_pvid(dpid);
+		default_pvid = portdb.get_default_pvid(rofl::crofdpt::get_dpt(dptid).get_dpid());
 		add_vlan(default_pvid);
+
+		rofl::cdpid dpid = rofl::crofdpt::get_dpt(dptid).get_dpid();
 
 		// install ethernet endpoints
 		for (std::set<std::string>::const_iterator
@@ -84,8 +86,8 @@ cethcore::add_eth_endpnts()
 
 			set_vlan(eth.get_port_vid()).add_eth_endpnt(eth.get_hwaddr(), /*tagged=*/false);
 
-			if (not has_tap_dev(dpt.get_dpid(), eth.get_devname())) {
-				add_tap_dev(dpt.get_dpid(), eth.get_devname(), eth.get_port_vid(), eth.get_hwaddr());
+			if (not has_tap_dev(dpt.get_dptid(), eth.get_devname())) {
+				add_tap_dev(dpt.get_dptid(), eth.get_devname(), eth.get_port_vid(), eth.get_hwaddr());
 			}
 		}
 
@@ -99,7 +101,7 @@ void
 cethcore::add_phy_ports()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		cportdb& portdb = cportdb::get_portdb(std::string("file"));
 
@@ -109,11 +111,11 @@ cethcore::add_phy_ports()
 
 			const rofl::openflow::cofport& ofport = *(it->second);
 			uint32_t portno = it->first;
-			if (not portdb.has_port_entry(dpid, ofport.get_port_no())) {
+			if (not portdb.has_port_entry(rofl::crofdpt::get_dpt(dptid).get_dpid(), ofport.get_port_no())) {
 				set_vlan(default_pvid).add_phy_port(portno, ofport.get_hwaddr(), /*tagged*/false);
 				continue;
 			}
-			const cportentry& port = portdb.get_port_entry(dpid, portno);
+			const cportentry& port = portdb.get_port_entry(rofl::crofdpt::get_dpt(dptid).get_dpid(), portno);
 
 			// create or update existing vlan for port's default vid
 			set_vlan(port.get_port_vid()).add_phy_port(portno, ofport.get_hwaddr(), /*tagged=*/false);
@@ -134,7 +136,7 @@ void
 cethcore::clear_phy_ports()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		cportdb& portdb = cportdb::get_portdb(std::string("file"));
 
@@ -309,7 +311,7 @@ cethcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::
 				rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 				*pkt = msg.get_packet();
 				pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t)-sizeof(uint16_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
-				set_tap_dev(dpt.get_dpid(), msg.get_match().get_eth_dst()).enqueue(pkt);
+				set_tap_dev(dptid, msg.get_match().get_eth_dst()).enqueue(pkt);
 
 			} else {
 				/* multicast frames carry a metadata field with the VLAN id
@@ -320,7 +322,7 @@ cethcore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::
 				uint16_t vid = msg.get_match().get_vlan_vid() & 0x0fff;
 
 				for (std::map<std::string, rofcore::ctapdev*>::iterator
-						it = devs[dpt.get_dpid()].begin(); it != devs[dpt.get_dpid()].end(); ++it) {
+						it = devs[dptid].begin(); it != devs[dptid].end(); ++it) {
 					rofcore::ctapdev& tapdev = *(it->second);
 					if (tapdev.get_pvid() != vid) {
 						continue;
@@ -373,12 +375,12 @@ cethcore::handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl
 	case rofl::openflow::OFPPR_ADD:
 	case rofl::openflow::OFPPR_MODIFY: {
 		// no configuration for this port => add to default vlan
-		if (not portdb.has_port_entry(dpid, msg.get_port().get_port_no())) {
+		if (not portdb.has_port_entry(rofl::crofdpt::get_dpt(dptid).get_dpid(), msg.get_port().get_port_no())) {
 			set_vlan(default_pvid).add_phy_port(msg.get_port().get_port_no(), msg.get_port().get_hwaddr(), /*tagged*/false);
 
 		// configuration for this port found => add port vid and tagged memberships
 		} else {
-			const cportentry& port = portdb.get_port_entry(dpid, msg.get_port().get_port_no());
+			const cportentry& port = portdb.get_port_entry(rofl::crofdpt::get_dpt(dptid).get_dpid(), msg.get_port().get_port_no());
 
 			// create or update existing vlan for port's default vid
 			set_vlan(port.get_port_vid()).add_phy_port(msg.get_port().get_port_no(), msg.get_port().get_hwaddr(), /*tagged=*/false);
@@ -394,12 +396,12 @@ cethcore::handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl
 	case rofl::openflow::OFPPR_DELETE: {
 
 		// no configuration for this port => drop port from default vlan
-		if (not portdb.has_port_entry(dpid, msg.get_port().get_port_no())) {
+		if (not portdb.has_port_entry(rofl::crofdpt::get_dpt(dptid).get_dpid(), msg.get_port().get_port_no())) {
 			set_vlan(default_pvid).drop_phy_port(msg.get_port().get_port_no());
 
 		// configuration for this port found => drop port vid and tagged memberships
 		} else {
-			const cportentry& port = portdb.get_port_entry(dpid, msg.get_port().get_port_no());
+			const cportentry& port = portdb.get_port_entry(rofl::crofdpt::get_dpt(dptid).get_dpid(), msg.get_port().get_port_no());
 
 			// drop port from port's default vid
 			set_vlan(port.get_port_vid()).drop_phy_port(msg.get_port().get_port_no());

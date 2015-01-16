@@ -123,7 +123,7 @@ protected:
 	 */
 	virtual void
 	handle_dpt_close(
-			rofl::crofdpt& dpt);
+			const rofl::cdptid& dptid);
 
 	/**
 	 *
@@ -249,6 +249,8 @@ private:
 	};
 
 	static std::bitset<64>		flags;
+
+	rofl::cdpid					dpid;
 };
 
 }; // end of namespace ethcore
