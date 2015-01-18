@@ -142,7 +142,7 @@ cvlan::handle_packet_in(
 {
 	if (msg.get_table_id() == table_id_eth_src) {
 		try {
-			assert(dpid == dpt.get_dpid());
+			assert(dptid == dpt.get_dptid());
 			assert(vid == (msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT)));
 
 			uint32_t in_port = msg.get_match().get_in_port();
@@ -167,7 +167,7 @@ cvlan::handle_packet_in(
 	if (msg.get_table_id() == table_id_eth_local) {
 		rofcore::logging::debug << "[cvlan][handle_packet_in] pkt received: " << std::endl << msg;
 		// store packet in ethcore and thus, tap devices
-		cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+		cethcore::set_eth_core(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
 	}
 }
 
@@ -178,7 +178,7 @@ cvlan::handle_flow_removed(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg)
 {
 	try {
-		assert(dpid == dpt.get_dpid());
+		assert(dptid == dpt.get_dptid());
 		assert(vid == (msg.get_match().get_vlan_vid_value() & (uint16_t)(~rofl::openflow::OFPVID_PRESENT)));
 
 		// TODO: check port here?
@@ -254,12 +254,12 @@ cvlan::update_group_entry_buckets(uint16_t command)
 			return;
 		}
 
-		if (rofl::openflow::OFP_VERSION_UNKNOWN == rofl::crofdpt::get_dpt(dpid).get_version_negotiated()) {
+		if (rofl::openflow::OFP_VERSION_UNKNOWN == rofl::crofdpt::get_dpt(dptid).get_version_negotiated()) {
 			return;
 		}
 
 		// update flooding group entry
-		rofl::openflow::cofgroupmod gm(rofl::crofdpt::get_dpt(dpid).get_version_negotiated());
+		rofl::openflow::cofgroupmod gm(rofl::crofdpt::get_dpt(dptid).get_version_negotiated());
 		gm.set_command(command);
 		gm.set_group_id(group_id);
 		gm.set_type(rofl::openflow::OFPGT_ALL);
@@ -296,7 +296,7 @@ cvlan::update_group_entry_buckets(uint16_t command)
 		}
 #endif
 
-		rofl::crofdpt::get_dpt(dpid).send_group_mod_message(rofl::cauxid(0), gm);
+		rofl::crofdpt::get_dpt(dptid).send_group_mod_message(rofl::cauxid(0), gm);
 
 	} catch (rofl::eRofBaseCongested& e) {
 		rofcore::logging::debug << "[cvlan][update_group_entry_buckets] control channel congested" << std::endl;

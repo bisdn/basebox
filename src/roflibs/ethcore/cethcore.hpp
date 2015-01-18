@@ -200,7 +200,7 @@ public:
 		if (vlans.find(vid) != vlans.end()) {
 			vlans.erase(vid);
 		}
-		vlans[vid] = cvlan(rofl::crofdpt::get_dpt(dptid), table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, vid);
+		vlans[vid] = cvlan(dptid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, vid);
 		if (STATE_ATTACHED == state) {
 			vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
@@ -214,7 +214,7 @@ public:
 	set_vlan(uint16_t vid) {
 		rofl::RwLock rwlock(vlans_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (vlans.find(vid) == vlans.end()) {
-			vlans[vid] = cvlan(rofl::crofdpt::get_dpt(dptid), table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, vid);
+			vlans[vid] = cvlan(dptid, table_id_eth_in, table_id_eth_src, table_id_eth_local, table_id_eth_dst, vid);
 			if (STATE_ATTACHED == state) {
 				vlans[vid].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
@@ -326,7 +326,7 @@ private:
 		while (not devs[dpid].empty()) {
 			std::map<std::string, rofcore::ctapdev*>::iterator it = devs[dpid].begin();
 			try {
-				hook_port_down(rofl::crofdpt::get_dpt(it->second->get_dpid()), it->second->get_devname());
+				hook_port_down(rofl::crofdpt::get_dpt(it->second->get_dptid()), it->second->get_devname());
 			} catch (rofl::eRofDptNotFound& e) {}
 			drop_tap_dev(dpid, it->first);
 		}
@@ -486,7 +486,7 @@ public:
 		rofl::RwLock rwlock(core.vlans_rwlock, rofl::RwLock::RWLOCK_READ);
 		os << rofcore::indent(0) << "<cethcore default-pvid: " << (int)core.get_default_pvid() << " >" << std::endl;
 		rofcore::indent i(2);
-		for (std::map<rofl::cdpid, std::map<std::string, rofcore::ctapdev*> >::const_iterator
+		for (std::map<rofl::cdptid, std::map<std::string, rofcore::ctapdev*> >::const_iterator
 				it = core.devs.begin(); it != core.devs.end(); ++it) {
 			for (std::map<std::string, rofcore::ctapdev*>::const_iterator
 					jt = it->second.begin(); jt != it->second.end(); ++jt) {

@@ -14,14 +14,14 @@ extern int errno;
 
 ctapdev::ctapdev(
 		cnetdev_owner *netdev_owner,
-		const rofl::cdpid& dpid,
+		const rofl::cdptid& dptid,
 		std::string const& devname,
 		uint16_t pvid,
 		rofl::cmacaddr const& hwaddr,
 		pthread_t tid) :
 		cnetdev(netdev_owner, devname, tid),
 		fd(-1),
-		dpid(dpid),
+		dptid(dptid),
 		devname(devname),
 		pvid(pvid),
 		hwaddr(hwaddr)

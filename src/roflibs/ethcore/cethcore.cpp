@@ -9,7 +9,7 @@
 
 using namespace roflibs::eth;
 
-/*static*/std::map<rofl::cdpid, cethcore*> cethcore::ethcores;
+/*static*/std::map<rofl::cdptid, cethcore*> cethcore::ethcores;
 /*static*/std::set<uint64_t> cethcore::dpids;
 /*static*/std::string cethcore::script_path_port_up 	= std::string("/var/lib/basebox/port-up.sh");
 /*static*/std::string cethcore::script_path_port_down 	= std::string("/var/lib/basebox/port-down.sh");
@@ -448,7 +448,7 @@ cethcore::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			throw eLinkTapDevNotFound("cethcore::enqueue() tap device not found");
 		}
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(tapdev->get_dpid());
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(tapdev->get_dptid());
 
 		if (not dpt.is_established()) {
 			throw eLinkNoDptAttached("cethcore::enqueue() dpt not found");

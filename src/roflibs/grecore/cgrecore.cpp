@@ -10,7 +10,7 @@
 
 using namespace roflibs::gre;
 
-/*static*/std::map<rofl::cdpid, cgrecore*> cgrecore::grecores;
+/*static*/std::map<rofl::cdptid, cgrecore*> cgrecore::grecores;
 
 
 void
@@ -121,7 +121,7 @@ cgrecore::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::
 {
 	rofcore::logging::debug << "[cgrecore][handle_packet_in] pkt received: " << std::endl << msg;
 	// store packet in ethcore and thus, tap devices
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
 }
 
 

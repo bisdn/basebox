@@ -15,10 +15,10 @@ using namespace roflibs::gre;
 /*static*/std::string cgreterm::script_path_term = std::string("/var/lib/basebox/greterm.sh");
 
 
-cgreterm::cgreterm(const rofl::cdpid& dpid, uint8_t eth_ofp_table_id,
+cgreterm::cgreterm(const rofl::cdptid& dptid, uint8_t eth_ofp_table_id,
 		uint8_t gre_ofp_table_id, uint8_t ip_fwd_ofp_table_id,
 		uint32_t gre_portno, uint32_t gre_key) :
-	state(STATE_DETACHED), dpid(dpid), eth_ofp_table_id(eth_ofp_table_id),
+	state(STATE_DETACHED), dptid(dptid), eth_ofp_table_id(eth_ofp_table_id),
 	gre_ofp_table_id(gre_ofp_table_id), ip_fwd_ofp_table_id(ip_fwd_ofp_table_id),
 	idle_timeout(DEFAULT_IDLE_TIMEOUT),
 	gre_portno(gre_portno), gre_key(gre_key), gretap(0),
@@ -47,8 +47,8 @@ cgreterm::cgreterm(const rofl::cdpid& dpid, uint8_t eth_ofp_table_id,
 	// enforce locally administered bit = 1
 	hwaddr[0] |= (1 << 1);
 
-	gretap = new rofcore::ctapdev(this, dpid, ss.str(), /*pvid*/0, hwaddr,
-			cgrecore::get_gre_core(dpid).get_thread_id());
+	gretap = new rofcore::ctapdev(this, dptid, ss.str(), /*pvid*/0, hwaddr,
+			cgrecore::get_gre_core(dptid).get_thread_id());
 }
 
 
@@ -89,7 +89,7 @@ cgreterm::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::
 		rofcore::logging::debug << "[cgreterm][handle_packet_in] egress pkt received heading towards GRE port" << std::endl << msg.get_packet();
 
 		// store packet in ethcore and thus, tap devices
-		roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+		roflibs::eth::cethcore::set_eth_core(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
 	}
 }
 
@@ -132,7 +132,7 @@ cgreterm::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			throw eLinkTapDevNotFound("cgreterm::enqueue() tap device not found");
 		}
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(tapdev->get_dpid());
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(tapdev->get_dptid());
 
 		if (not dpt.is_established()) {
 			throw eLinkNoDptAttached("cgreterm::enqueue() dpt not found");
@@ -735,7 +735,7 @@ void
 cgreterm_in4::hook_init()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 		//gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
 		std::stringstream sstap; sstap << std::string("gretap") << gre_portno;
 		gre_tap_portname = sstap.str();
@@ -780,7 +780,7 @@ cgreterm_in4::hook_init()
 		cgreterm::execute(cgreterm::script_path_init, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cgreterm_in4][hook_init] datapath not found, dpid: " << dpid.str() << std::endl;
+		rofcore::logging::error << "[cgreterm_in4][hook_init] datapath not found, dptid: " << dptid.str() << std::endl;
 	} catch (rofl::openflow::ePortNotFound& e) {
 		rofcore::logging::error << "[cgreterm_in4][hook_init] unable to find portno: " << (unsigned int)gre_portno << std::endl;
 	}
@@ -791,7 +791,7 @@ void
 cgreterm_in4::hook_term()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
@@ -815,7 +815,7 @@ cgreterm_in4::hook_term()
 		cgreterm::execute(cgreterm::script_path_term, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cgreterm_in4][hook_term] datapath not found, dpid: " << dpid.str() << std::endl;
+		rofcore::logging::error << "[cgreterm_in4][hook_term] datapath not found, dptid: " << dptid.str() << std::endl;
 	}
 }
 
@@ -824,7 +824,7 @@ void
 cgreterm_in6::hook_init()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 		//gre_portname = dpt.get_ports().get_port(gre_portno).get_name();
 		std::stringstream sstap; sstap << std::string("gretap") << gre_portno;
 		gre_tap_portname = sstap.str();
@@ -869,7 +869,7 @@ cgreterm_in6::hook_init()
 		cgreterm::execute(cgreterm::script_path_init, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cgreterm_in6][hook_init] datapath not found, dpid: " << dpid.str() << std::endl;
+		rofcore::logging::error << "[cgreterm_in6][hook_init] datapath not found, dptid: " << dptid.str() << std::endl;
 	} catch (rofl::openflow::ePortNotFound& e) {
 		rofcore::logging::error << "[cgreterm_in6][hook_init] unable to find portno: " << (unsigned int)gre_portno << std::endl;
 	}
@@ -880,7 +880,7 @@ void
 cgreterm_in6::hook_term()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		std::vector<std::string> argv;
 		std::vector<std::string> envp;
@@ -904,7 +904,7 @@ cgreterm_in6::hook_term()
 		cgreterm::execute(cgreterm::script_path_term, argv, envp);
 
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[cgreterm_in6][hook_term] datapath not found, dpid: " << dpid.str() << std::endl;
+		rofcore::logging::error << "[cgreterm_in6][hook_term] datapath not found, dptid: " << dptid.str() << std::endl;
 	}
 }
 

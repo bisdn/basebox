@@ -218,7 +218,7 @@ cneigh_in4::handle_packet_in(
 {
 	rofcore::logging::debug << "[cneigh_in4][handle_packet_in] pkt received: " << std::endl << msg;
 	// store packet in ethcore and thus, tap devices
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
 }
 
 
@@ -431,7 +431,7 @@ cneigh_in6::handle_packet_in(
 {
 	rofcore::logging::debug << "[cneigh_in6][handle_packet_in] pkt received: " << std::endl << msg;
 	// store packet in ethcore and thus, tap devices
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
 }
 
 

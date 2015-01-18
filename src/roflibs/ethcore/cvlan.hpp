@@ -59,11 +59,11 @@ public:
 	/**
 	 *
 	 */
-	cvlan(const rofl::cdpid& dpid,
+	cvlan(const rofl::cdptid& dptid,
 			uint8_t table_id_eth_in, uint8_t table_id_eth_src,
 			uint8_t table_id_eth_local, uint8_t table_id_eth_dst,
 			uint16_t vid) :
-		state(STATE_IDLE), dpid(dpid),
+		state(STATE_IDLE), dptid(dptid),
 		cookie_flooding(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		cookie_multicast(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		vid(vid), group_id(0),
@@ -76,7 +76,7 @@ public:
 	~cvlan() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};
@@ -97,7 +97,7 @@ public:
 		if (this == &vlan)
 			return *this;
 		state 				= vlan.state;
-		dpid 				= vlan.dpid;
+		dptid 				= vlan.dptid;
 		// do not copy cookies here!
 		vid 				= vlan.vid;
 		group_id 			= vlan.group_id;
@@ -156,9 +156,9 @@ public:
 		if (phyports.find(portno) != phyports.end()) {
 			phyports.erase(portno);
 		}
-		phyports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, hwaddr, vid, tagged);
+		phyports[portno] = cmemberport(dptid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, hwaddr, vid, tagged);
 		if (STATE_ATTACHED == state) {
-			phyports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			phyports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
 		update_group_entry_buckets();
 		return phyports[portno];
@@ -183,10 +183,10 @@ public:
 	set_phy_port(uint32_t portno, const rofl::cmacaddr& hwaddr, bool tagged) {
 		rofl::RwLock rwlock(phyports_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (phyports.find(portno) == phyports.end()) {
-			phyports[portno] = cmemberport(dpid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, hwaddr, vid, tagged);
+			phyports[portno] = cmemberport(dptid, table_id_eth_in, table_id_eth_local, table_id_eth_dst, portno, hwaddr, vid, tagged);
 			update_group_entry_buckets();
 			if (STATE_ATTACHED == state) {
-				phyports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				phyports[portno].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		}
 		return phyports[portno];
@@ -256,9 +256,9 @@ public:
 		if (ethendpnts.find(hwaddr) != ethendpnts.end()) {
 			ethendpnts.erase(hwaddr);
 		}
-		ethendpnts[hwaddr] = cethendpnt(dpid, table_id_eth_local, hwaddr, vid, tagged);
+		ethendpnts[hwaddr] = cethendpnt(dptid, table_id_eth_local, hwaddr, vid, tagged);
 		if (STATE_ATTACHED == state) {
-			ethendpnts[hwaddr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			ethendpnts[hwaddr].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
 		//update_group_entry_buckets(); // NO!!!
 		return ethendpnts[hwaddr];
@@ -283,10 +283,10 @@ public:
 	set_eth_endpnt(const rofl::caddress_ll& hwaddr, bool tagged) {
 		rofl::RwLock rwlock(ethendpnts_rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (ethendpnts.find(hwaddr) == ethendpnts.end()) {
-			ethendpnts[hwaddr] = cethendpnt(dpid, table_id_eth_local, hwaddr, vid, tagged);
+			ethendpnts[hwaddr] = cethendpnt(dptid, table_id_eth_local, hwaddr, vid, tagged);
 			//update_group_entry_buckets(); // NO!!!
 			if (STATE_ATTACHED == state) {
-				ethendpnts[hwaddr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				ethendpnts[hwaddr].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		}
 		return ethendpnts[hwaddr];
@@ -340,10 +340,10 @@ public:
 		if (not has_phy_port(portno)) {
 			throw eFibEntryPortNotMember("cvlan::add_fib_entry() port is not member of this vlan");
 		}
-		fib[lladdr] = cfibentry(this, dpid, vid, portno, get_phy_port(portno).get_tagged(), lladdr, permanent,
+		fib[lladdr] = cfibentry(this, dptid, vid, portno, get_phy_port(portno).get_tagged(), lladdr, permanent,
 							entry_timeout, table_id_eth_src, table_id_eth_dst);
 		if (STATE_ATTACHED == state) {
-			fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 		}
 		return fib[lladdr];
 	};
@@ -369,10 +369,10 @@ public:
 			if (not has_phy_port(portno)) {
 				throw eFibEntryPortNotMember("cvlan::set_fib_entry() port is not member of this vlan");
 			}
-			fib[lladdr] = cfibentry(this, dpid, vid, portno, get_phy_port(portno).get_tagged(), lladdr, permanent,
+			fib[lladdr] = cfibentry(this, dptid, vid, portno, get_phy_port(portno).get_tagged(), lladdr, permanent,
 										entry_timeout, table_id_eth_src, table_id_eth_dst);
 			if (STATE_ATTACHED == state) {
-				fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				fib[lladdr].handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		}
 		return fib[lladdr];
@@ -413,8 +413,8 @@ public:
 	/**
 	 *
 	 */
-	const rofl::cdpid&
-	get_dpid() const { return dpid; };
+	const rofl::cdptid&
+	get_dptid() const { return dptid; };
 
 	/**
 	 *
@@ -526,7 +526,7 @@ private:
 	};
 
 	dpt_state_t			state;
-	rofl::cdpid			dpid;
+	rofl::cdptid		dptid;
 	uint64_t 			cookie_flooding; 	// cookie used for flooding flow table entry
 	uint64_t			cookie_multicast;	// cookie used for multicast flow table entry
 	uint16_t			vid;

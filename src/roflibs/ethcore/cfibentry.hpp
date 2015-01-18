@@ -65,7 +65,7 @@ public:
 	 */
 	cfibentry(
 			cfibentry_owner *fib,
-			rofl::cdpid dpid,
+			rofl::cdptid dptid,
 			uint16_t vid,
 			uint32_t portno,
 			bool tagged,
@@ -74,7 +74,7 @@ public:
 			int entry_timeout = FIB_ENTRY_DEFAULT_TIMEOUT,
 			uint8_t src_stage_table_id = 1,
 			uint8_t dst_stage_table_id = 2) :
-				state(STATE_IDLE), fib(fib), dpid(dpid),
+				state(STATE_IDLE), fib(fib), dptid(dptid),
 				cookie_src(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 				cookie_dst(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 				vid(vid), portno(portno),
@@ -91,7 +91,7 @@ public:
 	~cfibentry() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};
@@ -113,7 +113,7 @@ public:
 			return *this;
 		state				= entry.state;
 		fib 				= entry.fib;
-		dpid 				= entry.dpid;
+		dptid 				= entry.dptid;
 		// do not copy cookies here!
 		vid 				= entry.vid;
 		portno 				= entry.portno;
@@ -130,8 +130,8 @@ public:
 	/**
 	 *
 	 */
-	const rofl::cdpid&
-	get_dpid() const { return dpid; };
+	const rofl::cdptid&
+	get_dptid() const { return dptid; };
 
 	/**
 	 *
@@ -227,7 +227,7 @@ public:
 			os << "tagged:" 	<< (entry.get_tagged() ? "true":"false") << " ";
 		os << ">" << std::endl;
 		rofcore::indent i(2);
-		os << "<dpid: >" << std::endl; os << entry.get_dpid();
+		os << "<dptid: >" << std::endl; os << entry.get_dptid();
 		os << "<lladdr: >" << std::endl; os << entry.get_lladdr();
 		return os;
 	};
@@ -263,7 +263,7 @@ private:
 
 	std::bitset<32>				flags;
 	cfibentry_owner				*fib;
-	rofl::cdpid					dpid;
+	rofl::cdptid				dptid;
 	uint64_t					cookie_src; // cookie used for flow table entry in src stage
 	uint64_t					cookie_dst; // cookie used for flow table entry in dst stage
 	uint16_t					vid;

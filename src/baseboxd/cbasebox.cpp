@@ -286,20 +286,20 @@ cbasebox::handle_dpt_close(
 	hook_dpt_detach(dpt);
 
 	if (flags.test(FLAG_FLOWCORE)) {
-		roflibs::svc::cflowcore::set_flow_core(dpid).handle_dpt_close(dptid);
+		roflibs::svc::cflowcore::set_flow_core(dptid).handle_dpt_close(dptid);
 	}
 	if (flags.test(FLAG_GRECORE)) {
-		roflibs::gre::cgrecore::set_gre_core(dpid).handle_dpt_close(dptid);
+		roflibs::gre::cgrecore::set_gre_core(dptid).handle_dpt_close(dptid);
 	}
 	if (flags.test(FLAG_GTPCORE)) {
-		roflibs::gtp::cgtprelay::set_gtp_relay(dpid).handle_dpt_close(dptid);
-		roflibs::gtp::cgtpcore::set_gtp_core(dpid).handle_dpt_close(dptid);
+		roflibs::gtp::cgtprelay::set_gtp_relay(dptid).handle_dpt_close(dptid);
+		roflibs::gtp::cgtpcore::set_gtp_core(dptid).handle_dpt_close(dptid);
 	}
 	if (flags.test(FLAG_ETHCORE)) {
-		roflibs::eth::cethcore::set_eth_core(dpid).handle_dpt_close(dptid);
+		roflibs::eth::cethcore::set_eth_core(dptid).handle_dpt_close(dptid);
 	}
 	if (flags.test(FLAG_IPCORE)) {
-		roflibs::ip::cipcore::set_ip_core(dpid).handle_dpt_close(dptid);
+		roflibs::ip::cipcore::set_ip_core(dptid).handle_dpt_close(dptid);
 	}
 
 #if 0
