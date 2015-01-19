@@ -13,6 +13,8 @@
 #include <sstream>
 #include <exception>
 
+#include <rofl/common/caddress.h>
+
 namespace roflibs {
 namespace eth {
 namespace rstp {
@@ -26,6 +28,13 @@ public:
 	cbridgeid() :
 		priority(0), system_id(0), braddr(rofl::caddress_ll("00:00:00:00:00:00"))
 	{};
+
+	/**
+	 *
+	 */
+	cbridgeid(uint64_t brid) :
+		priority(0), system_id(0)
+	{ /* TODO */ };
 
 	/**
 	 *
@@ -90,7 +99,7 @@ public:
 
 public:
 
-	const uint64_t&
+	uint64_t
 	get_bridge_id() const {
 		uint64_t brid(0);
 		brid = (brid & ~((0x4ULL) << 60)) | ((uint64_t)(priority & 0xf0) << 60);
@@ -117,22 +126,28 @@ public:
 	};
 
 	uint8_t
-	get_priority() const { return priority; };
+	get_priority() const
+	{ return priority; };
 
 	void
-	set_priority(uint8_t priority) { this->priority = (priority & 0x000f) };
+	set_priority(uint8_t priority)
+	{ this->priority = (priority & 0x000f); };
 
 	uint16_t
-	get_system_id() const { return system_id; };
+	get_system_id() const
+	{ return system_id; };
 
 	void
-	set_system_id(uint16_t system_id) { this->system_id = (system_id & 0x0fff) };
+	set_system_id(uint16_t system_id)
+	{ this->system_id = (system_id & 0x0fff); };
 
 	rofl::caddress_ll
-	get_bridge_address() const { return braddr; };
+	get_bridge_address() const
+	{ return braddr; };
 
 	void
-	set_bridge_address(const rofl::caddress_ll& braddr) { this->braddr = braddr; };
+	set_bridge_address(const rofl::caddress_ll& braddr)
+	{ this->braddr = braddr; };
 
 	// 7.12.5 and 9.2.5
 

@@ -89,6 +89,7 @@ AC_CONFIG_FILES([
 	src/roflibs/python/Makefile
 	src/roflibs/netlink/Makefile
 	src/roflibs/flowcore/Makefile
+	src/roflibs/8021core/Makefile
 	src/roflibs/ethcore/Makefile
 	src/roflibs/ethcore/rstp/Makefile
 	src/roflibs/ipcore/Makefile
