@@ -264,15 +264,13 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(
-			rofl::crofdpt& dpt);
+	handle_dpt_open();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(
-			rofl::crofdpt& dpt);
+	handle_dpt_close();
 
 	/**
 	 *

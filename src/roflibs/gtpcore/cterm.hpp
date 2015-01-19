@@ -58,13 +58,16 @@ public:
 	/**
 	 *
 	 */
-	cterm(const rofl::cdpid& dpid, uint8_t ofp_table_id) :
-		state(STATE_DETACHED), dpid(dpid), ofp_table_id(ofp_table_id), idle_timeout(DEFAULT_IDLE_TIMEOUT) {};
+	cterm(const rofl::cdptid& dptid, uint8_t ofp_table_id) :
+		state(STATE_DETACHED), dptid(dptid),
+		ofp_table_id(ofp_table_id), idle_timeout(DEFAULT_IDLE_TIMEOUT)
+	{};
 
 	/**
 	 *
 	 */
-	cterm(const cterm& term) { *this = term; };
+	cterm(const cterm& term)
+	{ *this = term; };
 
 	/**
 	 *
@@ -74,7 +77,7 @@ public:
 		if (this == &term)
 			return *this;
 		state = term.state;
-		dpid = term.dpid;
+		dptid = term.dptid;
 		ofp_table_id = term.ofp_table_id;
 		idle_timeout = term.idle_timeout;
 		return *this;
@@ -100,7 +103,7 @@ protected:
 		FLAG_EGRESS_FM_INSTALLED 	= (1 << 1),
 	};
 	std::bitset<32>		flags;
-	rofl::cdpid 		dpid;
+	rofl::cdptid 		dptid;
 	uint8_t 			ofp_table_id;
 
 	static const int DEFAULT_IDLE_TIMEOUT = 15; // seconds
@@ -124,7 +127,7 @@ public:
 	~cterm_in4() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+				handle_dpt_close();
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 	};
@@ -132,14 +135,15 @@ public:
 	/**
 	 *
 	 */
-	cterm_in4(const rofl::cdpid& dpid, uint8_t ofp_table_id,
+	cterm_in4(const rofl::cdptid& dptid, uint8_t ofp_table_id,
 			const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) :
-		cterm(dpid, ofp_table_id), label_egress(label_egress), label_ingress(label_ingress), tft_match(tft_match) {};
+		cterm(dptid, ofp_table_id), label_egress(label_egress), label_ingress(label_ingress), tft_match(tft_match) {};
 
 	/**
 	 *
 	 */
-	cterm_in4(const cterm_in4& term) { *this = term; };
+	cterm_in4(const cterm_in4& term)
+	{ *this = term; };
 
 	/**
 	 *
@@ -169,19 +173,22 @@ public:
 	 *
 	 */
 	const clabel_in4&
-	get_label_egress() const { return label_egress; };
+	get_label_egress() const
+	{ return label_egress; };
 
 	/**
 	 *
 	 */
 	const clabel_in4&
-	get_label_ingress() const { return label_ingress; };
+	get_label_ingress() const
+	{ return label_ingress; };
 
 	/**
 	 *
 	 */
 	const rofl::openflow::cofmatch&
-	get_tft_match() const { return tft_match; };
+	get_tft_match() const
+	{ return tft_match; };
 
 public:
 
@@ -189,33 +196,33 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open_egress(rofl::crofdpt& dpt);
+	handle_dpt_open_egress();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close_egress(rofl::crofdpt& dpt);
+	handle_dpt_close_egress();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_open_ingress(rofl::crofdpt& dpt);
+	handle_dpt_open_ingress();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close_ingress(rofl::crofdpt& dpt);
+	handle_dpt_close_ingress();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt) {
-		handle_dpt_close_egress(dpt);
-		handle_dpt_close_ingress(dpt);
+	handle_dpt_close() {
+		handle_dpt_close_egress();
+		handle_dpt_close_ingress();
 	};
 
 public:
@@ -265,7 +272,7 @@ public:
 	~cterm_in6() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+				handle_dpt_close();
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 	};
@@ -273,14 +280,15 @@ public:
 	/**
 	 *
 	 */
-	cterm_in6(const rofl::cdpid& dpid, uint8_t ofp_table_id,
+	cterm_in6(const rofl::cdptid& dptid, uint8_t ofp_table_id,
 			const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) :
-		cterm(dpid, ofp_table_id), label_egress(label_egress), label_ingress(label_ingress), tft_match(tft_match) {};
+		cterm(dptid, ofp_table_id), label_egress(label_egress), label_ingress(label_ingress), tft_match(tft_match) {};
 
 	/**
 	 *
 	 */
-	cterm_in6(const cterm_in6& term) { *this = term; };
+	cterm_in6(const cterm_in6& term)
+	{ *this = term; };
 
 	/**
 	 *
@@ -310,19 +318,22 @@ public:
 	 *
 	 */
 	const clabel_in6&
-	get_label_egress() const { return label_egress; };
+	get_label_egress() const
+	{ return label_egress; };
 
 	/**
 	 *
 	 */
 	const clabel_in6&
-	get_label_ingress() const { return label_ingress; };
+	get_label_ingress() const
+	{ return label_ingress; };
 
 	/**
 	 *
 	 */
 	const rofl::openflow::cofmatch&
-	get_tft_match() const { return tft_match; };
+	get_tft_match() const
+	{ return tft_match; };
 
 public:
 
@@ -330,33 +341,33 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open_egress(rofl::crofdpt& dpt);
+	handle_dpt_open_egress();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close_egress(rofl::crofdpt& dpt);
+	handle_dpt_close_egress();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_open_ingress(rofl::crofdpt& dpt);
+	handle_dpt_open_ingress();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close_ingress(rofl::crofdpt& dpt);
+	handle_dpt_close_ingress();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt) {
-		handle_dpt_close_egress(dpt);
-		handle_dpt_close_ingress(dpt);
+	handle_dpt_close() {
+		handle_dpt_close_egress();
+		handle_dpt_close_ingress();
 	};
 
 public:

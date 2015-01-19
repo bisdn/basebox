@@ -41,7 +41,7 @@ cethcore::cethcore(const rofl::cdptid& dptid,
 cethcore::~cethcore() {
 	try {
 		if (STATE_ATTACHED == state) {
-			handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+			handle_dpt_close();
 		}
 	} catch (rofl::eRofDptNotFound& e) {}
 
@@ -152,13 +152,15 @@ cethcore::clear_phy_ports()
 
 
 void
-cethcore::handle_dpt_open(rofl::crofdpt& dpt)
+cethcore::handle_dpt_open()
 {
 	try {
 		// deploy physical port vlan memberships
 		add_phy_ports();
 
 		state = STATE_ATTACHED;
+
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		for (std::map<uint16_t, cvlan>::iterator
 				it = vlans.begin(); it != vlans.end(); ++it) {
@@ -222,13 +224,15 @@ cethcore::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-cethcore::handle_dpt_close(rofl::crofdpt& dpt)
+cethcore::handle_dpt_close()
 {
 	try {
 		// remove physical ports
 		clear_phy_ports();
 
 		state = STATE_DETACHED;
+
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		for (std::map<uint16_t, cvlan>::iterator
 				it = vlans.begin(); it != vlans.end(); ++it) {

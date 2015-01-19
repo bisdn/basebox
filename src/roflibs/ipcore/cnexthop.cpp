@@ -13,9 +13,11 @@ using namespace roflibs::ip;
 
 
 void
-cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
+cnexthop_in4::handle_dpt_open()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
 		// the route ...
@@ -35,7 +37,7 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data ...
 		const roflibs::ip::clink& dpl =
-				cipcore::get_ip_core(dpid).get_link(rtn.get_ifindex());
+				cipcore::get_ip_core(dptid).get_link(rtn.get_ifindex());
 
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in4& rtb =
@@ -59,7 +61,6 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
@@ -120,9 +121,11 @@ cnexthop_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
+cnexthop_in4::handle_dpt_close()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
 		// the route ...
@@ -138,7 +141,6 @@ cnexthop_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -188,9 +190,11 @@ cnexthop_in4::handle_packet_in(
 
 
 void
-cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
+cnexthop_in6::handle_dpt_open()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
 		// the route ...
@@ -210,7 +214,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (cdptlink) needed for OFP related data ...
 		const roflibs::ip::clink& dpl =
-				cipcore::get_ip_core(dpid).get_link(rtn.get_ifindex());
+				cipcore::get_ip_core(dptid).get_link(rtn.get_ifindex());
 
 		// .. and associated to this neighbour
 		const rofcore::crtneigh_in6& rtb =
@@ -234,7 +238,7 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 		//uint32_t out_portno 			= dpl.get_ofp_port_no();
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
+
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
@@ -296,9 +300,11 @@ cnexthop_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
+cnexthop_in6::handle_dpt_close()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
 		// the route ...
@@ -314,7 +320,6 @@ cnexthop_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(get_dpid());
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);

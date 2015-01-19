@@ -45,24 +45,24 @@ public:
 	 *
 	 */
 	static cflowcore&
-	add_flow_core(const rofl::cdpid& dpid) {
-		if (cflowcore::flowcores.find(dpid) != cflowcore::flowcores.end()) {
-			delete cflowcore::flowcores[dpid];
-			cflowcore::flowcores.erase(dpid);
+	add_flow_core(const rofl::cdptid& dptid) {
+		if (cflowcore::flowcores.find(dptid) != cflowcore::flowcores.end()) {
+			delete cflowcore::flowcores[dptid];
+			cflowcore::flowcores.erase(dptid);
 		}
-		cflowcore::flowcores[dpid] = new cflowcore(dpid);
-		return *(cflowcore::flowcores[dpid]);
+		cflowcore::flowcores[dptid] = new cflowcore(dptid);
+		return *(cflowcore::flowcores[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static cflowcore&
-	set_flow_core(const rofl::cdpid& dpid) {
-		if (cflowcore::flowcores.find(dpid) == cflowcore::flowcores.end()) {
-			cflowcore::flowcores[dpid] = new cflowcore(dpid);
+	set_flow_core(const rofl::cdptid& dptid) {
+		if (cflowcore::flowcores.find(dptid) == cflowcore::flowcores.end()) {
+			cflowcore::flowcores[dptid] = new cflowcore(dptid);
 		}
-		return *(cflowcore::flowcores[dpid]);
+		return *(cflowcore::flowcores[dptid]);
 	};
 
 
@@ -70,31 +70,31 @@ public:
 	 *
 	 */
 	static const cflowcore&
-	get_flow_core(const rofl::cdpid& dpid) {
-		if (cflowcore::flowcores.find(dpid) == cflowcore::flowcores.end()) {
+	get_flow_core(const rofl::cdptid& dptid) {
+		if (cflowcore::flowcores.find(dptid) == cflowcore::flowcores.end()) {
 			throw eFlowCoreNotFound("cflowcore::get_flow_core() dpt not found");
 		}
-		return *(cflowcore::flowcores.at(dpid));
+		return *(cflowcore::flowcores.at(dptid));
 	};
 
 	/**
 	 *
 	 */
 	static void
-	drop_flow_core(const rofl::cdpid& dpid) {
-		if (cflowcore::flowcores.find(dpid) == cflowcore::flowcores.end()) {
+	drop_flow_core(const rofl::cdptid& dptid) {
+		if (cflowcore::flowcores.find(dptid) == cflowcore::flowcores.end()) {
 			return;
 		}
-		delete cflowcore::flowcores[dpid];
-		cflowcore::flowcores.erase(dpid);
+		delete cflowcore::flowcores[dptid];
+		cflowcore::flowcores.erase(dptid);
 	}
 
 	/**
 	 *
 	 */
 	static bool
-	has_flow_core(const rofl::cdpid& dpid) {
-		return (not (cflowcore::flowcores.find(dpid) == cflowcore::flowcores.end()));
+	has_flow_core(const rofl::cdptid& dptid) {
+		return (not (cflowcore::flowcores.find(dptid) == cflowcore::flowcores.end()));
 	};
 
 private:
@@ -102,8 +102,8 @@ private:
 	/**
 	 *
 	 */
-	cflowcore(const rofl::cdpid& dpid) :
-		state(STATE_DETACHED), dpid(dpid)
+	cflowcore(const rofl::cdptid& dptid) :
+		state(STATE_DETACHED), dptid(dptid)
 	{};
 
 	/**
@@ -123,10 +123,10 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt) {
+	handle_dpt_open() {
 		for (std::map<uint32_t, cflow*>::iterator
 				it = flows.begin(); it != flows.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
+			it->second->handle_dpt_open();
 		}
 	};
 
@@ -134,10 +134,10 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt) {
+	handle_dpt_close() {
 		for (std::map<uint32_t, cflow*>::iterator
 				it = flows.begin(); it != flows.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
+			it->second->handle_dpt_close();
 		}
 	};
 
@@ -181,10 +181,10 @@ public:
 			delete flows[flow_id];
 			flows.erase(flow_id);
 		}
-		flows[flow_id] = new cflow(dpid, flowmod);
+		flows[flow_id] = new cflow(dptid, flowmod);
 		try {
 			if (STATE_ATTACHED == state) {
-				flows[flow_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				flows[flow_id]->handle_dpt_open();
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 		return *(flows[flow_id]);
@@ -198,11 +198,11 @@ public:
 			const rofl::openflow::cofflowmod& flowmod) {
 		rofl::RwLock rwl(rwlock, rofl::RwLock::RWLOCK_WRITE);
 		if (flows.find(flow_id) == flows.end()) {
-			flows[flow_id] = new cflow(dpid, flowmod);
+			flows[flow_id] = new cflow(dptid, flowmod);
 		}
 		try {
 			if (STATE_ATTACHED == state) {
-				flows[flow_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				flows[flow_id]->handle_dpt_open();
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 		return *(flows[flow_id]);
@@ -287,7 +287,7 @@ public:
 
 private:
 
-	static std::map<rofl::cdpid, cflowcore*>		flowcores;
+	static std::map<rofl::cdptid, cflowcore*>		flowcores;
 
 	enum ofp_state_t {
 		STATE_DETACHED = 1,
@@ -295,7 +295,7 @@ private:
 	};
 
 	enum ofp_state_t				state;
-	rofl::cdpid						dpid;
+	rofl::cdptid					dptid;
 
 	std::map<uint32_t, cflow*>		flows;
 	mutable rofl::PthreadRwLock		rwlock;

@@ -66,24 +66,24 @@ public:
 	 *
 	 */
 	static cipcore&
-	add_ip_core(const rofl::cdpid& dpid, uint8_t local_ofp_table_id, uint8_t out_ofp_table_id) {
-		if (cipcore::ipcores.find(dpid) != cipcore::ipcores.end()) {
-			delete cipcore::ipcores[dpid];
-			cipcore::ipcores.erase(dpid);
+	add_ip_core(const rofl::cdptid& dptid, uint8_t local_ofp_table_id, uint8_t out_ofp_table_id) {
+		if (cipcore::ipcores.find(dptid) != cipcore::ipcores.end()) {
+			delete cipcore::ipcores[dptid];
+			cipcore::ipcores.erase(dptid);
 		}
-		cipcore::ipcores[dpid] = new cipcore(dpid, local_ofp_table_id, out_ofp_table_id);
-		return *(cipcore::ipcores[dpid]);
+		cipcore::ipcores[dptid] = new cipcore(dptid, local_ofp_table_id, out_ofp_table_id);
+		return *(cipcore::ipcores[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static cipcore&
-	set_ip_core(const rofl::cdpid& dpid, uint8_t local_ofp_table_id, uint8_t out_ofp_table_id) {
-		if (cipcore::ipcores.find(dpid) == cipcore::ipcores.end()) {
-			cipcore::ipcores[dpid] = new cipcore(dpid, local_ofp_table_id, out_ofp_table_id);
+	set_ip_core(const rofl::cdptid& dptid, uint8_t local_ofp_table_id, uint8_t out_ofp_table_id) {
+		if (cipcore::ipcores.find(dptid) == cipcore::ipcores.end()) {
+			cipcore::ipcores[dptid] = new cipcore(dptid, local_ofp_table_id, out_ofp_table_id);
 		}
-		return *(cipcore::ipcores[dpid]);
+		return *(cipcore::ipcores[dptid]);
 	};
 
 
@@ -91,42 +91,42 @@ public:
 	 *
 	 */
 	static cipcore&
-	set_ip_core(const rofl::cdpid& dpid) {
-		if (cipcore::ipcores.find(dpid) == cipcore::ipcores.end()) {
+	set_ip_core(const rofl::cdptid& dptid) {
+		if (cipcore::ipcores.find(dptid) == cipcore::ipcores.end()) {
 			throw eIpCoreNotFound("cipcore::set_ip_core() dpt not found");
 		}
-		return *(cipcore::ipcores[dpid]);
+		return *(cipcore::ipcores[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static const cipcore&
-	get_ip_core(const rofl::cdpid& dpid) {
-		if (cipcore::ipcores.find(dpid) == cipcore::ipcores.end()) {
+	get_ip_core(const rofl::cdptid& dptid) {
+		if (cipcore::ipcores.find(dptid) == cipcore::ipcores.end()) {
 			throw eIpCoreNotFound("cipcore::get_ip_core() dptid not found");
 		}
-		return *(cipcore::ipcores.at(dpid));
+		return *(cipcore::ipcores.at(dptid));
 	};
 
 	/**
 	 *
 	 */
 	static void
-	drop_ip_core(const rofl::cdpid& dpid) {
-		if (cipcore::ipcores.find(dpid) == cipcore::ipcores.end()) {
+	drop_ip_core(const rofl::cdptid& dptid) {
+		if (cipcore::ipcores.find(dptid) == cipcore::ipcores.end()) {
 			return;
 		}
-		delete cipcore::ipcores[dpid];
-		cipcore::ipcores.erase(dpid);
+		delete cipcore::ipcores[dptid];
+		cipcore::ipcores.erase(dptid);
 	}
 
 	/**
 	 *
 	 */
 	static bool
-	has_ip_core(const rofl::cdpid& dpid) {
-		return (not (cipcore::ipcores.find(dpid) == cipcore::ipcores.end()));
+	has_ip_core(const rofl::cdptid& dptid) {
+		return (not (cipcore::ipcores.find(dptid) == cipcore::ipcores.end()));
 	};
 
 private:
@@ -134,11 +134,11 @@ private:
 	/**
 	 *
 	 */
-	cipcore(const rofl::cdpid& dpid,
+	cipcore(const rofl::cdptid& dptid,
 			uint8_t local_ofp_table_id = 3,
 			uint8_t out_ofp_table_id = 4) :
 		state(STATE_DETACHED),
-		dpid(dpid),
+		dptid(dptid),
 		cookie_fwd_local(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		cookie_app(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		cookie_no_route(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
@@ -146,7 +146,8 @@ private:
 		cookie_multicast_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		local_ofp_table_id(local_ofp_table_id),
 		out_ofp_table_id(out_ofp_table_id),
-		config_file(DEFAULT_CONFIG_FILE) {};
+		config_file(DEFAULT_CONFIG_FILE)
+		{};
 
 	/**
 	 *
@@ -178,9 +179,9 @@ public:
 			delete links[ifindex];
 			links.erase(ifindex);
 		}
-		links[ifindex] = new clink(dpid, ifindex, devname, hwaddr, local_ofp_table_id, out_ofp_table_id, tagged, vid);
+		links[ifindex] = new clink(dptid, ifindex, devname, hwaddr, local_ofp_table_id, out_ofp_table_id, tagged, vid);
 		if (STATE_ATTACHED == state) {
-			links[ifindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			links[ifindex]->handle_dpt_open();
 		}
 		return *(links[ifindex]);
 	};
@@ -191,9 +192,9 @@ public:
 	clink&
 	set_link(int ifindex, const std::string& devname, const rofl::caddress_ll& hwaddr, bool tagged = false, uint16_t vid = 1) {
 		if (links.find(ifindex) == links.end()) {
-			links[ifindex] = new clink(dpid, ifindex, devname, hwaddr, local_ofp_table_id, out_ofp_table_id, tagged, vid);
+			links[ifindex] = new clink(dptid, ifindex, devname, hwaddr, local_ofp_table_id, out_ofp_table_id, tagged, vid);
 			if (STATE_ATTACHED == state) {
-				links[ifindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				links[ifindex]->handle_dpt_open();
 			}
 		}
 		return *(links[ifindex]);
@@ -230,7 +231,7 @@ public:
 			return;
 		}
 		if (STATE_ATTACHED == state) {
-			links[ifindex]->handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+			links[ifindex]->handle_dpt_close();
 		}
 		delete links[ifindex];
 		links.erase(ifindex);
@@ -299,9 +300,9 @@ public:
 		if (rtables.find(rttblid) != rtables.end()) {
 			rtables.erase(rttblid);
 		}
-		rtables[rttblid] = croutetable(rttblid, dpid, local_ofp_table_id, out_ofp_table_id);
+		rtables[rttblid] = croutetable(rttblid, dptid, local_ofp_table_id, out_ofp_table_id);
 		if (STATE_ATTACHED == state) {
-			rtables[rttblid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			rtables[rttblid].handle_dpt_open();
 		}
 		return rtables[rttblid];
 	};
@@ -312,9 +313,9 @@ public:
 	croutetable&
 	set_table(unsigned int rttblid) {
 		if (rtables.find(rttblid) == rtables.end()) {
-			rtables[rttblid] = croutetable(rttblid, dpid, local_ofp_table_id, out_ofp_table_id);
+			rtables[rttblid] = croutetable(rttblid, dptid, local_ofp_table_id, out_ofp_table_id);
 			if (STATE_ATTACHED == state) {
-				rtables[rttblid].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				rtables[rttblid].handle_dpt_open();
 			}
 		}
 		return rtables[rttblid];
@@ -340,7 +341,7 @@ public:
 			return;
 		}
 		if (STATE_ATTACHED == state) {
-			rtables[rttblid].handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+			rtables[rttblid].handle_dpt_close();
 		}
 		rtables.erase(rttblid);
 	};
@@ -359,10 +360,10 @@ public:
 	operator<< (std::ostream& os, const cipcore& ipcore) {
 		try {
 			os << rofcore::indent(0) << "<cipcore dpid: "
-					<< rofl::crofdpt::get_dpt(ipcore.dpid).get_dpid().str() << " >" << std::endl;
+					<< rofl::crofdpt::get_dpt(ipcore.dptid).get_dpid().str() << " >" << std::endl;
 		} catch (rofl::eRofDptNotFound& e) {
 			os << rofcore::indent(0) << "<cipcore dptid: >" << std::endl;
-			os << rofcore::indent(2) << ipcore.dpid;
+			os << rofcore::indent(2) << ipcore.dptid;
 		}
 		rofcore::indent i(2);
 		for (std::map<int, clink*>::const_iterator
@@ -386,7 +387,7 @@ private:
 	};
 
 	ofp_core_state_t					state;
-	rofl::cdpid 						dpid;
+	rofl::cdptid 						dptid;
 	uint64_t							cookie_fwd_local; // forwarding enabled flow table entry in local table
 	uint64_t							cookie_app; // table miss in application flow table (fwd stage + 1)
 	uint64_t							cookie_no_route; // no appropriate routing entry found in fwd table
@@ -397,7 +398,7 @@ private:
 	uint8_t								local_ofp_table_id;
 	uint8_t								out_ofp_table_id;
 
-	static std::map<rofl::cdpid, cipcore*>		ipcores;
+	static std::map<rofl::cdptid, cipcore*>		ipcores;
 
 	static const std::string			DEFAULT_CONFIG_FILE;
 	std::string							config_file;
@@ -420,10 +421,10 @@ private:
 public:
 
 	virtual void
-	handle_dpt_open(rofl::crofdpt& dpt);
+	handle_dpt_open();
 
 	virtual void
-	handle_dpt_close(rofl::crofdpt& dpt);
+	handle_dpt_close();
 
 	virtual void
 	handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);

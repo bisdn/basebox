@@ -16,7 +16,7 @@ void
 cneigh_in4::update()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
@@ -33,12 +33,12 @@ cneigh_in4::update()
 
 		// remove old flow entries
 		if (0 != group_id) {
-			handle_dpt_close(dpt);
+			handle_dpt_close();
 		}
 
 		// create new flow entries with updated values
 		if (not eth_dst.is_null() && not eth_dst.is_multicast()) {
-			handle_dpt_open(dpt);
+			handle_dpt_open();
 		}
 
 	} catch (rofl::eRofDptNotFound& e) {
@@ -54,9 +54,11 @@ cneigh_in4::update()
 
 
 void
-cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
+cneigh_in4::handle_dpt_open()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
 		// the neighbour ...
@@ -69,7 +71,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
 		const roflibs::ip::clink& dpl =
-				cipcore::get_ip_core(dpid).get_link(rtn.get_ifindex());
+				cipcore::get_ip_core(dptid).get_link(rtn.get_ifindex());
 
 
 
@@ -88,7 +90,7 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// synchronize state in case dpt has seen a full reset
 		if (0 != group_id) {
-			handle_dpt_close(dpt);
+			handle_dpt_close();
 		}
 
 		group_id = dpt.get_next_idle_group_id();
@@ -160,9 +162,11 @@ cneigh_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
+cneigh_in4::handle_dpt_close()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
 		// the neighbour ...
@@ -207,7 +211,9 @@ cneigh_in4::handle_dpt_close(rofl::crofdpt& dpt)
 	}
 
 	state = STATE_DETACHED;
-	dpt.release_group_id(group_id); group_id = 0;
+	try {
+		rofl::crofdpt::get_dpt(dptid).release_group_id(group_id); group_id = 0;
+	} catch (...) {}
 }
 
 
@@ -227,7 +233,7 @@ void
 cneigh_in6::update()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
@@ -244,12 +250,12 @@ cneigh_in6::update()
 
 		// remove old flow entries
 		if (0 != group_id) {
-			handle_dpt_close(dpt);
+			handle_dpt_close();
 		}
 
 		// create new flow entries with updated values
 		if (not eth_dst.is_null() && not eth_dst.is_multicast()) {
-			handle_dpt_open(dpt);
+			handle_dpt_open();
 		}
 
 	} catch (rofl::eRofDptNotFound& e) {
@@ -266,9 +272,11 @@ cneigh_in6::update()
 
 
 void
-cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
+cneigh_in6::handle_dpt_open()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
 		// the neighbour ...
@@ -281,7 +289,7 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
 		const roflibs::ip::clink& dpl =
-				cipcore::get_ip_core(dpid).get_link(rtn.get_ifindex());
+				cipcore::get_ip_core(dptid).get_link(rtn.get_ifindex());
 
 
 
@@ -373,9 +381,11 @@ cneigh_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
+cneigh_in6::handle_dpt_close()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
 
 		// the neighbour ...
@@ -420,7 +430,10 @@ cneigh_in6::handle_dpt_close(rofl::crofdpt& dpt)
 	}
 
 	state = STATE_DETACHED;
-	dpt.release_group_id(group_id); group_id = 0;
+
+	try {
+		rofl::crofdpt::get_dpt(dptid).release_group_id(group_id); group_id = 0;
+	} catch (...) {}
 }
 
 

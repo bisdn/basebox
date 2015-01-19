@@ -10,9 +10,11 @@
 using namespace roflibs::gtp;
 
 void
-crelay_in4::handle_dpt_open(rofl::crofdpt& dpt)
+crelay_in4::handle_dpt_open()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		switch (state) {
@@ -70,10 +72,12 @@ crelay_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-crelay_in4::handle_dpt_close(rofl::crofdpt& dpt)
+crelay_in4::handle_dpt_close()
 {
 	try {
 		state = STATE_DETACHED;
+
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
@@ -108,9 +112,11 @@ crelay_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 
 void
-crelay_in6::handle_dpt_open(rofl::crofdpt& dpt)
+crelay_in6::handle_dpt_open()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		switch (state) {
@@ -167,10 +173,12 @@ crelay_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-crelay_in6::handle_dpt_close(rofl::crofdpt& dpt)
+crelay_in6::handle_dpt_close()
 {
 	try {
 		state = STATE_DETACHED;
+
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
@@ -199,3 +207,6 @@ crelay_in6::handle_dpt_close(rofl::crofdpt& dpt)
 		rofcore::logging::error << "[crelay_in6][handle_dpt_close] control channel congested" << std::endl;
 	}
 }
+
+
+

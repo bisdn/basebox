@@ -26,7 +26,7 @@ clink::clink() :
 
 
 clink::clink(
-		const rofl::cdpid& dpid,
+		const rofl::cdptid& dptid,
 		int ifindex,
 		const std::string& devname,
 		const rofl::caddress_ll& hwaddr,
@@ -38,7 +38,7 @@ clink::clink(
 				devname(devname),
 				hwaddr(hwaddr),
 				ifindex(ifindex),
-				dpid(dpid),
+				dptid(dptid),
 				in_ofp_table_id(in_ofp_table_id),
 				out_ofp_table_id(out_ofp_table_id),
 				tagged(tagged),
@@ -53,7 +53,7 @@ clink::~clink()
 {
 	try {
 		if (STATE_ATTACHED == state) {
-			handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+			handle_dpt_close();
 		}
 	} catch (rofl::eRofDptNotFound& e) {};
 }
@@ -61,26 +61,26 @@ clink::~clink()
 
 
 void
-clink::handle_dpt_open(rofl::crofdpt& dpt)
+clink::handle_dpt_open()
 {
 	try {
 		state = STATE_ATTACHED;
 
 		for (std::map<unsigned int, caddr_in4*>::iterator
 				it = addrs_in4.begin(); it != addrs_in4.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
+			it->second->handle_dpt_open();
 		}
 		for (std::map<unsigned int, caddr_in6*>::iterator
 				it = addrs_in6.begin(); it != addrs_in6.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
+			it->second->handle_dpt_open();
 		}
 		for (std::map<unsigned int, cneigh_in4*>::iterator
 				it = neighs_in4.begin(); it != neighs_in4.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
+			it->second->handle_dpt_open();
 		}
 		for (std::map<unsigned int, cneigh_in6*>::iterator
 				it = neighs_in6.begin(); it != neighs_in6.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
+			it->second->handle_dpt_open();
 		}
 
 	} catch (rofl::eRofBaseNotConnected& e) {
@@ -93,27 +93,26 @@ clink::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-clink::handle_dpt_close(
-		rofl::crofdpt& dpt)
+clink::handle_dpt_close()
 {
 	try {
 		state = STATE_DETACHED;
 
 		for (std::map<unsigned int, caddr_in4*>::iterator
 				it = addrs_in4.begin(); it != addrs_in4.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
+			it->second->handle_dpt_close();
 		}
 		for (std::map<unsigned int, caddr_in6*>::iterator
 				it = addrs_in6.begin(); it != addrs_in6.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
+			it->second->handle_dpt_close();
 		}
 		for (std::map<unsigned int, cneigh_in4*>::iterator
 				it = neighs_in4.begin(); it != neighs_in4.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
+			it->second->handle_dpt_close();
 		}
 		for (std::map<unsigned int, cneigh_in6*>::iterator
 				it = neighs_in6.begin(); it != neighs_in6.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
+			it->second->handle_dpt_close();
 		}
 
 	} catch (rofl::eRofBaseNotConnected& e) {

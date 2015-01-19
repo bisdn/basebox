@@ -14,9 +14,10 @@ using namespace roflibs::gre;
 
 
 void
-cgrecore::handle_dpt_open(rofl::crofdpt& dpt)
+cgrecore::handle_dpt_open()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		switch (state) {
@@ -71,11 +72,12 @@ cgrecore::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-cgrecore::handle_dpt_close(rofl::crofdpt& dpt)
+cgrecore::handle_dpt_close()
 {
 	try {
 		state = STATE_DETACHED;
 
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);

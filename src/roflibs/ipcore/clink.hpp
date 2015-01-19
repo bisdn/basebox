@@ -15,6 +15,7 @@
 #include <rofl/common/logging.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
+#include <rofl/common/cdptid.h>
 #include <rofl/common/openflow/cofflowmod.h>
 
 #include <roflibs/netlink/cnetlink.hpp>
@@ -65,7 +66,7 @@ public:
 	 *
 	 */
 	clink(
-			const rofl::cdpid& dpid,
+			const rofl::cdptid& dptid,
 			int ifindex,
 			const std::string& devname,
 			const rofl::caddress_ll& hwaddr,
@@ -85,15 +86,15 @@ public:
 	/**
 	 *
 	 */
-	const rofl::cdpid&
-	get_dpid() const { return dpid; };
+	const rofl::cdptid&
+	get_dptid() const { return dptid; };
 
 	/**
 	 *
 	 */
 	void
-	set_dpid(const rofl::cdpid& dpid) {
-		this->dpid = dpid;
+	set_dptid(const rofl::cdptid& dptid) {
+		this->dptid = dptid;
 		//addrtable.set_dpid(dpid);
 		//neightable.set_dpid(dpid);
 	};
@@ -146,9 +147,9 @@ public:
 		if (addrs_in4.find(adindex) != addrs_in4.end()) {
 			addrs_in4.erase(adindex);
 		}
-		addrs_in4[adindex] = new caddr_in4(ifindex, adindex, dpid, in_ofp_table_id);
+		addrs_in4[adindex] = new caddr_in4(ifindex, adindex, dptid, in_ofp_table_id);
 		if (STATE_ATTACHED == state) {
-			addrs_in4[adindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			addrs_in4[adindex]->handle_dpt_open();
 		}
 		return *(addrs_in4[adindex]);
 	};
@@ -159,9 +160,9 @@ public:
 	caddr_in4&
 	set_addr_in4(unsigned int adindex) {
 		if (addrs_in4.find(adindex) == addrs_in4.end()) {
-			addrs_in4[adindex] = new caddr_in4(ifindex, adindex, dpid, in_ofp_table_id);
+			addrs_in4[adindex] = new caddr_in4(ifindex, adindex, dptid, in_ofp_table_id);
 			if (STATE_ATTACHED == state) {
-				addrs_in4[adindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				addrs_in4[adindex]->handle_dpt_open();
 			}
 		}
 		return *(addrs_in4[adindex]);
@@ -207,9 +208,9 @@ public:
 		if (addrs_in6.find(adindex) != addrs_in6.end()) {
 			addrs_in6.erase(adindex);
 		}
-		addrs_in6[adindex] = new caddr_in6(ifindex, adindex, dpid, in_ofp_table_id);
+		addrs_in6[adindex] = new caddr_in6(ifindex, adindex, dptid, in_ofp_table_id);
 		if (STATE_ATTACHED == state) {
-			addrs_in6[adindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			addrs_in6[adindex]->handle_dpt_open();
 		}
 		return *(addrs_in6[adindex]);
 	};
@@ -220,9 +221,9 @@ public:
 	caddr_in6&
 	set_addr_in6(unsigned int adindex) {
 		if (addrs_in6.find(adindex) == addrs_in6.end()) {
-			addrs_in6[adindex] = new caddr_in6(ifindex, adindex, dpid, in_ofp_table_id);
+			addrs_in6[adindex] = new caddr_in6(ifindex, adindex, dptid, in_ofp_table_id);
 			if (STATE_ATTACHED == state) {
-				addrs_in6[adindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				addrs_in6[adindex]->handle_dpt_open();
 			}
 		}
 		return *(addrs_in6[adindex]);
@@ -275,9 +276,9 @@ public:
 		if (neighs_in4.find(nbindex) != neighs_in4.end()) {
 			neighs_in4.erase(nbindex);
 		}
-		neighs_in4[nbindex] = new cneigh_in4(ifindex, nbindex, dpid, out_ofp_table_id);
+		neighs_in4[nbindex] = new cneigh_in4(ifindex, nbindex, dptid, out_ofp_table_id);
 		if (STATE_ATTACHED == state) {
-			neighs_in4[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			neighs_in4[nbindex]->handle_dpt_open();
 		}
 		return *(neighs_in4[nbindex]);
 	};
@@ -288,9 +289,9 @@ public:
 	cneigh_in4&
 	set_neigh_in4(unsigned int nbindex) {
 		if (neighs_in4.find(nbindex) == neighs_in4.end()) {
-			neighs_in4[nbindex] = new cneigh_in4(ifindex, nbindex, dpid, out_ofp_table_id);
+			neighs_in4[nbindex] = new cneigh_in4(ifindex, nbindex, dptid, out_ofp_table_id);
 			if (STATE_ATTACHED == state) {
-				neighs_in4[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				neighs_in4[nbindex]->handle_dpt_open();
 			}
 		}
 		return *(neighs_in4[nbindex]);
@@ -348,9 +349,9 @@ public:
 		if (neighs_in6.find(nbindex) != neighs_in6.end()) {
 			neighs_in6.erase(nbindex);
 		}
-		neighs_in6[nbindex] = new cneigh_in6(ifindex, nbindex, dpid, out_ofp_table_id);
+		neighs_in6[nbindex] = new cneigh_in6(ifindex, nbindex, dptid, out_ofp_table_id);
 		if (STATE_ATTACHED == state) {
-			neighs_in6[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			neighs_in6[nbindex]->handle_dpt_open();
 		}
 		return *(neighs_in6[nbindex]);
 	};
@@ -361,9 +362,9 @@ public:
 	cneigh_in6&
 	set_neigh_in6(unsigned int nbindex) {
 		if (neighs_in6.find(nbindex) == neighs_in6.end()) {
-			neighs_in6[nbindex] = new cneigh_in6(ifindex, nbindex, dpid, out_ofp_table_id);
+			neighs_in6[nbindex] = new cneigh_in6(ifindex, nbindex, dptid, out_ofp_table_id);
 			if (STATE_ATTACHED == state) {
-				neighs_in6[nbindex]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				neighs_in6[nbindex]->handle_dpt_open();
 			}
 		}
 		return *(neighs_in6[nbindex]);
@@ -428,10 +429,10 @@ public:
 	 * from crofbase
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt);
+	handle_dpt_open();
 
 	void
-	handle_dpt_close(rofl::crofdpt& dpt);
+	handle_dpt_close();
 
 
 public:
@@ -516,7 +517,7 @@ private:
 	std::string							devname;
 	rofl::caddress_ll					hwaddr;
 	int					 		 		ifindex;		// ifindex for tapdevice
-	rofl::cdpid							dpid;
+	rofl::cdptid						dptid;
 	uint8_t								in_ofp_table_id;
 	uint8_t								out_ofp_table_id;
 	bool								tagged;

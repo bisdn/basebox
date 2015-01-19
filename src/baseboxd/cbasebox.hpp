@@ -196,10 +196,10 @@ private:
 	 * event specific hooks
 	 */
 	void
-	hook_dpt_attach(const rofl::crofdpt& dpt);
+	hook_dpt_attach(const rofl::cdptid& dptid);
 
 	void
-	hook_dpt_detach(const rofl::crofdpt& dpt);
+	hook_dpt_detach(const rofl::cdptid& dptid);
 
 	void
 	set_forwarding(bool forward = true);

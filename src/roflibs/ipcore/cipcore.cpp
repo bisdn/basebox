@@ -3,15 +3,13 @@
 
 using namespace roflibs::ip;
 
-/*static*/std::map<rofl::cdpid, cipcore*> cipcore::ipcores;
+/*static*/std::map<rofl::cdptid, cipcore*> cipcore::ipcores;
 /*static*/const std::string cipcore::DEFAULT_CONFIG_FILE("/usr/local/etc/roflibs.conf");
 
 void
-cipcore::handle_dpt_open(rofl::crofdpt& dpt)
+cipcore::handle_dpt_open()
 {
 	state = STATE_ATTACHED;
-
-	dpid = dpt.get_dpid();
 
 	//purge_dpt_entries();
 	//block_stp_frames();
@@ -21,32 +19,28 @@ cipcore::handle_dpt_open(rofl::crofdpt& dpt)
 
 	for (std::map<int, clink*>::iterator
 			it = links.begin(); it != links.end(); ++it) {
-		it->second->handle_dpt_open(dpt);
+		it->second->handle_dpt_open();
 	}
 	for (std::map<unsigned int, croutetable>::iterator
 			it = rtables.begin(); it != rtables.end(); ++it) {
-		it->second.handle_dpt_open(dpt);
+		it->second.handle_dpt_open();
 	}
 }
 
 
 
 void
-cipcore::handle_dpt_close(rofl::crofdpt& dpt)
+cipcore::handle_dpt_close()
 {
-	if (dpid != dpt.get_dpid()) {
-		return;
-	}
-
 	state = STATE_DETACHED;
 
 	for (std::map<unsigned int, croutetable>::iterator
 			it = rtables.begin(); it != rtables.end(); ++it) {
-		it->second.handle_dpt_close(dpt);
+		it->second.handle_dpt_close();
 	}
 	for (std::map<int, clink*>::iterator
 			it = links.begin(); it != links.end(); ++it) {
-		it->second->handle_dpt_close(dpt);
+		it->second->handle_dpt_close();
 	}
 }
 
@@ -59,7 +53,7 @@ cipcore::handle_port_status(
 		rofl::openflow::cofmsg_port_status& msg)
 {
 
-	if (dpt.get_dpid() != dpid) {
+	if (dpt.get_dptid() != dptid) {
 		rofcore::logging::debug << "[roflibs][ipcore] received PortStatus from invalid data path, ignoring" << std::endl;
 		return;
 	}
@@ -101,7 +95,7 @@ void
 cipcore::set_forwarding(bool forward)
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		rofl::openflow::cofflowmod fed = rofl::openflow::cofflowmod(dpt.get_version_negotiated());
 		if (forward == true) {
@@ -145,7 +139,7 @@ cipcore::set_forwarding(bool forward)
 
 	} catch (rofl::eRofDptNotFound& e) {
 
-		rofcore::logging::debug << "[roflibs][ipcore] enable forwarding: dpid not found: " << dpid << std::endl;
+		rofcore::logging::debug << "[roflibs][ipcore] enable forwarding: dptid not found: " << dptid << std::endl;
 
 	}
 }
@@ -161,6 +155,8 @@ cipcore::link_created(unsigned int ifindex)
 		uint16_t vid = 1;
 		bool tagged = false;
 
+		const rofl::cdpid& dpid = rofl::crofdpt::get_dpt(dptid).get_dpid();
+
 		const std::string dbname("file");
 		roflibs::eth::cportdb& portdb = roflibs::eth::cportdb::get_portdb(dbname);
 
@@ -174,6 +170,8 @@ cipcore::link_created(unsigned int ifindex)
 		rofcore::logging::debug << "[roflibs][ipcore][link_created] state:" << std::endl << *this;
 
 	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
+		// should (:) never happen
+	} catch (rofl::eRofDptNotFound& e) {
 		// should (:) never happen
 	}
 }
@@ -616,7 +614,7 @@ void
 cipcore::purge_dpt_entries()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		// all wildcard matches with non-strict deletion => removes all state from data path
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
@@ -635,7 +633,7 @@ void
 cipcore::redirect_ipv4_multicast()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
@@ -666,7 +664,7 @@ void
 cipcore::redirect_ipv6_multicast()
 {
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dpid);
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 

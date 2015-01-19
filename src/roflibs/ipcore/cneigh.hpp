@@ -65,7 +65,7 @@ public:
 		if (this == &neigh)
 			return *this;
 		state				= neigh.state;
-		dpid	 			= neigh.dpid;
+		dptid	 			= neigh.dptid;
 		ifindex	 			= neigh.ifindex;
 		nbindex	 			= neigh.nbindex;
 		out_ofp_table_id 	= neigh.out_ofp_table_id;
@@ -80,12 +80,12 @@ public:
 	cneigh(
 			int ifindex,
 			uint16_t nbindex,
-			const rofl::cdpid& dpid,
+			const rofl::cdptid& dptid,
 			uint8_t out_ofp_table_id) :
 				state(STATE_DETACHED),
 				ifindex(ifindex),
 				nbindex(nbindex),
-				dpid(dpid),
+				dptid(dptid),
 				out_ofp_table_id(out_ofp_table_id),
 				group_id(0) {
 
@@ -122,14 +122,14 @@ public:
 	/**
 	 *
 	 */
-	const rofl::cdpid&
-	get_dpid() const { return dpid; };
+	const rofl::cdptid&
+	get_dptid() const { return dptid; };
 
 	/**
 	 *
 	 */
 	void
-	set_dpid(const rofl::cdpid& dpid) { this->dpid = dpid; };
+	set_dptid(const rofl::cdptid& dptid) { this->dptid = dptid; };
 
 	/**
 	 *
@@ -202,7 +202,7 @@ protected:
 	enum ofp_state_t			state;
 	int							ifindex;
 	uint16_t					nbindex;
-	rofl::cdpid					dpid;
+	rofl::cdptid				dptid;
 	uint8_t 					out_ofp_table_id;
 	uint32_t					group_id;
 	rofl::caddress_ll			lladdr;
@@ -225,8 +225,8 @@ public:
 	 *
 	 */
 	cneigh_in4(
-			int ifindex, uint16_t nbindex, const rofl::cdpid& dpid, uint8_t out_ofp_table_id) :
-				cneigh(ifindex, nbindex, dpid, out_ofp_table_id),
+			int ifindex, uint16_t nbindex, const rofl::cdptid& dptid, uint8_t out_ofp_table_id) :
+				cneigh(ifindex, nbindex, dptid, out_ofp_table_id),
 				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
 	{};
 
@@ -256,7 +256,7 @@ public:
 	~cneigh_in4() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+				handle_dpt_close();
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};
@@ -282,13 +282,13 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt);
+	handle_dpt_open();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt);
+	handle_dpt_close();
 
 	/**
 	 *
@@ -354,8 +354,8 @@ public:
 	 *
 	 */
 	cneigh_in6(
-			int ifindex, uint16_t nbindex, const rofl::cdpid& dpid, uint8_t out_ofp_table_id) :
-				cneigh(ifindex, nbindex, dpid, out_ofp_table_id),
+			int ifindex, uint16_t nbindex, const rofl::cdptid& dptid, uint8_t out_ofp_table_id) :
+				cneigh(ifindex, nbindex, dptid, out_ofp_table_id),
 				cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
 	{};
 
@@ -385,7 +385,7 @@ public:
 	~cneigh_in6() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+				handle_dpt_close();
 			}
 		} catch (rofl::eRofDptNotFound& e) {}
 	};
@@ -411,13 +411,13 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt);
+	handle_dpt_open();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt);
+	handle_dpt_close();
 
 	/**
 	 *

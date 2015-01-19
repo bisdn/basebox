@@ -10,9 +10,11 @@
 using namespace roflibs::gtp;
 
 void
-cterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)
+cterm_in4::handle_dpt_open_egress()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (not flags.test(FLAG_EGRESS_FM_INSTALLED)) {
@@ -65,9 +67,11 @@ cterm_in4::handle_dpt_open_egress(rofl::crofdpt& dpt)
 
 
 void
-cterm_in4::handle_dpt_close_egress(rofl::crofdpt& dpt)
+cterm_in4::handle_dpt_close_egress()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -103,9 +107,11 @@ cterm_in4::handle_dpt_close_egress(rofl::crofdpt& dpt)
 
 
 void
-cterm_in4::handle_dpt_open_ingress(rofl::crofdpt& dpt)
+cterm_in4::handle_dpt_open_ingress()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (not flags.test(FLAG_INGRESS_FM_INSTALLED)) {
@@ -178,9 +184,11 @@ cterm_in4::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 
 
 void
-cterm_in4::handle_dpt_close_ingress(rofl::crofdpt& dpt)
+cterm_in4::handle_dpt_close_ingress()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -215,9 +223,11 @@ cterm_in4::handle_dpt_close_ingress(rofl::crofdpt& dpt)
 
 
 void
-cterm_in6::handle_dpt_open_egress(rofl::crofdpt& dpt)
+cterm_in6::handle_dpt_open_egress()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (not flags.test(FLAG_EGRESS_FM_INSTALLED)) {
@@ -270,9 +280,11 @@ cterm_in6::handle_dpt_open_egress(rofl::crofdpt& dpt)
 
 
 void
-cterm_in6::handle_dpt_close_egress(rofl::crofdpt& dpt)
+cterm_in6::handle_dpt_close_egress()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -308,9 +320,11 @@ cterm_in6::handle_dpt_close_egress(rofl::crofdpt& dpt)
 
 
 void
-cterm_in6::handle_dpt_open_ingress(rofl::crofdpt& dpt)
+cterm_in6::handle_dpt_open_ingress()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		if (not flags.test(FLAG_INGRESS_FM_INSTALLED)) {
@@ -383,9 +397,11 @@ cterm_in6::handle_dpt_open_ingress(rofl::crofdpt& dpt)
 
 
 void
-cterm_in6::handle_dpt_close_ingress(rofl::crofdpt& dpt)
+cterm_in6::handle_dpt_close_ingress()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);

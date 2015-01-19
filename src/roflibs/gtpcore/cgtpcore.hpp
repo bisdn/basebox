@@ -46,24 +46,24 @@ public:
 	 *
 	 */
 	static cgtpcore&
-	add_gtp_core(const rofl::cdpid& dpid, uint8_t ip_local_table_id, uint8_t gtp_table_id) {
-		if (cgtpcore::gtpcores.find(dpid) != cgtpcore::gtpcores.end()) {
-			delete cgtpcore::gtpcores[dpid];
-			cgtpcore::gtpcores.erase(dpid);
+	add_gtp_core(const rofl::cdptid& dptid, uint8_t ip_local_table_id, uint8_t gtp_table_id) {
+		if (cgtpcore::gtpcores.find(dptid) != cgtpcore::gtpcores.end()) {
+			delete cgtpcore::gtpcores[dptid];
+			cgtpcore::gtpcores.erase(dptid);
 		}
-		cgtpcore::gtpcores[dpid] = new cgtpcore(dpid, ip_local_table_id, gtp_table_id);
-		return *(cgtpcore::gtpcores[dpid]);
+		cgtpcore::gtpcores[dptid] = new cgtpcore(dptid, ip_local_table_id, gtp_table_id);
+		return *(cgtpcore::gtpcores[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static cgtpcore&
-	set_gtp_core(const rofl::cdpid& dpid, uint8_t ip_local_table_id, uint8_t gtp_table_id) {
-		if (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()) {
-			cgtpcore::gtpcores[dpid] = new cgtpcore(dpid, ip_local_table_id, gtp_table_id);
+	set_gtp_core(const rofl::cdptid& dptid, uint8_t ip_local_table_id, uint8_t gtp_table_id) {
+		if (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()) {
+			cgtpcore::gtpcores[dptid] = new cgtpcore(dptid, ip_local_table_id, gtp_table_id);
 		}
-		return *(cgtpcore::gtpcores[dpid]);
+		return *(cgtpcore::gtpcores[dptid]);
 	};
 
 
@@ -71,42 +71,42 @@ public:
 	 *
 	 */
 	static cgtpcore&
-	set_gtp_core(const rofl::cdpid& dpid) {
-		if (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()) {
+	set_gtp_core(const rofl::cdptid& dptid) {
+		if (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()) {
 			throw eGtpCoreNotFound("cgtpcore::set_gtp_core() dpt not found");
 		}
-		return *(cgtpcore::gtpcores[dpid]);
+		return *(cgtpcore::gtpcores[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static const cgtpcore&
-	get_gtp_core(const rofl::cdpid& dpid) {
-		if (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()) {
+	get_gtp_core(const rofl::cdptid& dptid) {
+		if (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()) {
 			throw eGtpCoreNotFound("cgtpcore::get_gtp_core() dpt not found");
 		}
-		return *(cgtpcore::gtpcores.at(dpid));
+		return *(cgtpcore::gtpcores.at(dptid));
 	};
 
 	/**
 	 *
 	 */
 	static void
-	drop_gtp_core(const rofl::cdpid& dpid) {
-		if (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()) {
+	drop_gtp_core(const rofl::cdptid& dptid) {
+		if (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()) {
 			return;
 		}
-		delete cgtpcore::gtpcores[dpid];
-		cgtpcore::gtpcores.erase(dpid);
+		delete cgtpcore::gtpcores[dptid];
+		cgtpcore::gtpcores.erase(dptid);
 	}
 
 	/**
 	 *
 	 */
 	static bool
-	has_gtp_core(const rofl::cdpid& dpid) {
-		return (not (cgtpcore::gtpcores.find(dpid) == cgtpcore::gtpcores.end()));
+	has_gtp_core(const rofl::cdptid& dptid) {
+		return (not (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()));
 	};
 
 private:
@@ -114,8 +114,8 @@ private:
 	/**
 	 *
 	 */
-	cgtpcore(const rofl::cdpid& dpid, uint8_t ip_local_table_id, uint8_t gtp_table_id = 0) :
-		state(STATE_DETACHED), dpid(dpid),
+	cgtpcore(const rofl::cdptid& dptid, uint8_t ip_local_table_id, uint8_t gtp_table_id = 0) :
+		state(STATE_DETACHED), dptid(dptid),
 		cookie_miss_entry_ipv4(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		cookie_miss_entry_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		ip_local_table_id(ip_local_table_id), gtp_table_id(gtp_table_id) {};
@@ -132,13 +132,13 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt);
+	handle_dpt_open();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt);
+	handle_dpt_close();
 
 public:
 
@@ -163,7 +163,7 @@ public:
 			delete relays_in4[label_in];
 			relays_in4.erase(label_in);
 		}
-		relays_in4[label_in] = new crelay_in4(dpid, gtp_table_id, label_in, label_out);
+		relays_in4[label_in] = new crelay_in4(dptid, gtp_table_id, label_in, label_out);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
@@ -180,7 +180,7 @@ public:
 	crelay_in4&
 	set_relay_in4(const clabel_in4& label_in, const clabel_in4& label_out) {
 		if (relays_in4.find(label_in) == relays_in4.end()) {
-			relays_in4[label_in] = new crelay_in4(dpid, gtp_table_id, label_in, label_out);
+			relays_in4[label_in] = new crelay_in4(dptid, gtp_table_id, label_in, label_out);
 		}
 #if 0
 		try {
@@ -258,7 +258,7 @@ public:
 			delete relays_in6[label_in];
 			relays_in6.erase(label_in);
 		}
-		relays_in6[label_in] = new crelay_in6(dpid, gtp_table_id, label_in, label_out);
+		relays_in6[label_in] = new crelay_in6(dptid, gtp_table_id, label_in, label_out);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
@@ -275,7 +275,7 @@ public:
 	crelay_in6&
 	set_relay_in6(const clabel_in6& label_in, const clabel_in6& label_out) {
 		if (relays_in6.find(label_in) == relays_in6.end()) {
-			relays_in6[label_in] = new crelay_in6(dpid, gtp_table_id, label_in, label_out);
+			relays_in6[label_in] = new crelay_in6(dptid, gtp_table_id, label_in, label_out);
 		}
 #if 0
 		try {
@@ -353,7 +353,7 @@ public:
 			delete terms_in4[label_egress];
 			terms_in4.erase(label_egress);
 		}
-		terms_in4[label_egress] = new cterm_in4(dpid, gtp_table_id, label_egress, label_ingress, tft_match);
+		terms_in4[label_egress] = new cterm_in4(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
@@ -370,7 +370,7 @@ public:
 	cterm_in4&
 	set_term_in4(const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) {
 		if (terms_in4.find(label_egress) == terms_in4.end()) {
-			terms_in4[label_egress] = new cterm_in4(dpid, gtp_table_id, label_egress, label_ingress, tft_match);
+			terms_in4[label_egress] = new cterm_in4(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
 		}
 #if 0
 		try {
@@ -483,7 +483,7 @@ public:
 			delete terms_in6[label_egress];
 			terms_in6.erase(label_egress);
 		}
-		terms_in6[label_egress] = new cterm_in6(dpid, gtp_table_id, label_egress, label_ingress, tft_match);
+		terms_in6[label_egress] = new cterm_in6(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
@@ -500,7 +500,7 @@ public:
 	cterm_in6&
 	set_term_in6(const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) {
 		if (terms_in6.find(label_egress) == terms_in6.end()) {
-			terms_in6[label_egress] = new cterm_in6(dpid, gtp_table_id, label_egress, label_ingress, tft_match);
+			terms_in6[label_egress] = new cterm_in6(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
 		}
 #if 0
 		try {
@@ -651,7 +651,7 @@ private:
 	};
 
 	enum ofp_state_t							state;
-	rofl::cdpid									dpid;
+	rofl::cdptid								dptid;
 	uint64_t									cookie_miss_entry_ipv4;
 	uint64_t									cookie_miss_entry_ipv6;
 	uint8_t										ip_local_table_id;
@@ -660,7 +660,7 @@ private:
 	std::map<clabel_in6, crelay_in6*>			relays_in6;
 	std::map<clabel_in4, cterm_in4*>			terms_in4;
 	std::map<clabel_in6, cterm_in6*>			terms_in6;
-	static std::map<rofl::cdpid, cgtpcore*>		gtpcores;
+	static std::map<rofl::cdptid, cgtpcore*>	gtpcores;
 };
 
 }; // end of namespace gtp

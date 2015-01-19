@@ -10,13 +10,14 @@
 
 using namespace roflibs::gtp;
 
-/*static*/std::map<rofl::cdpid, cgtpcore*> cgtpcore::gtpcores;
+/*static*/std::map<rofl::cdptid, cgtpcore*> cgtpcore::gtpcores;
 
 
 void
-cgtpcore::handle_dpt_open(rofl::crofdpt& dpt)
+cgtpcore::handle_dpt_open()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		switch (state) {
@@ -74,11 +75,12 @@ cgtpcore::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-cgtpcore::handle_dpt_close(rofl::crofdpt& dpt)
+cgtpcore::handle_dpt_close()
 {
 	try {
 		state = STATE_DETACHED;
 
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 		rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);

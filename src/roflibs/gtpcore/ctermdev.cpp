@@ -10,9 +10,11 @@
 using namespace roflibs::gtp;
 
 void
-ctermdev::handle_dpt_open(rofl::crofdpt& dpt, const rofcore::cprefix_in4& prefix)
+ctermdev::handle_dpt_open(const rofcore::cprefix_in4& prefix)
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
@@ -54,9 +56,11 @@ ctermdev::handle_dpt_open(rofl::crofdpt& dpt, const rofcore::cprefix_in4& prefix
 
 
 void
-ctermdev::handle_dpt_close(rofl::crofdpt& dpt, const rofcore::cprefix_in4& prefix)
+ctermdev::handle_dpt_close(const rofcore::cprefix_in4& prefix)
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -86,9 +90,11 @@ ctermdev::handle_dpt_close(rofl::crofdpt& dpt, const rofcore::cprefix_in4& prefi
 
 
 void
-ctermdev::handle_dpt_open(rofl::crofdpt& dpt, const rofcore::cprefix_in6& prefix)
+ctermdev::handle_dpt_open(const rofcore::cprefix_in6& prefix)
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
@@ -130,9 +136,11 @@ ctermdev::handle_dpt_open(rofl::crofdpt& dpt, const rofcore::cprefix_in6& prefix
 
 
 void
-ctermdev::handle_dpt_close(rofl::crofdpt& dpt, const rofcore::cprefix_in6& prefix)
+ctermdev::handle_dpt_close(const rofcore::cprefix_in6& prefix)
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
