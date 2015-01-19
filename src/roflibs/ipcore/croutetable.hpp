@@ -40,9 +40,9 @@ public:
 	 *
 	 */
 	croutetable(
-			uint8_t rttblid, const rofl::cdpid& dpid,
+			uint8_t rttblid, const rofl::cdptid& dptid,
 			uint8_t local_ofp_table_id = 0, uint8_t out_ofp_table_id = 2) :
-		state(STATE_DETACHED), rttblid(rttblid), dpid(dpid),
+		state(STATE_DETACHED), rttblid(rttblid), dptid(dptid),
 		local_ofp_table_id(local_ofp_table_id), out_ofp_table_id(out_ofp_table_id) {};
 
 	/**
@@ -51,7 +51,7 @@ public:
 	~croutetable() {
 		try {
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+				handle_dpt_close();
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 	};
@@ -71,7 +71,7 @@ public:
 		if (this == &rtable)
 			return *this;
 		state 				= rtable.state;
-		dpid 				= rtable.dpid;
+		dptid 				= rtable.dptid;
 		rttblid 			= rtable.rttblid;
 		local_ofp_table_id 	= rtable.local_ofp_table_id;
 		out_ofp_table_id 	= rtable.out_ofp_table_id;
@@ -117,9 +117,9 @@ public:
 		if (rib4.find(rtindex) != rib4.end()) {
 			rib4.erase(rtindex);
 		}
-		rib4[rtindex] = croute_in4(rttblid, rtindex, dpid, out_ofp_table_id);
+		rib4[rtindex] = croute_in4(rttblid, rtindex, dptid, out_ofp_table_id);
 		if (STATE_ATTACHED == state) {
-			rib4[rtindex].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			rib4[rtindex].handle_dpt_open();
 		}
 		return rib4[rtindex];
 	};
@@ -131,12 +131,12 @@ public:
 	set_route_in4(
 			unsigned int rtindex) {
 		if (rib4.find(rtindex) == rib4.end()) {
-			rib4[rtindex] = croute_in4(rttblid, rtindex, dpid, out_ofp_table_id);
+			rib4[rtindex] = croute_in4(rttblid, rtindex, dptid, out_ofp_table_id);
 			if (STATE_ATTACHED == state) {
-				rib4[rtindex].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				rib4[rtindex].handle_dpt_open();
 			}
 		}
-		return (rib4[rtindex] = croute_in4(rttblid, rtindex, dpid, out_ofp_table_id));
+		return (rib4[rtindex] = croute_in4(rttblid, rtindex, dptid, out_ofp_table_id));
 	};
 
 	/**
@@ -183,9 +183,9 @@ public:
 		if (rib6.find(rtindex) != rib6.end()) {
 			rib6.erase(rtindex);
 		}
-		rib6[rtindex] = croute_in6(rttblid, rtindex, dpid, out_ofp_table_id);
+		rib6[rtindex] = croute_in6(rttblid, rtindex, dptid, out_ofp_table_id);
 		if (STATE_ATTACHED == state) {
-			rib6[rtindex].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+			rib6[rtindex].handle_dpt_open();
 		}
 		return rib6[rtindex];
 	};
@@ -197,12 +197,12 @@ public:
 	set_route_in6(
 			unsigned int rtindex) {
 		if (rib6.find(rtindex) == rib6.end()) {
-			rib6[rtindex] = croute_in6(rttblid, rtindex, dpid, out_ofp_table_id);
+			rib6[rtindex] = croute_in6(rttblid, rtindex, dptid, out_ofp_table_id);
 			if (STATE_ATTACHED == state) {
-				rib6[rtindex].handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				rib6[rtindex].handle_dpt_open();
 			}
 		}
-		return (rib6[rtindex] = croute_in6(rttblid, rtindex, dpid, out_ofp_table_id));
+		return (rib6[rtindex] = croute_in6(rttblid, rtindex, dptid, out_ofp_table_id));
 	};
 
 	/**
@@ -244,15 +244,15 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt) {
+	handle_dpt_open() {
 		state = STATE_ATTACHED;
 		for (std::map<unsigned int, croute_in4>::iterator
 				it = rib4.begin(); it != rib4.end(); ++it) {
-			it->second.handle_dpt_open(dpt);
+			it->second.handle_dpt_open();
 		}
 		for (std::map<unsigned int, croute_in6>::iterator
 				it = rib6.begin(); it != rib6.end(); ++it) {
-			it->second.handle_dpt_open(dpt);
+			it->second.handle_dpt_open();
 		}
 	};
 
@@ -260,15 +260,15 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt) {
+	handle_dpt_close() {
 		state = STATE_DETACHED;
 		for (std::map<unsigned int, croute_in4>::iterator
 				it = rib4.begin(); it != rib4.end(); ++it) {
-			it->second.handle_dpt_close(dpt);
+			it->second.handle_dpt_close();
 		}
 		for (std::map<unsigned int, croute_in6>::iterator
 				it = rib6.begin(); it != rib6.end(); ++it) {
-			it->second.handle_dpt_close(dpt);
+			it->second.handle_dpt_close();
 		}
 	};
 
@@ -305,7 +305,7 @@ private:
 	};
 
 	enum ofp_state_t					state;
-	rofl::cdpid 						dpid;
+	rofl::cdptid 						dptid;
 	uint8_t								rttblid;
 	uint8_t								local_ofp_table_id;
 	uint8_t								out_ofp_table_id;

@@ -14,9 +14,11 @@ using namespace roflibs::ip;
 
 
 void
-caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
+caddr_in4::handle_dpt_open()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
@@ -43,7 +45,7 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
 		const roflibs::ip::clink& dpl =
-				cipcore::get_ip_core(dpid).get_link(ifindex);
+				cipcore::get_ip_core(dptid).get_link(ifindex);
 
 		// local VLAN associated with interface
 		uint16_t vid = dpl.get_vlan_vid();
@@ -112,9 +114,11 @@ caddr_in4::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
+caddr_in4::handle_dpt_close()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -126,7 +130,7 @@ caddr_in4::handle_dpt_close(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
 		const roflibs::ip::clink& dpl =
-				cipcore::get_ip_core(dpid).get_link(ifindex);
+				cipcore::get_ip_core(dptid).get_link(ifindex);
 
 		// local VLAN associated with interface
 		uint16_t vid = dpl.get_vlan_vid();
@@ -187,15 +191,17 @@ caddr_in4::handle_packet_in(
 {
 	rofcore::logging::debug << "[caddr_in4][handle_packet_in] pkt received: " << std::endl << msg;
 	// store packet in ethcore and thus, tap devices
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
 }
 
 
 
 void
-caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
+caddr_in6::handle_dpt_open()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		switch (state) {
@@ -217,7 +223,7 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
 		const roflibs::ip::clink& dpl =
-				cipcore::get_ip_core(dpid).get_link(ifindex);
+				cipcore::get_ip_core(dptid).get_link(ifindex);
 
 		// local VLAN associated with interface
 		uint16_t vid = dpl.get_vlan_vid();
@@ -270,9 +276,11 @@ caddr_in6::handle_dpt_open(rofl::crofdpt& dpt)
 
 
 void
-caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
+caddr_in6::handle_dpt_close()
 {
 	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
 		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
 		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
@@ -281,7 +289,7 @@ caddr_in6::handle_dpt_close(rofl::crofdpt& dpt)
 
 		// ... and the link's dpt representation (clink) needed for OFP related data
 		const roflibs::ip::clink& dpl =
-				cipcore::get_ip_core(dpid).get_link(ifindex);
+				cipcore::get_ip_core(dptid).get_link(ifindex);
 
 		// local VLAN associated with interface
 		uint16_t vid = dpl.get_vlan_vid();
@@ -330,7 +338,7 @@ caddr_in6::handle_packet_in(
 {
 	rofcore::logging::debug << "[caddr_in6][handle_packet_in] pkt received: " << std::endl << msg;
 	// store packet in ethcore and thus, tap devices
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+	roflibs::eth::cethcore::set_eth_core(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
 }
 
 

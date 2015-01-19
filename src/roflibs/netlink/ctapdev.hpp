@@ -28,7 +28,7 @@ extern "C" {
 
 #include <list>
 
-#include <rofl/common/cdpid.h>
+#include <rofl/common/cdptid.h>
 #include <roflibs/netlink/cnetdev.hpp>
 #include <roflibs/netlink/clogging.hpp>
 
@@ -63,7 +63,7 @@ class ctapdev : public cnetdev {
 
 	int 							fd; 			// tap device file descriptor
 	std::list<rofl::cpacket*> 		pout_queue;		// queue of outgoing packets
-	rofl::cdpid						dpid;
+	rofl::cdptid					dptid;
 	std::string						devname;
 	uint16_t						pvid;
 	rofl::cmacaddr					hwaddr;
@@ -84,7 +84,7 @@ public:
 	 */
 	ctapdev(
 			cnetdev_owner *netdev_owner,
-			const rofl::cdpid& dpid,
+			const rofl::cdptid& dptid,
 			std::string const& devname,
 			uint16_t pvid,
 			rofl::cmacaddr const& hwaddr,
@@ -110,8 +110,8 @@ public:
 	/**
 	 *
 	 */
-	rofl::cdpid
-	get_dpid() const { return dpid; };
+	rofl::cdptid
+	get_dptid() const { return dptid; };
 
 	/**
 	 *
@@ -160,35 +160,35 @@ private:
 public:
 
 	class ctapdev_find_by_devname {
-		rofl::cdpid dpid;
+		rofl::cdptid dptid;
 		std::string devname;
 	public:
-		ctapdev_find_by_devname(const rofl::cdpid& dpid, const std::string& devname) :
-			dpid(dpid), devname(devname) {};
+		ctapdev_find_by_devname(const rofl::cdptid& dptid, const std::string& devname) :
+			dptid(dptid), devname(devname) {};
 		bool operator() (const std::pair<std::string, ctapdev*>& p) const {
-			return ((p.second->dpid == dpid) && (p.second->devname == devname));
+			return ((p.second->dptid == dptid) && (p.second->devname == devname));
 		};
 	};
 
 	class ctapdev_find_by_hwaddr {
-		rofl::cdpid dpid;
+		rofl::cdptid dptid;
 		rofl::caddress_ll hwaddr;
 	public:
-		ctapdev_find_by_hwaddr(const rofl::cdpid& dpid, const rofl::caddress_ll& hwaddr) :
-			dpid(dpid), hwaddr(hwaddr) {};
+		ctapdev_find_by_hwaddr(const rofl::cdptid& dptid, const rofl::caddress_ll& hwaddr) :
+			dptid(dptid), hwaddr(hwaddr) {};
 		bool operator() (const std::pair<std::string, ctapdev*>& p) const {
-			return ((p.second->dpid == dpid) && (p.second->hwaddr == hwaddr));
+			return ((p.second->dptid == dptid) && (p.second->hwaddr == hwaddr));
 		};
 	};
 
 	class ctapdev_find_by_pvid {
-		rofl::cdpid dpid;
+		rofl::cdptid dptid;
 		uint16_t pvid;
 	public:
-		ctapdev_find_by_pvid(const rofl::cdpid& dpid, uint16_t pvid) :
-			dpid(dpid), pvid(pvid) {};
+		ctapdev_find_by_pvid(const rofl::cdptid& dptid, uint16_t pvid) :
+			dptid(dptid), pvid(pvid) {};
 		bool operator() (const std::pair<std::string, ctapdev*>& p) const {
-			return ((p.second->dpid == dpid) && (p.second->pvid == pvid));
+			return ((p.second->dptid == dptid) && (p.second->pvid == pvid));
 		};
 	};
 

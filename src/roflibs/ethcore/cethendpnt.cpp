@@ -96,7 +96,7 @@ cethendpnt::handle_packet_in(
 {
 	rofcore::logging::debug << "[cethendpnt][handle_packet_in] pkt received: " << std::endl << msg;
 	// store packet in ethcore and thus, tap devices
-	cethcore::set_eth_core(dpt.get_dpid()).handle_packet_in(dpt, auxid, msg);
+	cethcore::set_eth_core(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
 }
 
 

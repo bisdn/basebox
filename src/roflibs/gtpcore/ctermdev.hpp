@@ -44,8 +44,10 @@ public:
 	 *
 	 */
 	ctermdev(rofcore::cnetdev_owner *netdev_owner, const std::string& devname,
-			const rofl::cdpid& dpid, uint8_t ofp_table_id) :
-		rofcore::ctundev(netdev_owner, devname), state(STATE_DETACHED), dpid(dpid), ofp_table_id(ofp_table_id) {};
+			const rofl::cdptid& dptid, uint8_t ofp_table_id) :
+				rofcore::ctundev(netdev_owner, devname), state(STATE_DETACHED),
+				dptid(dptid), ofp_table_id(ofp_table_id)
+	{};
 
 
 	/**
@@ -69,7 +71,7 @@ public:
 			rofcore::cnetlink::get_instance().add_addr_in4(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
 			prefixes_in4.insert(prefix);
 			if (STATE_ATTACHED == state) {
-				handle_dpt_open(rofl::crofdpt::get_dpt(dpid), prefix);
+				handle_dpt_open(prefix);
 			}
 		} catch (rofcore::eNetLinkFailed& e) {
 			rofcore::logging::debug << "[rofcore][ctermdev][add_prefix_in4] failed to set address via netlink" << std::endl;
@@ -89,7 +91,7 @@ public:
 			}
 			rofcore::cnetlink::get_instance().drop_addr_in4(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid), prefix);
+				handle_dpt_close(prefix);
 			}
 			prefixes_in4.erase(prefix);
 		} catch (rofcore::eNetLinkFailed& e) {
@@ -121,7 +123,7 @@ public:
 			rofcore::cnetlink::get_instance().add_addr_in6(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
 			prefixes_in6.insert(prefix);
 			if (STATE_ATTACHED == state) {
-				handle_dpt_open(rofl::crofdpt::get_dpt(dpid), prefix);
+				handle_dpt_open(prefix);
 			}
 		} catch (rofcore::eNetLinkFailed& e) {
 			rofcore::logging::debug << "[rofcore][ctermdev][add_prefix_in6] failed to set address via netlink" << std::endl;
@@ -141,7 +143,7 @@ public:
 			}
 			rofcore::cnetlink::get_instance().drop_addr_in6(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid), prefix);
+				handle_dpt_close(prefix);
 			}
 			prefixes_in6.erase(prefix);
 		} catch (rofcore::eNetLinkFailed& e) {
@@ -165,15 +167,15 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt) {
+	handle_dpt_open() {
 		state = STATE_ATTACHED;
 		for (std::set<rofcore::cprefix_in4>::const_iterator
 				it = prefixes_in4.begin(); it != prefixes_in4.end(); ++it) {
-			handle_dpt_open(dpt, *it);
+			handle_dpt_open(*it);
 		}
 		for (std::set<rofcore::cprefix_in6>::const_iterator
 				it = prefixes_in6.begin(); it != prefixes_in6.end(); ++it) {
-			handle_dpt_open(dpt, *it);
+			handle_dpt_open(*it);
 		}
 	};
 
@@ -181,15 +183,15 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt) {
+	handle_dpt_close() {
 		state = STATE_DETACHED;
 		for (std::set<rofcore::cprefix_in4>::const_iterator
 				it = prefixes_in4.begin(); it != prefixes_in4.end(); ++it) {
-			handle_dpt_close(dpt, *it);
+			handle_dpt_close(*it);
 		}
 		for (std::set<rofcore::cprefix_in6>::const_iterator
 				it = prefixes_in6.begin(); it != prefixes_in6.end(); ++it) {
-			handle_dpt_close(dpt, *it);
+			handle_dpt_close(*it);
 		}
 	};
 
@@ -199,25 +201,25 @@ private:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt, const rofcore::cprefix_in4& prefix);
+	handle_dpt_open(const rofcore::cprefix_in4& prefix);
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt, const rofcore::cprefix_in4& prefix);
+	handle_dpt_close(const rofcore::cprefix_in4& prefix);
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt, const rofcore::cprefix_in6& prefix);
+	handle_dpt_open(const rofcore::cprefix_in6& prefix);
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt, const rofcore::cprefix_in6& prefix);
+	handle_dpt_close(const rofcore::cprefix_in6& prefix);
 
 public:
 
@@ -247,7 +249,7 @@ private:
 	};
 
 	enum ofp_state_t						state;
-	rofl::cdpid								dpid;
+	rofl::cdptid							dptid;
 	uint8_t									ofp_table_id;
 	std::set<rofcore::cprefix_in4>			prefixes_in4;
 	std::set<rofcore::cprefix_in6>			prefixes_in6;

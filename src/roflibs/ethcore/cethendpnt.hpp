@@ -47,11 +47,11 @@ public:
 	 *
 	 */
 	cethendpnt(
-			const rofl::cdpid& dpid, uint8_t local_stage_table_id,
+			const rofl::cdptid& dptid, uint8_t local_stage_table_id,
 			const rofl::cmacaddr& hwaddr,
 			uint16_t vid = 0xffff, bool tagged = true) :
 		dpt_state(STATE_IDLE),
-		dpid(dpid),
+		dptid(dptid),
 		cookie_endpoint(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		vid(vid), tagged(tagged),
 		table_id_eth_local(local_stage_table_id),
@@ -65,7 +65,7 @@ public:
 	~cethendpnt() {
 		try {
 			if (STATE_ATTACHED == dpt_state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dpid));
+				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 	};
@@ -85,7 +85,7 @@ public:
 		if (this == &port)
 			return *this;
 		dpt_state	= port.dpt_state;
-		dpid 		= port.dpid;
+		dptid 		= port.dptid;
 		// do not copy cookies here!
 		vid 		= port.vid;
 		tagged 		= port.tagged;
@@ -179,7 +179,7 @@ private:
 
 	dpt_state_t		dpt_state;
 
-	rofl::cdpid		dpid;
+	rofl::cdptid	dptid;
 	uint64_t		cookie_endpoint;
 	uint16_t 		vid;
 	bool 			tagged;

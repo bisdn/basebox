@@ -47,24 +47,24 @@ public:
 	 *
 	 */
 	static cgrecore&
-	add_gre_core(const rofl::cdpid& dpid, uint8_t eth_local_table_id, uint8_t ip_local_table_id, uint8_t gre_local_table_id, uint8_t ip_fwd_table_id) {
-		if (cgrecore::grecores.find(dpid) != cgrecore::grecores.end()) {
-			delete cgrecore::grecores[dpid];
-			cgrecore::grecores.erase(dpid);
+	add_gre_core(const rofl::cdptid& dptid, uint8_t eth_local_table_id, uint8_t ip_local_table_id, uint8_t gre_local_table_id, uint8_t ip_fwd_table_id) {
+		if (cgrecore::grecores.find(dptid) != cgrecore::grecores.end()) {
+			delete cgrecore::grecores[dptid];
+			cgrecore::grecores.erase(dptid);
 		}
-		cgrecore::grecores[dpid] = new cgrecore(dpid, eth_local_table_id, ip_local_table_id, gre_local_table_id, ip_fwd_table_id);
-		return *(cgrecore::grecores[dpid]);
+		cgrecore::grecores[dptid] = new cgrecore(dptid, eth_local_table_id, ip_local_table_id, gre_local_table_id, ip_fwd_table_id);
+		return *(cgrecore::grecores[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static cgrecore&
-	set_gre_core(const rofl::cdpid& dpid, uint8_t eth_local_table_id, uint8_t ip_local_table_id, uint8_t gre_local_table_id, uint8_t ip_fwd_table_id) {
-		if (cgrecore::grecores.find(dpid) == cgrecore::grecores.end()) {
-			cgrecore::grecores[dpid] = new cgrecore(dpid, eth_local_table_id, ip_local_table_id, gre_local_table_id, ip_fwd_table_id);
+	set_gre_core(const rofl::cdptid& dptid, uint8_t eth_local_table_id, uint8_t ip_local_table_id, uint8_t gre_local_table_id, uint8_t ip_fwd_table_id) {
+		if (cgrecore::grecores.find(dptid) == cgrecore::grecores.end()) {
+			cgrecore::grecores[dptid] = new cgrecore(dptid, eth_local_table_id, ip_local_table_id, gre_local_table_id, ip_fwd_table_id);
 		}
-		return *(cgrecore::grecores[dpid]);
+		return *(cgrecore::grecores[dptid]);
 	};
 
 
@@ -72,42 +72,42 @@ public:
 	 *
 	 */
 	static cgrecore&
-	set_gre_core(const rofl::cdpid& dpid) {
-		if (cgrecore::grecores.find(dpid) == cgrecore::grecores.end()) {
+	set_gre_core(const rofl::cdptid& dptid) {
+		if (cgrecore::grecores.find(dptid) == cgrecore::grecores.end()) {
 			throw eGreCoreNotFound("cgrecore::set_gre_core() dpt not found");
 		}
-		return *(cgrecore::grecores[dpid]);
+		return *(cgrecore::grecores[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static const cgrecore&
-	get_gre_core(const rofl::cdpid& dpid) {
-		if (cgrecore::grecores.find(dpid) == cgrecore::grecores.end()) {
+	get_gre_core(const rofl::cdptid& dptid) {
+		if (cgrecore::grecores.find(dptid) == cgrecore::grecores.end()) {
 			throw eGreCoreNotFound("cgrecore::get_gre_core() dpt not found");
 		}
-		return *(cgrecore::grecores.at(dpid));
+		return *(cgrecore::grecores.at(dptid));
 	};
 
 	/**
 	 *
 	 */
 	static void
-	drop_gre_core(const rofl::cdpid& dpid) {
-		if (cgrecore::grecores.find(dpid) == cgrecore::grecores.end()) {
+	drop_gre_core(const rofl::cdptid& dptid) {
+		if (cgrecore::grecores.find(dptid) == cgrecore::grecores.end()) {
 			return;
 		}
-		delete cgrecore::grecores[dpid];
-		cgrecore::grecores.erase(dpid);
+		delete cgrecore::grecores[dptid];
+		cgrecore::grecores.erase(dptid);
 	}
 
 	/**
 	 *
 	 */
 	static bool
-	has_gre_core(const rofl::cdpid& dpid) {
-		return (not (cgrecore::grecores.find(dpid) == cgrecore::grecores.end()));
+	has_gre_core(const rofl::cdptid& dptid) {
+		return (not (cgrecore::grecores.find(dptid) == cgrecore::grecores.end()));
 	};
 
 private:
@@ -115,12 +115,12 @@ private:
 	/**
 	 *
 	 */
-	cgrecore(const rofl::cdpid& dpid,
+	cgrecore(const rofl::cdptid& dptid,
 			uint8_t eth_local_table_id,
 			uint8_t ip_local_table_id,
 			uint8_t gre_local_table_id,
 			uint8_t ip_fwd_table_id) :
-		state(STATE_DETACHED), dpid(dpid),
+		state(STATE_DETACHED), dptid(dptid),
 		cookie_miss_entry(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		eth_local_table_id(eth_local_table_id),
 		ip_local_table_id(ip_local_table_id),
@@ -149,13 +149,13 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt);
+	handle_dpt_open();
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt);
+	handle_dpt_close();
 
 
 public:
@@ -198,11 +198,11 @@ public:
 			delete terms_in4[term_id];
 			terms_in4.erase(term_id);
 		}
-		terms_in4[term_id] = new cgreterm_in4(dpid, eth_local_table_id, gre_local_table_id, ip_fwd_table_id,
+		terms_in4[term_id] = new cgreterm_in4(dptid, eth_local_table_id, gre_local_table_id, ip_fwd_table_id,
 												laddr, raddr, gre_portno, gre_key);
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in4[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in4[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 		return *(terms_in4[term_id]);
@@ -216,12 +216,12 @@ public:
 			const rofl::caddress_in4& laddr, const rofl::caddress_in4& raddr, uint32_t gre_key) {
 		rofl::RwLock rwlock(rwlock_in4, rofl::RwLock::RWLOCK_WRITE);
 		if (terms_in4.find(term_id) == terms_in4.end()) {
-			terms_in4[term_id] = new cgreterm_in4(dpid, eth_local_table_id, gre_local_table_id, ip_fwd_table_id,
+			terms_in4[term_id] = new cgreterm_in4(dptid, eth_local_table_id, gre_local_table_id, ip_fwd_table_id,
 													laddr, raddr, gre_portno, gre_key);
 		}
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in4[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in4[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 		return *(terms_in4[term_id]);
@@ -313,11 +313,11 @@ public:
 			delete terms_in6[term_id];
 			terms_in6.erase(term_id);
 		}
-		terms_in6[term_id] = new cgreterm_in6(dpid, eth_local_table_id, gre_local_table_id, ip_fwd_table_id,
+		terms_in6[term_id] = new cgreterm_in6(dptid, eth_local_table_id, gre_local_table_id, ip_fwd_table_id,
 												laddr, raddr, gre_portno, gre_key);
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in6[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in6[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 		return *(terms_in6[term_id]);
@@ -331,12 +331,12 @@ public:
 			const rofl::caddress_in6& laddr, const rofl::caddress_in6& raddr, uint32_t gre_key) {
 		rofl::RwLock rwlock(rwlock_in6, rofl::RwLock::RWLOCK_WRITE);
 		if (terms_in6.find(term_id) == terms_in6.end()) {
-			terms_in6[term_id] = new cgreterm_in6(dpid, eth_local_table_id, gre_local_table_id, ip_fwd_table_id,
+			terms_in6[term_id] = new cgreterm_in6(dptid, eth_local_table_id, gre_local_table_id, ip_fwd_table_id,
 													laddr, raddr, gre_portno, gre_key);
 		}
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in6[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in6[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dptid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 		return *(terms_in6[term_id]);
@@ -425,7 +425,7 @@ public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cgrecore& grecore) {
-		os << rofcore::indent(0) << "<cgrecore dpid:" << (unsigned long long)grecore.dpid.get_uint64_t() << " "
+		os << rofcore::indent(0) << "<cgrecore dpid:" << grecore.dptid.str() << " "
 				<< " 0x" << std::hex << &grecore << std::dec << " "
 				<< "#in4-term(s): " << grecore.terms_in4.size() << " "
 				<< "#in6-term(s): " << grecore.terms_in6.size() << " >" << std::endl;
@@ -449,7 +449,7 @@ private:
 	};
 
 	enum ofp_state_t							state;
-	rofl::cdpid									dpid;
+	rofl::cdptid								dptid;
 	uint64_t									cookie_miss_entry;
 	uint8_t										eth_local_table_id;
 	uint8_t										ip_local_table_id;
@@ -459,7 +459,7 @@ private:
 	mutable rofl::PthreadRwLock					rwlock_in4;
 	std::map<uint32_t, cgreterm_in6*>			terms_in6;
 	mutable rofl::PthreadRwLock					rwlock_in6;
-	static std::map<rofl::cdpid, cgrecore*>		grecores;
+	static std::map<rofl::cdptid, cgrecore*>	grecores;
 
 	static const uint8_t						GRE_IP_PROTO = 47;
 	static const uint16_t 						GRE_PROT_TYPE_TRANSPARENT_ETHERNET_BRIDGING = 0x6558;

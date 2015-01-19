@@ -44,66 +44,66 @@ public:
 	 *
 	 */
 	static cgtprelay&
-	add_gtp_relay(const rofl::cdpid& dpid, uint8_t ofp_table_id) {
-		if (cgtprelay::gtprelays.find(dpid) != cgtprelay::gtprelays.end()) {
-			delete cgtprelay::gtprelays[dpid];
-			cgtprelay::gtprelays.erase(dpid);
+	add_gtp_relay(const rofl::cdptid& dptid, uint8_t ofp_table_id) {
+		if (cgtprelay::gtprelays.find(dptid) != cgtprelay::gtprelays.end()) {
+			delete cgtprelay::gtprelays[dptid];
+			cgtprelay::gtprelays.erase(dptid);
 		}
-		cgtprelay::gtprelays[dpid] = new cgtprelay(dpid, ofp_table_id);
-		return *(cgtprelay::gtprelays[dpid]);
+		cgtprelay::gtprelays[dptid] = new cgtprelay(dptid, ofp_table_id);
+		return *(cgtprelay::gtprelays[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static cgtprelay&
-	set_gtp_relay(const rofl::cdpid& dpid, uint8_t ofp_table_id) {
-		if (cgtprelay::gtprelays.find(dpid) == cgtprelay::gtprelays.end()) {
-			cgtprelay::gtprelays[dpid] = new cgtprelay(dpid, ofp_table_id);
+	set_gtp_relay(const rofl::cdptid& dptid, uint8_t ofp_table_id) {
+		if (cgtprelay::gtprelays.find(dptid) == cgtprelay::gtprelays.end()) {
+			cgtprelay::gtprelays[dptid] = new cgtprelay(dptid, ofp_table_id);
 		}
-		return *(cgtprelay::gtprelays[dpid]);
+		return *(cgtprelay::gtprelays[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static cgtprelay&
-	set_gtp_relay(const rofl::cdpid& dpid) {
-		if (cgtprelay::gtprelays.find(dpid) == cgtprelay::gtprelays.end()) {
+	set_gtp_relay(const rofl::cdptid& dptid) {
+		if (cgtprelay::gtprelays.find(dptid) == cgtprelay::gtprelays.end()) {
 			throw eGtpRelayNotFound("cgtprelay::set_gtp_relay() dpt not found");
 		}
-		return *(cgtprelay::gtprelays[dpid]);
+		return *(cgtprelay::gtprelays[dptid]);
 	};
 
 	/**
 	 *
 	 */
 	static const cgtprelay&
-	get_gtp_relay(const rofl::cdpid& dpid) {
-		if (cgtprelay::gtprelays.find(dpid) == cgtprelay::gtprelays.end()) {
+	get_gtp_relay(const rofl::cdptid& dptid) {
+		if (cgtprelay::gtprelays.find(dptid) == cgtprelay::gtprelays.end()) {
 			throw eGtpRelayNotFound("cgtprelay::get_gtp_relay() dpt not found");
 		}
-		return *(cgtprelay::gtprelays.at(dpid));
+		return *(cgtprelay::gtprelays.at(dptid));
 	};
 
 	/**
 	 *
 	 */
 	static void
-	drop_gtp_relay(const rofl::cdpid& dpid) {
-		if (cgtprelay::gtprelays.find(dpid) == cgtprelay::gtprelays.end()) {
+	drop_gtp_relay(const rofl::cdptid& dptid) {
+		if (cgtprelay::gtprelays.find(dptid) == cgtprelay::gtprelays.end()) {
 			return;
 		}
-		delete cgtprelay::gtprelays[dpid];
-		cgtprelay::gtprelays.erase(dpid);
+		delete cgtprelay::gtprelays[dptid];
+		cgtprelay::gtprelays.erase(dptid);
 	}
 
 	/**
 	 *
 	 */
 	static bool
-	has_gtp_relay(const rofl::cdpid& dpid) {
-		return (not (cgtprelay::gtprelays.find(dpid) == cgtprelay::gtprelays.end()));
+	has_gtp_relay(const rofl::cdptid& dptid) {
+		return (not (cgtprelay::gtprelays.find(dptid) == cgtprelay::gtprelays.end()));
 	};
 
 private:
@@ -111,8 +111,8 @@ private:
 	/**
 	 *
 	 */
-	cgtprelay(const rofl::cdpid& dpid, uint8_t ofp_table_id) :
-		state(STATE_DETACHED), dpid(dpid), ofp_table_id(ofp_table_id) {};
+	cgtprelay(const rofl::cdptid& dptid, uint8_t ofp_table_id) :
+		state(STATE_DETACHED), dptid(dptid), ofp_table_id(ofp_table_id) {};
 
 	/**
 	 *
@@ -257,10 +257,10 @@ public:
 			delete termdevs[devname];
 			termdevs.erase(devname);
 		}
-		termdevs[devname] = new ctermdev(this, devname, dpid, ofp_table_id);
+		termdevs[devname] = new ctermdev(this, devname, dptid, ofp_table_id);
 		try {
 			if (STATE_ATTACHED == state) {
-				termdevs[devname]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				termdevs[devname]->handle_dpt_open();
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 		return *(termdevs[devname]);
@@ -272,10 +272,10 @@ public:
 	ctermdev&
 	set_termdev(const std::string& devname) {
 		if (termdevs.find(devname) == termdevs.end()) {
-			termdevs[devname] = new ctermdev(this, devname, dpid, ofp_table_id);
+			termdevs[devname] = new ctermdev(this, devname, dptid, ofp_table_id);
 			try {
 				if (STATE_ATTACHED == state) {
-					termdevs[devname]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+					termdevs[devname]->handle_dpt_open();
 				}
 			} catch (rofl::eRofDptNotFound& e) {};
 		}
@@ -319,11 +319,11 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt) {
+	handle_dpt_open() {
 		state = STATE_ATTACHED;
 		for (std::map<std::string, ctermdev*>::iterator
 				it = termdevs.begin(); it != termdevs.end(); ++it) {
-			it->second->handle_dpt_open(dpt);
+			it->second->handle_dpt_open();
 		}
 	};
 
@@ -331,11 +331,11 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt) {
+	handle_dpt_close() {
 		state = STATE_DETACHED;
 		for (std::map<std::string, ctermdev*>::iterator
 				it = termdevs.begin(); it != termdevs.end(); ++it) {
-			it->second->handle_dpt_close(dpt);
+			it->second->handle_dpt_close();
 		}
 	};
 
@@ -453,12 +453,12 @@ private:
 	};
 
 	enum ofp_state_t							state;
-	rofl::cdpid 								dpid;
+	rofl::cdptid 								dptid;
 	uint8_t										ofp_table_id;
 	std::map<caddress_gtp_in4, rofl::csocket*>	sockets_in4;
 	std::map<caddress_gtp_in6, rofl::csocket*>	sockets_in6;
 	std::map<std::string, ctermdev*>			termdevs;
-	static std::map<rofl::cdpid, cgtprelay*>	gtprelays;
+	static std::map<rofl::cdptid, cgtprelay*>	gtprelays;
 
 private:
 

@@ -10,7 +10,7 @@
 
 using namespace roflibs::gtp;
 
-/*static*/std::map<rofl::cdpid, cgtprelay*> cgtprelay::gtprelays;
+/*static*/std::map<rofl::cdptid, cgtprelay*> cgtprelay::gtprelays;
 
 void
 cgtprelay::handle_read(
@@ -44,11 +44,11 @@ cgtprelay::handle_read(
 
 				rofcore::logging::debug << "[cgtprelay][handle_read] label-in: " << std::endl << label_in;
 
-				if (cgtpcore::get_gtp_core(dpid).has_relay_in4(label_in)) {
+				if (cgtpcore::get_gtp_core(dptid).has_relay_in4(label_in)) {
 
 					// find associated label-out for label-in
 					const roflibs::gtp::clabel_in4& label_out =
-							cgtpcore::get_gtp_core(dpid).
+							cgtpcore::get_gtp_core(dptid).
 									get_relay_in4(label_in).get_label_out();
 
 					rofcore::logging::debug << "[cgtprelay][handle_read] label-out: " << std::endl << label_out;
@@ -61,14 +61,14 @@ cgtprelay::handle_read(
 							rofl::csockaddr(label_out.get_daddr().get_addr(), label_out.get_daddr().get_port().get_value()));
 
 					// set OFP shortcut into datapath
-					cgtpcore::set_gtp_core(dpid).set_relay_in4(label_in).handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+					cgtpcore::set_gtp_core(dptid).set_relay_in4(label_in).handle_dpt_open();
 
 				} else
-				if (cgtpcore::get_gtp_core(dpid).has_term_in4(/*egress label*/label_in)) {
+				if (cgtpcore::get_gtp_core(dptid).has_term_in4(/*egress label*/label_in)) {
 
 					// find associated tft-match for label-in
 					const roflibs::gtp::cterm_in4& term =
-							cgtpcore::get_gtp_core(dpid).get_term_in4(label_in);
+							cgtpcore::get_gtp_core(dptid).get_term_in4(label_in);
 
 					rofl::cpacket* pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 
@@ -79,7 +79,7 @@ cgtprelay::handle_read(
 					set_termdev("tun57").enqueue(pkt); // TODO
 
 					// set OFP shortcut into datapath
-					cgtpcore::set_gtp_core(dpid).set_term_in4(label_in).handle_dpt_open_egress(rofl::crofdpt::get_dpt(dpid));
+					cgtpcore::set_gtp_core(dptid).set_term_in4(label_in).handle_dpt_open_egress();
 
 				}
 
@@ -106,11 +106,11 @@ cgtprelay::handle_read(
 
 				rofcore::logging::debug << "[cgtprelay][handle_read] label-in: " << std::endl << label_in;
 
-				if (cgtpcore::get_gtp_core(dpid).has_relay_in6(label_in)) {
+				if (cgtpcore::get_gtp_core(dptid).has_relay_in6(label_in)) {
 
 					// find associated label-out for label-in
 					const roflibs::gtp::clabel_in6& label_out =
-							cgtpcore::get_gtp_core(dpid).
+							cgtpcore::get_gtp_core(dptid).
 									get_relay_in6(label_in).get_label_out();
 
 					rofcore::logging::debug << "[cgtprelay][handle_read] label-out: " << std::endl << label_out;
@@ -123,14 +123,14 @@ cgtprelay::handle_read(
 							rofl::csockaddr(label_out.get_daddr().get_addr(), label_out.get_daddr().get_port().get_value()));
 
 					// set OFP shortcut into datapath
-					cgtpcore::set_gtp_core(dpid).set_relay_in6(label_in).handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+					cgtpcore::set_gtp_core(dptid).set_relay_in6(label_in).handle_dpt_open();
 
 				} else
-				if (cgtpcore::get_gtp_core(dpid).has_term_in6(label_in)) {
+				if (cgtpcore::get_gtp_core(dptid).has_term_in6(label_in)) {
 
 					// find associated tft-match for label-in
 					const roflibs::gtp::cterm_in6& term =
-							cgtpcore::get_gtp_core(dpid).get_term_in6(/*egress label*/label_in);
+							cgtpcore::get_gtp_core(dptid).get_term_in6(/*egress label*/label_in);
 
 					rofl::cpacket* pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 
@@ -141,7 +141,7 @@ cgtprelay::handle_read(
 					set_termdev("tun57").enqueue(pkt); // TODO
 
 					// set OFP shortcut into datapath
-					cgtpcore::set_gtp_core(dpid).set_term_in6(label_in).handle_dpt_open_egress(rofl::crofdpt::get_dpt(dpid));
+					cgtpcore::set_gtp_core(dptid).set_term_in6(label_in).handle_dpt_open_egress();
 
 				}
 
@@ -226,13 +226,13 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 	// try to find TFT with source and destination address
 	try {
 
-		rofl::openflow::cofmatch tft_match(rofl::crofdpt::get_dpt(dpid).get_version_negotiated());
+		rofl::openflow::cofmatch tft_match(rofl::crofdpt::get_dpt(dptid).get_version_negotiated());
 		tft_match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		tft_match.set_ipv4_dst(ipv4.get_ipv4_dst());
 		tft_match.set_ipv4_src(ipv4.get_ipv4_src());
 
-		if (cgtpcore::get_gtp_core(dpid).has_term_in4(tft_match)) {
-			cterm_in4& term = cgtpcore::set_gtp_core(dpid).set_term_in4(tft_match);
+		if (cgtpcore::get_gtp_core(dptid).has_term_in4(tft_match)) {
+			cterm_in4& term = cgtpcore::set_gtp_core(dptid).set_term_in4(tft_match);
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] cterm_in4 (src->dst) found" << std::endl << term;
 
 			size_t orig_len = pkt->length();
@@ -259,7 +259,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
 
 			// set OFP shortcut into datapath
-			term.handle_dpt_open_ingress(rofl::crofdpt::get_dpt(dpid));
+			term.handle_dpt_open_ingress();
 
 			return;
 		}
@@ -268,8 +268,8 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		tft_match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		tft_match.set_ipv4_dst(ipv4.get_ipv4_dst());
 
-		if (cgtpcore::get_gtp_core(dpid).has_term_in4(tft_match)) {
-			cterm_in4& term = cgtpcore::set_gtp_core(dpid).set_term_in4(tft_match);
+		if (cgtpcore::get_gtp_core(dptid).has_term_in4(tft_match)) {
+			cterm_in4& term = cgtpcore::set_gtp_core(dptid).set_term_in4(tft_match);
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] cterm_in4 (dst only) found" << std::endl << term;
 
 			size_t orig_len = pkt->length();
@@ -296,7 +296,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
 
 			// set OFP shortcut into datapath
-			term.handle_dpt_open_ingress(rofl::crofdpt::get_dpt(dpid));
+			term.handle_dpt_open_ingress();
 
 			return;
 		}
@@ -328,13 +328,13 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 	// try to find TFT with source and destination address
 	try {
 
-		rofl::openflow::cofmatch tft_match(rofl::crofdpt::get_dpt(dpid).get_version_negotiated());
+		rofl::openflow::cofmatch tft_match(rofl::crofdpt::get_dpt(dptid).get_version_negotiated());
 		tft_match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		tft_match.set_ipv6_dst(ipv6.get_ipv6_dst());
 		tft_match.set_ipv6_src(ipv6.get_ipv6_src());
 
-		if (cgtpcore::get_gtp_core(dpid).has_term_in6(tft_match)) {
-			cterm_in6& term = cgtpcore::set_gtp_core(dpid).set_term_in6(tft_match);
+		if (cgtpcore::get_gtp_core(dptid).has_term_in6(tft_match)) {
+			cterm_in6& term = cgtpcore::set_gtp_core(dptid).set_term_in6(tft_match);
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] cterm_in6 (src->dst) found" << std::endl << term;
 
 			size_t orig_len = pkt->length();
@@ -361,7 +361,7 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
 
 			// set OFP shortcut into datapath
-			term.handle_dpt_open_ingress(rofl::crofdpt::get_dpt(dpid));
+			term.handle_dpt_open_ingress();
 
 			return;
 		}
@@ -370,8 +370,8 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		tft_match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		tft_match.set_ipv6_dst(ipv6.get_ipv6_dst());
 
-		if (cgtpcore::get_gtp_core(dpid).has_term_in6(tft_match)) {
-			cterm_in6& term = cgtpcore::set_gtp_core(dpid).set_term_in6(tft_match);
+		if (cgtpcore::get_gtp_core(dptid).has_term_in6(tft_match)) {
+			cterm_in6& term = cgtpcore::set_gtp_core(dptid).set_term_in6(tft_match);
 			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] cterm_in6 (dst only) found" << std::endl << term;
 
 			size_t orig_len = pkt->length();
@@ -398,7 +398,7 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 			set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
 
 			// set OFP shortcut into datapath
-			term.handle_dpt_open_ingress(rofl::crofdpt::get_dpt(dpid));
+			term.handle_dpt_open_ingress();
 
 			return;
 		}

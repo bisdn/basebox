@@ -52,9 +52,9 @@ public:
 	/**
 	 *
 	 */
-	cflow(const rofl::cdpid& dpid,
+	cflow(const rofl::cdptid& dptid,
 			const rofl::openflow::cofflowmod& flowmod) :
-		state(STATE_DETACHED), dpid(dpid), flowmod(flowmod)
+		state(STATE_DETACHED), dptid(dptid), flowmod(flowmod)
 	{};
 
 	/**
@@ -71,7 +71,7 @@ public:
 		if (this == &flow)
 			return *this;
 		state 		= flow.state;
-		dpid 		= flow.dpid;
+		dptid 		= flow.dptid;
 		flowmod		= flow.flowmod;
 		return *this;
 	};
@@ -82,8 +82,9 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open(rofl::crofdpt& dpt) {
+	handle_dpt_open() {
 		try {
+			rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 			flowmod.set_version(dpt.get_version_negotiated());
 			flowmod.set_command(rofl::openflow::OFPFC_ADD);
 			dpt.send_flow_mod_message(rofl::cauxid(0), flowmod);
@@ -105,8 +106,9 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_close(rofl::crofdpt& dpt) {
+	handle_dpt_close() {
 		try {
+			rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 			flowmod.set_version(dpt.get_version_negotiated());
 			flowmod.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 			dpt.send_flow_mod_message(rofl::cauxid(0), flowmod);
@@ -148,7 +150,7 @@ protected:
 	};
 	enum ofp_state_t 			state;
 
-	rofl::cdpid 				dpid;
+	rofl::cdptid 				dptid;
 	rofl::openflow::cofflowmod 	flowmod;
 };
 
