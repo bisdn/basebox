@@ -39,7 +39,7 @@ public:
 	 *
 	 */
 	crelay() :
-		state(STATE_DETACHED), ofp_table_id(0), idle_timeout(DEFAULT_IDLE_TIMEOUT) {};
+		state(STATE_DETACHED), relay_id(0), ofp_table_id(0), idle_timeout(DEFAULT_IDLE_TIMEOUT) {};
 
 	/**
 	 *
@@ -49,8 +49,8 @@ public:
 	/**
 	 *
 	 */
-	crelay(const rofl::cdptid& dptid, uint8_t ofp_table_id) :
-		state(STATE_DETACHED), dptid(dptid), ofp_table_id(ofp_table_id), idle_timeout(DEFAULT_IDLE_TIMEOUT) {};
+	crelay(unsigned int relay_id, const rofl::cdptid& dptid, uint8_t ofp_table_id) :
+		state(STATE_DETACHED), relay_id(relay_id), dptid(dptid), ofp_table_id(ofp_table_id), idle_timeout(DEFAULT_IDLE_TIMEOUT) {};
 
 	/**
 	 *
@@ -65,6 +65,7 @@ public:
 		if (this == &relay)
 			return *this;
 		state = relay.state;
+		relay_id = relay.relay_id;
 		dptid = relay.dptid;
 		ofp_table_id = relay.ofp_table_id;
 		idle_timeout = relay.idle_timeout;
@@ -87,6 +88,7 @@ protected:
 	};
 
 	enum ofp_state_t state;
+	unsigned int relay_id;
 	rofl::cdptid dptid;
 	uint8_t ofp_table_id;
 
@@ -103,7 +105,8 @@ public:
 	/**
 	 *
 	 */
-	crelay_in4() {};
+	crelay_in4()
+	{};
 
 	/**
 	 *
@@ -119,9 +122,10 @@ public:
 	/**
 	 *
 	 */
-	crelay_in4(const rofl::cdptid& dptid, uint8_t ofp_table_id,
+	crelay_in4(unsigned int relay_id, const rofl::cdptid& dptid, uint8_t ofp_table_id,
 			const clabel_in4& label_in, const clabel_in4& label_out) :
-		crelay(dptid, ofp_table_id), label_in(label_in), label_out(label_out) {};
+		crelay(relay_id, dptid, ofp_table_id), label_in(label_in), label_out(label_out)
+	{};
 
 	/**
 	 *
@@ -192,6 +196,16 @@ public:
 		return os;
 	};
 
+	class crelay_in4_find_by_in_label {
+		roflibs::gtp::clabel_in4 in_label;
+	public:
+		crelay_in4_find_by_in_label(const roflibs::gtp::clabel_in4& in_label) :
+			in_label(in_label) {};
+		bool operator() (const std::pair<unsigned int, crelay_in4*>& p) {
+			return (p.second->label_in == in_label);
+		};
+	};
+
 private:
 
 	clabel_in4 label_in;
@@ -222,9 +236,10 @@ public:
 	/**
 	 *
 	 */
-	crelay_in6(const rofl::cdptid& dptid, uint8_t ofp_table_id,
+	crelay_in6(unsigned int relay_id, const rofl::cdptid& dptid, uint8_t ofp_table_id,
 			const clabel_in6& label_in, const clabel_in6& label_out) :
-		crelay(dptid, ofp_table_id), label_in(label_in), label_out(label_out) {};
+		crelay(relay_id, dptid, ofp_table_id), label_in(label_in), label_out(label_out)
+	{};
 
 	/**
 	 *
@@ -292,6 +307,16 @@ public:
 		os << rofcore::indent(2) << "<label-out >" << std::endl;
 		{ rofcore::indent i(4); os << relay.get_label_out(); };
 		return os;
+	};
+
+	class crelay_in6_find_by_in_label {
+		roflibs::gtp::clabel_in6 in_label;
+	public:
+		crelay_in6_find_by_in_label(const roflibs::gtp::clabel_in6& in_label) :
+			in_label(in_label) {};
+		bool operator() (const std::pair<unsigned int, crelay_in6*>& p) {
+			return (p.second->label_in == in_label);
+		};
 	};
 
 private:

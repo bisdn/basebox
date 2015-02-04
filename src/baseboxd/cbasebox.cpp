@@ -44,9 +44,17 @@ cbasebox::run(int argc, char** argv)
 	/*
 	 * read configuration file for roflibs related configuration
 	 */
-	roflibs::eth::cportdb_file& portdb =
-			dynamic_cast<roflibs::eth::cportdb_file&>( roflibs::eth::cportdb::get_portdb("file") );
-	portdb.read_config(env_parser.get_arg("config-file"), std::string("baseboxd"));
+
+	// ethcore
+	roflibs::eth::cethcoredb_file& ethcoredb =
+			dynamic_cast<roflibs::eth::cethcoredb_file&>( roflibs::eth::cethcoredb::get_ethcoredb("file") );
+	ethcoredb.read_config(env_parser.get_arg("config-file"), std::string("baseboxd"));
+
+	// gtpcore
+	roflibs::gtp::cgtpcoredb_file& gtpcoredb =
+			dynamic_cast<roflibs::gtp::cgtpcoredb_file&>( roflibs::gtp::cgtpcoredb::get_gtpcoredb("file") );
+	gtpcoredb.read_config(env_parser.get_arg("config-file"), std::string("baseboxd"));
+
 
 	/*
 	 * extract debug level
@@ -674,7 +682,7 @@ cbasebox::test_workflow(rofl::crofdpt& dpt)
 		tft_match.set_ipv4_src(rofl::caddress_in4("10.2.2.20"));
 		tft_match.set_ipv4_dst(rofl::caddress_in4("192.168.4.33"));
 
-		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_term_in4(label_egress, label_ingress, tft_match);
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_term_in4(0, label_egress, label_ingress, tft_match);
 	}
 	if (gtp_test) {
 		roflibs::gtp::clabel_in4 label_in(
@@ -685,7 +693,7 @@ cbasebox::test_workflow(rofl::crofdpt& dpt)
 				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.1") , roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.2.2.20"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				roflibs::gtp::cteid(222222));
-		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(label_in, label_out);
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(0, label_in, label_out);
 	}
 	if (gtp_test) {
 		roflibs::gtp::clabel_in4 label_in(
@@ -696,7 +704,7 @@ cbasebox::test_workflow(rofl::crofdpt& dpt)
 				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.1") , roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				roflibs::gtp::caddress_gtp_in4(rofl::caddress_in4("10.1.1.10"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				roflibs::gtp::cteid(111111));
-		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(label_in, label_out);
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(1, label_in, label_out);
 
 		rofcore::logging::debug << roflibs::gtp::cgtpcore::get_gtp_core(dpt.get_dptid());
 	}

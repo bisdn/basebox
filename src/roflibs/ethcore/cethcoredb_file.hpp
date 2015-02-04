@@ -1,36 +1,36 @@
 /*
- * cportconf_file.hpp
+ * cethcoredb_file.hpp
  *
  *  Created on: 16.10.2014
  *      Author: andreas
  */
 
-#ifndef CPORTCONF_FILE_HPP_
-#define CPORTCONF_FILE_HPP_
+#ifndef CETHCOREDB_FILE_HPP_
+#define CETHCOREDB_FILE_HPP_
 
 #include <string>
 #include <ostream>
 #include <libconfig.h++>
-#include <roflibs/ethcore/cportdb.hpp>
+#include <roflibs/ethcore/cethcoredb.hpp>
 #include <roflibs/netlink/cconfig.hpp>
 
 namespace roflibs {
 namespace eth {
 
-class cportdb_file : public cportdb {
+class cethcoredb_file : public cethcoredb {
 public:
 
 	/**
 	 *
 	 */
-	cportdb_file() :
-		config_file(cportdb_file::DEFAULT_CONFIG_FILE),
-		port_vid(cportdb_file::DEFAULT_PORT_VID) {};
+	cethcoredb_file() :
+		config_file(cethcoredb_file::DEFAULT_CONFIG_FILE),
+		port_vid(cethcoredb_file::DEFAULT_PORT_VID) {};
 
 	/**
 	 *
 	 */
-	virtual ~cportdb_file() {};
+	virtual ~cethcoredb_file() {};
 
 public:
 
@@ -67,8 +67,8 @@ private:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const cportdb_file& portdb) {
-		os << dynamic_cast<const cportdb&>( portdb );
+	operator<< (std::ostream& os, const cethcoredb_file& portdb) {
+		os << dynamic_cast<const cethcoredb&>( portdb );
 		return os;
 	};
 

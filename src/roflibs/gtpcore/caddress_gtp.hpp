@@ -125,6 +125,14 @@ public:
 		return ((this->addr < addr.addr) || (caddress_gtp::operator< (addr)));
 	};
 
+	/**
+	 *
+	 */
+	bool
+	operator== (const caddress_gtp_in4& addr) const {
+		return (this->addr == addr.addr);
+	};
+
 public:
 
 	/**
@@ -192,6 +200,14 @@ public:
 	bool
 	operator< (const caddress_gtp_in6& addr) const {
 		return ((this->addr < addr.addr) || (caddress_gtp::operator< (addr)));
+	};
+
+	/**
+	 *
+	 */
+	bool
+	operator== (const caddress_gtp_in6& addr) const {
+		return (this->addr == addr.addr);
 	};
 
 public:

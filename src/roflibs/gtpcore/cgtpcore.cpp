@@ -14,6 +14,202 @@ using namespace roflibs::gtp;
 
 
 void
+cgtpcore::add_gtp_relays()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
+		cgtpcoredb& db = cgtpcoredb::get_gtpcoredb(std::string("file"));
+
+		rofl::cdpid dpid = rofl::crofdpt::get_dpt(dptid).get_dpid();
+
+		// install GTPv4 relays
+		for (std::set<unsigned int>::const_iterator
+				it = db.get_gtp_relay_ids(dpid).begin(); it != db.get_gtp_relay_ids(dpid).end(); ++it) {
+			const cgtprelayentry& entry = db.get_gtp_relay(dpid, *it);
+
+			switch (entry.get_incoming_label().get_version()) {
+			case 4: {
+				clabel_in4 inc_label(
+						caddress_gtp_in4(
+								rofl::caddress_in4(entry.get_incoming_label().get_src_addr()),
+								cport(entry.get_incoming_label().get_src_port())),
+						caddress_gtp_in4(
+								rofl::caddress_in4(entry.get_incoming_label().get_dst_addr()),
+								cport(entry.get_incoming_label().get_dst_port())),
+						cteid(entry.get_incoming_label().get_teid()));
+
+				clabel_in4 out_label(
+						caddress_gtp_in4(
+								rofl::caddress_in4(entry.get_outgoing_label().get_src_addr()),
+								cport(entry.get_outgoing_label().get_src_port())),
+						caddress_gtp_in4(
+								rofl::caddress_in4(entry.get_outgoing_label().get_dst_addr()),
+								cport(entry.get_outgoing_label().get_dst_port())),
+						cteid(entry.get_outgoing_label().get_teid()));
+
+				add_relay_in4(entry.get_relay_id(), inc_label, out_label);
+
+			} break;
+			case 6: {
+				clabel_in6 inc_label(
+						caddress_gtp_in6(
+								rofl::caddress_in6(entry.get_incoming_label().get_src_addr()),
+								cport(entry.get_incoming_label().get_src_port())),
+						caddress_gtp_in6(
+								rofl::caddress_in6(entry.get_incoming_label().get_dst_addr()),
+								cport(entry.get_incoming_label().get_dst_port())),
+						cteid(entry.get_incoming_label().get_teid()));
+
+				clabel_in6 out_label(
+						caddress_gtp_in6(
+								rofl::caddress_in6(entry.get_outgoing_label().get_src_addr()),
+								cport(entry.get_outgoing_label().get_src_port())),
+						caddress_gtp_in6(
+								rofl::caddress_in6(entry.get_outgoing_label().get_dst_addr()),
+								cport(entry.get_outgoing_label().get_dst_port())),
+						cteid(entry.get_outgoing_label().get_teid()));
+
+				add_relay_in6(entry.get_relay_id(), inc_label, out_label);
+
+			} break;
+			default: {
+				// TODO
+			};
+			}
+		}
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
+}
+
+
+void
+cgtpcore::add_gtp_terms()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
+		cgtpcoredb& db = cgtpcoredb::get_gtpcoredb(std::string("file"));
+
+		rofl::cdpid dpid = rofl::crofdpt::get_dpt(dptid).get_dpid();
+
+		// install GTPv4 terms
+		for (std::set<unsigned int>::const_iterator
+				it = db.get_gtp_term_ids(dpid).begin(); it != db.get_gtp_term_ids(dpid).end(); ++it) {
+			const cgtptermentry& entry = db.get_gtp_term(dpid, *it);
+
+			switch (entry.get_ingress_label().get_version()) {
+			case 4: {
+				clabel_in4 ingress_label(
+						caddress_gtp_in4(
+								rofl::caddress_in4(entry.get_ingress_label().get_src_addr()),
+								cport(entry.get_ingress_label().get_src_port())),
+						caddress_gtp_in4(
+								rofl::caddress_in4(entry.get_ingress_label().get_dst_addr()),
+								cport(entry.get_ingress_label().get_dst_port())),
+						cteid(entry.get_ingress_label().get_teid()));
+
+				clabel_in4 egress_label(
+						caddress_gtp_in4(
+								rofl::caddress_in4(entry.get_egress_label().get_src_addr()),
+								cport(entry.get_egress_label().get_src_port())),
+						caddress_gtp_in4(
+								rofl::caddress_in4(entry.get_egress_label().get_dst_addr()),
+								cport(entry.get_egress_label().get_dst_port())),
+						cteid(entry.get_egress_label().get_teid()));
+
+				rofl::openflow::cofmatch match;
+
+				switch (entry.get_inject_filter().get_version()) {
+				case 4: {
+					match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+					match.set_ipv4_dst(
+							rofl::caddress_in4(entry.get_inject_filter().get_dst_addr()),
+							rofl::caddress_in4(entry.get_inject_filter().get_dst_mask()));
+					match.set_ipv4_src(
+							rofl::caddress_in4(entry.get_inject_filter().get_src_addr()),
+							rofl::caddress_in4(entry.get_inject_filter().get_src_mask()));
+				} break;
+				case 6: {
+					match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+					match.set_ipv6_dst(
+							rofl::caddress_in6(entry.get_inject_filter().get_dst_addr()),
+							rofl::caddress_in6(entry.get_inject_filter().get_dst_mask()));
+					match.set_ipv6_src(
+							rofl::caddress_in6(entry.get_inject_filter().get_src_addr()),
+							rofl::caddress_in6(entry.get_inject_filter().get_src_mask()));
+				} break;
+				default: {
+					// TODO
+				};
+				}
+
+				add_term_in4(entry.get_term_id(), ingress_label, egress_label, match);
+
+			} break;
+			case 6: {
+				clabel_in6 ingress_label(
+						caddress_gtp_in6(
+								rofl::caddress_in6(entry.get_ingress_label().get_src_addr()),
+								cport(entry.get_ingress_label().get_src_port())),
+						caddress_gtp_in6(
+								rofl::caddress_in6(entry.get_ingress_label().get_dst_addr()),
+								cport(entry.get_ingress_label().get_dst_port())),
+						cteid(entry.get_ingress_label().get_teid()));
+
+				clabel_in6 egress_label(
+						caddress_gtp_in6(
+								rofl::caddress_in6(entry.get_egress_label().get_src_addr()),
+								cport(entry.get_egress_label().get_src_port())),
+						caddress_gtp_in6(
+								rofl::caddress_in6(entry.get_egress_label().get_dst_addr()),
+								cport(entry.get_egress_label().get_dst_port())),
+						cteid(entry.get_egress_label().get_teid()));
+
+				rofl::openflow::cofmatch match;
+
+				switch (entry.get_inject_filter().get_version()) {
+				case 4: {
+					match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+					match.set_ipv4_dst(
+							rofl::caddress_in4(entry.get_inject_filter().get_dst_addr()),
+							rofl::caddress_in4(entry.get_inject_filter().get_dst_mask()));
+					match.set_ipv4_src(
+							rofl::caddress_in4(entry.get_inject_filter().get_src_addr()),
+							rofl::caddress_in4(entry.get_inject_filter().get_src_mask()));
+				} break;
+				case 6: {
+					match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+					match.set_ipv6_dst(
+							rofl::caddress_in6(entry.get_inject_filter().get_dst_addr()),
+							rofl::caddress_in6(entry.get_inject_filter().get_dst_mask()));
+					match.set_ipv6_src(
+							rofl::caddress_in6(entry.get_inject_filter().get_src_addr()),
+							rofl::caddress_in6(entry.get_inject_filter().get_src_mask()));
+				} break;
+				default: {
+					// TODO
+				};
+				}
+
+				add_term_in6(entry.get_term_id(), ingress_label, egress_label, match);
+
+			} break;
+			default: {
+				// TODO
+			};
+			}
+		}
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
+}
+
+
+void
 cgtpcore::handle_dpt_open()
 {
 	try {

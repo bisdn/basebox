@@ -62,6 +62,14 @@ public:
 		return (teid < label.teid);
 	};
 
+	/**
+	 *
+	 */
+	bool
+	operator== (const clabel& label) const {
+		return (teid == label.teid);
+	};
+
 public:
 
 	/**
@@ -122,6 +130,14 @@ public:
 		saddr = label.saddr;
 		daddr = label.daddr;
 		return *this;
+	};
+
+	/**
+	 *
+	 */
+	bool
+	operator== (const clabel_in4& label) const {
+		return (clabel::operator== (label) && (saddr == label.saddr) && (daddr == label.daddr));
 	};
 
 	/**
@@ -211,6 +227,14 @@ public:
 	bool
 	operator< (const clabel_in6& label) const {
 		return (clabel::operator< (label) && (saddr < label.saddr) && (daddr < label.daddr));
+	};
+
+	/**
+	 *
+	 */
+	bool
+	operator== (const clabel_in6& label) const {
+		return (clabel::operator== (label) && (saddr == label.saddr) && (daddr == label.daddr));
 	};
 
 public:

@@ -61,6 +61,14 @@ public:
 		return (this->teid < teid.teid);
 	};
 
+	/**
+	 *
+	 */
+	bool
+	operator== (const cteid& teid) const {
+		return (this->teid == teid.teid);
+	};
+
 public:
 
 	/**

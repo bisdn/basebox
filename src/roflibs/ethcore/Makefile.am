@@ -16,10 +16,10 @@ libroflibs_ethcore_la_SOURCES = \
 	cvlan.hpp \
 	cethcore.cpp \
 	cethcore.hpp \
-	cportdb.hpp \
-	cportdb.cpp \
-	cportdb_file.hpp \
-	cportdb_file.cpp 
+	cethcoredb.hpp \
+	cethcoredb.cpp \
+	cethcoredb_file.hpp \
+	cethcoredb_file.cpp 
 
 libroflibs_ethcore_la_LIBADD=-Lrstp -lroflibs_rstp
 
@@ -30,8 +30,8 @@ library_include_HEADERS= \
 	cethendpnt.hpp \
 	cvlan.hpp \
 	cethcore.hpp \
-	cportdb.hpp \
-	cportdb_file.hpp
+	cethcoredb.hpp \
+	cethcoredb_file.hpp
 
 AM_CPPFLAGS=-fPIC
 AM_CXXFLAGS=-I$(top_srcdir)/src

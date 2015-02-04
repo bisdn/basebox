@@ -244,8 +244,18 @@ public:
 	public:
 		cterm_in4_find_by_tft_match(const rofl::openflow::cofmatch& tft_match) :
 			tft_match(tft_match) {};
-		bool operator() (const std::pair<clabel_in4, cterm_in4*>& p) {
+		bool operator() (const std::pair<unsigned int, cterm_in4*>& p) {
 			return (p.second->tft_match == tft_match);
+		};
+	};
+
+	class cterm_in4_find_by_label_in {
+		roflibs::gtp::clabel_in4 label_in;
+	public:
+		cterm_in4_find_by_label_in(const roflibs::gtp::clabel_in4& label_in) :
+			label_in(label_in) {};
+		bool operator() (const std::pair<unsigned int, cterm_in4*>& p) {
+			return (p.second->label_ingress == label_in);
 		};
 	};
 
@@ -389,8 +399,18 @@ public:
 	public:
 		cterm_in6_find_by_tft_match(const rofl::openflow::cofmatch& tft_match) :
 			tft_match(tft_match) {};
-		bool operator() (const std::pair<clabel_in6, cterm_in6*>& p) {
+		bool operator() (const std::pair<unsigned int, cterm_in6*>& p) {
 			return (p.second->tft_match == tft_match);
+		};
+	};
+
+	class cterm_in6_find_by_label_in {
+		roflibs::gtp::clabel_in6 label_in;
+	public:
+		cterm_in6_find_by_label_in(const roflibs::gtp::clabel_in6& label_in) :
+			label_in(label_in) {};
+		bool operator() (const std::pair<unsigned int, cterm_in6*>& p) {
+			return (p.second->label_ingress == label_in);
 		};
 	};
 

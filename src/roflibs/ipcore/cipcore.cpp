@@ -158,7 +158,7 @@ cipcore::link_created(unsigned int ifindex)
 		const rofl::cdpid& dpid = rofl::crofdpt::get_dpt(dptid).get_dpid();
 
 		const std::string dbname("file");
-		roflibs::eth::cportdb& portdb = roflibs::eth::cportdb::get_portdb(dbname);
+		roflibs::eth::cethcoredb& portdb = roflibs::eth::cethcoredb::get_ethcoredb(dbname);
 
 		if (not portdb.has_eth_entry(dpid, devname)) {
 			return;

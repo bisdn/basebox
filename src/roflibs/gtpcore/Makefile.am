@@ -19,7 +19,11 @@ libroflibs_gtpcore_la_SOURCES = \
 	clabel.hpp \
 	caddress_gtp.hpp \
 	ctermdev.hpp \
-	ctermdev.cpp
+	ctermdev.cpp \
+	cgtpcoredb.hpp \
+	cgtpcoredb.cpp \
+	cgtpcoredb_file.hpp \
+	cgtpcoredb_file.cpp
 
 libroflibs_gtpcore_la_LIBADD= -lrt 
 
@@ -33,7 +37,9 @@ library_include_HEADERS= \
 	cteid.hpp \
 	clabel.hpp \
 	caddress_gtp.hpp \
-	ctermdev.hpp
+	ctermdev.hpp \
+	cgtpcoredb.hpp \
+	cgtpcoredb_file.hpp
 
 AM_CPPFLAGS=-fPIC
 AM_CXXFLAGS=-I$(top_srcdir)/src

@@ -52,27 +52,10 @@ cethcore::~cethcore() {
 void
 cethcore::add_eth_endpnts()
 {
-#if 0
-	/*
-	 * create virtual ports for predefined ethernet endpoints
-	 */
-	roflibs::eth::cportdb& portdb = roflibs::eth::cportdb::get_portdb("file");
-
-	// install ethernet endpoints
-	for (std::set<std::string>::const_iterator
-			it = portdb.get_eth_entries(dpt.get_dpid()).begin(); it != portdb.get_eth_entries(dpt.get_dpid()).end(); ++it) {
-		const roflibs::eth::cethentry& eth = portdb.get_eth_entry(dpt.get_dpid(), *it);
-
-		if (not has_tap_dev(dpt.get_dpid(), eth.get_devname())) {
-			add_tap_dev(dpt.get_dpid(), eth.get_devname(), eth.get_port_vid(), eth.get_hwaddr());
-		}
-	}
-#endif
-
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-		cportdb& portdb = cportdb::get_portdb(std::string("file"));
+		cethcoredb& portdb = cethcoredb::get_ethcoredb(std::string("file"));
 
 		default_pvid = portdb.get_default_pvid(rofl::crofdpt::get_dpt(dptid).get_dpid());
 		add_vlan(default_pvid);
@@ -103,7 +86,7 @@ cethcore::add_phy_ports()
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-		cportdb& portdb = cportdb::get_portdb(std::string("file"));
+		cethcoredb& portdb = cethcoredb::get_ethcoredb(std::string("file"));
 
 		// install physical ports
 		for (std::map<uint32_t, rofl::openflow::cofport*>::const_iterator
@@ -138,7 +121,7 @@ cethcore::clear_phy_ports()
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-		cportdb& portdb = cportdb::get_portdb(std::string("file"));
+		cethcoredb& portdb = cethcoredb::get_ethcoredb(std::string("file"));
 
 		// install physical ports
 		for (std::map<uint16_t, cvlan>::iterator
@@ -373,7 +356,7 @@ cethcore::handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rof
 void
 cethcore::handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg)
 {
-	cportdb& portdb = cportdb::get_portdb(std::string("file"));
+	cethcoredb& portdb = cethcoredb::get_ethcoredb(std::string("file"));
 
 	switch (msg.get_reason()) {
 	case rofl::openflow::OFPPR_ADD:

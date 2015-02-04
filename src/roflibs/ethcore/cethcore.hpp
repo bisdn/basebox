@@ -21,7 +21,7 @@
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/clogging.hpp"
 #include "roflibs/ethcore/cvlan.hpp"
-#include "roflibs/ethcore/cportdb.hpp"
+#include "roflibs/ethcore/cethcoredb.hpp"
 #include "roflibs/netlink/ctundev.hpp"
 #include "roflibs/netlink/ctapdev.hpp"
 #include "roflibs/netlink/ccookiebox.hpp"

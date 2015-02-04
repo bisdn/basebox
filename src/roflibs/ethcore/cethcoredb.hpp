@@ -1,12 +1,12 @@
 /*
- * cportconf.hpp
+ * cethcoredb.hpp
  *
  *  Created on: 16.10.2014
  *      Author: andreas
  */
 
-#ifndef CPORTCONF_HPP_
-#define CPORTCONF_HPP_
+#ifndef CETHCOREDB_HPP_
+#define CETHCOREDB_HPP_
 
 #include <inttypes.h>
 #include <exception>
@@ -248,20 +248,20 @@ private:
 	uint16_t			port_vid;
 };
 
-class cportdb {
+class cethcoredb {
 public:
 
 	/**
 	 *
 	 */
-	static cportdb&
-	get_portdb(const std::string& name);
+	static cethcoredb&
+	get_ethcoredb(const std::string& name);
 
 	/**
 	 *
 	 */
 	virtual
-	~cportdb() {};
+	~cethcoredb() {};
 
 public:
 
@@ -279,7 +279,7 @@ public:
 	uint16_t
 	get_default_pvid(const rofl::cdpid& dpid) {
 		if (portvids.find(dpid) == portvids.end()) {
-			portvids[dpid] = cportdb::DEFAULT_PVID;
+			portvids[dpid] = cethcoredb::DEFAULT_PVID;
 		}
 		return portvids[dpid];
 	};
@@ -355,7 +355,7 @@ public:
 	get_port_entry(const rofl::cdpid& dpid, uint32_t portno) const {
 		if ((portentries.find(dpid) == portentries.end()) ||
 				(portentries.at(dpid).find(portno) == portentries.at(dpid).end())) {
-			throw ePortDBNotFound("cportdb::get_port_entry() portno not found");
+			throw ePortDBNotFound("cethcoredb::get_port_entry() portno not found");
 		}
 		return portentries.at(dpid).at(portno);
 	};
@@ -474,8 +474,8 @@ public:
 public:
 
 	friend std::ostream&
-	operator<< (std::ostream& os, const cportdb& portdb) {
-		os << rofcore::indent(0) << "<cportdb >" << std::endl;
+	operator<< (std::ostream& os, const cethcoredb& portdb) {
+		os << rofcore::indent(0) << "<cethcoredb >" << std::endl;
 		rofcore::indent i(2);
 		for (std::map<rofl::cdpid, std::map<uint32_t, cportentry> >::const_iterator
 				it = portdb.portentries.begin(); it != portdb.portentries.end(); ++it) {
@@ -506,7 +506,7 @@ private:
 	mutable std::map<rofl::cdpid, std::set<uint32_t> >			portnames;
 	std::map<rofl::cdpid, std::map<std::string, cethentry> >	ethentries;
 	mutable std::map<rofl::cdpid, std::set<std::string> >		ethnames;
-	static std::map<std::string, cportdb*> 						portdbs;
+	static std::map<std::string, cethcoredb*> 						portdbs;
 };
 
 }; // end of namespace ethernet

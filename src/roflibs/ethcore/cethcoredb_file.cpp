@@ -5,19 +5,19 @@
  *      Author: andreas
  */
 
-#include "cportdb_file.hpp"
+#include "cethcoredb_file.hpp"
 
 using namespace roflibs::eth;
 
-/*static*/const  std::string cportdb_file::DEFAULT_CONFIG_FILE = std::string("/usr/local/etc/roflibs.conf");
-/*static*/const 	uint16_t cportdb_file::DEFAULT_PORT_VID = 1;
-/*static*/const  std::string cportdb_file::ETHCORE_CONFIG_DPT_LIST("roflibs.ethcore.datapaths");
+/*static*/const  std::string cethcoredb_file::DEFAULT_CONFIG_FILE = std::string("/usr/local/etc/roflibs.conf");
+/*static*/const 	uint16_t cethcoredb_file::DEFAULT_PORT_VID = 1;
+/*static*/const  std::string cethcoredb_file::ETHCORE_CONFIG_DPT_LIST("roflibs.ethcore.datapaths");
 
 void
-cportdb_file::read_config(const std::string& config_file, const std::string& prefix)
+cethcoredb_file::read_config(const std::string& config_file, const std::string& prefix)
 {
 	if (config_file.empty()) {
-		this->config_file = cportdb_file::DEFAULT_CONFIG_FILE;
+		this->config_file = cethcoredb_file::DEFAULT_CONFIG_FILE;
 	} else {
 		this->config_file = config_file;
 	}
@@ -29,7 +29,7 @@ cportdb_file::read_config(const std::string& config_file, const std::string& pre
 	ethcore::cconfig& config = ethcore::cconfig::get_instance();
 	config.open(this->config_file);
 
-	std::string path = prefix + std::string(".") + cportdb_file::ETHCORE_CONFIG_DPT_LIST;
+	std::string path = prefix + std::string(".") + cethcoredb_file::ETHCORE_CONFIG_DPT_LIST;
 	if (config.exists(path)) {
 		for (int i = 0; i < config.lookup(path).getLength(); i++) {
 			try {
@@ -38,12 +38,12 @@ cportdb_file::read_config(const std::string& config_file, const std::string& pre
 		}
 	}
 
-	rofcore::logging::debug << "[cportdb][file] config:" << std::endl << *this;
+	rofcore::logging::debug << "[cethcoredb][file] config:" << std::endl << *this;
 }
 
 
 void
-cportdb_file::parse_datapath(ethcore::cconfig& config, libconfig::Setting& datapath)
+cethcoredb_file::parse_datapath(ethcore::cconfig& config, libconfig::Setting& datapath)
 {
 	// get data path dpid
 	if (not datapath.exists("dpid")) {
@@ -79,7 +79,7 @@ cportdb_file::parse_datapath(ethcore::cconfig& config, libconfig::Setting& datap
 
 
 void
-cportdb_file::parse_datapath_phy_port(
+cethcoredb_file::parse_datapath_phy_port(
 		ethcore::cconfig& config, libconfig::Setting& port,
 		const rofl::cdpid& dpid, uint16_t default_pvid)
 {
@@ -109,14 +109,14 @@ cportdb_file::parse_datapath_phy_port(
 
 
 void
-cportdb_file::parse_datapath_eth_endpnt(
+cethcoredb_file::parse_datapath_eth_endpnt(
 		ethcore::cconfig& config, libconfig::Setting& endpnt,
 		const rofl::cdpid& dpid, uint16_t default_pvid)
 {
 	// devname
 	std::string devname;
 	if (not endpnt.exists("devname")) {
-		rofcore::logging::error << "[cportdb][file] no devname found for ethernet entry" << std::endl;
+		rofcore::logging::error << "[cethcoredb][file] no devname found for ethernet entry" << std::endl;
 		return;
 	} else {
 		devname = (const char*)endpnt["devname"];
@@ -131,7 +131,7 @@ cportdb_file::parse_datapath_eth_endpnt(
 	// hwaddr
 	rofl::caddress_ll hwaddr;
 	if (not endpnt.exists("hwaddr")) {
-		rofcore::logging::error << "[cportdb][file] no hwaddr found for ethernet entry" << std::endl;
+		rofcore::logging::error << "[cethcoredb][file] no hwaddr found for ethernet entry" << std::endl;
 		return;
 	} else {
 		hwaddr = rofl::caddress_ll((const char*)endpnt["hwaddr"]);

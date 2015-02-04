@@ -29,7 +29,8 @@
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/ctundev.hpp"
 #include "roflibs/python/cpython.hpp"
-#include "roflibs/ethcore/cportdb_file.hpp"
+#include "roflibs/ethcore/cethcoredb_file.hpp"
+#include "roflibs/gtpcore/cgtpcoredb_file.hpp"
 #include "roflibs/netlink/ccookiebox.hpp"
 
 #include "cconfig.hpp"

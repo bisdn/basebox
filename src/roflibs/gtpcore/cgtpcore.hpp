@@ -26,6 +26,7 @@
 #include "roflibs/gtpcore/crelay.hpp"
 #include "roflibs/gtpcore/cterm.hpp"
 #include "roflibs/netlink/ccookiebox.hpp"
+#include "roflibs/gtpcore/cgtpcoredb.hpp"
 
 namespace roflibs {
 namespace gtp {
@@ -118,7 +119,10 @@ private:
 		state(STATE_DETACHED), dptid(dptid),
 		cookie_miss_entry_ipv4(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
 		cookie_miss_entry_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-		ip_local_table_id(ip_local_table_id), gtp_table_id(gtp_table_id) {};
+		ip_local_table_id(ip_local_table_id), gtp_table_id(gtp_table_id) {
+		add_gtp_relays();
+		add_gtp_terms();
+	};
 
 	/**
 	 *
@@ -147,7 +151,7 @@ public:
 	 */
 	void
 	clear_relays_in4() {
-		for (std::map<clabel_in4, crelay_in4*>::iterator
+		for (std::map<unsigned int, crelay_in4*>::iterator
 				it = relays_in4.begin(); it != relays_in4.end(); ++it) {
 			delete it->second;
 		}
@@ -158,91 +162,126 @@ public:
 	 *
 	 */
 	crelay_in4&
-	add_relay_in4(const clabel_in4& label_in, const clabel_in4& label_out) {
-		if (relays_in4.find(label_in) != relays_in4.end()) {
-			delete relays_in4[label_in];
-			relays_in4.erase(label_in);
+	add_relay_in4(unsigned int relay_id, const clabel_in4& label_in, const clabel_in4& label_out) {
+		if (relays_in4.find(relay_id) != relays_in4.end()) {
+			delete relays_in4[relay_id];
+			relays_in4.erase(relay_id);
 		}
-		relays_in4[label_in] = new crelay_in4(dptid, gtp_table_id, label_in, label_out);
+		relays_in4[relay_id] = new crelay_in4(relay_id, dptid, gtp_table_id, label_in, label_out);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				relays_in4[label_in]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				relays_in4[relay_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(relays_in4[label_in]);
+		return *(relays_in4[relay_id]);
 	};
 
 	/**
 	 *
 	 */
 	crelay_in4&
-	set_relay_in4(const clabel_in4& label_in, const clabel_in4& label_out) {
-		if (relays_in4.find(label_in) == relays_in4.end()) {
-			relays_in4[label_in] = new crelay_in4(dptid, gtp_table_id, label_in, label_out);
+	set_relay_in4(unsigned int relay_id, const clabel_in4& label_in, const clabel_in4& label_out) {
+		if (relays_in4.find(relay_id) == relays_in4.end()) {
+			relays_in4[relay_id] = new crelay_in4(relay_id, dptid, gtp_table_id, label_in, label_out);
 		}
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				relays_in4[label_in]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				relays_in4[relay_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(relays_in4[label_in]);
+		return *(relays_in4[relay_id]);
 	};
 
 	/**
 	 *
 	 */
 	crelay_in4&
-	set_relay_in4(const clabel_in4& label_in) {
-		if (relays_in4.find(label_in) == relays_in4.end()) {
+	set_relay_in4(unsigned int relay_id) {
+		if (relays_in4.find(relay_id) == relays_in4.end()) {
 			throw eRelayNotFound("cgtpcore::get_relay_in4() label not found");
 		}
-		return *(relays_in4[label_in]);
+		return *(relays_in4[relay_id]);
+	};
+
+	/**
+	 *
+	 */
+	crelay_in4&
+	set_relay_in4(const roflibs::gtp::clabel_in4& label_in) {
+		std::map<unsigned int, crelay_in4*>::iterator it;
+		if ((it = find_if(relays_in4.begin(), relays_in4.end(),
+				crelay_in4::crelay_in4_find_by_in_label(label_in))) == relays_in4.end()) {
+			throw eRelayNotFound("cgtpcore::set_relay_in4() incoming GTP label not found");
+		}
+		return *(it->second);
 	};
 
 	/**
 	 *
 	 */
 	const crelay_in4&
-	get_relay_in4(const clabel_in4& label_in) const {
-		if (relays_in4.find(label_in) == relays_in4.end()) {
+	get_relay_in4(unsigned int relay_id) const {
+		if (relays_in4.find(relay_id) == relays_in4.end()) {
 			throw eRelayNotFound("cgtpcore::get_relay_in4() label not found");
 		}
-		return *(relays_in4.at(label_in));
+		return *(relays_in4.at(relay_id));
+	};
+
+	/**
+	 *
+	 */
+	const crelay_in4&
+	get_relay_in4(const roflibs::gtp::clabel_in4& label_in) const {
+		std::map<unsigned int, crelay_in4*>::const_iterator it;
+		if ((it = find_if(relays_in4.begin(), relays_in4.end(),
+				crelay_in4::crelay_in4_find_by_in_label(label_in))) == relays_in4.end()) {
+			throw eRelayNotFound("cgtpcore::get_relay_in4() incoming GTP label not found");
+		}
+		return *(it->second);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_relay_in4(const clabel_in4& label_in) {
-		if (relays_in4.find(label_in) == relays_in4.end()) {
+	drop_relay_in4(unsigned int relay_id) {
+		if (relays_in4.find(relay_id) == relays_in4.end()) {
 			return;
 		}
-		delete relays_in4[label_in];
-		relays_in4.erase(label_in);
+		delete relays_in4[relay_id];
+		relays_in4.erase(relay_id);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_relay_in4(const clabel_in4& label_in) const {
-		return (not (relays_in4.find(label_in) == relays_in4.end()));
+	has_relay_in4(unsigned int relay_id) const {
+		return (not (relays_in4.find(relay_id) == relays_in4.end()));
 	};
 
+	/**
+	 *
+	 */
+	bool
+	has_relay_in4(const roflibs::gtp::clabel_in4& label_in) const {
+		std::map<unsigned int, crelay_in4*>::const_iterator it;
+		 return (not (find_if(relays_in4.begin(), relays_in4.end(),
+				crelay_in4::crelay_in4_find_by_in_label(label_in)) == relays_in4.end()));
+	};
 
-
+public:
 
 	/**
 	 *
 	 */
 	void
 	clear_relays_in6() {
-		for (std::map<clabel_in6, crelay_in6*>::iterator
+		for (std::map<unsigned int, crelay_in6*>::iterator
 				it = relays_in6.begin(); it != relays_in6.end(); ++it) {
 			delete it->second;
 		}
@@ -253,91 +292,126 @@ public:
 	 *
 	 */
 	crelay_in6&
-	add_relay_in6(const clabel_in6& label_in, const clabel_in6& label_out) {
-		if (relays_in6.find(label_in) != relays_in6.end()) {
-			delete relays_in6[label_in];
-			relays_in6.erase(label_in);
+	add_relay_in6(unsigned int relay_id, const clabel_in6& label_in, const clabel_in6& label_out) {
+		if (relays_in6.find(relay_id) != relays_in6.end()) {
+			delete relays_in6[relay_id];
+			relays_in6.erase(relay_id);
 		}
-		relays_in6[label_in] = new crelay_in6(dptid, gtp_table_id, label_in, label_out);
+		relays_in6[relay_id] = new crelay_in6(relay_id, dptid, gtp_table_id, label_in, label_out);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				relays_in6[label_in]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				relays_in6[relay_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(relays_in6[label_in]);
+		return *(relays_in6[relay_id]);
 	};
 
 	/**
 	 *
 	 */
 	crelay_in6&
-	set_relay_in6(const clabel_in6& label_in, const clabel_in6& label_out) {
-		if (relays_in6.find(label_in) == relays_in6.end()) {
-			relays_in6[label_in] = new crelay_in6(dptid, gtp_table_id, label_in, label_out);
+	set_relay_in6(unsigned int relay_id, const clabel_in6& label_in, const clabel_in6& label_out) {
+		if (relays_in6.find(relay_id) == relays_in6.end()) {
+			relays_in6[relay_id] = new crelay_in6(relay_id, dptid, gtp_table_id, label_in, label_out);
 		}
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				relays_in6[label_in]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				relays_in6[relay_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(relays_in6[label_in]);
+		return *(relays_in6[relay_id]);
 	};
 
 	/**
 	 *
 	 */
 	crelay_in6&
-	set_relay_in6(const clabel_in6& label_in) {
-		if (relays_in6.find(label_in) == relays_in6.end()) {
+	set_relay_in6(unsigned int relay_id) {
+		if (relays_in6.find(relay_id) == relays_in6.end()) {
 			throw eRelayNotFound("cgtpcore::get_relay_in6() label not found");
 		}
-		return *(relays_in6[label_in]);
+		return *(relays_in6[relay_id]);
+	};
+
+	/**
+	 *
+	 */
+	crelay_in6&
+	set_relay_in6(const roflibs::gtp::clabel_in6& label_in) {
+		std::map<unsigned int, crelay_in6*>::iterator it;
+		if ((it = find_if(relays_in6.begin(), relays_in6.end(),
+				crelay_in6::crelay_in6_find_by_in_label(label_in))) == relays_in6.end()) {
+			throw eRelayNotFound("cgtpcore::set_relay_in6() incoming GTP label not found");
+		}
+		return *(it->second);
 	};
 
 	/**
 	 *
 	 */
 	const crelay_in6&
-	get_relay_in6(const clabel_in6& label_in) const {
-		if (relays_in6.find(label_in) == relays_in6.end()) {
+	get_relay_in6(unsigned int relay_id) const {
+		if (relays_in6.find(relay_id) == relays_in6.end()) {
 			throw eRelayNotFound("cgtpcore::get_relay_in6() label not found");
 		}
-		return *(relays_in6.at(label_in));
+		return *(relays_in6.at(relay_id));
+	};
+
+	/**
+	 *
+	 */
+	const crelay_in6&
+	get_relay_in6(const roflibs::gtp::clabel_in6& label_in) const {
+		std::map<unsigned int, crelay_in6*>::const_iterator it;
+		if ((it = find_if(relays_in6.begin(), relays_in6.end(),
+				crelay_in6::crelay_in6_find_by_in_label(label_in))) == relays_in6.end()) {
+			throw eRelayNotFound("cgtpcore::get_relay_in6() incoming GTP label not found");
+		}
+		return *(it->second);
 	};
 
 	/**
 	 *
 	 */
 	void
-	drop_relay_in6(const clabel_in6& label_in) {
-		if (relays_in6.find(label_in) == relays_in6.end()) {
+	drop_relay_in6(unsigned int relay_id) {
+		if (relays_in6.find(relay_id) == relays_in6.end()) {
 			return;
 		}
-		delete relays_in6[label_in];
-		relays_in6.erase(label_in);
+		delete relays_in6[relay_id];
+		relays_in6.erase(relay_id);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_relay_in6(const clabel_in6& label_in) const {
-		return (not (relays_in6.find(label_in) == relays_in6.end()));
+	has_relay_in6(unsigned int relay_id) const {
+		return (not (relays_in6.find(relay_id) == relays_in6.end()));
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_relay_in6(const roflibs::gtp::clabel_in6& label_in) const {
+		std::map<unsigned int, crelay_in6*>::const_iterator it;
+		 return (not (find_if(relays_in6.begin(), relays_in6.end(),
+				crelay_in6::crelay_in6_find_by_in_label(label_in)) == relays_in6.end()));
 	};
 
 public:
-
 
 	/**
 	 *
 	 */
 	void
 	clear_terms_in4() {
-		for (std::map<clabel_in4, cterm_in4*>::iterator
+		for (std::map<unsigned int, cterm_in4*>::iterator
 				it = terms_in4.begin(); it != terms_in4.end(); ++it) {
 			delete it->second;
 		}
@@ -348,49 +422,49 @@ public:
 	 *
 	 */
 	cterm_in4&
-	add_term_in4(const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) {
-		if (terms_in4.find(label_egress) != terms_in4.end()) {
-			delete terms_in4[label_egress];
-			terms_in4.erase(label_egress);
+	add_term_in4(unsigned int term_id, const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in4.find(term_id) != terms_in4.end()) {
+			delete terms_in4[term_id];
+			terms_in4.erase(term_id);
 		}
-		terms_in4[label_egress] = new cterm_in4(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
+		terms_in4[term_id] = new cterm_in4(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in4[label_ingress]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in4[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(terms_in4[label_egress]);
+		return *(terms_in4[term_id]);
 	};
 
 	/**
 	 *
 	 */
 	cterm_in4&
-	set_term_in4(const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) {
-		if (terms_in4.find(label_egress) == terms_in4.end()) {
-			terms_in4[label_egress] = new cterm_in4(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
+	set_term_in4(unsigned int term_id, const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in4.find(term_id) == terms_in4.end()) {
+			terms_in4[term_id] = new cterm_in4(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
 		}
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in4[label_egress]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in4[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(terms_in4[label_egress]);
+		return *(terms_in4[term_id]);
 	};
 
 	/**
 	 *
 	 */
 	cterm_in4&
-	set_term_in4(const clabel_in4& label_egress) {
-		if (terms_in4.find(label_egress) == terms_in4.end()) {
+	set_term_in4(unsigned int term_id) {
+		if (terms_in4.find(term_id) == terms_in4.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in4() label not found");
 		}
-		return *(terms_in4[label_egress]);
+		return *(terms_in4[term_id]);
 	};
 
 	/**
@@ -398,7 +472,7 @@ public:
 	 */
 	cterm_in4&
 	set_term_in4(const rofl::openflow::cofmatch& tft_match) {
-		std::map<clabel_in4, cterm_in4*>::iterator it;
+		std::map<unsigned int, cterm_in4*>::iterator it;
 		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_tft_match(tft_match))) == terms_in4.end()) {
 			throw eRelayNotFound("cgtpcore::set_term_in4() match not found");
@@ -409,12 +483,25 @@ public:
 	/**
 	 *
 	 */
+	cterm_in4&
+	set_term_in4(const roflibs::gtp::clabel_in4& label_in) {
+		std::map<unsigned int, cterm_in4*>::iterator it;
+		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
+				cterm_in4::cterm_in4_find_by_label_in(label_in))) == terms_in4.end()) {
+			throw eRelayNotFound("cgtpcore::set_term_in4() incoming GTP label not found");
+		}
+		return *(it->second);
+	};
+
+	/**
+	 *
+	 */
 	const cterm_in4&
-	get_term_in4(const clabel_in4& label_egress) const {
-		if (terms_in4.find(label_egress) == terms_in4.end()) {
+	get_term_in4(unsigned int term_id) const {
+		if (terms_in4.find(term_id) == terms_in4.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in4() label not found");
 		}
-		return *(terms_in4.at(label_egress));
+		return *(terms_in4.at(term_id));
 	};
 
 	/**
@@ -422,7 +509,7 @@ public:
 	 */
 	const cterm_in4&
 	get_term_in4(const rofl::openflow::cofmatch& tft_match) const {
-		std::map<clabel_in4, cterm_in4*>::const_iterator it;
+		std::map<unsigned int, cterm_in4*>::const_iterator it;
 		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_tft_match(tft_match))) == terms_in4.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in4() match not found");
@@ -433,21 +520,34 @@ public:
 	/**
 	 *
 	 */
+	const cterm_in4&
+	get_term_in4(const roflibs::gtp::clabel_in4& label_in) const {
+		std::map<unsigned int, cterm_in4*>::const_iterator it;
+		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
+				cterm_in4::cterm_in4_find_by_label_in(label_in))) == terms_in4.end()) {
+			throw eRelayNotFound("cgtpcore::get_term_in4() incoming GTP label not found");
+		}
+		return *(it->second);
+	};
+
+	/**
+	 *
+	 */
 	void
-	drop_term_in4(const clabel_in4& label_egress) {
-		if (terms_in4.find(label_egress) == terms_in4.end()) {
+	drop_term_in4(unsigned int term_id) {
+		if (terms_in4.find(term_id) == terms_in4.end()) {
 			return;
 		}
-		delete terms_in4[label_egress];
-		terms_in4.erase(label_egress);
+		delete terms_in4[term_id];
+		terms_in4.erase(term_id);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_term_in4(const clabel_in4& label_egress) const {
-		return (not (terms_in4.find(label_egress) == terms_in4.end()));
+	has_term_in4(unsigned int term_id) const {
+		return (not (terms_in4.find(term_id) == terms_in4.end()));
 	};
 
 	/**
@@ -455,9 +555,19 @@ public:
 	 */
 	bool
 	has_term_in4(const rofl::openflow::cofmatch& tft_match) const {
-		std::map<clabel_in4, cterm_in4*>::const_iterator it;
+		std::map<unsigned int, cterm_in4*>::const_iterator it;
 		 return (not (find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_tft_match(tft_match)) == terms_in4.end()));
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_term_in4(const roflibs::gtp::clabel_in4& label_in) const {
+		std::map<unsigned int, cterm_in4*>::const_iterator it;
+		 return (not (find_if(terms_in4.begin(), terms_in4.end(),
+				cterm_in4::cterm_in4_find_by_label_in(label_in)) == terms_in4.end()));
 	};
 
 public:
@@ -467,7 +577,7 @@ public:
 	 */
 	void
 	clear_terms_in6() {
-		for (std::map<clabel_in6, cterm_in6*>::iterator
+		for (std::map<unsigned int, cterm_in6*>::iterator
 				it = terms_in6.begin(); it != terms_in6.end(); ++it) {
 			delete it->second;
 		}
@@ -478,49 +588,49 @@ public:
 	 *
 	 */
 	cterm_in6&
-	add_term_in6(const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) {
-		if (terms_in6.find(label_egress) != terms_in6.end()) {
-			delete terms_in6[label_egress];
-			terms_in6.erase(label_egress);
+	add_term_in6(unsigned int term_id, const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in6.find(term_id) != terms_in6.end()) {
+			delete terms_in6[term_id];
+			terms_in6.erase(term_id);
 		}
-		terms_in6[label_egress] = new cterm_in6(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
+		terms_in6[term_id] = new cterm_in6(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in6[label_ingress]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in6[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(terms_in6[label_egress]);
+		return *(terms_in6[term_id]);
 	};
 
 	/**
 	 *
 	 */
 	cterm_in6&
-	set_term_in6(const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) {
-		if (terms_in6.find(label_egress) == terms_in6.end()) {
-			terms_in6[label_egress] = new cterm_in6(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
+	set_term_in6(unsigned int term_id, const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+		if (terms_in6.find(term_id) == terms_in6.end()) {
+			terms_in6[term_id] = new cterm_in6(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
 		}
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
-				terms_in6[label_egress]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
+				terms_in6[term_id]->handle_dpt_open(rofl::crofdpt::get_dpt(dpid));
 			}
 		} catch (rofl::eRofDptNotFound& e) {};
 #endif
-		return *(terms_in6[label_egress]);
+		return *(terms_in6[term_id]);
 	};
 
 	/**
 	 *
 	 */
 	cterm_in6&
-	set_term_in6(const clabel_in6& label_egress) {
-		if (terms_in6.find(label_egress) == terms_in6.end()) {
+	set_term_in6(unsigned int term_id) {
+		if (terms_in6.find(term_id) == terms_in6.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in6() label not found");
 		}
-		return *(terms_in6[label_egress]);
+		return *(terms_in6[term_id]);
 	};
 
 	/**
@@ -528,7 +638,7 @@ public:
 	 */
 	cterm_in6&
 	set_term_in6(const rofl::openflow::cofmatch& tft_match) {
-		std::map<clabel_in6, cterm_in6*>::iterator it;
+		std::map<unsigned int, cterm_in6*>::iterator it;
 		if ((it = find_if(terms_in6.begin(), terms_in6.end(),
 				cterm_in6::cterm_in6_find_by_tft_match(tft_match))) == terms_in6.end()) {
 			throw eRelayNotFound("cgtpcore::set_term_in6() match not found");
@@ -539,12 +649,25 @@ public:
 	/**
 	 *
 	 */
+	cterm_in6&
+	set_term_in6(const roflibs::gtp::clabel_in6& label_in) {
+		std::map<unsigned int, cterm_in6*>::iterator it;
+		if ((it = find_if(terms_in6.begin(), terms_in6.end(),
+				cterm_in6::cterm_in6_find_by_label_in(label_in))) == terms_in6.end()) {
+			throw eRelayNotFound("cgtpcore::set_term_in6() incoming GTP label not found");
+		}
+		return *(it->second);
+	};
+
+	/**
+	 *
+	 */
 	const cterm_in6&
-	get_term_in6(const clabel_in6& label_egress) const {
-		if (terms_in6.find(label_egress) == terms_in6.end()) {
+	get_term_in6(unsigned int term_id) const {
+		if (terms_in6.find(term_id) == terms_in6.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in6() label not found");
 		}
-		return *(terms_in6.at(label_egress));
+		return *(terms_in6.at(term_id));
 	};
 
 	/**
@@ -552,7 +675,7 @@ public:
 	 */
 	const cterm_in6&
 	get_term_in6(const rofl::openflow::cofmatch& tft_match) const {
-		std::map<clabel_in6, cterm_in6*>::const_iterator it;
+		std::map<unsigned int, cterm_in6*>::const_iterator it;
 		if ((it = find_if(terms_in6.begin(), terms_in6.end(),
 				cterm_in6::cterm_in6_find_by_tft_match(tft_match))) == terms_in6.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in6() match not found");
@@ -563,21 +686,34 @@ public:
 	/**
 	 *
 	 */
+	const cterm_in6&
+	get_term_in6(const roflibs::gtp::clabel_in6& label_in) const {
+		std::map<unsigned int, cterm_in6*>::const_iterator it;
+		if ((it = find_if(terms_in6.begin(), terms_in6.end(),
+				cterm_in6::cterm_in6_find_by_label_in(label_in))) == terms_in6.end()) {
+			throw eRelayNotFound("cgtpcore::get_term_in6() incoming GTP label not found");
+		}
+		return *(it->second);
+	};
+
+	/**
+	 *
+	 */
 	void
-	drop_term_in6(const clabel_in6& label_egress) {
-		if (terms_in6.find(label_egress) == terms_in6.end()) {
+	drop_term_in6(unsigned int term_id) {
+		if (terms_in6.find(term_id) == terms_in6.end()) {
 			return;
 		}
-		delete terms_in6[label_egress];
-		terms_in6.erase(label_egress);
+		delete terms_in6[term_id];
+		terms_in6.erase(term_id);
 	};
 
 	/**
 	 *
 	 */
 	bool
-	has_term_in6(const clabel_in6& label_egress) const {
-		return (not (terms_in6.find(label_egress) == terms_in6.end()));
+	has_term_in6(unsigned int term_id) const {
+		return (not (terms_in6.find(term_id) == terms_in6.end()));
 	};
 
 	/**
@@ -585,9 +721,19 @@ public:
 	 */
 	bool
 	has_term_in6(const rofl::openflow::cofmatch& tft_match) const {
-		std::map<clabel_in6, cterm_in6*>::const_iterator it;
+		std::map<unsigned int, cterm_in6*>::const_iterator it;
 		 return (not (find_if(terms_in6.begin(), terms_in6.end(),
 				cterm_in6::cterm_in6_find_by_tft_match(tft_match)) == terms_in6.end()));
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_term_in6(const roflibs::gtp::clabel_in6& label_in) const {
+		std::map<unsigned int, cterm_in6*>::const_iterator it;
+		 return (not (find_if(terms_in6.begin(), terms_in6.end(),
+				cterm_in6::cterm_in6_find_by_label_in(label_in)) == terms_in6.end()));
 	};
 
 public:
@@ -613,6 +759,14 @@ public:
 	handle_error_message(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {};
 
+private:
+
+	void
+	add_gtp_relays();
+
+	void
+	add_gtp_terms();
+
 public:
 
 	friend std::ostream&
@@ -622,19 +776,19 @@ public:
 				<< "#in6-relay(s): " << gtpcore.relays_in6.size() << " "
 				<< "#in4-term(s): " << gtpcore.terms_in4.size() << " "
 				<< "#in6-term(s): " << gtpcore.terms_in6.size() << " >" << std::endl;
-		for (std::map<clabel_in4, crelay_in4*>::const_iterator
+		for (std::map<unsigned int, crelay_in4*>::const_iterator
 				it = gtpcore.relays_in4.begin(); it != gtpcore.relays_in4.end(); ++it) {
 			rofcore::indent i(2); os << *(it->second);
 		}
-		for (std::map<clabel_in6, crelay_in6*>::const_iterator
+		for (std::map<unsigned int, crelay_in6*>::const_iterator
 				it = gtpcore.relays_in6.begin(); it != gtpcore.relays_in6.end(); ++it) {
 			rofcore::indent i(2); os << *(it->second);
 		}
-		for (std::map<clabel_in4, cterm_in4*>::const_iterator
+		for (std::map<unsigned int, cterm_in4*>::const_iterator
 				it = gtpcore.terms_in4.begin(); it != gtpcore.terms_in4.end(); ++it) {
 			rofcore::indent i(2); os << *(it->second);
 		}
-		for (std::map<clabel_in6, cterm_in6*>::const_iterator
+		for (std::map<unsigned int, cterm_in6*>::const_iterator
 				it = gtpcore.terms_in6.begin(); it != gtpcore.terms_in6.end(); ++it) {
 			rofcore::indent i(2); os << *(it->second);
 		}
@@ -656,10 +810,10 @@ private:
 	uint64_t									cookie_miss_entry_ipv6;
 	uint8_t										ip_local_table_id;
 	uint8_t										gtp_table_id;
-	std::map<clabel_in4, crelay_in4*>			relays_in4;
-	std::map<clabel_in6, crelay_in6*>			relays_in6;
-	std::map<clabel_in4, cterm_in4*>			terms_in4;
-	std::map<clabel_in6, cterm_in6*>			terms_in6;
+	std::map<unsigned int, crelay_in4*>			relays_in4;
+	std::map<unsigned int, crelay_in6*>			relays_in6;
+	std::map<unsigned int, cterm_in4*>			terms_in4;
+	std::map<unsigned int, cterm_in6*>			terms_in6;
 	static std::map<rofl::cdptid, cgtpcore*>	gtpcores;
 };
 
