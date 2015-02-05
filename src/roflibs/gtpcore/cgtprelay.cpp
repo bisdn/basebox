@@ -228,8 +228,8 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		rofl::openflow::cofmatch tft_match(rofl::crofdpt::get_dpt(dptid).get_version_negotiated());
 		tft_match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-		tft_match.set_ipv4_dst(ipv4.get_ipv4_dst());
-		tft_match.set_ipv4_src(ipv4.get_ipv4_src());
+		tft_match.set_ipv4_dst(ipv4.get_ipv4_dst(), rofl::caddress_in4("255.255.255.255"));
+		tft_match.set_ipv4_src(ipv4.get_ipv4_src(), rofl::caddress_in4("255.255.255.255"));
 
 		if (cgtpcore::get_gtp_core(dptid).has_term_in4(tft_match)) {
 			cterm_in4& term = cgtpcore::set_gtp_core(dptid).set_term_in4(tft_match);
@@ -266,7 +266,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		tft_match.clear();
 		tft_match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-		tft_match.set_ipv4_dst(ipv4.get_ipv4_dst());
+		tft_match.set_ipv4_dst(ipv4.get_ipv4_dst(), rofl::caddress_in4("255.255.255.255"));
 
 		if (cgtpcore::get_gtp_core(dptid).has_term_in4(tft_match)) {
 			cterm_in4& term = cgtpcore::set_gtp_core(dptid).set_term_in4(tft_match);
@@ -330,8 +330,8 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		rofl::openflow::cofmatch tft_match(rofl::crofdpt::get_dpt(dptid).get_version_negotiated());
 		tft_match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-		tft_match.set_ipv6_dst(ipv6.get_ipv6_dst());
-		tft_match.set_ipv6_src(ipv6.get_ipv6_src());
+		tft_match.set_ipv6_dst(ipv6.get_ipv6_dst(), rofl::caddress_in6("255.255.255.255"));
+		tft_match.set_ipv6_src(ipv6.get_ipv6_src(), rofl::caddress_in6("255.255.255.255"));
 
 		if (cgtpcore::get_gtp_core(dptid).has_term_in6(tft_match)) {
 			cterm_in6& term = cgtpcore::set_gtp_core(dptid).set_term_in6(tft_match);
@@ -368,7 +368,7 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		tft_match.clear();
 		tft_match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-		tft_match.set_ipv6_dst(ipv6.get_ipv6_dst());
+		tft_match.set_ipv6_dst(ipv6.get_ipv6_dst(), rofl::caddress_in6("255.255.255.255"));
 
 		if (cgtpcore::get_gtp_core(dptid).has_term_in6(tft_match)) {
 			cterm_in6& term = cgtpcore::set_gtp_core(dptid).set_term_in6(tft_match);
