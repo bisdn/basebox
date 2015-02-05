@@ -473,11 +473,23 @@ public:
 	cterm_in4&
 	set_term_in4(const rofl::openflow::cofmatch& tft_match) {
 		std::map<unsigned int, cterm_in4*>::iterator it;
+		for (it = terms_in4.begin(); it != terms_in4.end(); ++it) {
+			cterm_in4& term = *(it->second);
+			if ((((term.get_tft_match().get_ipv4_dst_value() & term.get_tft_match().get_ipv4_dst_mask())) ==
+					(tft_match.get_ipv4_dst_value() & term.get_tft_match().get_ipv4_dst_mask())) &&
+				(((term.get_tft_match().get_ipv4_src_value() & term.get_tft_match().get_ipv4_src_mask()) ==
+					(tft_match.get_ipv4_src_value() & term.get_tft_match().get_ipv4_src_mask())))) {
+				return *(it->second);
+			}
+		}
+		throw eRelayNotFound("cgtpcore::set_term_in4() match not found");
+#if 0
 		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_tft_match(tft_match))) == terms_in4.end()) {
 			throw eRelayNotFound("cgtpcore::set_term_in4() match not found");
 		}
 		return *(it->second);
+#endif
 	};
 
 	/**
@@ -510,11 +522,23 @@ public:
 	const cterm_in4&
 	get_term_in4(const rofl::openflow::cofmatch& tft_match) const {
 		std::map<unsigned int, cterm_in4*>::const_iterator it;
+		for (it = terms_in4.begin(); it != terms_in4.end(); ++it) {
+			cterm_in4& term = *(it->second);
+			if ((((term.get_tft_match().get_ipv4_dst_value() & term.get_tft_match().get_ipv4_dst_mask())) ==
+					(tft_match.get_ipv4_dst_value() & term.get_tft_match().get_ipv4_dst_mask())) &&
+				(((term.get_tft_match().get_ipv4_src_value() & term.get_tft_match().get_ipv4_src_mask()) ==
+					(tft_match.get_ipv4_src_value() & term.get_tft_match().get_ipv4_src_mask())))) {
+				return *(it->second);
+			}
+		}
+		throw eRelayNotFound("cgtpcore::get_term_in4() match not found");
+#if 0
 		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_tft_match(tft_match))) == terms_in4.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in4() match not found");
 		}
 		return *(it->second);
+#endif
 	};
 
 	/**
@@ -556,8 +580,20 @@ public:
 	bool
 	has_term_in4(const rofl::openflow::cofmatch& tft_match) const {
 		std::map<unsigned int, cterm_in4*>::const_iterator it;
+		for (it = terms_in4.begin(); it != terms_in4.end(); ++it) {
+			cterm_in4& term = *(it->second);
+			if ((((term.get_tft_match().get_ipv4_dst_value() & term.get_tft_match().get_ipv4_dst_mask())) ==
+					(tft_match.get_ipv4_dst_value() & term.get_tft_match().get_ipv4_dst_mask())) &&
+				(((term.get_tft_match().get_ipv4_src_value() & term.get_tft_match().get_ipv4_src_mask()) ==
+					(tft_match.get_ipv4_src_value() & term.get_tft_match().get_ipv4_src_mask())))) {
+				return true;
+			}
+		}
+		return false;
+#if 0
 		 return (not (find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_tft_match(tft_match)) == terms_in4.end()));
+#endif
 	};
 
 	/**
@@ -639,11 +675,23 @@ public:
 	cterm_in6&
 	set_term_in6(const rofl::openflow::cofmatch& tft_match) {
 		std::map<unsigned int, cterm_in6*>::iterator it;
+		for (it = terms_in6.begin(); it != terms_in6.end(); ++it) {
+			cterm_in6& term = *(it->second);
+			if ((((term.get_tft_match().get_ipv6_dst_value() & term.get_tft_match().get_ipv6_dst_mask())) ==
+					(tft_match.get_ipv6_dst_value() & term.get_tft_match().get_ipv6_dst_mask())) &&
+				(((term.get_tft_match().get_ipv6_src_value() & term.get_tft_match().get_ipv6_src_mask()) ==
+					(tft_match.get_ipv6_src_value() & term.get_tft_match().get_ipv6_src_mask())))) {
+				return *(it->second);
+			}
+		}
+		throw eRelayNotFound("cgtpcore::set_term_in6() match not found");
+#if 0
 		if ((it = find_if(terms_in6.begin(), terms_in6.end(),
 				cterm_in6::cterm_in6_find_by_tft_match(tft_match))) == terms_in6.end()) {
 			throw eRelayNotFound("cgtpcore::set_term_in6() match not found");
 		}
 		return *(it->second);
+#endif
 	};
 
 	/**
@@ -676,11 +724,23 @@ public:
 	const cterm_in6&
 	get_term_in6(const rofl::openflow::cofmatch& tft_match) const {
 		std::map<unsigned int, cterm_in6*>::const_iterator it;
+		for (it = terms_in6.begin(); it != terms_in6.end(); ++it) {
+			cterm_in6& term = *(it->second);
+			if ((((term.get_tft_match().get_ipv6_dst_value() & term.get_tft_match().get_ipv6_dst_mask())) ==
+					(tft_match.get_ipv6_dst_value() & term.get_tft_match().get_ipv6_dst_mask())) &&
+				(((term.get_tft_match().get_ipv6_src_value() & term.get_tft_match().get_ipv6_src_mask()) ==
+					(tft_match.get_ipv6_src_value() & term.get_tft_match().get_ipv6_src_mask())))) {
+				return *(it->second);
+			}
+		}
+		throw eRelayNotFound("cgtpcore::get_term_in6() match not found");
+#if 0
 		if ((it = find_if(terms_in6.begin(), terms_in6.end(),
 				cterm_in6::cterm_in6_find_by_tft_match(tft_match))) == terms_in6.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in6() match not found");
 		}
 		return *(it->second);
+#endif
 	};
 
 	/**
@@ -722,8 +782,20 @@ public:
 	bool
 	has_term_in6(const rofl::openflow::cofmatch& tft_match) const {
 		std::map<unsigned int, cterm_in6*>::const_iterator it;
+		for (it = terms_in6.begin(); it != terms_in6.end(); ++it) {
+			cterm_in6& term = *(it->second);
+			if ((((term.get_tft_match().get_ipv6_dst_value() & term.get_tft_match().get_ipv6_dst_mask())) ==
+					(tft_match.get_ipv6_dst_value() & term.get_tft_match().get_ipv6_dst_mask())) &&
+				(((term.get_tft_match().get_ipv6_src_value() & term.get_tft_match().get_ipv6_src_mask()) ==
+					(tft_match.get_ipv6_src_value() & term.get_tft_match().get_ipv6_src_mask())))) {
+				return true;
+			}
+		}
+		return false;
+#if 0
 		 return (not (find_if(terms_in6.begin(), terms_in6.end(),
 				cterm_in6::cterm_in6_find_by_tft_match(tft_match)) == terms_in6.end()));
+#endif
 	};
 
 	/**
