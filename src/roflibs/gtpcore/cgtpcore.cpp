@@ -120,7 +120,7 @@ cgtpcore::add_gtp_terms()
 								cport(entry.get_egress_label().get_dst_port())),
 						cteid(entry.get_egress_label().get_teid()));
 
-				rofl::openflow::cofmatch match;
+				rofl::openflow::cofmatch match(rofl::crofdpt::get_dpt(dptid).get_version_negotiated());
 
 				switch (entry.get_inject_filter().get_version()) {
 				case 4: {
@@ -168,7 +168,7 @@ cgtpcore::add_gtp_terms()
 								cport(entry.get_egress_label().get_dst_port())),
 						cteid(entry.get_egress_label().get_teid()));
 
-				rofl::openflow::cofmatch match;
+				rofl::openflow::cofmatch match(rofl::crofdpt::get_dpt(dptid).get_version_negotiated());
 
 				switch (entry.get_inject_filter().get_version()) {
 				case 4: {
