@@ -381,14 +381,14 @@ cgtpcoredb_file::parse_datapath_term(
 	entry.set_tunnel_device().set_version((int)s_term_tunnel["version"]);
 
 	// addr (mandatory)
-	if (not s_term_tunnel.exists("daddr")) {
+	if (not s_term_tunnel.exists("addr")) {
 		return;
 	}
-	entry.set_tunnel_device().set_addr((const char*)s_term_tunnel["daddr"]);
+	entry.set_tunnel_device().set_addr((const char*)s_term_tunnel["addr"]);
 
 	// mask (optional)
-	if (s_term_tunnel.exists("dmask")) {
-		entry.set_tunnel_device().set_mask((const char*)s_term_tunnel["dmask"]);
+	if (s_term_tunnel.exists("mask")) {
+		entry.set_tunnel_device().set_mask((const char*)s_term_tunnel["mask"]);
 	} else {
 		entry.set_tunnel_device().set_mask("255.255.255.255");
 	}
