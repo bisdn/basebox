@@ -74,66 +74,69 @@ cgtpcoredb_file::parse_datapath(ethcore::cconfig& config, libconfig::Setting& da
 void
 cgtpcoredb_file::parse_datapath_relay(
 		ethcore::cconfig& config,
-		libconfig::Setting& relay,
+		libconfig::Setting& s_relay,
 		const rofl::cdpid& dpid)
 {
 	cgtprelayentry entry;
 
 	// relay_id
-	if (not relay.exists("relay_id")) {
+	if (not s_relay.exists("relay_id")) {
 		return;
 	}
-	entry.set_relay_id((unsigned int)relay["relay_id"]);
+	entry.set_relay_id((unsigned int)s_relay["relay_id"]);
 
 	// gtp
-	if (not relay.exists("gtp")) {
+	if (not s_relay.exists("gtp")) {
 		return;
 	}
+	libconfig::Setting& s_relay_gtp = s_relay["gtp"];
+
 
 	/*
 	 *  incoming GTP label
 	 */
-	if (not relay.exists("gtp.incoming")) {
+	if (not s_relay_gtp.exists("incoming")) {
 		return;
 	}
+	libconfig::Setting& s_relay_gtp_incoming = s_relay_gtp["incoming"];
 
 	// IP version (mandatory)
-	if (not relay.exists("gtp.incoming.version")) {
+	if (not s_relay_gtp_incoming.exists("version")) {
 		return;
 	}
-	entry.set_incoming_label().set_version((int)relay["gtp.incoming.version"]);
+	entry.set_incoming_label().set_version((int)s_relay_gtp_incoming["version"]);
 
 	// src addr (mandatory)
-	if (not relay.exists("gtp.incoming.saddr")) {
+	if (not s_relay_gtp_incoming.exists("saddr")) {
 		return;
 	}
-	entry.set_incoming_label().set_src_addr((const char*)relay["gtp.incoming.saddr"]);
+	entry.set_incoming_label().set_src_addr((const char*)s_relay_gtp_incoming["saddr"]);
 
 	// src port (optional)
-	if (relay.exists("gtp.incoming.sport")) {
-		entry.set_incoming_label().set_src_port((int)relay["gtp.incoming.sport"]);
+	if (s_relay_gtp_incoming.exists("sport")) {
+		entry.set_incoming_label().set_src_port((int)s_relay_gtp_incoming["sport"]);
 	} else {
 		entry.set_incoming_label().set_src_port(2152);
 	}
 
 	// dst addr (mandatory)
-	if (not relay.exists("gtp.incoming.daddr")) {
+	if (not s_relay_gtp_incoming.exists("daddr")) {
 		return;
 	}
-	entry.set_incoming_label().set_dst_addr((const char*)relay["gtp.incoming.daddr"]);
+	entry.set_incoming_label().set_dst_addr((const char*)s_relay_gtp_incoming["daddr"]);
 
 	// dst port (optional)
-	if (relay.exists("gtp.incoming.dport")) {
-		entry.set_incoming_label().set_dst_port((int)relay["gtp.incoming.dport"]);
+	if (s_relay_gtp_incoming.exists("dport")) {
+		entry.set_incoming_label().set_dst_port((int)s_relay_gtp_incoming["dport"]);
 	} else {
 		entry.set_incoming_label().set_dst_port(2152);
 	}
 
 	// teid (mandatory)
-	if (not relay.exists("gtp.incoming.teid")) {
+	if (not s_relay_gtp_incoming.exists("teid")) {
 		return;
 	}
-	entry.set_incoming_label().set_teid((unsigned int)relay["gtp.incoming.teid"]);
+	entry.set_incoming_label().set_teid((unsigned int)s_relay_gtp_incoming["teid"]);
 
 	// TODO: sanity checks
 
@@ -142,52 +145,53 @@ cgtpcoredb_file::parse_datapath_relay(
 	/*
 	 *  outgoing GTP label
 	 */
-	if (not relay.exists("gtp.outgoing")) {
+	if (not s_relay_gtp.exists("outgoing")) {
 		return;
 	}
+	libconfig::Setting& s_relay_gtp_outgoing = s_relay_gtp["outgoing"];
 
 	// IP version (mandatory)
-	if (not relay.exists("gtp.outgoing.version")) {
+	if (not s_relay_gtp_outgoing.exists("version")) {
 		return;
 	}
-	entry.set_outgoing_label().set_version((int)relay["gtp.outgoing.version"]);
+	entry.set_outgoing_label().set_version((int)s_relay_gtp_outgoing["version"]);
 
 	// src addr (mandatory)
-	if (not relay.exists("gtp.outgoing.saddr")) {
+	if (not s_relay_gtp_outgoing.exists("saddr")) {
 		return;
 	}
-	entry.set_outgoing_label().set_src_addr((const char*)relay["gtp.outgoing.saddr"]);
+	entry.set_outgoing_label().set_src_addr((const char*)s_relay_gtp_outgoing["saddr"]);
 
 	// src port (optional)
-	if (relay.exists("gtp.outgoing.sport")) {
-		entry.set_outgoing_label().set_src_port((int)relay["gtp.outgoing.sport"]);
+	if (s_relay_gtp_outgoing.exists("sport")) {
+		entry.set_outgoing_label().set_src_port((int)s_relay_gtp_outgoing["sport"]);
 	} else {
 		entry.set_outgoing_label().set_src_port(2152);
 	}
 
 	// dst addr (mandatory)
-	if (not relay.exists("gtp.outgoing.daddr")) {
+	if (not s_relay_gtp_outgoing.exists("daddr")) {
 		return;
 	}
-	entry.set_outgoing_label().set_dst_addr((const char*)relay["gtp.outgoing.daddr"]);
+	entry.set_outgoing_label().set_dst_addr((const char*)s_relay_gtp_outgoing["daddr"]);
 
 	// dst port (optional)
-	if (relay.exists("gtp.outgoing.dport")) {
-		entry.set_outgoing_label().set_dst_port((int)relay["gtp.outgoing.dport"]);
+	if (s_relay_gtp_outgoing.exists("dport")) {
+		entry.set_outgoing_label().set_dst_port((int)s_relay_gtp_outgoing["dport"]);
 	} else {
 		entry.set_outgoing_label().set_dst_port(2152);
 	}
 
 	// teid (mandatory)
-	if (not relay.exists("gtp.outgoing.teid")) {
+	if (not s_relay_gtp_outgoing.exists("teid")) {
 		return;
 	}
-	entry.set_outgoing_label().set_teid((unsigned int)relay["gtp.outgoing.teid"]);
+	entry.set_outgoing_label().set_teid((unsigned int)s_relay_gtp_outgoing["teid"]);
 
 	// TODO: sanity checks
 
 
-
+	std::cerr << ">>> " << entry.str() << " <<<" << std::endl;
 	cgtpcoredb::add_gtp_relay(dpid, entry);
 }
 
@@ -195,67 +199,69 @@ cgtpcoredb_file::parse_datapath_relay(
 void
 cgtpcoredb_file::parse_datapath_term(
 		ethcore::cconfig& config,
-		libconfig::Setting& term,
+		libconfig::Setting& s_term,
 		const rofl::cdpid& dpid)
 {
 	cgtptermentry entry;
 
 	// term_id
-	if (not term.exists("term_id")) {
+	if (not s_term.exists("term_id")) {
 		return;
 	}
-	entry.set_term_id((unsigned int)term["term_id"]);
+	entry.set_term_id((unsigned int)s_term["term_id"]);
 
 	// gtp
-	if (not term.exists("gtp")) {
+	if (not s_term.exists("gtp")) {
 		return;
 	}
+	libconfig::Setting& s_term_gtp = s_term["gtp"];
 
 
 	/*
 	 *  ingress GTP label
 	 */
-	if (not term.exists("gtp.ingress")) {
+	if (not s_term_gtp.exists("ingress")) {
 		return;
 	}
+	libconfig::Setting& s_term_gtp_ingress = s_term_gtp["ingress"];
 
 	// IP version (mandatory)
-	if (not term.exists("gtp.ingress.version")) {
+	if (not s_term_gtp_ingress.exists("version")) {
 		return;
 	}
-	entry.set_ingress_label().set_version((int)term["gtp.ingress.version"]);
+	entry.set_ingress_label().set_version((int)s_term_gtp_ingress["version"]);
 
 	// src addr (mandatory)
-	if (not term.exists("gtp.ingress.saddr")) {
+	if (not s_term_gtp_ingress.exists("saddr")) {
 		return;
 	}
-	entry.set_ingress_label().set_src_addr((const char*)term["gtp.ingress.saddr"]);
+	entry.set_ingress_label().set_src_addr((const char*)s_term_gtp_ingress["saddr"]);
 
 	// src port (optional)
-	if (term.exists("gtp.ingress.sport")) {
-		entry.set_ingress_label().set_src_port((int)term["gtp.ingress.sport"]);
+	if (s_term_gtp_ingress.exists("sport")) {
+		entry.set_ingress_label().set_src_port((int)s_term_gtp_ingress["sport"]);
 	} else {
 		entry.set_ingress_label().set_src_port(2152);
 	}
 
 	// dst addr (mandatory)
-	if (not term.exists("gtp.ingress.daddr")) {
+	if (not s_term_gtp_ingress.exists("daddr")) {
 		return;
 	}
-	entry.set_ingress_label().set_dst_addr((const char*)term["gtp.ingress.daddr"]);
+	entry.set_ingress_label().set_dst_addr((const char*)s_term_gtp_ingress["daddr"]);
 
 	// dst port (optional)
-	if (term.exists("gtp.ingress.dport")) {
-		entry.set_ingress_label().set_dst_port((int)term["gtp.ingress.dport"]);
+	if (s_term_gtp_ingress.exists("dport")) {
+		entry.set_ingress_label().set_dst_port((int)s_term_gtp_ingress["dport"]);
 	} else {
 		entry.set_ingress_label().set_dst_port(2152);
 	}
 
 	// teid (mandatory)
-	if (not term.exists("gtp.ingress.teid")) {
+	if (not s_term_gtp_ingress.exists("teid")) {
 		return;
 	}
-	entry.set_ingress_label().set_teid((unsigned int)term["gtp.ingress.teid"]);
+	entry.set_ingress_label().set_teid((unsigned int)s_term_gtp_ingress["teid"]);
 
 	// TODO: sanity checks
 
@@ -264,94 +270,96 @@ cgtpcoredb_file::parse_datapath_term(
 	/*
 	 *  egress GTP label
 	 */
-	if (not term.exists("gtp.egress")) {
+	if (not s_term_gtp.exists("egress")) {
 		return;
 	}
+	libconfig::Setting& s_term_gtp_egress = s_term_gtp["egress"];
 
 	// IP version (mandatory)
-	if (not term.exists("gtp.egress.version")) {
+	if (not s_term_gtp_egress.exists("version")) {
 		return;
 	}
-	entry.set_egress_label().set_version((int)term["gtp.egress.version"]);
+	entry.set_egress_label().set_version((int)s_term_gtp_egress["version"]);
 
 	// src addr (mandatory)
-	if (not term.exists("gtp.egress.saddr")) {
+	if (not s_term_gtp_egress.exists("saddr")) {
 		return;
 	}
-	entry.set_egress_label().set_src_addr((const char*)term["gtp.egress.saddr"]);
+	entry.set_egress_label().set_src_addr((const char*)s_term_gtp_egress["saddr"]);
 
 	// src port (optional)
-	if (term.exists("gtp.egress.sport")) {
-		entry.set_egress_label().set_src_port((int)term["gtp.egress.sport"]);
+	if (s_term_gtp_egress.exists("sport")) {
+		entry.set_egress_label().set_src_port((int)s_term_gtp_egress["sport"]);
 	} else {
 		entry.set_egress_label().set_src_port(2152);
 	}
 
 	// dst addr (mandatory)
-	if (not term.exists("gtp.egress.daddr")) {
+	if (not s_term_gtp_egress.exists("daddr")) {
 		return;
 	}
-	entry.set_egress_label().set_dst_addr((const char*)term["gtp.egress.daddr"]);
+	entry.set_egress_label().set_dst_addr((const char*)s_term_gtp_egress["daddr"]);
 
 	// dst port (optional)
-	if (term.exists("gtp.egress.dport")) {
-		entry.set_egress_label().set_dst_port((int)term["gtp.egress.dport"]);
+	if (s_term_gtp_egress.exists("dport")) {
+		entry.set_egress_label().set_dst_port((int)s_term_gtp_egress["dport"]);
 	} else {
 		entry.set_egress_label().set_dst_port(2152);
 	}
 
 	// teid (mandatory)
-	if (not term.exists("gtp.egress.teid")) {
+	if (not s_term_gtp_egress.exists("teid")) {
 		return;
 	}
-	entry.set_egress_label().set_teid((unsigned int)term["gtp.egress.teid"]);
+	entry.set_egress_label().set_teid((unsigned int)s_term_gtp_egress["teid"]);
 
 	// TODO: sanity checks
-
 
 
 
 	/*
 	 * inject filter
 	 */
-	if (not term.exists("gtp.inject")) {
+	if (not s_term.exists("inject")) {
 		return;
 	}
+	libconfig::Setting& s_term_inject = s_term["inject"];
 
 	// IP version (mandatory)
-	if (not term.exists("gtp.inject.version")) {
+	if (not s_term_inject.exists("version")) {
 		return;
 	}
-	entry.set_inject_filter().set_version((int)term["gtp.inject.version"]);
+	entry.set_inject_filter().set_version((int)s_term_inject["version"]);
 
 	// dst addr (mandatory)
-	if (not term.exists("gtp.inject.daddr")) {
+	if (not s_term_inject.exists("daddr")) {
 		return;
 	}
-	entry.set_inject_filter().set_dst_addr((const char*)term["gtp.inject.daddr"]);
+	entry.set_inject_filter().set_dst_addr((const char*)s_term_inject["daddr"]);
 
 	// dst mask (optional)
-	if (term.exists("gtp.inject.dmask")) {
-		entry.set_inject_filter().set_dst_mask((const char*)term["gtp.inject.dmask"]);
+	if (s_term_inject.exists("dmask")) {
+		entry.set_inject_filter().set_dst_mask((const char*)s_term_inject["dmask"]);
 	} else {
 		entry.set_inject_filter().set_dst_mask("255.255.255.255");
 	}
 
 	// src addr (optional)
-	if (term.exists("gtp.inject.saddr")) {
-		entry.set_inject_filter().set_src_addr((const char*)term["gtp.inject.saddr"]);
+	if (s_term_inject.exists("saddr")) {
+		entry.set_inject_filter().set_src_addr((const char*)s_term_inject["saddr"]);
 	} else {
 		entry.set_inject_filter().set_src_addr("0.0.0.0");
 	}
 
 	// src mask (optional)
-	if (term.exists("gtp.inject.smask")) {
-		entry.set_inject_filter().set_src_mask((const char*)term["gtp.inject.smask"]);
+	if (s_term_inject.exists("smask")) {
+		entry.set_inject_filter().set_src_mask((const char*)s_term_inject["smask"]);
 	} else {
 		entry.set_inject_filter().set_src_mask("0.0.0.0");
 	}
 
 
+	std::cerr << ">>> " << entry.str() << " <<<" << std::endl;
 	cgtpcoredb::add_gtp_term(dpid, entry);
 }
 

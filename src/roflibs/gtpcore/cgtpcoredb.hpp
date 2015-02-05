@@ -100,6 +100,10 @@ public:
 			int vers)
 	{ this->vers = vers; };
 
+	int&
+	set_version()
+	{ return vers; };
+
 	void
 	set_src_addr(
 			const std::string& addr)
