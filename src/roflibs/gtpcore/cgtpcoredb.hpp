@@ -335,6 +335,149 @@ private:
 
 
 
+class cgtptermdeventry {
+public:
+
+	/**
+	 *
+	 */
+	~cgtptermdeventry()
+	{};
+
+	/**
+	 *
+	 */
+	cgtptermdeventry() :
+		version(0)
+	{};
+
+	/**
+	 *
+	 */
+	cgtptermdeventry(
+			const std::string& devname,
+			int version,
+			const std::string& addr,
+			const std::string& mask) :
+				devname(devname),
+				version(version),
+				addr(addr),
+				mask(mask)
+	{};
+
+	/**
+	 *
+	 */
+	cgtptermdeventry(
+			const cgtptermdeventry& entry)
+	{ *this = entry; };
+
+	/**
+	 *
+	 */
+	cgtptermdeventry&
+	operator= (
+			const cgtptermdeventry& entry) {
+		if (this == &entry)
+			return *this;
+		devname = entry.devname;
+		version = entry.version;
+		addr = entry.addr;
+		mask = entry.mask;
+		info_s = entry.info_s;
+		return *this;
+	};
+
+public:
+
+	void
+	set_version(
+			int version)
+	{ this->version = version; };
+
+	int&
+	set_version()
+	{ return version; };
+
+	void
+	set_devname(
+			const std::string& devname)
+	{ this->devname = devname; };
+
+	std::string&
+	set_devname()
+	{ return devname; };
+
+	void
+	set_addr(
+			const std::string& addr)
+	{ this->addr = addr; };
+
+	std::string&
+	set_addr()
+	{ return addr; };
+
+	void
+	set_mask(
+			const std::string& mask)
+	{ this->mask = mask; };
+
+	std::string&
+	set_mask()
+	{ return mask; };
+
+public:
+
+	int
+	get_version() const
+	{ return version; };
+
+	const std::string&
+	get_devname() const
+	{ return devname; };
+
+	const std::string&
+	get_addr() const
+	{ return addr; };
+
+	const std::string&
+	get_mask() const
+	{ return mask; };
+
+public:
+
+	friend std::ostream&
+	operator<< (
+			std::ostream& os, const cgtptermdeventry& entry) {
+		os << rofcore::indent(0) << "<cgtptermdeventry tundev: " << entry.get_devname() << ", ";
+		os << "IPv" << entry.get_version() << ", ";
+		os << "addr: " << entry.get_addr() << "/" << entry.get_mask();
+		os << " >" << std::endl;
+		return os;
+	};
+
+	const std::string&
+	str() const {
+		std::stringstream ss;
+		ss << "tundev: " << get_devname() << ", ";
+		ss << "IPv" << get_version() << ", ";
+		ss << "addr: " << get_addr() << "/" << get_mask();
+		info_s = ss.str();
+		return info_s;
+	};
+
+private:
+
+	std::string devname;
+	int version;
+	std::string addr;
+	std::string mask;
+	mutable std::string info_s;
+};
+
+
+
+
 class cgtprelayentry {
 public:
 
@@ -478,11 +621,13 @@ public:
 			unsigned int tid,
 			const cgtplabelentry& ingress_label,
 			const cgtplabelentry& egress_label,
-			const cgtpinjectentry& inject_filter) :
+			const cgtpinjectentry& inject_filter,
+			const cgtptermdeventry& tunnel_device) :
 				tid(tid),
 				ingress_label(ingress_label),
 				egress_label(egress_label),
-				inject_filter(inject_filter)
+				inject_filter(inject_filter),
+				tunnel_device(tunnel_device)
 	{};
 
 	/**
@@ -504,6 +649,7 @@ public:
 		ingress_label 	= entry.ingress_label;
 		egress_label 	= entry.egress_label;
 		inject_filter 	= entry.inject_filter;
+		tunnel_device	= entry.tunnel_device;
 		return *this;
 	};
 
@@ -541,6 +687,15 @@ public:
 	set_inject_filter()
 	{ return inject_filter; };
 
+	void
+	set_tunnel_device(
+			const cgtptermdeventry& tunnel)
+	{ this->tunnel_device = tunnel; };
+
+	cgtptermdeventry&
+	set_tunnel_device()
+	{ return tunnel_device; };
+
 public:
 
 	unsigned int
@@ -559,6 +714,10 @@ public:
 	get_inject_filter() const
 	{ return inject_filter; };
 
+	const cgtptermdeventry&
+	get_tunnel_device() const
+	{ return tunnel_device; };
+
 public:
 
 	friend std::ostream&
@@ -567,7 +726,8 @@ public:
 		os << rofcore::indent(0) << "<cgtptermentry relay-id: " << entry.get_term_id() << " ";
 		os << "ingress GTP label: " << entry.get_ingress_label().str() << " ";
 		os << "egress GTP label: " << entry.get_egress_label().str() << " ";
-		os << "inject filter: " << entry.get_inject_filter().str() << " >" << std::endl;
+		os << "inject filter: " << entry.get_inject_filter().str() << " ";;
+		os << "tunnel device: " << entry.get_tunnel_device().str() << " >" << std::endl;
 		return os;
 	};
 
@@ -578,6 +738,7 @@ public:
 		ss << "ingress GTP label: " << get_ingress_label().str() << ", ";
 		ss << "egress GTP label: " << get_egress_label().str() << ", ";
 		ss << "inject filter: " << get_inject_filter().str();
+		ss << "tunnel device: " << get_tunnel_device().str();
 		info_s = ss.str();
 		return info_s;
 	};
@@ -588,6 +749,7 @@ private:
 	cgtplabelentry		ingress_label;	// ingress GTP label
 	cgtplabelentry		egress_label;	// egress GTP label
 	cgtpinjectentry		inject_filter;	// inject traffic matching this filter into GTP tunnel
+	cgtptermdeventry	tunnel_device;	// termination device for injecting traffic into this GTP tunnel
 	mutable std::string	info_s;
 };
 

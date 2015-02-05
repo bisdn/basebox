@@ -219,19 +219,19 @@ cbasebox::run(int argc, char** argv)
 	 */
 	if (flags.test(FLAG_ETHCORE) && not flags.test(FLAG_FLOWCORE)) {
 		rofcore::logging::crit << "[baseboxd][main] must enable flowcore for using ethcore, aborting." << std::endl;
-		exit(1);
+		return -1;
 	}
 	if (flags.test(FLAG_IPCORE) && not flags.test(FLAG_ETHCORE)) {
 		rofcore::logging::crit << "[baseboxd][main] must enable ethcore for using ipcore, aborting." << std::endl;
-		exit(1);
+		return -1;
 	}
 	if (flags.test(FLAG_GRECORE) && not flags.test(FLAG_IPCORE)) {
 		rofcore::logging::crit << "[baseboxd][main] must enable ipcore for using grecore, aborting." << std::endl;
-		exit(1);
+		return -1;
 	}
 	if (flags.test(FLAG_GTPCORE) && not flags.test(FLAG_IPCORE)) {
 		rofcore::logging::crit << "[baseboxd][main] must enable ipcore for using gtpcore, aborting." << std::endl;
-		exit(1);
+		return -1;
 	}
 
 

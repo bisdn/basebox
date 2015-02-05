@@ -359,6 +359,42 @@ cgtpcoredb_file::parse_datapath_term(
 	}
 
 
+
+	/*
+	 * tunnel device
+	 */
+	if (not s_term.exists("tunnel")) {
+		return;
+	}
+	libconfig::Setting& s_term_tunnel = s_term["tunnel"];
+
+	// tunnel device name
+	if (not s_term_tunnel.exists("devname")) {
+		return;
+	}
+	entry.set_tunnel_device().set_devname((const char*)s_term_tunnel["devname"]);
+
+	// IP version (mandatory)
+	if (not s_term_tunnel.exists("version")) {
+		return;
+	}
+	entry.set_tunnel_device().set_version((int)s_term_tunnel["version"]);
+
+	// addr (mandatory)
+	if (not s_term_tunnel.exists("daddr")) {
+		return;
+	}
+	entry.set_tunnel_device().set_addr((const char*)s_term_tunnel["daddr"]);
+
+	// mask (optional)
+	if (s_term_tunnel.exists("dmask")) {
+		entry.set_tunnel_device().set_mask((const char*)s_term_tunnel["dmask"]);
+	} else {
+		entry.set_tunnel_device().set_mask("255.255.255.255");
+	}
+
+
+
 	std::cerr << ">>> " << entry.str() << " <<<" << std::endl;
 	cgtpcoredb::add_gtp_term(dpid, entry);
 }
