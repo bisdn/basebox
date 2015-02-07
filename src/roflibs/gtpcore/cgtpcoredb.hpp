@@ -334,6 +334,117 @@ private:
 
 
 
+class cgtptermdevprefixentry {
+public:
+
+	/**
+	 *
+	 */
+	~cgtptermdevprefixentry()
+	{};
+
+	/**
+	 *
+	 */
+	cgtptermdevprefixentry() :
+		version(0),
+		prefixlen(0)
+	{};
+
+	/**
+	 *
+	 */
+	cgtptermdevprefixentry(
+			int version,
+			const std::string& addr,
+			unsigned int prefixlen) :
+		version(version),
+		addr(addr),
+		prefixlen(prefixlen)
+	{};
+
+	/**
+	 *
+	 */
+	cgtptermdevprefixentry(
+			const cgtptermdevprefixentry& prefix)
+	{ *this = prefix; };
+
+	/**
+	 *
+	 */
+	cgtptermdevprefixentry&
+	operator= (
+			const cgtptermdevprefixentry& prefix) {
+		if (this == &prefix)
+			return *this;
+		version = prefix.version;
+		addr = prefix.addr;
+		prefixlen = prefix.prefixlen;
+		info_s = prefix.info_s;
+		return *this;
+	};
+
+public:
+
+	void
+	set_version(
+			int version)
+	{ this->version = version; };
+
+	void
+	set_addr(
+			const std::string& addr)
+	{ this->addr = addr; };
+
+	void
+	set_prefixlen(
+			int prefixlen)
+	{ this->prefixlen = prefixlen; };
+
+public:
+
+	int
+	get_version() const
+	{ return version; };
+
+	const std::string&
+	get_addr() const
+	{ return addr; };
+
+	int
+	get_prefixlen() const
+	{ return prefixlen; };
+
+public:
+
+	friend std::ostream&
+	operator<< (
+			std::ostream& os, const cgtptermdevprefixentry& prefix) {
+		os << rofcore::indent(0) << "<cgtptermdevprefixentry IPv" << prefix.get_version() << ", ";
+		os << "addr: " << prefix.get_addr() << "/" << prefix.get_prefixlen() << ", ";
+		os << " >" << std::endl;
+		return os;
+	};
+
+	const std::string&
+	str() const {
+		std::stringstream ss;
+		ss << "IPv" << get_version() << ", ";
+		ss << "addr: " << get_addr() << "/" << get_prefixlen();
+		info_s = ss.str();
+		return info_s;
+	};
+
+private:
+
+	int version;
+	std::string addr;
+	unsigned int prefixlen;
+	mutable std::string info_s;
+};
+
+
 
 class cgtptermdeventry {
 public:
@@ -347,22 +458,15 @@ public:
 	/**
 	 *
 	 */
-	cgtptermdeventry() :
-		version(0)
+	cgtptermdeventry()
 	{};
 
 	/**
 	 *
 	 */
 	cgtptermdeventry(
-			const std::string& devname,
-			int version,
-			const std::string& addr,
-			const std::string& mask) :
-				devname(devname),
-				version(version),
-				addr(addr),
-				mask(mask)
+			const std::string& devname) :
+				devname(devname)
 	{};
 
 	/**
@@ -381,23 +485,104 @@ public:
 		if (this == &entry)
 			return *this;
 		devname = entry.devname;
-		version = entry.version;
-		addr = entry.addr;
-		mask = entry.mask;
 		info_s = entry.info_s;
+		prefixes.clear();
+		for (std::map<unsigned int, cgtptermdevprefixentry>::const_iterator
+				it = entry.prefixes.begin(); it != entry.prefixes.end(); ++it) {
+			prefixes[it->first] = it->second;
+		}
 		return *this;
 	};
 
 public:
 
-	void
-	set_version(
-			int version)
-	{ this->version = version; };
+	/**
+	 *
+	 */
+	const std::set<unsigned int>&
+	get_prefix_ids() const
+	{ return prefixids; };
 
-	int&
-	set_version()
-	{ return version; };
+	/**
+	 *
+	 */
+	cgtptermdevprefixentry&
+	add_prefix(
+			unsigned int prefix_id,
+			int version,
+			const std::string& addr,
+			unsigned int prefixlen) {
+		if (prefixes.find(prefix_id) != prefixes.end()) {
+			prefixes.erase(prefix_id);
+		}
+		prefixes[prefix_id] = cgtptermdevprefixentry(version, addr, prefixlen);
+		prefixids.insert(prefix_id);
+		return prefixes[prefix_id];
+	};
+
+	/**
+	 *
+	 */
+	cgtptermdevprefixentry&
+	set_prefix(
+			unsigned int prefix_id,
+			int version,
+			const std::string& addr,
+			unsigned int prefixlen) {
+		if (prefixes.find(prefix_id) == prefixes.end()) {
+			prefixes[prefix_id] = cgtptermdevprefixentry(version, addr, prefixlen);
+			prefixids.insert(prefix_id);
+		}
+		return prefixes[prefix_id];
+	};
+
+	/**
+	 *
+	 */
+	cgtptermdevprefixentry&
+	set_prefix(
+			unsigned int prefix_id) {
+		if (prefixes.find(prefix_id) == prefixes.end()) {
+			throw eGtpDBNotFound("cgtptermdeventry::set_prefix() prefix-id not found");
+		}
+		return prefixes[prefix_id];
+	}
+
+	/**
+	 *
+	 */
+	const cgtptermdevprefixentry&
+	get_prefix(
+			unsigned int prefix_id) const {
+		if (prefixes.find(prefix_id) == prefixes.end()) {
+			throw eGtpDBNotFound("cgtptermdeventry::get_prefix() prefix-id not found");
+		}
+		return prefixes.at(prefix_id);
+	}
+
+	/**
+	 *
+	 */
+	void
+	drop_prefix(
+			unsigned int prefix_id) {
+		if (prefixes.find(prefix_id) == prefixes.end()) {
+			return;
+		}
+		prefixes.erase(prefix_id);
+		prefixids.erase(prefix_id);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_prefix(
+			unsigned int prefix_id) const {
+		return (not (prefixes.find(prefix_id) == prefixes.end()));
+	};
+
+public:
 
 	void
 	set_devname(
@@ -408,41 +593,11 @@ public:
 	set_devname()
 	{ return devname; };
 
-	void
-	set_addr(
-			const std::string& addr)
-	{ this->addr = addr; };
-
-	std::string&
-	set_addr()
-	{ return addr; };
-
-	void
-	set_mask(
-			const std::string& mask)
-	{ this->mask = mask; };
-
-	std::string&
-	set_mask()
-	{ return mask; };
-
 public:
-
-	int
-	get_version() const
-	{ return version; };
 
 	const std::string&
 	get_devname() const
 	{ return devname; };
-
-	const std::string&
-	get_addr() const
-	{ return addr; };
-
-	const std::string&
-	get_mask() const
-	{ return mask; };
 
 public:
 
@@ -450,9 +605,10 @@ public:
 	operator<< (
 			std::ostream& os, const cgtptermdeventry& entry) {
 		os << rofcore::indent(0) << "<cgtptermdeventry tundev: " << entry.get_devname() << ", ";
-		os << "IPv" << entry.get_version() << ", ";
-		os << "addr: " << entry.get_addr() << "/" << entry.get_mask();
-		os << " >" << std::endl;
+		for (std::map<unsigned int, cgtptermdevprefixentry>::const_iterator
+				it = entry.prefixes.begin(); it != entry.prefixes.end(); ++it) {
+			rofcore::indent(2); os << it->second;
+		}
 		return os;
 	};
 
@@ -460,8 +616,10 @@ public:
 	str() const {
 		std::stringstream ss;
 		ss << "tundev: " << get_devname() << ", ";
-		ss << "IPv" << get_version() << ", ";
-		ss << "addr: " << get_addr() << "/" << get_mask();
+		for (std::map<unsigned int, cgtptermdevprefixentry>::const_iterator
+				it = prefixes.begin(); it != prefixes.end(); ++it) {
+			ss << it->second << " ";
+		}
 		info_s = ss.str();
 		return info_s;
 	};
@@ -469,9 +627,8 @@ public:
 private:
 
 	std::string devname;
-	int version;
-	std::string addr;
-	std::string mask;
+	std::map<unsigned int, cgtptermdevprefixentry> prefixes;
+	std::set<unsigned int> prefixids;
 	mutable std::string info_s;
 };
 
@@ -956,6 +1113,97 @@ public:
 
 public:
 
+	/**
+	 *
+	 */
+	const std::set<std::string>&
+	get_gtp_termdev_ids(const rofl::cdpid& dpid) const {
+		return termdevids[dpid];
+	};
+
+	/**
+	 *
+	 */
+	cgtptermdeventry&
+	add_gtp_termdev(
+			const rofl::cdpid& dpid,
+			const cgtptermdeventry& entry) {
+		if (termdeventries[dpid].find(entry.get_devname()) != termdeventries[dpid].end()) {
+			termdeventries[dpid].erase(entry.get_devname());
+		}
+		termdevids[dpid].insert(entry.get_devname());
+		return (termdeventries[dpid][entry.get_devname()] = entry);
+	};
+
+	/**
+	 *
+	 */
+	cgtptermdeventry&
+	set_gtp_termdev(
+			const rofl::cdpid& dpid,
+			const cgtptermdeventry& entry) {
+		if (termdeventries[dpid].find(entry.get_devname()) == termdeventries[dpid].end()) {
+			termdevids[dpid].insert(entry.get_devname());
+			termdeventries[dpid][entry.get_devname()] = entry;
+		}
+		return termdeventries[dpid][entry.get_devname()];
+	};
+
+	/**
+	 *
+	 */
+	cgtptermdeventry&
+	set_gtp_termdev(
+			const rofl::cdpid& dpid,
+			const std::string& devname) {
+		if (termdeventries[dpid].find(devname) == termdeventries[dpid].end()) {
+			throw eGtpDBNotFound("cgtpcoredb::set_gtp_termdev() termdev_id not found");
+		}
+		return termdeventries[dpid][devname];
+	};
+
+	/**
+	 *
+	 */
+	const cgtptermdeventry&
+	get_gtp_termdev(
+			const rofl::cdpid& dpid,
+			const std::string& devname) const {
+		if (termdeventries.at(dpid).find(devname) == termdeventries.at(dpid).end()) {
+			throw eGtpDBNotFound("cgtpcoredb::get_gtp_termdev() termdev_id not found");
+		}
+		return termdeventries.at(dpid).at(devname);
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_gtp_termdev(
+			const rofl::cdpid& dpid,
+			const std::string& devname) {
+		if (termdeventries.at(dpid).find(devname) == termdeventries.at(dpid).end()) {
+			return;
+		}
+		termdeventries[dpid].erase(devname);
+		termdevids[dpid].erase(devname);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_gtp_termdev(
+			const rofl::cdpid& dpid,
+			const std::string& devname) const {
+		if (termdeventries.find(dpid) == termdeventries.end()) {
+			return false;
+		}
+		return (not (termdeventries.at(dpid).find(devname) == termdeventries.at(dpid).end()));
+	};
+
+public:
+
 	friend std::ostream&
 	operator<< (std::ostream& os, const cgtpcoredb& db) {
 		os << rofcore::indent(0) << "<cgtpcoredb >" << std::endl;
@@ -984,11 +1232,13 @@ public:
 private:
 
 
-	std::map<rofl::cdpid, std::map<unsigned int, cgtprelayentry> >	relayentries;
-	mutable std::map<rofl::cdpid, std::set<unsigned int> >			relayids;
-	std::map<rofl::cdpid, std::map<unsigned int, cgtptermentry> >	termentries;
-	mutable std::map<rofl::cdpid, std::set<unsigned int> >			termids;
-	static std::map<std::string, cgtpcoredb*> 						gtpcoredbs;
+	std::map<rofl::cdpid, std::map<unsigned int, cgtprelayentry> >	 relayentries;
+	mutable std::map<rofl::cdpid, std::set<unsigned int> >			 relayids;
+	std::map<rofl::cdpid, std::map<unsigned int, cgtptermentry> >	 termentries;
+	mutable std::map<rofl::cdpid, std::set<unsigned int> >			 termids;
+	std::map<rofl::cdpid, std::map<std::string, cgtptermdeventry> >  termdeventries;
+	mutable std::map<rofl::cdpid, std::set<std::string> >			 termdevids;
+	static std::map<std::string, cgtpcoredb*> 						 gtpcoredbs;
 };
 
 }; // end of namespace gtp

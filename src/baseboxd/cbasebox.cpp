@@ -615,6 +615,32 @@ cbasebox::execute(
 
 
 void
+cbasebox::test_gtp(rofl::crofdpt& dpt)
+{
+	uint32_t teid = 0;
+
+	for (int i = 1; i < 100000; i++) {
+
+		roflibs::gtp::clabel_in4 label_in(
+				roflibs::gtp::caddress_gtp_in4(
+						rofl::caddress_in4("10.1.1.10"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::caddress_gtp_in4(
+						rofl::caddress_in4("10.1.1.1") , roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::cteid(i));
+
+		roflibs::gtp::clabel_in4 label_out(
+				roflibs::gtp::caddress_gtp_in4(
+						rofl::caddress_in4("10.2.2.1") , roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::caddress_gtp_in4(
+						rofl::caddress_in4("10.2.2.20"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
+				roflibs::gtp::cteid(i));
+
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(0, label_in, label_out);
+	}
+}
+
+
+void
 cbasebox::test_workflow(rofl::crofdpt& dpt)
 {
 	bool gre_test = false;

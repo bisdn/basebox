@@ -112,7 +112,9 @@ private:
 	 *
 	 */
 	cgtprelay(const rofl::cdptid& dptid, uint8_t ofp_table_id) :
-		state(STATE_DETACHED), dptid(dptid), ofp_table_id(ofp_table_id) {};
+		state(STATE_DETACHED), dptid(dptid), ofp_table_id(ofp_table_id) {
+		add_gtp_termdevs();
+	};
 
 	/**
 	 *
@@ -441,6 +443,11 @@ public:
 		}
 		return os;
 	};
+
+private:
+
+	void
+	add_gtp_termdevs();
 
 private:
 

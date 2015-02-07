@@ -72,6 +72,15 @@ private:
 			libconfig::Setting& term,
 			const rofl::cdpid& dpid);
 
+	/**
+	 *
+	 */
+	void
+	parse_datapath_termdev(
+			ethcore::cconfig& config,
+			libconfig::Setting& termdev,
+			const rofl::cdpid& dpid);
+
 public:
 
 	friend std::ostream&

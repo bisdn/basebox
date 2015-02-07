@@ -12,6 +12,53 @@ using namespace roflibs::gtp;
 
 /*static*/std::map<rofl::cdptid, cgtprelay*> cgtprelay::gtprelays;
 
+
+
+void
+cgtprelay::add_gtp_termdevs()
+{
+	try {
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+
+		cgtpcoredb& db = cgtpcoredb::get_gtpcoredb(std::string("file"));
+
+		rofl::cdpid dpid = rofl::crofdpt::get_dpt(dptid).get_dpid();
+
+		// install GTPv4 termdevs
+		for (std::set<std::string>::const_iterator
+				it = db.get_gtp_termdev_ids(dpid).begin(); it != db.get_gtp_termdev_ids(dpid).end(); ++it) {
+			const cgtptermdeventry& entry = db.get_gtp_termdev(dpid, *it);
+
+			roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dptid()).add_termdev(entry.get_devname());
+
+			for (std::set<unsigned int>::iterator
+					it = entry.get_prefix_ids().begin(); it != entry.get_prefix_ids().end(); ++it) {
+				const cgtptermdevprefixentry& prefix = entry.get_prefix(*it);
+
+				switch (prefix.get_version()) {
+				case 4: {
+					roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dptid()).set_termdev(entry.get_devname()).
+									add_prefix_in4(rofcore::cprefix_in4(rofl::caddress_in4(prefix.get_addr()), prefix.get_prefixlen()));
+				} break;
+				case 6: {
+					roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dptid()).set_termdev(entry.get_devname()).
+									add_prefix_in6(rofcore::cprefix_in6(rofl::caddress_in6(prefix.get_addr()), prefix.get_prefixlen()));
+				} break;
+				default: {
+
+				};
+				}
+
+			}
+		}
+
+
+	} catch (rofl::eRofDptNotFound& e) {
+
+	}
+}
+
+
 void
 cgtprelay::handle_read(
 		rofl::csocket& socket)

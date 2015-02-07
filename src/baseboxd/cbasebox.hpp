@@ -213,11 +213,13 @@ private:
 
 private:
 
-	/**
-	 *
-	 */
 	void
-	test_workflow(rofl::crofdpt& dpt);
+	test_gtp(
+			rofl::crofdpt& dpt);
+
+	void
+	test_workflow(
+			rofl::crofdpt& dpt);
 
 private:
 

@@ -201,25 +201,29 @@ private:
 	 *
 	 */
 	void
-	handle_dpt_open(const rofcore::cprefix_in4& prefix);
+	handle_dpt_open(
+			const rofcore::cprefix_in4& prefix);
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(const rofcore::cprefix_in4& prefix);
+	handle_dpt_close(
+			const rofcore::cprefix_in4& prefix);
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_open(const rofcore::cprefix_in6& prefix);
+	handle_dpt_open(
+			const rofcore::cprefix_in6& prefix);
 
 	/**
 	 *
 	 */
 	void
-	handle_dpt_close(const rofcore::cprefix_in6& prefix);
+	handle_dpt_close(
+			const rofcore::cprefix_in6& prefix);
 
 public:
 

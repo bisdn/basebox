@@ -51,7 +51,7 @@ cgtpcoredb_file::parse_datapath(ethcore::cconfig& config, libconfig::Setting& da
 	rofl::cdpid dpid( (int)datapath["dpid"] );
 
 
-	// extract all physical ports
+	// extract all GTP relays
 	const std::string relays("relays");
 	if (datapath.exists(relays.c_str())) {
 		for (int j = 0; j < datapath[relays.c_str()].getLength(); ++j) {
@@ -60,12 +60,21 @@ cgtpcoredb_file::parse_datapath(ethcore::cconfig& config, libconfig::Setting& da
 		}
 	}
 
-	// extract all predefined ethernet endpoints
+	// extract all predefined GTP termination points
 	const std::string terms("terms");
 	if (datapath.exists(terms.c_str())) {
 		for (int j = 0; j < datapath[terms.c_str()].getLength(); ++j) {
 			libconfig::Setting& term = datapath[terms.c_str()][j];
 			parse_datapath_term(config, term, dpid);
+		}
+	}
+
+	// extract all predefined GTP termination devices
+	const std::string termdevs("termdevs");
+	if (datapath.exists(termdevs.c_str())) {
+		for (int j = 0; j < datapath[termdevs.c_str()].getLength(); ++j) {
+			libconfig::Setting& termdev = datapath[termdevs.c_str()][j];
+			parse_datapath_termdev(config, termdev, dpid);
 		}
 	}
 }
@@ -360,43 +369,65 @@ cgtpcoredb_file::parse_datapath_term(
 
 
 
-	/*
-	 * tunnel device
-	 */
-	if (not s_term.exists("tunnel")) {
-		return;
-	}
-	libconfig::Setting& s_term_tunnel = s_term["tunnel"];
-
-	// tunnel device name
-	if (not s_term_tunnel.exists("devname")) {
-		return;
-	}
-	entry.set_tunnel_device().set_devname((const char*)s_term_tunnel["devname"]);
-
-	// IP version (mandatory)
-	if (not s_term_tunnel.exists("version")) {
-		return;
-	}
-	entry.set_tunnel_device().set_version((int)s_term_tunnel["version"]);
-
-	// addr (mandatory)
-	if (not s_term_tunnel.exists("addr")) {
-		return;
-	}
-	entry.set_tunnel_device().set_addr((const char*)s_term_tunnel["addr"]);
-
-	// mask (optional)
-	if (s_term_tunnel.exists("mask")) {
-		entry.set_tunnel_device().set_mask((const char*)s_term_tunnel["mask"]);
-	} else {
-		entry.set_tunnel_device().set_mask("255.255.255.255");
-	}
-
 
 
 	std::cerr << ">>> " << entry.str() << " <<<" << std::endl;
 	cgtpcoredb::add_gtp_term(dpid, entry);
+}
+
+
+void
+cgtpcoredb_file::parse_datapath_termdev(
+		ethcore::cconfig& config,
+		libconfig::Setting& s_termdev,
+		const rofl::cdpid& dpid)
+{
+	cgtptermdeventry entry;
+
+	// devname
+	if (not s_termdev.exists("devname")) {
+		return;
+	}
+	entry.set_devname((const char*)s_termdev["devname"]);
+
+
+	// prefixes
+	const std::string prefixes("prefixes");
+	if (s_termdev.exists(prefixes.c_str())) {
+		for (int j = 0; j < s_termdev[prefixes.c_str()].getLength(); ++j) {
+			libconfig::Setting& s_prefix = s_termdev[prefixes.c_str()][j];
+			//parse_datapath_term(config, term, dpid);
+
+
+			if (not s_prefix.exists("prefix_id")) {
+				continue;
+			}
+			unsigned int prefix_id = s_prefix["prefix_id"];
+
+			// version
+			if (not s_prefix.exists("version")) {
+				continue;
+			}
+			entry.set_prefix(prefix_id).set_version((int)s_prefix["version"]);
+
+			// addr
+			if (not s_prefix.exists("addr")) {
+				continue;
+			}
+			entry.set_prefix(prefix_id).set_addr((const char*)s_prefix["addr"]);
+
+			// prefixlen
+			if (not s_prefix.exists("prefixlen")) {
+				continue;
+			}
+			entry.set_prefix(prefix_id).set_version((unsigned int)s_prefix["prefixlen"]);
+
+		}
+	}
+
+
+	std::cerr << ">>> " << entry.str() << " <<<" << std::endl;
+	cgtpcoredb::add_gtp_termdev(dpid, entry);
 }
 
 
