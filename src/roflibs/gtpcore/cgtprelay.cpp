@@ -29,7 +29,7 @@ cgtprelay::add_gtp_termdevs()
 				it = db.get_gtp_termdev_ids(dpid).begin(); it != db.get_gtp_termdev_ids(dpid).end(); ++it) {
 			const cgtptermdeventry& entry = db.get_gtp_termdev(dpid, *it);
 
-			roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dptid()).add_termdev(entry.get_devname());
+			add_termdev(entry.get_devname());
 
 			for (std::set<unsigned int>::iterator
 					it = entry.get_prefix_ids().begin(); it != entry.get_prefix_ids().end(); ++it) {
@@ -37,12 +37,14 @@ cgtprelay::add_gtp_termdevs()
 
 				switch (prefix.get_version()) {
 				case 4: {
-					roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dptid()).set_termdev(entry.get_devname()).
-									add_prefix_in4(rofcore::cprefix_in4(rofl::caddress_in4(prefix.get_addr()), prefix.get_prefixlen()));
+					set_termdev(entry.get_devname()).add_prefix_in4(
+							rofcore::cprefix_in4(
+									rofl::caddress_in4(prefix.get_addr()), prefix.get_prefixlen()));
 				} break;
 				case 6: {
-					roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dptid()).set_termdev(entry.get_devname()).
-									add_prefix_in6(rofcore::cprefix_in6(rofl::caddress_in6(prefix.get_addr()), prefix.get_prefixlen()));
+					set_termdev(entry.get_devname()).add_prefix_in6(
+							rofcore::cprefix_in6(
+									rofl::caddress_in6(prefix.get_addr()), prefix.get_prefixlen()));
 				} break;
 				default: {
 
@@ -123,7 +125,10 @@ cgtprelay::handle_read(
 
 					pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-					set_termdev("tun57").enqueue(pkt); // TODO
+					for (std::map<std::string, ctermdev*>::iterator
+							it = termdevs.begin(); it != termdevs.end(); ++it) {
+						set_termdev(it->first).enqueue(pkt);
+					}
 
 					// set OFP shortcut into datapath
 					cgtpcore::set_gtp_core(dptid).set_term_in4(label_in).handle_dpt_open_egress();
@@ -185,7 +190,10 @@ cgtprelay::handle_read(
 
 					pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-					set_termdev("tun57").enqueue(pkt); // TODO
+					for (std::map<std::string, ctermdev*>::iterator
+							it = termdevs.begin(); it != termdevs.end(); ++it) {
+						set_termdev(it->first).enqueue(pkt);
+					}
 
 					// set OFP shortcut into datapath
 					cgtpcore::set_gtp_core(dptid).set_term_in6(label_in).handle_dpt_open_egress();
@@ -221,6 +229,17 @@ cgtprelay::handle_read(
 
 
 void
+cgtprelay::enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
+{
+	for (std::vector<rofl::cpacket*>::iterator
+			it = pkts.begin(); it != pkts.end(); ++it) {
+		enqueue(netdev, *it);
+	}
+}
+
+
+
+void
 cgtprelay::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 {
 	rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue] msg received: " << std::endl << *pkt;
@@ -242,17 +261,6 @@ cgtprelay::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 	}
 
 	rofcore::cpacketpool::get_instance().release_pkt(pkt);
-}
-
-
-
-void
-cgtprelay::enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
-{
-	for (std::vector<rofl::cpacket*>::iterator
-			it = pkts.begin(); it != pkts.end(); ++it) {
-		enqueue(netdev, *it);
-	}
 }
 
 

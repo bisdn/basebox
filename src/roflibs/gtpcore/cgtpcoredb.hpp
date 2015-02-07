@@ -421,7 +421,7 @@ public:
 	friend std::ostream&
 	operator<< (
 			std::ostream& os, const cgtptermdevprefixentry& prefix) {
-		os << rofcore::indent(0) << "<cgtptermdevprefixentry IPv" << prefix.get_version() << ", ";
+		os << rofcore::indent(0) << "<cgtptermdevprefixentry IPv" << prefix.get_version() << " ";
 		os << "addr: " << prefix.get_addr() << "/" << prefix.get_prefixlen() << ", ";
 		os << " >" << std::endl;
 		return os;
@@ -430,7 +430,7 @@ public:
 	const std::string&
 	str() const {
 		std::stringstream ss;
-		ss << "IPv" << get_version() << ", ";
+		ss << "IPv" << get_version() << " ";
 		ss << "addr: " << get_addr() << "/" << get_prefixlen();
 		info_s = ss.str();
 		return info_s;
@@ -487,9 +487,11 @@ public:
 		devname = entry.devname;
 		info_s = entry.info_s;
 		prefixes.clear();
+		prefixids.clear();
 		for (std::map<unsigned int, cgtptermdevprefixentry>::const_iterator
 				it = entry.prefixes.begin(); it != entry.prefixes.end(); ++it) {
-			prefixes[it->first] = it->second;
+			const cgtptermdevprefixentry& prefix = it->second;
+			add_prefix(it->first, prefix.get_version(), prefix.get_addr(), prefix.get_prefixlen());
 		}
 		return *this;
 	};
@@ -618,7 +620,7 @@ public:
 		ss << "tundev: " << get_devname() << ", ";
 		for (std::map<unsigned int, cgtptermdevprefixentry>::const_iterator
 				it = prefixes.begin(); it != prefixes.end(); ++it) {
-			ss << it->second << " ";
+			ss << it->second.str() << " ";
 		}
 		info_s = ss.str();
 		return info_s;

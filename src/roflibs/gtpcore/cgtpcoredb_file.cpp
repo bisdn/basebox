@@ -408,7 +408,7 @@ cgtpcoredb_file::parse_datapath_termdev(
 			if (not s_prefix.exists("version")) {
 				continue;
 			}
-			entry.set_prefix(prefix_id).set_version((int)s_prefix["version"]);
+			entry.set_prefix(prefix_id, 0, "", 0).set_version((int)s_prefix["version"]);
 
 			// addr
 			if (not s_prefix.exists("addr")) {
@@ -420,7 +420,7 @@ cgtpcoredb_file::parse_datapath_termdev(
 			if (not s_prefix.exists("prefixlen")) {
 				continue;
 			}
-			entry.set_prefix(prefix_id).set_version((unsigned int)s_prefix["prefixlen"]);
+			entry.set_prefix(prefix_id).set_prefixlen((unsigned int)s_prefix["prefixlen"]);
 
 		}
 	}
