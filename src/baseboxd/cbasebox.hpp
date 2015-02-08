@@ -69,7 +69,7 @@ class cbasebox : public rofl::crofbase, public rofcore::cnetlink_common_observer
 						table_id_ip_fwd(6),
 						table_id_eth_dst(7),
 						default_pvid(1)
-						{};
+	{};
 
 	/**
 	 *

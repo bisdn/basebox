@@ -112,7 +112,7 @@ cgtprelay::handle_read(
 				if (cgtpcore::get_gtp_core(dptid).has_term_in4(/*egress label*/label_in)) {
 
 					// find associated term point for label-in
-					const roflibs::gtp::cterm_in4& term =
+					roflibs::gtp::cterm_in4& term =
 							cgtpcore::set_gtp_core(dptid).set_term_in4(label_in);
 
 					rofcore::logging::debug << "[cgtprelay][handle_read][term] found termination point: " << std::endl << term;
@@ -125,7 +125,7 @@ cgtprelay::handle_read(
 
 					set_termdev(term.get_devname()).enqueue(pkt);
 
-#if 0
+#if 1
 					// set OFP shortcut into datapath
 					term.handle_dpt_open_egress();
 #endif
@@ -315,7 +315,7 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
 
-#if 0
+#if 1
 		// set OFP shortcut into datapath
 		term.handle_dpt_open_ingress();
 #endif
@@ -377,9 +377,12 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
 
+#if 1
+		// remove OFP redirection to controller
+		set_termdev(netdev->get_devname()).handle_dpt_close();
 		// set OFP shortcut into datapath
 		term.handle_dpt_open_ingress();
-
+#endif
 
 	} catch (eGtpRelayNotFound& e) {
 		rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] socket not found" << std::endl;
