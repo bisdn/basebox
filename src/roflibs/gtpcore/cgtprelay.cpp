@@ -89,12 +89,13 @@ cgtprelay::handle_read(
 
 				if (cgtpcore::get_gtp_core(dptid).has_relay_in4(label_in)) {
 
-					// find associated label-out for label-in
-					const roflibs::gtp::clabel_in4& label_out =
-							cgtpcore::get_gtp_core(dptid).
-									get_relay_in4(label_in).get_label_out();
+					const roflibs::gtp::crelay_in4& relay =
+							cgtpcore::get_gtp_core(dptid).get_relay_in4(label_in);
 
-					rofcore::logging::debug << "[cgtprelay][handle_read] label-out: " << std::endl << label_out;
+					// find associated label-out for label-in
+					const roflibs::gtp::clabel_in4& label_out = relay.get_label_out();
+
+					rofcore::logging::debug << "[cgtprelay][handle_read][relay] found relay: " << std::endl << relay;
 
 					// set TEID for outgoing packet
 					gtpu.set_teid(label_out.get_teid().get_value());
@@ -109,9 +110,11 @@ cgtprelay::handle_read(
 				} else
 				if (cgtpcore::get_gtp_core(dptid).has_term_in4(/*egress label*/label_in)) {
 
-					// find associated tft-match for label-in
-					roflibs::gtp::cterm_in4& term =
+					// find associated term point for label-in
+					const roflibs::gtp::cterm_in4& term =
 							cgtpcore::set_gtp_core(dptid).set_term_in4(label_in);
+
+					rofcore::logging::debug << "[cgtprelay][handle_read][term] found termination point: " << std::endl << term;
 
 					rofl::cpacket* pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 
@@ -125,6 +128,9 @@ cgtprelay::handle_read(
 					// set OFP shortcut into datapath
 					term.handle_dpt_open_egress();
 #endif
+				} else {
+					rofcore::logging::debug << "[cgtprelay][handle_read] no relay or termination point found" << std::endl;
+
 				}
 
 			} catch (eGtpCoreNotFound& e) {
@@ -152,12 +158,13 @@ cgtprelay::handle_read(
 
 				if (cgtpcore::get_gtp_core(dptid).has_relay_in6(label_in)) {
 
-					// find associated label-out for label-in
-					const roflibs::gtp::clabel_in6& label_out =
-							cgtpcore::get_gtp_core(dptid).
-									get_relay_in6(label_in).get_label_out();
+					const roflibs::gtp::crelay_in6& relay =
+							cgtpcore::get_gtp_core(dptid).get_relay_in6(label_in);
 
-					rofcore::logging::debug << "[cgtprelay][handle_read] label-out: " << std::endl << label_out;
+					// find associated label-out for label-in
+					const roflibs::gtp::clabel_in6& label_out = relay.get_label_out();
+
+					rofcore::logging::debug << "[cgtprelay][handle_read][relay] found relay: " << std::endl << relay;
 
 					// set TEID for outgoing packet
 					gtpu.set_teid(label_out.get_teid().get_value());
@@ -172,9 +179,11 @@ cgtprelay::handle_read(
 				} else
 				if (cgtpcore::get_gtp_core(dptid).has_term_in6(label_in)) {
 
-					// find associated tft-match for label-in
+					// find associated term point for label-in
 					const roflibs::gtp::cterm_in6& term =
-							cgtpcore::get_gtp_core(dptid).get_term_in6(/*egress label*/label_in);
+							cgtpcore::set_gtp_core(dptid).set_term_in6(label_in);
+
+					rofcore::logging::debug << "[cgtprelay][handle_read][term] found termination point: " << std::endl << term;
 
 					rofl::cpacket* pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 
@@ -186,6 +195,9 @@ cgtprelay::handle_read(
 
 					// set OFP shortcut into datapath
 					cgtpcore::set_gtp_core(dptid).set_term_in6(label_in).handle_dpt_open_egress();
+
+				} else {
+					rofcore::logging::debug << "[cgtprelay][handle_read] no relay or termination point found" << std::endl;
 
 				}
 
