@@ -57,8 +57,16 @@ public:
 	 *
 	 */
 	virtual
-	~ctermdev()
-	{};
+	~ctermdev() {
+		for (std::map<rofcore::cprefix_in4, uint64_t>::const_iterator
+				it = prefixes_in4.begin(); it != prefixes_in4.end(); ++it) {
+			roflibs::common::openflow::ccookie_owner::release_cookie(it->second);
+		}
+		for (std::map<rofcore::cprefix_in6, uint64_t>::const_iterator
+				it = prefixes_in6.begin(); it != prefixes_in6.end(); ++it) {
+			roflibs::common::openflow::ccookie_owner::release_cookie(it->second);
+		}
+	};
 
 
 public:
