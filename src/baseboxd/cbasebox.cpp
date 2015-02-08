@@ -516,6 +516,8 @@ cbasebox::handle_port_desc_stats_reply(
 
 	// call external scripting hook
 	hook_dpt_attach(dpt.get_dptid());
+
+	//test_gtp(dpt);
 }
 
 
@@ -619,7 +621,9 @@ cbasebox::test_gtp(rofl::crofdpt& dpt)
 {
 	uint32_t teid = 0;
 
-	for (int i = 1; i < 100000; i++) {
+	for (int i = 1; i < 10000; i++) {
+
+		std::cerr << ">>> GTP test i=" << i << " <<<" << std::endl;
 
 		roflibs::gtp::clabel_in4 label_in(
 				roflibs::gtp::caddress_gtp_in4(
@@ -635,7 +639,7 @@ cbasebox::test_gtp(rofl::crofdpt& dpt)
 						rofl::caddress_in4("10.2.2.20"), roflibs::gtp::cport(roflibs::gtp::cgtpcore::DEFAULT_GTPU_PORT)),
 				roflibs::gtp::cteid(i));
 
-		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(0, label_in, label_out);
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_relay_in4(i, label_in, label_out).handle_dpt_open();
 	}
 }
 
