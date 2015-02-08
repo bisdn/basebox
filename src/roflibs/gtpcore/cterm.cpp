@@ -127,10 +127,10 @@ cterm_in4::handle_dpt_open_ingress()
 
 		fm.set_match().set_eth_type(tft_match.get_eth_type());
 		if (tft_match.get_matches().has_match(rofl::openflow::OXM_TLV_BASIC_IPV4_SRC)) {
-			fm.set_match().set_ipv4_src(tft_match.get_ipv4_src());
+			fm.set_match().set_ipv4_src(tft_match.get_ipv4_src(), tft_match.get_ipv4_src_mask());
 		}
 		if (tft_match.get_matches().has_match(rofl::openflow::OXM_TLV_BASIC_IPV4_DST)) {
-			fm.set_match().set_ipv4_dst(tft_match.get_ipv4_dst());
+			fm.set_match().set_ipv4_dst(tft_match.get_ipv4_dst(), tft_match.get_ipv4_dst_mask());
 		}
 
 		rofl::cindex index;
@@ -199,10 +199,10 @@ cterm_in4::handle_dpt_close_ingress()
 
 		fm.set_match().set_eth_type(tft_match.get_eth_type());
 		if (tft_match.get_matches().has_match(rofl::openflow::OXM_TLV_BASIC_IPV4_SRC)) {
-			fm.set_match().set_ipv4_src(tft_match.get_ipv4_src());
+			fm.set_match().set_ipv4_src(tft_match.get_ipv4_src(), tft_match.get_ipv4_src_mask());
 		}
 		if (tft_match.get_matches().has_match(rofl::openflow::OXM_TLV_BASIC_IPV4_DST)) {
-			fm.set_match().set_ipv4_dst(tft_match.get_ipv4_dst());
+			fm.set_match().set_ipv4_dst(tft_match.get_ipv4_dst(), tft_match.get_ipv4_dst_mask());
 		}
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);

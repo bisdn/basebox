@@ -128,18 +128,22 @@ cgtpcore::add_gtp_terms()
 					match.set_ipv4_dst(
 							rofl::caddress_in4(entry.get_inject_filter().get_dst_addr()),
 							rofl::caddress_in4(entry.get_inject_filter().get_dst_mask()));
+#if 0
 					match.set_ipv4_src(
 							rofl::caddress_in4(entry.get_inject_filter().get_src_addr()),
 							rofl::caddress_in4(entry.get_inject_filter().get_src_mask()));
+#endif
 				} break;
 				case 6: {
 					match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 					match.set_ipv6_dst(
 							rofl::caddress_in6(entry.get_inject_filter().get_dst_addr()),
 							rofl::caddress_in6(entry.get_inject_filter().get_dst_mask()));
+#if 0
 					match.set_ipv6_src(
 							rofl::caddress_in6(entry.get_inject_filter().get_src_addr()),
 							rofl::caddress_in6(entry.get_inject_filter().get_src_mask()));
+#endif
 				} break;
 				default: {
 					// TODO
@@ -176,18 +180,22 @@ cgtpcore::add_gtp_terms()
 					match.set_ipv4_dst(
 							rofl::caddress_in4(entry.get_inject_filter().get_dst_addr()),
 							rofl::caddress_in4(entry.get_inject_filter().get_dst_mask()));
+#if 0
 					match.set_ipv4_src(
 							rofl::caddress_in4(entry.get_inject_filter().get_src_addr()),
 							rofl::caddress_in4(entry.get_inject_filter().get_src_mask()));
+#endif
 				} break;
 				case 6: {
 					match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 					match.set_ipv6_dst(
 							rofl::caddress_in6(entry.get_inject_filter().get_dst_addr()),
 							rofl::caddress_in6(entry.get_inject_filter().get_dst_mask()));
+#if 0
 					match.set_ipv6_src(
 							rofl::caddress_in6(entry.get_inject_filter().get_src_addr()),
 							rofl::caddress_in6(entry.get_inject_filter().get_src_mask()));
+#endif
 				} break;
 				default: {
 					// TODO
