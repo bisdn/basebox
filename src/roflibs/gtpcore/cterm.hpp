@@ -289,6 +289,16 @@ public:
 		};
 	};
 
+	class cterm_in4_find_by_label_out {
+		roflibs::gtp::clabel_in4 label_out;
+	public:
+		cterm_in4_find_by_label_out(const roflibs::gtp::clabel_in4& label_out) :
+			label_out(label_out) {};
+		bool operator() (const std::pair<unsigned int, cterm_in4*>& p) {
+			return (p.second->label_egress == label_out);
+		};
+	};
+
 private:
 
 	clabel_in4 label_egress;
@@ -460,6 +470,16 @@ public:
 			label_in(label_in) {};
 		bool operator() (const std::pair<unsigned int, cterm_in6*>& p) {
 			return (p.second->label_ingress == label_in);
+		};
+	};
+
+	class cterm_in6_find_by_label_out {
+		roflibs::gtp::clabel_in6 label_out;
+	public:
+		cterm_in6_find_by_label_out(const roflibs::gtp::clabel_in6& label_out) :
+			label_out(label_out) {};
+		bool operator() (const std::pair<unsigned int, cterm_in6*>& p) {
+			return (p.second->label_egress == label_out);
 		};
 	};
 

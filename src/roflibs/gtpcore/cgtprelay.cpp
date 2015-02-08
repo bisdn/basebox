@@ -108,6 +108,7 @@ cgtprelay::handle_read(
 					cgtpcore::set_gtp_core(dptid).set_relay_in4(label_in).handle_dpt_open();
 
 				} else
+				/* this is the incoming label == egress label */
 				if (cgtpcore::get_gtp_core(dptid).has_term_in4(/*egress label*/label_in)) {
 
 					// find associated term point for label-in
@@ -177,6 +178,7 @@ cgtprelay::handle_read(
 					cgtpcore::set_gtp_core(dptid).set_relay_in6(label_in).handle_dpt_open();
 
 				} else
+				/* this is the incoming label == egress label */
 				if (cgtpcore::get_gtp_core(dptid).has_term_in6(label_in)) {
 
 					// find associated term point for label-in

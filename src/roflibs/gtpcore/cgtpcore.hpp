@@ -644,10 +644,10 @@ public:
 	 */
 	bool
 	has_term_in4(
-			const roflibs::gtp::clabel_in4& label_in) const {
+			const roflibs::gtp::clabel_in4& label_egress) const {
 		std::map<unsigned int, cterm_in4*>::const_iterator it;
 		 return (not (find_if(terms_in4.begin(), terms_in4.end(),
-				cterm_in4::cterm_in4_find_by_label_in(label_in)) == terms_in4.end()));
+				cterm_in4::cterm_in4_find_by_label_out(label_egress)) == terms_in4.end()));
 	};
 
 public:
@@ -889,10 +889,10 @@ public:
 	 */
 	bool
 	has_term_in6(
-			const roflibs::gtp::clabel_in6& label_in) const {
+			const roflibs::gtp::clabel_in6& label_egress) const {
 		std::map<unsigned int, cterm_in6*>::const_iterator it;
 		 return (not (find_if(terms_in6.begin(), terms_in6.end(),
-				cterm_in6::cterm_in6_find_by_label_in(label_in)) == terms_in6.end()));
+				cterm_in6::cterm_in6_find_by_label_out(label_egress)) == terms_in6.end()));
 	};
 
 public:
