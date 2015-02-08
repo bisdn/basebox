@@ -712,7 +712,7 @@ cbasebox::test_workflow(rofl::crofdpt& dpt)
 		tft_match.set_ipv4_src(rofl::caddress_in4("10.2.2.20"));
 		tft_match.set_ipv4_dst(rofl::caddress_in4("192.168.4.33"));
 
-		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_term_in4(0, label_egress, label_ingress, tft_match);
+		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).add_term_in4(0, "tun57", label_egress, label_ingress, tft_match);
 	}
 	if (gtp_test) {
 		roflibs::gtp::clabel_in4 label_in(

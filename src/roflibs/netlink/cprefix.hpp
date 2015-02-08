@@ -84,6 +84,19 @@ public:
 	/**
 	 *
 	 */
+	cprefix_in4(const rofl::caddress_in4& addr, const rofl::caddress_in4& mask) :
+		cprefix(0), addr(addr), mask(mask) {
+		uint32_t m = mask.get_addr_hbo();
+		while (0 == (m % 2)) {
+			prefixlen++;
+			m = m >> 1;
+		}
+		prefixlen = 32-prefixlen;
+	};
+
+	/**
+	 *
+	 */
 	cprefix_in4(const rofl::caddress_in4& addr, int prefixlen) :
 		cprefix(prefixlen), addr(addr) {
 		mask.set_addr_hbo(~((1 << (32 - prefixlen)) - 1));
@@ -165,6 +178,24 @@ public:
 	 */
 	virtual
 	~cprefix_in6() {};
+
+	/**
+	 *
+	 */
+	cprefix_in6(const rofl::caddress_in6& addr, const rofl::caddress_in6& mask) :
+		cprefix(0), addr(addr), mask(mask) {
+		// TODO
+		assert(0);
+#if 0
+		for (int i = 0; i < 16; i++) {
+			uint8_t byte = ((uint8_t*)&mask)[15-i];
+			while (0 == (byte % 2)) {
+				prefixlen++;
+				byte = byte >> 1;
+			}
+		}
+#endif
+	};
 
 	/**
 	 *

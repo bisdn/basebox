@@ -25,39 +25,33 @@ cgtprelay::add_gtp_termdevs()
 		rofl::cdpid dpid = rofl::crofdpt::get_dpt(dptid).get_dpid();
 
 		// install GTPv4 termdevs
-		for (std::set<std::string>::const_iterator
-				it = db.get_gtp_termdev_ids(dpid).begin(); it != db.get_gtp_termdev_ids(dpid).end(); ++it) {
-			const cgtptermdeventry& entry = db.get_gtp_termdev(dpid, *it);
+		for (std::set<unsigned int>::const_iterator
+				it = db.get_gtp_term_ids(dpid).begin(); it != db.get_gtp_term_ids(dpid).end(); ++it) {
+			const cgtptermentry& entry = db.get_gtp_term(dpid, *it);
 
-			add_termdev(entry.get_devname());
-
-			for (std::set<unsigned int>::iterator
-					it = entry.get_prefix_ids().begin(); it != entry.get_prefix_ids().end(); ++it) {
-				const cgtptermdevprefixentry& prefix = entry.get_prefix(*it);
-
-				switch (prefix.get_version()) {
-				case 4: {
-					set_termdev(entry.get_devname()).add_prefix_in4(
-							rofcore::cprefix_in4(
-									rofl::caddress_in4(prefix.get_addr()), prefix.get_prefixlen()));
-				} break;
-				case 6: {
-					set_termdev(entry.get_devname()).add_prefix_in6(
-							rofcore::cprefix_in6(
-									rofl::caddress_in6(prefix.get_addr()), prefix.get_prefixlen()));
-				} break;
-				default: {
-
-				};
-				}
-
+			switch (entry.get_inject_filter().get_version()) {
+			case 4: {
+				set_termdev(entry.get_inject_filter().get_devname()).
+						add_prefix_in4(rofcore::cprefix_in4(
+								rofl::caddress_in4(entry.get_inject_filter().get_dst_addr()),
+								rofl::caddress_in4(entry.get_inject_filter().get_dst_mask())));
+			} break;
+			case 6: {
+				set_termdev(entry.get_inject_filter().get_devname()).
+						add_prefix_in6(rofcore::cprefix_in6(
+								rofl::caddress_in6(entry.get_inject_filter().get_dst_addr()),
+								rofl::caddress_in6(entry.get_inject_filter().get_dst_mask())));
+			} break;
+			default: {
+				// TODO
+			};
 			}
 		}
-
 
 	} catch (rofl::eRofDptNotFound& e) {
 
 	}
+
 }
 
 
@@ -116,8 +110,8 @@ cgtprelay::handle_read(
 				if (cgtpcore::get_gtp_core(dptid).has_term_in4(/*egress label*/label_in)) {
 
 					// find associated tft-match for label-in
-					const roflibs::gtp::cterm_in4& term =
-							cgtpcore::get_gtp_core(dptid).get_term_in4(label_in);
+					roflibs::gtp::cterm_in4& term =
+							cgtpcore::set_gtp_core(dptid).set_term_in4(label_in);
 
 					rofl::cpacket* pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 
@@ -125,14 +119,12 @@ cgtprelay::handle_read(
 
 					pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-					for (std::map<std::string, ctermdev*>::iterator
-							it = termdevs.begin(); it != termdevs.end(); ++it) {
-						set_termdev(it->first).enqueue(pkt);
-					}
+					set_termdev(term.get_devname()).enqueue(pkt);
 
+#if 0
 					// set OFP shortcut into datapath
-					cgtpcore::set_gtp_core(dptid).set_term_in4(label_in).handle_dpt_open_egress();
-
+					term.handle_dpt_open_egress();
+#endif
 				}
 
 			} catch (eGtpCoreNotFound& e) {
@@ -190,10 +182,7 @@ cgtprelay::handle_read(
 
 					pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-					for (std::map<std::string, ctermdev*>::iterator
-							it = termdevs.begin(); it != termdevs.end(); ++it) {
-						set_termdev(it->first).enqueue(pkt);
-					}
+					set_termdev(term.get_devname()).enqueue(pkt);
 
 					// set OFP shortcut into datapath
 					cgtpcore::set_gtp_core(dptid).set_term_in6(label_in).handle_dpt_open_egress();
@@ -281,81 +270,41 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 	// try to find TFT with source and destination address
 	try {
 
-		rofl::openflow::cofmatch tft_match(rofl::crofdpt::get_dpt(dptid).get_version_negotiated());
-		tft_match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-		tft_match.set_ipv4_dst(ipv4.get_ipv4_dst(), rofl::caddress_in4("255.255.255.255"));
-		tft_match.set_ipv4_src(ipv4.get_ipv4_src(), rofl::caddress_in4("255.255.255.255"));
-
-		if (cgtpcore::get_gtp_core(dptid).has_term_in4(tft_match)) {
-			cterm_in4& term = cgtpcore::set_gtp_core(dptid).set_term_in4(tft_match);
-			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] cterm_in4 (src->dst) found" << std::endl << term;
-
-			size_t orig_len = pkt->length();
-
-			pkt->tag_insert(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
-
-			rofl::fgtpuframe gtpu(pkt->soframe(), pkt->length());
-
-			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
-			gtpu.set_pt_flag(true);
-			gtpu.set_msg_type(255);
-			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
-			gtpu.set_length(orig_len);
-
-			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] tagged frame" << std::endl << *pkt;
-
-			rofl::cmemory* mem = new rofl::cmemory(pkt->soframe(), pkt->length());
-
-			pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
-
-			rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
-									term.get_label_ingress().get_daddr().get_port().get_value());
-
-			set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
-
-			// set OFP shortcut into datapath
-			term.handle_dpt_open_ingress();
-
+		if (not cgtpcore::get_gtp_core(dptid).has_term_in4(netdev->get_devname())) {
+			rofcore::cpacketpool::get_instance().release_pkt(pkt);
 			return;
 		}
 
-		tft_match.clear();
-		tft_match.set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-		tft_match.set_ipv4_dst(ipv4.get_ipv4_dst(), rofl::caddress_in4("255.255.255.255"));
+		cterm_in4& term = cgtpcore::set_gtp_core(dptid).set_term_in4(netdev->get_devname());
+		rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] cterm_in4 (src->dst) found" << std::endl << term;
 
-		if (cgtpcore::get_gtp_core(dptid).has_term_in4(tft_match)) {
-			cterm_in4& term = cgtpcore::set_gtp_core(dptid).set_term_in4(tft_match);
-			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] cterm_in4 (dst only) found" << std::endl << term;
+		size_t orig_len = pkt->length();
 
-			size_t orig_len = pkt->length();
+		pkt->tag_insert(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-			pkt->tag_insert(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
+		rofl::fgtpuframe gtpu(pkt->soframe(), pkt->length());
 
-			rofl::fgtpuframe gtpu(pkt->soframe(), pkt->length());
+		gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
+		gtpu.set_pt_flag(true);
+		gtpu.set_msg_type(255);
+		gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
+		gtpu.set_length(orig_len);
 
-			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
-			gtpu.set_pt_flag(true);
-			gtpu.set_msg_type(255);
-			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
-			gtpu.set_length(orig_len);
+		rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] tagged frame" << std::endl << *pkt;
 
-			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] tagged frame" << std::endl << *pkt;
+		rofl::cmemory* mem = new rofl::cmemory(pkt->soframe(), pkt->length());
 
-			rofl::cmemory* mem = new rofl::cmemory(pkt->soframe(), pkt->length());
+		pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-			pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
+		rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
+								term.get_label_ingress().get_daddr().get_port().get_value());
 
-			rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
-									term.get_label_ingress().get_daddr().get_port().get_value());
+		set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
 
-			set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
-
-			// set OFP shortcut into datapath
-			term.handle_dpt_open_ingress();
-
-			return;
-		}
-
+#if 0
+		// set OFP shortcut into datapath
+		term.handle_dpt_open_ingress();
+#endif
 
 	} catch (eGtpRelayNotFound& e) {
 		rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] socket not found" << std::endl;
@@ -383,80 +332,39 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 	// try to find TFT with source and destination address
 	try {
 
-		rofl::openflow::cofmatch tft_match(rofl::crofdpt::get_dpt(dptid).get_version_negotiated());
-		tft_match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-		tft_match.set_ipv6_dst(ipv6.get_ipv6_dst(), rofl::caddress_in6("255.255.255.255"));
-		tft_match.set_ipv6_src(ipv6.get_ipv6_src(), rofl::caddress_in6("255.255.255.255"));
-
-		if (cgtpcore::get_gtp_core(dptid).has_term_in6(tft_match)) {
-			cterm_in6& term = cgtpcore::set_gtp_core(dptid).set_term_in6(tft_match);
-			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] cterm_in6 (src->dst) found" << std::endl << term;
-
-			size_t orig_len = pkt->length();
-
-			pkt->tag_insert(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
-
-			rofl::fgtpuframe gtpu(pkt->soframe(), pkt->length());
-
-			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
-			gtpu.set_pt_flag(true);
-			gtpu.set_msg_type(255);
-			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
-			gtpu.set_length(orig_len);
-
-			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] tagged frame" << std::endl << *pkt;
-
-			rofl::cmemory* mem = new rofl::cmemory(pkt->soframe(), pkt->length());
-
-			pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
-
-			rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
-									term.get_label_ingress().get_daddr().get_port().get_value());
-
-			set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
-
-			// set OFP shortcut into datapath
-			term.handle_dpt_open_ingress();
-
+		if (cgtpcore::get_gtp_core(dptid).has_term_in6(netdev->get_devname())) {
+			rofcore::cpacketpool::get_instance().release_pkt(pkt);
 			return;
 		}
 
-		tft_match.clear();
-		tft_match.set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-		tft_match.set_ipv6_dst(ipv6.get_ipv6_dst(), rofl::caddress_in6("255.255.255.255"));
+		cterm_in6& term = cgtpcore::set_gtp_core(dptid).set_term_in6(netdev->get_devname());
+		rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] cterm_in6 (src->dst) found" << std::endl << term;
 
-		if (cgtpcore::get_gtp_core(dptid).has_term_in6(tft_match)) {
-			cterm_in6& term = cgtpcore::set_gtp_core(dptid).set_term_in6(tft_match);
-			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] cterm_in6 (dst only) found" << std::endl << term;
+		size_t orig_len = pkt->length();
 
-			size_t orig_len = pkt->length();
+		pkt->tag_insert(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-			pkt->tag_insert(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
+		rofl::fgtpuframe gtpu(pkt->soframe(), pkt->length());
 
-			rofl::fgtpuframe gtpu(pkt->soframe(), pkt->length());
+		gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
+		gtpu.set_pt_flag(true);
+		gtpu.set_msg_type(255);
+		gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
+		gtpu.set_length(orig_len);
 
-			gtpu.set_version(rofl::fgtpuframe::GTPU_VERS_1);
-			gtpu.set_pt_flag(true);
-			gtpu.set_msg_type(255);
-			gtpu.set_teid(term.get_label_ingress().get_teid().get_value());
-			gtpu.set_length(orig_len);
+		rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] tagged frame" << std::endl << *pkt;
 
-			rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] tagged frame" << std::endl << *pkt;
+		rofl::cmemory* mem = new rofl::cmemory(pkt->soframe(), pkt->length());
 
-			rofl::cmemory* mem = new rofl::cmemory(pkt->soframe(), pkt->length());
+		pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
 
-			pkt->tag_remove(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
+		rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
+								term.get_label_ingress().get_daddr().get_port().get_value());
 
-			rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
-									term.get_label_ingress().get_daddr().get_port().get_value());
+		set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
 
-			set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
-
-			// set OFP shortcut into datapath
-			term.handle_dpt_open_ingress();
-
-			return;
-		}
+		// set OFP shortcut into datapath
+		term.handle_dpt_open_ingress();
 
 
 	} catch (eGtpRelayNotFound& e) {

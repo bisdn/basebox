@@ -422,12 +422,17 @@ public:
 	 *
 	 */
 	cterm_in4&
-	add_term_in4(unsigned int term_id, const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+	add_term_in4(
+			unsigned int term_id,
+			const std::string& devname,
+			const clabel_in4& label_egress,
+			const clabel_in4& label_ingress,
+			const rofl::openflow::cofmatch& tft_match) {
 		if (terms_in4.find(term_id) != terms_in4.end()) {
 			delete terms_in4[term_id];
 			terms_in4.erase(term_id);
 		}
-		terms_in4[term_id] = new cterm_in4(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
+		terms_in4[term_id] = new cterm_in4(dptid, gtp_table_id, devname, label_egress, label_ingress, tft_match);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
@@ -442,9 +447,14 @@ public:
 	 *
 	 */
 	cterm_in4&
-	set_term_in4(unsigned int term_id, const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+	set_term_in4(
+			unsigned int term_id,
+			const std::string& devname,
+			const clabel_in4& label_egress,
+			const clabel_in4& label_ingress,
+			const rofl::openflow::cofmatch& tft_match) {
 		if (terms_in4.find(term_id) == terms_in4.end()) {
-			terms_in4[term_id] = new cterm_in4(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
+			terms_in4[term_id] = new cterm_in4(dptid, gtp_table_id, devname, label_egress, label_ingress, tft_match);
 		}
 #if 0
 		try {
@@ -460,7 +470,8 @@ public:
 	 *
 	 */
 	cterm_in4&
-	set_term_in4(unsigned int term_id) {
+	set_term_in4(
+			unsigned int term_id) {
 		if (terms_in4.find(term_id) == terms_in4.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in4() label not found");
 		}
@@ -471,7 +482,8 @@ public:
 	 *
 	 */
 	cterm_in4&
-	set_term_in4(const rofl::openflow::cofmatch& tft_match) {
+	set_term_in4(
+			const rofl::openflow::cofmatch& tft_match) {
 		std::map<unsigned int, cterm_in4*>::iterator it;
 		for (it = terms_in4.begin(); it != terms_in4.end(); ++it) {
 			cterm_in4& term = *(it->second);
@@ -496,7 +508,8 @@ public:
 	 *
 	 */
 	cterm_in4&
-	set_term_in4(const roflibs::gtp::clabel_in4& label_in) {
+	set_term_in4(
+			const roflibs::gtp::clabel_in4& label_in) {
 		std::map<unsigned int, cterm_in4*>::iterator it;
 		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_label_in(label_in))) == terms_in4.end()) {
@@ -508,8 +521,23 @@ public:
 	/**
 	 *
 	 */
+	cterm_in4&
+	set_term_in4(
+			const std::string& devname) {
+		std::map<unsigned int, cterm_in4*>::iterator it;
+		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
+				cterm_in4::cterm_in4_find_by_devname(devname))) == terms_in4.end()) {
+			throw eRelayNotFound("cgtpcore::set_term_in4() GTP tunnel device not found");
+		}
+		return *(it->second);
+	};
+
+	/**
+	 *
+	 */
 	const cterm_in4&
-	get_term_in4(unsigned int term_id) const {
+	get_term_in4(
+			unsigned int term_id) const {
 		if (terms_in4.find(term_id) == terms_in4.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in4() label not found");
 		}
@@ -520,7 +548,8 @@ public:
 	 *
 	 */
 	const cterm_in4&
-	get_term_in4(const rofl::openflow::cofmatch& tft_match) const {
+	get_term_in4(
+			const rofl::openflow::cofmatch& tft_match) const {
 		std::map<unsigned int, cterm_in4*>::const_iterator it;
 		for (it = terms_in4.begin(); it != terms_in4.end(); ++it) {
 			cterm_in4& term = *(it->second);
@@ -545,7 +574,8 @@ public:
 	 *
 	 */
 	const cterm_in4&
-	get_term_in4(const roflibs::gtp::clabel_in4& label_in) const {
+	get_term_in4(
+			const roflibs::gtp::clabel_in4& label_in) const {
 		std::map<unsigned int, cterm_in4*>::const_iterator it;
 		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_label_in(label_in))) == terms_in4.end()) {
@@ -558,7 +588,8 @@ public:
 	 *
 	 */
 	void
-	drop_term_in4(unsigned int term_id) {
+	drop_term_in4(
+			unsigned int term_id) {
 		if (terms_in4.find(term_id) == terms_in4.end()) {
 			return;
 		}
@@ -570,7 +601,8 @@ public:
 	 *
 	 */
 	bool
-	has_term_in4(unsigned int term_id) const {
+	has_term_in4(
+			unsigned int term_id) const {
 		return (not (terms_in4.find(term_id) == terms_in4.end()));
 	};
 
@@ -578,7 +610,8 @@ public:
 	 *
 	 */
 	bool
-	has_term_in4(const rofl::openflow::cofmatch& tft_match) const {
+	has_term_in4(
+			const rofl::openflow::cofmatch& tft_match) const {
 		std::map<unsigned int, cterm_in4*>::const_iterator it;
 		for (it = terms_in4.begin(); it != terms_in4.end(); ++it) {
 			cterm_in4& term = *(it->second);
@@ -600,7 +633,18 @@ public:
 	 *
 	 */
 	bool
-	has_term_in4(const roflibs::gtp::clabel_in4& label_in) const {
+	has_term_in4(
+			const std::string& devname) const {
+		 return (not (find_if(terms_in4.begin(), terms_in4.end(),
+				cterm_in4::cterm_in4_find_by_devname(devname)) == terms_in4.end()));
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_term_in4(
+			const roflibs::gtp::clabel_in4& label_in) const {
 		std::map<unsigned int, cterm_in4*>::const_iterator it;
 		 return (not (find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_label_in(label_in)) == terms_in4.end()));
@@ -624,12 +668,17 @@ public:
 	 *
 	 */
 	cterm_in6&
-	add_term_in6(unsigned int term_id, const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+	add_term_in6(
+			unsigned int term_id,
+			const std::string& devname,
+			const clabel_in6& label_egress,
+			const clabel_in6& label_ingress,
+			const rofl::openflow::cofmatch& tft_match) {
 		if (terms_in6.find(term_id) != terms_in6.end()) {
 			delete terms_in6[term_id];
 			terms_in6.erase(term_id);
 		}
-		terms_in6[term_id] = new cterm_in6(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
+		terms_in6[term_id] = new cterm_in6(dptid, gtp_table_id, devname, label_egress, label_ingress, tft_match);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
@@ -644,9 +693,14 @@ public:
 	 *
 	 */
 	cterm_in6&
-	set_term_in6(unsigned int term_id, const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) {
+	set_term_in6(
+			unsigned int term_id,
+			const std::string& devname,
+			const clabel_in6& label_egress,
+			const clabel_in6& label_ingress,
+			const rofl::openflow::cofmatch& tft_match) {
 		if (terms_in6.find(term_id) == terms_in6.end()) {
-			terms_in6[term_id] = new cterm_in6(dptid, gtp_table_id, label_egress, label_ingress, tft_match);
+			terms_in6[term_id] = new cterm_in6(dptid, gtp_table_id, devname, label_egress, label_ingress, tft_match);
 		}
 #if 0
 		try {
@@ -662,7 +716,8 @@ public:
 	 *
 	 */
 	cterm_in6&
-	set_term_in6(unsigned int term_id) {
+	set_term_in6(
+			unsigned int term_id) {
 		if (terms_in6.find(term_id) == terms_in6.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in6() label not found");
 		}
@@ -673,7 +728,8 @@ public:
 	 *
 	 */
 	cterm_in6&
-	set_term_in6(const rofl::openflow::cofmatch& tft_match) {
+	set_term_in6(
+			const rofl::openflow::cofmatch& tft_match) {
 		std::map<unsigned int, cterm_in6*>::iterator it;
 		for (it = terms_in6.begin(); it != terms_in6.end(); ++it) {
 			cterm_in6& term = *(it->second);
@@ -698,7 +754,8 @@ public:
 	 *
 	 */
 	cterm_in6&
-	set_term_in6(const roflibs::gtp::clabel_in6& label_in) {
+	set_term_in6(
+			const roflibs::gtp::clabel_in6& label_in) {
 		std::map<unsigned int, cterm_in6*>::iterator it;
 		if ((it = find_if(terms_in6.begin(), terms_in6.end(),
 				cterm_in6::cterm_in6_find_by_label_in(label_in))) == terms_in6.end()) {
@@ -710,8 +767,23 @@ public:
 	/**
 	 *
 	 */
+	cterm_in6&
+	set_term_in6(
+			const std::string& devname) {
+		std::map<unsigned int, cterm_in6*>::iterator it;
+		if ((it = find_if(terms_in6.begin(), terms_in6.end(),
+				cterm_in6::cterm_in6_find_by_devname(devname))) == terms_in6.end()) {
+			throw eRelayNotFound("cgtpcore::set_term_in6() GTP tunnel device not found");
+		}
+		return *(it->second);
+	};
+
+	/**
+	 *
+	 */
 	const cterm_in6&
-	get_term_in6(unsigned int term_id) const {
+	get_term_in6(
+			unsigned int term_id) const {
 		if (terms_in6.find(term_id) == terms_in6.end()) {
 			throw eRelayNotFound("cgtpcore::get_term_in6() label not found");
 		}
@@ -722,7 +794,8 @@ public:
 	 *
 	 */
 	const cterm_in6&
-	get_term_in6(const rofl::openflow::cofmatch& tft_match) const {
+	get_term_in6(
+			const rofl::openflow::cofmatch& tft_match) const {
 		std::map<unsigned int, cterm_in6*>::const_iterator it;
 		for (it = terms_in6.begin(); it != terms_in6.end(); ++it) {
 			cterm_in6& term = *(it->second);
@@ -747,7 +820,8 @@ public:
 	 *
 	 */
 	const cterm_in6&
-	get_term_in6(const roflibs::gtp::clabel_in6& label_in) const {
+	get_term_in6(
+			const roflibs::gtp::clabel_in6& label_in) const {
 		std::map<unsigned int, cterm_in6*>::const_iterator it;
 		if ((it = find_if(terms_in6.begin(), terms_in6.end(),
 				cterm_in6::cterm_in6_find_by_label_in(label_in))) == terms_in6.end()) {
@@ -760,7 +834,8 @@ public:
 	 *
 	 */
 	void
-	drop_term_in6(unsigned int term_id) {
+	drop_term_in6(
+			unsigned int term_id) {
 		if (terms_in6.find(term_id) == terms_in6.end()) {
 			return;
 		}
@@ -772,7 +847,8 @@ public:
 	 *
 	 */
 	bool
-	has_term_in6(unsigned int term_id) const {
+	has_term_in6(
+			unsigned int term_id) const {
 		return (not (terms_in6.find(term_id) == terms_in6.end()));
 	};
 
@@ -802,7 +878,18 @@ public:
 	 *
 	 */
 	bool
-	has_term_in6(const roflibs::gtp::clabel_in6& label_in) const {
+	has_term_in6(
+			const std::string& devname) const {
+		 return (not (find_if(terms_in6.begin(), terms_in6.end(),
+				cterm_in6::cterm_in6_find_by_devname(devname)) == terms_in6.end()));
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_term_in6(
+			const roflibs::gtp::clabel_in6& label_in) const {
 		std::map<unsigned int, cterm_in6*>::const_iterator it;
 		 return (not (find_if(terms_in6.begin(), terms_in6.end(),
 				cterm_in6::cterm_in6_find_by_label_in(label_in)) == terms_in6.end()));

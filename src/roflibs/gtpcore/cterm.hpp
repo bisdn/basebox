@@ -58,9 +58,9 @@ public:
 	/**
 	 *
 	 */
-	cterm(const rofl::cdptid& dptid, uint8_t ofp_table_id) :
+	cterm(const rofl::cdptid& dptid, uint8_t ofp_table_id, const std::string& devname) :
 		state(STATE_DETACHED), dptid(dptid),
-		ofp_table_id(ofp_table_id), idle_timeout(DEFAULT_IDLE_TIMEOUT)
+		ofp_table_id(ofp_table_id), devname(devname), idle_timeout(DEFAULT_IDLE_TIMEOUT)
 	{};
 
 	/**
@@ -79,9 +79,19 @@ public:
 		state = term.state;
 		dptid = term.dptid;
 		ofp_table_id = term.ofp_table_id;
+		devname = term.devname;
 		idle_timeout = term.idle_timeout;
 		return *this;
 	};
+
+public:
+
+	/**
+	 *
+	 */
+	const std::string&
+	get_devname() const
+	{ return devname; };
 
 public:
 
@@ -105,6 +115,7 @@ protected:
 	std::bitset<32>		flags;
 	rofl::cdptid 		dptid;
 	uint8_t 			ofp_table_id;
+	std::string			devname;
 
 	static const int DEFAULT_IDLE_TIMEOUT = 15; // seconds
 
@@ -135,9 +146,18 @@ public:
 	/**
 	 *
 	 */
-	cterm_in4(const rofl::cdptid& dptid, uint8_t ofp_table_id,
-			const clabel_in4& label_egress, const clabel_in4& label_ingress, const rofl::openflow::cofmatch& tft_match) :
-		cterm(dptid, ofp_table_id), label_egress(label_egress), label_ingress(label_ingress), tft_match(tft_match) {};
+	cterm_in4(
+			const rofl::cdptid& dptid,
+			uint8_t ofp_table_id,
+			const std::string& devname,
+			const clabel_in4& label_egress,
+			const clabel_in4& label_ingress,
+			const rofl::openflow::cofmatch& tft_match) :
+				cterm(dptid, ofp_table_id, devname),
+				label_egress(label_egress),
+				label_ingress(label_ingress),
+				tft_match(tft_match)
+	{};
 
 	/**
 	 *
@@ -239,6 +259,16 @@ public:
 		return os;
 	};
 
+	class cterm_in4_find_by_devname {
+		std::string devname;
+	public:
+		cterm_in4_find_by_devname(const std::string& devname) :
+			devname(devname) {};
+		bool operator() (const std::pair<unsigned int, cterm_in4*>& p) {
+			return (p.second->devname == devname);
+		};
+	};
+
 	class cterm_in4_find_by_tft_match {
 		rofl::openflow::cofmatch tft_match;
 	public:
@@ -290,9 +320,18 @@ public:
 	/**
 	 *
 	 */
-	cterm_in6(const rofl::cdptid& dptid, uint8_t ofp_table_id,
-			const clabel_in6& label_egress, const clabel_in6& label_ingress, const rofl::openflow::cofmatch& tft_match) :
-		cterm(dptid, ofp_table_id), label_egress(label_egress), label_ingress(label_ingress), tft_match(tft_match) {};
+	cterm_in6(
+			const rofl::cdptid& dptid,
+			uint8_t ofp_table_id,
+			const std::string& devname,
+			const clabel_in6& label_egress,
+			const clabel_in6& label_ingress,
+			const rofl::openflow::cofmatch& tft_match) :
+				cterm(dptid, ofp_table_id, devname),
+				label_egress(label_egress),
+				label_ingress(label_ingress),
+				tft_match(tft_match)
+	{};
 
 	/**
 	 *
@@ -392,6 +431,16 @@ public:
 		os << rofcore::indent(2) << "<tft-match >" << std::endl;
 		{ rofcore::indent i(4); os << term.get_tft_match(); };
 		return os;
+	};
+
+	class cterm_in6_find_by_devname {
+		std::string devname;
+	public:
+		cterm_in6_find_by_devname(const std::string& devname) :
+			devname(devname) {};
+		bool operator() (const std::pair<unsigned int, cterm_in6*>& p) {
+			return (p.second->devname == devname);
+		};
 	};
 
 	class cterm_in6_find_by_tft_match {

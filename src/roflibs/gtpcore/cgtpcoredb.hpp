@@ -217,9 +217,11 @@ public:
 	 *
 	 */
 	cgtpinjectentry(
+			const std::string& devname,
 			int version,
 			const std::string& saddr, const std::string& smask,
 			const std::string& daddr, const std::string& dmask) :
+				devname(devname),
 				version(version),
 				saddr(saddr),
 				smask(smask),
@@ -242,6 +244,7 @@ public:
 			(const cgtpinjectentry& entry) {
 		if (this == &entry)
 			return *this;
+		devname	= entry.devname;
 		version	= entry.version;
 		saddr	= entry.saddr;
 		smask	= entry.smask;
@@ -252,6 +255,11 @@ public:
 	};
 
 public:
+
+	void
+	set_devname(
+			const std::string& devname)
+	{ this->devname = devname; };
 
 	void
 	set_version(
@@ -280,6 +288,10 @@ public:
 
 public:
 
+	const std::string&
+	get_devname() const
+	{ return devname; };
+
 	int
 	get_version() const
 	{ return version; };
@@ -305,7 +317,9 @@ public:
 	friend std::ostream&
 	operator<< (
 			std::ostream& os, const cgtpinjectentry& entry) {
-		os << rofcore::indent(0) << "<cgtpinjectentry IPv" << entry.get_version() << ", ";
+		os << rofcore::indent(0) << "<cgtpinjectentry ";
+		os << "devname: " << entry.get_devname() << ", ";
+		os << "IPv" << entry.get_version() << ", ";
 		os << "saddr: " << entry.get_src_addr() << "/" << entry.get_src_mask() << ", ";
 		os << "daddr: " << entry.get_dst_addr() << "/" << entry.get_dst_mask() << " ";
 		os << " >" << std::endl;
@@ -315,6 +329,7 @@ public:
 	const std::string&
 	str() const {
 		std::stringstream ss;
+		ss << "devname: " << get_devname() << ", ";
 		ss << "IPv" << get_version() << ", ";
 		ss << "saddr: " << get_src_addr() << "/" << get_src_mask() << ", ";
 		ss << "daddr: " << get_dst_addr() << "/" << get_dst_mask();
@@ -324,6 +339,7 @@ public:
 
 private:
 
+	std::string	devname;
 	int 		version;	// IP version (4,6,...)
 	std::string saddr;		// src addr
 	std::string smask;		// src mask

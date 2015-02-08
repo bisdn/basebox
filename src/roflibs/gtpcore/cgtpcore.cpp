@@ -146,12 +146,7 @@ cgtpcore::add_gtp_terms()
 				};
 				}
 
-				add_term_in4(entry.get_term_id(), egress_label, ingress_label, match);
-#if 0
-				roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dptid()).set_termdev(entry.get_tunnel_device().get_devname()).
-						add_prefix_in4(rofcore::cprefix_in4(rofl::caddress_in4(entry.get_tunnel_device().get_addr()), 32));
-				// TODO: get prefix for tunnel devive properly
-#endif
+				add_term_in4(entry.get_term_id(), entry.get_inject_filter().get_devname(), egress_label, ingress_label, match);
 
 			} break;
 			case 6: {
@@ -199,12 +194,7 @@ cgtpcore::add_gtp_terms()
 				};
 				}
 
-				add_term_in6(entry.get_term_id(), egress_label, ingress_label, match);
-#if 0
-				roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dptid()).set_termdev(entry.get_tunnel_device().get_devname()).
-						add_prefix_in6(rofcore::cprefix_in6(rofl::caddress_in6(entry.get_tunnel_device().get_addr()), 32));
-				// TODO: get prefix for tunnel devive properly
-#endif
+				add_term_in6(entry.get_term_id(), entry.get_inject_filter().get_devname(), egress_label, ingress_label, match);
 
 			} break;
 			default: {

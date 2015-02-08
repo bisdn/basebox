@@ -334,6 +334,12 @@ cgtpcoredb_file::parse_datapath_term(
 	}
 	libconfig::Setting& s_term_inject = s_term["inject"];
 
+	// devname
+	if (not s_term_inject.exists("devname")) {
+		return;
+	}
+	entry.set_inject_filter().set_devname((const char*)s_term_inject["devname"]);
+
 	// IP version (mandatory)
 	if (not s_term_inject.exists("version")) {
 		return;
