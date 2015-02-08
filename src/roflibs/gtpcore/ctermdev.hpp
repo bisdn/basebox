@@ -24,6 +24,7 @@
 #include <roflibs/netlink/cnetdev.hpp>
 #include <roflibs/netlink/cnetlink.hpp>
 #include <roflibs/netlink/clogging.hpp>
+#include <roflibs/netlink/ccookiebox.hpp>
 
 namespace roflibs {
 namespace gtp {
@@ -37,7 +38,9 @@ public:
 	eTermDevNotFound(const std::string& __arg) : eTermDevBase(__arg) {};
 };
 
-class ctermdev : public rofcore::ctundev {
+class ctermdev :
+		public rofcore::ctundev,
+		public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
@@ -54,7 +57,8 @@ public:
 	 *
 	 */
 	virtual
-	~ctermdev() {};
+	~ctermdev()
+	{};
 
 
 public:
@@ -69,9 +73,9 @@ public:
 				return;
 			}
 			rofcore::cnetlink::get_instance().add_addr_in4(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
-			prefixes_in4.insert(prefix);
+			prefixes_in4[prefix] = roflibs::common::openflow::ccookie_owner::acquire_cookie();
 			if (STATE_ATTACHED == state) {
-				handle_dpt_open(prefix);
+				handle_dpt_open(prefix, prefixes_in4[prefix]);
 			}
 		} catch (rofcore::eNetLinkFailed& e) {
 			rofcore::logging::debug << "[rofcore][ctermdev][add_prefix_in4] failed to set address via netlink" << std::endl;
@@ -91,8 +95,9 @@ public:
 			}
 			rofcore::cnetlink::get_instance().drop_addr_in4(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(prefix);
+				handle_dpt_close(prefix, prefixes_in4[prefix]);
 			}
+			roflibs::common::openflow::ccookie_owner::release_cookie(prefixes_in4[prefix]);
 			prefixes_in4.erase(prefix);
 		} catch (rofcore::eNetLinkFailed& e) {
 			rofcore::logging::debug << "[rofcore][ctermdev][drop_prefix_in4] failed to set address via netlink" << std::endl;
@@ -121,9 +126,9 @@ public:
 				return;
 			}
 			rofcore::cnetlink::get_instance().add_addr_in6(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
-			prefixes_in6.insert(prefix);
+			prefixes_in6[prefix] = roflibs::common::openflow::ccookie_owner::acquire_cookie();
 			if (STATE_ATTACHED == state) {
-				handle_dpt_open(prefix);
+				handle_dpt_open(prefix, prefixes_in6[prefix]);
 			}
 		} catch (rofcore::eNetLinkFailed& e) {
 			rofcore::logging::debug << "[rofcore][ctermdev][add_prefix_in6] failed to set address via netlink" << std::endl;
@@ -143,8 +148,9 @@ public:
 			}
 			rofcore::cnetlink::get_instance().drop_addr_in6(get_ifindex(), prefix.get_addr(), prefix.get_prefixlen());
 			if (STATE_ATTACHED == state) {
-				handle_dpt_close(prefix);
+				handle_dpt_close(prefix, prefixes_in6[prefix]);
 			}
+			roflibs::common::openflow::ccookie_owner::release_cookie(prefixes_in6[prefix]);
 			prefixes_in6.erase(prefix);
 		} catch (rofcore::eNetLinkFailed& e) {
 			rofcore::logging::debug << "[rofcore][ctermdev][drop_prefix_in6] failed to set address via netlink" << std::endl;
@@ -169,13 +175,13 @@ public:
 	void
 	handle_dpt_open() {
 		state = STATE_ATTACHED;
-		for (std::set<rofcore::cprefix_in4>::const_iterator
+		for (std::map<rofcore::cprefix_in4, uint64_t>::const_iterator
 				it = prefixes_in4.begin(); it != prefixes_in4.end(); ++it) {
-			handle_dpt_open(*it);
+			handle_dpt_open(it->first, it->second);
 		}
-		for (std::set<rofcore::cprefix_in6>::const_iterator
+		for (std::map<rofcore::cprefix_in6, uint64_t>::const_iterator
 				it = prefixes_in6.begin(); it != prefixes_in6.end(); ++it) {
-			handle_dpt_open(*it);
+			handle_dpt_open(it->first, it->second);
 		}
 	};
 
@@ -185,13 +191,13 @@ public:
 	void
 	handle_dpt_close() {
 		state = STATE_DETACHED;
-		for (std::set<rofcore::cprefix_in4>::const_iterator
+		for (std::map<rofcore::cprefix_in4, uint64_t>::const_iterator
 				it = prefixes_in4.begin(); it != prefixes_in4.end(); ++it) {
-			handle_dpt_close(*it);
+			handle_dpt_close(it->first, it->second);
 		}
-		for (std::set<rofcore::cprefix_in6>::const_iterator
+		for (std::map<rofcore::cprefix_in6, uint64_t>::const_iterator
 				it = prefixes_in6.begin(); it != prefixes_in6.end(); ++it) {
-			handle_dpt_close(*it);
+			handle_dpt_close(it->first, it->second);
 		}
 	};
 
@@ -202,28 +208,28 @@ private:
 	 */
 	void
 	handle_dpt_open(
-			const rofcore::cprefix_in4& prefix);
+			const rofcore::cprefix_in4& prefix, uint64_t cookie);
 
 	/**
 	 *
 	 */
 	void
 	handle_dpt_close(
-			const rofcore::cprefix_in4& prefix);
+			const rofcore::cprefix_in4& prefix, uint64_t cookie);
 
 	/**
 	 *
 	 */
 	void
 	handle_dpt_open(
-			const rofcore::cprefix_in6& prefix);
+			const rofcore::cprefix_in6& prefix, uint64_t cookie);
 
 	/**
 	 *
 	 */
 	void
 	handle_dpt_close(
-			const rofcore::cprefix_in6& prefix);
+			const rofcore::cprefix_in6& prefix, uint64_t cookie);
 
 public:
 
@@ -234,16 +240,36 @@ public:
 				<< "#in4-prefix(es): " << (int)termdev.prefixes_in4.size() << " "
 				<< "#in6-prefix(es): " << (int)termdev.prefixes_in6.size() << " >" << std::endl;
 		rofcore::indent i(2);
-		for (std::set<rofcore::cprefix_in4>::const_iterator
+		for (std::map<rofcore::cprefix_in4, uint64_t>::const_iterator
 				it = termdev.prefixes_in4.begin(); it != termdev.prefixes_in4.end(); ++it) {
-			os << *(it);
+			os << it->first;
 		}
-		for (std::set<rofcore::cprefix_in6>::const_iterator
+		for (std::map<rofcore::cprefix_in6, uint64_t>::const_iterator
 				it = termdev.prefixes_in6.begin(); it != termdev.prefixes_in6.end(); ++it) {
-			os << *(it);
+			os << it->first;
 		}
 		return os;
 	};
+
+private:
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt,
+			const rofl::cauxid& auxid,
+			rofl::openflow::cofmsg_packet_in& msg);
+
+	/**
+	 *
+	 */
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt,
+			const rofl::cauxid& auxid,
+			rofl::openflow::cofmsg_flow_removed& msg);
 
 private:
 
@@ -252,11 +278,11 @@ private:
 		STATE_ATTACHED = 2,
 	};
 
-	enum ofp_state_t						state;
-	rofl::cdptid							dptid;
-	uint8_t									ofp_table_id;
-	std::set<rofcore::cprefix_in4>			prefixes_in4;
-	std::set<rofcore::cprefix_in6>			prefixes_in6;
+	enum ofp_state_t							state;
+	rofl::cdptid								dptid;
+	uint8_t										ofp_table_id;
+	std::map<rofcore::cprefix_in4, uint64_t>	prefixes_in4;
+	std::map<rofcore::cprefix_in6, uint64_t>	prefixes_in6;
 };
 
 }; // end of namespace gtp
