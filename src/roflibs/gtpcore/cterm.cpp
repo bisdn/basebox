@@ -24,7 +24,7 @@ cterm_in4::handle_dpt_open_egress()
 		}
 
 		fm.set_idle_timeout(idle_timeout);
-		fm.set_hard_timeout(0);
+		fm.set_hard_timeout(idle_timeout);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
 
@@ -76,7 +76,7 @@ cterm_in4::handle_dpt_close_egress()
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);
-		fm.set_hard_timeout(0);
+		fm.set_hard_timeout(idle_timeout);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
 
@@ -121,7 +121,7 @@ cterm_in4::handle_dpt_open_ingress()
 		}
 
 		fm.set_idle_timeout(idle_timeout);
-		fm.set_hard_timeout(0);
+		fm.set_hard_timeout(idle_timeout);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
 
@@ -193,7 +193,7 @@ cterm_in4::handle_dpt_close_ingress()
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);
-		fm.set_hard_timeout(0);
+		fm.set_hard_timeout(idle_timeout);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id - 1); // TODO: check ofp_table_id - 1
 
@@ -237,7 +237,7 @@ cterm_in6::handle_dpt_open_egress()
 		}
 
 		fm.set_idle_timeout(idle_timeout);
-		fm.set_hard_timeout(0);
+		fm.set_hard_timeout(idle_timeout);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
 
@@ -289,7 +289,7 @@ cterm_in6::handle_dpt_close_egress()
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);
-		fm.set_hard_timeout(0);
+		fm.set_hard_timeout(idle_timeout);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
 
@@ -334,7 +334,7 @@ cterm_in6::handle_dpt_open_ingress()
 		}
 
 		fm.set_idle_timeout(idle_timeout);
-		fm.set_hard_timeout(0);
+		fm.set_hard_timeout(idle_timeout);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
 
@@ -406,7 +406,7 @@ cterm_in6::handle_dpt_close_ingress()
 
 		fm.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
 		fm.set_idle_timeout(idle_timeout);
-		fm.set_hard_timeout(0);
+		fm.set_hard_timeout(idle_timeout);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
 
