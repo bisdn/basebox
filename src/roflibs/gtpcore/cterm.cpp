@@ -26,8 +26,7 @@ cterm_in4::handle_dpt_open_egress()
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
-		//fm.set_table_id(ofp_table_id);
-		fm.set_table_id(0); // FIXME
+		fm.set_table_id(ofp_table_id);
 
 		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fm.set_match().set_ipv4_src(label_egress.get_saddr().get_addr());
@@ -48,8 +47,7 @@ cterm_in4::handle_dpt_open_egress()
 		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_dec_nw_ttl(rofl::cindex(1));
 
 		// Goto Next Table ofp_table_id + 1
-		//fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
-		fm.set_instructions().add_inst_goto_table().set_table_id(1); // FIXME
+		fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
@@ -80,8 +78,7 @@ cterm_in4::handle_dpt_close_egress()
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
-		//fm.set_table_id(ofp_table_id);
-		fm.set_table_id(0);
+		fm.set_table_id(ofp_table_id);
 
 		fm.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
 		fm.set_match().set_ipv4_src(label_egress.get_saddr().get_addr());
@@ -126,8 +123,7 @@ cterm_in4::handle_dpt_open_ingress()
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
-		//fm.set_table_id(ofp_table_id - 1); // TODO: check ofp_table_id - 1
-		fm.set_table_id(0);
+		fm.set_table_id(ofp_table_id);
 
 		fm.set_match().set_eth_type(tft_match.get_eth_type());
 		if (tft_match.get_matches().has_match(rofl::openflow::OXM_TLV_BASIC_IPV4_SRC)) {
@@ -168,8 +164,7 @@ cterm_in4::handle_dpt_open_ingress()
 		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_set_field(++index).
 				set_oxm(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_teid(label_ingress.get_teid().get_value()));
 		// Goto Next Table: ofp_table_id + 1
-		//fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
-		fm.set_instructions().add_inst_goto_table().set_table_id(1);
+		fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
@@ -244,8 +239,7 @@ cterm_in6::handle_dpt_open_egress()
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
-		//fm.set_table_id(ofp_table_id);
-		fm.set_table_id(0); // FIXME
+		fm.set_table_id(ofp_table_id);
 
 		fm.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fm.set_match().set_ipv6_src(label_egress.get_saddr().get_addr());
@@ -266,8 +260,7 @@ cterm_in6::handle_dpt_open_egress()
 		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_dec_nw_ttl(rofl::cindex(1));
 
 		// Goto Next Table ofp_table_id + 1
-		//fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
-		fm.set_instructions().add_inst_goto_table().set_table_id(1); // FIXME
+		fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
@@ -298,8 +291,7 @@ cterm_in6::handle_dpt_close_egress()
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
-		//fm.set_table_id(ofp_table_id);
-		fm.set_table_id(0); // FIXME
+		fm.set_table_id(ofp_table_id);
 
 		fm.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
 		fm.set_match().set_ipv6_src(label_egress.get_saddr().get_addr());
@@ -344,8 +336,7 @@ cterm_in6::handle_dpt_open_ingress()
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
-		//fm.set_table_id(ofp_table_id - 1); // TODO: check ofp_table_id - 1
-		fm.set_table_id(0);
+		fm.set_table_id(ofp_table_id);
 
 		fm.set_match().set_eth_type(tft_match.get_eth_type());
 		if (tft_match.get_matches().has_match(rofl::openflow::OXM_TLV_BASIC_IPV4_SRC)) {
@@ -386,8 +377,7 @@ cterm_in6::handle_dpt_open_ingress()
 		fm.set_instructions().set_inst_apply_actions().set_actions().set_action_set_field(++index).
 				set_oxm(rofl::openflow::experimental::gtp::coxmatch_ofx_gtp_teid(label_ingress.get_teid().get_value()));
 		// Goto Next Table: ofp_table_id + 1
-		//fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
-		fm.set_instructions().add_inst_goto_table().set_table_id(1);
+		fm.set_instructions().add_inst_goto_table().set_table_id(ofp_table_id + 1);
 
 		dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
@@ -418,8 +408,7 @@ cterm_in6::handle_dpt_close_ingress()
 		fm.set_idle_timeout(idle_timeout);
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
-		//fm.set_table_id(ofp_table_id - 1); // TODO: check ofp_table_id - 1
-		fm.set_table_id(0);
+		fm.set_table_id(ofp_table_id);
 
 		fm.set_match().set_eth_type(tft_match.get_eth_type());
 		if (tft_match.get_matches().has_match(rofl::openflow::OXM_TLV_BASIC_IPV6_SRC)) {
