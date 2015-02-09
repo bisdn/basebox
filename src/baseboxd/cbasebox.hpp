@@ -60,12 +60,12 @@ class cbasebox : public rofl::crofbase, public rofcore::cnetlink_common_observer
 					rofl::openflow::cofhello_elem_versionbitmap()) :
 						rofl::crofbase(versionbitmap),
 						table_id_svc_flows(0),
-						table_id_gtp_local(0),
 						table_id_eth_port_membership(1),
 						table_id_eth_src(2),
 						table_id_eth_local(3),
 						table_id_ip_local(4),
 						table_id_gre_local(5),
+						table_id_gtp_local(5),
 						table_id_ip_fwd(6),
 						table_id_eth_dst(7),
 						default_pvid(1)

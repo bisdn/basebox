@@ -47,12 +47,12 @@ public:
 	 *
 	 */
 	static cgtpcore&
-	add_gtp_core(const rofl::cdptid& dptid, uint8_t ip_local_table_id, uint8_t gtp_table_id) {
+	add_gtp_core(const rofl::cdptid& dptid, uint8_t gtp_push_pop_table_id, uint8_t ip_local_table_id, uint8_t gtp_table_id) {
 		if (cgtpcore::gtpcores.find(dptid) != cgtpcore::gtpcores.end()) {
 			delete cgtpcore::gtpcores[dptid];
 			cgtpcore::gtpcores.erase(dptid);
 		}
-		cgtpcore::gtpcores[dptid] = new cgtpcore(dptid, ip_local_table_id, gtp_table_id);
+		cgtpcore::gtpcores[dptid] = new cgtpcore(dptid, gtp_push_pop_table_id, ip_local_table_id, gtp_table_id);
 		return *(cgtpcore::gtpcores[dptid]);
 	};
 
@@ -60,9 +60,9 @@ public:
 	 *
 	 */
 	static cgtpcore&
-	set_gtp_core(const rofl::cdptid& dptid, uint8_t ip_local_table_id, uint8_t gtp_table_id) {
+	set_gtp_core(const rofl::cdptid& dptid, uint8_t gtp_push_pop_table_id, uint8_t ip_local_table_id, uint8_t gtp_table_id) {
 		if (cgtpcore::gtpcores.find(dptid) == cgtpcore::gtpcores.end()) {
-			cgtpcore::gtpcores[dptid] = new cgtpcore(dptid, ip_local_table_id, gtp_table_id);
+			cgtpcore::gtpcores[dptid] = new cgtpcore(dptid, gtp_push_pop_table_id, ip_local_table_id, gtp_table_id);
 		}
 		return *(cgtpcore::gtpcores[dptid]);
 	};
@@ -115,11 +115,18 @@ private:
 	/**
 	 *
 	 */
-	cgtpcore(const rofl::cdptid& dptid, uint8_t ip_local_table_id, uint8_t gtp_table_id = 0) :
-		state(STATE_DETACHED), dptid(dptid),
-		cookie_miss_entry_ipv4(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-		cookie_miss_entry_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-		ip_local_table_id(ip_local_table_id), gtp_table_id(gtp_table_id) {
+	cgtpcore(
+			const rofl::cdptid& dptid,
+			uint8_t gtp_push_pop_table_id,
+			uint8_t ip_local_table_id,
+			uint8_t gtp_table_id = 0) :
+				state(STATE_DETACHED),
+				dptid(dptid),
+				cookie_miss_entry_ipv4(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+				cookie_miss_entry_ipv6(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+				gtp_push_pop_table_id(gtp_push_pop_table_id),
+				ip_local_table_id(ip_local_table_id),
+				gtp_table_id(gtp_table_id) {
 		add_gtp_relays();
 		add_gtp_terms();
 	};
@@ -432,7 +439,7 @@ public:
 			delete terms_in4[term_id];
 			terms_in4.erase(term_id);
 		}
-		terms_in4[term_id] = new cterm_in4(dptid, gtp_table_id, devname, label_egress, label_ingress, tft_match);
+		terms_in4[term_id] = new cterm_in4(dptid, gtp_push_pop_table_id, devname, label_egress, label_ingress, tft_match);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
@@ -454,7 +461,7 @@ public:
 			const clabel_in4& label_ingress,
 			const rofl::openflow::cofmatch& tft_match) {
 		if (terms_in4.find(term_id) == terms_in4.end()) {
-			terms_in4[term_id] = new cterm_in4(dptid, gtp_table_id, devname, label_egress, label_ingress, tft_match);
+			terms_in4[term_id] = new cterm_in4(dptid, gtp_push_pop_table_id, devname, label_egress, label_ingress, tft_match);
 		}
 #if 0
 		try {
@@ -967,6 +974,7 @@ private:
 	rofl::cdptid								dptid;
 	uint64_t									cookie_miss_entry_ipv4;
 	uint64_t									cookie_miss_entry_ipv6;
+	uint8_t										gtp_push_pop_table_id;
 	uint8_t										ip_local_table_id;
 	uint8_t										gtp_table_id;
 	std::map<unsigned int, crelay_in4*>			relays_in4;

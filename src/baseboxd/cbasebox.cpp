@@ -466,6 +466,7 @@ cbasebox::handle_port_desc_stats_reply(
 
 	if (flags.test(FLAG_GTPCORE)) {
 		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid(),
+												table_id_svc_flows,
 												table_id_ip_local,
 												table_id_gtp_local).handle_dpt_close(); // yes, same as local for cipcore
 
