@@ -473,7 +473,7 @@ public:
 	set_term_in4(
 			unsigned int term_id) {
 		if (terms_in4.find(term_id) == terms_in4.end()) {
-			throw eRelayNotFound("cgtpcore::get_term_in4() label not found");
+			throw eTermNotFound("cgtpcore::get_term_in4() label not found");
 		}
 		return *(terms_in4[term_id]);
 	};
@@ -494,11 +494,11 @@ public:
 				return *(it->second);
 			}
 		}
-		throw eRelayNotFound("cgtpcore::set_term_in4() match not found");
+		throw eTermNotFound("cgtpcore::set_term_in4() match not found");
 #if 0
 		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_tft_match(tft_match))) == terms_in4.end()) {
-			throw eRelayNotFound("cgtpcore::set_term_in4() match not found");
+			throw eTermNotFound("cgtpcore::set_term_in4() match not found");
 		}
 		return *(it->second);
 #endif
@@ -513,7 +513,7 @@ public:
 		std::map<unsigned int, cterm_in4*>::iterator it;
 		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_label_out(label_egress))) == terms_in4.end()) {
-			throw eRelayNotFound("cgtpcore::set_term_in4() incoming GTP label not found");
+			throw eTermNotFound("cgtpcore::set_term_in4() incoming GTP label not found");
 		}
 		return *(it->second);
 	};
@@ -527,7 +527,7 @@ public:
 		std::map<unsigned int, cterm_in4*>::iterator it;
 		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_devname(devname))) == terms_in4.end()) {
-			throw eRelayNotFound("cgtpcore::set_term_in4() GTP tunnel device not found");
+			throw eTermNotFound("cgtpcore::set_term_in4() GTP tunnel device not found");
 		}
 		return *(it->second);
 	};
@@ -539,7 +539,7 @@ public:
 	get_term_in4(
 			unsigned int term_id) const {
 		if (terms_in4.find(term_id) == terms_in4.end()) {
-			throw eRelayNotFound("cgtpcore::get_term_in4() label not found");
+			throw eTermNotFound("cgtpcore::get_term_in4() label not found");
 		}
 		return *(terms_in4.at(term_id));
 	};
@@ -560,7 +560,7 @@ public:
 				return *(it->second);
 			}
 		}
-		throw eRelayNotFound("cgtpcore::get_term_in4() match not found");
+		throw eTermNotFound("cgtpcore::get_term_in4() match not found");
 #if 0
 		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_tft_match(tft_match))) == terms_in4.end()) {
@@ -579,7 +579,7 @@ public:
 		std::map<unsigned int, cterm_in4*>::const_iterator it;
 		if ((it = find_if(terms_in4.begin(), terms_in4.end(),
 				cterm_in4::cterm_in4_find_by_label_in(label_in))) == terms_in4.end()) {
-			throw eRelayNotFound("cgtpcore::get_term_in4() incoming GTP label not found");
+			throw eTermNotFound("cgtpcore::get_term_in4() incoming GTP label not found");
 		}
 		return *(it->second);
 	};

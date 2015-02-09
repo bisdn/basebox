@@ -85,7 +85,7 @@ cgtprelay::handle_read(
 
 				roflibs::gtp::clabel_in4 label_in(gtp_src_addr, gtp_dst_addr, roflibs::gtp::cteid(gtpu.get_teid()));
 
-				rofcore::logging::debug << "[cgtprelay][handle_read] label-in: " << std::endl << label_in;
+				rofcore::logging::debug << "[cgtprelay][handle_read] label-incoming/label-egress: " << std::endl << label_in;
 
 				if (cgtpcore::get_gtp_core(dptid).has_relay_in4(label_in)) {
 
@@ -140,6 +140,9 @@ cgtprelay::handle_read(
 			} catch (eRelayNotFound& e) {
 				rofcore::logging::debug << "[cgtprelay][handle_read] relay_in4 not found" << std::endl;
 				delete mem;
+			} catch (eTermNotFound& e) {
+				rofcore::logging::debug << "[cgtprelay][handle_read] term_in4 not found" << std::endl;
+				delete mem;
 			}
 		} break;
 		case AF_INET6: {
@@ -155,7 +158,7 @@ cgtprelay::handle_read(
 
 				roflibs::gtp::clabel_in6 label_in(gtp_src_addr, gtp_dst_addr, roflibs::gtp::cteid(gtpu.get_teid()));
 
-				rofcore::logging::debug << "[cgtprelay][handle_read] label-in: " << std::endl << label_in;
+				rofcore::logging::debug << "[cgtprelay][handle_read] label-incoming/label-egress: " << std::endl << label_in;
 
 				if (cgtpcore::get_gtp_core(dptid).has_relay_in6(label_in)) {
 
@@ -208,6 +211,9 @@ cgtprelay::handle_read(
 				delete mem;
 			} catch (eRelayNotFound& e) {
 				rofcore::logging::debug << "[cgtprelay][handle_read] relay_in6 not found" << std::endl;
+				delete mem;
+			} catch (eTermNotFound& e) {
+				rofcore::logging::debug << "[cgtprelay][handle_read] term_in6 not found" << std::endl;
 				delete mem;
 			}
 		} break;
