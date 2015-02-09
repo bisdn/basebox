@@ -482,6 +482,17 @@ cipcore::neigh_in4_created(unsigned int ifindex, uint16_t nbindex)
 			return;
 		}
 
+		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
+
+		// the neighbour ...
+		const rofcore::crtneigh_in4& rtn =
+				netlink.get_links().get_link(ifindex).get_neighs_in4().get_neigh(nbindex);
+
+		if (rofl::cmacaddr("00:00:00:00:00:00") == rtn.get_lladdr()) {
+			rofcore::logging::debug << "[roflibs][ipcore][neigh_in4_created] but no name resolution" << std::endl << *this;
+			return;
+		}
+
 		if (not get_link(ifindex).has_neigh_in4(nbindex)) {
 			set_link(ifindex).set_neigh_in4(nbindex);
 			rofcore::logging::debug << "[roflibs][ipcore][neigh_in4_created] state:" << std::endl << *this;
@@ -503,6 +514,17 @@ cipcore::neigh_in4_updated(unsigned int ifindex, uint16_t nbindex)
 
 		if (not has_link(ifindex)) {
 			rofcore::logging::error << "[roflibs][ipcore] neigh_in4 update: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
+
+		// the neighbour ...
+		const rofcore::crtneigh_in4& rtn =
+				netlink.get_links().get_link(ifindex).get_neighs_in4().get_neigh(nbindex);
+
+		if (rofl::cmacaddr("00:00:00:00:00:00") == rtn.get_lladdr()) {
+			rofcore::logging::debug << "[roflibs][ipcore][neigh_in4_created] but no name resolution" << std::endl << *this;
 			return;
 		}
 
@@ -551,6 +573,17 @@ cipcore::neigh_in6_created(unsigned int ifindex, uint16_t nbindex)
 			return;
 		}
 
+		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
+
+		// the neighbour ...
+		const rofcore::crtneigh_in4& rtn =
+				netlink.get_links().get_link(ifindex).get_neighs_in4().get_neigh(nbindex);
+
+		if (rofl::cmacaddr("00:00:00:00:00:00") == rtn.get_lladdr()) {
+			rofcore::logging::debug << "[roflibs][ipcore][neigh_in6_created] but no name resolution" << std::endl << *this;
+			return;
+		}
+
 		if (not get_link(ifindex).has_neigh_in6(nbindex)) {
 			set_link(ifindex).set_neigh_in6(nbindex);
 			rofcore::logging::debug << "[roflibs][ipcore][neigh_in6_created] state:" << std::endl << *this;
@@ -572,6 +605,17 @@ cipcore::neigh_in6_updated(unsigned int ifindex, uint16_t nbindex)
 
 		if (not has_link(ifindex)) {
 			rofcore::logging::error << "[roflibs][ipcore] neigh_in6 create: link ifindex not found: " << ifindex << std::endl;
+			return;
+		}
+
+		rofcore::cnetlink& netlink = rofcore::cnetlink::get_instance();
+
+		// the neighbour ...
+		const rofcore::crtneigh_in4& rtn =
+				netlink.get_links().get_link(ifindex).get_neighs_in4().get_neigh(nbindex);
+
+		if (rofl::cmacaddr("00:00:00:00:00:00") == rtn.get_lladdr()) {
+			rofcore::logging::debug << "[roflibs][ipcore][neigh_in6_created] but no name resolution" << std::endl << *this;
 			return;
 		}
 
