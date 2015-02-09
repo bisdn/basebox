@@ -37,7 +37,11 @@ public:
 	eGtpRelayNotFound(const std::string& __arg) : eGtpRelayBase(__arg) {};
 };
 
-class cgtprelay : public rofl::csocket_env, public rofcore::cnetdev_owner, public rofcore::cnetlink_common_observer {
+class cgtprelay :
+		public rofl::csocket_env,
+		public rofcore::cnetdev_owner,
+		public rofcore::cnetlink_common_observer,
+		public rofl::ciosrv {
 public:
 
 	/**
@@ -114,6 +118,7 @@ private:
 	cgtprelay(const rofl::cdptid& dptid, uint8_t ofp_table_id) :
 		state(STATE_DETACHED), dptid(dptid), ofp_table_id(ofp_table_id) {
 		add_gtp_termdevs();
+		register_timer(TIMER_KEEP_ALIVE, rofl::ctimespec(8));
 	};
 
 	/**
@@ -397,6 +402,25 @@ private:
 	 */
 	virtual void
 	handle_closed(rofl::csocket& socket) {};
+
+private:
+
+	enum cgtprelay_timer_t {
+		TIMER_KEEP_ALIVE = 1,
+	};
+
+	/**
+	 *
+	 */
+	void
+	handle_timeout(
+			int opaque, void* data = (void*)0);
+
+	/**
+	 *
+	 */
+	void
+	do_keep_alive();
 
 private:
 

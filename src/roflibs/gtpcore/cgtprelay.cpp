@@ -493,3 +493,46 @@ cgtprelay::addr_in6_deleted(unsigned int ifindex, uint16_t adindex)
 
 
 
+void
+cgtprelay::handle_timeout(
+		int opaque, void* data)
+{
+	switch (opaque) {
+	case TIMER_KEEP_ALIVE: {
+		do_keep_alive();
+		register_timer(TIMER_KEEP_ALIVE, rofl::ctimespec(8));
+	} break;
+	}
+}
+
+
+
+void
+cgtprelay::do_keep_alive()
+{
+	for (std::set<unsigned int>::const_iterator
+			it = cgtpcore::get_gtp_core(dptid).get_term_in4_ids().begin();
+				it != cgtpcore::get_gtp_core(dptid).get_term_in4_ids().end(); ++it) try {
+		const cterm_in4& term = cgtpcore::get_gtp_core(dptid).get_term_in4(*it);
+
+		rofl::cmemory* mem = new rofl::cmemory(32);
+
+		rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
+								term.get_label_ingress().get_daddr().get_port().get_value());
+
+		set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
+	} catch (eGtpRelayNotFound& e) {};
+
+	for (std::set<unsigned int>::const_iterator
+			it = cgtpcore::get_gtp_core(dptid).get_term_in6_ids().begin();
+				it != cgtpcore::get_gtp_core(dptid).get_term_in6_ids().end(); ++it) try {
+		const cterm_in6& term = cgtpcore::get_gtp_core(dptid).get_term_in6(*it);
+
+		rofl::cmemory* mem = new rofl::cmemory(32);
+
+		rofl::csockaddr to(term.get_label_ingress().get_daddr().get_addr(),
+								term.get_label_ingress().get_daddr().get_port().get_value());
+
+		set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
+	} catch (eGtpRelayNotFound& e) {};
+}

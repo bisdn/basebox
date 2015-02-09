@@ -416,6 +416,13 @@ public:
 	/**
 	 *
 	 */
+	const std::set<unsigned int>&
+	get_term_in4_ids() const
+	{ return term_in4_ids; }
+
+	/**
+	 *
+	 */
 	void
 	clear_terms_in4() {
 		for (std::map<unsigned int, cterm_in4*>::iterator
@@ -440,6 +447,7 @@ public:
 			terms_in4.erase(term_id);
 		}
 		terms_in4[term_id] = new cterm_in4(dptid, gtp_push_pop_table_id, devname, label_egress, label_ingress, tft_match);
+		term_in4_ids.insert(term_id);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
@@ -462,6 +470,7 @@ public:
 			const rofl::openflow::cofmatch& tft_match) {
 		if (terms_in4.find(term_id) == terms_in4.end()) {
 			terms_in4[term_id] = new cterm_in4(dptid, gtp_push_pop_table_id, devname, label_egress, label_ingress, tft_match);
+			term_in4_ids.insert(term_id);
 		}
 #if 0
 		try {
@@ -602,6 +611,7 @@ public:
 		}
 		delete terms_in4[term_id];
 		terms_in4.erase(term_id);
+		term_in4_ids.erase(term_id);
 	};
 
 	/**
@@ -662,6 +672,13 @@ public:
 	/**
 	 *
 	 */
+	const std::set<unsigned int>&
+	get_term_in6_ids() const
+	{ return term_in6_ids; }
+
+	/**
+	 *
+	 */
 	void
 	clear_terms_in6() {
 		for (std::map<unsigned int, cterm_in6*>::iterator
@@ -686,6 +703,7 @@ public:
 			terms_in6.erase(term_id);
 		}
 		terms_in6[term_id] = new cterm_in6(dptid, gtp_table_id, devname, label_egress, label_ingress, tft_match);
+		term_in6_ids.insert(term_id);
 #if 0
 		try {
 			if (STATE_ATTACHED == state) {
@@ -708,6 +726,7 @@ public:
 			const rofl::openflow::cofmatch& tft_match) {
 		if (terms_in6.find(term_id) == terms_in6.end()) {
 			terms_in6[term_id] = new cterm_in6(dptid, gtp_table_id, devname, label_egress, label_ingress, tft_match);
+			term_in6_ids.insert(term_id);
 		}
 #if 0
 		try {
@@ -848,6 +867,7 @@ public:
 		}
 		delete terms_in6[term_id];
 		terms_in6.erase(term_id);
+		term_in6_ids.erase(term_id);
 	};
 
 	/**
@@ -980,7 +1000,9 @@ private:
 	std::map<unsigned int, crelay_in4*>			relays_in4;
 	std::map<unsigned int, crelay_in6*>			relays_in6;
 	std::map<unsigned int, cterm_in4*>			terms_in4;
+	std::set<unsigned int>						term_in4_ids;
 	std::map<unsigned int, cterm_in6*>			terms_in6;
+	std::set<unsigned int>						term_in6_ids;
 	static std::map<rofl::cdptid, cgtpcore*>	gtpcores;
 };
 
