@@ -125,10 +125,9 @@ cgtprelay::handle_read(
 
 					set_termdev(term.get_devname()).enqueue(pkt);
 
-#if 1
 					// set OFP shortcut into datapath
 					term.handle_dpt_open_egress();
-#endif
+
 				} else {
 					rofcore::logging::debug << "[cgtprelay][handle_read] no relay or termination point found" << std::endl;
 
@@ -185,7 +184,7 @@ cgtprelay::handle_read(
 				if (cgtpcore::get_gtp_core(dptid).has_term_in6(label_in)) {
 
 					// find associated term point for label-in
-					const roflibs::gtp::cterm_in6& term =
+					roflibs::gtp::cterm_in6& term =
 							cgtpcore::set_gtp_core(dptid).set_term_in6(label_in);
 
 					rofcore::logging::debug << "[cgtprelay][handle_read][term] found termination point: " << std::endl << term;
@@ -199,7 +198,7 @@ cgtprelay::handle_read(
 					set_termdev(term.get_devname()).enqueue(pkt);
 
 					// set OFP shortcut into datapath
-					cgtpcore::set_gtp_core(dptid).set_term_in6(label_in).handle_dpt_open_egress();
+					term.handle_dpt_open_egress();
 
 				} else {
 					rofcore::logging::debug << "[cgtprelay][handle_read] no relay or termination point found" << std::endl;
@@ -298,6 +297,26 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		cterm_in4& term = cgtpcore::set_gtp_core(dptid).set_term_in4(netdev->get_devname());
 		rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] cterm_in4 (src->dst) found" << std::endl << term;
 
+
+		uint8_t ip_version = ((*(pkt->soframe()) & 0xf0) >> 4);
+		switch (ip_version) {
+		case rofl::fipv4frame::IPV4_IP_PROTO: {
+			rofl::fipv4frame iphv4(pkt->soframe(), pkt->length());
+			term.set_peer(iphv4.get_ipv4_src());
+			// set OFP shortcut into datapath
+			term.handle_dpt_open_ingress(iphv4.get_ipv4_src());
+
+		} break;
+		case rofl::fipv6frame::IPV6_IP_PROTO: {
+			rofl::fipv6frame iphv6(pkt->soframe(), pkt->length());
+			term.set_peer(iphv6.get_ipv6_src());
+			// set OFP shortcut into datapath
+			term.handle_dpt_open_ingress(iphv6.get_ipv6_src());
+
+		} break;
+		}
+
+
 		size_t orig_len = pkt->length();
 
 		pkt->tag_insert(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
@@ -321,10 +340,6 @@ cgtprelay::enqueue_in4(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
 
-#if 1
-		// set OFP shortcut into datapath
-		term.handle_dpt_open_ingress();
-#endif
 
 	} catch (eGtpRelayNotFound& e) {
 		rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in4] socket not found" << std::endl;
@@ -360,6 +375,26 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		cterm_in6& term = cgtpcore::set_gtp_core(dptid).set_term_in6(netdev->get_devname());
 		rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] cterm_in6 (src->dst) found" << std::endl << term;
 
+
+		uint8_t ip_version = ((*(pkt->soframe()) & 0xf0) >> 4);
+		switch (ip_version) {
+		case rofl::fipv4frame::IPV4_IP_PROTO: {
+			rofl::fipv4frame iphv4(pkt->soframe(), pkt->length());
+			term.set_peer(iphv4.get_ipv4_src());
+			// set OFP shortcut into datapath
+			term.handle_dpt_open_ingress(iphv4.get_ipv4_src());
+
+		} break;
+		case rofl::fipv6frame::IPV6_IP_PROTO: {
+			rofl::fipv6frame iphv6(pkt->soframe(), pkt->length());
+			term.set_peer(iphv6.get_ipv6_src());
+			// set OFP shortcut into datapath
+			term.handle_dpt_open_ingress(iphv6.get_ipv6_src());
+
+		} break;
+		}
+
+
 		size_t orig_len = pkt->length();
 
 		pkt->tag_insert(sizeof(rofl::fgtpuframe::gtpu_base_hdr_t));
@@ -383,12 +418,6 @@ cgtprelay::enqueue_in6(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
 
-#if 1
-		// remove OFP redirection to controller
-		set_termdev(netdev->get_devname()).handle_dpt_close();
-		// set OFP shortcut into datapath
-		term.handle_dpt_open_ingress();
-#endif
 
 	} catch (eGtpRelayNotFound& e) {
 		rofcore::logging::debug << "[rofgtp][cgtprelay][enqueue_in6] socket not found" << std::endl;
@@ -521,6 +550,19 @@ cgtprelay::do_keep_alive()
 								term.get_label_ingress().get_daddr().get_port().get_value());
 
 		set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, to);
+
+		for (std::map<rofl::caddress_in4, uint64_t>::const_iterator
+				it = term.get_peers_in4().begin(); it != term.get_peers_in4().end(); ++it) {
+			const rofl::caddress_in4& peer = it->first;
+
+			// hack => send an empty frame also to our peer entity, just to keep the ARP entry alive
+			// btw., OpenFlow is a crappy framework ...
+
+			rofl::cmemory* mem = new rofl::cmemory(32);
+
+			set_socket_in4(term.get_label_ingress().get_saddr()).send(mem, rofl::csockaddr(peer, 2152));
+		}
+
 	} catch (eGtpRelayNotFound& e) {};
 
 	for (std::set<unsigned int>::const_iterator
@@ -534,5 +576,20 @@ cgtprelay::do_keep_alive()
 								term.get_label_ingress().get_daddr().get_port().get_value());
 
 		set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, to);
+
+		for (std::map<rofl::caddress_in6, uint64_t>::const_iterator
+				it = term.get_peers_in6().begin(); it != term.get_peers_in6().end(); ++it) {
+			const rofl::caddress_in6& peer = it->first;
+
+			// hack => send an empty frame also to our peer entity, just to keep the ARP entry alive
+			// btw., OpenFlow is a crappy framework ...
+
+			rofl::cmemory* mem = new rofl::cmemory(32);
+
+			set_socket_in6(term.get_label_ingress().get_saddr()).send(mem, rofl::csockaddr(peer, 2152));
+		}
+
 	} catch (eGtpRelayNotFound& e) {};
+
+
 }

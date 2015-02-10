@@ -22,6 +22,7 @@
 
 #include <roflibs/gtpcore/clabel.hpp>
 #include <roflibs/netlink/clogging.hpp>
+#include <roflibs/netlink/ccookiebox.hpp>
 
 
 namespace roflibs {
@@ -41,7 +42,8 @@ public:
  * -ingress- means: send traffic into the tunnel
  * -egress-  means: strip the tunnel and send traffic to the external world
  */
-class cterm {
+class cterm :
+		public roflibs::common::openflow::ccookie_owner {
 public:
 
 	/**
@@ -89,6 +91,188 @@ public:
 	/**
 	 *
 	 */
+	const std::map<rofl::caddress_in4, uint64_t>&
+	get_peers_in4() const
+	{ return peers_in4; };
+
+	/**
+	 *
+	 */
+	uint64_t
+	add_peer(
+			const rofl::caddress_in4& peer) {
+		if (peers_in4.find(peer) != peers_in4.end()) {
+			roflibs::common::openflow::ccookie_owner::release_cookie(peers_in4[peer]);
+			peers_in4.erase(peer);
+		}
+		return (peers_in4[peer] = roflibs::common::openflow::ccookie_owner::acquire_cookie());
+	};
+
+	/**
+	 *
+	 */
+	uint64_t
+	set_peer(
+			const rofl::caddress_in4& peer) {
+		if (peers_in4.find(peer) == peers_in4.end()) {
+			peers_in4[peer] = roflibs::common::openflow::ccookie_owner::acquire_cookie();
+		}
+		return (peers_in4[peer]);
+	};
+
+	/**
+	 *
+	 */
+	uint64_t
+	get_peer(
+			const rofl::caddress_in4& peer) const {
+		if (peers_in4.find(peer) == peers_in4.end()) {
+			throw eTermNotFound("cterm::get_peer() peer not found");
+		}
+		return (peers_in4.at(peer));
+	};
+
+	/**
+	 *
+	 */
+	const rofl::caddress_in4&
+	get_peer_in4(
+			uint64_t cookie) const {
+		std::map<rofl::caddress_in4, uint64_t>::const_iterator it;
+		if ((it = find_if(peers_in4.begin(), peers_in4.end(),
+							peer_find_by_cookie(cookie))) == peers_in4.end()) {
+			throw eTermNotFound("cterm::get_peer() peer not found");
+		}
+		return (it->first);
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_peer(
+			const rofl::caddress_in4& peer) {
+		if (peers_in4.find(peer) == peers_in4.end()) {
+			return;
+		}
+		roflibs::common::openflow::ccookie_owner::release_cookie(peers_in4[peer]);
+		peers_in4.erase(peer);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_peer(
+			const rofl::caddress_in4& peer) const
+	{ return (not (peers_in4.find(peer) == peers_in4.end())); };
+
+	/**
+	 *
+	 */
+	bool
+	has_peer_in4(
+			uint64_t cookie) const {
+		return (not (find_if(peers_in4.begin(), peers_in4.end(),
+						peer_find_by_cookie(cookie)) == peers_in4.end()));
+	};
+
+public:
+
+	/**
+	 *
+	 */
+	const std::map<rofl::caddress_in6, uint64_t>&
+	get_peers_in6() const
+	{ return peers_in6; };
+
+	/**
+	 *
+	 */
+	uint64_t
+	add_peer(
+			const rofl::caddress_in6& peer) {
+		if (peers_in6.find(peer) != peers_in6.end()) {
+			roflibs::common::openflow::ccookie_owner::release_cookie(peers_in6[peer]);
+			peers_in6.erase(peer);
+		}
+		return (peers_in6[peer] = roflibs::common::openflow::ccookie_owner::acquire_cookie());
+	};
+
+	/**
+	 *
+	 */
+	uint64_t
+	set_peer(
+			const rofl::caddress_in6& peer) {
+		if (peers_in6.find(peer) == peers_in6.end()) {
+			peers_in6[peer] = roflibs::common::openflow::ccookie_owner::acquire_cookie();
+		}
+		return (peers_in6[peer]);
+	};
+
+	/**
+	 *
+	 */
+	uint64_t
+	get_peer(
+			const rofl::caddress_in6& peer) const {
+		if (peers_in6.find(peer) == peers_in6.end()) {
+			throw eTermNotFound("cterm::get_peer() peer not found");
+		}
+		return (peers_in6.at(peer));
+	};
+
+	/**
+	 *
+	 */
+	const rofl::caddress_in6&
+	get_peer_in6(
+			uint64_t cookie) const {
+		std::map<rofl::caddress_in6, uint64_t>::const_iterator it;
+		if ((it = find_if(peers_in6.begin(), peers_in6.end(),
+							peer_find_by_cookie(cookie))) == peers_in6.end()) {
+			throw eTermNotFound("cterm::get_peer() peer not found");
+		}
+		return (it->first);
+	};
+
+	/**
+	 *
+	 */
+	void
+	drop_peer(
+			const rofl::caddress_in6& peer) {
+		if (peers_in6.find(peer) == peers_in6.end()) {
+			return;
+		}
+		roflibs::common::openflow::ccookie_owner::release_cookie(peers_in6[peer]);
+		peers_in6.erase(peer);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_peer(
+			const rofl::caddress_in6& peer) const
+	{ return (not (peers_in6.find(peer) == peers_in6.end())); };
+
+	/**
+	 *
+	 */
+	bool
+	has_peer_in6(
+			uint64_t cookie) const {
+		return (not (find_if(peers_in6.begin(), peers_in6.end(),
+						peer_find_by_cookie(cookie)) == peers_in6.end()));
+	};
+
+public:
+
+	/**
+	 *
+	 */
 	const std::string&
 	get_devname() const
 	{ return devname; };
@@ -99,6 +283,35 @@ public:
 	operator<< (std::ostream& os, const cterm& term) {
 		os << rofcore::indent(0) << "<cterm >" << std::endl;
 		return os;
+	};
+
+protected:
+
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt,
+			const rofl::cauxid& auxid,
+			rofl::openflow::cofmsg_packet_in& msg) = 0;
+
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt,
+			const rofl::cauxid& auxid,
+			rofl::openflow::cofmsg_flow_removed& msg) = 0;
+
+public:
+
+	class peer_find_by_cookie {
+		uint64_t cookie;
+	public:
+		peer_find_by_cookie(uint64_t cookie) :
+			cookie(cookie) {};
+		bool operator() (const std::pair<const rofl::caddress_in4, uint64_t>& p) const {
+			return (p.second == cookie);
+		};
+		bool operator() (const std::pair<const rofl::caddress_in6, uint64_t>& p) const {
+			return (p.second == cookie);
+		};
 	};
 
 protected:
@@ -118,6 +331,9 @@ protected:
 	std::string			devname;
 
 	static const int DEFAULT_IDLE_TIMEOUT = 15; // seconds
+
+	std::map<rofl::caddress_in4, uint64_t>	peers_in4;
+	std::map<rofl::caddress_in6, uint64_t>	peers_in6;
 
 	int idle_timeout;
 };
@@ -228,7 +444,15 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open_ingress();
+	handle_dpt_open_ingress(
+			const rofl::caddress_in4& peer);
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_open_ingress(
+			const rofl::caddress_in6& peer);
 
 	/**
 	 *
@@ -298,6 +522,20 @@ public:
 			return (p.second->label_egress == label_out);
 		};
 	};
+
+protected:
+
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt,
+			const rofl::cauxid& auxid,
+			rofl::openflow::cofmsg_packet_in& msg);
+
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt,
+			const rofl::cauxid& auxid,
+			rofl::openflow::cofmsg_flow_removed& msg);
 
 private:
 
@@ -412,7 +650,15 @@ public:
 	 *
 	 */
 	void
-	handle_dpt_open_ingress();
+	handle_dpt_open_ingress(
+			const rofl::caddress_in4& peer);
+
+	/**
+	 *
+	 */
+	void
+	handle_dpt_open_ingress(
+			const rofl::caddress_in6& peer);
 
 	/**
 	 *
@@ -482,6 +728,20 @@ public:
 			return (p.second->label_egress == label_out);
 		};
 	};
+
+protected:
+
+	virtual void
+	handle_packet_in(
+			rofl::crofdpt& dpt,
+			const rofl::cauxid& auxid,
+			rofl::openflow::cofmsg_packet_in& msg);
+
+	virtual void
+	handle_flow_removed(
+			rofl::crofdpt& dpt,
+			const rofl::cauxid& auxid,
+			rofl::openflow::cofmsg_flow_removed& msg);
 
 private:
 
