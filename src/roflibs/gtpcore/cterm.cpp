@@ -125,6 +125,7 @@ cterm_in4::handle_dpt_open_ingress(
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
+		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm.set_cookie(get_peer(peer));
 
 #if 0
@@ -211,6 +212,7 @@ cterm_in4::handle_dpt_open_ingress(
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
+		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm.set_cookie(get_peer(peer));
 
 #if 0
@@ -471,6 +473,7 @@ cterm_in6::handle_dpt_open_ingress(
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
+		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm.set_cookie(get_peer(peer));
 
 
@@ -558,6 +561,7 @@ cterm_in6::handle_dpt_open_ingress(
 		fm.set_hard_timeout(0);
 		fm.set_priority(0xe000);
 		fm.set_table_id(ofp_table_id);
+		fm.set_flags(rofl::openflow13::OFPFF_SEND_FLOW_REM);
 		fm.set_cookie(get_peer(peer));
 
 
