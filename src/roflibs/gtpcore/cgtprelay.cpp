@@ -33,14 +33,14 @@ cgtprelay::add_gtp_termdevs()
 			case 4: {
 				set_termdev(entry.get_inject_filter().get_devname()).
 						add_prefix_in4(rofcore::cprefix_in4(
-								rofl::caddress_in4(entry.get_inject_filter().get_dst_addr()),
-								rofl::caddress_in4(entry.get_inject_filter().get_dst_mask())));
+								rofl::caddress_in4(entry.get_inject_filter().get_route()),
+								rofl::caddress_in4(entry.get_inject_filter().get_netmask())));
 			} break;
 			case 6: {
 				set_termdev(entry.get_inject_filter().get_devname()).
 						add_prefix_in6(rofcore::cprefix_in6(
-								rofl::caddress_in6(entry.get_inject_filter().get_dst_addr()),
-								rofl::caddress_in6(entry.get_inject_filter().get_dst_mask())));
+								rofl::caddress_in6(entry.get_inject_filter().get_route()),
+								rofl::caddress_in6(entry.get_inject_filter().get_netmask())));
 			} break;
 			default: {
 				// TODO

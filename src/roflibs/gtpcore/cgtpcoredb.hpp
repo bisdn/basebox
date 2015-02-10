@@ -219,14 +219,11 @@ public:
 	cgtpinjectentry(
 			const std::string& devname,
 			int version,
-			const std::string& saddr, const std::string& smask,
 			const std::string& daddr, const std::string& dmask) :
 				devname(devname),
 				version(version),
-				saddr(saddr),
-				smask(smask),
-				daddr(daddr),
-				dmask(dmask)
+				route(daddr),
+				netmask(dmask)
 	{};
 
 	/**
@@ -246,10 +243,8 @@ public:
 			return *this;
 		devname	= entry.devname;
 		version	= entry.version;
-		saddr	= entry.saddr;
-		smask	= entry.smask;
-		daddr	= entry.daddr;
-		dmask	= entry.dmask;
+		route	= entry.route;
+		netmask	= entry.netmask;
 		info_s	= entry.info_s;
 		return *this;
 	};
@@ -267,24 +262,14 @@ public:
 	{ this->version = version; };
 
 	void
-	set_src_addr(
-			const std::string& saddr)
-	{ this->saddr = saddr; };
-
-	void
-	set_src_mask(
-			const std::string& smask)
-	{ this->smask = smask; };
-
-	void
-	set_dst_addr(
+	set_route(
 			const std::string& daddr)
-	{ this->daddr = daddr; };
+	{ this->route = daddr; };
 
 	void
-	set_dst_mask(
+	set_netmask(
 			const std::string& dmask)
-	{ this->dmask = dmask; };
+	{ this->netmask = dmask; };
 
 public:
 
@@ -297,20 +282,12 @@ public:
 	{ return version; };
 
 	const std::string&
-	get_src_addr() const
-	{ return saddr; };
+	get_route() const
+	{ return route; };
 
 	const std::string&
-	get_src_mask() const
-	{ return smask; };
-
-	const std::string&
-	get_dst_addr() const
-	{ return daddr; };
-
-	const std::string&
-	get_dst_mask() const
-	{ return dmask; };
+	get_netmask() const
+	{ return netmask; };
 
 public:
 
@@ -320,8 +297,7 @@ public:
 		os << rofcore::indent(0) << "<cgtpinjectentry ";
 		os << "devname: " << entry.get_devname() << ", ";
 		os << "IPv" << entry.get_version() << ", ";
-		os << "saddr: " << entry.get_src_addr() << "/" << entry.get_src_mask() << ", ";
-		os << "daddr: " << entry.get_dst_addr() << "/" << entry.get_dst_mask() << " ";
+		os << "route: " << entry.get_route() << "/" << entry.get_netmask() << " ";
 		os << " >" << std::endl;
 		return os;
 	};
@@ -331,8 +307,7 @@ public:
 		std::stringstream ss;
 		ss << "devname: " << get_devname() << ", ";
 		ss << "IPv" << get_version() << ", ";
-		ss << "saddr: " << get_src_addr() << "/" << get_src_mask() << ", ";
-		ss << "daddr: " << get_dst_addr() << "/" << get_dst_mask();
+		ss << "route: " << get_route() << "/" << get_netmask();
 		info_s = ss.str();
 		return info_s;
 	};
@@ -341,10 +316,8 @@ private:
 
 	std::string	devname;
 	int 		version;	// IP version (4,6,...)
-	std::string saddr;		// src addr
-	std::string smask;		// src mask
-	std::string daddr;		// dst addr
-	std::string dmask;		// dst mask
+	std::string route;		// dst addr
+	std::string netmask;		// dst mask
 	mutable std::string info_s;
 };
 
