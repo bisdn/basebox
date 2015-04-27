@@ -294,9 +294,11 @@ cbasebox::handle_dpt_close(
 	if (flags.test(FLAG_FLOWCORE)) {
 		roflibs::svc::cflowcore::set_flow_core(dptid).handle_dpt_close();
 	}
+#if 0
 	if (flags.test(FLAG_GRECORE)) {
 		roflibs::gre::cgrecore::set_gre_core(dptid).handle_dpt_close();
 	}
+#endif
 	if (flags.test(FLAG_GTPCORE)) {
 		roflibs::gtp::cgtprelay::set_gtp_relay(dptid).handle_dpt_close();
 		roflibs::gtp::cgtpcore::set_gtp_core(dptid).handle_dpt_close();
@@ -422,9 +424,11 @@ cbasebox::handle_error_message(
 	if (flags.test(FLAG_IPCORE) && roflibs::ip::cipcore::has_ip_core(dpt.get_dptid())) {
 		roflibs::ip::cipcore::set_ip_core(dpt.get_dptid()).handle_error_message(dpt, auxid, msg);
 	}
+#if 0
 	if (flags.test(FLAG_GRECORE) && roflibs::gre::cgrecore::has_gre_core(dpt.get_dptid())) {
 		roflibs::gre::cgrecore::set_gre_core(dpt.get_dptid()).handle_error_message(dpt, auxid, msg);
 	}
+#endif
 	if (flags.test(FLAG_GTPCORE) && roflibs::gtp::cgtpcore::has_gtp_core(dpt.get_dptid())) {
 		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).handle_error_message(dpt, auxid, msg);
 	}
@@ -472,6 +476,7 @@ cbasebox::handle_port_desc_stats_reply(
 												table_id_ip_local).handle_dpt_close(); // yes, same as local for cipcore
 	}
 
+#if 0
 	if (flags.test(FLAG_GRECORE)) {
 		roflibs::gre::cgrecore::set_gre_core(dpt.get_dptid(),
 												table_id_eth_port_membership,
@@ -479,6 +484,7 @@ cbasebox::handle_port_desc_stats_reply(
 												table_id_gre_local,
 												table_id_ip_fwd).handle_dpt_close();
 	}
+#endif
 
 	// purge all entries, definitly
 	dpt.flow_mod_reset();
@@ -509,9 +515,11 @@ cbasebox::handle_port_desc_stats_reply(
 		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).handle_dpt_open();
 		roflibs::gtp::cgtprelay::set_gtp_relay(dpt.get_dptid()).handle_dpt_open();
 	}
+#if 0
 	if (flags.test(FLAG_GRECORE)) {
 		roflibs::gre::cgrecore::set_gre_core(dpt.get_dptid()).handle_dpt_open();
 	}
+#endif
 
 	// call external scripting hook
 	hook_dpt_attach(dpt.get_dptid());
@@ -646,9 +654,10 @@ cbasebox::test_gtp(rofl::crofdpt& dpt)
 void
 cbasebox::test_workflow(rofl::crofdpt& dpt)
 {
-	bool gre_test = false;
+//	bool gre_test = false;
 	bool gtp_test = false;
 
+#if 0
 	/*
 	 * GRE test
 	 */
@@ -678,6 +687,7 @@ cbasebox::test_workflow(rofl::crofdpt& dpt)
 		roflibs::gre::cgrecore::set_gre_core(dpt.get_dptid()).
 				add_gre_term_in4(term_id, gre_portno, laddr, raddr, gre_key);
 	}
+#endif
 
 	/*
 	 * GTP test

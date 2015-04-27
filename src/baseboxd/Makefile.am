@@ -19,7 +19,6 @@ baseboxd_LDADD = -lpthread -lrt \
                 -L../roflibs/ethcore -lroflibs_ethcore \
                 -L../roflibs/ipcore -lroflibs_ipcore \
                 -L../roflibs/gtpcore -lroflibs_gtpcore \
-                -L../roflibs/grecore -lroflibs_grecore \
                 -L../roflibs/python -lroflibs_python
 
 
