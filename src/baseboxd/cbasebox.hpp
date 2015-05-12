@@ -8,6 +8,8 @@
 #ifndef CROFBASE_HPP_
 #define CROFBASE_HPP_
 
+#define OF_DPA
+
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -19,19 +21,24 @@
 #include <rofl/platform/unix/cdaemon.h>
 #include <rofl/platform/unix/cunixenv.h>
 
+#ifndef OF_DPA
 #include "roflibs/flowcore/cflowcore.hpp"
 #include "roflibs/ethcore/cethcore.hpp"
 #include "roflibs/ipcore/cipcore.hpp"
 #include "roflibs/gtpcore/cgtpcore.hpp"
 #include "roflibs/gtpcore/cgtprelay.hpp"
 #include "roflibs/grecore/cgrecore.hpp"
+#endif
 #include "roflibs/netlink/clogging.hpp"
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/ctundev.hpp"
+#ifndef OF_DPA
 #include "roflibs/python/cpython.hpp"
 #include "roflibs/ethcore/cethcoredb_file.hpp"
 #include "roflibs/gtpcore/cgtpcoredb_file.hpp"
+#endif
 #include "roflibs/netlink/ccookiebox.hpp"
+#include "roflibs/netlink/cconfig.hpp"
 
 #include "cconfig.hpp"
 
@@ -59,6 +66,7 @@ class cbasebox : public rofl::crofbase, public rofcore::cnetlink_common_observer
 			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap =
 					rofl::openflow::cofhello_elem_versionbitmap()) :
 						rofl::crofbase(versionbitmap),
+						// FIXME this is configurations, hence move somewhere else
 						table_id_svc_flows(0),
 						table_id_eth_port_membership(1),
 						table_id_eth_src(2),
@@ -176,12 +184,13 @@ protected:
 
 public:
 
+#if 0
 	/**
 	 *
 	 */
 	void
 	set_python_script(const std::string& python_script) { this->python_script = python_script; };
-
+#endif
 
 public:
 

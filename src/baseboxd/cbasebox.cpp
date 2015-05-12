@@ -24,6 +24,7 @@ int
 cbasebox::run(int argc, char** argv)
 {
 	rofl::cunixenv env_parser(argc, argv);
+	rofl::logging::set_debug_level(rofl::logging::TRACE);
 
 	/* update defaults */
 	//env_parser.update_default_option("logfile", ETHCORE_LOG_FILE);
@@ -44,7 +45,7 @@ cbasebox::run(int argc, char** argv)
 	/*
 	 * read configuration file for roflibs related configuration
 	 */
-
+#if 0
 	// ethcore
 	roflibs::eth::cethcoredb_file& ethcoredb =
 			dynamic_cast<roflibs::eth::cethcoredb_file&>( roflibs::eth::cethcoredb::get_ethcoredb("file") );
@@ -54,7 +55,7 @@ cbasebox::run(int argc, char** argv)
 	roflibs::gtp::cgtpcoredb_file& gtpcoredb =
 			dynamic_cast<roflibs::gtp::cgtpcoredb_file&>( roflibs::gtp::cgtpcoredb::get_gtpcoredb("file") );
 	gtpcoredb.read_config(env_parser.get_arg("config-file"), std::string("baseboxd"));
-
+#endif
 
 	/*
 	 * extract debug level
@@ -68,6 +69,7 @@ cbasebox::run(int argc, char** argv)
 		core_debug = (int)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.logging.core.debug");
 	}
 	if (env_parser.is_arg_set("debug")) {
+		puts("debug");
 		rofl_debug = core_debug = atoi(env_parser.get_arg("debug").c_str());
 	}
 
@@ -161,7 +163,7 @@ cbasebox::run(int argc, char** argv)
 
 	box.add_dpt_listening(0, socket_type, socket_params);
 
-
+#if 0
 	/*
 	 * extract python script to execute as business/use case specific logic
 	 */
@@ -173,7 +175,11 @@ cbasebox::run(int argc, char** argv)
 			roflibs::python::cpython::get_instance().run(script);
 		}
 	}
+#endif
 
+#ifdef OF_DPA
+	// FIXME basic init
+#else
 	/*
 	 * enable all cores by default
 	 */
@@ -231,7 +237,7 @@ cbasebox::run(int argc, char** argv)
 		rofcore::logging::crit << "[baseboxd][main] must enable ipcore for using gtpcore, aborting." << std::endl;
 		return -1;
 	}
-
+#endif /* OF_DPA */
 
 
 	cbasebox::keep_on_running = true;
@@ -291,6 +297,9 @@ cbasebox::handle_dpt_close(
 	// call external scripting hook
 	hook_dpt_detach(dptid);
 
+#ifdef OF_DPA
+	// FIXME implemente close
+#else
 	if (flags.test(FLAG_FLOWCORE)) {
 		roflibs::svc::cflowcore::set_flow_core(dptid).handle_dpt_close();
 	}
@@ -316,6 +325,7 @@ cbasebox::handle_dpt_close(
 		roflibs::gre::cgrecore::set_gre_core(dpid).clear_gre_terms_in6();
 	}
 #endif
+#endif /* OF_DPA */
 }
 
 
@@ -324,6 +334,9 @@ void
 cbasebox::handle_features_reply(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_features_reply& msg)
 {
+#ifdef OF_DPA
+	// FIXME implement first checks
+#else
 	if (msg.get_n_tables() < (table_id_eth_dst + 1)) {
 		rofcore::logging::error << "[cbasebox][handle_features_reply] datapath does not support "
 				<< "sufficient number of tables in pipeline, need " << (int)(table_id_eth_dst+1) << ", found "
@@ -333,6 +346,7 @@ cbasebox::handle_features_reply(
 
 	rofcore::logging::debug << "[cbasebox][handle_features_reply] dpid: "
 			<< dpt.get_dpid().str() << std::endl << msg;
+#endif
 
 	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 }
@@ -397,9 +411,13 @@ cbasebox::handle_port_status(
 		}
 #endif
 
+#ifdef OF_DPA
+		// FIXME handle port status
+#else
 		if (flags.test(FLAG_ETHCORE) && roflibs::eth::cethcore::has_eth_core(dpt.get_dptid())) {
 			roflibs::eth::cethcore::set_eth_core(dpt.get_dptid()).handle_port_status(dpt, auxid, msg);
 		}
+#endif // OF_DPA
 
 	} catch (rofl::openflow::ePortNotFound& e) {
 		rofcore::logging::debug << "[cbasebox][handle_port_status] portno not found" << std::endl;
@@ -415,6 +433,8 @@ cbasebox::handle_error_message(
 	rofcore::logging::debug << "[cbasebox][handle_error_message] dpid: " << dpt.get_dpid().str()
 			<< " pkt received: " << std::endl << msg;
 
+#ifdef OF_DPA
+#else
 	if (flags.test(FLAG_FLOWCORE) && roflibs::svc::cflowcore::has_flow_core(dpt.get_dptid())) {
 		roflibs::svc::cflowcore::set_flow_core(dpt.get_dptid()).handle_error_message(dpt, auxid, msg);
 	}
@@ -432,6 +452,7 @@ cbasebox::handle_error_message(
 	if (flags.test(FLAG_GTPCORE) && roflibs::gtp::cgtpcore::has_gtp_core(dpt.get_dptid())) {
 		roflibs::gtp::cgtpcore::set_gtp_core(dpt.get_dptid()).handle_error_message(dpt, auxid, msg);
 	}
+#endif // OF_DPA
 }
 
 
@@ -442,6 +463,10 @@ cbasebox::handle_port_desc_stats_reply(
 
 	rofcore::logging::debug << "[cbasebox][handle_port_desc_stats_reply] dpid: " << dpt.get_dpid().str()
 			<< " pkt received: " << std::endl << msg;
+
+#ifdef OF_DPA
+
+#else
 
 #if 0
 	dpt.set_ports() = msg.get_ports();
@@ -520,7 +545,7 @@ cbasebox::handle_port_desc_stats_reply(
 		roflibs::gre::cgrecore::set_gre_core(dpt.get_dptid()).handle_dpt_open();
 	}
 #endif
-
+#endif /* OF_DPA */
 	// call external scripting hook
 	hook_dpt_attach(dpt.get_dptid());
 
@@ -622,10 +647,12 @@ cbasebox::execute(
 }
 
 
-
+#ifndef OF_DPA
 void
 cbasebox::test_gtp(rofl::crofdpt& dpt)
 {
+
+
 	uint32_t teid = 0;
 
 	for (int i = 1; i < 10000; i++) {
@@ -749,4 +776,5 @@ cbasebox::test_workflow(rofl::crofdpt& dpt)
 	}
 }
 
+#endif
 

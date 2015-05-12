@@ -30,7 +30,7 @@ if test "$enable_debug" = "yes"; then
 	AC_MSG_RESULT(yes)
 else
 	CXXFLAGS="-O3 -fomit-frame-pointer"
-	CFLAGS="-O3 --compiler-options -fno-strict-aliasing --compiler-options -fno-inline --compiler-bindir=/usr/bin/g++-4.3"
+	CFLAGS="-O3 -fomit-frame-pointer"
 	AC_DEFINE(NDEBUG)
 	AC_MSG_RESULT(no)
 fi
@@ -77,7 +77,16 @@ fi
 # version
 m4_include([config/versioning.m4])
 
-AM_PATH_PYTHON([2.7])
+#AM_PATH_PYTHON([2.7])
+
+#	src/roflibs/python/Makefile
+#	src/roflibs/flowcore/Makefile
+#	src/roflibs/8021core/Makefile
+#	src/roflibs/ethcore/Makefile
+#	src/roflibs/ethcore/rstp/Makefile
+#	src/roflibs/ipcore/Makefile
+#	src/roflibs/gtpcore/Makefile
+#	src/roflibs/grecore/Makefile
 
 
 # AC_CONFIG_HEADERS([include/config.h])
@@ -86,15 +95,7 @@ AC_CONFIG_FILES([
 	src/Makefile
 	src/baseboxd/Makefile
 	src/roflibs/Makefile
-	src/roflibs/python/Makefile
 	src/roflibs/netlink/Makefile
-	src/roflibs/flowcore/Makefile
-	src/roflibs/8021core/Makefile
-	src/roflibs/ethcore/Makefile
-	src/roflibs/ethcore/rstp/Makefile
-	src/roflibs/ipcore/Makefile
-	src/roflibs/gtpcore/Makefile
-	src/roflibs/grecore/Makefile
 	
 	test/Makefile
 	test/ipcore/Makefile

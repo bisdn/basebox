@@ -14,12 +14,12 @@ baseboxd_SOURCES = \
 	
 baseboxd_LDADD = -lpthread -lrt \
 		-L../roflibs -lroflibs \
-                -L../roflibs/netlink -lroflibs_netlink \
-                -L../roflibs/flowcore -lroflibs_flowcore \
-                -L../roflibs/ethcore -lroflibs_ethcore \
-                -L../roflibs/ipcore -lroflibs_ipcore \
-                -L../roflibs/gtpcore -lroflibs_gtpcore \
-                -L../roflibs/python -lroflibs_python
+                -L../roflibs/netlink -lroflibs_netlink
+#                -L../roflibs/flowcore -lroflibs_flowcore \
+#                -L../roflibs/ethcore -lroflibs_ethcore \
+#                -L../roflibs/ipcore -lroflibs_ipcore \
+#                -L../roflibs/gtpcore -lroflibs_gtpcore \
+#                -L../roflibs/python -lroflibs_python
 
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I/usr/include/python2.7
