@@ -73,6 +73,8 @@ if (test "${have_libconfig}" = "yes"); then
         LIBS+="$LIBCONFIGXX_LIBS"
 fi
 
+# todo: add http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx_11.html
+CXXFLAGS="$CXXFLAGS -std=c++11"
 
 # version
 m4_include([config/versioning.m4])
@@ -96,6 +98,7 @@ AC_CONFIG_FILES([
 	src/baseboxd/Makefile
 	src/roflibs/Makefile
 	src/roflibs/netlink/Makefile
+	src/roflibs/of-dpa/Makefile
 	
 	test/Makefile
 	test/ipcore/Makefile

@@ -9,12 +9,15 @@ baseboxd_SOURCES = \
 	cbasebox.hpp \
 	cbasebox.cpp \
 	cconfig.hpp \
-	cconfig.cpp
+	cconfig.cpp \
+	switch_behavior.hpp \
+	switch_behavior.cpp
 
 	
 baseboxd_LDADD = -lpthread -lrt \
 		-L../roflibs -lroflibs \
-                -L../roflibs/netlink -lroflibs_netlink
+		-L../roflibs/netlink -lroflibs_netlink \
+		-L../roflibs/of-dpa -lroflibs_ofdpa
 #                -L../roflibs/flowcore -lroflibs_flowcore \
 #                -L../roflibs/ethcore -lroflibs_ethcore \
 #                -L../roflibs/ipcore -lroflibs_ipcore \

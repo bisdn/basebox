@@ -41,6 +41,7 @@
 #include "roflibs/netlink/cconfig.hpp"
 
 #include "cconfig.hpp"
+#include <baseboxd/switch_behavior.hpp>
 
 namespace basebox {
 
@@ -76,7 +77,8 @@ class cbasebox : public rofl::crofbase, public rofcore::cnetlink_common_observer
 						table_id_gtp_local(5),
 						table_id_ip_fwd(6),
 						table_id_eth_dst(7),
-						default_pvid(1)
+						default_pvid(1),
+						sa(switch_behavior_fabric::get_behavior(-1))
 	{};
 
 	/**
@@ -140,6 +142,9 @@ protected:
 	virtual void
 	handle_features_reply(
 			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_features_reply& msg);
+
+	virtual void
+	handle_desc_stats_reply(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_desc_stats_reply& msg);
 
 	/**
 	 *
@@ -263,6 +268,7 @@ private:
 	static std::bitset<64>		flags;
 
 	rofl::cdpid					dpid;
+	switch_behavior 			*sa;		// behavior of the switch (currently only a single switch)
 };
 
 }; // end of namespace ethcore

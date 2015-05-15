@@ -7,6 +7,8 @@
 
 #include "cbasebox.hpp"
 
+#include <assert.h>
+
 using namespace basebox;
 
 /*static*/cbasebox* cbasebox::rofbase = (cbasebox*)0;
@@ -143,7 +145,10 @@ cbasebox::run(int argc, char** argv)
 	//base.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
 
 	std::stringstream portno;
-	if (ethcore::cconfig::get_instance().exists("baseboxd.openflow.bindport")) {
+	if (env_parser.is_arg_set("port")) {
+		puts(env_parser.get_arg("port").c_str());
+		portno << env_parser.get_arg("port").c_str();
+	} else if (ethcore::cconfig::get_instance().exists("baseboxd.openflow.bindport")) {
 		portno << (int)ethcore::cconfig::get_instance().lookup("baseboxd.openflow.bindport");
 	} else {
 		portno << (int)6653;
@@ -240,6 +245,7 @@ cbasebox::run(int argc, char** argv)
 #endif /* OF_DPA */
 
 
+
 	cbasebox::keep_on_running = true;
 	while (cbasebox::keep_on_running) {
 		try {
@@ -278,12 +284,21 @@ cbasebox::handle_dpt_open(
 	}
 
 	rofcore::logging::debug << "[cbasebox][handle_dpt_open] dpid: " << dpt.get_dpid().str() << std::endl;
+	rofcore::logging::debug << "[cbasebox][handle_dpt_open] dpt: " << dpt << std::endl;
 
+#ifdef OF_DPA
+
+#else
 	dpid = dpt.get_dpid();
 	dpt.flow_mod_reset();
 	dpt.group_mod_reset();
+#endif
 
 	dpt.send_features_request(rofl::cauxid(0));
+	dpt.send_desc_stats_request(rofl::cauxid(0), 0);
+	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
+
+	// todo timeout?
 }
 
 
@@ -344,14 +359,20 @@ cbasebox::handle_features_reply(
 		return;
 	}
 
+#endif
 	rofcore::logging::debug << "[cbasebox][handle_features_reply] dpid: "
 			<< dpt.get_dpid().str() << std::endl << msg;
-#endif
 
+#ifndef OF_DPA
 	dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
+#endif
 }
 
-
+void
+cbasebox::handle_desc_stats_reply(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_desc_stats_reply& msg)
+{
+	rofcore::logging::debug << "[cbasebox][handle_desc_stats_reply] dpt: " << std::endl << dpt << std::endl << msg;
+}
 
 void
 cbasebox::handle_packet_in(
@@ -465,6 +486,15 @@ cbasebox::handle_port_desc_stats_reply(
 			<< " pkt received: " << std::endl << msg;
 
 #ifdef OF_DPA
+
+	/* init behavior */// todo behavior based on features/descs/stats
+	switch_behavior *tmp = this->sa;
+	this->sa = switch_behavior_fabric::get_behavior(1, dpt.get_dptid());
+
+	if (tmp) {
+		delete tmp;
+	}
+
 
 #else
 
@@ -600,8 +630,6 @@ cbasebox::hook_dpt_detach(const rofl::cdptid& dptid)
 		rofcore::logging::error << "[cbasebox][hook_dpt_detach] script execution failed" << std::endl;
 	}
 }
-
-
 
 void
 cbasebox::execute(
