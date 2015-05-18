@@ -143,6 +143,8 @@ cnetlink::handle_revent(int fd)
 	if (fd == nl_cache_mngr_get_fd(mngr)) {
 		nl_cache_mngr_data_ready(mngr);
 	}
+	// reregister fd
+	register_filedesc_r(nl_cache_mngr_get_fd(mngr));
 }
 
 
