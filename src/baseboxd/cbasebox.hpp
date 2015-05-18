@@ -51,7 +51,7 @@ public:
 };
 
 
-class cbasebox : public rofl::crofbase, public rofcore::cnetlink_common_observer {
+class cbasebox : public rofl::crofbase/*, public rofcore::cnetlink_common_observer*/ {
 
 	/**
 	 * @brief	pointer to singleton
