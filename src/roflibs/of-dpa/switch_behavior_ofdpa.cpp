@@ -55,4 +55,73 @@ switch_behavior_ofdpa::init_ports()
 }
 
 
+void
+switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
+{
+	try {
+		rofcore::ctapdev* tapdev = dynamic_cast<rofcore::ctapdev*>( netdev );
+		assert(tapdev);
+
+		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(tapdev->get_dptid());
+
+		if (not dpt.is_established()) {
+			throw eLinkNoDptAttached("switch_behavior_ofdpa::enqueue() dpt not found");
+		}
+
+		// fixme check what else is needed to send a packet out
+		rofl::openflow::cofactions actions(dpt.get_version_negotiated());
+		//actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
+		//actions.set_action_set_field(rofl::cindex(1)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(tapdev->get_pvid()));
+		actions.set_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_TABLE);
+
+		// todo enable
+//		dpt.send_packet_out_message(
+//				rofl::cauxid(0),
+//				rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()),
+//				rofl::openflow::base::get_ofpp_controller_port(dpt.get_version_negotiated()),
+//				actions,
+//				pkt->soframe(),
+//				pkt->length());
+
+	} catch (rofl::eRofDptNotFound& e) {
+		rofcore::logging::error << "[switch_behavior_ofdpa][enqueue] no data path attached, dropping outgoing packet" << std::endl;
+
+	} catch (eLinkNoDptAttached& e) {
+		rofcore::logging::error << "[switch_behavior_ofdpa][enqueue] no data path attached, dropping outgoing packet" << std::endl;
+
+	} catch (eLinkTapDevNotFound& e) {
+		rofcore::logging::error << "[switch_behavior_ofdpa][enqueue] unable to find tap device" << std::endl;
+	}
+
+	rofcore::cpacketpool::get_instance().release_pkt(pkt);
+}
+
+void
+switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
+{
+	for (std::vector<rofl::cpacket*>::iterator
+			it = pkts.begin(); it != pkts.end(); ++it) {
+		enqueue(netdev, *it);
+	}
+}
+
+void
+switch_behavior_ofdpa::link_created(unsigned int ifindex)
+{
+	rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] ifindex=" << ifindex << std::endl;
+
+}
+
+void
+switch_behavior_ofdpa::link_updated(unsigned int ifindex)
+{
+	rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] ifindex=" << ifindex << std::endl;
+}
+
+void
+switch_behavior_ofdpa::link_deleted(unsigned int ifindex)
+{
+	rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] ifindex=" << ifindex << std::endl;
+}
+
 } /* namespace basebox */

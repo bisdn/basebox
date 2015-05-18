@@ -9,6 +9,26 @@
 
 namespace basebox {
 
+class eSwitchBehaviorBaseErr : public std::runtime_error {
+public:
+	eSwitchBehaviorBaseErr(const std::string& __arg) : std::runtime_error(__arg) {}
+};
+
+class eLinkNoDptAttached : public eSwitchBehaviorBaseErr {
+public:
+	eLinkNoDptAttached(const std::string& __arg) :
+			eSwitchBehaviorBaseErr(__arg)
+	{}
+
+};
+
+class eLinkTapDevNotFound : public eSwitchBehaviorBaseErr {
+public:
+	eLinkTapDevNotFound(const std::string& __arg) :
+			eSwitchBehaviorBaseErr(__arg)
+	{}
+};
+
 class switch_behavior_ofdpa :
 		public switch_behavior,
 		public rofcore::cnetdev_owner,
@@ -180,6 +200,23 @@ private:
 		return true;
 	};
 
+
+	/* IO */
+	void
+	enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt);
+
+	void
+	enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket*> pkts);
+
+	/* netlink */
+	virtual void
+	link_created(unsigned int ifindex);
+
+	virtual void
+	link_updated(unsigned int ifindex);
+
+	virtual void
+	link_deleted(unsigned int ifindex);
 };
 
 }
