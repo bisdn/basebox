@@ -71,7 +71,6 @@ cbasebox::run(int argc, char** argv)
 		core_debug = (int)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.logging.core.debug");
 	}
 	if (env_parser.is_arg_set("debug")) {
-		puts("debug");
 		rofl_debug = core_debug = atoi(env_parser.get_arg("debug").c_str());
 	}
 
@@ -146,7 +145,6 @@ cbasebox::run(int argc, char** argv)
 
 	std::stringstream portno;
 	if (env_parser.is_arg_set("port")) {
-		puts(env_parser.get_arg("port").c_str());
 		portno << env_parser.get_arg("port").c_str();
 	} else if (ethcore::cconfig::get_instance().exists("baseboxd.openflow.bindport")) {
 		portno << (int)ethcore::cconfig::get_instance().lookup("baseboxd.openflow.bindport");
@@ -310,7 +308,7 @@ cbasebox::handle_dpt_close(
 	rofcore::logging::debug << "[cbasebox][handle_dpt_close] dpid: " << dpid.str() << std::endl;
 
 	// call external scripting hook
-	hook_dpt_detach(dptid);
+	//hook_dpt_detach(dptid);
 
 #ifdef OF_DPA
 	// FIXME implemente close
@@ -495,7 +493,6 @@ cbasebox::handle_port_desc_stats_reply(
 		delete tmp;
 	}
 
-
 #else
 
 #if 0
@@ -577,7 +574,7 @@ cbasebox::handle_port_desc_stats_reply(
 #endif
 #endif /* OF_DPA */
 	// call external scripting hook
-	hook_dpt_attach(dpt.get_dptid());
+	//hook_dpt_attach(dpt.get_dptid());
 
 	//test_gtp(dpt);
 }

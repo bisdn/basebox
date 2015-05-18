@@ -18,7 +18,9 @@ cnetlink::cnetlink() :
 {
 	try {
 		init_caches();
-	} catch (...) {}
+	} catch (...) {
+		rofcore::logging::error << "cnetlink: caught unkown exception during " << __FUNCTION__ << std::endl;
+	}
 }
 
 
@@ -36,25 +38,31 @@ cnetlink::~cnetlink()
 	destroy_caches();
 }
 
-
-
 void
 cnetlink::init_caches()
 {
 	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
 	if (rc < 0) {
-		rofcore::logging::debug << "clinkcache::clinkcache() failed to allocate netlink cache manager" << std::endl;
+		rofcore::logging::crit << "cnetlink::init_caches() failed to allocate netlink cache manager" << std::endl;
 		throw eNetLinkCritical("cnetlink::init_caches()");
 	}
 
 	rc = nl_cache_mngr_add(mngr, "route/link", (change_func_t)&route_link_cb, NULL, &caches[NL_LINK_CACHE]);
-
+	if (0 != rc){
+		rofcore::logging::error << "cnetlink::init_caches() add route/link to cache mngr" << std::endl;
+	}
 	rc = nl_cache_mngr_add(mngr, "route/addr", (change_func_t)&route_addr_cb, NULL, &caches[NL_ADDR_CACHE]);
-
+	if (0 != rc){
+		rofcore::logging::error << "cnetlink::init_caches() add route/addr to cache mngr" << std::endl;
+	}
 	rc = nl_cache_mngr_add(mngr, "route/route", (change_func_t)&route_route_cb, NULL, &caches[NL_ROUTE_CACHE]);
-
+	if (0 != rc){
+		rofcore::logging::error << "cnetlink::init_caches() add route/route to cache mngr" << std::endl;
+	}
 	rc = nl_cache_mngr_add(mngr, "route/neigh", (change_func_t)&route_neigh_cb, NULL, &caches[NL_NEIGH_CACHE]);
-
+	if (0 != rc){
+		rofcore::logging::error << "cnetlink::init_caches() add route/neigh to cache mngr" << std::endl;
+	}
 	struct nl_object* obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
 	while (0 != obj) {
 		nl_object_get(obj);
@@ -141,7 +149,9 @@ void
 cnetlink::handle_revent(int fd)
 {
 	if (fd == nl_cache_mngr_get_fd(mngr)) {
-		nl_cache_mngr_data_ready(mngr);
+		int rv = nl_cache_mngr_data_ready(mngr);
+		rofcore::logging::debug << "cnetlink #processed=" << rv << std::endl;
+	} else {
 	}
 	// reregister fd
 	register_filedesc_r(nl_cache_mngr_get_fd(mngr));

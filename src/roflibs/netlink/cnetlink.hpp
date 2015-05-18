@@ -8,25 +8,11 @@
 #ifndef CNETLINK_H_
 #define CNETLINK_H_ 1
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include <netlink/cache.h>
 #include <netlink/object.h>
 #include <netlink/route/link.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/neighbour.h>
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <netlink/cache.h>
-#ifdef __cplusplus
-}
-#endif
 
 #include <exception>
 
