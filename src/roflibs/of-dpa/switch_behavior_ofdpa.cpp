@@ -12,7 +12,7 @@ switch_behavior_ofdpa::switch_behavior_ofdpa(const rofl::cdptid& dptid) :
 {
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-	rofcore::logging::debug << "[switch_behavior_ofdpa][switch_behavior_ofdpa] dpt: " << std::endl << dpt;
+	rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] dpt: " << std::endl << dpt;
 
 	init_ports();
 }
@@ -45,6 +45,8 @@ switch_behavior_ofdpa::init_ports()
 		for (map<uint32_t, cofport*>::const_iterator iter = ports.begin(); iter != ports.end(); ++iter) {
 			const cofport* port = iter->second;
 			if (not has_tap_dev(dptid, port->get_name())) {
+				rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] adding port " << port->get_name() << " with portno=" << port->get_port_no() << std::endl;
+
 				add_tap_dev(dptid, port->get_name(), default_pvid, port->get_hwaddr());
 			}
 		}
@@ -99,13 +101,13 @@ switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		}
 	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[switch_behavior_ofdpa][enqueue] no data path attached, dropping outgoing packet" << std::endl;
+		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] no data path attached, dropping outgoing packet" << std::endl;
 
 	} catch (eLinkNoDptAttached& e) {
-		rofcore::logging::error << "[switch_behavior_ofdpa][enqueue] no data path attached, dropping outgoing packet" << std::endl;
+		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] no data path attached, dropping outgoing packet" << std::endl;
 
 	} catch (eLinkTapDevNotFound& e) {
-		rofcore::logging::error << "[switch_behavior_ofdpa][enqueue] unable to find tap device" << std::endl;
+		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] unable to find tap device" << std::endl;
 	}
 
 	rofcore::cpacketpool::get_instance().release_pkt(pkt);
@@ -125,18 +127,24 @@ switch_behavior_ofdpa::link_created(unsigned int ifindex)
 {
 	rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] ifindex=" << ifindex << std::endl;
 
+	// fixme check for new bridges
+
 }
 
 void
 switch_behavior_ofdpa::link_updated(unsigned int ifindex)
 {
 	rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] ifindex=" << ifindex << std::endl;
+
+	// fixme check for link de/attachments from/to bridges (i.e. check for master)
 }
 
 void
 switch_behavior_ofdpa::link_deleted(unsigned int ifindex)
 {
 	rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] ifindex=" << ifindex << std::endl;
+
+	// todo same as in link_updated?
 }
 
 } /* namespace basebox */
