@@ -312,6 +312,7 @@ cbasebox::handle_dpt_close(
 
 #ifdef OF_DPA
 	// FIXME implemente close
+	sa->handle_dpt_close(dptid);
 #else
 	if (flags.test(FLAG_FLOWCORE)) {
 		roflibs::svc::cflowcore::set_flow_core(dptid).handle_dpt_close();
