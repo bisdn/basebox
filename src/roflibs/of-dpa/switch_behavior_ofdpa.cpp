@@ -30,6 +30,28 @@ switch_behavior_ofdpa::~switch_behavior_ofdpa()
 }
 
 void
+switch_behavior_ofdpa::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
+{
+	if (this->dptid != dpt.get_dptid()) { // todo maybe even assert here?
+		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] wrong dptid received" << std::endl;
+		return;
+	}
+
+	if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()) == msg.get_buffer_id()) {
+		// got the full packet
+		// XXX asdf
+		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] got packet-in:" << std::endl << msg;
+
+	} else {
+		// packet is buffered
+		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] cannot handle buffered packet currently" << std::endl;
+		return;
+	}
+
+
+}
+
+void
 switch_behavior_ofdpa::init_ports()
 {
 	using rofl::openflow::cofport;

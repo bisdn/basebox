@@ -45,6 +45,9 @@ public:
 		return 1;
 	}
 
+	virtual void
+	handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
+
 private:
 
 	std::map<rofl::cdptid, std::map<std::string, rofcore::ctapdev*> > devs;

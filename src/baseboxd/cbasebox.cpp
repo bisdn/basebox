@@ -379,7 +379,11 @@ cbasebox::handle_packet_in(
 	rofcore::logging::debug << "[cbasebox][handle_packet_in] dpid: " << dpt.get_dpid().str()
 			<< " pkt received: " << std::endl << msg;
 
+#ifdef OF_DPA
+	sa->handle_packet_in(dpt, auxid, msg);
+#else
 	roflibs::common::openflow::ccookiebox::get_instance().handle_packet_in(dpt, auxid, msg);
+#endif
 }
 
 
