@@ -71,7 +71,7 @@ private:
 			} catch (rofl::eRofDptNotFound& e) {}
 			drop_tap_dev(dpid, it->first);
 		}
-	};
+	}
 
 	/**
 	 *
@@ -83,7 +83,7 @@ private:
 		}
 		devs[dpid][devname] = new rofcore::ctapdev(this, dpid, devname, pvid, hwaddr);
 		return *(devs[dpid][devname]);
-	};
+	}
 
 	/**
 	 *
@@ -94,7 +94,7 @@ private:
 			devs[dpid][devname] = new rofcore::ctapdev(this, dpid, devname, pvid, hwaddr);
 		}
 		return *(devs[dpid][devname]);
-	};
+	}
 
 	/**
 	 *
@@ -105,7 +105,7 @@ private:
 			throw rofcore::eTunDevNotFound("cbasebox::set_tap_dev() devname not found");
 		}
 		return *(devs[dpid][devname]);
-	};
+	}
 
 	/**
 	 *
@@ -118,7 +118,7 @@ private:
 			throw rofcore::eTunDevNotFound("cbasebox::set_tap_dev() hwaddr not found");
 		}
 		return *(it->second);
-	};
+	}
 
 	/**
 	 *
@@ -132,7 +132,7 @@ private:
 			throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() devname not found");
 		}
 		return *(devs.at(dpid).at(devname));
-	};
+	}
 
 	/**
 	 *
@@ -148,7 +148,7 @@ private:
 			throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() hwaddr not found");
 		}
 		return *(it->second);
-	};
+	}
 
 	/**
 	 *
@@ -160,7 +160,7 @@ private:
 		}
 		delete devs[dpid][devname];
 		devs[dpid].erase(devname);
-	};
+	}
 
 	/**
 	 *
@@ -174,7 +174,7 @@ private:
 		}
 		delete it->second;
 		devs[dpid].erase(it->first);
-	};
+	}
 
 	/**
 	 *
@@ -185,7 +185,7 @@ private:
 			return false;
 		}
 		return (not (devs.at(dpid).find(devname) == devs.at(dpid).end()));
-	};
+	}
 
 	/**
 	 *
@@ -201,7 +201,7 @@ private:
 			return false;
 		}
 		return true;
-	};
+	}
 
 
 	/* IO */
