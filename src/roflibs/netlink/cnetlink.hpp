@@ -279,6 +279,8 @@ private:
 	void
 	destroy_caches();
 
+	void
+	update_link_cache();
 
 	/**
 	 *

@@ -19,7 +19,7 @@ cnetlink::cnetlink() :
 	try {
 		init_caches();
 	} catch (...) {
-		rofcore::logging::error << "cnetlink: caught unkown exception during " << __FUNCTION__ << std::endl;
+		logging::error << "cnetlink: caught unkown exception during " << __FUNCTION__ << std::endl;
 	}
 }
 
@@ -41,27 +41,32 @@ cnetlink::~cnetlink()
 void
 cnetlink::init_caches()
 {
-	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
+	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, 0, &mngr);
 	if (rc < 0) {
-		rofcore::logging::crit << "cnetlink::init_caches() failed to allocate netlink cache manager" << std::endl;
+		logging::crit << "cnetlink::init_caches() failed to allocate netlink cache manager" << std::endl;
 		throw eNetLinkCritical("cnetlink::init_caches()");
 	}
 
+	caches[NL_LINK_CACHE] = NULL;
+	caches[NL_ADDR_CACHE] = NULL;
+	caches[NL_ROUTE_CACHE] = NULL;
+	caches[NL_NEIGH_CACHE] = NULL;
+
 	rc = nl_cache_mngr_add(mngr, "route/link", (change_func_t)&route_link_cb, NULL, &caches[NL_LINK_CACHE]);
 	if (0 != rc){
-		rofcore::logging::error << "cnetlink::init_caches() add route/link to cache mngr" << std::endl;
+		logging::error << "cnetlink::init_caches() add route/link to cache mngr" << std::endl;
 	}
 	rc = nl_cache_mngr_add(mngr, "route/addr", (change_func_t)&route_addr_cb, NULL, &caches[NL_ADDR_CACHE]);
 	if (0 != rc){
-		rofcore::logging::error << "cnetlink::init_caches() add route/addr to cache mngr" << std::endl;
+		logging::error << "cnetlink::init_caches() add route/addr to cache mngr" << std::endl;
 	}
 	rc = nl_cache_mngr_add(mngr, "route/route", (change_func_t)&route_route_cb, NULL, &caches[NL_ROUTE_CACHE]);
 	if (0 != rc){
-		rofcore::logging::error << "cnetlink::init_caches() add route/route to cache mngr" << std::endl;
+		logging::error << "cnetlink::init_caches() add route/route to cache mngr" << std::endl;
 	}
 	rc = nl_cache_mngr_add(mngr, "route/neigh", (change_func_t)&route_neigh_cb, NULL, &caches[NL_NEIGH_CACHE]);
 	if (0 != rc){
-		rofcore::logging::error << "cnetlink::init_caches() add route/neigh to cache mngr" << std::endl;
+		logging::error << "cnetlink::init_caches() add route/neigh to cache mngr" << std::endl;
 	}
 	struct nl_object* obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
 	while (0 != obj) {
@@ -144,15 +149,50 @@ cnetlink::get_instance()
 }
 
 
+void
+cnetlink::update_link_cache()
+{
+	if (cnetlink::get_instance().get_links().size() != nl_cache_nitems(caches[NL_LINK_CACHE])) {
+
+		logging::warn << "[cnetlink][" << __FUNCTION__ << "] #links=" << cnetlink::get_instance().get_links().size()
+				<< " #cacheitems=" << nl_cache_nitems(caches[NL_LINK_CACHE]) << std::endl;
+
+		struct nl_sock *sk = NULL;
+		if ((sk = nl_socket_alloc()) == NULL) {
+			return;
+		}
+
+		int sd = 0;
+		if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
+			nl_socket_free(sk);
+			return;
+		}
+
+		int rv = nl_cache_refill(sk, caches[NL_LINK_CACHE]);
+		if (rv != 0) {
+			logging::error << "[cnetlink][" << __FUNCTION__ << "] nl_cache_refill failed" << std::endl;
+		}
+
+		nl_close(sk);
+		nl_socket_free(sk);
+	}
+
+	// fixme sync with local links
+}
+
 
 void
 cnetlink::handle_revent(int fd)
 {
 	if (fd == nl_cache_mngr_get_fd(mngr)) {
 		int rv = nl_cache_mngr_data_ready(mngr);
-		rofcore::logging::debug << "cnetlink #processed=" << rv << std::endl;
-	} else {
+		logging::debug << "cnetlink #processed=" << rv << std::endl;
 	}
+
+	// fixme these should rather be event based
+	update_link_cache();
+
+
 	// reregister fd
 	register_filedesc_r(nl_cache_mngr_get_fd(mngr));
 }
@@ -165,7 +205,7 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 {
 	try {
 		if (std::string(nl_object_get_type(obj)) != std::string("route/link")) {
-			rofcore::logging::debug << "cnetlink::route_link_cb() ignoring non link object received" << std::endl;
+			logging::debug << "cnetlink::route_link_cb() ignoring non link object received" << std::endl;
 			return;
 		}
 
@@ -177,23 +217,23 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 		switch (action) {
 		case NL_ACT_NEW: {
-			cnetlink::get_instance().set_links().add_link(rtlink);
-			rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+			cnetlink::get_instance().set_links().add_link(rtlink); // fixme this might overwrite addr/neighs/routes (due to missing entries in the cache)
+			logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			cnetlink::get_instance().notify_link_created(ifindex);
 		} break;
 		case NL_ACT_CHANGE: {
 			cnetlink::get_instance().set_links().set_link(rtlink);
-			rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+			logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			cnetlink::get_instance().notify_link_updated(ifindex);
 		} break;
 		case NL_ACT_DEL: {
 			//notify_link_deleted(ifindex);
 			cnetlink::get_instance().set_links().drop_link(ifindex);
-			rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+			logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			cnetlink::get_instance().notify_link_deleted(ifindex);
 		} break;
 		default: {
-			rofcore::logging::debug << "route/link: unknown NL action" << std::endl;
+			logging::debug << "route/link: unknown NL action" << std::endl;
 		}
 		}
 
@@ -201,8 +241,9 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 	} catch (eNetLinkNotFound& e) {
 		// NL_ACT_CHANGE => ifindex not found
+		logging::error << "cnetlink::route_link_cb() oops, route_link_cb() caught eNetLinkNotFound" << std::endl;
 	} catch (crtlink::eRtLinkNotFound& e) {
-
+		logging::error << "cnetlink::route_link_cb() oops, route_link_cb() caught eRtLinkNotFound" << std::endl;
 	}
 }
 
@@ -212,7 +253,7 @@ void
 cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data)
 {
 	if (std::string(nl_object_get_type(obj)) != std::string("route/addr")) {
-		rofcore::logging::debug << "cnetlink::route_addr_cb() ignoring non addr object received" << std::endl;
+		logging::debug << "cnetlink::route_addr_cb() ignoring non addr object received" << std::endl;
 		return;
 	}
 
@@ -226,15 +267,15 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 		case NL_ACT_NEW: {
 			switch (family) {
 			case AF_INET: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_addr_cb] new addr_in4" << std::endl << crtaddr_in4((struct rtnl_addr*)obj);
+				logging::debug << "[roflibs][cnetlink][route_addr_cb] new addr_in4" << std::endl << crtaddr_in4((struct rtnl_addr*)obj);
 				unsigned int adindex = cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in4().add_addr(crtaddr_in4((struct rtnl_addr*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in4_created(ifindex, adindex);
 			} break;
 			case AF_INET6: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_addr_cb] new addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
+				logging::debug << "[roflibs][cnetlink][route_addr_cb] new addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
 				unsigned int adindex = cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in6().add_addr(crtaddr_in6((struct rtnl_addr*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in6_created(ifindex, adindex);
 			} break;
 			}
@@ -243,15 +284,15 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 		case NL_ACT_CHANGE: {
 			switch (family) {
 			case AF_INET: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_addr_cb] updated addr_in4" << std::endl << crtaddr_in4((struct rtnl_addr*)obj);
+				logging::debug << "[roflibs][cnetlink][route_addr_cb] updated addr_in4" << std::endl << crtaddr_in4((struct rtnl_addr*)obj);
 				unsigned int adindex = cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in4().set_addr(crtaddr_in4((struct rtnl_addr*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in4_updated(ifindex, adindex);
 			} break;
 			case AF_INET6: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_addr_cb] updated addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
+				logging::debug << "[roflibs][cnetlink][route_addr_cb] updated addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
 				unsigned int adindex = cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in6().set_addr(crtaddr_in6((struct rtnl_addr*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in6_updated(ifindex, adindex);
 			} break;
 			}
@@ -260,31 +301,31 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 		case NL_ACT_DEL: {
 			switch (family) {
 			case AF_INET: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_addr_cb] deleted addr_in4" << std::endl << crtaddr_in4((struct rtnl_addr*)obj);
+				logging::debug << "[roflibs][cnetlink][route_addr_cb] deleted addr_in4" << std::endl << crtaddr_in4((struct rtnl_addr*)obj);
 				unsigned int adindex = cnetlink::get_instance().set_links().get_link(ifindex).get_addrs_in4().get_addr(crtaddr_in4((struct rtnl_addr*)obj));
 				cnetlink::get_instance().notify_addr_in4_deleted(ifindex, adindex);
 				cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in4().drop_addr(adindex);
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			case AF_INET6: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_addr_cb] deleted addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
+				logging::debug << "[roflibs][cnetlink][route_addr_cb] deleted addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
 				unsigned int adindex = cnetlink::get_instance().set_links().get_link(ifindex).get_addrs_in6().get_addr(crtaddr_in6((struct rtnl_addr*)obj));
 				cnetlink::get_instance().notify_addr_in6_deleted(ifindex, adindex);
 				cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in6().drop_addr(adindex);
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			}
 
 		} break;
 		default: {
-			rofcore::logging::debug << "route/addr: unknown NL action" << std::endl;
+			logging::debug << "route/addr: unknown NL action" << std::endl;
 		}
 		}
-		rofcore::logging::debug << "[roflibs][cnetlink][route_addr_cb] status" << std::endl << cnetlink::get_instance();
+		logging::trace << "[roflibs][cnetlink][route_addr_cb] status" << std::endl << cnetlink::get_instance();
 	} catch (eNetLinkNotFound& e) {
-		rofcore::logging::debug << "cnetlink::route_addr_cb() oops, route_addr_cb() was called with an invalid link [1]" << std::endl;
+		logging::error << "cnetlink::route_addr_cb() oops, route_addr_cb() was called with an invalid link [1]" << std::endl;
 	} catch (crtaddr::eRtAddrNotFound& e) {
-		rofcore::logging::debug << "cnetlink::route_addr_cb() oops, route_addr_cb() was called with an invalid address [2]" << std::endl;
+		logging::error << "cnetlink::route_addr_cb() oops, route_addr_cb() was called with an invalid address [2]" << std::endl;
 	}
 
 	nl_object_put(obj); // release reference to object
@@ -296,13 +337,13 @@ void
 cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data)
 {
 	if (std::string(nl_object_get_type(obj)) != std::string("route/route")) {
-		rofcore::logging::debug << "cnetlink::route_route_cb() ignoring non route object received" << std::endl;
+		logging::debug << "cnetlink::route_route_cb() ignoring non route object received" << std::endl;
 		return;
 	}
 
 	nl_object_get(obj); // get reference to object
 
-	//rofcore::logging::debug << "cnetlink::route_route_cb() called" << std::endl;
+	//logging::debug << "cnetlink::route_route_cb() called" << std::endl;
 
 	int family = rtnl_route_get_family((struct rtnl_route*)obj);
 	int table_id = rtnl_route_get_table((struct rtnl_route*)obj);
@@ -312,15 +353,15 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 		case NL_ACT_NEW: {
 			switch (family) {
 			case AF_INET: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_route_cb] new route_in4" << std::endl << crtroute_in4((struct rtnl_route*)obj);
+				logging::debug << "[roflibs][cnetlink][route_route_cb] new route_in4" << std::endl << crtroute_in4((struct rtnl_route*)obj);
 				unsigned int rtindex = cnetlink::get_instance().set_routes_in4(table_id).add_route(crtroute_in4((struct rtnl_route*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_routes_in4(table_id).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_routes_in4(table_id).str() << std::endl;
 				cnetlink::get_instance().notify_route_in4_created(table_id, rtindex);
 			} break;
 			case AF_INET6: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_route_cb] new route_in6" << std::endl << crtroute_in6((struct rtnl_route*)obj);
+				logging::debug << "[roflibs][cnetlink][route_route_cb] new route_in6" << std::endl << crtroute_in6((struct rtnl_route*)obj);
 				unsigned int rtindex = cnetlink::get_instance().set_routes_in6(table_id).add_route(crtroute_in6((struct rtnl_route*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_routes_in6(table_id).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_routes_in6(table_id).str() << std::endl;
 				cnetlink::get_instance().notify_route_in6_created(table_id, rtindex);
 			} break;
 			}
@@ -328,15 +369,15 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 		case NL_ACT_CHANGE: {
 			switch (family) {
 			case AF_INET: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_route_cb] updated route_in4" << std::endl << crtroute_in4((struct rtnl_route*)obj);
+				logging::debug << "[roflibs][cnetlink][route_route_cb] updated route_in4" << std::endl << crtroute_in4((struct rtnl_route*)obj);
 				unsigned int rtindex = cnetlink::get_instance().set_routes_in4(table_id).set_route(crtroute_in4((struct rtnl_route*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_routes_in4(table_id).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_routes_in4(table_id).str() << std::endl;
 				cnetlink::get_instance().notify_route_in4_updated(table_id, rtindex);
 			} break;
 			case AF_INET6: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_route_cb] updated route_in6" << std::endl << crtroute_in6((struct rtnl_route*)obj);
+				logging::debug << "[roflibs][cnetlink][route_route_cb] updated route_in6" << std::endl << crtroute_in6((struct rtnl_route*)obj);
 				unsigned int rtindex = cnetlink::get_instance().set_routes_in6(table_id).set_route(crtroute_in6((struct rtnl_route*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_routes_in6(table_id).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_routes_in6(table_id).str() << std::endl;
 				cnetlink::get_instance().notify_route_in6_updated(table_id, rtindex);
 			} break;
 			}
@@ -344,30 +385,30 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 		case NL_ACT_DEL: {
 			switch (family) {
 			case AF_INET: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_route_cb] deleted route_in4" << std::endl << crtroute_in4((struct rtnl_route*)obj);
+				logging::debug << "[roflibs][cnetlink][route_route_cb] deleted route_in4" << std::endl << crtroute_in4((struct rtnl_route*)obj);
 				unsigned int rtindex = cnetlink::get_instance().get_routes_in4(table_id).get_route(crtroute_in4((struct rtnl_route*)obj));
 				cnetlink::get_instance().notify_route_in4_deleted(table_id, rtindex);
 				cnetlink::get_instance().set_routes_in4(table_id).drop_route(rtindex);
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_routes_in4(table_id).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_routes_in4(table_id).str() << std::endl;
 			} break;
 			case AF_INET6: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_route_cb] deleted route_in6" << std::endl << crtroute_in6((struct rtnl_route*)obj);
+				logging::debug << "[roflibs][cnetlink][route_route_cb] deleted route_in6" << std::endl << crtroute_in6((struct rtnl_route*)obj);
 				unsigned int rtindex = cnetlink::get_instance().get_routes_in6(table_id).get_route(crtroute_in6((struct rtnl_route*)obj));
 				cnetlink::get_instance().notify_route_in6_deleted(table_id, rtindex);
 				cnetlink::get_instance().set_routes_in6(table_id).drop_route(rtindex);
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_routes_in6(table_id).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_routes_in6(table_id).str() << std::endl;
 			} break;
 			}
 		} break;
 		default: {
-			rofcore::logging::debug << "route/route: unknown NL action" << std::endl;
+			logging::debug << "route/route: unknown NL action" << std::endl;
 		}
 		}
-		rofcore::logging::debug << "[roflibs][cnetlink][route_route_cb] status" << std::endl << cnetlink::get_instance();
+		logging::trace << "[roflibs][cnetlink][route_route_cb] status" << std::endl << cnetlink::get_instance();
 	} catch (eNetLinkNotFound& e) {
-		rofcore::logging::debug << "cnetlink::route_route_cb() oops, route_route_cb() was called with an invalid link" << std::endl;
+		logging::error << "cnetlink::route_route_cb() oops, route_route_cb() was called with an invalid link" << std::endl;
 	} catch (crtroute::eRtRouteNotFound& e) {
-		rofcore::logging::debug << "cnetlink::route_route_cb() oops, route_route_cb() was called with an invalid route" << std::endl;
+		logging::error << "cnetlink::route_route_cb() oops, route_route_cb() was called with an invalid route" << std::endl;
 	}
 
 	nl_object_put(obj); // release reference to object
@@ -379,7 +420,7 @@ void
 cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data)
 {
 	if (std::string(nl_object_get_type(obj)) != std::string("route/neigh")) {
-		rofcore::logging::debug << "cnetlink::route_neigh_cb() ignoring non neighbor object received" << std::endl;
+		logging::debug << "cnetlink::route_neigh_cb() ignoring non neighbor object received" << std::endl;
 		return;
 	}
 
@@ -395,15 +436,15 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 		case NL_ACT_NEW: {
 			switch (family) {
 			case AF_INET: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_in4" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
+				logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_in4" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in4().add_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in4_created(ifindex, nbindex);
 			} break;
 			case AF_INET6: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
+				logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in6().add_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in6_created(ifindex, nbindex);
 			} break;
 			}
@@ -411,15 +452,15 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 		case NL_ACT_CHANGE: {
 			switch (family) {
 			case AF_INET: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_in4" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
+				logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_in4" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in4().set_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in4_updated(ifindex, nbindex);
 			} break;
 			case AF_INET6: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
+				logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in6().set_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in6_updated(ifindex, nbindex);
 			} break;
 			}
@@ -427,30 +468,30 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 		case NL_ACT_DEL: {
 			switch (family) {
 			case AF_INET: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_in4" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
+				logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_in4" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4().get_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
 				cnetlink::get_instance().notify_neigh_in4_deleted(ifindex, nbindex);
 				cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in4().drop_neigh(nbindex);
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			case AF_INET6: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
+				logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in6().get_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
 				cnetlink::get_instance().notify_neigh_in6_deleted(ifindex, nbindex);
 				cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in6().drop_neigh(nbindex);
-				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			}
 		} break;
 		default: {
-			rofcore::logging::debug << "route/addr: unknown NL action" << std::endl;
+			logging::debug << "route/addr: unknown NL action" << std::endl;
 		}
 		}
-		rofcore::logging::debug << "[roflibs][cnetlink][route_neigh_cb] status" << std::endl << cnetlink::get_instance();
+		logging::trace << "[roflibs][cnetlink][route_neigh_cb] status" << std::endl << cnetlink::get_instance();
 	} catch (eNetLinkNotFound& e) {
-		rofcore::logging::debug << "cnetlink::route_neigh_cb() oops, route_neigh_cb() was called with an invalid link" << std::endl;
+		logging::error << "cnetlink::route_neigh_cb() oops, route_neigh_cb() was called with an invalid link" << std::endl;
 	} catch (crtneigh::eRtNeighNotFound& e) {
-		rofcore::logging::debug << "cnetlink::route_neigh_cb() oops, route_neigh_cb() was called with an invalid neighbor" << std::endl;
+		logging::error << "cnetlink::route_neigh_cb() oops, route_neigh_cb() was called with an invalid neighbor" << std::endl;
 	}
 
 	nl_object_put(obj); // release reference to object
@@ -494,9 +535,9 @@ cnetlink::notify_link_deleted(unsigned int ifindex) {
 void
 cnetlink::notify_addr_in4_created(unsigned int ifindex, unsigned int adindex) {
 
-	rofcore::logging::debug << "[cnetlink][notify_addr_in4_created] sending notifications:" << std::endl;
-	rofcore::logging::debug << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
-	rofcore::logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4();
+	logging::debug << "[cnetlink][notify_addr_in4_created] sending notifications:" << std::endl;
+	logging::debug << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
+	logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4();
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = cnetlink::get_instance().observers.begin();
@@ -521,9 +562,9 @@ cnetlink::notify_addr_in6_created(unsigned int ifindex, unsigned int adindex) {
 void
 cnetlink::notify_addr_in4_updated(unsigned int ifindex, unsigned int adindex) {
 
-	rofcore::logging::debug << "[cnetlink][notify_addr_in4_updated] sending notifications:" << std::endl;
-	rofcore::logging::debug << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
-	rofcore::logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4();
+	logging::debug << "[cnetlink][notify_addr_in4_updated] sending notifications:" << std::endl;
+	logging::debug << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
+	logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4();
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = cnetlink::get_instance().observers.begin();
@@ -548,9 +589,9 @@ cnetlink::notify_addr_in6_updated(unsigned int ifindex, unsigned int adindex) {
 void
 cnetlink::notify_addr_in4_deleted(unsigned int ifindex, unsigned int adindex) {
 
-	rofcore::logging::debug << "[cnetlink][notify_addr_in4_deleted] sending notifications:" << std::endl;
-	rofcore::logging::debug << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
-	rofcore::logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4();
+	logging::debug << "[cnetlink][notify_addr_in4_deleted] sending notifications:" << std::endl;
+	logging::debug << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
+	logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_addrs_in4();
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = cnetlink::get_instance().observers.begin();
@@ -577,9 +618,9 @@ cnetlink::notify_neigh_in4_created(unsigned int ifindex, unsigned int nbindex) {
 	const rofl::caddress_in4& dst = cnetlink::get_instance().get_links().
 									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
 
-	rofcore::logging::debug << "[cnetlink][notify_neigh_in4_created] sending notifications:" << std::endl;
-	rofcore::logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
-	rofcore::logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4();
+	logging::debug << "[cnetlink][notify_neigh_in4_created] sending notifications:" << std::endl;
+	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
+	logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4();
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = cnetlink::get_instance().observers.begin();
@@ -622,9 +663,9 @@ cnetlink::notify_neigh_in4_updated(unsigned int ifindex, unsigned int nbindex) {
 	const rofl::caddress_in4& dst = cnetlink::get_instance().get_links().
 									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
 
-	rofcore::logging::debug << "[cnetlink][notify_neigh_in4_updated] sending notifications:" << std::endl;
-	rofcore::logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
-	rofcore::logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4();
+	logging::debug << "[cnetlink][notify_neigh_in4_updated] sending notifications:" << std::endl;
+	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
+	logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4();
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = cnetlink::get_instance().observers.begin();
@@ -666,9 +707,9 @@ cnetlink::notify_neigh_in4_deleted(unsigned int ifindex, unsigned int nbindex) {
 	const rofl::caddress_in4& dst = cnetlink::get_instance().get_links().
 									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
 
-	rofcore::logging::debug << "[cnetlink][notify_neigh_in4_deleted] sending notifications:" << std::endl;
-	rofcore::logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
-	rofcore::logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4();
+	logging::debug << "[cnetlink][notify_neigh_in4_deleted] sending notifications:" << std::endl;
+	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
+	logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4();
 
 	// make local copy of set
 	std::set<cnetlink_common_observer*> obs(observers);
