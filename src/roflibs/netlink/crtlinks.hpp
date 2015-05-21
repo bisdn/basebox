@@ -60,7 +60,8 @@ public:
 	void
 	clear() { rtlinks.clear(); };
 
-
+	size_t
+	size() const { return rtlinks.size(); }
 
 	/**
 	 *
