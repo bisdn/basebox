@@ -61,7 +61,8 @@ public:
 		af(0),
 		arptype(0),
 		ifindex(0),
-		mtu(0) {};
+		mtu(0),
+		master(0) {};
 
 	/**
 	 *
@@ -71,7 +72,8 @@ public:
 		af(0),
 		arptype(0),
 		ifindex(0),
-		mtu(0)
+		mtu(0),
+		master(0)
 	{
 		char s_buf[128];
 		memset(s_buf, 0, sizeof(s_buf));
@@ -86,6 +88,7 @@ public:
 		arptype = rtnl_link_get_arptype(link);
 		ifindex	= rtnl_link_get_ifindex(link);
 		mtu 	= rtnl_link_get_mtu(link);
+		master = rtnl_link_get_master(link);
 
 		nl_object_put((struct nl_object*)link); // decrement reference counter by one
 	};
@@ -117,6 +120,7 @@ public:
 		arptype	= rtlink.arptype;
 		ifindex	= rtlink.ifindex;
 		mtu		= rtlink.mtu;
+		master	= rtlink.master;
 
 		addrs_in4	= rtlink.addrs_in4;
 		addrs_in6	= rtlink.addrs_in6;
@@ -245,6 +249,9 @@ public:
 	unsigned int
 	get_mtu() const { return mtu; };
 
+	int
+	get_master() const { return master; }
+
 
 public:
 
@@ -265,6 +272,7 @@ public:
 		os << rofcore::indent(2) << "<arptype: " << rtlink.arptype 	<< " >" << std::endl;
 		os << rofcore::indent(2) << "<ifindex: " << rtlink.ifindex 	<< " >" << std::endl;
 		os << rofcore::indent(2) << "<mtu: " << rtlink.mtu 			<< " >" << std::endl;
+		os << rofcore::indent(2) << "<master: " << rtlink.master	<< " >" << std::endl;
 
 		{ rofcore::indent i(2); os << rtlink.addrs_in4; };
 		{ rofcore::indent i(2); os << rtlink.addrs_in6; };
@@ -363,6 +371,7 @@ private:
 	unsigned int			arptype;	// ARP type (e.g. ARPHDR_ETHER)
 	int						ifindex;	// interface index
 	unsigned int			mtu;		// maximum transfer unit
+	int						master;		// ifindex of master interface
 
 	crtaddrs_in4			addrs_in4;
 	crtaddrs_in6			addrs_in6;
