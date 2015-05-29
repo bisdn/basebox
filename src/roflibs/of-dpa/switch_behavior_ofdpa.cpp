@@ -5,10 +5,13 @@
 #include <rofl/common/openflow/cofport.h>
 #include <rofl/common/openflow/cofports.h>
 
+
 namespace basebox {
 
 switch_behavior_ofdpa::switch_behavior_ofdpa(const rofl::cdptid& dptid) :
-		switch_behavior(dptid)
+		switch_behavior(dptid),
+		fm_driver(dptid),
+		bridge(fm_driver)
 {
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
@@ -39,7 +42,7 @@ switch_behavior_ofdpa::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& 
 
 	if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()) == msg.get_buffer_id()) {
 		// got the full packet
-		// XXX asdf
+		// fixme deal with pkt-in
 		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] got packet-in:" << std::endl << msg;
 
 	} else {
@@ -61,14 +64,12 @@ switch_behavior_ofdpa::init_ports()
 	/* init 1:1 port mapping */
 	try {
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-
 		const map<uint32_t, cofport*> &ports = dpt.get_ports().get_ports();
 
-		for (map<uint32_t, cofport*>::const_iterator iter = ports.begin(); iter != ports.end(); ++iter) {
-			const cofport* port = iter->second;
+		for (const auto &i : dpt.get_ports().get_ports()) {
+			const cofport* port = i.second;
 			if (not has_tap_dev(dptid, port->get_name())) {
 				rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] adding port " << port->get_name() << " with portno=" << port->get_port_no() << std::endl;
-
 				add_tap_dev(dptid, port->get_name(), default_pvid, port->get_hwaddr());
 			}
 		}
@@ -78,6 +79,24 @@ switch_behavior_ofdpa::init_ports()
 	}
 }
 
+uint32_t
+switch_behavior_ofdpa::get_of_port_no(const rofl::crofdpt& dpt, const std::string& dev) const
+{
+	using rofl::openflow::cofport;
+	using std::map;
+
+	uint32_t port_no = 0;
+
+	for (const auto &i : dpt.get_ports().get_ports()) {
+		if (0 == i.second->get_name().compare(dev)) {
+			rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] outport=" << i.first << std::endl;
+			port_no = i.first;
+			break;
+		}
+	}
+
+	return port_no;
+}
 
 void
 switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
@@ -96,15 +115,7 @@ switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		}
 
 		// todo move to separate function:
-		uint32_t portno = 0;
-		const map<uint32_t, cofport*> &ports = dpt.get_ports().get_ports();
-		for(map<uint32_t, cofport*>::const_iterator iter = ports.begin(); iter != ports.end(); ++iter) {
-			if (0 == iter->second->get_name().compare(tapdev->get_devname())) {
-				rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] outport=" << iter->first << std::endl;
-				portno = iter->first;
-				break;
-			}
-		}
+		uint32_t portno = get_of_port_no(dpt, tapdev->get_devname());
 
 		/* only send packet-out if we can determine a port-no */
 		if (portno) {
@@ -147,16 +158,47 @@ switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpack
 void
 switch_behavior_ofdpa::link_created(unsigned int ifindex)
 {
-	rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] ifindex=" << ifindex << std::endl;
+	const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+	rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]:" << std::endl << rtl;
 
-	// fixme check for new bridges
+	if (AF_BRIDGE == rtl.get_family()) {
 
+		// check for new bridges
+		if (rtl.get_master()) {
+			// slave interface
+			rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: is new slave interface" << std::endl;
+
+			if (bridge.has_bridge_interface()) {
+				// get of_port_no and add the interface to the bridge
+				uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), rtl.get_devname());
+				if (port_no) {
+					bridge.add_interface(port_no);
+				}
+			} else {
+				rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: adding slave interface failed" << std::endl;
+				// TODO implement fault handling
+			}
+		} else {
+			// bridge
+			rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: is new bridge" << std::endl;
+
+			if (bridge.has_bridge_interface()) {
+				rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: only one l2 bridge is supported" << std::endl;
+			} else {
+				rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: add set bridge interface to ifindex=" << ifindex << std::endl;
+				bridge.set_bridge_interface(ifindex);
+			}
+		}
+
+		// new bridge slaves will be shown as new link as well
+	}
 }
 
 void
 switch_behavior_ofdpa::link_updated(unsigned int ifindex)
 {
-	rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] ifindex=" << ifindex << std::endl;
+	const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+	rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]:" << std::endl << rtl;
 
 	// fixme check for link de/attachments from/to bridges (i.e. check for master)
 }
@@ -164,7 +206,10 @@ switch_behavior_ofdpa::link_updated(unsigned int ifindex)
 void
 switch_behavior_ofdpa::link_deleted(unsigned int ifindex)
 {
-	rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] ifindex=" << ifindex << std::endl;
+	const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+	rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: " << std::endl << rtl;
+
+
 
 	// todo same as in link_updated?
 }

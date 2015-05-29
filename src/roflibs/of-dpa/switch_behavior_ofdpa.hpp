@@ -1,11 +1,18 @@
 #ifndef SRC_ROFLIBS_OF_DPA_SWITCH_BEHAVIOR_OFDPA_HPP_
 #define SRC_ROFLIBS_OF_DPA_SWITCH_BEHAVIOR_OFDPA_HPP_
 
+#include <string>
+
 #include <baseboxd/switch_behavior.hpp>
+
+#include <roflibs/of-dpa/ofdpa_bridge.hpp>
+#include <roflibs/of-dpa/ofdpa_fm_driver.hpp>
+
 #include "roflibs/netlink/cnetdev.hpp"
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/ctapdev.hpp"
 #include "roflibs/netlink/ctundev.hpp"
+
 
 namespace basebox {
 
@@ -51,11 +58,16 @@ public:
 private:
 
 	std::map<rofl::cdptid, std::map<std::string, rofcore::ctapdev*> > devs;
-	static const uint16_t							default_pvid = 0;
+	static const uint16_t							default_pvid = 1;
+
+	ofdpa_fm_driver fm_driver;
+	ofdpa_bridge bridge;
 
 	void
 	init_ports();
 
+	uint32_t
+	get_of_port_no(const rofl::crofdpt& dpt, const std::string &dev) const;
 
 	// todo code duplication: align with cethcore
 	/**
