@@ -2,6 +2,7 @@
 #define SRC_BASEBOXD_SWITCH_BEHAVIOR_HPP_
 
 #include <rofl/common/crofdpt.h>
+#include "roflibs/netlink/clogging.hpp"
 
 namespace basebox {
 
@@ -22,20 +23,28 @@ public:
 	~switch_behavior();
 
 	// todo check if we need handle_dpt_open
-	void
+	virtual void
 	handle_dpt_close(const rofl::cdptid& dptid) {}
 
-	void
-	handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {}
+	virtual void
+	handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg) {
+		rofcore::logging::warn << __FUNCTION__ << ": unhandled" << std::endl;
+	}
 
-	void
-	handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {}
+	virtual void
+	handle_flow_removed(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg) {
+		rofcore::logging::warn << __FUNCTION__ << ": unhandled" << std::endl;
+	}
 
-	void
-	handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg) {}
+	virtual void
+	handle_port_status(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg) {
+		rofcore::logging::warn << __FUNCTION__ << ": unhandled" << std::endl;
+	}
 
-	void
-	handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {}
+	virtual void
+	handle_error_message(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
+		rofcore::logging::warn << __FUNCTION__ << ": unhandled" << std::endl;
+	}
 
 	virtual int
 	get_switch_type() { return -1; }
