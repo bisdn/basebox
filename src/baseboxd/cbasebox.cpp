@@ -458,6 +458,7 @@ cbasebox::handle_error_message(
 			<< " pkt received: " << std::endl << msg;
 
 #ifdef OF_DPA
+	sa->handle_error_message(dpt, auxid, msg);
 #else
 	if (flags.test(FLAG_FLOWCORE) && roflibs::svc::cflowcore::has_flow_core(dpt.get_dptid())) {
 		roflibs::svc::cflowcore::set_flow_core(dpt.get_dptid()).handle_error_message(dpt, auxid, msg);
