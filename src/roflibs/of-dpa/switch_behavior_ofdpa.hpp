@@ -69,6 +69,10 @@ private:
 	uint32_t
 	get_of_port_no(const rofl::crofdpt& dpt, const std::string &dev) const;
 
+	void
+	handle_srcmac_table(rofl::openflow::cofmsg_packet_in& msg);
+
+
 	// todo code duplication: align with cethcore
 	/**
 	 *

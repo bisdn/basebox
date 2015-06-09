@@ -1,9 +1,12 @@
 #include "switch_behavior_ofdpa.hpp"
+#include "ofdpa_fm_driver.hpp"
+#include "ofdpa_datatypes.h"
 #include "roflibs/netlink/clogging.hpp"
 
 #include <map>
 #include <rofl/common/openflow/cofport.h>
 #include <rofl/common/openflow/cofports.h>
+#include <rofl/common/protocols/fetherframe.h>
 
 
 namespace basebox {
@@ -40,18 +43,24 @@ switch_behavior_ofdpa::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& 
 		return;
 	}
 
+	switch (msg.get_table_id()) {
+		case OFDPA_FLOW_TABLE_ID_SA_LOOKUP:
+			this->handle_srcmac_table(msg);
+			break;
+		default:
+			break;
+	}
+
+	// todo remove?
 	if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()) == msg.get_buffer_id()) {
 		// got the full packet
 		// fixme deal with pkt-in
-		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] got packet-in:" << std::endl << msg;
+		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] got packet-in:" << std::endl;
 
 	} else {
 		// packet is buffered
 		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] cannot handle buffered packet currently" << std::endl;
-		return;
 	}
-
-
 }
 
 void
@@ -96,6 +105,19 @@ switch_behavior_ofdpa::get_of_port_no(const rofl::crofdpt& dpt, const std::strin
 	}
 
 	return port_no;
+}
+
+void
+switch_behavior_ofdpa::handle_srcmac_table(
+		rofl::openflow::cofmsg_packet_in& msg)
+{
+	rofcore::logging::info << __FUNCTION__ << ": handle message" << std::endl << msg;
+
+	rofcore::logging::info << __FUNCTION__ << ": in_port=" << msg.get_match().get_in_port() << std::endl;
+
+	rofl::fetherframe eth_frame(msg.get_packet().soframe(), msg.get_packet().length());
+
+	bridge.add_mac_to_fdb(eth_frame.get_dl_src(), msg.get_match().get_in_port());
 }
 
 void
