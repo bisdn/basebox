@@ -21,10 +21,12 @@ void
 ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
 {
 	// XXX This contradicts the OF-DPA ASS (p. 64) "The VLAN_VID value cannot be used in a VLAN Filtering rule."
-	// XXX Send ticket to BCM to clarify
+	// todo Send ticket to BCM to clarify
 	enable_port_vid_ingress(vid, port_no);
 
-	// todo check vid
+	// check params
+	assert(vid < 0x1000);
+	assert(port_no);
 
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
@@ -33,7 +35,6 @@ ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
 	fm.set_command(rofl::openflow::OFPFC_ADD);
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_VLAN);
 
-	// todo make configurable?
 	fm.set_idle_timeout(0);
 	fm.set_hard_timeout(0);
 	fm.set_priority(2);
@@ -47,7 +48,9 @@ ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
 
 	fm.set_instructions().set_inst_goto_table().set_table_id(OFDPA_FLOW_TABLE_ID_TERMINATION_MAC);
 
-	// todo set vrf?
+	// XXX set vrf
+	//	fm.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(
+	//			rofl::cindex(0)).set_oxm(rofl::openflow::coxmatch_ofb_vrf(vid)); // currently vid == vrf
 
 	std::cout << "write flow-mod:" << std::endl << fm;
 
@@ -57,14 +60,16 @@ ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
 void
 ofdpa_fm_driver::enable_port_vid_ingress(uint16_t vid, uint32_t port_no)
 {
+	assert(vid < 0x1000);
+	assert(port_no);
+
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
-	fm.set_command(rofl::openflow::OFPFC_ADD); // fixme what happens if this is added two times?
+	fm.set_command(rofl::openflow::OFPFC_ADD); // todo check what happens if this is added two times?
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_VLAN);
 
-	// todo make configurable?
 	fm.set_idle_timeout(0);
 	fm.set_hard_timeout(0);
 	fm.set_priority(3);
@@ -73,9 +78,12 @@ ofdpa_fm_driver::enable_port_vid_ingress(uint16_t vid, uint32_t port_no)
 	fm.set_match().set_in_port(port_no);
 	fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT, 0x1fff);
 
-	fm.set_instructions().set_inst_goto_table().set_table_id(OFDPA_FLOW_TABLE_ID_TERMINATION_MAC);
+	fm.set_instructions().set_inst_goto_table().set_table_id(
+			OFDPA_FLOW_TABLE_ID_TERMINATION_MAC);
 
-	// todo set vrf?
+	// XXX set vrf
+//	fm.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(
+//			rofl::cindex(0)).set_oxm(rofl::openflow::coxmatch_ofb_vrf(vid)); // currently vid == vrf
 
 	std::cout << "write flow-mod:" << std::endl << fm;
 
@@ -85,7 +93,9 @@ ofdpa_fm_driver::enable_port_vid_ingress(uint16_t vid, uint32_t port_no)
 uint32_t
 ofdpa_fm_driver::enable_port_pvid_egress(uint16_t vid, uint32_t port_no)
 {
-	// todo check params
+	assert(vid < 0x1000);
+	assert(port_no);
+
 	uint32_t group_id = (0x0fff & vid) << 16 | (0xffff & port_no);
 
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
@@ -143,7 +153,6 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id, const std:
 	std::cout << std::endl;
 
 	std::cout << "send group mod:" << std::endl << gm;
-
 	dpt.send_group_mod_message(rofl::cauxid(0), gm);
 
 	if (update) {
@@ -169,19 +178,18 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id, const std:
 void
 ofdpa_fm_driver::enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id, bool do_pkt_in)
 {
+	assert(vid < 0x1000);
+
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
 	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_BRIDGING);
 
-	// todo make configurable?
 	fm.set_idle_timeout(0);
 	fm.set_hard_timeout(0);
 	fm.set_priority(2);
 	fm.set_cookie(0);
 
-	//fm.set_match().set_eth_dst(rofl::cmacaddr("00:00:00:00:00:01"), rofl::cmacaddr("00:00:00:00:00:00"));
-	// fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 	fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT, 0x0fff);
 
 	if (do_pkt_in) {
@@ -195,7 +203,6 @@ ofdpa_fm_driver::enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id, bool 
 	//fm.set_instructions().set_inst_clear_actions();
 
 	fm.set_instructions().set_inst_goto_table().set_table_id(OFDPA_FLOW_TABLE_ID_ACL_POLICY);
-
 
 	std::cout << "write flow-mod:" << std::endl << fm;
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
