@@ -32,7 +32,7 @@ ofdpa_bridge::set_bridge_interface(const unsigned int id)
 	this->interface_id = id;
 
 	// todo vid should not be static, and maybe moved to a better location
-	// XXX enable again if decided what the default fwding should be
+	// fixme cannot be handled here, since we cannot create the L2 Groups yet
 	// fm_driver.enable_bridging_dlf_vlan(1, 0, true); // enable pkt-in for vid 1
 }
 
