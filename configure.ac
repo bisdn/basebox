@@ -59,7 +59,7 @@ if (test "${have_libnl3}" = "yes"); then
         LIBS+="$LIBNL3_LIBS"
 fi
 
-PKG_CHECK_MODULES([ROFL], rofl >= 0.3.0, [have_rofl=yes], [have_rofl=no])
+PKG_CHECK_MODULES([ROFL], rofl_common >= 0.6.0, [have_rofl=yes], [have_rofl=no])
 if (test "${have_rofl}" = "yes"); then
         CPPFLAGS+="$ROFL_CFLAGS"
         LIBS+="$ROFL_LIBS"

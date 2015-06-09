@@ -405,7 +405,7 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 				cnetlink::get_instance().notify_neigh_in4_updated(ifindex, nbindex);
 			} break;
 			case AF_INET6: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_in6" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
+				rofcore::logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in6().set_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
 				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in6_updated(ifindex, nbindex);
@@ -422,7 +422,7 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 				rofcore::logging::debug << rofcore::cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			case AF_INET6: {
-				rofcore::logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_in6" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
+				rofcore::logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in6().get_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
 				cnetlink::get_instance().notify_neigh_in6_deleted(ifindex, nbindex);
 				cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in6().drop_neigh(nbindex);

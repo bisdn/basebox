@@ -98,16 +98,14 @@ cbasebox::run(int argc, char** argv)
 	/*
 	 * extract daemonize flag
 	 */
-	bool daemonize = true;
+	bool daemonize = false;
 	if (env_parser.is_arg_set("daemonize")) {
-		daemonize = atoi(env_parser.get_arg("pidfile").c_str());
+		daemonize = atoi(env_parser.get_arg("daemonize").c_str());
 	} else if (ethcore::cconfig::get_instance().exists("baseboxd.daemon.daemonize")) {
 		daemonize = (bool)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.daemonize");
 	} else {
-		daemonize = true; // default
+		/* default to false */
 	}
-
-
 
 	/*
 	 * daemonize
