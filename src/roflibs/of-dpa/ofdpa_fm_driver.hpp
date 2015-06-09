@@ -2,15 +2,17 @@
 #define SRC_ROFLIBS_OF_DPA_OFDPA_FM_DRIVER_HPP_
 
 #include <rofl/common/cdptid.h>
+#include <rofl/common/caddress.h>
 #include <list>
 
-namespace basebox {
+namespace basebox
+{
 
-class ofdpa_fm_driver {
+class ofdpa_fm_driver
+{
 public:
 	ofdpa_fm_driver(const rofl::cdptid& dptid);
-	virtual
-	~ofdpa_fm_driver();
+	virtual ~ofdpa_fm_driver();
 
 	void
 	enable_port_pvid_ingress(uint16_t vid, uint32_t port_no);
@@ -31,6 +33,10 @@ public:
 
 	void
 	enable_policy_arp(uint16_t vid, uint32_t group_id, bool update = false);
+
+	void
+	add_bridging_unicast_vlan(const rofl::cmacaddr& mac, uint16_t vid,
+			uint32_t port_no);
 
 private:
 	rofl::cdptid dptid;

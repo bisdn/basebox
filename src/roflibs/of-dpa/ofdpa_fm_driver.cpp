@@ -237,4 +237,33 @@ ofdpa_fm_driver::enable_policy_arp(uint16_t vid, uint32_t group_id, bool update)
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
 
+void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
+		uint16_t vid, uint32_t port_no)
+{
+	assert(vid < 0x1000);
+
+	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
+	fm.set_table_id(OFDPA_FLOW_TABLE_ID_BRIDGING);
+
+	fm.set_idle_timeout(0);
+	fm.set_hard_timeout(0);
+	fm.set_priority(2);
+	fm.set_cookie(0);
+
+	fm.set_command(rofl::openflow::OFPFC_ADD);
+
+	fm.set_match().set_eth_dst(mac);
+	fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
+
+	uint32_t group_id = (0x0fff & vid) << 16 | (0xffff & port_no);
+	fm.set_instructions().set_inst_write_actions().set_actions()
+			.add_action_group(rofl::cindex(0)).set_group_id(group_id);
+	fm.set_instructions().set_inst_goto_table().set_table_id(OFDPA_FLOW_TABLE_ID_ACL_POLICY);
+
+	std::cout << __FUNCTION__ << ": send flow mod:" << std::endl << fm;
+
+	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+}
+
 } /* namespace basebox */
