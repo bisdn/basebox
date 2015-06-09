@@ -3,10 +3,64 @@
 
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
+#include <rofl/common/openflow/openflow_common.h>
+#include <rofl/common/openflow/coxmatch.h>
 #include <rofl/common/protocols/fvlanframe.h>
 #include <rofl/common/protocols/farpv4frame.h>
 
 namespace basebox {
+
+namespace ofdpa {
+
+	static const uint32_t experimenter_id = 0x001018;
+
+	/* OXM Flow match field types for OpenFlow Experimental */
+	enum oxm_ofx_match_fields {
+
+		OFPXMT_OFX_VRF	= 1,	/* virtual routing and forwarding */
+
+		/* max value */
+		OFPXMT_OFX_MAX,
+	};
+
+#define HAS_MASK_FLAG (1 << 8)
+
+	/* OXM Flow match field types for OpenFlow experimenter class. */
+	enum oxm_tlv_match_fields {
+		OXM_TLV_EXPR_VRF			= (rofl::openflow::OFPXMC_EXPERIMENTER << 16) | (OFPXMT_OFX_VRF << 9)	|  2,
+		OXM_TLV_EXPR_VRF_MASK		= (rofl::openflow::OFPXMC_EXPERIMENTER << 16) | (OFPXMT_OFX_VRF << 9)	|  4 | HAS_MASK_FLAG,
+	};
+
+}; // end of namespace ofdpa
+
+
+class coxmatch_ofb_vrf : public rofl::openflow::coxmatch {
+public:
+	coxmatch_ofb_vrf(
+			uint16_t vrf) :
+				coxmatch(ofdpa::OXM_TLV_EXPR_VRF, vrf, COXMATCH_16BIT)
+	{};
+	coxmatch_ofb_vrf(
+			uint16_t vrf, uint16_t mask) :
+				coxmatch(ofdpa::OXM_TLV_EXPR_VRF_MASK, vrf, mask, COXMATCH_16BIT)
+	{};
+	coxmatch_ofb_vrf(
+			const coxmatch& oxm) :
+				coxmatch(oxm)
+	{};
+	virtual
+	~coxmatch_ofb_vrf()
+	{};
+public:
+	friend std::ostream&
+	operator<< (std::ostream& os, const coxmatch_ofb_vrf& oxm) {
+		os << dynamic_cast<const coxmatch&>(oxm);
+		os << rofl::indent(2) << "<coxmatch_ofb_vlan_vid >" << std::endl;
+		os << rofl::indent(4) << "<vlan-vid: 0x" << std::hex << (int)oxm.get_u16value() << "/0x" << (int)oxm.get_u16mask() << std::dec << " >" << std::endl;
+		return os;
+	};
+};
+
 
 ofdpa_fm_driver::ofdpa_fm_driver(const rofl::cdptid& dptid) :
 		dptid(dptid)
