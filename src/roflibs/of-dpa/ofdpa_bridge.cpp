@@ -41,11 +41,19 @@ ofdpa_bridge::add_interface(const uint32_t of_port_no)
 {
 	assert(interface_id);
 
-	fm_driver.enable_port_pvid_ingress(1, of_port_no);
+	const uint16_t vid = 1;
+
+	fm_driver.enable_port_pvid_ingress(vid, of_port_no);
 	uint32_t group = fm_driver.enable_port_pvid_egress(1, of_port_no);
 	assert(group);
 	l2_domain.push_back(group);
-	fm_driver.enable_group_l2_multicast(1, 1, l2_domain, 1 != l2_domain.size());
+	// todo check if vid is okay as an id as well
+	group = fm_driver.enable_group_l2_multicast(vid, vid, l2_domain, 1 != l2_domain.size());
+	// enable arp flooding as well
+
+	if (1 == l2_domain.size()) {
+		fm_driver.enable_policy_arp(vid, group, 1 != l2_domain.size());
+	}
 }
 
 void

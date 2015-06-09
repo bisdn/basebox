@@ -22,11 +22,15 @@ public:
 	uint32_t
 	enable_port_pvid_egress(uint16_t vid, uint32_t port_no);
 
-	void
-	enable_group_l2_multicast(uint16_t vid, uint16_t id, const std::list<uint32_t> &l2_interfaces, bool update = false);
+	uint32_t
+	enable_group_l2_multicast(uint16_t vid, uint16_t id,
+			const std::list<uint32_t> &l2_interfaces, bool update = false);
 
 	void
 	enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id, bool do_pkt_in);
+
+	void
+	enable_policy_arp(uint16_t vid, uint32_t group_id, bool update = false);
 
 private:
 	rofl::cdptid dptid;

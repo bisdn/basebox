@@ -4,6 +4,7 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
 #include <rofl/common/protocols/fvlanframe.h>
+#include <rofl/common/protocols/farpv4frame.h>
 
 namespace basebox {
 
@@ -106,30 +107,63 @@ ofdpa_fm_driver::enable_port_pvid_egress(uint16_t vid, uint32_t port_no)
 	return group_id;
 }
 
-void
+uint32_t
 ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id, const std::list<uint32_t>& l2_interfaces, bool update)
 {
+	assert(vid < 0x1000);
+
+	static const uint16_t identifier = 0x1000;
+	static uint16_t current_ident = 0;
+	uint16_t next_ident = current_ident;
+	if (update) {
+		next_ident ^= identifier;
+	}
+
+	uint32_t group_id = 3 << 28 | (0x0fff & vid) << 16 | (0xffff & (id | next_ident));
+
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 	rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 
-	gm.set_command(update ? rofl::openflow::OFPGC_MODIFY : rofl::openflow::OFPGC_ADD);
+	gm.set_command(rofl::openflow::OFPGC_ADD);
 	gm.set_type(rofl::openflow::OFPGT_ALL);
-	gm.set_group_id(3 << 28 | (0x0fff & vid) << 16 | (0xffff & id));
+	gm.set_group_id(group_id);
 
-	rofl::cindex indx(0);
-	gm.set_buckets().add_bucket(0).set_actions().
-			add_action_pop_vlan(indx);
+	uint32_t bucket_id = 0;
 
 	for (const uint32_t &i : l2_interfaces) {
 		std::cout << i << ' ';
-		gm.set_buckets().add_bucket(0).set_actions().
-					add_action_group(++indx).set_group_id(i);
+
+		gm.set_buckets().add_bucket(bucket_id).set_actions()
+				.add_action_pop_vlan(rofl::cindex(0));
+		gm.set_buckets().add_bucket(bucket_id).set_actions()
+				.add_action_group(rofl::cindex(1)).set_group_id(i);
+
+		++bucket_id;
 	}
 	std::cout << std::endl;
 
 	std::cout << "send group mod:" << std::endl << gm;
 
 	dpt.send_group_mod_message(rofl::cauxid(0), gm);
+
+	if (update) {
+		// update arp policy
+		enable_policy_arp(vid, group_id, true);
+
+		// delete old entry
+		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
+
+		gm.set_command(rofl::openflow::OFPGC_DELETE);
+		gm.set_type(rofl::openflow::OFPGT_ALL);
+		gm.set_group_id(3 << 28 | (0x0fff & vid) << 16 | (0xffff & (id | current_ident)));
+
+		std::cout << "send gm delete" << std::endl;
+		dpt.send_group_mod_message(rofl::cauxid(0), gm); // xxx this does not work currently
+
+		current_ident = next_ident;
+	}
+
+	return group_id;
 }
 
 void
@@ -164,7 +198,35 @@ ofdpa_fm_driver::enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id, bool 
 
 
 	std::cout << "write flow-mod:" << std::endl << fm;
-	// fixme add cookie
+	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+}
+
+void
+ofdpa_fm_driver::enable_policy_arp(uint16_t vid, uint32_t group_id, bool update)
+{
+	assert(vid < 0x1000);
+
+	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
+	fm.set_table_id(OFDPA_FLOW_TABLE_ID_ACL_POLICY);
+
+	fm.set_idle_timeout(0);
+	fm.set_hard_timeout(0);
+	fm.set_priority(2);
+	fm.set_cookie(0);
+
+	fm.set_command(update ? rofl::openflow::OFPFC_MODIFY : rofl::openflow::OFPFC_ADD);
+
+	fm.set_match().set_eth_dst(rofl::cmacaddr("ff:ff:ff:ff:ff:ff"));
+	fm.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
+
+	fm.set_out_port(rofl::openflow::OFPP_CONTROLLER);
+
+	fm.set_instructions().set_inst_write_actions().set_actions()
+			.add_action_group(rofl::cindex(0)).set_group_id(group_id);
+
+	std::cout << "send flow mod:" << std::endl << fm;
+
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
 
