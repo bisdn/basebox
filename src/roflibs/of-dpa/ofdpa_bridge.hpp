@@ -31,6 +31,9 @@ public:
 	void
 	delete_interface(const uint32_t of_port_no);
 
+	void
+	add_mac_to_fdb(const rofl::cmacaddr &mac, const uint32_t of_port_no);
+
 private:
 	unsigned int interface_id;
 	ofdpa_fm_driver &fm_driver; // todo use shared pointer?

@@ -63,4 +63,11 @@ ofdpa_bridge::delete_interface(const uint32_t of_port_no)
 	// fixme update L2 Multicast Group
 }
 
+
+void
+ofdpa_bridge::add_mac_to_fdb(const rofl::cmacaddr& mac, const uint32_t of_port_no)
+{
+	fm_driver.add_bridging_unicast_vlan(mac, 1, of_port_no);
+}
+
 } /* namespace basebox */
