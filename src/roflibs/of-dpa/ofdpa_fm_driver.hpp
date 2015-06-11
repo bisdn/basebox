@@ -39,6 +39,8 @@ public:
 			uint32_t port_no);
 
 private:
+	const uint16_t default_idle_timeout;
+
 	rofl::cdptid dptid;
 };
 

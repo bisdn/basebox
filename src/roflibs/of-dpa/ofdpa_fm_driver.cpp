@@ -63,7 +63,8 @@ public:
 
 
 ofdpa_fm_driver::ofdpa_fm_driver(const rofl::cdptid& dptid) :
-		dptid(dptid)
+		dptid(dptid),
+		default_idle_timeout(30) // todo idle timeout should be configurable
 {
 }
 
@@ -300,7 +301,7 @@ void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_BRIDGING);
 
-	fm.set_idle_timeout(0);
+	fm.set_idle_timeout(default_idle_timeout);
 	fm.set_hard_timeout(0);
 	fm.set_priority(2);
 	fm.set_cookie(0);
