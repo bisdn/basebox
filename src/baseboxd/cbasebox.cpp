@@ -454,7 +454,7 @@ void
 cbasebox::handle_error_message(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg) {
 
-	rofcore::logging::debug << "[cbasebox][handle_error_message] dpid: " << dpt.get_dpid().str()
+	rofcore::logging::info << "[cbasebox][handle_error_message] dpid: " << dpt.get_dpid().str()
 			<< " pkt received: " << std::endl << msg;
 
 #ifdef OF_DPA
