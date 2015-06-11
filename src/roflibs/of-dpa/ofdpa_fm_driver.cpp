@@ -310,6 +310,7 @@ void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 
 	fm.set_command(rofl::openflow::OFPFC_ADD);
 
+	// fixme do not allow multicast mac here
 	fm.set_match().set_eth_dst(mac);
 	fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 
