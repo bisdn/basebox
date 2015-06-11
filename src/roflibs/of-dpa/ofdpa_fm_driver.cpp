@@ -1,5 +1,6 @@
 #include "ofdpa_fm_driver.hpp"
 #include "ofdpa_datatypes.h"
+#include "roflibs/netlink/clogging.hpp"
 
 #include <rofl/common/crofdpt.h>
 #include <rofl/common/openflow/cofflowmod.h>
@@ -107,7 +108,7 @@ ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
 	//	fm.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(
 	//			rofl::cindex(0)).set_oxm(rofl::openflow::coxmatch_ofb_vrf(vid)); // currently vid == vrf
 
-	std::cout << "write flow-mod:" << std::endl << fm;
+	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl << fm;
 
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
@@ -140,7 +141,7 @@ ofdpa_fm_driver::enable_port_vid_ingress(uint16_t vid, uint32_t port_no)
 //	fm.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(
 //			rofl::cindex(0)).set_oxm(rofl::openflow::coxmatch_ofb_vrf(vid)); // currently vid == vrf
 
-	std::cout << "write flow-mod:" << std::endl << fm;
+	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl << fm;
 
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
@@ -165,7 +166,7 @@ ofdpa_fm_driver::enable_port_pvid_egress(uint16_t vid, uint32_t port_no)
 	gm.set_buckets().set_bucket(0).set_actions().
 			add_action_output(rofl::cindex(1)).set_port_no(port_no);
 
-	std::cout << "send group mod:" << std::endl << gm;
+	rofcore::logging::debug << __FUNCTION__ << ": send group-mod:" << std::endl << gm;
 
 	dpt.send_group_mod_message(rofl::cauxid(0), gm);
 
@@ -196,8 +197,6 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id, const std:
 	uint32_t bucket_id = 0;
 
 	for (const uint32_t &i : l2_interfaces) {
-		std::cout << i << ' ';
-
 		gm.set_buckets().add_bucket(bucket_id).set_actions()
 				.add_action_pop_vlan(rofl::cindex(0));
 		gm.set_buckets().add_bucket(bucket_id).set_actions()
@@ -205,9 +204,8 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id, const std:
 
 		++bucket_id;
 	}
-	std::cout << std::endl;
 
-	std::cout << "send group mod:" << std::endl << gm;
+	rofcore::logging::debug << __FUNCTION__ << ": send group-mod:" << std::endl << gm;
 	dpt.send_group_mod_message(rofl::cauxid(0), gm);
 
 	if (update) {
@@ -221,7 +219,7 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id, const std:
 		gm.set_type(rofl::openflow::OFPGT_ALL);
 		gm.set_group_id(3 << 28 | (0x0fff & vid) << 16 | (0xffff & (id | current_ident)));
 
-		std::cout << "send gm delete" << std::endl;
+		rofcore::logging::debug << __FUNCTION__ << ": send group-mod delete" << std::endl;
 		dpt.send_group_mod_message(rofl::cauxid(0), gm); // xxx this does not work currently
 
 		current_ident = next_ident;
@@ -259,7 +257,7 @@ ofdpa_fm_driver::enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id, bool 
 
 	fm.set_instructions().set_inst_goto_table().set_table_id(OFDPA_FLOW_TABLE_ID_ACL_POLICY);
 
-	std::cout << "write flow-mod:" << std::endl << fm;
+	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl << fm;
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
 
@@ -287,7 +285,7 @@ ofdpa_fm_driver::enable_policy_arp(uint16_t vid, uint32_t group_id, bool update)
 	fm.set_instructions().set_inst_write_actions().set_actions()
 			.add_action_group(rofl::cindex(0)).set_group_id(group_id);
 
-	std::cout << "send flow mod:" << std::endl << fm;
+	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl << fm;
 
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
@@ -319,7 +317,7 @@ void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 			.add_action_group(rofl::cindex(0)).set_group_id(group_id);
 	fm.set_instructions().set_inst_goto_table().set_table_id(OFDPA_FLOW_TABLE_ID_ACL_POLICY);
 
-	std::cout << __FUNCTION__ << ": send flow mod:" << std::endl << fm;
+	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl << fm;
 
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
