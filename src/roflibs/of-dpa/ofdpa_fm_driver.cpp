@@ -306,6 +306,8 @@ void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 	fm.set_priority(2);
 	fm.set_cookie(0);
 
+	fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
+
 	fm.set_command(rofl::openflow::OFPFC_ADD);
 
 	fm.set_match().set_eth_dst(mac);
