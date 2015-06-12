@@ -63,6 +63,20 @@ switch_behavior_ofdpa::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& 
 	}
 }
 
+void switch_behavior_ofdpa::handle_flow_removed(rofl::crofdpt& dpt,
+		const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg)
+{
+	if (this->dptid != dpt.get_dptid()) { // todo maybe even assert here?
+		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] wrong dptid received" << std::endl;
+		return;
+	}
+
+	std::cout << __FUNCTION__ << ": msg:" << std::endl << msg;
+
+	// xxx implement flow_removed
+}
+
+
 void
 switch_behavior_ofdpa::init_ports()
 {
