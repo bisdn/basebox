@@ -20,6 +20,11 @@ public:
 	void
 	set_bridge_interface(const unsigned int id);
 
+	unsigned int
+	get_bridge_interface() const {
+		return interface_id;
+	}
+
 	bool
 	has_bridge_interface() const {
 		return 0 != interface_id;

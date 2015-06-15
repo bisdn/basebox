@@ -198,6 +198,14 @@ switch_behavior_ofdpa::link_created(unsigned int ifindex)
 	const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
 	rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]:" << std::endl << rtl;
 
+	// currently ignore all interfaces besides the tap devs
+	if (not has_tap_dev(this->dptid, rtl.get_devname())) {
+		rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+				<< "]: ignore interface " << rtl.get_devname() << std::endl
+				<< rtl;
+		return;
+	}
+
 	if (AF_BRIDGE == rtl.get_family()) {
 
 		// check for new bridges
@@ -205,26 +213,27 @@ switch_behavior_ofdpa::link_created(unsigned int ifindex)
 			// slave interface
 			rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: is new slave interface" << std::endl;
 
-			if (bridge.has_bridge_interface()) {
+			if (not bridge.has_bridge_interface()) {
+				bridge.set_bridge_interface(rtl.get_master());
+				// get of_port_no and add the interface to the bridge
+				uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), rtl.get_devname());
+				if (port_no) {
+					bridge.add_interface(port_no);
+				}
+			} else if (bridge.get_bridge_interface() == rtl.get_master()) {
 				// get of_port_no and add the interface to the bridge
 				uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), rtl.get_devname());
 				if (port_no) {
 					bridge.add_interface(port_no);
 				}
 			} else {
-				rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: adding slave interface failed" << std::endl;
+				rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: only a single bridge is supported currently" << std::endl;
 				// TODO implement fault handling
 			}
+
 		} else {
 			// bridge
 			rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: is new bridge" << std::endl;
-
-			if (bridge.has_bridge_interface()) {
-				rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: only one l2 bridge is supported" << std::endl;
-			} else {
-				rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: add set bridge interface to ifindex=" << ifindex << std::endl;
-				bridge.set_bridge_interface(ifindex);
-			}
 		}
 
 		// new bridge slaves will be shown as new link as well
