@@ -396,7 +396,11 @@ cbasebox::handle_flow_removed(
 	rofcore::logging::debug << "[cbasebox][handle_flow_removed] dpid: " << dpt.get_dpid().str()
 			<< " pkt received: " << std::endl << msg;
 
+#ifdef OF_DPA
+	sa->handle_flow_removed(dpt, auxid, msg);
+#else
 	roflibs::common::openflow::ccookiebox::get_instance().handle_flow_removed(dpt, auxid, msg);
+#endif
 }
 
 
