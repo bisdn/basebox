@@ -126,7 +126,8 @@ public:
 	operator== (const crtneigh& rtneigh) {
 		return ((ifindex 	== rtneigh.ifindex) &&
 				(family 	== rtneigh.family) 	&&
-				(type 		== rtneigh.type));
+				(type 		== rtneigh.type) &&
+				(lladdr		== rtneigh.lladdr));
 	};
 
 public:
@@ -213,7 +214,26 @@ private:
 };
 
 
-
+/**
+ *
+ */
+class crtneigh_ll_find : public std::unary_function<crtneigh, bool> {
+	crtneigh rtneigh;
+public:
+	crtneigh_ll_find(const crtneigh& rtneigh) :
+		rtneigh(rtneigh) {};
+	bool operator() (const crtneigh& rtn) {
+		return (rtneigh == rtn);
+	};
+	bool operator() (const std::pair<unsigned int, crtneigh>& p) {
+		return (rtneigh == p.second);
+	};
+#if 0
+	bool operator() (const std::pair<unsigned int, crtneigh*>& p) {
+		return (rtneigh == *(p.second));
+	};
+#endif
+};
 
 class crtneigh_in4 : public crtneigh {
 public:

@@ -17,6 +17,182 @@
 
 namespace rofcore {
 
+
+class crtneighs_ll {
+public:
+
+	/**
+	 *
+	 */
+	crtneighs_ll() {}
+
+	/**
+	 *
+	 */
+	virtual
+	~crtneighs_ll() {}
+
+	/**
+	 *
+	 */
+	crtneighs_ll(const crtneighs_ll& rtneighs) { *this = rtneighs; }
+
+	/**
+	 *
+	 */
+	crtneighs_ll&
+	operator= (const crtneighs_ll& rtneighs) {
+		if (this == &rtneighs)
+			return *this;
+
+		clear();
+		for (std::map<unsigned int, crtneigh>::const_iterator
+				it = rtneighs.rtneighs.begin(); it != rtneighs.rtneighs.end(); ++it) {
+			add_neigh(it->first) = it->second;
+		}
+
+		return *this;
+	}
+
+public:
+
+	/**
+	 *
+	 */
+	bool
+	empty() const { return rtneighs.empty(); }
+
+	/**
+	 *
+	 */
+	void
+	clear() { rtneighs.clear(); }
+
+	/**
+	 *
+	 */
+	unsigned int
+	add_neigh(const crtneigh& rtneigh) {
+		std::map<unsigned int, crtneigh>::iterator it;
+		if ((it = find_if(rtneighs.begin(), rtneighs.end(),
+				crtneigh_ll_find(rtneigh))) != rtneighs.end()) {
+			rtneighs.erase(it->first);
+		}
+		unsigned int nbindex = 0;
+		while (rtneighs.find(nbindex) != rtneighs.end()) {
+			nbindex++;
+		}
+		rtneighs[nbindex] = rtneigh;
+		return nbindex;
+	}
+
+	/**
+	 *
+	 */
+	unsigned int
+	set_neigh(const crtneigh& rtneigh) {
+		std::map<unsigned int, crtneigh>::iterator it;
+		if ((it = find_if(rtneighs.begin(), rtneighs.end(),
+				crtneigh_ll_find(rtneigh))) == rtneighs.end()) {
+			return add_neigh(rtneigh);
+		}
+		rtneighs[it->first] = rtneigh;
+		return it->first;
+	}
+
+	/**
+	 *
+	 */
+	unsigned int
+	get_neigh(const crtneigh& rtneigh) const {
+		std::map<unsigned int, crtneigh>::const_iterator it;
+		if ((it = find_if(rtneighs.begin(), rtneighs.end(),
+				crtneigh_ll_find(rtneigh))) == rtneighs.end()) {
+			throw crtneigh::eRtNeighNotFound("crtneighs_ll::get_neigh() / error: rtneigh not found");
+		}
+		return it->first;
+	}
+
+	/**
+	 *
+	 */
+	crtneigh&
+	add_neigh(unsigned int nbindex) {
+		if (rtneighs.find(nbindex) != rtneighs.end()) {
+			rtneighs.erase(nbindex);
+		}
+		return rtneighs[nbindex];
+	}
+
+	/**
+	 *
+	 */
+	crtneigh&
+	set_neigh(unsigned int nbindex) {
+		if (rtneighs.find(nbindex) == rtneighs.end()) {
+			rtneighs[nbindex];
+		}
+		return rtneighs[nbindex];
+	}
+
+	/**
+	 *
+	 */
+	const crtneigh&
+	get_neigh(unsigned int nbindex) const {
+		if (rtneighs.find(nbindex) == rtneighs.end()) {
+			throw crtneigh::eRtNeighNotFound("crtneighs_ll::get_neigh() / error: nbindex not found");
+		}
+		return rtneighs.at(nbindex);
+	}
+
+	/**
+	 *
+	 */
+	void
+	drop_neigh(unsigned int nbindex) {
+		if (rtneighs.find(nbindex) == rtneighs.end()) {
+			return;
+		}
+		rtneighs.erase(nbindex);
+	};
+
+	/**
+	 *
+	 */
+	bool
+	has_neigh(unsigned int nbindex) const {
+		return (not (rtneighs.find(nbindex) == rtneighs.end()));
+	}
+
+public:
+
+	friend std::ostream&
+	operator<< (std::ostream& os, const crtneighs_ll& rtneighs) {
+		os << rofcore::indent(0) << "<crtneighs_ll #rtneighs: " << rtneighs.rtneighs.size() << " >" << std::endl;
+		rofcore::indent i(2);
+		for (std::map<unsigned int, crtneigh>::const_iterator
+				it = rtneighs.rtneighs.begin(); it != rtneighs.rtneighs.end(); ++it) {
+			os << it->second;
+		}
+		return os;
+	}
+
+	std::string
+	str() const {
+		std::stringstream ss;
+		for (std::map<unsigned int, crtneigh>::const_iterator
+				it = rtneighs.begin(); it != rtneighs.end(); ++it) {
+			ss << it->second << std::endl;
+		}
+		return ss.str();
+	}
+
+private:
+
+	std::map<unsigned int, crtneigh> rtneighs;
+};
+
 class crtneighs_in4 {
 public:
 

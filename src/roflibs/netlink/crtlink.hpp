@@ -164,6 +164,17 @@ public:
 	crtaddrs_in6&
 	set_addrs_in6() { return addrs_in6; };
 
+	/**
+	 *
+	 */
+	const crtneighs_ll&
+	get_neighs_ll() const { return neighs_ll; };
+
+	/**
+	 *
+	 */
+	crtneighs_ll&
+	set_neighs_ll() { return neighs_ll; };
 
 	/**
 	 *
@@ -375,6 +386,7 @@ private:
 
 	crtaddrs_in4			addrs_in4;
 	crtaddrs_in6			addrs_in6;
+	crtneighs_ll			neighs_ll;
 	crtneighs_in4			neighs_in4;
 	crtneighs_in6			neighs_in6;
 

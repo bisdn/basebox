@@ -447,6 +447,14 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in6_created(ifindex, nbindex);
 			} break;
+			case PF_BRIDGE: {
+				// xxx implement bridge handling
+				logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_ll" << std::endl << crtneigh((struct rtnl_neigh*)obj);
+				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_ll().add_neigh(crtneigh((struct rtnl_neigh*)obj));
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				cnetlink::get_instance().notify_neigh_ll_created(ifindex, nbindex);
+			} break;
+
 			}
 		} break;
 		case NL_ACT_CHANGE: {
@@ -462,6 +470,13 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in6().set_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in6_updated(ifindex, nbindex);
+			} break;
+			case PF_BRIDGE: {
+				// xxx implement bridge handling
+				logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_ll" << std::endl << crtneigh((struct rtnl_neigh*)obj);
+				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_ll().set_neigh(crtneigh((struct rtnl_neigh*)obj));
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				cnetlink::get_instance().notify_neigh_ll_updated(ifindex, nbindex);
 			} break;
 			}
 		} break;
@@ -479,6 +494,14 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 				unsigned int nbindex = cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in6().get_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
 				cnetlink::get_instance().notify_neigh_in6_deleted(ifindex, nbindex);
 				cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in6().drop_neigh(nbindex);
+				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+			} break;
+			case PF_BRIDGE: {
+				// xxx implement bridge handling
+				logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_ll" << std::endl << crtneigh((struct rtnl_neigh*)obj);
+				unsigned int nbindex = cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_ll().get_neigh(crtneigh((struct rtnl_neigh*)obj));
+				cnetlink::get_instance().notify_neigh_ll_deleted(ifindex, nbindex);
+				cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_ll().drop_neigh(nbindex);
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			}
@@ -611,7 +634,28 @@ cnetlink::notify_addr_in6_deleted(unsigned int ifindex, unsigned int adindex) {
 	}
 };
 
+void
+cnetlink::notify_neigh_ll_created(unsigned int ifindex, unsigned int nbindex) {
+	const rofl::caddress_ll& dst = cnetlink::get_instance().get_links().
+									get_link(ifindex).get_neighs_ll().get_neigh(nbindex).get_lladdr();
 
+	logging::debug << "[cnetlink][notify_neigh_ll_created] sending notifications:" << std::endl;
+	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
+	logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_ll();
+
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
+		(*it)->neigh_ll_created(ifindex, nbindex);
+	}
+
+	for (std::set<cnetlink_neighbour_observer*>::iterator
+			it = nbobservers_ll[ifindex][dst].begin();
+				it != nbobservers_ll[ifindex][dst].end(); ++it) {
+
+		(*it)->neigh_ll_created(ifindex, nbindex);
+	}
+};
 
 void
 cnetlink::notify_neigh_in4_created(unsigned int ifindex, unsigned int nbindex) {
@@ -656,7 +700,27 @@ cnetlink::notify_neigh_in6_created(unsigned int ifindex, unsigned int nbindex) {
 	}
 };
 
+void
+cnetlink::notify_neigh_ll_updated(unsigned int ifindex, unsigned int nbindex) {
+	const rofl::caddress_ll& dst = cnetlink::get_instance().get_links().
+									get_link(ifindex).get_neighs_ll().get_neigh(nbindex).get_lladdr();
 
+	logging::debug << "[cnetlink][notify_neigh_ll_updated] sending notifications:" << std::endl;
+	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
+	logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_ll();
+
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = cnetlink::get_instance().observers.begin();
+				it != cnetlink::get_instance().observers.end(); ++it) {
+		(*it)->neigh_ll_updated(ifindex, nbindex);
+	}
+
+	for (std::set<cnetlink_neighbour_observer*>::iterator
+			it = nbobservers_ll[ifindex][dst].begin();
+				it != nbobservers_ll[ifindex][dst].end(); ++it) {
+		(*it)->neigh_ll_updated(ifindex, nbindex);
+	}
+};
 
 void
 cnetlink::notify_neigh_in4_updated(unsigned int ifindex, unsigned int nbindex) {
@@ -700,7 +764,29 @@ cnetlink::notify_neigh_in6_updated(unsigned int ifindex, unsigned int nbindex) {
 	}
 };
 
+void
+cnetlink::notify_neigh_ll_deleted(unsigned int ifindex, unsigned int nbindex) {
+	const rofl::caddress_ll& dst = cnetlink::get_instance().get_links().
+									get_link(ifindex).get_neighs_ll().get_neigh(nbindex).get_lladdr();
 
+	logging::debug << "[cnetlink][notify_neigh_ll_deleted] sending notifications:" << std::endl;
+	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
+	logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_ll();
+
+	// make local copy of set
+	std::set<cnetlink_common_observer*> obs(observers);
+	for (std::set<cnetlink_common_observer*>::iterator
+			it = obs.begin(); it != obs.end(); ++it) {
+		(*it)->neigh_ll_deleted(ifindex, nbindex);
+	}
+
+	// make local copy of set
+	std::set<cnetlink_neighbour_observer*> nbobs_ll(nbobservers_ll[ifindex][dst]);
+	for (std::set<cnetlink_neighbour_observer*>::iterator
+			it = nbobs_ll.begin(); it != nbobs_ll.end(); ++it) {
+		(*it)->neigh_ll_deleted(ifindex, nbindex);
+	}
+};
 
 void
 cnetlink::notify_neigh_in4_deleted(unsigned int ifindex, unsigned int nbindex) {
