@@ -174,8 +174,12 @@ cnetdev::disable_interface()
 
 
 unsigned int
-cnetdev::get_ifindex()
+cnetdev::get_ifindex() const
 {
+	if (ifindex) {
+		return ifindex;
+	}
+
 	// get ifindex for devname
 	int sd, rc;
 	if ((sd = socket(AF_PACKET, SOCK_RAW, 0)) < 0)

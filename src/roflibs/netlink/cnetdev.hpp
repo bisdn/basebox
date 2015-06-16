@@ -160,7 +160,7 @@ protected:
 
 	std::string		 devname;
 	cnetdev_owner	*netdev_owner;
-	unsigned int	 ifindex;
+	mutable unsigned int	 ifindex;
 	rofl::cmacaddr	 hwaddr;
 
 
@@ -213,7 +213,7 @@ public:
 	/**
 	 *
 	 */
-	virtual unsigned int get_ifindex();
+	virtual unsigned int get_ifindex() const;
 
 
 	/**
