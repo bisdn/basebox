@@ -469,6 +469,9 @@ public:
 
 public:
 
+	void
+	add_neigh_ll(int ifindex, const rofl::caddress_ll& addr);
+
 	/**
 	 *
 	 */

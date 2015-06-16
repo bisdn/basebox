@@ -125,11 +125,21 @@ void
 switch_behavior_ofdpa::handle_srcmac_table(
 		rofl::openflow::cofmsg_packet_in& msg)
 {
+	using rofl::openflow::cofport;
+
 	rofcore::logging::info << __FUNCTION__ << ": handle message" << std::endl << msg;
 
 	rofcore::logging::info << __FUNCTION__ << ": in_port=" << msg.get_match().get_in_port() << std::endl;
 
 	rofl::fetherframe eth_frame(msg.get_packet().soframe(), msg.get_packet().length());
+
+	// todo this has to be improved
+	rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
+	const cofport &port = dpt.get_ports().get_port(msg.get_match().get_in_port());
+	const rofcore::ctapdev &tapdev = get_tap_dev(dptid, port.get_name());
+
+	// update bridge fdb
+	rofcore::cnetlink::get_instance().add_neigh_ll(tapdev.get_ifindex(), eth_frame.get_dl_src());
 
 	bridge.add_mac_to_fdb(eth_frame.get_dl_src(), msg.get_match().get_in_port());
 }
