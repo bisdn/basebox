@@ -73,7 +73,13 @@ void switch_behavior_ofdpa::handle_flow_removed(rofl::crofdpt& dpt,
 
 	std::cout << __FUNCTION__ << ": msg:" << std::endl << msg;
 
-	// xxx implement flow_removed
+	switch (msg.get_table_id()) {
+		case OFDPA_FLOW_TABLE_ID_BRIDGING:
+			this->handle_bridging_table(msg);
+			break;
+		default:
+			break;
+	}
 }
 
 
@@ -141,7 +147,26 @@ switch_behavior_ofdpa::handle_srcmac_table(
 	// update bridge fdb
 	rofcore::cnetlink::get_instance().add_neigh_ll(tapdev.get_ifindex(), eth_frame.get_dl_src());
 
-	bridge.add_mac_to_fdb(eth_frame.get_dl_src(), msg.get_match().get_in_port());
+	bridge.add_mac_to_fdb(eth_frame.get_dl_src(), msg.get_match().get_in_port()); // xxx remove when done via netlink?
+}
+
+void
+switch_behavior_ofdpa::handle_bridging_table(rofl::openflow::cofmsg_flow_removed& msg)
+{
+	using rofl::cmacaddr;
+	using rofl::openflow::cofport;
+	rofcore::logging::info << __FUNCTION__ << ": handle message" << std::endl << msg;
+
+	cmacaddr eth_dst(msg.get_match().get_eth_dst());
+
+	// todo this has to be improved
+	uint32_t portno = msg.get_cookie(); // fixme cookiebox here??
+	rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
+	const cofport &port = dpt.get_ports().get_port(portno);
+	const rofcore::ctapdev &tapdev = get_tap_dev(dptid, port.get_name());
+
+	// update bridge fdb
+	rofcore::cnetlink::get_instance().drop_neigh_ll(tapdev.get_ifindex(), eth_dst);
 }
 
 void

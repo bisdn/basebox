@@ -74,6 +74,9 @@ private:
 	void
 	handle_srcmac_table(rofl::openflow::cofmsg_packet_in& msg);
 
+	void
+	handle_bridging_table(rofl::openflow::cofmsg_flow_removed& msg);
+
 
 	// todo code duplication: align with cethcore
 	/**

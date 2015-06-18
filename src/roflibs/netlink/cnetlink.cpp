@@ -943,6 +943,46 @@ cnetlink::add_neigh_ll(int ifindex, const rofl::caddress_ll& addr)
 }
 
 void
+cnetlink::drop_neigh_ll(int ifindex, const rofl::caddress_ll& addr)
+{
+	struct rtnl_neigh *neigh = rtnl_neigh_alloc();
+
+	rtnl_neigh_set_ifindex(neigh, ifindex);
+	rtnl_neigh_set_family(neigh, PF_BRIDGE);
+	rtnl_neigh_set_state(neigh, NUD_NOARP|NUD_REACHABLE);
+	rtnl_neigh_set_flags(neigh, NTF_MASTER);
+	rtnl_neigh_set_vlan(neigh, 1); // todo expose
+
+	struct nl_addr *_addr = nl_addr_build(AF_LLC, addr.somem(), addr.memlen());
+	rtnl_neigh_set_lladdr(neigh, _addr);
+	nl_addr_put(_addr);
+
+	struct nl_sock *sk = NULL;
+	if ((sk = nl_socket_alloc()) == NULL) {
+		rtnl_neigh_put(neigh);
+		throw eNetLinkFailed("cnetlink::add_neigh_ll() nl_socket_alloc()");
+	}
+
+	int sd = 0;
+	if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
+		rtnl_neigh_put(neigh);
+		nl_socket_free(sk);
+		throw eNetLinkFailed("cnetlink::add_neigh_ll() nl_connect()");
+	}
+
+	int rc;
+	if ((rc = rtnl_neigh_delete(sk, neigh, 0)) < 0) {
+		rtnl_neigh_put(neigh);
+		nl_socket_free(sk);
+		throw eNetLinkFailed("cnetlink::add_neigh_ll() rtnl_neigh_add()");
+	}
+
+	nl_close(sk);
+	nl_socket_free(sk);
+	rtnl_neigh_put(neigh);
+}
+
+void
 cnetlink::add_addr_in4(int ifindex, const rofl::caddress_in4& laddr, int prefixlen)
 {
 	int rc = 0;
