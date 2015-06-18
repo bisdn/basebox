@@ -36,7 +36,7 @@ public:
 
 	void
 	add_bridging_unicast_vlan(const rofl::cmacaddr& mac, uint16_t vid,
-			uint32_t port_no);
+			uint32_t port_no, bool permanent = false);
 
 private:
 	const uint16_t default_idle_timeout;

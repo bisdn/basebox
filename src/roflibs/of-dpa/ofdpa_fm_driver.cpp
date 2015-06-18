@@ -291,7 +291,7 @@ ofdpa_fm_driver::enable_policy_arp(uint16_t vid, uint32_t group_id, bool update)
 }
 
 void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
-		uint16_t vid, uint32_t port_no)
+		uint16_t vid, uint32_t port_no, bool permanent)
 {
 	assert(vid < 0x1000);
 
@@ -299,7 +299,7 @@ void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_BRIDGING);
 
-	fm.set_idle_timeout(default_idle_timeout);
+	fm.set_idle_timeout(permanent ? 0 : default_idle_timeout);
 	fm.set_hard_timeout(0);
 	fm.set_priority(2);
 	fm.set_cookie(port_no); // fixme cookiebox here?
