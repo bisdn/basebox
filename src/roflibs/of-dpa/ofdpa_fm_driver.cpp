@@ -28,8 +28,10 @@ namespace ofdpa {
 
 	/* OXM Flow match field types for OpenFlow experimenter class. */
 	enum oxm_tlv_match_fields {
-		OXM_TLV_EXPR_VRF			= (rofl::openflow::OFPXMC_EXPERIMENTER << 16) | (OFPXMT_OFX_VRF << 9)	|  2,
-		OXM_TLV_EXPR_VRF_MASK		= (rofl::openflow::OFPXMC_EXPERIMENTER << 16) | (OFPXMT_OFX_VRF << 9)	|  4 | HAS_MASK_FLAG,
+	OXM_TLV_EXPR_VRF = (rofl::openflow::OFPXMC_EXPERIMENTER << 16)
+			| (OFPXMT_OFX_VRF << 9) | 2,
+	OXM_TLV_EXPR_VRF_MASK = (rofl::openflow::OFPXMC_EXPERIMENTER << 16)
+			| (OFPXMT_OFX_VRF << 9) | 4 | HAS_MASK_FLAG,
 	};
 
 }; // end of namespace ofdpa
@@ -37,13 +39,11 @@ namespace ofdpa {
 
 class coxmatch_ofb_vrf : public rofl::openflow::coxmatch {
 public:
-	coxmatch_ofb_vrf(
-			uint16_t vrf) :
+	coxmatch_ofb_vrf(uint16_t vrf) :
 				coxmatch(ofdpa::OXM_TLV_EXPR_VRF, vrf, COXMATCH_16BIT)
 	{};
-	coxmatch_ofb_vrf(
-			uint16_t vrf, uint16_t mask) :
-				coxmatch(ofdpa::OXM_TLV_EXPR_VRF_MASK, vrf, mask, COXMATCH_16BIT)
+	coxmatch_ofb_vrf(uint16_t vrf, uint16_t mask) :
+			coxmatch(ofdpa::OXM_TLV_EXPR_VRF_MASK, vrf, mask, COXMATCH_16BIT)
 	{};
 	coxmatch_ofb_vrf(
 			const coxmatch& oxm) :
@@ -57,7 +57,9 @@ public:
 	operator<< (std::ostream& os, const coxmatch_ofb_vrf& oxm) {
 		os << dynamic_cast<const coxmatch&>(oxm);
 		os << rofl::indent(2) << "<coxmatch_ofb_vlan_vid >" << std::endl;
-		os << rofl::indent(4) << "<vlan-vid: 0x" << std::hex << (int)oxm.get_u16value() << "/0x" << (int)oxm.get_u16mask() << std::dec << " >" << std::endl;
+		os << rofl::indent(4) << "<vlan-vid: 0x" << std::hex
+				<< (int) oxm.get_u16value() << "/0x" << (int) oxm.get_u16mask()
+				<< std::dec << " >" << std::endl;
 		return os;
 	};
 };
@@ -76,7 +78,8 @@ ofdpa_fm_driver::~ofdpa_fm_driver()
 void
 ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
 {
-	// XXX This contradicts the OF-DPA ASS (p. 64) "The VLAN_VID value cannot be used in a VLAN Filtering rule."
+	// XXX This contradicts the OF-DPA ASS (p. 64) "The VLAN_VID value cannot
+	// be used in a VLAN Filtering rule."
 	// todo Send ticket to BCM to clarify
 	enable_port_vid_ingress(vid, port_no);
 
@@ -100,15 +103,19 @@ ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
 	fm.set_match().set_vlan_vid(0, 0x1fff);
 
 	fm.set_instructions().set_inst_apply_actions().set_actions().
-			add_action_set_field(rofl::cindex(0)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT));
+			add_action_set_field(rofl::cindex(0)).set_oxm(
+			rofl::openflow::coxmatch_ofb_vlan_vid(
+					vid | rofl::openflow::OFPVID_PRESENT));
 
-	fm.set_instructions().set_inst_goto_table().set_table_id(OFDPA_FLOW_TABLE_ID_TERMINATION_MAC);
+	fm.set_instructions().set_inst_goto_table().set_table_id(
+			OFDPA_FLOW_TABLE_ID_TERMINATION_MAC);
 
 	// XXX set vrf
 	//	fm.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(
 	//			rofl::cindex(0)).set_oxm(rofl::openflow::coxmatch_ofb_vrf(vid)); // currently vid == vrf
 
-	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl << fm;
+	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl
+			<< fm;
 
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
@@ -123,7 +130,8 @@ ofdpa_fm_driver::enable_port_vid_ingress(uint16_t vid, uint32_t port_no)
 
 	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
-	fm.set_command(rofl::openflow::OFPFC_ADD); // todo check what happens if this is added two times?
+	 // todo check what happens if this is added two times?
+	fm.set_command(rofl::openflow::OFPFC_ADD);
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_VLAN);
 
 	fm.set_idle_timeout(0);
@@ -141,7 +149,8 @@ ofdpa_fm_driver::enable_port_vid_ingress(uint16_t vid, uint32_t port_no)
 //	fm.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(
 //			rofl::cindex(0)).set_oxm(rofl::openflow::coxmatch_ofb_vrf(vid)); // currently vid == vrf
 
-	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl << fm;
+	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl
+			<< fm;
 
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
@@ -174,7 +183,8 @@ ofdpa_fm_driver::enable_port_pvid_egress(uint16_t vid, uint32_t port_no)
 }
 
 uint32_t
-ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id, const std::list<uint32_t>& l2_interfaces, bool update)
+ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id,
+		const std::list<uint32_t>& l2_interfaces, bool update)
 {
 	assert(vid < 0x1000);
 
@@ -185,7 +195,8 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id, const std:
 		next_ident ^= identifier;
 	}
 
-	uint32_t group_id = 3 << 28 | (0x0fff & vid) << 16 | (0xffff & (id | next_ident));
+	uint32_t group_id = 3 << 28 | (0x0fff & vid) << 16
+			| (0xffff & (id | next_ident));
 
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 	rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
@@ -203,7 +214,8 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id, const std:
 		++bucket_id;
 	}
 
-	rofcore::logging::debug << __FUNCTION__ << ": send group-mod:" << std::endl << gm;
+	rofcore::logging::debug << __FUNCTION__ << ": send group-mod:" << std::endl
+			<< gm;
 	dpt.send_group_mod_message(rofl::cauxid(0), gm);
 
 	if (update) {
@@ -227,7 +239,8 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id, const std:
 }
 
 void
-ofdpa_fm_driver::enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id, bool do_pkt_in)
+ofdpa_fm_driver::enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id,
+		bool do_pkt_in)
 {
 	assert(vid < 0x1000);
 
@@ -247,15 +260,18 @@ ofdpa_fm_driver::enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id, bool 
 		fm.set_out_port(rofl::openflow::OFPP_CONTROLLER);
 
 		fm.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
+				add_action_output(rofl::cindex(0)).set_port_no(
+				rofl::openflow::OFPP_CONTROLLER);
 	}
 
 	// fixme not supported in this table... check with BCM
 	//fm.set_instructions().set_inst_clear_actions();
 
-	fm.set_instructions().set_inst_goto_table().set_table_id(OFDPA_FLOW_TABLE_ID_ACL_POLICY);
+	fm.set_instructions().set_inst_goto_table().set_table_id(
+			OFDPA_FLOW_TABLE_ID_ACL_POLICY);
 
-	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl << fm;
+	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl
+			<< fm;
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
 
@@ -273,7 +289,8 @@ ofdpa_fm_driver::enable_policy_arp(uint16_t vid, uint32_t group_id, bool update)
 	fm.set_priority(2);
 	fm.set_cookie(0);
 
-	fm.set_command(update ? rofl::openflow::OFPFC_MODIFY : rofl::openflow::OFPFC_ADD);
+	fm.set_command(
+			update ? rofl::openflow::OFPFC_MODIFY : rofl::openflow::OFPFC_ADD);
 
 	fm.set_match().set_eth_dst(rofl::cmacaddr("ff:ff:ff:ff:ff:ff"));
 	fm.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
@@ -283,7 +300,8 @@ ofdpa_fm_driver::enable_policy_arp(uint16_t vid, uint32_t group_id, bool update)
 	fm.set_instructions().set_inst_write_actions().set_actions()
 			.add_action_group(rofl::cindex(0)).set_group_id(group_id);
 
-	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl << fm;
+	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl
+			<< fm;
 
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
@@ -315,9 +333,11 @@ void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 	uint32_t group_id = (0x0fff & vid) << 16 | (0xffff & port_no);
 	fm.set_instructions().set_inst_write_actions().set_actions()
 			.add_action_group(rofl::cindex(0)).set_group_id(group_id);
-	fm.set_instructions().set_inst_goto_table().set_table_id(OFDPA_FLOW_TABLE_ID_ACL_POLICY);
+	fm.set_instructions().set_inst_goto_table().set_table_id(
+			OFDPA_FLOW_TABLE_ID_ACL_POLICY);
 
-	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl << fm;
+	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl
+			<< fm;
 
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
@@ -334,7 +354,7 @@ void ofdpa_fm_driver::remove_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 	fm.set_priority(2);
 	fm.set_cookie(port_no); // fixme cookiebox here?
 
-	 // todo do this strict?
+	// todo do this strict?
 	fm.set_command(rofl::openflow::OFPFC_DELETE);
 
 	// fixme do not allow multicast mac here
