@@ -241,6 +241,15 @@ private:
 
 	virtual void
 	link_deleted(unsigned int ifindex);
+
+	virtual void
+	neigh_ll_created(unsigned int ifindex, uint16_t nbindex);
+
+	virtual void
+	neigh_ll_updated(unsigned int ifindex, uint16_t nbindex);
+
+	virtual void
+	neigh_ll_deleted(unsigned int ifindex, uint16_t nbindex);
 };
 
 }

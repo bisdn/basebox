@@ -147,7 +147,7 @@ switch_behavior_ofdpa::handle_srcmac_table(
 	// update bridge fdb
 	rofcore::cnetlink::get_instance().add_neigh_ll(tapdev.get_ifindex(), eth_frame.get_dl_src());
 
-	bridge.add_mac_to_fdb(eth_frame.get_dl_src(), msg.get_match().get_in_port()); // xxx remove when done via netlink?
+	bridge.add_mac_to_fdb(eth_frame.get_dl_src(), msg.get_match().get_in_port(), false); // xxx remove when done via netlink?
 }
 
 void
@@ -293,6 +293,67 @@ switch_behavior_ofdpa::link_deleted(unsigned int ifindex)
 
 
 	// todo same as in link_updated?
+}
+
+void
+switch_behavior_ofdpa::neigh_ll_created(unsigned int ifindex, uint16_t nbindex)
+{
+	using rofcore::crtneigh;
+	using rofcore::crtlink;
+	using rofcore::cnetlink;
+	using rofl::crofdpt;
+	using rofcore::logging;
+
+	const crtlink& rtl = cnetlink::get_instance().get_links().get_link(ifindex);
+	const crtneigh& rtn = rtl.get_neighs_ll().get_neigh(nbindex);
+
+	logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: "
+			<< std::endl << rtn;
+
+	// xxx only permanent or all? if all add_mac_to_fdb call
+	// in remove handle_srcmac_table
+	if (bridge.has_bridge_interface() && (rtn.get_state() & NUD_PERMANENT)) {
+		bridge.add_mac_to_fdb(rtn.get_lladdr(),
+				get_of_port_no(crofdpt::get_dpt(this->dptid),
+						rtl.get_devname()), true);
+	} else {
+		// todo log warning
+	}
+}
+
+void
+switch_behavior_ofdpa::neigh_ll_updated(unsigned int ifindex, uint16_t nbindex)
+{
+	using rofcore::crtneigh;
+	const crtneigh& rtn =
+			rofcore::cnetlink::get_instance().get_links().get_link(ifindex)
+					.get_neighs_ll().get_neigh(nbindex);
+
+	rofcore::logging::warn << "[switch_behavior_ofdpa][" << __FUNCTION__
+			<< "]: NOT handled neighbor:" << std::endl << rtn;
+}
+
+void
+switch_behavior_ofdpa::neigh_ll_deleted(unsigned int ifindex, uint16_t nbindex)
+{
+	using rofcore::crtneigh;
+	using rofcore::crtlink;
+	using rofcore::cnetlink;
+	using rofl::crofdpt;
+	using rofcore::logging;
+
+	const crtlink& rtl = cnetlink::get_instance().get_links().get_link(ifindex);
+	const crtneigh& rtn = rtl.get_neighs_ll().get_neigh(nbindex);
+
+	logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: "
+			<< std::endl << rtn;
+
+	// only permanent here, others are already gone
+	if (bridge.has_bridge_interface() && (rtn.get_state() & NUD_PERMANENT)) {
+		bridge.remove_mac_from_fdb(rtn.get_lladdr(),
+				get_of_port_no(crofdpt::get_dpt(this->dptid),
+						rtl.get_devname()));
+	}
 }
 
 } /* namespace basebox */
