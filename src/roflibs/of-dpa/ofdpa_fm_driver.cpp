@@ -302,7 +302,9 @@ void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 	fm.set_priority(2);
 	fm.set_cookie(port_no); // fixme cookiebox here?
 
-	fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
+	if (not permanent) {
+		fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
+	}
 
 	fm.set_command(rofl::openflow::OFPFC_ADD);
 
@@ -316,6 +318,28 @@ void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 	fm.set_instructions().set_inst_goto_table().set_table_id(OFDPA_FLOW_TABLE_ID_ACL_POLICY);
 
 	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl << fm;
+
+	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
+}
+
+void ofdpa_fm_driver::remove_bridging_unicast_vlan(const rofl::cmacaddr& mac,
+		uint16_t vid, uint32_t port_no)
+{
+	assert(vid < 0x1000);
+
+	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
+	fm.set_table_id(OFDPA_FLOW_TABLE_ID_BRIDGING);
+
+	fm.set_priority(2);
+	fm.set_cookie(port_no); // fixme cookiebox here?
+
+	 // todo do this strict?
+	fm.set_command(rofl::openflow::OFPFC_DELETE);
+
+	// fixme do not allow multicast mac here
+	fm.set_match().set_eth_dst(mac);
+	fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT);
 
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }

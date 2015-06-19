@@ -37,7 +37,10 @@ public:
 	delete_interface(const uint32_t of_port_no);
 
 	void
-	add_mac_to_fdb(const rofl::cmacaddr &mac, const uint32_t of_port_no);
+	add_mac_to_fdb(const rofl::cmacaddr &mac, const uint32_t of_port_no, bool permanent = false);
+
+	void
+	remove_mac_from_fdb(const rofl::cmacaddr &mac, const uint32_t of_port_no);
 
 private:
 	unsigned int interface_id;
