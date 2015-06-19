@@ -41,7 +41,7 @@ cnetlink::~cnetlink()
 void
 cnetlink::init_caches()
 {
-	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, 0, &mngr);
+	int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
 	if (rc < 0) {
 		logging::crit << "cnetlink::init_caches() failed to allocate netlink cache manager" << std::endl;
 		throw eNetLinkCritical("cnetlink::init_caches()");
