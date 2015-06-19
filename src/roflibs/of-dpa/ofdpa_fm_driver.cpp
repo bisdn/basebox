@@ -64,6 +64,10 @@ public:
 	};
 };
 
+static inline uint64_t
+gen_flow_mod_type_cookie(uint64_t val) {
+	return (val<< 8*7);
+}
 
 ofdpa_fm_driver::ofdpa_fm_driver(const rofl::cdptid& dptid) :
 		dptid(dptid),
@@ -97,7 +101,7 @@ ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
 	fm.set_idle_timeout(0);
 	fm.set_hard_timeout(0);
 	fm.set_priority(2);
-	fm.set_cookie(0);
+	fm.set_cookie(gen_flow_mod_type_cookie(OFDPA_FTT_VLAN_VLAN_ASSIGNMENT) | 0);
 
 	fm.set_match().set_in_port(port_no);
 	fm.set_match().set_vlan_vid(0, 0x1fff);
@@ -137,7 +141,7 @@ ofdpa_fm_driver::enable_port_vid_ingress(uint16_t vid, uint32_t port_no)
 	fm.set_idle_timeout(0);
 	fm.set_hard_timeout(0);
 	fm.set_priority(3);
-	fm.set_cookie(0);
+	fm.set_cookie(gen_flow_mod_type_cookie(OFDPA_FTT_VLAN_VLAN_FILTERING) | 0);
 
 	fm.set_match().set_in_port(port_no);
 	fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT, 0x1fff);
@@ -252,7 +256,7 @@ ofdpa_fm_driver::enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id,
 	fm.set_idle_timeout(0);
 	fm.set_hard_timeout(0);
 	fm.set_priority(2);
-	fm.set_cookie(0);
+	fm.set_cookie(gen_flow_mod_type_cookie(OFDPA_FTT_BRIDGING_DLF_VLAN)|0);
 
 	fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT, 0x0fff);
 
@@ -287,7 +291,7 @@ ofdpa_fm_driver::enable_policy_arp(uint16_t vid, uint32_t group_id, bool update)
 	fm.set_idle_timeout(0);
 	fm.set_hard_timeout(0);
 	fm.set_priority(2);
-	fm.set_cookie(0);
+	fm.set_cookie(gen_flow_mod_type_cookie(OFDPA_FTT_POLICY_ACL_IPV4_VLAN) | 0);
 
 	fm.set_command(
 			update ? rofl::openflow::OFPFC_MODIFY : rofl::openflow::OFPFC_ADD);
@@ -318,7 +322,7 @@ void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 	fm.set_idle_timeout(permanent ? 0 : default_idle_timeout);
 	fm.set_hard_timeout(0);
 	fm.set_priority(2);
-	fm.set_cookie(port_no); // fixme cookiebox here?
+	fm.set_cookie(gen_flow_mod_type_cookie(OFDPA_FTT_BRIDGING_UNICAST_VLAN) | port_no); // fixme cookiebox here?
 
 	if (not permanent) {
 		fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
@@ -352,7 +356,7 @@ void ofdpa_fm_driver::remove_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_BRIDGING);
 
 	fm.set_priority(2);
-	fm.set_cookie(port_no); // fixme cookiebox here?
+	fm.set_cookie(gen_flow_mod_type_cookie(OFDPA_FTT_BRIDGING_UNICAST_VLAN) | port_no); // fixme cookiebox here?
 
 	// todo do this strict?
 	fm.set_command(rofl::openflow::OFPFC_DELETE);
