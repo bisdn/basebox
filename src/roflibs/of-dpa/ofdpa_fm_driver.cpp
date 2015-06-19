@@ -198,9 +198,7 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id, const std:
 
 	for (const uint32_t &i : l2_interfaces) {
 		gm.set_buckets().add_bucket(bucket_id).set_actions()
-				.add_action_pop_vlan(rofl::cindex(0));
-		gm.set_buckets().add_bucket(bucket_id).set_actions()
-				.add_action_group(rofl::cindex(1)).set_group_id(i);
+				.add_action_group(rofl::cindex(0)).set_group_id(i);
 
 		++bucket_id;
 	}
