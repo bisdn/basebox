@@ -37,17 +37,16 @@ namespace ofdpa {
 }; // end of namespace ofdpa
 
 
-class coxmatch_ofb_vrf : public rofl::openflow::coxmatch {
+class coxmatch_ofb_vrf : public rofl::openflow::coxmatch_16_exp {
 public:
 	coxmatch_ofb_vrf(uint16_t vrf) :
-				coxmatch(ofdpa::OXM_TLV_EXPR_VRF, vrf, COXMATCH_16BIT)
+		coxmatch_16_exp(ofdpa::OXM_TLV_EXPR_VRF, ofdpa::experimenter_id, vrf, COXMATCH_16BIT)
 	{};
 	coxmatch_ofb_vrf(uint16_t vrf, uint16_t mask) :
-			coxmatch(ofdpa::OXM_TLV_EXPR_VRF_MASK, vrf, mask, COXMATCH_16BIT)
+		coxmatch_16_exp(ofdpa::OXM_TLV_EXPR_VRF_MASK, ofdpa::experimenter_id, vrf, mask, COXMATCH_16BIT)
 	{};
-	coxmatch_ofb_vrf(
-			const coxmatch& oxm) :
-				coxmatch(oxm)
+	coxmatch_ofb_vrf(const coxmatch& oxm) :
+			coxmatch_16_exp(oxm)
 	{};
 	virtual
 	~coxmatch_ofb_vrf()
