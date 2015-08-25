@@ -68,7 +68,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision :shell, inline: LIBNL, keep_color: true
   config.vm.provision :shell, inline: ROFL, keep_color: true
 
-  config.vm.network "forwarded_port", guest: 4000, host: 4000
+  config.vm.network "forwarded_port", guest: 6653, host: 6653
 
   config.vm.provider "virtualbox" do |vb|
     vb.name = NAME

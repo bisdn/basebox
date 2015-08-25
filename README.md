@@ -52,6 +52,7 @@ Install the dependencies and run:
 
 ```bash
 # cd /vagrant
+# you may have to run make clean in /vagrant
 ./autogen.sh
 cd build
 ../configure
