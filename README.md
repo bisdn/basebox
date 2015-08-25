@@ -46,7 +46,7 @@ Then you can ssh into the machine with `vagrant ssh`.
 
 Even if you do not intend to use vagrant, please see the `Vagrantfile` for more specifics on the requirements (version numbers, branches, etc.)
 
-## Installation
+## Installation of baseboxd
 
 Install the dependencies and run:
 
@@ -59,6 +59,8 @@ cd build
 make
 make install
 ```
+
+Alternatively, please see the development section below.
 
 ## Configuration
 
@@ -245,7 +247,21 @@ datapath element and establish shortcuts for packet forwarding.
 Here some useful commands:
 
 ```bash
-cd build/src/baseboxd/
-./baseboxd --help # checkout the options of baseboxd
-./baseboxd -d7  # show more stuff
+# start basebox (without having run make install)
+cd /vagrant/build/src/baseboxd/
+sudo ./baseboxd -d7 -c /vagrant/src/baseboxd/baseboxd.conf # use the example config
+sudo ./baseboxd --help # checkout the options/defaults of baseboxd
+sudo ./baseboxd -d7  # show more debug
+
+# test
+ip link # to see if new ports were created
 ```
+
+## Troubleshooting
+
+If you encounter weird `shared object` errors (e.g. `# error while loading shared libraries: librofl_common.so.0: cannot open shared object file: No such file or directory`) please run `sudo ldconfig`.
+
+Don't forget to run as sudo.
+
+If you get weird stuff like `indigo_fwd_expiration` on the switch and `syscall: read() error: No such file or directory` on the baseboxd host.
+Please just be patient. It will work eventually.
