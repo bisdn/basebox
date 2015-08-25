@@ -31,7 +31,7 @@ cbasebox::run(int argc, char** argv)
 	/* update defaults */
 	//env_parser.update_default_option("logfile", ETHCORE_LOG_FILE);
 	//env_parser.update_default_option("config-file", ETHCORE_CONFIG_FILE);
-	env_parser.add_option(rofl::coption(true, NO_ARGUMENT,'D',"daemonize","daemonize",""));
+	env_parser.add_option(rofl::coption(true, NO_ARGUMENT,'D',"daemonize","daemonize", ""));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'l', "logfile", "set log-file", std::string(BASEBOX_LOG_FILE)));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'c', "config-file", "set config-file", std::string(BASEBOX_CONFIG_FILE)));
 	env_parser.add_option(rofl::coption(true, REQUIRED_ARGUMENT, 'i', "pidfile", "set pid-file", std::string(BASEBOX_PID_FILE)));
@@ -72,6 +72,14 @@ cbasebox::run(int argc, char** argv)
 	}
 	if (env_parser.is_arg_set("debug")) {
 		rofl_debug = core_debug = atoi(env_parser.get_arg("debug").c_str());
+	}
+
+	/*
+	* extract help flag
+	*/
+	if (env_parser.is_arg_set("help")) {
+		std::cout << env_parser.get_usage((char *)"baseboxd");
+		exit(0);
 	}
 
 	/*

@@ -63,7 +63,7 @@ make install
 
 Currently, baseboxd uses a configuration file for storing control 
 and management information. An example baseboxd.conf file is available
-in directory `basebox/src/baseboxd`. See below:
+in directory `src/baseboxd/baseboxd.conf`. See below:
 
 ```
 #
@@ -239,3 +239,12 @@ virtual ports according to your needs, e.g., assigning IP addresses
 and routes. baseboxd will map this information down to the attached
 datapath element and establish shortcuts for packet forwarding.
 
+## Development
+
+Here some useful commands:
+
+```bash
+cd build/src/baseboxd/
+./baseboxd --help # checkout the options of baseboxd
+./baseboxd -d7  # show more stuff
+```
