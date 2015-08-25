@@ -24,41 +24,42 @@ baseboxd aims towards easy extensibility for adding new protocols
 like GTP, GRE, and so on that typically require basic Ethernet and 
 or IP support.
 
-# Version
+## Version
 
 There is no stable release yet. Current development version is
 v0.6.0dev and v0.6 is supposed to be the first useful release
 of baseboxd.
 
-# Requirements
+## Requirements
+
+In the `Vagrantfile` you can find all commands to install the dependencies.
+If you choose to use it, please install Vagrant and use `vagrant up` to initialize/start the machine.
+Then you can ssh into the machine with `vagrant ssh`.
 
 - A modern GNU build-system (autoconf, automake, libtool, ...)
 - GNU/Linux and libc development headers
 - pkg-config
-- ROFL libraries installed, see [1] and [2]
-- Configuration File Library (libconfig) [3]
-- Network Protocol Library Suite 3.2.x (libnl) [4]
+- ROFL libraries installed, see [here](http://www.roflibs.org/) and [here](https://github.com/bisdn/rofl-core )
+- Configuration File Library, [libconfig](http://www.hyperrealm.com/libconfig/)
+- Network Protocol Library Suite 3.2.x, [libnl](http://www.infradead.org/~tgr/libnl/)
 - [optional] if you want to run automatic tests (make check), libcunit and libcppunit are required.
 
-[1] http://www.roflibs.org/ 
+Even if you do not intend to use vagrant, please see the `Vagrantfile` for more specifics on the requirements (version numbers, branches, etc.)
 
-[2] https://github.com/bisdn/rofl-core 
-
-[3] http://www.hyperrealm.com/libconfig/ 
-
-[4] http://www.infradead.org/~tgr/libnl/ 
-
-# Installation
+## Installation
 
 Install the dependencies and run:
 
-        sh# ./autogen.sh
-        sh# cd build
-        sh# ../configure
-        sh# make
-        sh# make install
+```bash
+# cd /vagrant
+./autogen.sh
+cd build
+../configure
+make
+make install
+```
 
-# Configuration
+## Configuration
 
 Currently, baseboxd uses a configuration file for storing control 
 and management information. An example baseboxd.conf file is available
