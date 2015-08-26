@@ -35,6 +35,8 @@ of baseboxd.
 In the `Vagrantfile` you can find all commands to install the dependencies.
 If you choose to use it, please install Vagrant and use `vagrant up` to initialize/start the machine.
 Then you can ssh into the machine with `vagrant ssh`.
+Please make sure you have an uptodate vagrant installation (>=1.7.x). The simplest is to download their package from [their website](https://www.vagrantup.com/downloads.html) and install it.
+If you want to stop the machine, please use `vagrant halt`. If you want to remove the machine and reprovision it run: `vagrant destroy; vagrant up`.
 
 - A modern GNU build-system (autoconf, automake, libtool, ...)
 - GNU/Linux and libc development headers
