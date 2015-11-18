@@ -53,7 +53,8 @@ public:
 		ifindex(0),
 		lladdr(rofl::cmacaddr("00:00:00:00:00:00")),
 		family(0),
-		type(0) {};
+		type(0),
+       		vlan(0)	{};
 
 	/**
 	 *
@@ -82,6 +83,7 @@ public:
 		lladdr		= neigh.lladdr;
 		family 		= neigh.family;
 		type		= neigh.type;
+		vlan		= neigh.vlan;
 
 		return *this;
 	};
@@ -107,6 +109,7 @@ public:
 		ifindex	= rtnl_neigh_get_ifindex(neigh);
 		family	= rtnl_neigh_get_family(neigh);
 		type	= rtnl_neigh_get_type(neigh);
+		vlan	= rtnl_neigh_get_vlan(neigh);
 
 		memset(s_buf, 0, sizeof(s_buf));
 		nl_addr2str(rtnl_neigh_get_lladdr(neigh), s_buf, sizeof(s_buf));
@@ -189,6 +192,12 @@ public:
 	int
 	get_type() const { return type; };
 
+	/**
+	 *
+	 */
+	int
+	get_vlan() const { return vlan; };
+
 public:
 
 	friend std::ostream&
@@ -200,6 +209,7 @@ public:
 		os << rofcore::indent(2) << "<lladdr: " 	<< neigh.lladdr.str() 	<< " >" << std::endl;
 		os << rofcore::indent(2) << "<family: " 	<< neigh.family 	<< " >" << std::endl;
 		os << rofcore::indent(2) << "<type: " 		<< neigh.type 		<< " >" << std::endl;
+		os << rofcore::indent(2) << "<vlan: " 		<< neigh.vlan		<< " >" << std::endl;
 		return os;
 	};
 
@@ -211,6 +221,7 @@ private:
 	rofl::cmacaddr	lladdr;
 	int				family;
 	int				type;
+	int				vlan;
 };
 
 

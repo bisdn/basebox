@@ -52,11 +52,10 @@ else
 fi
 
 # check for libraries
-PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.1 libnl-route-3.0 >= 3.1, [have_libnl3=yes], [have_libnl3=no])
-if (test "${have_libnl3}" = "yes"); then
-	CPPFLAGS+="$LIBNL3_CFLAGS"
-	LIBS+="$LIBNL3_LIBS"
-fi
+PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.26 libnl-route-3.0 >= 3.2.26,
+  [ CPPFLAGS+="$LIBNL3_CFLAGS"
+	LIBS+="$LIBNL3_LIBS" ],
+  [ AC_MSG_ERROR([unable to find a recent version of libnl-3]) ])
 
 PKG_CHECK_MODULES([ROFL], rofl_common >= 0.6.0, [have_rofl=yes], [have_rofl=no])
 if (test "${have_rofl}" = "yes"); then
