@@ -24,13 +24,13 @@ AC_ARG_ENABLE(debug,
 	AS_HELP_STRING([--enable-debug], [turn on debug mode [default=no]])
 		, , enable_debug=$debug_default)
 if test "$enable_debug" = "yes"; then
-	CFLAGS="-g -O0"
-	CXXFLAGS="-g -O0 -fno-inline"
+	CFLAGS="$CFLAGS -g -O0"
+	CXXFLAGS="$CXXFLAGS -g -O0 -fno-inline"
 	AC_DEFINE(DEBUG)
 	AC_MSG_RESULT(yes)
 else
-	CXXFLAGS="-O3 -fomit-frame-pointer"
-	CFLAGS="-O3 -fomit-frame-pointer"
+	CXXFLAGS="$CXXFLAGS -O3 -fomit-frame-pointer"
+	CFLAGS="$CFLAGS -O3 -fomit-frame-pointer"
 	AC_DEFINE(NDEBUG)
 	AC_MSG_RESULT(no)
 fi
@@ -51,26 +51,23 @@ else
 	AC_MSG_RESULT(no)
 fi
 
-
-
+# check for libraries
 PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.1 libnl-route-3.0 >= 3.1, [have_libnl3=yes], [have_libnl3=no])
 if (test "${have_libnl3}" = "yes"); then
-        CPPFLAGS+="$LIBNL3_CFLAGS"
-        LIBS+="$LIBNL3_LIBS"
+	CPPFLAGS+="$LIBNL3_CFLAGS"
+	LIBS+="$LIBNL3_LIBS"
 fi
 
 PKG_CHECK_MODULES([ROFL], rofl_common >= 0.6.0, [have_rofl=yes], [have_rofl=no])
 if (test "${have_rofl}" = "yes"); then
-        CPPFLAGS+="$ROFL_CFLAGS"
-        LIBS+="$ROFL_LIBS"
+	CPPFLAGS+="$ROFL_CFLAGS"
+	LIBS+="$ROFL_LIBS"
 fi
-
-
 
 PKG_CHECK_MODULES([LIBCONFIGXX], [libconfig++ >= 1.4], [have_libconfig=yes], AC_MSG_ERROR([libconfig++ 1.4 or newer not found.]))
 if (test "${have_libconfig}" = "yes"); then
-        CPPFLAGS+="$LIBCONFIGXX_CFLAGS"
-        LIBS+="$LIBCONFIGXX_LIBS"
+	CPPFLAGS+="$LIBCONFIGXX_CFLAGS"
+	LIBS+="$LIBCONFIGXX_LIBS"
 fi
 
 # todo: add http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx_11.html
