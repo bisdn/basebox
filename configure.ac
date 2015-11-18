@@ -57,17 +57,15 @@ PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.26 libnl-route-3.0 >= 3.2.26,
 	LIBS+="$LIBNL3_LIBS" ],
   [ AC_MSG_ERROR([unable to find a recent version of libnl-3]) ])
 
-PKG_CHECK_MODULES([ROFL], rofl_common >= 0.6.0, [have_rofl=yes], [have_rofl=no])
-if (test "${have_rofl}" = "yes"); then
-	CPPFLAGS+="$ROFL_CFLAGS"
-	LIBS+="$ROFL_LIBS"
-fi
+PKG_CHECK_MODULES([ROFL], rofl_common >= 0.6.0,
+  [ CPPFLAGS+="$ROFL_CFLAGS"
+	LIBS+="$ROFL_LIBS" ],
+  [ AC_MSG_ERROR([unable to find a recent version of rofl_common]) ])
 
-PKG_CHECK_MODULES([LIBCONFIGXX], [libconfig++ >= 1.4], [have_libconfig=yes], AC_MSG_ERROR([libconfig++ 1.4 or newer not found.]))
-if (test "${have_libconfig}" = "yes"); then
-	CPPFLAGS+="$LIBCONFIGXX_CFLAGS"
-	LIBS+="$LIBCONFIGXX_LIBS"
-fi
+PKG_CHECK_MODULES([LIBCONFIGXX], [libconfig++ >= 1.4],
+  [ CPPFLAGS+="$LIBCONFIGXX_CFLAGS"
+	LIBS+="$LIBCONFIGXX_LIBS"],
+  [ AC_MSG_ERROR([libconfig++ 1.4 or newer not found.])] )
 
 # todo: add http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx_11.html
 CXXFLAGS="$CXXFLAGS -std=c++11"
