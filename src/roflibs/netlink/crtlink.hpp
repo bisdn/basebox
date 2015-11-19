@@ -124,6 +124,7 @@ public:
 
 		addrs_in4	= rtlink.addrs_in4;
 		addrs_in6	= rtlink.addrs_in6;
+		neighs_ll	= rtlink.neighs_ll;
 		neighs_in4	= rtlink.neighs_in4;
 		neighs_in6	= rtlink.neighs_in6;
 
@@ -287,6 +288,7 @@ public:
 
 		{ rofcore::indent i(2); os << rtlink.addrs_in4; };
 		{ rofcore::indent i(2); os << rtlink.addrs_in6; };
+		{ rofcore::indent i(2); os << rtlink.neighs_ll; };
 		{ rofcore::indent i(2); os << rtlink.neighs_in4; };
 		{ rofcore::indent i(2); os << rtlink.neighs_in6; };
 
@@ -325,6 +327,7 @@ public:
 		ss << maddr.str() << " brd " << bcast.str() << std::endl;
 		if (not addrs_in4.empty())  ss << addrs_in4.str();
 		if (not addrs_in6.empty())  ss << addrs_in6.str();
+		if (not neighs_ll.empty())  ss << neighs_ll.str();
 		if (not neighs_in4.empty()) ss << neighs_in4.str();
 		if (not neighs_in6.empty()) ss << neighs_in6.str();
 		return ss.str();
