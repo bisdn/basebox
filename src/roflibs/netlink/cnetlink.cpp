@@ -205,28 +205,52 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 {
 	try {
 		if (std::string(nl_object_get_type(obj)) != std::string("route/link")) {
-			logging::debug << "cnetlink::route_link_cb() ignoring non link object received" << std::endl;
+			logging::warn << "cnetlink::route_link_cb() ignoring non link object received" << std::endl;
 			return;
 		}
 
 		unsigned int ifindex = rtnl_link_get_ifindex((struct rtnl_link*)obj);
-
 		nl_object_get(obj); // get reference to object
-
 		crtlink rtlink((struct rtnl_link*)obj);
 
 		switch (action) {
 		case NL_ACT_NEW: {
-			cnetlink::get_instance().set_links().add_link(rtlink); // fixme this might overwrite addr/neighs/routes (due to missing entries in the cache)
-			logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
-			cnetlink::get_instance().notify_link_created(ifindex);
+			switch(rtlink.get_family()) {
+			case AF_BRIDGE:
+				/* link got enslaved, check if its existing and update */
+				if (cnetlink::get_instance().get_links().has_link(rtlink.get_ifindex())) {
+
+					// todo this could be optimized by just changing the existing link
+					rtlink.set_addrs_in4() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_addrs_in4();
+					rtlink.set_addrs_in6() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_addrs_in6();
+					rtlink.set_neighs_in4() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_in4();
+					rtlink.set_neighs_in6() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_in6();
+					rtlink.set_neighs_ll() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_ll();
+
+					cnetlink::get_instance().set_links().add_link(rtlink); // overwrite old link
+					logging::notice << "link new (bridge slave): " << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+					cnetlink::get_instance().notify_link_created(ifindex);
+				} else {
+					// fixme can this happen?
+					logging::crit << "unexpected behavior" << std::endl;
+				}
+
+				break;
+			default:
+				cnetlink::get_instance().set_links().add_link(rtlink); // fixme this might overwrite addr/neighs/routes (due to missing entries in the cache)
+				logging::notice << "link new: " << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				cnetlink::get_instance().notify_link_created(ifindex);
+				break;
+			}
 		} break;
 		case NL_ACT_CHANGE: {
+			 // fixme this might overwrite addr/neighs/routes (due to missing entries in the cache)
 			cnetlink::get_instance().set_links().set_link(rtlink);
 			logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			cnetlink::get_instance().notify_link_updated(ifindex);
 		} break;
 		case NL_ACT_DEL: {
+			// xxx check if this has to be handled like new
 			//notify_link_deleted(ifindex);
 			cnetlink::get_instance().set_links().drop_link(ifindex);
 			logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
