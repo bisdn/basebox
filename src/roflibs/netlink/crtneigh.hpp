@@ -54,7 +54,7 @@ public:
 		lladdr(rofl::cmacaddr("00:00:00:00:00:00")),
 		family(0),
 		type(0),
-       		vlan(0)	{};
+		vlan(0)	{};
 
 	/**
 	 *
