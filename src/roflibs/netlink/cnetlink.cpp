@@ -203,16 +203,15 @@ cnetlink::handle_revent(int fd)
 void
 cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data)
 {
+	if (std::string(nl_object_get_type(obj)) != std::string("route/link")) {
+		logging::warn << "cnetlink::route_link_cb() ignoring non link object received" << std::endl;
+		return;
+	}
+
+	unsigned int ifindex = rtnl_link_get_ifindex((struct rtnl_link*)obj);
+	crtlink rtlink((struct rtnl_link*)obj);
+
 	try {
-		if (std::string(nl_object_get_type(obj)) != std::string("route/link")) {
-			logging::warn << "cnetlink::route_link_cb() ignoring non link object received" << std::endl;
-			return;
-		}
-
-		unsigned int ifindex = rtnl_link_get_ifindex((struct rtnl_link*)obj);
-		nl_object_get(obj); // get reference to object
-		crtlink rtlink((struct rtnl_link*)obj);
-
 		switch (action) {
 		case NL_ACT_NEW: {
 			switch(rtlink.get_family()) {
@@ -260,8 +259,6 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 			logging::warn << "route/link: unknown NL action" << std::endl;
 		}
 		}
-
-		nl_object_put(obj); // release reference to object
 
 	} catch (eNetLinkNotFound& e) {
 		// NL_ACT_CHANGE => ifindex not found
