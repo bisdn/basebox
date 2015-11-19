@@ -252,9 +252,9 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 		case NL_ACT_DEL: {
 			// xxx check if this has to be handled like new
 			//notify_link_deleted(ifindex);
-			cnetlink::get_instance().set_links().drop_link(ifindex);
-			logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			cnetlink::get_instance().notify_link_deleted(ifindex);
+			logging::notice << "link deleted: " << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+			cnetlink::get_instance().set_links().drop_link(ifindex);
 		} break;
 		default: {
 			logging::debug << "route/link: unknown NL action" << std::endl;
