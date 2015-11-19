@@ -189,7 +189,7 @@ cnetlink::handle_revent(int fd)
 		logging::debug << "cnetlink #processed=" << rv << std::endl;
 	}
 
-	// fixme these should rather be event based
+	// fixme check if this is necessary, if so then this should rather be event based
 	update_link_cache();
 
 
@@ -257,7 +257,7 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 			cnetlink::get_instance().set_links().drop_link(ifindex);
 		} break;
 		default: {
-			logging::debug << "route/link: unknown NL action" << std::endl;
+			logging::warn << "route/link: unknown NL action" << std::endl;
 		}
 		}
 
@@ -342,7 +342,7 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 		} break;
 		default: {
-			logging::debug << "route/addr: unknown NL action" << std::endl;
+			logging::warn << "route/addr: unknown NL action" << std::endl;
 		}
 		}
 		logging::trace << "[roflibs][cnetlink][route_addr_cb] status" << std::endl << cnetlink::get_instance();
@@ -425,7 +425,7 @@ cnetlink::route_route_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 			}
 		} break;
 		default: {
-			logging::debug << "route/route: unknown NL action" << std::endl;
+			logging::warn << "route/route: unknown NL action" << std::endl;
 		}
 		}
 		logging::trace << "[roflibs][cnetlink][route_route_cb] status" << std::endl << cnetlink::get_instance();
@@ -531,7 +531,7 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 			}
 		} break;
 		default: {
-			logging::debug << "route/addr: unknown NL action" << std::endl;
+			logging::warn << "route/addr: unknown NL action" << std::endl;
 		}
 		}
 		logging::trace << "[roflibs][cnetlink][route_neigh_cb] status" << std::endl << cnetlink::get_instance();
