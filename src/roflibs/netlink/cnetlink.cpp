@@ -216,22 +216,26 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 		case NL_ACT_NEW: {
 			switch(rtlink.get_family()) {
 			case AF_BRIDGE:
-				/* link got enslaved, check if its existing and update */
-				if (cnetlink::get_instance().get_links().has_link(rtlink.get_ifindex())) {
-
-					// todo this could be optimized by just changing the existing link
-					rtlink.set_addrs_in4() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_addrs_in4();
-					rtlink.set_addrs_in6() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_addrs_in6();
-					rtlink.set_neighs_in4() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_in4();
-					rtlink.set_neighs_in6() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_in6();
-					rtlink.set_neighs_ll() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_ll();
+				if (0 == rtlink.get_master()) {
+					/* new bridge */
+					cnetlink::get_instance().set_links().add_link(rtlink); // overwrite old link
+					logging::notice << "link new (bridge master): " << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+					cnetlink::get_instance().notify_link_created(ifindex);
+				} else {
+					/* link got enslaved, check if its existing and update */
+					if (cnetlink::get_instance().get_links().has_link(rtlink.get_ifindex())) {
+						// fixme merge old and new data
+						// todo this could be optimized by just changing the existing link
+						rtlink.set_addrs_in4() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_addrs_in4();
+						rtlink.set_addrs_in6() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_addrs_in6();
+						rtlink.set_neighs_in4() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_in4();
+						rtlink.set_neighs_in6() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_in6();
+						rtlink.set_neighs_ll() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_ll();
+					}
 
 					cnetlink::get_instance().set_links().add_link(rtlink); // overwrite old link
 					logging::notice << "link new (bridge slave): " << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 					cnetlink::get_instance().notify_link_created(ifindex);
-				} else {
-					// fixme can this happen?
-					logging::crit << "unexpected behavior" << std::endl;
 				}
 
 				break;
