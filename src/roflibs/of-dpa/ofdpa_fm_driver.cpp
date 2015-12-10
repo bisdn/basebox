@@ -111,9 +111,9 @@ ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
 					vid | rofl::openflow::OFPVID_PRESENT));
 
 	// set vrf
-	fm.set_instructions().set_inst_apply_actions().set_actions().
-			add_action_set_field(rofl::cindex(1)).set_oxm(
-					coxmatch_ofb_vrf(vid)); // currently vid == vrf
+//	fm.set_instructions().set_inst_apply_actions().set_actions().
+//			add_action_set_field(rofl::cindex(1)).set_oxm(
+//					coxmatch_ofb_vrf(vid)); // currently vid == vrf
 
 	fm.set_instructions().set_inst_goto_table().set_table_id(
 			OFDPA_FLOW_TABLE_ID_TERMINATION_MAC);
@@ -147,8 +147,8 @@ ofdpa_fm_driver::enable_port_vid_ingress(uint16_t vid, uint32_t port_no)
 	fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT, 0x1fff);
 
 	// set vrf
-	fm.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(
-			rofl::cindex(0)).set_oxm(coxmatch_ofb_vrf(vid)); // currently vid == vrf
+//	fm.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(
+//			rofl::cindex(0)).set_oxm(coxmatch_ofb_vrf(vid)); // currently vid == vrf
 
 	fm.set_instructions().set_inst_goto_table().set_table_id(
 			OFDPA_FLOW_TABLE_ID_TERMINATION_MAC);
