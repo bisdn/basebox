@@ -226,6 +226,8 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id,
 		// update arp policy
 		enable_policy_arp(vid, group_id, true);
 
+		usleep(500);
+
 		// delete old entry
 		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 
