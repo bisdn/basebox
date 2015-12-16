@@ -52,7 +52,7 @@ ofdpa_bridge::add_interface(const uint32_t of_port_no)
 	// enable arp flooding as well
 
 	if (1 == l2_domain.size()) {
-		fm_driver.enable_policy_arp(vid, group, 1 != l2_domain.size());
+		fm_driver.enable_policy_arp(vid, group);
 	}
 }
 
