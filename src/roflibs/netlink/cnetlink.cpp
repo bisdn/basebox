@@ -203,6 +203,7 @@ cnetlink::handle_revent(int fd)
 void
 cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int action, void* data)
 {
+	nl_object_get(obj); // increment reference counter by one
 	if (std::string(nl_object_get_type(obj)) != std::string("route/link")) {
 		logging::warn << "cnetlink::route_link_cb() ignoring non link object received" << std::endl;
 		return;
@@ -210,6 +211,8 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 	unsigned int ifindex = rtnl_link_get_ifindex((struct rtnl_link*)obj);
 	crtlink rtlink((struct rtnl_link*)obj);
+
+	nl_object_put(obj); // decrement reference counter by one
 
 	try {
 		switch (action) {
