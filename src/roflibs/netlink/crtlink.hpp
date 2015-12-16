@@ -19,16 +19,10 @@
 #include <rofl/common/logging.h>
 #include <rofl/common/cmemory.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include <netlink/object.h>
 #include <netlink/route/link.h>
 #include <inttypes.h>
 #include <linux/if_arp.h>
-#ifdef __cplusplus
-}
-#endif
 
 #include <roflibs/netlink/crtaddrs.hpp>
 #include <roflibs/netlink/crtneighs.hpp>
