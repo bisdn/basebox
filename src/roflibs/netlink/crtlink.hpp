@@ -21,6 +21,7 @@
 
 #include <netlink/object.h>
 #include <netlink/route/link.h>
+#include <netlink/route/link/bridge.h>
 #include <inttypes.h>
 #include <linux/if_arp.h>
 
@@ -83,6 +84,11 @@ public:
 		ifindex	= rtnl_link_get_ifindex(link);
 		mtu 	= rtnl_link_get_mtu(link);
 		master = rtnl_link_get_master(link);
+
+		if (AF_BRIDGE == af) {
+			struct rtnl_link_bridge_vlan *vlans = rtnl_link_bridge_get_port_vlan(link);
+			memcpy(&this->br_vlan, vlans, sizeof(struct rtnl_link_bridge_vlan));
+		}
 
 		nl_object_put((struct nl_object*)link); // decrement reference counter by one
 	};
@@ -381,6 +387,7 @@ private:
 	unsigned int			mtu;		// maximum transfer unit
 	int						master;		// ifindex of master interface
 
+	struct rtnl_link_bridge_vlan	br_vlan;
 //	crtaddrs_in4			addrs_in4;
 //	crtaddrs_in6			addrs_in6;
 //	crtneighs_ll			neighs_ll;
