@@ -122,6 +122,7 @@ public:
 		mtu		= rtlink.mtu;
 		master	= rtlink.master;
 
+		memcpy(&br_vlan, &rtlink.br_vlan, sizeof(rtnl_link_bridge_vlan));
 //		addrs_in4	= rtlink.addrs_in4;
 //		addrs_in6	= rtlink.addrs_in6;
 //		neighs_ll	= rtlink.neighs_ll;
@@ -286,6 +287,7 @@ public:
 		os << rofcore::indent(2) << "<mtu: " << rtlink.mtu 			<< " >" << std::endl;
 		os << rofcore::indent(2) << "<master: " << rtlink.master	<< " >" << std::endl;
 
+		// xxx print vlans
 //		{ rofcore::indent i(2); os << rtlink.addrs_in4; };
 //		{ rofcore::indent i(2); os << rtlink.addrs_in6; };
 //		{ rofcore::indent i(2); os << rtlink.neighs_ll; };
@@ -325,6 +327,8 @@ public:
 		else
 			ss << "unknown ";
 		ss << maddr.str() << " brd " << bcast.str() << std::endl;
+
+		// xxx print vlans
 //		if (not addrs_in4.empty())  ss << addrs_in4.str();
 //		if (not addrs_in6.empty())  ss << addrs_in6.str();
 //		if (not neighs_ll.empty())  ss << neighs_ll.str();
