@@ -277,8 +277,6 @@ switch_behavior_ofdpa::link_created(unsigned int ifindex)
 			// bridge (master)
 			rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: is new bridge" << std::endl;
 		}
-
-		// new bridge slaves will be shown as new link as well
 	}
 }
 
