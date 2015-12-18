@@ -143,11 +143,16 @@ switch_behavior_ofdpa::handle_srcmac_table(
 	rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
 	const cofport &port = dpt.get_ports().get_port(msg.get_match().get_in_port());
 	const rofcore::ctapdev &tapdev = get_tap_dev(dptid, port.get_name());
-
 	// update bridge fdb
-	rofcore::cnetlink::get_instance().add_neigh_ll(tapdev.get_ifindex(), eth_frame.get_dl_src());
 
-	bridge.add_mac_to_fdb(eth_frame.get_dl_src(), msg.get_match().get_in_port(), false); // xxx remove when done via netlink?
+	try {
+		rofcore::cnetlink::get_instance().add_neigh_ll(tapdev.get_ifindex(), eth_frame.get_dl_src());
+		bridge.add_mac_to_fdb(eth_frame.get_dl_src(), msg.get_match().get_in_port(), false);
+	} catch (rofcore::eNetLinkNotFound &e) {
+		rofcore::logging::notice << __FUNCTION__ << ": cannot add neighbor to interface" << std::endl;
+	} catch (rofcore::eNetLinkFailed &e) {
+		rofcore::logging::crit << __FUNCTION__ << ": netlink failed" << std::endl;
+	}
 }
 
 void

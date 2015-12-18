@@ -944,7 +944,9 @@ cnetlink::notify_route_in6_deleted(uint8_t table_id, unsigned int adindex) {
 void
 cnetlink::add_neigh_ll(int ifindex, const rofl::caddress_ll& addr)
 {
-	// fixme check if ifindex is a bridge interface
+	if (AF_BRIDGE != cnetlink::get_instance().get_links().get_link(ifindex).get_family()) {
+		throw eNetLinkNotFound("cnetlink::add_neigh_ll(): no bridge link");
+	}
 
 	struct rtnl_neigh *neigh = rtnl_neigh_alloc();
 
