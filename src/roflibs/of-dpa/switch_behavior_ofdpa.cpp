@@ -99,7 +99,7 @@ switch_behavior_ofdpa::init_ports()
 			const cofport* port = i.second;
 			if (not has_tap_dev(dptid, port->get_name())) {
 				rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] adding port " << port->get_name() << " with portno=" << port->get_port_no() << std::endl;
-				add_tap_dev(dptid, port->get_name(), default_pvid, port->get_hwaddr());
+				add_tap_dev(dptid, port->get_name(), default_pvid, port->get_hwaddr()); // XXX why pvid here?
 			}
 		}
 
@@ -235,7 +235,7 @@ switch_behavior_ofdpa::link_created(unsigned int ifindex)
 
 	// currently ignore all interfaces besides the tap devs
 	if (not has_tap_dev(this->dptid, rtl.get_devname())) {
-		rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+		rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
 				<< "]: ignore interface " << rtl.get_devname() << std::endl
 				<< rtl;
 		return;
