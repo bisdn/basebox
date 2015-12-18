@@ -112,12 +112,25 @@ cnetlink::init_caches()
 	while (0 != obj) {
 		nl_object_get(obj);
 		// not handled at all? was #if 0
-#if 0
+		unsigned int ifindex = rtnl_neigh_get_ifindex((struct rtnl_neigh*)obj);
 		switch (rtnl_neigh_get_family((struct rtnl_neigh*)obj)) {
-		case AF_INET:	set_neigh_in4(crtneigh_in4((struct rtnl_neigh*)obj)); break;
-		case AF_INET6:	set_neigh_in6(crtneigh_in6((struct rtnl_neigh*)obj)); break;
+		case AF_INET:
+			// set_neigh_in4(crtneigh_in4((struct rtnl_neigh*)obj));
+			if (rtlinks.has_link(ifindex)) {
+				rtlinks.set_link(ifindex).set_neighs_in4().add_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
+			}
+			break;
+		case AF_INET6:
+			if (rtlinks.has_link(ifindex)) {
+				rtlinks.set_link(ifindex).set_neighs_in6().add_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
+			}
+			break;
+		case AF_BRIDGE:
+			if (rtlinks.has_link(ifindex)) {
+				rtlinks.set_link(ifindex).set_neighs_ll().add_neigh(crtneigh((struct rtnl_neigh*)obj));
+			}
+			break;
 		}
-#endif
 		nl_object_put(obj);
 		obj = nl_cache_get_next(obj);
 	}
