@@ -57,7 +57,9 @@ public:
 		arptype(0),
 		ifindex(0),
 		mtu(0),
-		master(0) {};
+		master(0) {
+		memset(&br_vlan, 0, sizeof(struct rtnl_link_bridge_vlan));
+	};
 
 	/**
 	 *
@@ -87,7 +89,13 @@ public:
 
 		if (AF_BRIDGE == af) {
 			struct rtnl_link_bridge_vlan *vlans = rtnl_link_bridge_get_port_vlan(link);
-			memcpy(&this->br_vlan, vlans, sizeof(struct rtnl_link_bridge_vlan));
+			if (vlans) {
+				memcpy(&br_vlan, vlans, sizeof(struct rtnl_link_bridge_vlan));
+			} else {
+				memset(&br_vlan, 0, sizeof(struct rtnl_link_bridge_vlan));
+			}
+		} else {
+			memset(&br_vlan, 0, sizeof(struct rtnl_link_bridge_vlan));
 		}
 
 		nl_object_put((struct nl_object*)link); // decrement reference counter by one
@@ -266,9 +274,79 @@ public:
 	get_master() const { return master; }
 
 
+private:
+	static int find_next_bit(int i, uint32_t x)
+	{
+		int j;
+
+		if (i >= 32)
+			return -1;
+
+		/* find first bit */
+		if (i < 0)
+			return __builtin_ffs(x);
+
+		/* mask off prior finds to get next */
+		j = __builtin_ffs(x >> i);
+		return j ? j + i : 0;
+	}
+
+	static std::string dump_bitmap(const uint32_t *b)
+	{
+		int i = -1, j, k;
+		int start = -1, prev = -1;
+		int done, found = 0;
+
+		std::stringstream ss;
+
+		for (k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
+			int base_bit;
+			uint32_t a = b[k];
+
+			base_bit = k * 32;
+			i = -1;
+			done = 0;
+			while (!done) {
+				j = find_next_bit(i, a);
+				if (j > 0) {
+					/* first hit of any bit */
+					if (start < 0 && prev < 0) {
+						start = prev = j - 1 + base_bit;
+						goto next;
+					}
+					/* this bit is a continuation of prior bits */
+					if (j - 2 + base_bit == prev) {
+						prev++;
+						goto next;
+					}
+				} else
+					done = 1;
+
+				if (start >= 0) {
+					found++;
+					if (done && k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN - 1)
+						break;
+
+					ss << " " << start;
+					if (start != prev)
+						ss << "-" << prev;
+
+					if (done)
+						break;
+				}
+				if (j > 0)
+					start = prev = j - 1 + base_bit;
+	next:
+				i = j;
+			}
+		}
+		if (!found)
+			ss << " <none>";
+
+		return ss.str();
+	}
+
 public:
-
-
 	/**
 	 *
 	 */
@@ -287,7 +365,12 @@ public:
 		os << rofcore::indent(2) << "<mtu: " << rtlink.mtu 			<< " >" << std::endl;
 		os << rofcore::indent(2) << "<master: " << rtlink.master	<< " >" << std::endl;
 
-		// xxx print vlans
+		if (AF_BRIDGE == rtlink.af) {
+			os << rofcore::indent(2) << "<pvid: " << rtlink.br_vlan.pvid  << " >" << std::endl;
+			os << rofcore::indent(2) << "<vlans (all): " << dump_bitmap(rtlink.br_vlan.vlan_bitmap) << " >" << std::endl;
+			os << rofcore::indent(2) << "<vlans (untagged): " <<  dump_bitmap(rtlink.br_vlan.untagged_bitmap) << " >" << std::endl;
+		}
+
 //		{ rofcore::indent i(2); os << rtlink.addrs_in4; };
 //		{ rofcore::indent i(2); os << rtlink.addrs_in6; };
 //		{ rofcore::indent i(2); os << rtlink.neighs_ll; };
@@ -328,15 +411,20 @@ public:
 			ss << "unknown ";
 		ss << maddr.str() << " brd " << bcast.str() << std::endl;
 
-		// xxx print vlans
+		if (AF_BRIDGE == af) {
+			ss << "pvid: " << br_vlan.pvid  << std::endl;
+			ss << "vlans (all): " << dump_bitmap(br_vlan.vlan_bitmap) << std::endl;
+			ss << "vlans (untagged): " <<  dump_bitmap(br_vlan.untagged_bitmap) << std::endl;
+		}
+
 //		if (not addrs_in4.empty())  ss << addrs_in4.str();
 //		if (not addrs_in6.empty())  ss << addrs_in6.str();
 //		if (not neighs_ll.empty())  ss << neighs_ll.str();
 //		if (not neighs_in4.empty()) ss << neighs_in4.str();
 //		if (not neighs_in6.empty()) ss << neighs_in6.str();
+
 		return ss.str();
 	};
-
 
 	/**
 	 *
@@ -356,7 +444,6 @@ public:
 			return (ifindex == p.second->ifindex);
 		};
 	};
-
 
 	/**
 	 *

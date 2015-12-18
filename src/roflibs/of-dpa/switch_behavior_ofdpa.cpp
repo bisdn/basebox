@@ -284,7 +284,7 @@ void
 switch_behavior_ofdpa::link_updated(unsigned int ifindex)
 {
 	const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
-	rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]:" << std::endl << rtl;
+	rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]:" << std::endl << rtl;
 
 	// fixme check for link de/attachments from/to bridges (i.e. check for master)
 }
@@ -293,9 +293,7 @@ void
 switch_behavior_ofdpa::link_deleted(unsigned int ifindex)
 {
 	const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
-	rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: " << std::endl << rtl;
-
-
+	rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: " << std::endl << rtl;
 
 	// todo same as in link_updated?
 }
