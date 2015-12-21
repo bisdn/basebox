@@ -263,8 +263,6 @@ public:
 
 private:
 
-	static cnetlink	*netlink;
-
 	/**
 	 *
 	 */

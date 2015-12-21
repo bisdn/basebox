@@ -9,10 +9,6 @@
 
 using namespace rofcore;
 
-cnetlink* cnetlink::netlink = (cnetlink*)0;
-
-
-
 cnetlink::cnetlink() :
 		mngr(0)
 {
@@ -148,19 +144,12 @@ cnetlink::destroy_caches()
 	nl_cache_mngr_free(mngr);
 }
 
-
-
-
-
 cnetlink&
 cnetlink::get_instance()
 {
-	if (0 == cnetlink::netlink) {
-		cnetlink::netlink = new cnetlink();
-	}
-	return *(cnetlink::netlink);
+	static cnetlink instance;
+	return instance;
 }
-
 
 void
 cnetlink::update_link_cache()
