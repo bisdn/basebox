@@ -234,21 +234,19 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 				break;
 			default:
-				cnetlink::get_instance().set_links().add_link(rtlink); // fixme this might overwrite addr/neighs/routes (due to missing entries in the cache)
+				cnetlink::get_instance().set_links().add_link(rtlink);
 				logging::notice << "link new: " << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_link_created(ifindex);
 				break;
 			}
 		} break;
 		case NL_ACT_CHANGE: {
-			 // fixme this might overwrite addr/neighs/routes (due to missing entries in the cache)
 			cnetlink::get_instance().set_links().set_link(rtlink);
 			logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			cnetlink::get_instance().notify_link_updated(ifindex);
 		} break;
 		case NL_ACT_DEL: {
 			// xxx check if this has to be handled like new
-			//notify_link_deleted(ifindex);
 			cnetlink::get_instance().notify_link_deleted(ifindex);
 			logging::notice << "link deleted: " << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			cnetlink::get_instance().set_links().drop_link(ifindex);
@@ -288,13 +286,11 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 			case AF_INET: {
 				logging::debug << "[roflibs][cnetlink][route_addr_cb] new addr_in4" << std::endl << crtaddr_in4((struct rtnl_addr*)obj);
 				unsigned int adindex = cnetlink::get_instance().addrs_in4[ifindex].add_addr(crtaddr_in4((struct rtnl_addr*)obj));
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in4_created(ifindex, adindex);
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_addr_cb] new addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
 				unsigned int adindex = cnetlink::get_instance().addrs_in6[ifindex].add_addr(crtaddr_in6((struct rtnl_addr*)obj));
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in6_created(ifindex, adindex);
 			} break;
 			}
@@ -305,13 +301,11 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 			case AF_INET: {
 				logging::debug << "[roflibs][cnetlink][route_addr_cb] updated addr_in4" << std::endl << crtaddr_in4((struct rtnl_addr*)obj);
 				unsigned int adindex = cnetlink::get_instance().addrs_in4[ifindex].set_addr(crtaddr_in4((struct rtnl_addr*)obj));
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in4_updated(ifindex, adindex);
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_addr_cb] updated addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
 				unsigned int adindex = cnetlink::get_instance().addrs_in6[ifindex].set_addr(crtaddr_in6((struct rtnl_addr*)obj));
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in6_updated(ifindex, adindex);
 			} break;
 			}
@@ -324,14 +318,12 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 				unsigned int adindex = cnetlink::get_instance().addrs_in4[ifindex].get_addr(crtaddr_in4((struct rtnl_addr*)obj));
 				cnetlink::get_instance().notify_addr_in4_deleted(ifindex, adindex);
 				cnetlink::get_instance().addrs_in4[ifindex].drop_addr(adindex);
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_addr_cb] deleted addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
 				unsigned int adindex = cnetlink::get_instance().addrs_in6[ifindex].get_addr(crtaddr_in6((struct rtnl_addr*)obj));
 				cnetlink::get_instance().notify_addr_in6_deleted(ifindex, adindex);
 				cnetlink::get_instance().addrs_in6[ifindex].drop_addr(adindex);
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			}
 
@@ -457,20 +449,17 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 			case AF_INET: {
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_in4" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().neighs_in4[ifindex].add_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in4_created(ifindex, nbindex);
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().neighs_in6[ifindex].add_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in6_created(ifindex, nbindex);
 			} break;
 			case PF_BRIDGE: {
 				// xxx implement bridge handling
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_ll" << std::endl << crtneigh((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().neighs_ll[ifindex].add_neigh(crtneigh((struct rtnl_neigh*)obj));
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_ll_created(ifindex, nbindex);
 			} break;
 
@@ -481,20 +470,17 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 			case AF_INET: {
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_in4" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().neighs_in4[ifindex].set_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in4_updated(ifindex, nbindex);
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().neighs_in6[ifindex].set_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in6_updated(ifindex, nbindex);
 			} break;
 			case PF_BRIDGE: {
 				// xxx implement bridge handling
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_ll" << std::endl << crtneigh((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().neighs_ll[ifindex].set_neigh(crtneigh((struct rtnl_neigh*)obj));
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_ll_updated(ifindex, nbindex);
 			} break;
 			}
@@ -506,14 +492,12 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 				unsigned int nbindex = cnetlink::get_instance().neighs_in4[ifindex].get_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
 				cnetlink::get_instance().notify_neigh_in4_deleted(ifindex, nbindex);
 				cnetlink::get_instance().neighs_in4[ifindex].drop_neigh(nbindex);
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
 				unsigned int nbindex = cnetlink::get_instance().neighs_in6[ifindex].get_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
 				cnetlink::get_instance().notify_neigh_in6_deleted(ifindex, nbindex);
 				cnetlink::get_instance().neighs_in6[ifindex].drop_neigh(nbindex);
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			case PF_BRIDGE: {
 				// xxx implement bridge handling
@@ -521,7 +505,6 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 				unsigned int nbindex = cnetlink::get_instance().neighs_ll[ifindex].get_neigh(crtneigh((struct rtnl_neigh*)obj));
 				cnetlink::get_instance().notify_neigh_ll_deleted(ifindex, nbindex);
 				cnetlink::get_instance().neighs_ll[ifindex].drop_neigh(nbindex);
-				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			}
 		} break;
