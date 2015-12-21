@@ -67,6 +67,8 @@ class cnetlink :
 	std::map<int, crtroutes_in4>	rtroutes_in4;	// all routes in system => key:table_id
 	std::map<int, crtroutes_in6>	rtroutes_in6;	// all routes in system => key:table_id
 
+	bool		check_links;
+	std::set<int>	missing_links;
 public:
 	std::map<int, crtaddrs_in4>			addrs_in4;
 	std::map<int, crtaddrs_in6>			addrs_in6;
@@ -271,6 +273,11 @@ public:
 
 private:
 
+	enum cnetlink_event_t {
+		EVENT_NONE			= 0,
+		EVENT_UPDATE_LINKS		= 1,
+	};
+
 	/**
 	 *
 	 */
@@ -306,11 +313,18 @@ private:
 	void
 	update_link_cache();
 
+	void
+	update_link_cache(unsigned int ifindex);
+
 	/**
 	 *
 	 */
 	void
 	handle_revent(int fd);
+
+	virtual void
+	handle_event(const rofl::cevent& ev);
+
 
 public:
 

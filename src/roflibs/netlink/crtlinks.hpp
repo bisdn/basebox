@@ -51,7 +51,6 @@ public:
 
 		return *this;
 	};
-
 public:
 
 	/**

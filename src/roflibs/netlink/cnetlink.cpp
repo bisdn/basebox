@@ -10,7 +10,8 @@
 using namespace rofcore;
 
 cnetlink::cnetlink() :
-		mngr(0)
+		mngr(0),
+		check_links(false)
 {
 	try {
 		init_caches();
@@ -155,32 +156,47 @@ cnetlink::get_instance()
 void
 cnetlink::update_link_cache()
 {
-	if (get_links().size() != nl_cache_nitems(caches[NL_LINK_CACHE])) {
+	logging::info << "[cnetlink][" << __FUNCTION__ << "] #links=" << get_links().size()
+			<< " #cacheitems=" << nl_cache_nitems(caches[NL_LINK_CACHE]) << std::endl;
 
-		logging::warn << "[cnetlink][" << __FUNCTION__ << "] #links=" << get_links().size()
-				<< " #cacheitems=" << nl_cache_nitems(caches[NL_LINK_CACHE]) << std::endl;
-
-		struct nl_sock *sk = NULL;
-		if ((sk = nl_socket_alloc()) == NULL) {
-			return;
-		}
-
-		int sd = 0;
-		if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
-			nl_socket_free(sk);
-			return;
-		}
-
-		int rv = nl_cache_refill(sk, caches[NL_LINK_CACHE]);
-		if (rv != 0) {
-			logging::error << "[cnetlink][" << __FUNCTION__ << "] nl_cache_refill failed" << std::endl;
-		}
-
-		nl_close(sk);
-		nl_socket_free(sk);
+	check_links = false;
+	struct nl_sock *sk = NULL;
+	if ((sk = nl_socket_alloc()) == NULL) {
+		return;
 	}
 
-	// fixme sync with local links
+	int sd = 0;
+	if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
+		nl_socket_free(sk);
+		return;
+	}
+
+	int rv = nl_cache_refill(sk, caches[NL_LINK_CACHE]);
+
+	nl_close(sk);
+	nl_socket_free(sk);
+	if (rv != 0) {
+		logging::error << "[cnetlink][" << __FUNCTION__ << "] nl_cache_refill failed" << std::endl;
+		return;
+	}
+
+	struct nl_object* obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
+	while (0 != obj) {
+		nl_object_get(obj);
+		int i = rtnl_link_get_ifindex((struct rtnl_link*)obj);
+		if (missing_links.find(i) != missing_links.end()) {
+			rtlinks.add_link(crtlink((struct rtnl_link*)obj));
+			missing_links.erase(i);
+		}
+		nl_object_put(obj);
+		obj = nl_cache_get_next(obj);
+	}
+
+	if (missing_links.size()) {
+		// reschedule
+		check_links = true;
+		rofl::ciosrv::notify(rofl::cevent(EVENT_UPDATE_LINKS));
+	}
 }
 
 
@@ -192,19 +208,34 @@ cnetlink::handle_revent(int fd)
 		logging::debug << "cnetlink #processed=" << rv << std::endl;
 	}
 
-	logging::warn << "[cnetlink][" << __FUNCTION__ << "] #links=" << get_links().size()
-			<< " #cacheitems=" << nl_cache_nitems(caches[NL_LINK_CACHE]) << std::endl;
-
-
-//	// fixme check if this is necessary, if so then this should rather be event based
-//	update_link_cache();
-//
-
 	// reregister fd
 	register_filedesc_r(nl_cache_mngr_get_fd(mngr));
 }
 
+/* virtual */void
+cnetlink::handle_event(const rofl::cevent& ev)
+{
+	switch (ev.get_cmd()) {
+	case EVENT_UPDATE_LINKS:
+		update_link_cache();
+		break;
+	case EVENT_NONE:
+	default:
+		break;
+	}
+}
 
+void
+cnetlink::update_link_cache(unsigned int ifindex)
+{
+	logging::notice << __FUNCTION__ << "(): missing ifindex=" << ifindex << std::endl;
+	missing_links.insert(ifindex);
+
+	if (not check_links) {
+		check_links = true;
+		rofl::ciosrv::notify(rofl::cevent(EVENT_UPDATE_LINKS));
+	}
+}
 
 /* static C-callback */
 void
@@ -278,6 +309,12 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 	unsigned int ifindex = rtnl_addr_get_ifindex((struct rtnl_addr*)obj);
 	int family = rtnl_addr_get_family((struct rtnl_addr*)obj);
+
+	try {
+		const crtlink& rtl = cnetlink::get_instance().rtlinks.get_link(ifindex);
+	} catch (crtlink::eRtLinkNotFound &e) {
+		cnetlink::get_instance().update_link_cache(ifindex);
+	}
 
 	try {
 		switch (action) {
@@ -441,6 +478,12 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 
 	int ifindex = rtnl_neigh_get_ifindex(neigh);
 	int family = rtnl_neigh_get_family((struct rtnl_neigh*)obj);
+
+	try {
+		const crtlink& rtl = cnetlink::get_instance().rtlinks.get_link(ifindex);
+	} catch (crtlink::eRtLinkNotFound &e) {
+		cnetlink::get_instance().update_link_cache(ifindex);
+	}
 
 	try {
 		switch (action) {
