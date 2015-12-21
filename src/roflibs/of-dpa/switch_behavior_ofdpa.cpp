@@ -59,6 +59,9 @@ switch_behavior_ofdpa::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& 
 
 	} else {
 		// packet is buffered
+
+		// xxx check if length of frame is available, guessing here, that
+		// the buffered flag is invalid sometimes
 		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] cannot handle buffered packet currently" << std::endl;
 	}
 }
@@ -248,19 +251,18 @@ switch_behavior_ofdpa::link_created(unsigned int ifindex)
 
 	if (AF_BRIDGE == rtl.get_family()) {
 
-		// check for new bridges
+		// check for new bridge slaves
 		if (rtl.get_master()) {
 			// slave interface
 			rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: is new slave interface" << std::endl;
 
+			// use only first bridge an of interface is attached to
 			if (not bridge.has_bridge_interface()) {
 				bridge.set_bridge_interface(rtl.get_master());
-				// get of_port_no and add the interface to the bridge
-				uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), rtl.get_devname());
-				if (port_no) {
-					bridge.add_interface(port_no);
-				}
-			} else if (bridge.get_bridge_interface() == rtl.get_master()) {
+			}
+
+			// then allow only interface to that bridge
+			if (bridge.get_bridge_interface() == rtl.get_master()) {
 				// get of_port_no and add the interface to the bridge
 				uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), rtl.get_devname());
 				if (port_no) {
@@ -272,7 +274,7 @@ switch_behavior_ofdpa::link_created(unsigned int ifindex)
 			}
 
 		} else {
-			// bridge
+			// bridge (master)
 			rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: is new bridge" << std::endl;
 		}
 
