@@ -64,6 +64,7 @@ cnetlink::init_caches()
 	if (0 != rc){
 		logging::error << "cnetlink::init_caches() add route/neigh to cache mngr" << std::endl;
 	}
+
 	struct nl_object* obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
 	while (0 != obj) {
 		nl_object_get(obj);
@@ -78,10 +79,10 @@ cnetlink::init_caches()
 		unsigned int ifindex = rtnl_addr_get_ifindex((struct rtnl_addr*)obj);
 		switch (rtnl_addr_get_family((struct rtnl_addr*)obj)) {
 		case AF_INET:
-			rtlinks.set_link(ifindex).set_addrs_in4().add_addr(crtaddr_in4((struct rtnl_addr*)obj));
+			addrs_in4[ifindex].add_addr(crtaddr_in4((struct rtnl_addr*)obj));
 			break;
 		case AF_INET6:
-			rtlinks.set_link(ifindex).set_addrs_in6().add_addr(crtaddr_in6((struct rtnl_addr*)obj));
+			addrs_in6[ifindex].add_addr(crtaddr_in6((struct rtnl_addr*)obj));
 			break;
 		}
 		nl_object_put(obj);
@@ -113,17 +114,17 @@ cnetlink::init_caches()
 		case AF_INET:
 			// set_neigh_in4(crtneigh_in4((struct rtnl_neigh*)obj));
 			if (rtlinks.has_link(ifindex)) {
-				rtlinks.set_link(ifindex).set_neighs_in4().add_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
+				neighs_in4[ifindex].add_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
 			}
 			break;
 		case AF_INET6:
 			if (rtlinks.has_link(ifindex)) {
-				rtlinks.set_link(ifindex).set_neighs_in6().add_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
+				neighs_in6[ifindex].add_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
 			}
 			break;
 		case AF_BRIDGE:
 			if (rtlinks.has_link(ifindex)) {
-				rtlinks.set_link(ifindex).set_neighs_ll().add_neigh(crtneigh((struct rtnl_neigh*)obj));
+				neighs_ll[ifindex].add_neigh(crtneigh((struct rtnl_neigh*)obj));
 			}
 			break;
 		}
@@ -191,9 +192,13 @@ cnetlink::handle_revent(int fd)
 		logging::debug << "cnetlink #processed=" << rv << std::endl;
 	}
 
-	// fixme check if this is necessary, if so then this should rather be event based
-	update_link_cache();
+	logging::warn << "[cnetlink][" << __FUNCTION__ << "] #links=" << get_links().size()
+			<< " #cacheitems=" << nl_cache_nitems(caches[NL_LINK_CACHE]) << std::endl;
 
+
+//	// fixme check if this is necessary, if so then this should rather be event based
+//	update_link_cache();
+//
 
 	// reregister fd
 	register_filedesc_r(nl_cache_mngr_get_fd(mngr));
@@ -221,27 +226,11 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 		case NL_ACT_NEW: {
 			switch(rtlink.get_family()) {
 			case AF_BRIDGE:
-				if (0 == rtlink.get_master()) {
-					/* new bridge */
-					cnetlink::get_instance().set_links().add_link(rtlink); // overwrite old link
-					logging::notice << "link new (bridge master): " << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
-					cnetlink::get_instance().notify_link_created(ifindex);
-				} else {
-					/* link got enslaved, check if its existing and update */
-					if (cnetlink::get_instance().get_links().has_link(rtlink.get_ifindex())) {
-						// fixme merge old and new data
-						// todo this could be optimized by just changing the existing link
-						rtlink.set_addrs_in4() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_addrs_in4();
-						rtlink.set_addrs_in6() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_addrs_in6();
-						rtlink.set_neighs_in4() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_in4();
-						rtlink.set_neighs_in6() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_in6();
-						rtlink.set_neighs_ll() = cnetlink::get_instance().get_links().get_link(rtlink.get_ifindex()).get_neighs_ll();
-					}
-
-					cnetlink::get_instance().set_links().add_link(rtlink); // overwrite old link
-					logging::notice << "link new (bridge slave): " << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
-					cnetlink::get_instance().notify_link_created(ifindex);
-				}
+				/* new bridge */
+				cnetlink::get_instance().set_links().add_link(rtlink); // overwrite old link
+				logging::notice << "link new (bridge " << ((0 == rtlink.get_master()) ? "master" : "slave") << "): "
+						<< cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
+				cnetlink::get_instance().notify_link_created(ifindex);
 
 				break;
 			default:
@@ -298,13 +287,13 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 			switch (family) {
 			case AF_INET: {
 				logging::debug << "[roflibs][cnetlink][route_addr_cb] new addr_in4" << std::endl << crtaddr_in4((struct rtnl_addr*)obj);
-				unsigned int adindex = cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in4().add_addr(crtaddr_in4((struct rtnl_addr*)obj));
+				unsigned int adindex = cnetlink::get_instance().addrs_in4[ifindex].add_addr(crtaddr_in4((struct rtnl_addr*)obj));
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in4_created(ifindex, adindex);
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_addr_cb] new addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
-				unsigned int adindex = cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in6().add_addr(crtaddr_in6((struct rtnl_addr*)obj));
+				unsigned int adindex = cnetlink::get_instance().addrs_in6[ifindex].add_addr(crtaddr_in6((struct rtnl_addr*)obj));
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in6_created(ifindex, adindex);
 			} break;
@@ -315,13 +304,13 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 			switch (family) {
 			case AF_INET: {
 				logging::debug << "[roflibs][cnetlink][route_addr_cb] updated addr_in4" << std::endl << crtaddr_in4((struct rtnl_addr*)obj);
-				unsigned int adindex = cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in4().set_addr(crtaddr_in4((struct rtnl_addr*)obj));
+				unsigned int adindex = cnetlink::get_instance().addrs_in4[ifindex].set_addr(crtaddr_in4((struct rtnl_addr*)obj));
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in4_updated(ifindex, adindex);
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_addr_cb] updated addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
-				unsigned int adindex = cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in6().set_addr(crtaddr_in6((struct rtnl_addr*)obj));
+				unsigned int adindex = cnetlink::get_instance().addrs_in6[ifindex].set_addr(crtaddr_in6((struct rtnl_addr*)obj));
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_addr_in6_updated(ifindex, adindex);
 			} break;
@@ -332,16 +321,16 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 			switch (family) {
 			case AF_INET: {
 				logging::debug << "[roflibs][cnetlink][route_addr_cb] deleted addr_in4" << std::endl << crtaddr_in4((struct rtnl_addr*)obj);
-				unsigned int adindex = cnetlink::get_instance().set_links().get_link(ifindex).get_addrs_in4().get_addr(crtaddr_in4((struct rtnl_addr*)obj));
+				unsigned int adindex = cnetlink::get_instance().addrs_in4[ifindex].get_addr(crtaddr_in4((struct rtnl_addr*)obj));
 				cnetlink::get_instance().notify_addr_in4_deleted(ifindex, adindex);
-				cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in4().drop_addr(adindex);
+				cnetlink::get_instance().addrs_in4[ifindex].drop_addr(adindex);
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_addr_cb] deleted addr_in6" << std::endl << crtaddr_in6((struct rtnl_addr*)obj);
-				unsigned int adindex = cnetlink::get_instance().set_links().get_link(ifindex).get_addrs_in6().get_addr(crtaddr_in6((struct rtnl_addr*)obj));
+				unsigned int adindex = cnetlink::get_instance().addrs_in6[ifindex].get_addr(crtaddr_in6((struct rtnl_addr*)obj));
 				cnetlink::get_instance().notify_addr_in6_deleted(ifindex, adindex);
-				cnetlink::get_instance().set_links().set_link(ifindex).set_addrs_in6().drop_addr(adindex);
+				cnetlink::get_instance().addrs_in6[ifindex].drop_addr(adindex);
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			}
@@ -467,20 +456,20 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 			switch (family) {
 			case AF_INET: {
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_in4" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
-				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in4().add_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
+				unsigned int nbindex = cnetlink::get_instance().neighs_in4[ifindex].add_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in4_created(ifindex, nbindex);
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
-				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in6().add_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
+				unsigned int nbindex = cnetlink::get_instance().neighs_in6[ifindex].add_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in6_created(ifindex, nbindex);
 			} break;
 			case PF_BRIDGE: {
 				// xxx implement bridge handling
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_ll" << std::endl << crtneigh((struct rtnl_neigh*)obj);
-				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_ll().add_neigh(crtneigh((struct rtnl_neigh*)obj));
+				unsigned int nbindex = cnetlink::get_instance().neighs_ll[ifindex].add_neigh(crtneigh((struct rtnl_neigh*)obj));
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_ll_created(ifindex, nbindex);
 			} break;
@@ -491,20 +480,20 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 			switch (family) {
 			case AF_INET: {
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_in4" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
-				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in4().set_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
+				unsigned int nbindex = cnetlink::get_instance().neighs_in4[ifindex].set_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in4_updated(ifindex, nbindex);
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
-				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in6().set_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
+				unsigned int nbindex = cnetlink::get_instance().neighs_in6[ifindex].set_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_in6_updated(ifindex, nbindex);
 			} break;
 			case PF_BRIDGE: {
 				// xxx implement bridge handling
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_ll" << std::endl << crtneigh((struct rtnl_neigh*)obj);
-				unsigned int nbindex = cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_ll().set_neigh(crtneigh((struct rtnl_neigh*)obj));
+				unsigned int nbindex = cnetlink::get_instance().neighs_ll[ifindex].set_neigh(crtneigh((struct rtnl_neigh*)obj));
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 				cnetlink::get_instance().notify_neigh_ll_updated(ifindex, nbindex);
 			} break;
@@ -514,24 +503,24 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 			switch (family) {
 			case AF_INET: {
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_in4" << std::endl << crtneigh_in4((struct rtnl_neigh*)obj);
-				unsigned int nbindex = cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in4().get_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
+				unsigned int nbindex = cnetlink::get_instance().neighs_in4[ifindex].get_neigh(crtneigh_in4((struct rtnl_neigh*)obj));
 				cnetlink::get_instance().notify_neigh_in4_deleted(ifindex, nbindex);
-				cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in4().drop_neigh(nbindex);
+				cnetlink::get_instance().neighs_in4[ifindex].drop_neigh(nbindex);
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			case AF_INET6: {
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_in6" << std::endl << crtneigh_in6((struct rtnl_neigh*)obj);
-				unsigned int nbindex = cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_in6().get_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
+				unsigned int nbindex = cnetlink::get_instance().neighs_in6[ifindex].get_neigh(crtneigh_in6((struct rtnl_neigh*)obj));
 				cnetlink::get_instance().notify_neigh_in6_deleted(ifindex, nbindex);
-				cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_in6().drop_neigh(nbindex);
+				cnetlink::get_instance().neighs_in6[ifindex].drop_neigh(nbindex);
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			case PF_BRIDGE: {
 				// xxx implement bridge handling
 				logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_ll" << std::endl << crtneigh((struct rtnl_neigh*)obj);
-				unsigned int nbindex = cnetlink::get_instance().get_links().get_link(ifindex).get_neighs_ll().get_neigh(crtneigh((struct rtnl_neigh*)obj));
+				unsigned int nbindex = cnetlink::get_instance().neighs_ll[ifindex].get_neigh(crtneigh((struct rtnl_neigh*)obj));
 				cnetlink::get_instance().notify_neigh_ll_deleted(ifindex, nbindex);
-				cnetlink::get_instance().set_links().set_link(ifindex).set_neighs_ll().drop_neigh(nbindex);
+				cnetlink::get_instance().neighs_ll[ifindex].drop_neigh(nbindex);
 				logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
 			} break;
 			}
@@ -590,7 +579,7 @@ cnetlink::notify_addr_in4_created(unsigned int ifindex, unsigned int adindex) {
 
 	logging::debug << "[cnetlink][notify_addr_in4_created] sending notifications:" << std::endl;
 	logging::debug << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
-	logging::debug << get_links().get_link(ifindex).get_addrs_in4();
+	logging::debug << addrs_in4[ifindex];
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = observers.begin();
@@ -617,7 +606,7 @@ cnetlink::notify_addr_in4_updated(unsigned int ifindex, unsigned int adindex) {
 
 	logging::debug << "[cnetlink][notify_addr_in4_updated] sending notifications:" << std::endl;
 	logging::debug << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
-	logging::debug << get_links().get_link(ifindex).get_addrs_in4();
+	logging::debug << addrs_in4[ifindex];
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = observers.begin();
@@ -644,7 +633,7 @@ cnetlink::notify_addr_in4_deleted(unsigned int ifindex, unsigned int adindex) {
 
 	logging::debug << "[cnetlink][notify_addr_in4_deleted] sending notifications:" << std::endl;
 	logging::debug << "<ifindex:" << ifindex << " adindex:" << adindex << " >" << std::endl;
-	logging::debug << get_links().get_link(ifindex).get_addrs_in4();
+	logging::debug << addrs_in4[ifindex];
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = observers.begin();
@@ -666,12 +655,11 @@ cnetlink::notify_addr_in6_deleted(unsigned int ifindex, unsigned int adindex) {
 
 void
 cnetlink::notify_neigh_ll_created(unsigned int ifindex, unsigned int nbindex) {
-	const rofl::caddress_ll& dst = get_links().
-									get_link(ifindex).get_neighs_ll().get_neigh(nbindex).get_lladdr();
+	const rofl::caddress_ll& dst = neighs_ll[ifindex].get_neigh(nbindex).get_lladdr();
 
 	logging::debug << "[cnetlink][notify_neigh_ll_created] sending notifications:" << std::endl;
 	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
-	logging::debug << get_links().get_link(ifindex).get_neighs_ll();
+	logging::debug << neighs_ll[ifindex];
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = observers.begin();
@@ -689,12 +677,11 @@ cnetlink::notify_neigh_ll_created(unsigned int ifindex, unsigned int nbindex) {
 
 void
 cnetlink::notify_neigh_in4_created(unsigned int ifindex, unsigned int nbindex) {
-	const rofl::caddress_in4& dst = get_links().
-									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
+	const rofl::caddress_in4& dst = neighs_in4[ifindex].get_neigh(nbindex).get_dst();
 
 	logging::debug << "[cnetlink][notify_neigh_in4_created] sending notifications:" << std::endl;
 	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
-	logging::debug << get_links().get_link(ifindex).get_neighs_in4();
+	logging::debug << neighs_in4[ifindex];
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = observers.begin();
@@ -714,8 +701,7 @@ cnetlink::notify_neigh_in4_created(unsigned int ifindex, unsigned int nbindex) {
 
 void
 cnetlink::notify_neigh_in6_created(unsigned int ifindex, unsigned int nbindex) {
-	const rofl::caddress_in6& dst = get_links().
-									get_link(ifindex).get_neighs_in6().get_neigh(nbindex).get_dst();
+	const rofl::caddress_in6& dst = neighs_in6[ifindex].get_neigh(nbindex).get_dst();
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = observers.begin();
@@ -732,12 +718,11 @@ cnetlink::notify_neigh_in6_created(unsigned int ifindex, unsigned int nbindex) {
 
 void
 cnetlink::notify_neigh_ll_updated(unsigned int ifindex, unsigned int nbindex) {
-	const rofl::caddress_ll& dst = get_links().
-									get_link(ifindex).get_neighs_ll().get_neigh(nbindex).get_lladdr();
+	const rofl::caddress_ll& dst = neighs_ll[ifindex].get_neigh(nbindex).get_lladdr();
 
 	logging::debug << "[cnetlink][notify_neigh_ll_updated] sending notifications:" << std::endl;
 	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
-	logging::debug << get_links().get_link(ifindex).get_neighs_ll();
+	logging::debug << neighs_ll[ifindex];
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = observers.begin();
@@ -754,12 +739,11 @@ cnetlink::notify_neigh_ll_updated(unsigned int ifindex, unsigned int nbindex) {
 
 void
 cnetlink::notify_neigh_in4_updated(unsigned int ifindex, unsigned int nbindex) {
-	const rofl::caddress_in4& dst = get_links().
-									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
+	const rofl::caddress_in4& dst = neighs_in4[ifindex].get_neigh(nbindex).get_dst();
 
 	logging::debug << "[cnetlink][notify_neigh_in4_updated] sending notifications:" << std::endl;
 	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
-	logging::debug << get_links().get_link(ifindex).get_neighs_in4();
+	logging::debug << neighs_in4[ifindex];
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = observers.begin();
@@ -778,8 +762,7 @@ cnetlink::notify_neigh_in4_updated(unsigned int ifindex, unsigned int nbindex) {
 
 void
 cnetlink::notify_neigh_in6_updated(unsigned int ifindex, unsigned int nbindex) {
-	const rofl::caddress_in6& dst = get_links().
-									get_link(ifindex).get_neighs_in6().get_neigh(nbindex).get_dst();
+	const rofl::caddress_in6& dst = neighs_in6[ifindex].get_neigh(nbindex).get_dst();
 
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = observers.begin();
@@ -796,12 +779,11 @@ cnetlink::notify_neigh_in6_updated(unsigned int ifindex, unsigned int nbindex) {
 
 void
 cnetlink::notify_neigh_ll_deleted(unsigned int ifindex, unsigned int nbindex) {
-	const rofl::caddress_ll& dst = get_links().
-									get_link(ifindex).get_neighs_ll().get_neigh(nbindex).get_lladdr();
+	const rofl::caddress_ll& dst = neighs_ll[ifindex].get_neigh(nbindex).get_lladdr();
 
 	logging::debug << "[cnetlink][notify_neigh_ll_deleted] sending notifications:" << std::endl;
 	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
-	logging::debug << get_links().get_link(ifindex).get_neighs_ll();
+	logging::debug << neighs_ll[ifindex];
 
 	// make local copy of set
 	std::set<cnetlink_common_observer*> obs(observers);
@@ -820,12 +802,11 @@ cnetlink::notify_neigh_ll_deleted(unsigned int ifindex, unsigned int nbindex) {
 
 void
 cnetlink::notify_neigh_in4_deleted(unsigned int ifindex, unsigned int nbindex) {
-	const rofl::caddress_in4& dst = get_links().
-									get_link(ifindex).get_neighs_in4().get_neigh(nbindex).get_dst();
+	const rofl::caddress_in4& dst = neighs_in4[ifindex].get_neigh(nbindex).get_dst();
 
 	logging::debug << "[cnetlink][notify_neigh_in4_deleted] sending notifications:" << std::endl;
 	logging::debug << "<ifindex:" << ifindex << " nbindex:" << nbindex << " dst:" << dst.str() << " >" << std::endl;
-	logging::debug << get_links().get_link(ifindex).get_neighs_in4();
+	logging::debug << neighs_in4[ifindex];
 
 	// make local copy of set
 	std::set<cnetlink_common_observer*> obs(observers);
@@ -846,8 +827,7 @@ cnetlink::notify_neigh_in4_deleted(unsigned int ifindex, unsigned int nbindex) {
 
 void
 cnetlink::notify_neigh_in6_deleted(unsigned int ifindex, unsigned int nbindex) {
-	const rofl::caddress_in6& dst = get_links().
-									get_link(ifindex).get_neighs_in6().get_neigh(nbindex).get_dst();
+	const rofl::caddress_in6& dst = neighs_in6[ifindex].get_neigh(nbindex).get_dst();
 
 	// make local copy of set
 	std::set<cnetlink_common_observer*> obs(observers);

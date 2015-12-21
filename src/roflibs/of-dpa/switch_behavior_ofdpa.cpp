@@ -312,7 +312,7 @@ switch_behavior_ofdpa::neigh_ll_created(unsigned int ifindex, uint16_t nbindex)
 	using rofcore::logging;
 
 	const crtlink& rtl = cnetlink::get_instance().get_links().get_link(ifindex);
-	const crtneigh& rtn = rtl.get_neighs_ll().get_neigh(nbindex);
+	const crtneigh& rtn = cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
 
 	logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: "
 			<< std::endl << rtn;
@@ -331,10 +331,9 @@ switch_behavior_ofdpa::neigh_ll_created(unsigned int ifindex, uint16_t nbindex)
 void
 switch_behavior_ofdpa::neigh_ll_updated(unsigned int ifindex, uint16_t nbindex)
 {
+	using rofcore::cnetlink;
 	using rofcore::crtneigh;
-	const crtneigh& rtn =
-			rofcore::cnetlink::get_instance().get_links().get_link(ifindex)
-					.get_neighs_ll().get_neigh(nbindex);
+	const crtneigh& rtn = cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
 
 	rofcore::logging::warn << "[switch_behavior_ofdpa][" << __FUNCTION__
 			<< "]: NOT handled neighbor:" << std::endl << rtn;
@@ -350,7 +349,7 @@ switch_behavior_ofdpa::neigh_ll_deleted(unsigned int ifindex, uint16_t nbindex)
 	using rofcore::logging;
 
 	const crtlink& rtl = cnetlink::get_instance().get_links().get_link(ifindex);
-	const crtneigh& rtn = rtl.get_neighs_ll().get_neigh(nbindex);
+	const crtneigh& rtn = cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
 
 	logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: "
 			<< std::endl << rtn;

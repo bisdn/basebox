@@ -116,11 +116,11 @@ public:
 		mtu		= rtlink.mtu;
 		master	= rtlink.master;
 
-		addrs_in4	= rtlink.addrs_in4;
-		addrs_in6	= rtlink.addrs_in6;
-		neighs_ll	= rtlink.neighs_ll;
-		neighs_in4	= rtlink.neighs_in4;
-		neighs_in6	= rtlink.neighs_in6;
+//		addrs_in4	= rtlink.addrs_in4;
+//		addrs_in6	= rtlink.addrs_in6;
+//		neighs_ll	= rtlink.neighs_ll;
+//		neighs_in4	= rtlink.neighs_in4;
+//		neighs_in6	= rtlink.neighs_in6;
 
 		return *this;
 	};
@@ -133,6 +133,7 @@ public:
 		return ((devname == rtlink.devname) && (ifindex == rtlink.ifindex) && (maddr == rtlink.maddr));
 	}
 
+#if 0
 public:
 
 	/**
@@ -194,8 +195,7 @@ public:
 	 */
 	crtneighs_in6&
 	set_neighs_in6() { return neighs_in6; };
-
-
+#endif
 
 public:
 
@@ -280,11 +280,11 @@ public:
 		os << rofcore::indent(2) << "<mtu: " << rtlink.mtu 			<< " >" << std::endl;
 		os << rofcore::indent(2) << "<master: " << rtlink.master	<< " >" << std::endl;
 
-		{ rofcore::indent i(2); os << rtlink.addrs_in4; };
-		{ rofcore::indent i(2); os << rtlink.addrs_in6; };
-		{ rofcore::indent i(2); os << rtlink.neighs_ll; };
-		{ rofcore::indent i(2); os << rtlink.neighs_in4; };
-		{ rofcore::indent i(2); os << rtlink.neighs_in6; };
+//		{ rofcore::indent i(2); os << rtlink.addrs_in4; };
+//		{ rofcore::indent i(2); os << rtlink.addrs_in6; };
+//		{ rofcore::indent i(2); os << rtlink.neighs_ll; };
+//		{ rofcore::indent i(2); os << rtlink.neighs_in4; };
+//		{ rofcore::indent i(2); os << rtlink.neighs_in6; };
 
 		return os;
 	};
@@ -319,11 +319,11 @@ public:
 		else
 			ss << "unknown ";
 		ss << maddr.str() << " brd " << bcast.str() << std::endl;
-		if (not addrs_in4.empty())  ss << addrs_in4.str();
-		if (not addrs_in6.empty())  ss << addrs_in6.str();
-		if (not neighs_ll.empty())  ss << neighs_ll.str();
-		if (not neighs_in4.empty()) ss << neighs_in4.str();
-		if (not neighs_in6.empty()) ss << neighs_in6.str();
+//		if (not addrs_in4.empty())  ss << addrs_in4.str();
+//		if (not addrs_in6.empty())  ss << addrs_in6.str();
+//		if (not neighs_ll.empty())  ss << neighs_ll.str();
+//		if (not neighs_in4.empty()) ss << neighs_in4.str();
+//		if (not neighs_in6.empty()) ss << neighs_in6.str();
 		return ss.str();
 	};
 
@@ -381,11 +381,11 @@ private:
 	unsigned int			mtu;		// maximum transfer unit
 	int						master;		// ifindex of master interface
 
-	crtaddrs_in4			addrs_in4;
-	crtaddrs_in6			addrs_in6;
-	crtneighs_ll			neighs_ll;
-	crtneighs_in4			neighs_in4;
-	crtneighs_in6			neighs_in6;
+//	crtaddrs_in4			addrs_in4;
+//	crtaddrs_in6			addrs_in6;
+//	crtneighs_ll			neighs_ll;
+//	crtneighs_in4			neighs_in4;
+//	crtneighs_in6			neighs_in6;
 
 };
 

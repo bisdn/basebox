@@ -68,6 +68,14 @@ class cnetlink :
 	std::map<int, crtroutes_in6>	rtroutes_in6;	// all routes in system => key:table_id
 
 public:
+	std::map<int, crtaddrs_in4>			addrs_in4;
+	std::map<int, crtaddrs_in6>			addrs_in6;
+	std::map<int, crtneighs_ll>			neighs_ll;
+	std::map<int, crtneighs_in4>			neighs_in4;
+	std::map<int, crtneighs_in6>			neighs_in6;
+
+
+public:
 
 	friend std::ostream&
 	operator<< (std::ostream& os, const cnetlink& netlink) {
