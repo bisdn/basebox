@@ -60,7 +60,6 @@ public:
 private:
 
 	std::map<rofl::cdptid, std::map<std::string, rofcore::ctapdev*> > devs;
-	static const uint16_t							default_pvid = 1;
 
 	ofdpa_fm_driver fm_driver;
 	ofdpa_bridge bridge;

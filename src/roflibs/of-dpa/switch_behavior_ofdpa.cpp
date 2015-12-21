@@ -98,11 +98,12 @@ switch_behavior_ofdpa::init_ports()
 		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 		const map<uint32_t, cofport*> &ports = dpt.get_ports().get_ports();
 
+		// xxx fixme this has to be async
 		for (const auto &i : dpt.get_ports().get_ports()) {
 			const cofport* port = i.second;
 			if (not has_tap_dev(dptid, port->get_name())) {
-				rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] adding port " << port->get_name() << " with portno=" << port->get_port_no() << std::endl;
-				add_tap_dev(dptid, port->get_name(), default_pvid, port->get_hwaddr()); // XXX why pvid here?
+				rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] adding port " << port->get_name() << " with portno=" << port->get_port_no() << std::endl;
+				add_tap_dev(dptid, port->get_name(), 1, port->get_hwaddr()); // todo remove pvid from tapdev
 			}
 		}
 
