@@ -214,6 +214,10 @@ public:
 		return ss.str();
 	};
 
+	const std::map<unsigned int, crtlink>&
+	get_all_links() {
+		return rtlinks;
+	}
 private:
 
 	std::map<unsigned int, crtlink> rtlinks;

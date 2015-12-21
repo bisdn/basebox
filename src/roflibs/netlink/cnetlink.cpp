@@ -69,6 +69,9 @@ cnetlink::init_caches()
 	struct nl_object* obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
 	while (0 != obj) {
 		nl_object_get(obj);
+		logging::debug << "cnetlink::" << __FUNCTION__ << "(): adding "
+				<< rtnl_link_get_name((struct rtnl_link*)obj)
+				<< " to rtlinks" << std::endl;
 		rtlinks.add_link(crtlink((struct rtnl_link*)obj));
 		nl_object_put(obj);
 		obj = nl_cache_get_next(obj);
@@ -158,6 +161,22 @@ cnetlink::update_link_cache()
 {
 	logging::info << "[cnetlink][" << __FUNCTION__ << "] #links=" << get_links().size()
 			<< " #cacheitems=" << nl_cache_nitems(caches[NL_LINK_CACHE]) << std::endl;
+
+#ifdef DEBUG
+		logging::debug << "existing links in cnetlink:" << std::endl;
+		const std::map<unsigned int, crtlink> &links = rtlinks.get_all_links();
+		std::for_each(links.cbegin(), links.cend(), [](const std::pair<unsigned int, crtlink> &n){
+			logging::debug << n.second.get_devname() << std::endl;
+		});
+
+		logging::debug << "existing links in nl_cache:" << std::endl;
+		struct nl_object* obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
+		while (0 != obj) {
+			logging::debug << rtnl_link_get_name((struct rtnl_link*)obj) << std::endl;
+			obj = nl_cache_get_next(obj);
+		}
+
+#endif
 
 	check_links = false;
 	struct nl_sock *sk = NULL;
