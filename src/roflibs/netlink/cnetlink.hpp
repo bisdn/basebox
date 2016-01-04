@@ -338,7 +338,7 @@ public:
 	 *
 	 */
 	void
-	notify_link_updated(unsigned int ifindex);
+	notify_link_updated(const crtlink &newlink);
 
 	/**
 	 *
@@ -565,7 +565,7 @@ public:
 	 *
 	 * @param rtl
 	 */
-	virtual void link_updated(unsigned int ifindex) {};
+	virtual void link_updated(const crtlink& newlink) {};
 
 
 	/**

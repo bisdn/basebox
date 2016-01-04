@@ -293,9 +293,9 @@ cnetlink::route_link_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 			}
 		} break;
 		case NL_ACT_CHANGE: {
+			cnetlink::get_instance().notify_link_updated(rtlink);
 			cnetlink::get_instance().set_links().set_link(rtlink);
 			logging::debug << cnetlink::get_instance().get_links().get_link(ifindex).str() << std::endl;
-			cnetlink::get_instance().notify_link_updated(ifindex);
 		} break;
 		case NL_ACT_DEL: {
 			// xxx check if this has to be handled like new
@@ -605,11 +605,11 @@ cnetlink::notify_link_created(unsigned int ifindex) {
 
 
 void
-cnetlink::notify_link_updated(unsigned int ifindex) {
+cnetlink::notify_link_updated(const crtlink &newlink) {
 	for (std::set<cnetlink_common_observer*>::iterator
 			it = observers.begin();
 				it != observers.end(); ++it) {
-		(*it)->link_updated(ifindex);
+		(*it)->link_updated(newlink);
 	}
 };
 

@@ -236,7 +236,7 @@ private:
 	link_created(unsigned int ifindex);
 
 	virtual void
-	link_updated(unsigned int ifindex);
+	link_updated(const rofcore::crtlink &newlink);
 
 	virtual void
 	link_deleted(unsigned int ifindex);
