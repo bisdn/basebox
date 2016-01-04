@@ -479,6 +479,11 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 	int ifindex = rtnl_neigh_get_ifindex(neigh);
 	int family = rtnl_neigh_get_family((struct rtnl_neigh*)obj);
 
+	if (0 == ifindex) {
+		logging::info << "cnetlink::route_neigh_cb() ignoring not existing link" << std::endl;
+		return;
+	}
+
 	try {
 		const crtlink& rtl = cnetlink::get_instance().rtlinks.get_link(ifindex);
 	} catch (crtlink::eRtLinkNotFound &e) {
