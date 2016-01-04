@@ -273,6 +273,8 @@ public:
 	int
 	get_master() const { return master; }
 
+	uint16_t
+	get_pvid() const { return br_vlan.pvid; }
 
 private:
 	static int find_next_bit(int i, uint32_t x)
