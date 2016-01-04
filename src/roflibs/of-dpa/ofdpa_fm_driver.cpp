@@ -68,6 +68,25 @@ gen_flow_mod_type_cookie(uint64_t val) {
 	return (val<< 8*7);
 }
 
+static uint32_t
+get_of_port_no(const rofl::crofdpt& dpt, const std::string& dev)
+{
+	using rofl::openflow::cofport;
+	using std::map;
+
+	uint32_t port_no = 0;
+
+	for (const auto &i : dpt.get_ports().get_ports()) {
+		if (0 == i.second->get_name().compare(dev)) {
+			rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] outport=" << i.first << std::endl;
+			port_no = i.first;
+			break;
+		}
+	}
+
+	return port_no;
+}
+
 ofdpa_fm_driver::ofdpa_fm_driver(const rofl::cdptid& dptid) :
 		dptid(dptid),
 		default_idle_timeout(30) // todo idle timeout should be configurable
@@ -79,18 +98,23 @@ ofdpa_fm_driver::~ofdpa_fm_driver()
 }
 
 void
-ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
+ofdpa_fm_driver::enable_port_pvid_ingress(const std::string &port_name, uint16_t vid)
 {
 	// XXX This contradicts the OF-DPA ASS (p. 64) "The VLAN_VID value cannot
 	// be used in a VLAN Filtering rule."
 	// todo Send ticket to BCM to clarify
-	enable_port_vid_ingress(vid, port_no);
+	enable_port_vid_ingress(port_name, vid);
 
 	// check params
 	assert(vid < 0x1000);
-	assert(port_no);
 
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+	uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), port_name);
+
+	if (0 == port_no) {
+		rofcore::logging::error << __PRETTY_FUNCTION__ << " not an of-port:" << std::endl;
+		return;
+	}
 
 	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
@@ -124,12 +148,17 @@ ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
 }
 
 void
-ofdpa_fm_driver::enable_port_vid_ingress(uint16_t vid, uint32_t port_no)
+ofdpa_fm_driver::enable_port_vid_ingress(const std::string &port_name, uint16_t vid)
 {
 	assert(vid < 0x1000);
-	assert(port_no);
 
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+	uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), port_name);
+
+	if (0 == port_no) {
+		rofcore::logging::error << __PRETTY_FUNCTION__ << " not an of-port:" << std::endl;
+		return;
+	}
 
 	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
 
@@ -159,14 +188,19 @@ ofdpa_fm_driver::enable_port_vid_ingress(uint16_t vid, uint32_t port_no)
 }
 
 uint32_t
-ofdpa_fm_driver::enable_port_pvid_egress(uint16_t vid, uint32_t port_no)
+ofdpa_fm_driver::enable_port_pvid_egress(const std::string &port_name, uint16_t vid)
 {
 	assert(vid < 0x1000);
-	assert(port_no);
-
-	uint32_t group_id = (0x0fff & vid) << 16 | (0xffff & port_no);
 
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+	uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), port_name);
+
+	if (0 == port_no) {
+		rofcore::logging::error << __PRETTY_FUNCTION__ << " not an of-port:" << std::endl;
+		return rofl::openflow::OFPG_MAX;
+	}
+
+	uint32_t group_id = (0x0fff & vid) << 16 | (0xffff & port_no);
 	rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
 
 	gm.set_command(rofl::openflow::OFPGC_ADD);
@@ -239,6 +273,7 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id,
 	return group_id;
 }
 
+#if 0
 void
 ofdpa_fm_driver::enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id,
 		bool do_pkt_in)
@@ -275,6 +310,7 @@ ofdpa_fm_driver::enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id,
 			<< fm;
 	dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 }
+#endif
 
 void
 ofdpa_fm_driver::enable_policy_arp(uint16_t vid, uint32_t group_id, bool update)

@@ -5,6 +5,7 @@
 #include <list>
 
 #include "ofdpa_fm_driver.hpp"
+#include "roflibs/netlink/crtlink.hpp"
 
 namespace basebox {
 
@@ -12,29 +13,27 @@ class ofdpa_bridge {
 public:
 	ofdpa_bridge(ofdpa_fm_driver &fm_driver);
 
-	ofdpa_bridge(const unsigned int ifindex, ofdpa_fm_driver &fm_driver);
-
 	virtual
 	~ofdpa_bridge();
 
 	void
-	set_bridge_interface(const unsigned int id);
+	set_bridge_interface(const rofcore::crtlink& rtl);
 
-	unsigned int
+	const rofcore::crtlink&
 	get_bridge_interface() const {
-		return interface_id;
+		return bridge;
 	}
 
 	bool
 	has_bridge_interface() const {
-		return 0 != interface_id;
+		return 0 != bridge.get_ifindex();
 	}
 
 	void
-	add_interface(const uint32_t of_port_no);
+	add_interface(const rofcore::crtlink& rtl);
 
 	void
-	delete_interface(const uint32_t of_port_no);
+	delete_interface(const rofcore::crtlink& rtl);
 
 	void
 	add_mac_to_fdb(const rofl::cmacaddr &mac, const uint32_t of_port_no, bool permanent = false);
@@ -43,7 +42,7 @@ public:
 	remove_mac_from_fdb(const rofl::cmacaddr &mac, const uint32_t of_port_no);
 
 private:
-	unsigned int interface_id;
+	rofcore::crtlink bridge;
 	ofdpa_fm_driver &fm_driver; // todo use shared pointer?
 
 	std::list<uint32_t> l2_domain;

@@ -259,21 +259,10 @@ switch_behavior_ofdpa::link_created(unsigned int ifindex)
 
 			// use only first bridge an of interface is attached to
 			if (not bridge.has_bridge_interface()) {
-				bridge.set_bridge_interface(rtl.get_master());
+				bridge.set_bridge_interface(rofcore::cnetlink::get_instance().get_links().get_link(rtl.get_master()));
 			}
 
-			// then allow only interface to that bridge
-			if (bridge.get_bridge_interface() == rtl.get_master()) {
-				// get of_port_no and add the interface to the bridge
-				uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), rtl.get_devname());
-				if (port_no) {
-					bridge.add_interface(port_no);
-				}
-			} else {
-				rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: only a single bridge is supported currently" << std::endl;
-				// TODO implement fault handling
-			}
-
+			bridge.add_interface(rtl);
 		} else {
 			// bridge (master)
 			rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: is new bridge" << std::endl;

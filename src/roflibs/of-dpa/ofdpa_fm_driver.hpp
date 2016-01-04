@@ -15,21 +15,23 @@ public:
 	virtual ~ofdpa_fm_driver();
 
 	void
-	enable_port_pvid_ingress(uint16_t vid, uint32_t port_no);
+	enable_port_pvid_ingress(const std::string &port_name, uint16_t vid);
 
 	void
-	enable_port_vid_ingress(uint16_t vid, uint32_t port_no);
+	enable_port_vid_ingress(const std::string &port_name, uint16_t vid);
 
-	// equals l2 interaface group, so maybe rename this
+	// equals l2 interface group, so maybe rename this
 	uint32_t
-	enable_port_pvid_egress(uint16_t vid, uint32_t port_no);
+	enable_port_pvid_egress(const std::string &port_name, uint16_t vid);
 
 	uint32_t
 	enable_group_l2_multicast(uint16_t vid, uint16_t id,
 			const std::list<uint32_t> &l2_interfaces, bool update = false);
 
+#if 0
 	void
 	enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id, bool do_pkt_in);
+#endif
 
 	void
 	enable_policy_arp(uint16_t vid, uint32_t group_id, bool update = false);
