@@ -53,6 +53,7 @@ public:
 	 */
 	crtlink() :
 		flags(0),
+		operstate(0),
 		af(0),
 		arptype(0),
 		ifindex(0),
@@ -81,6 +82,7 @@ public:
 		maddr 	= rofl::cmacaddr(nl_addr2str(rtnl_link_get_addr(link), 		s_buf, sizeof(s_buf)));
 		bcast 	= rofl::cmacaddr(nl_addr2str(rtnl_link_get_broadcast(link), s_buf, sizeof(s_buf)));
 		flags 	= rtnl_link_get_flags(link);
+		operstate = rtnl_link_get_operstate(link);
 		af 		= rtnl_link_get_family(link);
 		arptype = rtnl_link_get_arptype(link);
 		ifindex	= rtnl_link_get_ifindex(link);
@@ -124,6 +126,7 @@ public:
 		maddr	= rtlink.maddr;
 		bcast	= rtlink.bcast;
 		flags	= rtlink.flags;
+		operstate	= rtlink.operstate;
 		af		= rtlink.af;
 		arptype	= rtlink.arptype;
 		ifindex	= rtlink.ifindex;
@@ -242,6 +245,8 @@ public:
 	unsigned int
 	get_flags() const { return flags; };
 
+	unsigned int
+	get_operstate() const { return operstate; };
 
 	/**
 	 *
@@ -361,6 +366,7 @@ public:
 		os << rofcore::indent(2) << "<bcast: >" << std::endl;
 		os << rofcore::indent(4) << rtlink.bcast;
 		os << rofcore::indent(2) << "<flags: " << (std::hex) << rtlink.flags << (std::dec) << " >" << std::endl;
+		os << rofcore::indent(2) << "<operstate: " << (std::hex) << rtlink.operstate << (std::dec) << " >" << std::endl;
 		os << rofcore::indent(2) << "<af: " << rtlink.af 				<< " >" << std::endl;
 		os << rofcore::indent(2) << "<arptype: " << rtlink.arptype 	<< " >" << std::endl;
 		os << rofcore::indent(2) << "<ifindex: " << rtlink.ifindex 	<< " >" << std::endl;
@@ -405,7 +411,14 @@ public:
 		if (flags & IFF_SLAVE) 		ss << "SLAVE,";
 		if (flags & IFF_MULTICAST) 	ss << "MULTICAST,";
 		if (flags & IFF_LOWER_UP) 	ss << "LOWER_UP,";
-		ss << "> mtu: " << mtu << std::endl;
+
+		ss << "> ";
+		if (IF_OPER_UNKNOWN != operstate) {
+			char buf[64];
+			ss << "state " << rtnl_link_operstate2str(operstate, buf, sizeof(buf)) << " ";
+		}
+
+		ss << "mtu: " << mtu << std::endl;
 		ss << "link/";
 		if (arptype == ARPHRD_ETHER)
 			ss << "ether ";
@@ -474,6 +487,7 @@ private:
 	rofl::cmacaddr			maddr;		// mac address
 	rofl::cmacaddr			bcast; 		// broadcast address
 	unsigned int			flags;		// link flags
+	uint8_t				operstate;	// link operational status
 	int						af;			// address family (AF_INET, AF_UNSPEC, ...)
 	unsigned int			arptype;	// ARP type (e.g. ARPHDR_ETHER)
 	int						ifindex;	// interface index
