@@ -188,8 +188,10 @@ ofdpa_fm_driver::enable_port_vid_ingress(const std::string &port_name, uint16_t 
 }
 
 uint32_t
-ofdpa_fm_driver::enable_port_pvid_egress(const std::string &port_name, uint16_t vid)
+ofdpa_fm_driver::enable_port_vid_egress(const std::string &port_name, uint16_t vid, bool pvid)
 {
+	// equals l2 interface group, so maybe rename this
+
 	assert(vid < 0x1000);
 
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
@@ -207,10 +209,13 @@ ofdpa_fm_driver::enable_port_pvid_egress(const std::string &port_name, uint16_t 
 	gm.set_type(rofl::openflow::OFPGT_INDIRECT);
 	gm.set_group_id(group_id);
 
-	gm.set_buckets().add_bucket(0).set_actions().
-			add_action_pop_vlan(rofl::cindex(0));
+	rofl::cindex i(0);
+	if (pvid) {
+		gm.set_buckets().add_bucket(0).set_actions().
+				add_action_pop_vlan(i++);
+	}
 	gm.set_buckets().set_bucket(0).set_actions().
-			add_action_output(rofl::cindex(1)).set_port_no(port_no);
+			add_action_output(i++).set_port_no(port_no);
 
 	rofcore::logging::debug << __FUNCTION__ << ": send group-mod:" << std::endl << gm;
 

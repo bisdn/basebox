@@ -48,7 +48,7 @@ ofdpa_bridge::add_interface(const rofcore::crtlink& rtl)
 	}
 
 	fm_driver.enable_port_pvid_ingress(rtl.get_devname(), rtl.get_pvid());
-	uint32_t group = fm_driver.enable_port_pvid_egress(rtl.get_devname(), rtl.get_pvid());
+	uint32_t group = fm_driver.enable_port_vid_egress(rtl.get_devname(), rtl.get_pvid(), true);
 	assert(group);
 	if (rofl::openflow::OFPG_MAX == group) {
 		// fixme disable pvid ingress
