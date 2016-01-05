@@ -281,6 +281,11 @@ public:
 	uint16_t
 	get_pvid() const { return br_vlan.pvid; }
 
+	const struct rtnl_link_bridge_vlan*
+	get_br_vlan() const {
+		return &br_vlan;
+	}
+
 private:
 	static int find_next_bit(int i, uint32_t x)
 	{
