@@ -21,7 +21,7 @@ public:
 	enable_port_vid_ingress(const std::string &port_name, uint16_t vid);
 
 	uint32_t
-	enable_port_vid_egress(const std::string &port_name, uint16_t vid, bool pvid = false);
+	enable_port_vid_egress(const std::string &port_name, uint16_t vid, bool untagged = false);
 
 	uint32_t
 	enable_group_l2_multicast(uint16_t vid, uint16_t id,

@@ -188,7 +188,7 @@ ofdpa_fm_driver::enable_port_vid_ingress(const std::string &port_name, uint16_t 
 }
 
 uint32_t
-ofdpa_fm_driver::enable_port_vid_egress(const std::string &port_name, uint16_t vid, bool pvid)
+ofdpa_fm_driver::enable_port_vid_egress(const std::string &port_name, uint16_t vid, bool untagged)
 {
 	// equals l2 interface group, so maybe rename this
 
@@ -210,7 +210,7 @@ ofdpa_fm_driver::enable_port_vid_egress(const std::string &port_name, uint16_t v
 	gm.set_group_id(group_id);
 
 	rofl::cindex i(0);
-	if (pvid) {
+	if (untagged) {
 		gm.set_buckets().add_bucket(0).set_actions().
 				add_action_pop_vlan(i++);
 	}
