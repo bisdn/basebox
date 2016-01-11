@@ -45,7 +45,7 @@ private:
 	rofcore::crtlink bridge;
 	ofdpa_fm_driver &fm_driver; // todo use shared pointer?
 
-	std::list<uint32_t> l2_domain;
+	std::map<uint16_t, std::list<uint32_t> > l2_domain;
 };
 
 } /* namespace basebox */
