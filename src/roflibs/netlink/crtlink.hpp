@@ -286,6 +286,25 @@ public:
 		return &br_vlan;
 	}
 
+	static bool
+	are_br_vlan_equal(const rtnl_link_bridge_vlan *lhs, const rtnl_link_bridge_vlan *rhs) {
+		assert(lhs);
+		assert(rhs);
+		if (lhs->pvid != rhs->pvid) {
+			return false;
+		}
+
+		if (memcmp(lhs->vlan_bitmap, rhs->vlan_bitmap, sizeof(rhs->vlan_bitmap))) {
+			return false;
+		}
+
+		if (memcmp(lhs->untagged_bitmap, rhs->untagged_bitmap, sizeof(rhs->untagged_bitmap))) {
+			return false;
+		}
+
+		return true;
+	}
+
 private:
 	static int find_next_bit(int i, uint32_t x)
 	{
