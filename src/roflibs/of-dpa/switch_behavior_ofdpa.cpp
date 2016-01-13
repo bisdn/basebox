@@ -273,11 +273,14 @@ switch_behavior_ofdpa::link_created(unsigned int ifindex)
 void
 switch_behavior_ofdpa::link_updated(const rofcore::crtlink &newlink)
 {
-	const rofcore::crtlink& oldlink = rofcore::cnetlink::get_instance().get_links().get_link(newlink.get_ifindex());
+	using rofcore::crtlink;
+	using rofcore::cnetlink;
+
+	const crtlink& oldlink = cnetlink::get_instance().get_links().get_link(newlink.get_ifindex());
 	rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] oldlink:" << std::endl << oldlink;
 	rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] newlink:" << std::endl << newlink;
 
-	// fixme check for link de/attachments from/to bridges (i.e. check for master)
+	bridge.update_interface(oldlink, newlink);
 }
 
 void
@@ -286,7 +289,7 @@ switch_behavior_ofdpa::link_deleted(unsigned int ifindex)
 	const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
 	rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: " << std::endl << rtl;
 
-	// todo same as in link_updated?
+	bridge.delete_interface(rtl);
 }
 
 void

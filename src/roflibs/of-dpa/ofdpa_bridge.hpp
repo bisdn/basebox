@@ -33,6 +33,9 @@ public:
 	add_interface(const rofcore::crtlink& rtl);
 
 	void
+	update_interface(const rofcore::crtlink& oldlink, const rofcore::crtlink& newlink);
+
+	void
 	delete_interface(const rofcore::crtlink& rtl);
 
 	void
@@ -42,6 +45,11 @@ public:
 	remove_mac_from_fdb(const rofl::cmacaddr &mac, const uint32_t of_port_no);
 
 private:
+	void
+	update_vlans(const std::string &devname,
+			const rtnl_link_bridge_vlan *old_br_vlan,
+			const rtnl_link_bridge_vlan *new_br_vlan);
+
 	rofcore::crtlink bridge;
 	ofdpa_fm_driver &fm_driver; // todo use shared pointer?
 
