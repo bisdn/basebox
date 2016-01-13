@@ -103,12 +103,11 @@ ofdpa_fm_driver::enable_port_pvid_ingress(uint16_t vid, uint32_t port_no)
 	fm.set_cookie(gen_flow_mod_type_cookie(OFDPA_FTT_VLAN_VLAN_ASSIGNMENT) | 0);
 
 	fm.set_match().set_in_port(port_no);
-	fm.set_match().set_vlan_vid(0, 0x1000);
+	fm.set_match().set_vlan_vid(0, rofl::openflow::OFPVID_PRESENT | 0);
 
 	fm.set_instructions().set_inst_apply_actions().set_actions().
 			add_action_set_field(rofl::cindex(0)).set_oxm(
-			rofl::openflow::coxmatch_ofb_vlan_vid(
-					vid | rofl::openflow::OFPVID_PRESENT));
+			rofl::openflow::coxmatch_ofb_vlan_vid(vid));
 
 	// set vrf
 //	fm.set_instructions().set_inst_apply_actions().set_actions().
@@ -144,7 +143,7 @@ ofdpa_fm_driver::enable_port_vid_ingress(uint16_t vid, uint32_t port_no)
 	fm.set_cookie(gen_flow_mod_type_cookie(OFDPA_FTT_VLAN_VLAN_FILTERING) | 0);
 
 	fm.set_match().set_in_port(port_no);
-	fm.set_match().set_vlan_vid(vid | rofl::openflow::OFPVID_PRESENT, 0x1fff);
+	fm.set_match().set_vlan_vid(rofl::openflow::OFPVID_PRESENT | vid, rofl::openflow::OFPVID_PRESENT | 0xfff);
 
 	// set vrf
 //	fm.set_instructions().set_inst_apply_actions().set_actions().add_action_set_field(
