@@ -1024,21 +1024,21 @@ cnetlink::drop_neigh_ll(int ifindex, const rofl::caddress_ll& addr)
 	struct nl_sock *sk = NULL;
 	if ((sk = nl_socket_alloc()) == NULL) {
 		rtnl_neigh_put(neigh);
-		throw eNetLinkFailed("cnetlink::add_neigh_ll() nl_socket_alloc()");
+		throw eNetLinkFailed("cnetlink::drop_neigh_ll() nl_socket_alloc()");
 	}
 
 	int sd = 0;
 	if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
 		rtnl_neigh_put(neigh);
 		nl_socket_free(sk);
-		throw eNetLinkFailed("cnetlink::add_neigh_ll() nl_connect()");
+		throw eNetLinkFailed("cnetlink::drop_neigh_ll() nl_connect()");
 	}
 
 	int rc;
 	if ((rc = rtnl_neigh_delete(sk, neigh, 0)) < 0) {
 		rtnl_neigh_put(neigh);
 		nl_socket_free(sk);
-		throw eNetLinkFailed("cnetlink::add_neigh_ll() rtnl_neigh_add()");
+		throw eNetLinkFailed("cnetlink::drop_neigh_ll() rtnl_neigh_delete()");
 	}
 
 	nl_close(sk);
