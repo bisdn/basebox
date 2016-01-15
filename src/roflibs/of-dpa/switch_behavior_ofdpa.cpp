@@ -4,10 +4,10 @@
 #include "roflibs/netlink/clogging.hpp"
 
 #include <map>
+#include <linux/if_ether.h>
+
 #include <rofl/common/openflow/cofport.h>
 #include <rofl/common/openflow/cofports.h>
-#include <rofl/common/protocols/fetherframe.h>
-
 
 namespace basebox {
 
@@ -38,6 +38,8 @@ switch_behavior_ofdpa::~switch_behavior_ofdpa()
 void
 switch_behavior_ofdpa::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
+	rofcore::logging::info << __FUNCTION__ << ": handle message" << std::endl << msg;
+
 	if (this->dptid != dpt.get_dptid()) { // todo maybe even assert here?
 		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] wrong dptid received" << std::endl;
 		return;
@@ -85,7 +87,6 @@ void switch_behavior_ofdpa::handle_flow_removed(rofl::crofdpt& dpt,
 	}
 }
 
-
 void
 switch_behavior_ofdpa::init_ports()
 {
@@ -131,27 +132,44 @@ switch_behavior_ofdpa::get_of_port_no(const rofl::crofdpt& dpt, const std::strin
 	return port_no;
 }
 
+struct vlan_hdr {
+	struct ethhdr eth;	// vid + cfi + pcp
+	uint16_t vlan;  	// ethernet type
+} __attribute__((packed));
+
 void
 switch_behavior_ofdpa::handle_srcmac_table(
 		rofl::openflow::cofmsg_packet_in& msg)
 {
 	using rofl::openflow::cofport;
-
-	rofcore::logging::info << __FUNCTION__ << ": handle message" << std::endl << msg;
+	using rofcore::cnetlink;
+	using rofcore::crtlink;
+	using rofl::caddress_ll;
 
 	rofcore::logging::info << __FUNCTION__ << ": in_port=" << msg.get_match().get_in_port() << std::endl;
 
-	rofl::fetherframe eth_frame(msg.get_packet().soframe(), msg.get_packet().length());
+	struct ethhdr *eth = (struct ethhdr*)msg.get_packet().soframe();
+
+	uint16_t vlan = 0;
+	if (ETH_P_8021Q == be16toh(eth->h_proto)) {
+		vlan = be16toh(((struct vlan_hdr *)eth)->vlan) & 0xfff;
+		rofcore::logging::debug << __FUNCTION__ << ": vlan=0x" << std::hex << vlan << std::dec << std::endl;
+	}
 
 	// todo this has to be improved
-	rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
+	const rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
 	const cofport &port = dpt.get_ports().get_port(msg.get_match().get_in_port());
-	const rofcore::ctapdev &tapdev = get_tap_dev(dptid, port.get_name());
-	// update bridge fdb
+	const crtlink &rtl = cnetlink::get_instance().get_links().get_link(port.get_name());
 
+	if (0 == vlan) {
+		vlan = rtl.get_pvid();
+	}
+
+	// update bridge fdb
 	try {
-		rofcore::cnetlink::get_instance().add_neigh_ll(tapdev.get_ifindex(), eth_frame.get_dl_src());
-		bridge.add_mac_to_fdb(eth_frame.get_dl_src(), msg.get_match().get_in_port(), false);
+		const caddress_ll srcmac(eth->h_source, ETH_ALEN);
+		cnetlink::get_instance().add_neigh_ll(rtl.get_ifindex(), vlan, srcmac);
+		bridge.add_mac_to_fdb(msg.get_match().get_in_port(), vlan, srcmac, false);
 	} catch (rofcore::eNetLinkNotFound &e) {
 		rofcore::logging::notice << __FUNCTION__ << ": cannot add neighbor to interface" << std::endl;
 	} catch (rofcore::eNetLinkFailed &e) {
@@ -164,18 +182,34 @@ switch_behavior_ofdpa::handle_bridging_table(rofl::openflow::cofmsg_flow_removed
 {
 	using rofl::cmacaddr;
 	using rofl::openflow::cofport;
-	rofcore::logging::info << __FUNCTION__ << ": handle message" << std::endl << msg;
+	using rofcore::logging;
+	using rofcore::cnetlink;
+	using rofcore::ctapdev;
 
-	cmacaddr eth_dst(msg.get_match().get_eth_dst());
+	logging::info << __FUNCTION__ << ": handle message" << std::endl << msg;
+
+	cmacaddr eth_dst;
+	uint16_t vlan = 0;
+	try {
+		eth_dst = msg.get_match().get_eth_dst();
+		vlan = msg.get_match().get_vlan_vid() & 0xfff;
+	} catch(rofl::openflow::eOxmNotFound &e) {
+		logging::error << __FUNCTION__ << ": failed to get eth_dst or vlan" << std::endl;
+		return;
+	}
 
 	// todo this has to be improved
 	uint32_t portno = msg.get_cookie(); // fixme cookiebox here??
 	rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
 	const cofport &port = dpt.get_ports().get_port(portno);
-	const rofcore::ctapdev &tapdev = get_tap_dev(dptid, port.get_name());
+	const ctapdev &tapdev = get_tap_dev(dptid, port.get_name());
 
-	// update bridge fdb
-	rofcore::cnetlink::get_instance().drop_neigh_ll(tapdev.get_ifindex(), eth_dst);
+	try {
+		// update bridge fdb
+		cnetlink::get_instance().drop_neigh_ll(tapdev.get_ifindex(), vlan, eth_dst);
+	} catch (rofcore::eNetLinkFailed &e) {
+		logging::crit << __FUNCTION__ << ": netlink failed: " << e.what() << std::endl;
+	}
 }
 
 void
@@ -310,9 +344,10 @@ switch_behavior_ofdpa::neigh_ll_created(unsigned int ifindex, uint16_t nbindex)
 	// xxx only permanent or all? if all add_mac_to_fdb call
 	// in remove handle_srcmac_table
 	if (bridge.has_bridge_interface() && (rtn.get_state() & NUD_PERMANENT)) {
-		bridge.add_mac_to_fdb(rtn.get_lladdr(),
-				get_of_port_no(crofdpt::get_dpt(this->dptid),
-						rtl.get_devname()), true);
+		bridge.add_mac_to_fdb(get_of_port_no(crofdpt::get_dpt(this->dptid),rtl.get_devname()),
+				rtn.get_vlan(),
+				rtn.get_lladdr(),
+				true);
 	} else {
 		// todo log warning
 	}

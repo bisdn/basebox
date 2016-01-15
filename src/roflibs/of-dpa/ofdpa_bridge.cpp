@@ -264,9 +264,9 @@ ofdpa_bridge::delete_interface(const rofcore::crtlink& rtl)
 
 
 void
-ofdpa_bridge::add_mac_to_fdb(const rofl::cmacaddr& mac, const uint32_t of_port_no, bool permanent)
+ofdpa_bridge::add_mac_to_fdb(const uint32_t of_port_no, const uint16_t vlan, const rofl::cmacaddr &mac, bool permanent)
 {
-	fm_driver.add_bridging_unicast_vlan(mac, 1, of_port_no, permanent);
+	fm_driver.add_bridging_unicast_vlan(mac, vlan, of_port_no, permanent);
 }
 
 void ofdpa_bridge::remove_mac_from_fdb(const rofl::cmacaddr& mac,

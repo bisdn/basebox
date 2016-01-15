@@ -39,7 +39,7 @@ public:
 	delete_interface(const rofcore::crtlink& rtl);
 
 	void
-	add_mac_to_fdb(const rofl::cmacaddr &mac, const uint32_t of_port_no, bool permanent = false);
+	add_mac_to_fdb(const uint32_t of_port_no, const uint16_t vlan, const rofl::cmacaddr &mac, bool permanent = false);
 
 	void
 	remove_mac_from_fdb(const rofl::cmacaddr &mac, const uint32_t of_port_no);

@@ -963,7 +963,7 @@ cnetlink::notify_route_in6_deleted(uint8_t table_id, unsigned int adindex) {
 };
 
 void
-cnetlink::add_neigh_ll(int ifindex, const rofl::caddress_ll& addr)
+cnetlink::add_neigh_ll(int ifindex, uint16_t vlan, const rofl::caddress_ll& addr)
 {
 	if (AF_BRIDGE != get_links().get_link(ifindex).get_family()) {
 		throw eNetLinkNotFound("cnetlink::add_neigh_ll(): no bridge link");
@@ -975,7 +975,7 @@ cnetlink::add_neigh_ll(int ifindex, const rofl::caddress_ll& addr)
 	rtnl_neigh_set_family(neigh, PF_BRIDGE);
 	rtnl_neigh_set_state(neigh, NUD_NOARP|NUD_REACHABLE);
 	rtnl_neigh_set_flags(neigh, NTF_MASTER);
-	rtnl_neigh_set_vlan(neigh, 1); // todo expose
+	rtnl_neigh_set_vlan(neigh, vlan);
 
 	struct nl_addr *_addr = nl_addr_build(AF_LLC, addr.somem(), addr.memlen());
 	rtnl_neigh_set_lladdr(neigh, _addr);
@@ -1007,7 +1007,7 @@ cnetlink::add_neigh_ll(int ifindex, const rofl::caddress_ll& addr)
 }
 
 void
-cnetlink::drop_neigh_ll(int ifindex, const rofl::caddress_ll& addr)
+cnetlink::drop_neigh_ll(int ifindex, uint16_t vlan, const rofl::caddress_ll& addr)
 {
 	struct rtnl_neigh *neigh = rtnl_neigh_alloc();
 
@@ -1015,7 +1015,7 @@ cnetlink::drop_neigh_ll(int ifindex, const rofl::caddress_ll& addr)
 	rtnl_neigh_set_family(neigh, PF_BRIDGE);
 	rtnl_neigh_set_state(neigh, NUD_NOARP|NUD_REACHABLE);
 	rtnl_neigh_set_flags(neigh, NTF_MASTER);
-	rtnl_neigh_set_vlan(neigh, 1); // todo expose
+	rtnl_neigh_set_vlan(neigh, vlan);
 
 	struct nl_addr *_addr = nl_addr_build(AF_LLC, addr.somem(), addr.memlen());
 	rtnl_neigh_set_lladdr(neigh, _addr);
