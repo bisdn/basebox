@@ -211,10 +211,8 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id,
 	uint32_t bucket_id = 0;
 
 	for (const uint32_t &i : l2_interfaces) {
-		gm.set_buckets().add_bucket(bucket_id).set_actions()
-				.add_action_group(rofl::cindex(0)).set_group_id(i);
-
-		++bucket_id;
+		gm.set_buckets().add_bucket(bucket_id++).set_actions()
+			.add_action_group(rofl::cindex(0)).set_group_id(i);
 	}
 
 	rofcore::logging::debug << __FUNCTION__ << ": send group-mod:" << std::endl
