@@ -334,13 +334,17 @@ ofdpa_fm_driver::enable_policy_arp(uint16_t vid, uint32_t group_id, bool update)
 	fm.set_command(
 			update ? rofl::openflow::OFPFC_MODIFY : rofl::openflow::OFPFC_ADD);
 
-	fm.set_match().set_eth_dst(rofl::cmacaddr("ff:ff:ff:ff:ff:ff"));
+	//fm.set_match().set_eth_dst(rofl::cmacaddr("ff:ff:ff:ff:ff:ff"));
 	fm.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
 
-	fm.set_out_port(rofl::openflow::OFPP_CONTROLLER);
+//	fm.set_out_port(rofl::openflow::OFPP_CONTROLLER);
 
-	fm.set_instructions().set_inst_write_actions().set_actions()
-			.add_action_group(rofl::cindex(0)).set_group_id(group_id);
+	fm.set_instructions().set_inst_apply_actions().set_actions().add_action_output(
+			rofl::cindex(0)).set_port_no(
+			rofl::openflow::OFPP_CONTROLLER);
+
+//	fm.set_instructions().set_inst_write_actions().set_actions()
+//			.add_action_group(rofl::cindex(0)).set_group_id(group_id);
 
 	rofcore::logging::debug << __FUNCTION__ << ": send flow-mod:" << std::endl
 			<< fm;
