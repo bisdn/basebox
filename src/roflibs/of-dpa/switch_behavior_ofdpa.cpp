@@ -242,19 +242,20 @@ switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		/* only send packet-out if we can determine a port-no */
 		if (portno) {
-			// XXX pkt-out temporarily disabled
-//			rofl::openflow::cofactions actions(dpt.get_version_negotiated());
+			rofcore::logging::info << __FUNCTION__ << ": send pkt-out, pkt:" << std::endl << *pkt;
+
+			rofl::openflow::cofactions actions(dpt.get_version_negotiated());
 //			//actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
 //			//actions.set_action_set_field(rofl::cindex(1)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(tapdev->get_pvid()));
-//			actions.set_action_output(rofl::cindex(0)).set_port_no(portno);
-//
-//			dpt.send_packet_out_message(
-//					rofl::cauxid(0),
-//					rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()),
-//					rofl::openflow::base::get_ofpp_controller_port(dpt.get_version_negotiated()),
-//					actions,
-//					pkt->soframe(),
-//					pkt->length());
+			actions.set_action_output(rofl::cindex(0)).set_port_no(portno);
+
+			dpt.send_packet_out_message(
+					rofl::cauxid(0),
+					rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()),
+					rofl::openflow::base::get_ofpp_controller_port(dpt.get_version_negotiated()),
+					actions,
+					pkt->soframe(),
+					pkt->length());
 
 		}
 	} catch (rofl::eRofDptNotFound& e) {
