@@ -218,6 +218,15 @@ switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 	using rofl::openflow::cofport;
 	using std::map;
 
+	assert(pkt && "invalid enque");
+	struct ethhdr *eth = (struct ethhdr*)pkt->soframe();
+
+	if (eth->h_dest[0] == 0x33 && eth->h_dest[1] == 0x33) {
+		rofcore::logging::info << __FUNCTION__ << ": drop multicast packet" << std::endl;
+		rofcore::cpacketpool::get_instance().release_pkt(pkt);
+		return;
+	}
+
 	try {
 		rofcore::ctapdev* tapdev = dynamic_cast<rofcore::ctapdev*>( netdev );
 		assert(tapdev);
