@@ -353,13 +353,14 @@ switch_behavior_ofdpa::neigh_ll_created(unsigned int ifindex, uint16_t nbindex)
 
 	// xxx only permanent or all? if all add_mac_to_fdb call
 	// in remove handle_srcmac_table
-	if (bridge.has_bridge_interface() && (rtn.get_state() & NUD_PERMANENT)) {
+	if (bridge.has_bridge_interface()) {
 		bridge.add_mac_to_fdb(get_of_port_no(crofdpt::get_dpt(this->dptid),rtl.get_devname()),
 				rtn.get_vlan(),
 				rtn.get_lladdr(),
 				true);
 	} else {
-		// todo log warning
+		logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: no bridge interface"
+				<< std::endl;
 	}
 }
 
