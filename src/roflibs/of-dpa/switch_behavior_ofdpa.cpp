@@ -46,26 +46,30 @@ switch_behavior_ofdpa::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& 
 	}
 
 	switch (msg.get_table_id()) {
-		case OFDPA_FLOW_TABLE_ID_SA_LOOKUP:
-			this->handle_srcmac_table(msg);
-			break;
-		default:
-			break;
+	case OFDPA_FLOW_TABLE_ID_SA_LOOKUP:
+		this->handle_srcmac_table(msg);
+		break;
+
+	case OFDPA_FLOW_TABLE_ID_ACL_POLICY:
+		this->handle_acl_policy_table(msg);
+		break;
+	default:
+		break;
 	}
 
-	// todo remove?
-	if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()) == msg.get_buffer_id()) {
-		// got the full packet
-		// fixme deal with pkt-in
-		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] got packet-in:" << std::endl;
-
-	} else {
-		// packet is buffered
-
-		// xxx check if length of frame is available, guessing here, that
-		// the buffered flag is invalid sometimes
-		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] cannot handle buffered packet currently" << std::endl;
-	}
+//	// todo remove?
+//	if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()) == msg.get_buffer_id()) {
+//		// got the full packet
+//		// fixme deal with pkt-in
+//		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] got packet-in:" << std::endl;
+//
+//	} else {
+//		// packet is buffered
+//
+//		// xxx check if length of frame is available, guessing here, that
+//		// the buffered flag is invalid sometimes
+//		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] cannot handle buffered packet currently" << std::endl;
+//	}
 }
 
 void switch_behavior_ofdpa::handle_flow_removed(rofl::crofdpt& dpt,
