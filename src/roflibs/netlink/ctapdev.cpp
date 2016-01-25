@@ -24,12 +24,13 @@ ctapdev::ctapdev(
 		dptid(dptid),
 		devname(devname),
 		pvid(pvid),
-		hwaddr(hwaddr)
+		hwaddr(hwaddr),
+		thread(this)
 {
 	try {
 		tap_open(devname, hwaddr);
 	} catch (...) {
-		port_open_timer_id = register_timer(CTAPDEV_TIMER_OPEN_PORT, 1);
+		thread.add_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec().expire_in(1));
 	}
 }
 
@@ -38,6 +39,7 @@ ctapdev::ctapdev(
 ctapdev::~ctapdev()
 {
 	tap_close();
+	thread.stop();
 }
 
 
@@ -78,8 +80,8 @@ ctapdev::tap_open(std::string const& devname, rofl::cmacaddr const& hwaddr)
 
 		//netdev_owner->netdev_open(this);
 
-		register_filedesc_r(fd);
-
+		thread.start();
+		thread.add_read_fd(fd);
 
 	} catch (eTapDevOpenFailed& e) {
 
@@ -115,7 +117,7 @@ ctapdev::tap_close()
 
 		disable_interface();
 
-		deregister_filedesc_r(fd);
+		thread.drop_read_fd(fd);
 
 	} catch (eNetDevIoctl& e) {
 		rofcore::logging::error << "ctapdev::tap_close() failed: dev:" << devname << std::endl;
@@ -139,7 +141,7 @@ ctapdev::enqueue(rofl::cpacket *pkt)
 	// store pkt in outgoing queue
 	pout_queue.push_back(pkt);
 
-	register_filedesc_w(fd);
+	thread.wakeup();
 }
 
 
@@ -161,15 +163,15 @@ ctapdev::enqueue(std::vector<rofl::cpacket*> pkts)
 		pout_queue.push_back(*it);
 	}
 
-	register_filedesc_w(fd);
+	thread.wakeup();
 }
 
 
 
 void
-ctapdev::handle_revent(int fd)
+ctapdev::handle_read_event(rofl::cthread& thread, int fd)
 {
-	rofl::cpacket *pkt = (rofl::cpacket*)0;
+	rofl::cpacket *pkt = NULL;
 	try {
 
 		rofl::cmemory mem(1518);
@@ -197,33 +199,43 @@ ctapdev::handle_revent(int fd)
 
 		rofcore::logging::error << "ctapdev::handle_revent() EAGAIN, retrying later" << std::endl;
 
-		cpacketpool::get_instance().release_pkt(pkt);
+		if (pkt)
+			cpacketpool::get_instance().release_pkt(pkt);
 
 	} catch (eNetDevCritical& e) {
 		rofcore::logging::error << "ctapdev::handle_revent() error occured" << std::endl;
 
-		cpacketpool::get_instance().release_pkt(pkt);
+		if (pkt)
+			cpacketpool::get_instance().release_pkt(pkt);
 
-		delete this; return;
+		delete this;
+		return;
 	}
 }
 
 
 
 void
-ctapdev::handle_wevent(int fd)
-{
-	rofl::cpacket * pkt = (rofl::cpacket*)0;
-	try {
+ctapdev::handle_write_event(rofl::cthread& thread, int fd) {
+	tx();
+}
 
+void
+ctapdev::tx()
+{
+	rofl::cpacket * pkt = NULL;
+	try {
 		while (not pout_queue.empty()) {
 
 			pkt = pout_queue.front();
 			int rc = 0;
 			if ((rc = write(fd, pkt->soframe(), pkt->length())) < 0) {
 				switch (errno) {
-				case EAGAIN: 	throw eNetDevAgain("ctapdev::handle_wevent() EAGAIN");
-				default:		throw eNetDevCritical("ctapdev::handle_wevent() error occured");
+				case EAGAIN:
+					thread.add_write_fd(fd);
+					throw eNetDevAgain("ctapdev::handle_wevent() EAGAIN");
+				default:
+					throw eNetDevCritical("ctapdev::handle_wevent() error occured");
 				}
 			}
 
@@ -233,7 +245,6 @@ ctapdev::handle_wevent(int fd)
 		}
 
 		if (pout_queue.empty()) {
-			deregister_filedesc_w(fd);
 		}
 
 
@@ -255,14 +266,15 @@ ctapdev::handle_wevent(int fd)
 
 
 void
-ctapdev::handle_timeout(int opaque, void* data)
+ctapdev::handle_timeout(rofl::cthread& thread, uint32_t timer_id,
+		const std::list<unsigned int>& ttypes)
 {
-	switch (opaque) {
+	switch (timer_id) {
 	case CTAPDEV_TIMER_OPEN_PORT: {
 		try {
 			tap_open(devname, hwaddr);
 		} catch (...) {
-			port_open_timer_id = register_timer(CTAPDEV_TIMER_OPEN_PORT, 1);
+			thread.add_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec().expire_in(1));
 		}
 	} break;
 	}

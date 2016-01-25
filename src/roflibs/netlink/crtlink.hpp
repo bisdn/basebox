@@ -16,7 +16,6 @@
 #include <set>
 
 #include <rofl/common/caddress.h>
-#include <rofl/common/logging.h>
 #include <rofl/common/cmemory.h>
 
 #include <netlink/object.h>

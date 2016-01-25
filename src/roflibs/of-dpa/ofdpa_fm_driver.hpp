@@ -1,7 +1,7 @@
 #ifndef SRC_ROFLIBS_OF_DPA_OFDPA_FM_DRIVER_HPP_
 #define SRC_ROFLIBS_OF_DPA_OFDPA_FM_DRIVER_HPP_
 
-#include <rofl/common/cdptid.h>
+#include <rofl/common/crofdpt.h>
 #include <rofl/common/caddress.h>
 #include <list>
 
@@ -11,7 +11,7 @@ namespace basebox
 class ofdpa_fm_driver
 {
 public:
-	ofdpa_fm_driver(const rofl::cdptid& dptid);
+	ofdpa_fm_driver(rofl::crofdpt& dptid);
 	virtual ~ofdpa_fm_driver();
 
 	void
@@ -46,7 +46,7 @@ public:
 private:
 	const uint16_t default_idle_timeout;
 
-	rofl::cdptid dptid;
+	rofl::crofdpt& dpt;
 };
 
 } /* namespace basebox */

@@ -60,7 +60,6 @@ cnetdev_owner::enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts)
 
 
 cnetdev::cnetdev(cnetdev_owner *netdev_owner, std::string const& devname, pthread_t tid) :
-		rofl::ciosrv(tid),
 		devname(devname),
 		netdev_owner(netdev_owner),
 		ifindex(0)

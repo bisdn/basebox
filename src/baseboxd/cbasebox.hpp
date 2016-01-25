@@ -18,9 +18,6 @@
 #include <exception>
 #include <rofl/common/crofbase.h>
 
-#include <rofl/platform/unix/cdaemon.h>
-#include <rofl/platform/unix/cunixenv.h>
-
 #ifndef OF_DPA
 #include "roflibs/flowcore/cflowcore.hpp"
 #include "roflibs/ethcore/cethcore.hpp"
@@ -50,15 +47,13 @@ public:
 	eBaseBoxBase(const std::string& __arg) : std::runtime_error(__arg) {};
 };
 
+static rofl::crofdpt invalid(NULL, rofl::cdptid(0));
 
-class cbasebox : public rofl::crofbase/*, public rofcore::cnetlink_common_observer*/ {
-
-	/**
-	 * @brief	pointer to singleton
-	 */
-	static cbasebox*	rofbase;
+class cbasebox : public rofl::crofbase,
+	public virtual rofl::cthread_env {
 
 	static bool keep_on_running;
+	rofl::cthread thread;
 
 	/**
 	 *
@@ -66,7 +61,7 @@ class cbasebox : public rofl::crofbase/*, public rofcore::cnetlink_common_observ
 	cbasebox(
 			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap =
 					rofl::openflow::cofhello_elem_versionbitmap()) :
-						rofl::crofbase(versionbitmap),
+						thread(this),
 						// FIXME this is configurations, hence move somewhere else
 						table_id_svc_flows(0),
 						table_id_eth_port_membership(1),
@@ -78,8 +73,11 @@ class cbasebox : public rofl::crofbase/*, public rofcore::cnetlink_common_observ
 						table_id_ip_fwd(6),
 						table_id_eth_dst(7),
 						default_pvid(1),
-						sa(switch_behavior_fabric::get_behavior(-1))
-	{};
+						sa(switch_behavior_fabric::get_behavior(-1, invalid))
+	{
+		rofl::crofbase::set_versionbitmap(versionbitmap);
+		thread.start();
+	}
 
 	/**
 	 *
@@ -102,11 +100,9 @@ public:
 	get_instance(
 			const rofl::openflow::cofhello_elem_versionbitmap& versionbitmap =
 					rofl::openflow::cofhello_elem_versionbitmap()) {
-		if (cbasebox::rofbase == (cbasebox*)0) {
-			cbasebox::rofbase = new cbasebox(versionbitmap);
-		}
-		return *(cbasebox::rofbase);
-	};
+		static cbasebox box(versionbitmap);
+		return box;
+	}
 
 	/**
 	 *
@@ -121,6 +117,31 @@ public:
 	stop();
 
 protected:
+	virtual void handle_wakeup(rofl::cthread& thread)
+	{
+	}
+
+	virtual void
+	handle_conn_established(
+			rofl::crofdpt& dpt,
+			const rofl::cauxid& auxid)
+	{
+		dpt.set_conn(auxid).set_trace(true);
+
+
+		crofbase::add_ctl(rofl::cctlid(0)).set_conn(rofl::cauxid(0)).
+				set_trace(true).
+				set_journal().
+				log_on_stderr(true).
+				set_max_entries(64);
+
+		crofbase::set_ctl(rofl::cctlid(0)).set_conn(rofl::cauxid(0)).
+				set_tcp_journal().
+				log_on_stderr(true).
+				set_max_entries(16);
+
+
+	}
 
 	/**
 	 *
@@ -194,7 +215,7 @@ public:
 	 *
 	 */
 	void
-	set_python_script(const std::string& python_script) { this->python_script = python_script; };
+	set_python_script(const std::string& python_script) { this->python_script = python_script; }
 #endif
 
 public:
@@ -203,7 +224,7 @@ public:
 	operator<< (std::ostream& os, const cbasebox& box) {
 		os << rofcore::indent(0) << "<cbasebox>" << std::endl;
 		return os;
-	};
+	}
 
 private:
 
@@ -271,6 +292,6 @@ private:
 	switch_behavior 			*sa;		// behavior of the switch (currently only a single switch)
 };
 
-}; // end of namespace ethcore
+} // end of namespace ethcore
 
 #endif /* CROFBASE_HPP_ */

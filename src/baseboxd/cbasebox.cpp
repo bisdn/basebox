@@ -6,12 +6,12 @@
  */
 
 #include "cbasebox.hpp"
+#include "cunixenv.h"
 
 #include <assert.h>
 
 using namespace basebox;
 
-/*static*/cbasebox* cbasebox::rofbase = (cbasebox*)0;
 /*static*/bool cbasebox::keep_on_running = true;
 /*static*/std::bitset<64> cbasebox::flags;
 /*static*/const std::string cbasebox::BASEBOX_LOG_FILE = std::string("/var/log/baseboxd.log");
@@ -26,7 +26,6 @@ int
 cbasebox::run(int argc, char** argv)
 {
 	rofl::cunixenv env_parser(argc, argv);
-	rofl::logging::set_debug_level(rofl::logging::TRACE);
 
 	/* update defaults */
 	//env_parser.update_default_option("logfile", ETHCORE_LOG_FILE);
@@ -42,7 +41,6 @@ cbasebox::run(int argc, char** argv)
 
 	// configuration file
 	ethcore::cconfig::get_instance().open(env_parser.get_arg("config-file"));
-
 
 	/*
 	 * read configuration file for roflibs related configuration
@@ -118,35 +116,22 @@ cbasebox::run(int argc, char** argv)
 		/* default to false */
 	}
 
+	// FIXME get this working again
 	/*
-	 * daemonize
-	 */
-	if (daemonize) {
-		rofl::cdaemon::daemonize(pidfile, logfile);
-	}
-	rofl::logging::set_debug_level(rofl_debug);
+//	 * daemonize
+//	 */
+//	if (daemonize) {
+//		rofl::cdaemon::daemonize(pidfile, logfile);
+//	}
 	rofcore::logging::set_debug_level(core_debug);
 
 	if (daemonize) {
 		rofcore::logging::notice << "[baseboxd][main] daemonizing successful" << std::endl;
 	}
 
-
-
-	/*
-	 * prepare OpenFlow socket for listening
-	 */
 	rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-	if (ethcore::cconfig::get_instance().exists("baseboxd.openflow.version")) {
-		int ofp_version = (int)ethcore::cconfig::get_instance().lookup("baseboxd.openflow.version");
-		ofp_version = (ofp_version < rofl::openflow13::OFP_VERSION) ? rofl::openflow13::OFP_VERSION : ofp_version;
-		versionbitmap.add_ofp_version(ofp_version);
-	} else {
-		versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
-	}
-
+	versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
 	rofcore::logging::notice << "[baseboxd][main] using OpenFlow version-bitmap:" << std::endl << versionbitmap;
-
 	basebox::cbasebox& box = basebox::cbasebox::get_instance(versionbitmap);
 
 	//base.init(/*port-table-id=*/0, /*fib-in-table-id=*/1, /*fib-out-table-id=*/2, /*default-vid=*/1);
@@ -164,15 +149,10 @@ cbasebox::run(int argc, char** argv)
 	if (ethcore::cconfig::get_instance().exists("baseboxd.openflow.bindaddr")) {
 		bindaddr << (const char*)ethcore::cconfig::get_instance().lookup("baseboxd.openflow.bindaddr");
 	} else {
-		bindaddr << "::";
+		bindaddr << "0.0.0.0";
 	}
-
-	enum rofl::csocket::socket_type_t socket_type = rofl::csocket::SOCKET_TYPE_PLAIN;
-	rofl::cparams socket_params = rofl::csocket::get_default_params(socket_type);
-	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_PORT).set_string(portno.str());
-	socket_params.set_param(rofl::csocket::PARAM_KEY_LOCAL_HOSTNAME).set_string(bindaddr.str());
-
-	box.add_dpt_listening(0, socket_type, socket_params);
+	rofl::csockaddr baddr(AF_INET, bindaddr.str(), atoi(portno.str().c_str()));
+	box.dpt_sock_listen(baddr);
 
 #if 0
 	/*
@@ -252,20 +232,20 @@ cbasebox::run(int argc, char** argv)
 
 
 
-	cbasebox::keep_on_running = true;
-	while (cbasebox::keep_on_running) {
+	while (keep_on_running) {
 		try {
-			// start main loop, does not return
-			rofl::cioloop::get_loop().run();
+			//Launch main I/O loop
+			struct timespec ts;
+			ts.tv_sec = 1;
+			ts.tv_nsec = 0;
+			pselect(0, NULL, NULL, NULL, &ts, NULL);
 
 		} catch (std::runtime_error& e) {
-			rofcore::logging::error << "[cbasebox][run] caught exception in main loop, e.what() " << e.what() << std::endl;
+			std::cerr << "exception caught, what: " << e.what() << std::endl;
 		}
 	}
 
-	rofl::cioloop::get_loop().shutdown();
-
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 
@@ -274,7 +254,7 @@ void
 cbasebox::stop()
 {
 	cbasebox::keep_on_running = false;
-	rofl::cioloop::get_loop().stop();
+//	thread.stop();
 }
 
 
@@ -283,9 +263,9 @@ void
 cbasebox::handle_dpt_open(
 		rofl::crofdpt& dpt) {
 
-	if (rofl::openflow13::OFP_VERSION < dpt.get_version_negotiated()) {
+	if (rofl::openflow13::OFP_VERSION < dpt.get_version()) {
 		rofcore::logging::error << "[cbasebox][handle_dpt_open] datapath "
-				<< "attached with invalid OpenFlow protocol version: " << (int)dpt.get_version_negotiated() << std::endl;
+				<< "attached with invalid OpenFlow protocol version: " << (int)dpt.get_version() << std::endl;
 		return;
 	}
 
@@ -416,12 +396,11 @@ cbasebox::handle_flow_removed(
 void
 cbasebox::handle_port_status(
 		rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg) {
-	try {
-		rofcore::logging::debug << "[cbasebox][handle_port_status] dpid: " << dpt.get_dpid().str()
-				<< " pkt received: " << std::endl << msg;
+	rofcore::logging::debug << "[cbasebox][handle_port_status] dpid: " << dpt.get_dpid().str()
+						<< " pkt received: " << std::endl << msg;
 
-		const rofl::openflow::cofport& port = msg.get_port();
-		uint32_t ofp_port_no = msg.get_port().get_port_no();
+	//const rofl::openflow::cofport& port = msg.get_port();
+	uint32_t ofp_port_no = msg.get_port().get_port_no();
 
 #if 0
 		switch (msg.get_reason()) {
@@ -455,9 +434,6 @@ cbasebox::handle_port_status(
 		}
 #endif // OF_DPA
 
-	} catch (rofl::openflow::ePortNotFound& e) {
-		rofcore::logging::debug << "[cbasebox][handle_port_status] portno not found" << std::endl;
-	}
 }
 
 
@@ -505,7 +481,7 @@ cbasebox::handle_port_desc_stats_reply(
 
 	/* init behavior */// todo behavior based on features/descs/stats
 	switch_behavior *tmp = this->sa;
-	this->sa = switch_behavior_fabric::get_behavior(1, dpt.get_dptid());
+	this->sa = switch_behavior_fabric::get_behavior(1, dpt);
 
 	if (tmp) {
 		delete tmp;
@@ -604,7 +580,7 @@ cbasebox::handle_port_desc_stats_reply_timeout(rofl::crofdpt& dpt, uint32_t xid)
 }
 
 
-
+#if 0 // fixme temporary disabled hooks
 
 void
 cbasebox::hook_dpt_attach(const rofl::cdptid& dptid)
@@ -645,6 +621,7 @@ cbasebox::hook_dpt_detach(const rofl::cdptid& dptid)
 		rofcore::logging::error << "[cbasebox][hook_dpt_detach] script execution failed" << std::endl;
 	}
 }
+#endif
 
 void
 cbasebox::execute(

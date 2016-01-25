@@ -230,10 +230,10 @@ ofdpa_bridge::update_interface(const rofcore::crtlink& oldlink, const rofcore::c
 		rofcore::logging::error << __PRETTY_FUNCTION__ << newlink << " is not a bridge interface" << std::endl;
 		return;
 	}
-	if (AF_BRIDGE != oldlink.get_family()) {
-		rofcore::logging::error << __PRETTY_FUNCTION__ << oldlink << " is not a bridge interface" << std::endl;
-		return;
-	}
+//	if (AF_BRIDGE != oldlink.get_family()) {
+//		rofcore::logging::error << __PRETTY_FUNCTION__ << oldlink << " is not a bridge interface" << std::endl;
+//		return;
+//	}
 	if (bridge.get_ifindex() != newlink.get_master()) {
 		rofcore::logging::error << __PRETTY_FUNCTION__ << newlink << " is not a slave of this bridge interface" << std::endl;
 		return;

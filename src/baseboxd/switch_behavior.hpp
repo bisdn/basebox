@@ -12,12 +12,12 @@ class switch_behavior;
 class switch_behavior_fabric {
 public:
 	static switch_behavior*
-	get_behavior(const int type, const rofl::cdptid& dptid = rofl::cdptid());	// todo get behavior by evaluating switch description, features, port stats, table stats, ...
+	get_behavior(const int type, rofl::crofdpt& dpt);	// todo get behavior by evaluating switch description, features, port stats, table stats, ...
 };
 
 class switch_behavior {
 public:
-	switch_behavior(rofl::cdptid const& dptid);
+	switch_behavior(const rofl::cdptid&);
 
 	virtual
 	~switch_behavior();
@@ -51,7 +51,7 @@ public:
 
 protected:
 
-	rofl::cdptid						dptid;
+	const rofl::cdptid& dptid;
 
 private:
 	/* currently non copyable objects only */

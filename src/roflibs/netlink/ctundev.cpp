@@ -18,12 +18,13 @@ ctundev::ctundev(
 		std::string const& devname) :
 		cnetdev(netdev_owner, devname),
 		fd(-1),
-		devname(devname)
+		devname(devname),
+		thread(this)
 {
 	try {
 		tun_open(devname);
 	} catch (...) {
-		port_open_timer_id = register_timer(CTUNDEV_TIMER_OPEN_PORT, 1);
+		thread.add_timer(CTUNDEV_TIMER_OPEN_PORT, rofl::ctimespec().expire_in(1));
 	}
 }
 
@@ -32,6 +33,7 @@ ctundev::ctundev(
 ctundev::~ctundev()
 {
 	tun_close();
+	thread.stop();
 }
 
 
@@ -68,7 +70,8 @@ ctundev::tun_open(std::string const& devname)
 
 		enable_interface();
 
-		register_filedesc_r(fd);
+		thread.start();
+		thread.add_read_fd(fd);
 
 	} catch (std::runtime_error& e) {
 		rofcore::logging::debug << "[ctundev][tun_open] exception caught: " << e.what() << std::endl;
@@ -89,7 +92,7 @@ ctundev::tun_close()
 
 		disable_interface();
 
-		deregister_filedesc_r(fd);
+		thread.drop_read_fd(fd);
 
 	} catch (std::runtime_error& e) {
 		rofcore::logging::debug << "[ctundev][tun_close] exception caught: " << e.what() << std::endl;
@@ -114,7 +117,7 @@ ctundev::enqueue(rofl::cpacket *pkt)
 	// store pkt in outgoing queue
 	pout_queue.push_back(pkt);
 
-	register_filedesc_w(fd);
+	thread.add_write_fd(fd);
 }
 
 
@@ -136,13 +139,13 @@ ctundev::enqueue(std::vector<rofl::cpacket*> pkts)
 		pout_queue.push_back(*it);
 	}
 
-	register_filedesc_w(fd);
+	thread.add_write_fd(fd);
 }
 
 
 
 void
-ctundev::handle_revent(int fd)
+ctundev::handle_read_event(rofl::cthread& thread, int fd)
 {
 	rofl::cpacket *pkt = (rofl::cpacket*)0;
 	try {
@@ -188,7 +191,7 @@ ctundev::handle_revent(int fd)
 
 
 void
-ctundev::handle_wevent(int fd)
+ctundev::handle_write_event(rofl::cthread& thread, int fd)
 {
 	rofl::cpacket * pkt = (rofl::cpacket*)0;
 	try {
@@ -211,7 +214,7 @@ ctundev::handle_wevent(int fd)
 		}
 
 		if (pout_queue.empty()) {
-			deregister_filedesc_w(fd);
+			thread.drop_write_fd(fd);
 		}
 
 
@@ -231,14 +234,15 @@ ctundev::handle_wevent(int fd)
 
 
 void
-ctundev::handle_timeout(int opaque, void* data)
+ctundev::handle_timeout(rofl::cthread& thread, uint32_t timer_id,
+		const std::list<unsigned int>& ttypes)
 {
-	switch (opaque) {
+	switch (timer_id) {
 	case CTUNDEV_TIMER_OPEN_PORT: {
 		try {
 			tun_open(devname);
 		} catch (...) {
-			port_open_timer_id = register_timer(CTUNDEV_TIMER_OPEN_PORT, 1);
+			thread.add_timer(CTUNDEV_TIMER_OPEN_PORT, rofl::ctimespec(1));
 		}
 	} break;
 	}

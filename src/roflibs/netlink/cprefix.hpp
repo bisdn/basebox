@@ -11,6 +11,7 @@
 #include <iostream>
 #include <rofl/common/caddress.h>
 #include <roflibs/netlink/clogging.hpp>
+#include <cassert>
 
 namespace rofcore {
 

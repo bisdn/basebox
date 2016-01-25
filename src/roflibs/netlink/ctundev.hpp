@@ -61,7 +61,7 @@ public:
 	eTunDevNotFound(const std::string& __arg) : eTunDevBase(__arg) {};
 };
 
-class ctundev : public cnetdev {
+class ctundev : public cnetdev, rofl::cthread_env {
 public:
 
 	/**
@@ -107,27 +107,29 @@ protected:
 	void
 	tun_close();
 
+	virtual void handle_wakeup(rofl::cthread& thread)
+	{
+	}
 
 	/**
 	 * @brief	handle read events on file descriptor
 	 */
 	virtual void
-	handle_revent(int fd);
+	handle_read_event(rofl::cthread& thread, int fd);
 
 
 	/**
 	 * @brief	handle write events on file descriptor
 	 */
 	virtual void
-	handle_wevent(int fd);
-
-private:
+	handle_write_event(rofl::cthread& thread, int fd);
 
 	/**
 	 * @brief	reschedule opening of port in case of failure
 	 */
 	virtual void
-	handle_timeout(int opaque, void* data = (void*)0);
+	handle_timeout(rofl::cthread& thread, uint32_t timer_id,
+			const std::list<unsigned int>& ttypes);
 
 public:
 
@@ -153,7 +155,7 @@ private:
 	int 							fd; 			// tap device file descriptor
 	std::list<rofl::cpacket*> 		pout_queue;		// queue of outgoing packets
 	std::string						devname;
-	rofl::ctimerid					port_open_timer_id;
+	rofl::cthread thread;
 
 	enum ctundev_timer_t {
 		CTUNDEV_TIMER_OPEN_PORT = 1,

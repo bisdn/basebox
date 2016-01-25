@@ -6,8 +6,8 @@
 #include <rofl/common/openflow/cofflowmod.h>
 #include <rofl/common/openflow/openflow_common.h>
 #include <rofl/common/openflow/coxmatch.h>
-#include <rofl/common/protocols/fvlanframe.h>
-#include <rofl/common/protocols/farpv4frame.h>
+
+#include <linux/if_ether.h>
 
 namespace basebox {
 
@@ -37,16 +37,16 @@ namespace ofdpa {
 }; // end of namespace ofdpa
 
 
-class coxmatch_ofb_vrf : public rofl::openflow::coxmatch_16_exp {
+class coxmatch_ofb_vrf : public rofl::openflow::coxmatch_exp {
 public:
 	coxmatch_ofb_vrf(uint16_t vrf) :
-		coxmatch_16_exp(ofdpa::OXM_TLV_EXPR_VRF, ofdpa::experimenter_id, vrf, COXMATCH_16BIT)
+		coxmatch_exp(ofdpa::OXM_TLV_EXPR_VRF, ofdpa::experimenter_id, vrf)
 	{};
 	coxmatch_ofb_vrf(uint16_t vrf, uint16_t mask) :
-		coxmatch_16_exp(ofdpa::OXM_TLV_EXPR_VRF_MASK, ofdpa::experimenter_id, vrf, mask, COXMATCH_16BIT)
+		coxmatch_exp(ofdpa::OXM_TLV_EXPR_VRF_MASK, ofdpa::experimenter_id, vrf, mask)
 	{};
-	coxmatch_ofb_vrf(const coxmatch& oxm) :
-			coxmatch_16_exp(oxm)
+	coxmatch_ofb_vrf(const coxmatch_exp& oxm) :
+		coxmatch_exp(oxm)
 	{};
 	virtual
 	~coxmatch_ofb_vrf()
@@ -55,8 +55,8 @@ public:
 	friend std::ostream&
 	operator<< (std::ostream& os, const coxmatch_ofb_vrf& oxm) {
 		os << dynamic_cast<const coxmatch&>(oxm);
-		os << rofl::indent(2) << "<coxmatch_ofb_vlan_vid >" << std::endl;
-		os << rofl::indent(4) << "<vlan-vid: 0x" << std::hex
+		os << rofcore::indent(2) << "<coxmatch_ofb_vlan_vid >" << std::endl;
+		os << rofcore::indent(4) << "<vlan-vid: 0x" << std::hex
 				<< (int) oxm.get_u16value() << "/0x" << (int) oxm.get_u16mask()
 				<< std::dec << " >" << std::endl;
 		return os;
@@ -68,27 +68,8 @@ gen_flow_mod_type_cookie(uint64_t val) {
 	return (val<< 8*7);
 }
 
-static uint32_t
-get_of_port_no(const rofl::crofdpt& dpt, const std::string& dev)
-{
-	using rofl::openflow::cofport;
-	using std::map;
-
-	uint32_t port_no = 0;
-
-	for (const auto &i : dpt.get_ports().get_ports()) {
-		if (0 == i.second->get_name().compare(dev)) {
-			rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] outport=" << i.first << std::endl;
-			port_no = i.first;
-			break;
-		}
-	}
-
-	return port_no;
-}
-
-ofdpa_fm_driver::ofdpa_fm_driver(const rofl::cdptid& dptid) :
-		dptid(dptid),
+ofdpa_fm_driver::ofdpa_fm_driver(rofl::crofdpt& dpt) :
+		dpt(dpt),
 		default_idle_timeout(30) // todo idle timeout should be configurable
 {
 }
@@ -107,16 +88,16 @@ ofdpa_fm_driver::enable_port_pvid_ingress(const std::string &port_name, uint16_t
 
 	// check params
 	assert(vid < 0x1000);
+	uint32_t port_no;
 
-	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-	uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), port_name);
-
-	if (0 == port_no) {
+	try {
+		port_no = dpt.get_ports().get_port(port_name).get_port_no();
+	} catch (rofl::openflow::ePortsNotFound& e) {
 		rofcore::logging::error << __PRETTY_FUNCTION__ << " not an of-port:" << std::endl;
 		return;
 	}
 
-	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
+	rofl::openflow::cofflowmod fm(dpt.get_version());
 
 	fm.set_command(rofl::openflow::OFPFC_ADD);
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_VLAN);
@@ -151,16 +132,16 @@ void
 ofdpa_fm_driver::enable_port_vid_ingress(const std::string &port_name, uint16_t vid)
 {
 	assert(vid < 0x1000);
+	uint32_t port_no;
 
-	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-	uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), port_name);
-
-	if (0 == port_no) {
+	try {
+		port_no = dpt.get_ports().get_port(port_name).get_port_no();
+	} catch (rofl::openflow::ePortsNotFound& e) {
 		rofcore::logging::error << __PRETTY_FUNCTION__ << " not an of-port:" << std::endl;
 		return;
 	}
 
-	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
+	rofl::openflow::cofflowmod fm(dpt.get_version());
 
 	 // todo check what happens if this is added two times?
 	fm.set_command(rofl::openflow::OFPFC_ADD);
@@ -193,17 +174,17 @@ ofdpa_fm_driver::enable_port_vid_egress(const std::string &port_name, uint16_t v
 	// equals l2 interface group, so maybe rename this
 
 	assert(vid < 0x1000);
+	uint32_t port_no;
 
-	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-	uint32_t port_no = get_of_port_no(rofl::crofdpt::get_dpt(this->dptid), port_name);
-
-	if (0 == port_no) {
+	try {
+		port_no = dpt.get_ports().get_port(port_name).get_port_no();
+	} catch (rofl::openflow::ePortsNotFound& e) {
 		rofcore::logging::error << __PRETTY_FUNCTION__ << " not an of-port:" << std::endl;
 		return rofl::openflow::OFPG_MAX;
 	}
 
 	uint32_t group_id = (0x0fff & vid) << 16 | (0xffff & port_no);
-	rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
+	rofl::openflow::cofgroupmod gm(dpt.get_version());
 
 	gm.set_command(rofl::openflow::OFPGC_ADD);
 	gm.set_type(rofl::openflow::OFPGT_INDIRECT);
@@ -240,8 +221,7 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id,
 	uint32_t group_id = 3 << 28 | (0x0fff & vid) << 16
 			| (0xffff & (id | next_ident));
 
-	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-	rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
+	rofl::openflow::cofgroupmod gm(dpt.get_version());
 
 	gm.set_command(rofl::openflow::OFPGC_ADD);
 	gm.set_type(rofl::openflow::OFPGT_ALL);
@@ -263,7 +243,7 @@ ofdpa_fm_driver::enable_group_l2_multicast(uint16_t vid, uint16_t id,
 		enable_policy_arp(vid, group_id, true);
 
 		// delete old entry
-		rofl::openflow::cofgroupmod gm(dpt.get_version_negotiated());
+		rofl::openflow::cofgroupmod gm(dpt.get_version());
 
 		gm.set_command(rofl::openflow::OFPGC_DELETE);
 		gm.set_type(rofl::openflow::OFPGT_ALL);
@@ -287,7 +267,7 @@ ofdpa_fm_driver::enable_bridging_dlf_vlan(uint16_t vid, uint32_t group_id,
 
 	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
 
-	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
+	rofl::openflow::cofflowmod fm(dpt.get_version());
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_BRIDGING);
 
 	fm.set_idle_timeout(0);
@@ -322,8 +302,7 @@ ofdpa_fm_driver::enable_policy_arp(uint16_t vid, uint32_t group_id, bool update)
 {
 	assert(vid < 0x1000);
 
-	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
+	rofl::openflow::cofflowmod fm(dpt.get_version());
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_ACL_POLICY);
 
 	fm.set_idle_timeout(0);
@@ -335,7 +314,7 @@ ofdpa_fm_driver::enable_policy_arp(uint16_t vid, uint32_t group_id, bool update)
 			update ? rofl::openflow::OFPFC_MODIFY : rofl::openflow::OFPFC_ADD);
 
 	//fm.set_match().set_eth_dst(rofl::cmacaddr("ff:ff:ff:ff:ff:ff"));
-	fm.set_match().set_eth_type(rofl::farpv4frame::ARPV4_ETHER);
+	fm.set_match().set_eth_type(ETH_P_ARP);
 
 //	fm.set_out_port(rofl::openflow::OFPP_CONTROLLER);
 
@@ -357,8 +336,7 @@ void ofdpa_fm_driver::add_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 {
 	assert(vid < 0x1000);
 
-	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
+	rofl::openflow::cofflowmod fm(dpt.get_version());
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_BRIDGING);
 
 	fm.set_idle_timeout(permanent ? 0 : default_idle_timeout);
@@ -393,8 +371,7 @@ void ofdpa_fm_driver::remove_bridging_unicast_vlan(const rofl::cmacaddr& mac,
 {
 	assert(vid < 0x1000);
 
-	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-	rofl::openflow::cofflowmod fm(dpt.get_version_negotiated());
+	rofl::openflow::cofflowmod fm(dpt.get_version());
 	fm.set_table_id(OFDPA_FLOW_TABLE_ID_BRIDGING);
 
 	fm.set_priority(2);

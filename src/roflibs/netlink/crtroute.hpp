@@ -13,16 +13,9 @@
 #include <algorithm>
 #include <exception>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include <netlink/object.h>
 #include <netlink/route/route.h>
-#ifdef __cplusplus
-}
-#endif
 
-#include <rofl/common/logging.h>
 #include <rofl/common/caddress.h>
 
 #include <roflibs/netlink/crtnexthops.hpp>

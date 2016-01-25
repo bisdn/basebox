@@ -59,6 +59,7 @@ cpacketpool::get_instance(
 rofl::cpacket*
 cpacketpool::acquire_pkt()
 {
+	rofl::AcquireReadWriteLock rwlock(pool_rwlock);
 	if (idlepool.empty()) {
 		throw ePacketPoolExhausted("cpacketpool::acquire_pkt() packetpool exhausted");
 	}
@@ -73,9 +74,8 @@ void
 cpacketpool::release_pkt(
 			rofl::cpacket* pkt)
 {
-	if (0 == pkt) {
-		return;
-	}
+	assert(pkt);
+	rofl::AcquireReadWriteLock rwlock(pool_rwlock);
 	pkt->clear();
 	idlepool.insert(pkt);
 }

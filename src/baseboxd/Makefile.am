@@ -11,7 +11,9 @@ baseboxd_SOURCES = \
 	cconfig.hpp \
 	cconfig.cpp \
 	switch_behavior.hpp \
-	switch_behavior.cpp
+	switch_behavior.cpp \
+	cunixenv.cc \
+	cunixenv.h
 
 	
 baseboxd_LDADD = -lpthread -lrt \

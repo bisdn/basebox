@@ -88,7 +88,7 @@ private:
 	static ccookiebox* 					cookiebox;
 	uint64_t 							next_cookie;
 	std::map<uint64_t, ccookie_owner*> 	cookiestore;
-	ccookiebox() : next_cookie(rofl::crandom(8).uint64()) {};
+	ccookiebox() : next_cookie(rofl::crandom().uint64()) {};
 	~ccookiebox() {};
 
 public:

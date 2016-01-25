@@ -11,15 +11,13 @@
 
 namespace basebox {
 
-switch_behavior_ofdpa::switch_behavior_ofdpa(const rofl::cdptid& dptid) :
-		switch_behavior(dptid),
-		fm_driver(dptid),
-		bridge(fm_driver)
+switch_behavior_ofdpa::switch_behavior_ofdpa(rofl::crofdpt& dpt) :
+		switch_behavior(dpt.get_dptid()),
+		fm_driver(dpt),
+		bridge(fm_driver),
+		dpt(dpt)
 {
-	rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-
 	rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] dpt: " << std::endl << dpt;
-
 	init_ports();
 }
 
@@ -47,18 +45,18 @@ switch_behavior_ofdpa::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& 
 
 	switch (msg.get_table_id()) {
 	case OFDPA_FLOW_TABLE_ID_SA_LOOKUP:
-		this->handle_srcmac_table(msg);
+		this->handle_srcmac_table(dpt, msg);
 		break;
 
 	case OFDPA_FLOW_TABLE_ID_ACL_POLICY:
-		this->handle_acl_policy_table(msg);
+		this->handle_acl_policy_table(dpt, msg);
 		break;
 	default:
 		break;
 	}
 
 //	// todo remove?
-//	if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()) == msg.get_buffer_id()) {
+//	if (rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()) == msg.get_buffer_id()) {
 //		// got the full packet
 //		// fixme deal with pkt-in
 //		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] got packet-in:" << std::endl;
@@ -80,11 +78,11 @@ void switch_behavior_ofdpa::handle_flow_removed(rofl::crofdpt& dpt,
 		return;
 	}
 
-	std::cout << __FUNCTION__ << ": msg:" << std::endl << msg;
+	rofcore::logging::info << __FUNCTION__ << ": msg:" << std::endl << msg;
 
 	switch (msg.get_table_id()) {
 		case OFDPA_FLOW_TABLE_ID_BRIDGING:
-			this->handle_bridging_table(msg);
+			this->handle_bridging_table_rm(dpt, msg);
 			break;
 		default:
 			break;
@@ -100,15 +98,12 @@ switch_behavior_ofdpa::init_ports()
 
 	/* init 1:1 port mapping */
 	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-		const map<uint32_t, cofport*> &ports = dpt.get_ports().get_ports();
-
-		// xxx fixme this has to be async
-		for (const auto &i : dpt.get_ports().get_ports()) {
-			const cofport* port = i.second;
-			if (not has_tap_dev(dptid, port->get_name())) {
-				rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] adding port " << port->get_name() << " with portno=" << port->get_port_no() << std::endl;
-				add_tap_dev(dptid, port->get_name(), 1, port->get_hwaddr()); // todo remove pvid from tapdev
+		for (const auto &i : dpt.get_ports().keys()) {
+			const cofport &port = dpt.get_ports().get_port(i);
+			if (not has_tap_dev(dptid, port.get_name())) {
+				rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__ <<
+						"] adding port " << port.get_name() << " with portno=" << port.get_port_no() << " at dptid=" << dptid << std::endl;
+				add_tap_dev(dptid, port.get_name(), 1, port.get_hwaddr()); // todo remove pvid from tapdev
 			}
 		}
 
@@ -117,32 +112,13 @@ switch_behavior_ofdpa::init_ports()
 	}
 }
 
-uint32_t
-switch_behavior_ofdpa::get_of_port_no(const rofl::crofdpt& dpt, const std::string& dev) const
-{
-	using rofl::openflow::cofport;
-	using std::map;
-
-	uint32_t port_no = 0;
-
-	for (const auto &i : dpt.get_ports().get_ports()) {
-		if (0 == i.second->get_name().compare(dev)) {
-			rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] outport=" << i.first << std::endl;
-			port_no = i.first;
-			break;
-		}
-	}
-
-	return port_no;
-}
-
 struct vlan_hdr {
 	struct ethhdr eth;	// vid + cfi + pcp
 	uint16_t vlan;  	// ethernet type
 } __attribute__((packed));
 
 void
-switch_behavior_ofdpa::handle_srcmac_table(
+switch_behavior_ofdpa::handle_srcmac_table(const rofl::crofdpt &dpt,
 		rofl::openflow::cofmsg_packet_in& msg)
 {
 	using rofl::openflow::cofport;
@@ -161,7 +137,6 @@ switch_behavior_ofdpa::handle_srcmac_table(
 	}
 
 	// todo this has to be improved
-	const rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
 	const cofport &port = dpt.get_ports().get_port(msg.get_match().get_in_port());
 	const crtlink &rtl = cnetlink::get_instance().get_links().get_link(port.get_name());
 
@@ -182,7 +157,8 @@ switch_behavior_ofdpa::handle_srcmac_table(
 }
 
 void
-switch_behavior_ofdpa::handle_acl_policy_table(rofl::openflow::cofmsg_packet_in& msg)
+switch_behavior_ofdpa::handle_acl_policy_table(const rofl::crofdpt &dpt,
+		rofl::openflow::cofmsg_packet_in& msg)
 {
 	using rofl::openflow::cofport;
 
@@ -204,9 +180,8 @@ switch_behavior_ofdpa::handle_acl_policy_table(rofl::openflow::cofmsg_packet_in&
 	}
 #endif
 
-	const rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
 	const cofport &port = dpt.get_ports().get_port(msg.get_match().get_in_port());
-	rofcore::ctapdev &dev = set_tap_dev(dptid, port.get_name());
+	rofcore::ctapdev &dev = set_tap_dev(dpt.get_dptid(), port.get_name());
 
 	rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
 	*pkt = msg.get_packet();
@@ -218,7 +193,8 @@ switch_behavior_ofdpa::handle_acl_policy_table(rofl::openflow::cofmsg_packet_in&
 }
 
 void
-switch_behavior_ofdpa::handle_bridging_table(rofl::openflow::cofmsg_flow_removed& msg)
+switch_behavior_ofdpa::handle_bridging_table_rm(const rofl::crofdpt &dpt,
+		rofl::openflow::cofmsg_flow_removed& msg)
 {
 	using rofl::cmacaddr;
 	using rofl::openflow::cofport;
@@ -240,9 +216,8 @@ switch_behavior_ofdpa::handle_bridging_table(rofl::openflow::cofmsg_flow_removed
 
 	// todo this has to be improved
 	uint32_t portno = msg.get_cookie(); // fixme cookiebox here??
-	rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
 	const cofport &port = dpt.get_ports().get_port(portno);
-	const ctapdev &tapdev = get_tap_dev(dptid, port.get_name());
+	const ctapdev &tapdev = get_tap_dev(dpt.get_dptid(), port.get_name());
 
 	try {
 		// update bridge fdb
@@ -262,7 +237,7 @@ switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 	struct ethhdr *eth = (struct ethhdr*)pkt->soframe();
 
 	if (eth->h_dest[0] == 0x33 && eth->h_dest[1] == 0x33) {
-		rofcore::logging::info << __FUNCTION__ << ": drop multicast packet" << std::endl;
+		rofcore::logging::debug << __FUNCTION__ << ": drop multicast packet" << std::endl;
 		rofcore::cpacketpool::get_instance().release_pkt(pkt);
 		return;
 	}
@@ -271,28 +246,32 @@ switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 		rofcore::ctapdev* tapdev = dynamic_cast<rofcore::ctapdev*>( netdev );
 		assert(tapdev);
 
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(tapdev->get_dptid());
-
 		if (not dpt.is_established()) {
 			throw eLinkNoDptAttached("switch_behavior_ofdpa::enqueue() dpt not found");
 		}
 
 		// todo move to separate function:
-		uint32_t portno = get_of_port_no(dpt, tapdev->get_devname());
+		uint32_t portno;
+		try {
+			portno = dpt.get_ports().get_port(tapdev->get_devname()).get_port_no();
+		} catch (rofl::openflow::ePortsNotFound& e) {
+			// xxx fixme log err
+			return;
+		}
 
 		/* only send packet-out if we can determine a port-no */
 		if (portno) {
 			rofcore::logging::info << __FUNCTION__ << ": send pkt-out, pkt:" << std::endl << *pkt;
 
-			rofl::openflow::cofactions actions(dpt.get_version_negotiated());
+			rofl::openflow::cofactions actions(dpt.get_version());
 //			//actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
 //			//actions.set_action_set_field(rofl::cindex(1)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(tapdev->get_pvid()));
 			actions.set_action_output(rofl::cindex(0)).set_port_no(portno);
 
 			dpt.send_packet_out_message(
 					rofl::cauxid(0),
-					rofl::openflow::base::get_ofp_no_buffer(dpt.get_version_negotiated()),
-					rofl::openflow::base::get_ofpp_controller_port(dpt.get_version_negotiated()),
+					rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()),
+					rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()),
 					actions,
 					pkt->soframe(),
 					pkt->length());
@@ -327,9 +306,9 @@ switch_behavior_ofdpa::link_created(unsigned int ifindex)
 	rofcore::logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]:" << std::endl << rtl;
 
 	// currently ignore all interfaces besides the tap devs
-	if (not has_tap_dev(this->dptid, rtl.get_devname())) {
+	if (not has_tap_dev(dptid, rtl.get_devname())) {
 		rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
-				<< "]: ignore interface " << rtl.get_devname() << std::endl
+				<< "]: ignore interface " << rtl.get_devname() <<  " with dptid=" << dptid << std::endl
 				<< rtl;
 		return;
 	}
@@ -394,10 +373,20 @@ switch_behavior_ofdpa::neigh_ll_created(unsigned int ifindex, uint16_t nbindex)
 	// xxx only permanent or all? if all add_mac_to_fdb call
 	// in remove handle_srcmac_table
 	if (bridge.has_bridge_interface()) {
-		bridge.add_mac_to_fdb(get_of_port_no(crofdpt::get_dpt(this->dptid),rtl.get_devname()),
-				rtn.get_vlan(),
-				rtn.get_lladdr(),
-				true);
+		try {
+			if (0 > rtn.get_vlan() || 0x1000 < rtn.get_vlan()) {
+				logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: invalid vlan"
+						<< rtn.get_vlan() << std::endl;
+				return;
+			}
+
+			bridge.add_mac_to_fdb(dpt.get_ports().get_port(rtl.get_devname()).get_port_no(),
+					rtn.get_vlan(),
+					rtn.get_lladdr(),
+					true);
+		} catch (rofl::openflow::ePortsNotFound& e) {
+			//xxx log error
+		}
 	} else {
 		logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: no bridge interface"
 				<< std::endl;
@@ -431,10 +420,13 @@ switch_behavior_ofdpa::neigh_ll_deleted(unsigned int ifindex, uint16_t nbindex)
 			<< std::endl << rtn;
 
 	// only permanent here, others are already gone
-	if (bridge.has_bridge_interface() && (rtn.get_state() & NUD_PERMANENT)) {
-		bridge.remove_mac_from_fdb(rtn.get_lladdr(),
-				get_of_port_no(crofdpt::get_dpt(this->dptid),
-						rtl.get_devname()));
+	if (bridge.has_bridge_interface() && (rtn.get_state() & NUD_PERMANENT)) { // xxx fixme check if -permanent
+		try {
+			bridge.remove_mac_from_fdb(rtn.get_lladdr(),
+				dpt.get_ports().get_port(rtl.get_devname()).get_port_no());
+		} catch (rofl::openflow::ePortsNotFound& e) {
+			// xxx log error
+		}
 	}
 }
 

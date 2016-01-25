@@ -13,6 +13,7 @@
 #include <set>
 
 #include <rofl/common/cpacket.h>
+#include <rofl/common/locking.hpp>
 
 namespace rofcore
 {
@@ -45,6 +46,9 @@ class cpacketpool
 
 	std::vector<rofl::cpacket*> 	pktpool;
 	std::set<rofl::cpacket*>		idlepool;
+
+	// lock for peer controllers
+	mutable rofl::crwlock                 pool_rwlock;
 
 public:
 

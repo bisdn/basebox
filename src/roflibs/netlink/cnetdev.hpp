@@ -30,7 +30,6 @@ extern "C" {
 #endif
 
 #include <rofl/common/cpacket.h>
-#include <rofl/common/ciosrv.h>
 #include <rofl/common/caddress.h>
 
 #include <roflibs/netlink/cpacketpool.hpp>
@@ -152,17 +151,13 @@ private:
 };
 
 
-
-class cnetdev : public rofl::ciosrv
+class cnetdev
 {
 protected:
-
-
 	std::string		 devname;
 	cnetdev_owner	*netdev_owner;
 	mutable unsigned int	 ifindex;
 	rofl::cmacaddr	 hwaddr;
-
 
 public:
 

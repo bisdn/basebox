@@ -16,12 +16,12 @@
 
 #include <exception>
 
-#include <rofl/common/ciosrv.h>
-
 #include <roflibs/netlink/crtlinks.hpp>
 #include <roflibs/netlink/crtroutes.hpp>
 #include <roflibs/netlink/cprefix.hpp>
 #include <roflibs/netlink/clogging.hpp>
+
+#include <rofl/common/cthread.hpp>
 
 namespace rofcore {
 
@@ -45,8 +45,7 @@ public:
 class cnetlink_common_observer;
 class cnetlink_neighbour_observer;
 
-class cnetlink :
-		public rofl::ciosrv
+class cnetlink : public rofl::cthread_env
 {
 	enum nl_cache_t {
 		NL_LINK_CACHE = 0,
@@ -55,6 +54,7 @@ class cnetlink :
 		NL_NEIGH_CACHE = 3,
 	};
 
+	rofl::cthread thread;
 	struct nl_cache_mngr*									mngr;
 	std::map<enum nl_cache_t, struct nl_cache*> 			caches;
 	std::set<cnetlink_common_observer*> 					observers;
@@ -75,7 +75,6 @@ public:
 	std::map<int, crtneighs_ll>			neighs_ll;
 	std::map<int, crtneighs_in4>			neighs_in4;
 	std::map<int, crtneighs_in6>			neighs_in6;
-
 
 public:
 
@@ -283,26 +282,17 @@ private:
 	 */
 	cnetlink();
 
-
-	/**
-	 *
-	 */
-	cnetlink(cnetlink const& linkcache);
-
-
 	/**
 	 *
 	 */
 	virtual
 	~cnetlink();
 
-
 	/**
 	 *
 	 */
 	void
 	init_caches();
-
 
 	/**
 	 *
@@ -316,14 +306,18 @@ private:
 	void
 	update_link_cache(unsigned int ifindex);
 
+	virtual void handle_wakeup(rofl::cthread& thread)
+	{
+	}
+
 	/**
 	 *
 	 */
 	void
-	handle_revent(int fd);
+	handle_read_event(rofl::cthread& thread, int fd);
 
-	virtual void
-	handle_event(const rofl::cevent& ev);
+//	virtual void
+//	handle_event(const rofl::cevent& ev);
 
 
 public:
@@ -791,9 +785,6 @@ public:
 	 */
 	virtual void neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex) {};
 };
-
-
-
 
 }; // end of namespace dptmap
 

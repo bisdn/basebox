@@ -10,25 +10,17 @@
 using namespace rofcore;
 
 cnetlink::cnetlink() :
+		thread(this),
 		mngr(0),
 		check_links(false)
 {
 	try {
 		init_caches();
+		thread.start();
 	} catch (...) {
 		logging::error << "cnetlink: caught unkown exception during " << __FUNCTION__ << std::endl;
 	}
 }
-
-
-
-cnetlink::cnetlink(cnetlink const& linkcache) :
-		mngr(0)
-{
-	init_caches();
-}
-
-
 
 cnetlink::~cnetlink()
 {
@@ -136,7 +128,7 @@ cnetlink::init_caches()
 		obj = nl_cache_get_next(obj);
 	}
 
-	register_filedesc_r(nl_cache_mngr_get_fd(mngr));
+	thread.add_read_fd(nl_cache_mngr_get_fd(mngr));
 }
 
 
@@ -144,7 +136,7 @@ cnetlink::init_caches()
 void
 cnetlink::destroy_caches()
 {
-	deregister_filedesc_r(nl_cache_mngr_get_fd(mngr));
+	thread.drop_read_fd(nl_cache_mngr_get_fd(mngr));
 
 	nl_cache_mngr_free(mngr);
 }
@@ -216,13 +208,14 @@ cnetlink::update_link_cache()
 	if (missing_links.size()) {
 		// reschedule
 		check_links = true;
-		rofl::ciosrv::notify(rofl::cevent(EVENT_UPDATE_LINKS));
+//		rofl::ciosrv::notify(rofl::cevent(EVENT_UPDATE_LINKS));
+		logging::info << __FUNCTION__ << ": still some links missing" << std::endl;
 	}
 }
 
 
 void
-cnetlink::handle_revent(int fd)
+cnetlink::handle_read_event(rofl::cthread& thread, int fd)
 {
 	if (fd == nl_cache_mngr_get_fd(mngr)) {
 		int rv = nl_cache_mngr_data_ready(mngr);
@@ -230,21 +223,21 @@ cnetlink::handle_revent(int fd)
 	}
 
 	// reregister fd
-	register_filedesc_r(nl_cache_mngr_get_fd(mngr));
+	// register_filedesc_r(nl_cache_mngr_get_fd(mngr));
 }
 
-/* virtual */void
-cnetlink::handle_event(const rofl::cevent& ev)
-{
-	switch (ev.get_cmd()) {
-	case EVENT_UPDATE_LINKS:
-		update_link_cache();
-		break;
-	case EVENT_NONE:
-	default:
-		break;
-	}
-}
+// /* virtual */void
+//cnetlink::handle_event(const rofl::cevent& ev)
+//{
+//	switch (ev.get_cmd()) {
+//	case EVENT_UPDATE_LINKS:
+//		update_link_cache();
+//		break;
+//	case EVENT_NONE:
+//	default:
+//		break;
+//	}
+//}
 
 void
 cnetlink::update_link_cache(unsigned int ifindex)
@@ -254,7 +247,7 @@ cnetlink::update_link_cache(unsigned int ifindex)
 
 	if (not check_links) {
 		check_links = true;
-		rofl::ciosrv::notify(rofl::cevent(EVENT_UPDATE_LINKS));
+		//rofl::ciosrv::notify(rofl::cevent(EVENT_UPDATE_LINKS));
 	}
 }
 

@@ -28,11 +28,10 @@ extern "C" {
 
 #include <list>
 
+#include <rofl/common/cthread.hpp>
 #include <rofl/common/cdptid.h>
 #include <roflibs/netlink/cnetdev.hpp>
 #include <roflibs/netlink/clogging.hpp>
-
-
 
 namespace rofcore {
 
@@ -59,7 +58,7 @@ public:
 
 
 
-class ctapdev : public cnetdev {
+class ctapdev : public cnetdev, rofl::cthread_env {
 
 	int 							fd; 			// tap device file descriptor
 	std::list<rofl::cpacket*> 		pout_queue;		// queue of outgoing packets
@@ -67,7 +66,7 @@ class ctapdev : public cnetdev {
 	std::string						devname;
 	uint16_t						pvid;
 	rofl::cmacaddr					hwaddr;
-	rofl::ctimerid					port_open_timer_id;
+	rofl::cthread thread;
 
 	enum ctapdev_timer_t {
 		CTAPDEV_TIMER_OPEN_PORT = 1,
@@ -121,6 +120,9 @@ public:
 
 protected:
 
+	void
+	tx();
+
 	/**
 	 * @brief	open tapX device
 	 */
@@ -140,22 +142,27 @@ protected:
 	 * @brief	handle read events on file descriptor
 	 */
 	virtual void
-	handle_revent(int fd);
+	handle_read_event(rofl::cthread& thread, int fd);
 
 
 	/**
 	 * @brief	handle write events on file descriptor
 	 */
 	virtual void
-	handle_wevent(int fd);
+	handle_write_event(rofl::cthread& thread, int fd);
 
-private:
+	virtual void
+	handle_wakeup(rofl::cthread& thread)
+	{
+		tx();
+	}
 
 	/**
 	 * @brief	reschedule opening of port in case of failure
 	 */
 	virtual void
-	handle_timeout(int opaque, void* data = (void*)0);
+	handle_timeout(rofl::cthread& thread, uint32_t timer_id,
+			const std::list<unsigned int>& ttypes);
 
 public:
 
