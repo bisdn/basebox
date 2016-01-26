@@ -420,13 +420,16 @@ switch_behavior_ofdpa::neigh_ll_deleted(unsigned int ifindex, uint16_t nbindex)
 			<< std::endl << rtn;
 
 	// only permanent here, others are already gone
-	if (bridge.has_bridge_interface() && (rtn.get_state() & NUD_PERMANENT)) { // xxx fixme check if -permanent
+	if (bridge.has_bridge_interface()) {
 		try {
 			bridge.remove_mac_from_fdb(rtn.get_lladdr(),
 				dpt.get_ports().get_port(rtl.get_devname()).get_port_no());
 		} catch (rofl::openflow::ePortsNotFound& e) {
 			// xxx log error
 		}
+	} else {
+		logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: no bridge interface"
+				<< std::endl;
 	}
 }
 
