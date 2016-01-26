@@ -36,7 +36,7 @@ switch_behavior_ofdpa::~switch_behavior_ofdpa()
 void
 switch_behavior_ofdpa::handle_packet_in(rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg)
 {
-	rofcore::logging::info << __FUNCTION__ << ": handle message" << std::endl << msg;
+	rofcore::logging::debug << __FUNCTION__ << ": handle message" << std::endl << msg;
 
 	if (this->dptid != dpt.get_dptid()) { // todo maybe even assert here?
 		rofcore::logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] wrong dptid received" << std::endl;
@@ -187,7 +187,8 @@ switch_behavior_ofdpa::handle_acl_policy_table(const rofl::crofdpt &dpt,
 	*pkt = msg.get_packet();
 	//pkt->pop(sizeof(struct rofl::fetherframe::eth_hdr_t)-sizeof(uint16_t), sizeof(struct rofl::fvlanframe::vlan_hdr_t));
 
-	rofcore::logging::info << __FUNCTION__
+	// fixme move to ctapdev
+	rofcore::logging::debug << __FUNCTION__
 				<< ": enqueue packet" << std::endl << *pkt;
 	dev.enqueue(pkt);
 }
@@ -237,7 +238,7 @@ switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 	struct ethhdr *eth = (struct ethhdr*)pkt->soframe();
 
 	if (eth->h_dest[0] == 0x33 && eth->h_dest[1] == 0x33) {
-		rofcore::logging::debug << __FUNCTION__ << ": drop multicast packet" << std::endl;
+		rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: drop multicast packet" << std::endl;
 		rofcore::cpacketpool::get_instance().release_pkt(pkt);
 		return;
 	}
@@ -261,7 +262,7 @@ switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev, rofl::cpacket* pkt)
 
 		/* only send packet-out if we can determine a port-no */
 		if (portno) {
-			rofcore::logging::info << __FUNCTION__ << ": send pkt-out, pkt:" << std::endl << *pkt;
+			rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: send pkt-out, pkt:" << std::endl << *pkt;
 
 			rofl::openflow::cofactions actions(dpt.get_version());
 //			//actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
