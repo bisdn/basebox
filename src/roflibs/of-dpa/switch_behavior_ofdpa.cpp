@@ -340,6 +340,14 @@ switch_behavior_ofdpa::link_updated(const rofcore::crtlink &newlink)
 	using rofcore::crtlink;
 	using rofcore::cnetlink;
 
+	// currently ignore all interfaces besides the tap devs
+	if (not has_tap_dev(dptid, newlink.get_devname())) {
+		rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
+				<< "]: ignore interface " << newlink.get_devname() <<  " with dptid=" << dptid << std::endl
+				<< newlink;
+		return;
+	}
+
 	const crtlink& oldlink = cnetlink::get_instance().get_links().get_link(newlink.get_ifindex());
 	rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] oldlink:" << std::endl << oldlink;
 	rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__ << "] newlink:" << std::endl << newlink;
@@ -351,7 +359,14 @@ void
 switch_behavior_ofdpa::link_deleted(unsigned int ifindex)
 {
 	const rofcore::crtlink& rtl = rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
-	rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__ << "]: " << std::endl << rtl;
+
+	// currently ignore all interfaces besides the tap devs
+	if (not has_tap_dev(dptid, rtl.get_devname())) {
+		rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
+				<< "]: ignore interface " << rtl.get_devname() <<  " with dptid=" << dptid << std::endl
+				<< rtl;
+		return;
+	}
 
 	bridge.delete_interface(rtl);
 }
