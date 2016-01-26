@@ -42,7 +42,8 @@ public:
 	add_mac_to_fdb(const uint32_t of_port_no, const uint16_t vlan, const rofl::cmacaddr &mac, bool permanent = false);
 
 	void
-	remove_mac_from_fdb(const rofl::cmacaddr &mac, const uint32_t of_port_no);
+	remove_mac_from_fdb(const uint32_t of_port_no, uint16_t vid,
+			const rofl::cmacaddr& mac);
 
 private:
 	void

@@ -130,6 +130,7 @@ public:
 		return ((ifindex 	== rtneigh.ifindex) &&
 				(family 	== rtneigh.family) 	&&
 				(type 		== rtneigh.type) &&
+				(vlan 		== rtneigh.vlan) &&
 				(lladdr		== rtneigh.lladdr));
 	};
 

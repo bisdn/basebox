@@ -269,10 +269,10 @@ ofdpa_bridge::add_mac_to_fdb(const uint32_t of_port_no, const uint16_t vlan, con
 	fm_driver.add_bridging_unicast_vlan(mac, vlan, of_port_no, permanent);
 }
 
-void ofdpa_bridge::remove_mac_from_fdb(const rofl::cmacaddr& mac,
-		const uint32_t of_port_no)
+void ofdpa_bridge::remove_mac_from_fdb(const uint32_t of_port_no, uint16_t vid,
+		const rofl::cmacaddr& mac)
 {
-	fm_driver.remove_bridging_unicast_vlan(mac, 1, of_port_no);
+	fm_driver.remove_bridging_unicast_vlan(mac, vid, of_port_no);
 }
 
 } /* namespace basebox */
