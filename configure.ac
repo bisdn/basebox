@@ -55,13 +55,16 @@ fi
 # check for libraries
 PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.26 libnl-route-3.0 >= 3.2.26,
   [ CPPFLAGS+="$LIBNL3_CFLAGS"
-	LIBS+="$LIBNL3_LIBS" ],
-  [ AC_MSG_ERROR([unable to find a recent version of libnl-3]) ])
+	LIBS+="$LIBNL3_LIBS"
+	# the latest changes of libnl are not yet release, hence another check here
+    AC_SEARCH_LIBS([rtnl_link_bridge_get_port_vlan], [libnl-route], [], 
+      [AC_MSG_ERROR([libnl-route is too old, currently you have to use https://github.com/thom311/libnl master])]) ],
+  [ AC_MSG_ERROR([minimum version of libnl-3 is 3.2.26]) ])
 
-PKG_CHECK_MODULES([ROFL], rofl_common >= 0.6.0,
+PKG_CHECK_MODULES([ROFL], rofl_common >= 0.10.0,
   [ CPPFLAGS+="$ROFL_CFLAGS"
 	LIBS+="$ROFL_LIBS" ],
-  [ AC_MSG_ERROR([unable to find a recent version of rofl_common]) ])
+  [ AC_MSG_ERROR([minimum version of rofl_common is 0.10.0]) ])
 
 PKG_CHECK_MODULES([LIBCONFIGXX], [libconfig++ >= 1.4],
   [ CPPFLAGS+="$LIBCONFIGXX_CFLAGS"
