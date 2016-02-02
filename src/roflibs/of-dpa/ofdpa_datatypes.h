@@ -1,6 +1,16 @@
 #ifndef SRC_ROFLIBS_OF_DPA_OFDPA_DATATYPES_H_
 #define SRC_ROFLIBS_OF_DPA_OFDPA_DATATYPES_H_
 
+static const uint32_t OFDPA_EXP_ID = 0x001018;
+
+/* OXM Flow match field types for OpenFlow Experimental */
+enum oxm_ofx_match_fields {
+  OFPXMT_OFX_VRF	= 1,	/* virtual routing and forwarding */
+
+  /* max value */
+  OFPXMT_OFX_MAX,
+};
+
 /** Flow Table Id enumerator */
 typedef enum
 {

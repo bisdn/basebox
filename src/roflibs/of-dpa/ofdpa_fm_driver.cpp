@@ -13,17 +13,6 @@ namespace basebox {
 
 namespace ofdpa {
 
-	static const uint32_t experimenter_id = 0x001018;
-
-	/* OXM Flow match field types for OpenFlow Experimental */
-	enum oxm_ofx_match_fields {
-
-		OFPXMT_OFX_VRF	= 1,	/* virtual routing and forwarding */
-
-		/* max value */
-		OFPXMT_OFX_MAX,
-	};
-
 #define HAS_MASK_FLAG (1 << 8)
 
 	/* OXM Flow match field types for OpenFlow experimenter class. */
@@ -40,18 +29,21 @@ namespace ofdpa {
 class coxmatch_ofb_vrf : public rofl::openflow::coxmatch_exp {
 public:
 	coxmatch_ofb_vrf(uint16_t vrf) :
-		coxmatch_exp(ofdpa::OXM_TLV_EXPR_VRF, ofdpa::experimenter_id, vrf)
-	{};
+		coxmatch_exp(ofdpa::OXM_TLV_EXPR_VRF, OFDPA_EXP_ID, vrf)
+	{}
+
 	coxmatch_ofb_vrf(uint16_t vrf, uint16_t mask) :
-		coxmatch_exp(ofdpa::OXM_TLV_EXPR_VRF_MASK, ofdpa::experimenter_id, vrf, mask)
-	{};
+		coxmatch_exp(ofdpa::OXM_TLV_EXPR_VRF_MASK, OFDPA_EXP_ID, vrf, mask)
+	{}
+
 	coxmatch_ofb_vrf(const coxmatch_exp& oxm) :
 		coxmatch_exp(oxm)
-	{};
+	{}
+
 	virtual
 	~coxmatch_ofb_vrf()
-	{};
-public:
+	{}
+
 	friend std::ostream&
 	operator<< (std::ostream& os, const coxmatch_ofb_vrf& oxm) {
 		os << dynamic_cast<const coxmatch&>(oxm);
@@ -60,7 +52,7 @@ public:
 				<< (int) oxm.get_u16value() << "/0x" << (int) oxm.get_u16mask()
 				<< std::dec << " >" << std::endl;
 		return os;
-	};
+	}
 };
 
 static inline uint64_t
