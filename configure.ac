@@ -70,6 +70,11 @@ PKG_CHECK_MODULES([LIBCONFIGXX], [libconfig++ >= 1.4],
   [ CPPFLAGS+="$LIBCONFIGXX_CFLAGS"
 	LIBS+="$LIBCONFIGXX_LIBS"],
   [ AC_MSG_ERROR([libconfig++ 1.4 or newer not found.])] )
+  
+PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.1,
+  [ CPPFLAGS+="$ROFL_OFDPA_CFLAGS"
+	LIBS+="$ROFL_OFDPA_LIBS" ],
+  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.1]) ])
 
 # todo: add http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx_11.html
 CXXFLAGS="$CXXFLAGS -std=c++11"

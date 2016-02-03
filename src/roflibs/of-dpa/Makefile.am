@@ -8,9 +8,7 @@ libroflibs_ofdpa_la_SOURCES = \
 	switch_behavior_ofdpa.cpp \
 	switch_behavior_ofdpa.hpp \
 	ofdpa_bridge.hpp \
-	ofdpa_bridge.cpp \
-	ofdpa_fm_driver.hpp \
-	ofdpa_fm_driver.cpp
+	ofdpa_bridge.cpp
 
 libroflibs_ofdpa_la_LIBADD = 
 

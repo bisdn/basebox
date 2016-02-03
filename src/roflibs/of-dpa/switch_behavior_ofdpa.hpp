@@ -62,7 +62,7 @@ public:
 private:
 
 	std::map<rofl::cdptid, std::map<std::string, rofcore::ctapdev*> > devs;
-	ofdpa_fm_driver fm_driver;
+	rofl::rofl_ofdpa_fm_driver fm_driver;
 	ofdpa_bridge bridge;
 	rofl::crofdpt& dpt;
 	mutable rofl::crwlock devs_rwlock;

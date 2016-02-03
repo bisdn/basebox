@@ -10,7 +10,7 @@
 
 namespace basebox {
 
-ofdpa_bridge::ofdpa_bridge(ofdpa_fm_driver &fm_driver) :
+ofdpa_bridge::ofdpa_bridge(rofl::rofl_ofdpa_fm_driver &fm_driver) :
 		fm_driver(fm_driver)
 {
 }

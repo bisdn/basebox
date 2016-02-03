@@ -4,14 +4,15 @@
 #include <cstdint>
 #include <list>
 
-#include "ofdpa_fm_driver.hpp"
+#include <rofl/ofdpa/rofl_ofdpa_fm_driver.hpp>
+
 #include "roflibs/netlink/crtlink.hpp"
 
 namespace basebox {
 
 class ofdpa_bridge {
 public:
-	ofdpa_bridge(ofdpa_fm_driver &fm_driver);
+	ofdpa_bridge(rofl::rofl_ofdpa_fm_driver &fm_driver);
 
 	virtual
 	~ofdpa_bridge();
@@ -52,7 +53,7 @@ private:
 			const rtnl_link_bridge_vlan *new_br_vlan);
 
 	rofcore::crtlink bridge;
-	ofdpa_fm_driver &fm_driver; // todo use shared pointer?
+	rofl::rofl_ofdpa_fm_driver &fm_driver; // todo use shared pointer?
 
 	std::map<uint16_t, std::list<uint32_t> > l2_domain;
 };

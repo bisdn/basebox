@@ -1,11 +1,11 @@
 #include "switch_behavior_ofdpa.hpp"
-#include "ofdpa_fm_driver.hpp"
 #include "ofdpa_datatypes.h"
 #include "roflibs/netlink/clogging.hpp"
 
 #include <map>
 #include <linux/if_ether.h>
 
+#include <rofl/ofdpa/rofl_ofdpa_fm_driver.hpp>
 #include <rofl/common/openflow/cofport.h>
 #include <rofl/common/openflow/cofports.h>
 
