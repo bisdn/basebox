@@ -1,0 +1,71 @@
+Name:           baseboxd
+Version:        @VERSION@
+Release:        1%{?dist}
+Summary:        TODO
+
+License:        BISDN
+URL:            http://www.bisdn.de/
+Source0:        baseboxd-%{version}.tar.gz
+
+BuildRequires:  autoconf, automake, libtool, rofl-common-devel, rofl-ofdpa-devel, openssl-devel, libnl3-devel, libconfig-devel
+Requires:       rofl-common, rofl-ofdpa, libnl3, libconfig
+
+%description
+TODO
+
+%package	devel
+Summary:	TODO
+Group:		Development/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description	devel
+TODO
+
+%prep
+%setup -q
+
+
+%build
+%configure
+make %{?_smp_mflags}
+
+
+%install
+rm -rf $RPM_BUILD_ROOT
+%make_install
+
+
+%files
+%{_sbindir}/baseboxd
+%{_libdir}/libroflibs*.so.*
+
+%doc README.md
+
+
+%files devel
+%{_libdir}/libroflibs*.a
+%{_libdir}/libroflibs*.la
+%{_libdir}/libroflibs*.so
+%{_includedir}/roflibs/netlink/cconfig.hpp
+%{_includedir}/roflibs/netlink/ccookiebox.hpp
+%{_includedir}/roflibs/netlink/clogging.hpp
+%{_includedir}/roflibs/netlink/cnetdev.hpp
+%{_includedir}/roflibs/netlink/cnetlink.hpp
+%{_includedir}/roflibs/netlink/cpacketpool.hpp
+%{_includedir}/roflibs/netlink/cprefix.hpp
+%{_includedir}/roflibs/netlink/crtaddr.hpp
+%{_includedir}/roflibs/netlink/crtaddrs.hpp
+%{_includedir}/roflibs/netlink/crtlink.hpp
+%{_includedir}/roflibs/netlink/crtlinks.hpp
+%{_includedir}/roflibs/netlink/crtneigh.hpp
+%{_includedir}/roflibs/netlink/crtneighs.hpp
+%{_includedir}/roflibs/netlink/crtnexthop.hpp
+%{_includedir}/roflibs/netlink/crtnexthops.hpp
+%{_includedir}/roflibs/netlink/crtroute.hpp
+%{_includedir}/roflibs/netlink/crtroutes.hpp
+%{_includedir}/roflibs/netlink/ctapdev.hpp
+%{_includedir}/roflibs/netlink/ctundev.hpp
+
+%changelog
+* Tue Feb  9 2016 Tobias Jungel
+- 
