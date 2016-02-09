@@ -1,8 +1,9 @@
 AC_INIT(baseboxd, m4_esyscmd_s(cat VERSION), baseboxd-devel@roflibs.org, baseboxd, http://www.roflibs.org)
 
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
-AC_GNU_SOURCE
+
+AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -12,7 +13,7 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_LD
 AC_PROG_SED
-AUTOCONF_ENV="SHELL=/bin/sh"
+PKG_PROG_PKG_CONFIG
 
 LT_INIT
 
@@ -29,11 +30,6 @@ if test "$enable_debug" = "yes"; then
 	CXXFLAGS="$CXXFLAGS -g -O0 -fno-inline"
 	AC_DEFINE(DEBUG)
 	AC_MSG_RESULT(yes)
-else
-	CXXFLAGS="$CXXFLAGS -O3 -fomit-frame-pointer"
-	CFLAGS="$CFLAGS -O3 -fomit-frame-pointer"
-	AC_DEFINE(NDEBUG)
-	AC_MSG_RESULT(no)
 fi
 
 # Check for profiling mode
@@ -80,7 +76,7 @@ PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.1,
 CXXFLAGS="$CXXFLAGS -std=c++11"
 
 # version
-m4_include([config/versioning.m4])
+#m4_include([config/versioning.m4])
 
 #AM_PATH_PYTHON([2.7])
 
@@ -102,8 +98,5 @@ AC_CONFIG_FILES([
 	src/roflibs/Makefile
 	src/roflibs/netlink/Makefile
 	src/roflibs/of-dpa/Makefile
-	
-	test/Makefile
-	test/ipcore/Makefile
 	])
 AC_OUTPUT

@@ -1,15 +1,19 @@
-MAINTAINERCLEANFILES = $(top_srcdir)/aclocal.m4 \
-	$(top_srcdir)/ar-lib \
-	$(top_srcdir)/config.guess \
-	$(top_srcdir)/config.sub \
+MAINTAINERCLEANFILES = \
+	$(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 \
 	$(top_srcdir)/configure \
-	$(top_srcdir)/depcomp \
-	$(top_srcdir)/install-sh \
-	$(top_srcdir)/ltmain.sh \
-	$(top_srcdir)/Makefile.in \
-	$(top_srcdir)/missing
+	$(top_srcdir)/aclocal.m4 \
+	$(top_srcdir)/Makefile.in
 
-SUBDIRS = src test
+SUBDIRS = src
+
+EXTRA_DIST = \
+	autogen.sh
+
+
 
 install-exec-hook:
 	@echo "Install"
@@ -17,6 +21,6 @@ uninstall-hook:
 	@echo "Uninstall"
 
 maintainer-clean-local:
-	rm -rf m4
+	rm -rf $(top_srcdir)/build-aux
 
 ACLOCAL_AMFLAGS=-I m4
