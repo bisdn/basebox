@@ -11,9 +11,8 @@ MAINTAINERCLEANFILES = \
 SUBDIRS = src
 
 EXTRA_DIST = \
-	autogen.sh
-
-
+	autogen.sh \
+	README.md
 
 install-exec-hook:
 	@echo "Install"
