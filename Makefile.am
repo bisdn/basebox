@@ -12,7 +12,8 @@ SUBDIRS = src
 
 EXTRA_DIST = \
 	autogen.sh \
-	README.md
+	README.md \
+	VERSION
 
 install-exec-hook:
 	@echo "Install"

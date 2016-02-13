@@ -30,6 +30,7 @@ compile
 m4
 ar-lib
 test-driver
+VERSION
 
 /build-*
 /build/*
