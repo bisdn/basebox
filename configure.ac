@@ -19,6 +19,9 @@ LT_INIT
 
 AC_ENABLE_STATIC
 
+CFLAGS+=" -Wall -Werror"
+CXXFLAGS+=" -Wall -Werror"
+
 # Check for debug mode - MUST BE THE FIRST CHECK
 AC_MSG_CHECKING(whether to enable debug mode)
 debug_default="no"
