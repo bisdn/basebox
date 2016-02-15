@@ -15,6 +15,7 @@ BuildRequires:     rofl-ofdpa-devel
 BuildRequires:     openssl-devel
 BuildRequires:     libnl3-devel
 BuildRequires:     libconfig-devel
+BuildRequires:     systemd
 
 Requires:          rofl-common
 Requires:          rofl-ofdpa
@@ -26,7 +27,7 @@ TODO
 
 %package	devel
 Summary:	TODO
-Group:		Development/Libraries
+Group:		System Environment/Daemons
 Requires:       %{name} = %{version}-%{release}
 
 %description	devel
@@ -44,6 +45,10 @@ make %{?_smp_mflags}
 %install
 rm -rf $RPM_BUILD_ROOT
 %make_install
+
+install -p -D -m 0644 pkg/systemd/baseboxd.service \
+    %{buildroot}%{_unitdir}/baseboxd.service
+
 
 
 %files
