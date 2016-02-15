@@ -1,0 +1,14 @@
+### Configuration options for baseboxd
+#
+# set the debug level 0..
+# --debug 
+#
+# set the logfile
+# --logfile /path/to/file
+#
+# set the pidfile
+# --pidfile /var/run/baseboxd.pid
+#
+# set the listening port
+# --port 6653
+OPTIONS=""

@@ -1,0 +1,8 @@
+[Unit]
+Description=baseboxd
+After=syslog.target network.target
+
+[Service]
+Type=simple
+ExecStart=/sbin/baseboxd $OPTIONS
+EnvironmentFile=-/etc/sysconfig/baseboxd

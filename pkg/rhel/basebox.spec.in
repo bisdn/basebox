@@ -1,34 +1,34 @@
-Name:              baseboxd
-Version:           @VERSION@
-Release:           1%{?dist}
-Summary:           TODO
+Name:          baseboxd
+Version:       @VERSION@
+Release:       1%{?dist}
+Summary:       TODO
 
-License:           BISDN
-URL:               http://www.bisdn.de/
-Source0:           baseboxd-%{version}.tar.gz
+License:       BISDN
+URL:           http://www.bisdn.de/
+Source0:       baseboxd-%{version}.tar.gz
 
-BuildRequires:     autoconf
-BuildRequires:     automake
-BuildRequires:     libtool
-BuildRequires:     rofl-common-devel
-BuildRequires:     rofl-ofdpa-devel
-BuildRequires:     openssl-devel
-BuildRequires:     libnl3-devel
-BuildRequires:     libconfig-devel
-BuildRequires:     systemd
+BuildRequires: autoconf
+BuildRequires: automake
+BuildRequires: libtool
+BuildRequires: rofl-common-devel
+BuildRequires: rofl-ofdpa-devel
+BuildRequires: openssl-devel
+BuildRequires: libnl3-devel
+BuildRequires: libconfig-devel
+BuildRequires: systemd
 
-Requires:          rofl-common
-Requires:          rofl-ofdpa
-Requires:          libnl3
-Requires:          libconfig
+Requires:      rofl-common
+Requires:      rofl-ofdpa
+Requires:      libnl3
+Requires:      libconfig
 
 %description
 TODO
 
-%package	devel
-Summary:	TODO
-Group:		System Environment/Daemons
-Requires:       %{name} = %{version}-%{release}
+%package       devel
+Summary:       TODO
+Group:         System Environment/Daemons
+Requires:      %{name} = %{version}-%{release}
 
 %description	devel
 TODO
@@ -48,12 +48,15 @@ rm -rf $RPM_BUILD_ROOT
 
 install -p -D -m 0644 pkg/systemd/baseboxd.service \
     %{buildroot}%{_unitdir}/baseboxd.service
-
+install -p -D -m 0644 pkg/systemd/sysconfig.template \
+    %{buildroot}%{_sysconfdir}/sysconfig/baseboxd
 
 
 %files
 %{_sbindir}/baseboxd
 %{_libdir}/libroflibs*.so.*
+%{_unitdir}/baseboxd.service
+%{_sysconfdir}/sysconfig/baseboxd
 
 %doc README.md
 

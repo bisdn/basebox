@@ -13,7 +13,9 @@ SUBDIRS = src
 EXTRA_DIST = \
 	autogen.sh \
 	README.md \
-	VERSION
+	VERSION \
+	pkg/systemd/baseboxd.service \
+	pkg/systemd/sysconfig.template
 
 install-exec-hook:
 	@echo "Install"
