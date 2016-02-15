@@ -321,14 +321,8 @@ cnetlink::route_addr_cb(struct nl_cache* cache, struct nl_object* obj, int actio
 
 	nl_object_get(obj); // get reference to object
 
-	unsigned int ifindex = rtnl_addr_get_ifindex((struct rtnl_addr*)obj);
+	int ifindex = rtnl_addr_get_ifindex((struct rtnl_addr*)obj);
 	int family = rtnl_addr_get_family((struct rtnl_addr*)obj);
-
-	try {
-		const crtlink& rtl = cnetlink::get_instance().rtlinks.get_link(ifindex);
-	} catch (crtlink::eRtLinkNotFound &e) {
-		cnetlink::get_instance().update_link_cache(ifindex);
-	}
 
 	try {
 		switch (action) {
@@ -496,12 +490,6 @@ cnetlink::route_neigh_cb(struct nl_cache* cache, struct nl_object* obj, int acti
 	if (0 == ifindex) {
 		logging::info << "cnetlink::route_neigh_cb() ignoring not existing link" << std::endl;
 		return;
-	}
-
-	try {
-		const crtlink& rtl = cnetlink::get_instance().rtlinks.get_link(ifindex);
-	} catch (crtlink::eRtLinkNotFound &e) {
-		cnetlink::get_instance().update_link_cache(ifindex);
 	}
 
 	try {

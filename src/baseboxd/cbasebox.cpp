@@ -60,18 +60,20 @@ cbasebox::run(int argc, char** argv)
 	/*
 	 * extract debug level
 	 */
+#if 0
 	int rofl_debug = 0;
 	if (ethcore::cconfig::get_instance().exists("baseboxd.daemon.logging.rofl.debug")) {
 		rofl_debug = (int)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.logging.rofl.debug");
 	}
+	if (env_parser.is_arg_set("debug")) {
+		rofl_debug = core_debug = atoi(env_parser.get_arg("debug").c_str());
+	}
+#endif
+
 	int core_debug = 0;
 	if (ethcore::cconfig::get_instance().exists("baseboxd.daemon.logging.core.debug")) {
 		core_debug = (int)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.logging.core.debug");
 	}
-	if (env_parser.is_arg_set("debug")) {
-		rofl_debug = core_debug = atoi(env_parser.get_arg("debug").c_str());
-	}
-
 	/*
 	* extract help flag
 	*/
@@ -400,7 +402,7 @@ cbasebox::handle_port_status(
 						<< " pkt received: " << std::endl << msg;
 
 	//const rofl::openflow::cofport& port = msg.get_port();
-	uint32_t ofp_port_no = msg.get_port().get_port_no();
+	//uint32_t ofp_port_no = msg.get_port().get_port_no();
 
 #if 0
 		switch (msg.get_reason()) {

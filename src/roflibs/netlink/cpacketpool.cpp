@@ -15,7 +15,7 @@ cpacketpool::cpacketpool(
 		unsigned int n_pkts,
 		unsigned int pkt_size)
 {
-	for (int i = 0; i < n_pkts; ++i) {
+	for (unsigned int i = 0; i < n_pkts; ++i) {
 		rofl::cpacket *pkt = new rofl::cpacket(pkt_size);
 		pktpool.push_back(pkt);
 		idlepool.insert(pkt);

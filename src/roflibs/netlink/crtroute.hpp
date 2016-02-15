@@ -510,7 +510,7 @@ public:
 	class crtroute_in4_find {
 		uint32_t 			table_id;
 		uint8_t 			scope;
-		unsigned int 		ifindex;
+		int 		ifindex;
 		rofl::caddress_in4 	dst;
 	public:
 		crtroute_in4_find(uint32_t table_id, uint8_t scope, unsigned int ifindex, const rofl::caddress_in4& dst) :
@@ -762,7 +762,7 @@ public:
 	class crtroute_in6_find {
 		uint32_t 			table_id;
 		uint8_t 			scope;
-		unsigned int 		ifindex;
+		int 		ifindex;
 		rofl::caddress_in 	dst;
 	public:
 		crtroute_in6_find(uint32_t table_id, uint8_t scope, unsigned int ifindex, const rofl::caddress_in6& dst) :

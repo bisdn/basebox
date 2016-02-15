@@ -162,11 +162,10 @@ switch_behavior_ofdpa::handle_acl_policy_table(const rofl::crofdpt &dpt,
 {
 	using rofl::openflow::cofport;
 
-	struct ethhdr *eth = (struct ethhdr*)msg.get_packet().soframe();
-
 	// fixme check for reason (ACTION)
 
 #if 0 // xxx enable?
+	struct ethhdr *eth = (struct ethhdr*)msg.get_packet().soframe();
 	switch (htobe16(eth->h_proto)) {
 	case ETH_P_8021Q:
 		// fixme currently only arp should be coming in here

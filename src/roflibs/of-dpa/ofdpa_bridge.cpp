@@ -132,7 +132,6 @@ ofdpa_bridge::update_vlans(const std::string &devname,
 
 		base_bit = k * 32;
 		int i = -1;
-		int m = -1;
 		int done = 0;
 		while (!done) {
 			int j = find_next_bit(i, vlan_diff);
@@ -140,7 +139,6 @@ ofdpa_bridge::update_vlans(const std::string &devname,
 				// vlan added or removed
 				int vid = j - 1 + base_bit;
 				bool egress_untagged = false;
-				bool add_vlan = true;
 
 				// check if egress is untagged
 				if (new_br_vlan->untagged_bitmap[k] & 1 << (j-1)) {

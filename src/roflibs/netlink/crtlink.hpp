@@ -468,7 +468,7 @@ public:
 	 *
 	 */
 	class crtlink_find_by_ifindex : public std::unary_function<crtlink,bool> {
-		unsigned int ifindex;
+		int ifindex;
 	public:
 		crtlink_find_by_ifindex(unsigned int ifindex) :
 			ifindex(ifindex) {};
