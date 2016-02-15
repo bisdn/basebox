@@ -1,14 +1,25 @@
-Name:           baseboxd
-Version:        @VERSION@
-Release:        1%{?dist}
-Summary:        TODO
+Name:              baseboxd
+Version:           @VERSION@
+Release:           1%{?dist}
+Summary:           TODO
 
-License:        BISDN
-URL:            http://www.bisdn.de/
-Source0:        baseboxd-%{version}.tar.gz
+License:           BISDN
+URL:               http://www.bisdn.de/
+Source0:           baseboxd-%{version}.tar.gz
 
-BuildRequires:  autoconf, automake, libtool, rofl-common-devel, rofl-ofdpa-devel, openssl-devel, libnl3-devel, libconfig-devel
-Requires:       rofl-common, rofl-ofdpa, libnl3, libconfig
+BuildRequires:     autoconf
+BuildRequires:     automake
+BuildRequires:     libtool
+BuildRequires:     rofl-common-devel
+BuildRequires:     rofl-ofdpa-devel
+BuildRequires:     openssl-devel
+BuildRequires:     libnl3-devel
+BuildRequires:     libconfig-devel
+
+Requires:          rofl-common
+Requires:          rofl-ofdpa
+Requires:          libnl3
+Requires:          libconfig
 
 %description
 TODO
