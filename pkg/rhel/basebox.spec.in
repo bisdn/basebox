@@ -1,11 +1,14 @@
+%define snapshotrel @SPEC_SNAPSHOTREL@
+%define snapshot @SPEC_SNAPSHOT@
+
 Name:          baseboxd
-Version:       @VERSION@
-Release:       1%{?dist}
+Version:       @SPEC_VERSION@
+Release:       1%{?snapshotrel}%{?dist}
 Summary:       TODO
 
 License:       BISDN
 URL:           http://www.bisdn.de/
-Source0:       baseboxd-%{version}.tar.gz
+Source0:       http://www.bisdn.de/releases/basebox/%{name}-%{version}%{?snapshot}.tar.gz
 
 BuildRequires: autoconf
 BuildRequires: automake
@@ -34,7 +37,7 @@ Requires:      %{name} = %{version}-%{release}
 TODO
 
 %prep
-%setup -q
+%setup -q -n %{name}-%{version}%{?snapshot}
 
 
 %build

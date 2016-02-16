@@ -2,7 +2,7 @@
 
 if [ -x $(which git) -a -d .git ]
 then
-	VERSION=$(git describe  --dirty --always --tags)
+	VERSION=$(git describe --dirty --always --tags)
 	echo ${VERSION} > VERSION
 elif [ -f VERSION ]
 then

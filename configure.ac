@@ -19,6 +19,8 @@ LT_INIT
 
 AC_ENABLE_STATIC
 
+BASEBOX_VERSION
+
 CFLAGS+=" -Wall -Werror"
 CXXFLAGS+=" -Wall -Werror"
 
