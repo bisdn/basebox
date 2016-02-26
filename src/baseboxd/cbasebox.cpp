@@ -60,17 +60,14 @@ cbasebox::run(int argc, char** argv)
 	/*
 	 * extract debug level
 	 */
-#if 0
-	int rofl_debug = 0;
+	int rofl_debug = 0, core_debug = 0;
 	if (ethcore::cconfig::get_instance().exists("baseboxd.daemon.logging.rofl.debug")) {
 		rofl_debug = (int)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.logging.rofl.debug");
 	}
 	if (env_parser.is_arg_set("debug")) {
-		rofl_debug = core_debug = atoi(env_parser.get_arg("debug").c_str());
+	  core_debug = rofl_debug = atoi(env_parser.get_arg("debug").c_str());
 	}
-#endif
 
-	int core_debug = 0;
 	if (ethcore::cconfig::get_instance().exists("baseboxd.daemon.logging.core.debug")) {
 		core_debug = (int)ethcore::cconfig::get_instance().lookup("baseboxd.daemon.logging.core.debug");
 	}
