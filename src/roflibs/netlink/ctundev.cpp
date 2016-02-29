@@ -242,7 +242,7 @@ ctundev::handle_timeout(rofl::cthread& thread, uint32_t timer_id,
 		try {
 			tun_open(devname);
 		} catch (...) {
-			thread.add_timer(CTUNDEV_TIMER_OPEN_PORT, rofl::ctimespec(1));
+			thread.add_timer(CTUNDEV_TIMER_OPEN_PORT, rofl::ctimespec().expire_in(1));
 		}
 	} break;
 	}
