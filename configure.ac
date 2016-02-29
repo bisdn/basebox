@@ -103,6 +103,6 @@ AC_CONFIG_FILES([
 	src/roflibs/Makefile
 	src/roflibs/netlink/Makefile
 	src/roflibs/of-dpa/Makefile
-	pkg/rhel/basebox.spec
+	pkg/rhel/baseboxd.spec
 	])
 AC_OUTPUT
