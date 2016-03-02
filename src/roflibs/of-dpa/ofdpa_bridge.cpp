@@ -100,7 +100,6 @@ ofdpa_bridge::add_interface(const rofcore::crtlink& rtl)
 
 				// todo check if vid is okay as an id as well
 				group = fm_driver.enable_group_l2_multicast(vid, vid, l2_domain[vid], 1 != l2_domain[vid].size());
-				// enable arp flooding as well
 
 				if (1 == l2_domain[vid].size()) { // todo maybe unnecessary
 					fm_driver.enable_policy_arp(vid, group);
@@ -257,7 +256,13 @@ ofdpa_bridge::update_interface(const rofcore::crtlink& oldlink, const rofcore::c
 void
 ofdpa_bridge::delete_interface(const rofcore::crtlink& rtl)
 {
-	// fixme update L2 Multicast Group
+	// XXX update L2 Multicast Group
+
+  // get group id
+
+  // remove id from l2_domain
+
+  // update enable_group_l2_multicast
 }
 
 
