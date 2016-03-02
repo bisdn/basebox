@@ -31,6 +31,20 @@ bridge vlan add vid 2 dev port2
 bridge fdb add 68:05:ca:30:63:69 dev port1 master vlan 1
 ```
 
+## High level architecture
+
+```
+.------------------.
+|     netlink      |
+'------------------'
+.------------------.
+| adaptation layer |
+'------------------'
+.------------------.
+|     OpenFlow     |
+'------------------'
+```
+
 ## Notes
 
 If you are looking for older versions of basebox(d) for controlling 
