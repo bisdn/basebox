@@ -6,3 +6,6 @@ After=network.target
 Type=simple
 ExecStart=/sbin/baseboxd $OPTIONS
 EnvironmentFile=-/etc/sysconfig/baseboxd
+
+[Install]
+WantedBy=multi-user.target
