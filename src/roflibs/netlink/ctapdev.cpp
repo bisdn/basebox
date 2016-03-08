@@ -139,6 +139,7 @@ ctapdev::enqueue(rofl::cpacket *pkt)
 	}
 
 	// store pkt in outgoing queue
+  rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
 	pout_queue.push_back(pkt);
 
 	thread.wakeup();
@@ -158,6 +159,7 @@ ctapdev::enqueue(std::vector<rofl::cpacket*> pkts)
 	}
 
 	// store pkts in outgoing queue
+  rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
 	for (std::vector<rofl::cpacket*>::iterator
 			it = pkts.begin(); it != pkts.end(); ++it) {
 		pout_queue.push_back(*it);
@@ -225,6 +227,7 @@ ctapdev::tx()
 {
 	rofl::cpacket * pkt = NULL;
 	try {
+	  rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
 		while (not pout_queue.empty()) {
 
 			pkt = pout_queue.front();
@@ -243,10 +246,6 @@ ctapdev::tx()
 
 			pout_queue.pop_front();
 		}
-
-		if (pout_queue.empty()) {
-		}
-
 
 	} catch (eNetDevAgain& e) {
 
