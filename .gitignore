@@ -10,7 +10,6 @@
 *.orig
 *.swp
 *.swo
-*.m4
 *.kdev4
 *.pyc
 
@@ -18,21 +17,12 @@ Makefile.in
 Makefile
 .deps
 .libs
-autom4te.cache
-config.*
-configure
-install-sh
-ltmain.sh
-missing
-depcomp
-libtool
-compile
-m4
-ar-lib
-test-driver
-VERSION
 
-/build-*
-/build/*
+/aclocal.m4
+/autom4te.cache
+/config.*
+/configure
+/VERSION
+/build*
 
 !.gitignore
