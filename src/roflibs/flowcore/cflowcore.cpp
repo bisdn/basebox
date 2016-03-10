@@ -9,5 +9,4 @@
 
 using namespace roflibs::svc;
 
-/*static*/std::map<rofl::cdptid, cflowcore*>	cflowcore::flowcores;
-
+/*static*/ std::map<rofl::cdptid, cflowcore *> cflowcore::flowcores;

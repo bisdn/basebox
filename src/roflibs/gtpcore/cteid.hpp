@@ -18,76 +18,62 @@ namespace gtp {
 
 class cteid {
 public:
+  /**
+   *
+   */
+  cteid() : teid(0){};
 
-	/**
-	 *
-	 */
-	cteid() :
-		teid(0) {};
+  /**
+   *
+   */
+  explicit cteid(uint32_t teid) : teid(teid){};
 
-	/**
-	 *
-	 */
-	explicit
-	cteid(uint32_t teid) :
-		teid(teid) {};
+  /**
+   *
+   */
+  ~cteid(){};
 
-	/**
-	 *
-	 */
-	~cteid() {};
+  /**
+   *
+   */
+  cteid(const cteid &teid) { *this = teid; };
 
-	/**
-	 *
-	 */
-	cteid(const cteid& teid) { *this = teid; };
+  /**
+   *
+   */
+  cteid &operator=(const cteid &teid) {
+    if (this == &teid)
+      return *this;
+    this->teid = teid.teid;
+    return *this;
+  };
 
-	/**
-	 *
-	 */
-	cteid&
-	operator= (const cteid& teid) {
-		if (this == &teid)
-			return *this;
-		this->teid = teid.teid;
-		return *this;
-	};
+  /**
+   *
+   */
+  bool operator<(const cteid &teid) const { return (this->teid < teid.teid); };
 
-	/**
-	 *
-	 */
-	bool
-	operator< (const cteid& teid) const {
-		return (this->teid < teid.teid);
-	};
-
-	/**
-	 *
-	 */
-	bool
-	operator== (const cteid& teid) const {
-		return (this->teid == teid.teid);
-	};
+  /**
+   *
+   */
+  bool operator==(const cteid &teid) const {
+    return (this->teid == teid.teid);
+  };
 
 public:
-
-	/**
-	 *
-	 */
-	uint32_t
-	get_value() const { return teid; };
+  /**
+   *
+   */
+  uint32_t get_value() const { return teid; };
 
 public:
-
-	friend std::ostream&
-	operator<< (std::ostream& os, const cteid& teid) {
-		os << "<cteid " << (unsigned int)teid.get_value() << " >";
-		return os;
-	};
+  friend std::ostream &operator<<(std::ostream &os, const cteid &teid) {
+    os << "<cteid " << (unsigned int)teid.get_value() << " >";
+    return os;
+  };
 
 private:
-
-	uint32_t teid;
+  uint32_t teid;
 };
 
 }; // end of namespace gtp

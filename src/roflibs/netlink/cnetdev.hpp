@@ -38,191 +38,179 @@ namespace rofcore {
 
 class cnetdev; // forward declaration, see below
 
-class eNetDevBase 			: public std::runtime_error {
+class eNetDevBase : public std::runtime_error {
 public:
-	eNetDevBase(const std::string& __arg) : std::runtime_error(__arg) {};
+  eNetDevBase(const std::string &__arg) : std::runtime_error(__arg){};
 };
-class eNetDevInval 			: public eNetDevBase {
+class eNetDevInval : public eNetDevBase {
 public:
-	eNetDevInval(const std::string& __arg) : eNetDevBase(__arg) {};
+  eNetDevInval(const std::string &__arg) : eNetDevBase(__arg){};
 };
-class eNetDevInvalOwner 	: public eNetDevInval {
+class eNetDevInvalOwner : public eNetDevInval {
 public:
-	eNetDevInvalOwner(const std::string& __arg) : eNetDevInval(__arg) {};
+  eNetDevInvalOwner(const std::string &__arg) : eNetDevInval(__arg){};
 };
-class eNetDevInvalNetDev	: public eNetDevInval {
+class eNetDevInvalNetDev : public eNetDevInval {
 public:
-	eNetDevInvalNetDev(const std::string& __arg) : eNetDevInval(__arg) {};
+  eNetDevInvalNetDev(const std::string &__arg) : eNetDevInval(__arg){};
 };
-class eNetDevExists			: public eNetDevInval {
+class eNetDevExists : public eNetDevInval {
 public:
-	eNetDevExists(const std::string& __arg) : eNetDevInval(__arg) {};
+  eNetDevExists(const std::string &__arg) : eNetDevInval(__arg){};
 };
-class eNetDevSysCallFailed	: public eNetDevBase {
-	std::string s_error;
+class eNetDevSysCallFailed : public eNetDevBase {
+  std::string s_error;
+
 public:
-	eNetDevSysCallFailed(const std::string& __arg) : eNetDevBase(__arg) {
-		std::stringstream ss;
-		ss << __arg << " syscall failed (";
-		ss << "errno:" << errno << " ";
-		ss << strerror(errno)<< ")";
-		s_error = ss.str();
-	};
-	virtual
-	~eNetDevSysCallFailed() throw() {};
-	virtual const char* what() const throw() {
-		return s_error.c_str();
-	};
+  eNetDevSysCallFailed(const std::string &__arg) : eNetDevBase(__arg) {
+    std::stringstream ss;
+    ss << __arg << " syscall failed (";
+    ss << "errno:" << errno << " ";
+    ss << strerror(errno) << ")";
+    s_error = ss.str();
+  };
+  virtual ~eNetDevSysCallFailed() throw(){};
+  virtual const char *what() const throw() { return s_error.c_str(); };
 };
-class eNetDevSocket			: public eNetDevSysCallFailed {
+class eNetDevSocket : public eNetDevSysCallFailed {
 public:
-	eNetDevSocket(const std::string& __arg) : eNetDevSysCallFailed(__arg) {};
+  eNetDevSocket(const std::string &__arg) : eNetDevSysCallFailed(__arg){};
 };
-class eNetDevIoctl			: public eNetDevSysCallFailed {
+class eNetDevIoctl : public eNetDevSysCallFailed {
 public:
-	eNetDevIoctl(const std::string& __arg) : eNetDevSysCallFailed(__arg) {};
+  eNetDevIoctl(const std::string &__arg) : eNetDevSysCallFailed(__arg){};
 };
-class eNetDevAgain			: public eNetDevSysCallFailed {
+class eNetDevAgain : public eNetDevSysCallFailed {
 public:
-	eNetDevAgain(const std::string& __arg) : eNetDevSysCallFailed(__arg) {};
+  eNetDevAgain(const std::string &__arg) : eNetDevSysCallFailed(__arg){};
 };
-class eNetDevCritical		: public eNetDevBase {
+class eNetDevCritical : public eNetDevBase {
 public:
-	eNetDevCritical(const std::string& __arg) : eNetDevBase(__arg) {};
+  eNetDevCritical(const std::string &__arg) : eNetDevBase(__arg){};
 };
 
-
-
-class cnetdev_owner
-{
+class cnetdev_owner {
 protected:
+  friend class cnetdev;
 
-	friend class cnetdev;
-
-	std::map<std::string, cnetdev*> devs;
+  std::map<std::string, cnetdev *> devs;
 
 public:
+  virtual ~cnetdev_owner(){};
 
-	virtual ~cnetdev_owner() {};
+  /**
+   * @brief	Enqeues a packet received on a cnetdevice to this
+   * cnetdevice_owner
+   *
+   * This method is used to enqueue new cpacket instances received on a
+   * cnetdevice
+   * on a cnetdevice_owner instance. Default behaviour of all ::enqueue()
+   * methods
+   * is deletion of all packets from heap. All ::enqueue() methods should be
+   * subscribed
+   * by a class deriving from cnetdevice_owner.
+   *
+   * @param pkt Pointer to packet allocated on heap. This pkt must be deleted by
+   * this method.
+   */
+  virtual void enqueue(cnetdev *netdev, rofl::cpacket *pkt);
 
-	/**
-	 * @brief	Enqeues a packet received on a cnetdevice to this cnetdevice_owner
-	 *
-	 * This method is used to enqueue new cpacket instances received on a cnetdevice
-	 * on a cnetdevice_owner instance. Default behaviour of all ::enqueue() methods
-	 * is deletion of all packets from heap. All ::enqueue() methods should be subscribed
-	 * by a class deriving from cnetdevice_owner.
-	 *
-	 * @param pkt Pointer to packet allocated on heap. This pkt must be deleted by this method.
-	 */
-	virtual void enqueue(cnetdev *netdev, rofl::cpacket* pkt);
-
-
-	/**
-	 * @brief	Enqeues a vector of packets received on a cnetdevice to this cnetdevice_owner
-	 *
-	 * This method is used to enqueue new cpacket instances received on a cnetdevice
-	 * on a cnetdevice_owner instance. Default behaviour of all ::enqueue() methods
-	 * is deletion of all packets from heap. All ::enqueue() methods should be subscribed
-	 * by a class deriving from cnetdevice_owner.
-	 *
-	 * @param pkts Vector of cpacket instances allocated on the heap. All pkts must be deleted by this method.
-	 */
-	virtual void enqueue(cnetdev *netdev, std::vector<rofl::cpacket*> pkts);
-
+  /**
+   * @brief	Enqeues a vector of packets received on a cnetdevice to this
+   * cnetdevice_owner
+   *
+   * This method is used to enqueue new cpacket instances received on a
+   * cnetdevice
+   * on a cnetdevice_owner instance. Default behaviour of all ::enqueue()
+   * methods
+   * is deletion of all packets from heap. All ::enqueue() methods should be
+   * subscribed
+   * by a class deriving from cnetdevice_owner.
+   *
+   * @param pkts Vector of cpacket instances allocated on the heap. All pkts
+   * must be deleted by this method.
+   */
+  virtual void enqueue(cnetdev *netdev, std::vector<rofl::cpacket *> pkts);
 
 private:
+  /**
+   * @brief	Called, once a new cnetdev instance has been created.
+   *
+   * @param netdev pointer to cnetdev instance created.
+   */
+  void netdev_created(cnetdev *netdev);
 
-
-	/**
-	 * @brief	Called, once a new cnetdev instance has been created.
-	 *
-	 * @param netdev pointer to cnetdev instance created.
-	 */
-	void netdev_created(cnetdev* netdev);
-
-
-	/**
-	 * @brief	Called, once a cnetdev instance is removed.
-	 *
-	 * @param netdev pointer to cnetdev instance whose destructor was called.
-	 */
-	void netdev_removed(cnetdev* netdev);
+  /**
+   * @brief	Called, once a cnetdev instance is removed.
+   *
+   * @param netdev pointer to cnetdev instance whose destructor was called.
+   */
+  void netdev_removed(cnetdev *netdev);
 };
 
-
-class cnetdev
-{
+class cnetdev {
 protected:
-	std::string		 devname;
-	cnetdev_owner	*netdev_owner;
-	mutable unsigned int	 ifindex;
-	rofl::cmacaddr	 hwaddr;
+  std::string devname;
+  cnetdev_owner *netdev_owner;
+  mutable unsigned int ifindex;
+  rofl::cmacaddr hwaddr;
 
 public:
+  /**
+   * @brief	Constructor for class cnetdev.
+   *
+   * @param devname std::string containing name for this network device, e.g.
+   * eth0
+   * @param netdev_owner pointer to cnetdev_owner instance attached to this
+   * network device
+   */
+  cnetdev(cnetdev_owner *netdev_owner, std::string const &devname,
+          pthread_t tid = 0);
 
+  virtual ~cnetdev();
 
-	/**
-	 * @brief	Constructor for class cnetdev.
-	 *
-	 * @param devname std::string containing name for this network device, e.g. eth0
-	 * @param netdev_owner pointer to cnetdev_owner instance attached to this network device
-	 */
-	cnetdev(cnetdev_owner *netdev_owner, std::string const& devname, pthread_t tid = 0);
+  /**
+   * @brief	Returns std::string with network device name.
+   *
+   * @return const reference to std::string devname
+   */
+  std::string const &get_devname() const;
 
-	virtual ~cnetdev();
+  /**
+   * @brief	Enqueues a single rofl::cpacket instance on cnetdev.
+   *
+   * rofl::cpacket instance must have been allocated on heap and must
+   * be removed
+   */
+  virtual void enqueue(rofl::cpacket *pkt);
 
+  virtual void enqueue(std::vector<rofl::cpacket *> pkts);
 
-	/**
-	 * @brief	Returns std::string with network device name.
-	 *
-	 * @return const reference to std::string devname
-	 */
-	std::string const& get_devname() const;
+  /**
+   * @brief	enable interface (set IFF_UP flag)
+   */
+  virtual void enable_interface();
 
+  /**
+   * @brief	disable interface (clear IFF_UP flag)
+   */
+  virtual void disable_interface();
 
+  /**
+   *
+   */
+  virtual unsigned int get_ifindex() const;
 
-	/**
-	 * @brief	Enqueues a single rofl::cpacket instance on cnetdev.
-	 *
-	 * rofl::cpacket instance must have been allocated on heap and must
-	 * be removed
-	 */
-	virtual void enqueue(rofl::cpacket *pkt);
+  /**
+   *
+   */
+  virtual rofl::cmacaddr get_hwaddr();
 
-	virtual void enqueue(std::vector<rofl::cpacket*> pkts);
-
-
-	/**
-	 * @brief	enable interface (set IFF_UP flag)
-	 */
-	virtual void enable_interface();
-
-
-	/**
-	 * @brief	disable interface (clear IFF_UP flag)
-	 */
-	virtual void disable_interface();
-
-
-	/**
-	 *
-	 */
-	virtual unsigned int get_ifindex() const;
-
-
-	/**
-	 *
-	 */
-	virtual rofl::cmacaddr get_hwaddr();
-
-
-	/**
-	 *
-	 */
-	virtual void set_hwaddr(rofl::cmacaddr const& hwaddr);
+  /**
+   *
+   */
+  virtual void set_hwaddr(rofl::cmacaddr const &hwaddr);
 };
-
 };
 
 #endif /* CNETDEVICE_H_ */

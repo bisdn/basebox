@@ -12,50 +12,38 @@ namespace basebox {
 
 class ofdpa_bridge {
 public:
-	ofdpa_bridge(rofl::rofl_ofdpa_fm_driver &fm_driver);
+  ofdpa_bridge(rofl::rofl_ofdpa_fm_driver &fm_driver);
 
-	virtual
-	~ofdpa_bridge();
+  virtual ~ofdpa_bridge();
 
-	void
-	set_bridge_interface(const rofcore::crtlink& rtl);
+  void set_bridge_interface(const rofcore::crtlink &rtl);
 
-	const rofcore::crtlink&
-	get_bridge_interface() const {
-		return bridge;
-	}
+  const rofcore::crtlink &get_bridge_interface() const { return bridge; }
 
-	bool
-	has_bridge_interface() const {
-		return 0 != bridge.get_ifindex();
-	}
+  bool has_bridge_interface() const { return 0 != bridge.get_ifindex(); }
 
-	void
-	add_interface(const rofcore::crtlink& rtl);
+  void add_interface(const rofcore::crtlink &rtl);
 
-	void
-	update_interface(const rofcore::crtlink& oldlink, const rofcore::crtlink& newlink);
+  void update_interface(const rofcore::crtlink &oldlink,
+                        const rofcore::crtlink &newlink);
 
-	void
-	delete_interface(const rofcore::crtlink& rtl);
+  void delete_interface(const rofcore::crtlink &rtl);
 
-	void
-	add_mac_to_fdb(const uint32_t of_port_no, const uint16_t vlan, const rofl::cmacaddr &mac, bool permanent = false);
+  void add_mac_to_fdb(const uint32_t of_port_no, const uint16_t vlan,
+                      const rofl::cmacaddr &mac, bool permanent = false);
 
-	void
-	remove_mac_from_fdb(const uint32_t of_port_no, uint16_t vid,
-			const rofl::cmacaddr& mac);
+  void remove_mac_from_fdb(const uint32_t of_port_no, uint16_t vid,
+                           const rofl::cmacaddr &mac);
 
 private:
-	void
-	update_vlans(const std::string &devname,
-			const rtnl_link_bridge_vlan *old_br_vlan,
-			const rtnl_link_bridge_vlan *new_br_vlan);
+  void update_vlans(const std::string &devname,
+                    const rtnl_link_bridge_vlan *old_br_vlan,
+                    const rtnl_link_bridge_vlan *new_br_vlan);
 
-	rofcore::crtlink bridge;
-	rofl::rofl_ofdpa_fm_driver &fm_driver; // todo use shared pointer?
+  rofcore::crtlink bridge;
+  rofl::rofl_ofdpa_fm_driver &fm_driver; // todo use shared pointer?
 
-	std::map<uint16_t, std::list<uint32_t> > l2_domain;
+  std::map<uint16_t, std::list<uint32_t>> l2_domain;
 };
 
 } /* namespace basebox */

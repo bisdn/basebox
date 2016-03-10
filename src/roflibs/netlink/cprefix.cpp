@@ -8,4 +8,3 @@
 #include "cprefix.hpp"
 
 using namespace rofcore;
-

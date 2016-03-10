@@ -29,96 +29,83 @@ namespace python {
 
 class ePythonBase : public std::runtime_error {
 public:
-	ePythonBase(const std::string& __arg) : std::runtime_error(__arg) {};
+  ePythonBase(const std::string &__arg) : std::runtime_error(__arg){};
 };
 class ePythonNotFound : public ePythonBase {
 public:
-	ePythonNotFound(const std::string& __arg) : ePythonBase(__arg) {};
+  ePythonNotFound(const std::string &__arg) : ePythonBase(__arg){};
 };
 class ePythonFailed : public ePythonBase {
 public:
-	ePythonFailed(const std::string& __arg) : ePythonBase(__arg) {};
+  ePythonFailed(const std::string &__arg) : ePythonBase(__arg){};
 };
 
 class cpython {
 
-	static cpython* instance;
+  static cpython *instance;
 
-	/**
-	 *
-	 */
-	cpython() :
-		tid(0),
-		program_name(DEFAULT_PROGRAM_NAME),
-		script(DEFAULT_SCRIPT)
-	{};
+  /**
+   *
+   */
+  cpython()
+      : tid(0), program_name(DEFAULT_PROGRAM_NAME), script(DEFAULT_SCRIPT){};
 
-	/**
-	 *
-	 */
-	~cpython()
-	{};
+  /**
+   *
+   */
+  ~cpython(){};
 
 public:
+  /**
+   *
+   */
+  static cpython &get_instance() {
+    if ((cpython *)0 == cpython::instance) {
+      cpython::instance = new cpython();
+    }
+    return *(cpython::instance);
+  };
 
-	/**
-	 *
-	 */
-	static cpython&
-	get_instance() {
-		if ((cpython*)0 == cpython::instance) {
-			cpython::instance = new cpython();
-		}
-		return *(cpython::instance);
-	};
+  /**
+   *
+   */
+  void run(const std::string &python_script = DEFAULT_SCRIPT,
+           const std::string &program_name = DEFAULT_PROGRAM_NAME);
 
-	/**
-	 *
-	 */
-	void
-	run(const std::string& python_script = DEFAULT_SCRIPT,
-			const std::string& program_name = DEFAULT_PROGRAM_NAME);
+  /**
+   *
+   */
+  void stop();
 
-	/**
-	 *
-	 */
-	void
-	stop();
+  /**
+   *
+   */
+  const std::string &get_program_name() const {
+    rofl::RwLock rwlock(thread_rwlock, rofl::RwLock::RWLOCK_READ);
+    return program_name;
+  };
 
-	/**
-	 *
-	 */
-	const std::string&
-	get_program_name() const {
-		rofl::RwLock rwlock(thread_rwlock, rofl::RwLock::RWLOCK_READ);
-		return program_name;
-	};
-
-	/**
-	 *
-	 */
-	const std::string&
-	get_script() const {
-		rofl::RwLock rwlock(thread_rwlock, rofl::RwLock::RWLOCK_READ);
-		return script;
-	};
+  /**
+   *
+   */
+  const std::string &get_script() const {
+    rofl::RwLock rwlock(thread_rwlock, rofl::RwLock::RWLOCK_READ);
+    return script;
+  };
 
 private:
-
-	/**
-	 *
-	 */
-	static
-	void* run_script(void* arg);
+  /**
+   *
+   */
+  static void *run_script(void *arg);
 
 private:
-
-	static std::string				DEFAULT_PROGRAM_NAME;
-	std::string						program_name;
-	static std::string				DEFAULT_SCRIPT;
-	std::string						script;
-	pthread_t						tid;
-	mutable rofl::PthreadRwLock		thread_rwlock;
+  static std::string DEFAULT_PROGRAM_NAME;
+  std::string program_name;
+  static std::string DEFAULT_SCRIPT;
+  std::string script;
+  pthread_t tid;
+  mutable rofl::PthreadRwLock thread_rwlock;
 };
 
 }; // end of namespace python

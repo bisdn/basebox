@@ -15,102 +15,90 @@
 using namespace rofcore;
 
 std::filebuf logging::devnull;
-std::ostream logging::emerg	 (&logging::devnull);
-std::ostream logging::alert  (&logging::devnull);
-std::ostream logging::crit   (&logging::devnull);
-std::ostream logging::error  (&logging::devnull);
-std::ostream logging::warn   (&logging::devnull);
-std::ostream logging::notice (&logging::devnull);
-std::ostream logging::info   (&logging::devnull);
-std::ostream logging::debug  (&logging::devnull);
-std::ostream logging::trace  (&logging::devnull);
+std::ostream logging::emerg(&logging::devnull);
+std::ostream logging::alert(&logging::devnull);
+std::ostream logging::crit(&logging::devnull);
+std::ostream logging::error(&logging::devnull);
+std::ostream logging::warn(&logging::devnull);
+std::ostream logging::notice(&logging::devnull);
+std::ostream logging::info(&logging::devnull);
+std::ostream logging::debug(&logging::devnull);
+std::ostream logging::trace(&logging::devnull);
 
 std::streamsize logging::width(70);
 unsigned int indent::width(0);
 
-
-void
-logging::init()
-{
-	if (not logging::devnull.is_open()) {
-		logging::devnull.open("/dev/null", std::ios::out);
-	}
+void logging::init() {
+  if (not logging::devnull.is_open()) {
+    logging::devnull.open("/dev/null", std::ios::out);
+  }
 }
 
-
-void
-logging::close()
-{
-	if (logging::devnull.is_open()) {
-		logging::devnull.close();
-	}
+void logging::close() {
+  if (logging::devnull.is_open()) {
+    logging::devnull.close();
+  }
 }
 
+void logging::set_debug_level(unsigned int debug_level) {
+  logging::init();
 
+  // EMERG
+  logging::emerg.rdbuf(std::cerr.rdbuf());
 
-void
-logging::set_debug_level(
-			unsigned int debug_level)
-{
-	logging::init();
+  // ALERT
+  if (debug_level >= ALERT) {
+    logging::alert.rdbuf(std::cerr.rdbuf());
+  } else {
+    logging::alert.rdbuf(&logging::devnull);
+  }
 
-	// EMERG
-	logging::emerg .rdbuf(std::cerr.rdbuf());
+  // CRIT
+  if (debug_level >= CRIT) {
+    logging::crit.rdbuf(std::cerr.rdbuf());
+  } else {
+    logging::crit.rdbuf(&logging::devnull);
+  }
 
-	// ALERT
-	if (debug_level >= ALERT) {
-		logging::alert .rdbuf(std::cerr.rdbuf());
-	} else {
-		logging::alert .rdbuf(&logging::devnull);
-	}
+  // ERROR
+  if (debug_level >= ERROR) {
+    logging::error.rdbuf(std::cerr.rdbuf());
+  } else {
+    logging::error.rdbuf(&logging::devnull);
+  }
 
-	// CRIT
-	if (debug_level >= CRIT) {
-		logging::crit  .rdbuf(std::cerr.rdbuf());
-	} else {
-		logging::crit  .rdbuf(&logging::devnull);
-	}
+  // WARN
+  if (debug_level >= WARN) {
+    logging::warn.rdbuf(std::cerr.rdbuf());
+  } else {
+    logging::warn.rdbuf(&logging::devnull);
+  }
 
-	// ERROR
-	if (debug_level >= ERROR) {
-		logging::error .rdbuf(std::cerr.rdbuf());
-	} else {
-		logging::error .rdbuf(&logging::devnull);
-	}
+  // NOTICE
+  if (debug_level >= NOTICE) {
+    logging::notice.rdbuf(std::cerr.rdbuf());
+  } else {
+    logging::notice.rdbuf(&logging::devnull);
+  }
 
-	// WARN
-	if (debug_level >= WARN) {
-		logging::warn  .rdbuf(std::cerr.rdbuf());
-	} else {
-		logging::warn  .rdbuf(&logging::devnull);
-	}
+  // INFO
+  if (debug_level >= INFO) {
+    logging::info.rdbuf(std::cerr.rdbuf());
+  } else {
+    logging::info.rdbuf(&logging::devnull);
+  }
 
-	// NOTICE
-	if (debug_level >= NOTICE) {
-		logging::notice.rdbuf(std::cerr.rdbuf());
-	} else {
-		logging::notice.rdbuf(&logging::devnull);
-	}
+  // DEBUG
+  if (debug_level >= DBG) {
+    logging::debug.rdbuf(std::cerr.rdbuf());
+  } else {
+    logging::debug.rdbuf(&logging::devnull);
+  }
 
-	// INFO
-	if (debug_level >= INFO) {
-		logging::info  .rdbuf(std::cerr.rdbuf());
-	} else {
-		logging::info  .rdbuf(&logging::devnull);
-	}
-
-	// DEBUG
-	if (debug_level >= DBG) {
-		logging::debug .rdbuf(std::cerr.rdbuf());
-	} else {
-		logging::debug .rdbuf(&logging::devnull);
-	}
-
-	// TRACE 
-	if (debug_level >= TRACE) {
-		logging::trace .rdbuf(std::cerr.rdbuf());
-	} else {
-		logging::trace .rdbuf(&logging::devnull);
-	}
+  // TRACE
+  if (debug_level >= TRACE) {
+    logging::trace.rdbuf(std::cerr.rdbuf());
+  } else {
+    logging::trace.rdbuf(&logging::devnull);
+  }
 }
-

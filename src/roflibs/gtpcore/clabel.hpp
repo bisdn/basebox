@@ -21,253 +21,238 @@ namespace gtp {
 
 class clabel {
 public:
+  /**
+   *
+   */
+  clabel(){};
 
-	/**
-	 *
-	 */
-	clabel() {};
+  /**
+   *
+   */
+  ~clabel(){};
 
-	/**
-	 *
-	 */
-	~clabel() {};
+  /**
+   *
+   */
+  clabel(const cteid &teid) : teid(teid){};
 
-	/**
-	 *
-	 */
-	clabel(const cteid& teid) :
-		teid(teid) {};
+  /**
+   *
+   */
+  clabel(const clabel &label) { *this = label; };
 
-	/**
-	 *
-	 */
-	clabel(const clabel& label) { *this = label; };
+  /**
+   *
+   */
+  clabel &operator=(const clabel &label) {
+    if (this == &label)
+      return *this;
+    teid = label.teid;
+    return *this;
+  };
 
-	/**
-	 *
-	 */
-	clabel&
-	operator= (const clabel& label) {
-		if (this == &label)
-			return *this;
-		teid = label.teid;
-		return *this;
-	};
+  /**
+   *
+   */
+  bool operator<(const clabel &label) const { return (teid < label.teid); };
 
-	/**
-	 *
-	 */
-	bool
-	operator< (const clabel& label) const {
-		return (teid < label.teid);
-	};
-
-	/**
-	 *
-	 */
-	bool
-	operator== (const clabel& label) const {
-		return (teid == label.teid);
-	};
+  /**
+   *
+   */
+  bool operator==(const clabel &label) const { return (teid == label.teid); };
 
 public:
-
-	/**
-	 *
-	 */
-	const cteid&
-	get_teid() const { return teid; };
+  /**
+   *
+   */
+  const cteid &get_teid() const { return teid; };
 
 public:
-
-	friend std::ostream&
-	operator<< (std::ostream& os, const clabel& label) {
-		os << rofcore::indent(0) << "<clabel teid:"
-				<< (unsigned int)label.get_teid().get_value() << " >" << std::endl;
-		return os;
-	};
+  friend std::ostream &operator<<(std::ostream &os, const clabel &label) {
+    os << rofcore::indent(0)
+       << "<clabel teid:" << (unsigned int)label.get_teid().get_value() << " >"
+       << std::endl;
+    return os;
+  };
 
 private:
-
-	cteid		teid;
+  cteid teid;
 };
-
-
 
 class clabel_in4 : public clabel {
 public:
+  /**
+   *
+   */
+  clabel_in4(){};
 
-	/**
-	 *
-	 */
-	clabel_in4() {};
+  /**
+   *
+   */
+  ~clabel_in4(){};
 
-	/**
-	 *
-	 */
-	~clabel_in4() {};
+  /**
+   *
+   */
+  clabel_in4(const caddress_gtp_in4 &saddr, const caddress_gtp_in4 &daddr,
+             const cteid &teid)
+      : clabel(teid), saddr(saddr), daddr(daddr){};
 
-	/**
-	 *
-	 */
-	clabel_in4(
-			const caddress_gtp_in4& saddr, const caddress_gtp_in4& daddr, const cteid& teid) :
-				clabel(teid), saddr(saddr), daddr(daddr) {};
+  /**
+   *
+   */
+  clabel_in4(const clabel_in4 &label) { *this = label; };
 
-	/**
-	 *
-	 */
-	clabel_in4(const clabel_in4& label) { *this = label; };
+  /**
+   *
+   */
+  clabel_in4 &operator=(const clabel_in4 &label) {
+    if (this == &label)
+      return *this;
+    clabel::operator=(label);
+    saddr = label.saddr;
+    daddr = label.daddr;
+    return *this;
+  };
 
-	/**
-	 *
-	 */
-	clabel_in4&
-	operator= (const clabel_in4& label) {
-		if (this == &label)
-			return *this;
-		clabel::operator= (label);
-		saddr = label.saddr;
-		daddr = label.daddr;
-		return *this;
-	};
+  /**
+   *
+   */
+  bool operator==(const clabel_in4 &label) const {
+    return (clabel::operator==(label) && (saddr == label.saddr) &&
+            (daddr == label.daddr));
+  };
 
-	/**
-	 *
-	 */
-	bool
-	operator== (const clabel_in4& label) const {
-		return (clabel::operator== (label) && (saddr == label.saddr) && (daddr == label.daddr));
-	};
-
-	/**
-	 *
-	 */
-	bool
-	operator< (const clabel_in4& label) const {
-		return (clabel::operator< (label) || (saddr < label.saddr) || (daddr < label.daddr));
-	};
+  /**
+   *
+   */
+  bool operator<(const clabel_in4 &label) const {
+    return (clabel::operator<(label) || (saddr < label.saddr) ||
+            (daddr < label.daddr));
+  };
 
 public:
+  /**
+   *
+   */
+  const caddress_gtp_in4 &get_saddr() const { return saddr; };
 
-	/**
-	 *
-	 */
-	const caddress_gtp_in4&
-	get_saddr() const { return saddr; };
-
-	/**
-	 *
-	 */
-	const caddress_gtp_in4&
-	get_daddr() const { return daddr; };
+  /**
+   *
+   */
+  const caddress_gtp_in4 &get_daddr() const { return daddr; };
 
 public:
-
-	friend std::ostream&
-	operator<< (std::ostream& os, const clabel_in4& label) {
-		os << rofcore::indent(0) << "<clabel_in4 >" << std::endl;
-		{ rofcore::indent i(2); os << dynamic_cast<const clabel&>( label ); };
-		os << rofcore::indent(2) << "<saddr >" << std::endl;
-		{ rofcore::indent i(4); os << label.get_saddr(); };
-		os << rofcore::indent(2) << "<daddr >" << std::endl;
-		{ rofcore::indent i(4); os << label.get_daddr(); };
-		return os;
-	};
+  friend std::ostream &operator<<(std::ostream &os, const clabel_in4 &label) {
+    os << rofcore::indent(0) << "<clabel_in4 >" << std::endl;
+    {
+      rofcore::indent i(2);
+      os << dynamic_cast<const clabel &>(label);
+    };
+    os << rofcore::indent(2) << "<saddr >" << std::endl;
+    {
+      rofcore::indent i(4);
+      os << label.get_saddr();
+    };
+    os << rofcore::indent(2) << "<daddr >" << std::endl;
+    {
+      rofcore::indent i(4);
+      os << label.get_daddr();
+    };
+    return os;
+  };
 
 private:
-
-	caddress_gtp_in4	saddr;
-	caddress_gtp_in4	daddr;
+  caddress_gtp_in4 saddr;
+  caddress_gtp_in4 daddr;
 };
-
-
 
 class clabel_in6 : public clabel {
 public:
+  /**
+   *
+   */
+  clabel_in6(){};
 
-	/**
-	 *
-	 */
-	clabel_in6() {};
+  /**
+   *
+   */
+  ~clabel_in6(){};
 
-	/**
-	 *
-	 */
-	~clabel_in6() {};
+  /**
+   *
+   */
+  clabel_in6(const caddress_gtp_in6 &saddr, const caddress_gtp_in6 &daddr,
+             const cteid &teid)
+      : clabel(teid), saddr(saddr), daddr(daddr){};
 
-	/**
-	 *
-	 */
-	clabel_in6(
-			const caddress_gtp_in6& saddr, const caddress_gtp_in6& daddr, const cteid& teid) :
-				clabel(teid), saddr(saddr), daddr(daddr) {};
+  /**
+   *
+   */
+  clabel_in6(const clabel_in6 &label) { *this = label; };
 
-	/**
-	 *
-	 */
-	clabel_in6(const clabel_in6& label) { *this = label; };
+  /**
+   *
+   */
+  clabel_in6 &operator=(const clabel_in6 &label) {
+    if (this == &label)
+      return *this;
+    clabel::operator=(label);
+    saddr = label.saddr;
+    daddr = label.daddr;
+    return *this;
+  };
 
-	/**
-	 *
-	 */
-	clabel_in6&
-	operator= (const clabel_in6& label) {
-		if (this == &label)
-			return *this;
-		clabel::operator= (label);
-		saddr = label.saddr;
-		daddr = label.daddr;
-		return *this;
-	};
+  /**
+   *
+   */
+  bool operator<(const clabel_in6 &label) const {
+    return (clabel::operator<(label) && (saddr < label.saddr) &&
+            (daddr < label.daddr));
+  };
 
-	/**
-	 *
-	 */
-	bool
-	operator< (const clabel_in6& label) const {
-		return (clabel::operator< (label) && (saddr < label.saddr) && (daddr < label.daddr));
-	};
-
-	/**
-	 *
-	 */
-	bool
-	operator== (const clabel_in6& label) const {
-		return (clabel::operator== (label) && (saddr == label.saddr) && (daddr == label.daddr));
-	};
+  /**
+   *
+   */
+  bool operator==(const clabel_in6 &label) const {
+    return (clabel::operator==(label) && (saddr == label.saddr) &&
+            (daddr == label.daddr));
+  };
 
 public:
+  /**
+   *
+   */
+  const caddress_gtp_in6 &get_saddr() const { return saddr; };
 
-	/**
-	 *
-	 */
-	const caddress_gtp_in6&
-	get_saddr() const { return saddr; };
-
-	/**
-	 *
-	 */
-	const caddress_gtp_in6&
-	get_daddr() const { return daddr; };
+  /**
+   *
+   */
+  const caddress_gtp_in6 &get_daddr() const { return daddr; };
 
 public:
-
-	friend std::ostream&
-	operator<< (std::ostream& os, const clabel_in6& label) {
-		os << rofcore::indent(0) << "<clabel_in6 >" << std::endl;
-		{ rofcore::indent i(2); os << dynamic_cast<const clabel&>( label ); };
-		os << rofcore::indent(2) << "<saddr >" << std::endl;
-		{ rofcore::indent i(4); os << label.get_saddr(); };
-		os << rofcore::indent(2) << "<daddr >" << std::endl;
-		{ rofcore::indent i(4); os << label.get_daddr(); };
-		return os;
-	};
+  friend std::ostream &operator<<(std::ostream &os, const clabel_in6 &label) {
+    os << rofcore::indent(0) << "<clabel_in6 >" << std::endl;
+    {
+      rofcore::indent i(2);
+      os << dynamic_cast<const clabel &>(label);
+    };
+    os << rofcore::indent(2) << "<saddr >" << std::endl;
+    {
+      rofcore::indent i(4);
+      os << label.get_saddr();
+    };
+    os << rofcore::indent(2) << "<daddr >" << std::endl;
+    {
+      rofcore::indent i(4);
+      os << label.get_daddr();
+    };
+    return os;
+  };
 
 private:
-
-	caddress_gtp_in6	saddr;
-	caddress_gtp_in6	daddr;
+  caddress_gtp_in6 saddr;
+  caddress_gtp_in6 daddr;
 };
 
 }; // end of namespace gtp

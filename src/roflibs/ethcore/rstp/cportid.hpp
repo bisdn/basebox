@@ -19,91 +19,69 @@ namespace rstp {
 
 class cportid {
 public:
+  /**
+   *
+   */
+  cportid() : pid(0){};
 
-	/**
-	 *
-	 */
-	cportid() :
-		pid(0)
-	{};
+  /**
+   *
+   */
+  cportid(uint16_t pid) : pid(pid){};
 
-	/**
-	 *
-	 */
-	cportid(uint16_t pid) :
-		pid(pid)
-	{};
+  /**
+   *
+   */
+  ~cportid(){};
 
-	/**
-	 *
-	 */
-	~cportid()
-	{};
+  /**
+   *
+   */
+  cportid(const cportid &portid) { *this = portid; };
 
-	/**
-	 *
-	 */
-	cportid(const cportid& portid) {
-		*this = portid;
-	};
+  /**
+   *
+   */
+  cportid &operator=(const cportid &portid) {
+    if (this == &portid)
+      return *this;
+    pid = portid.pid;
+    return *this;
+  };
 
-	/**
-	 *
-	 */
-	cportid&
-	operator= (const cportid& portid) {
-		if (this == &portid)
-			return *this;
-		pid = portid.pid;
-		return *this;
-	};
+  /**
+   *
+   */
+  bool operator<(const cportid &portid) const { return (pid < portid.pid); };
 
-	/**
-	 *
-	 */
-	bool
-	operator< (const cportid& portid) const {
-		return (pid < portid.pid);
-	};
+  /**
+   *
+   */
+  bool operator==(const cportid &portid) const { return (pid == portid.pid); };
 
-	/**
-	 *
-	 */
-	bool
-	operator== (const cportid& portid) const {
-		return (pid == portid.pid);
-	};
-
-	/**
-	 *
-	 */
-	bool
-	operator!= (const cportid& portid) const {
-		return (pid != portid.pid);
-	};
+  /**
+   *
+   */
+  bool operator!=(const cportid &portid) const { return (pid != portid.pid); };
 
 public:
-
-	const uint16_t&
-	get_portid() const { return pid; };
+  const uint16_t &get_portid() const { return pid; };
 
 public:
+  friend std::ostream &operator<<(std::ostream &os, const cportid &portid) {
+    os << "<cportid port-id:" << (unsigned long long)portid.pid << " >";
+    return os;
+  };
 
-	friend std::ostream&
-	operator<< (std::ostream& os, const cportid& portid) {
-		os << "<cportid port-id:" << (unsigned long long)portid.pid << " >";
-		return os;
-	};
-
-	const std::string
-	str() const {
-		std::stringstream ss; ss << std::hex << "0x" << pid << std::dec; return ss.str();
-		//std::stringstream ss; ss << *this; return ss.str();
-	};
+  const std::string str() const {
+    std::stringstream ss;
+    ss << std::hex << "0x" << pid << std::dec;
+    return ss.str();
+    // std::stringstream ss; ss << *this; return ss.str();
+  };
 
 private:
-
-	uint16_t	pid;	// root path cost
+  uint16_t pid; // root path cost
 };
 
 }; // end of namespace rstp

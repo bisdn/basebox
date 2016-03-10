@@ -21,1215 +21,934 @@
 namespace roflibs {
 namespace gtp {
 
-
 class eGtpDBBase : public std::runtime_error {
 public:
-	eGtpDBBase(const std::string& __arg) : std::runtime_error(__arg) {};
+  eGtpDBBase(const std::string &__arg) : std::runtime_error(__arg){};
 };
 class eGtpDBNotFound : public eGtpDBBase {
 public:
-	eGtpDBNotFound(const std::string& __arg) : eGtpDBBase(__arg) {};
+  eGtpDBNotFound(const std::string &__arg) : eGtpDBBase(__arg){};
 };
-
-
 
 class cgtplabelentry {
 public:
+  /**
+   *
+   */
+  ~cgtplabelentry(){};
 
-	/**
-	 *
-	 */
-	~cgtplabelentry()
-	{};
+  /**
+   *
+   */
+  cgtplabelentry() : vers(0), sport(0), dport(0), teid(0){};
 
-	/**
-	 *
-	 */
-	cgtplabelentry() :
-		vers(0),
-		sport(0),
-		dport(0),
-		teid(0)
-	{};
+  /**
+   *
+   */
+  cgtplabelentry(int version, const std::string &saddr, uint16_t sport,
+                 const std::string &daddr, uint16_t dport, uint32_t teid)
+      : vers(version), saddr(saddr), sport(sport), daddr(daddr), dport(dport),
+        teid(teid){};
 
-	/**
-	 *
-	 */
-	cgtplabelentry(
-			int version,
-			const std::string& saddr, uint16_t sport,
-			const std::string& daddr, uint16_t dport,
-			uint32_t teid) :
-				vers(version),
-				saddr(saddr),
-				sport(sport),
-				daddr(daddr),
-				dport(dport),
-				teid(teid)
-	{};
+  /**
+   *
+   */
+  cgtplabelentry(const cgtplabelentry &port) { *this = port; };
 
-	/**
-	 *
-	 */
-	cgtplabelentry(
-			const cgtplabelentry& port)
-	{ *this = port; };
-
-	/**
-	 *
-	 */
-	cgtplabelentry&
-	operator= (
-			const cgtplabelentry& entry) {
-		if (this == &entry)
-			return *this;
-		vers    = entry.vers;
-		saddr   = entry.saddr;
-		sport   = entry.sport;
-		daddr   = entry.daddr;
-		dport   = entry.dport;
-		teid    = entry.teid;
-		info_s  = entry.info_s;
-		return *this;
-	};
+  /**
+   *
+   */
+  cgtplabelentry &operator=(const cgtplabelentry &entry) {
+    if (this == &entry)
+      return *this;
+    vers = entry.vers;
+    saddr = entry.saddr;
+    sport = entry.sport;
+    daddr = entry.daddr;
+    dport = entry.dport;
+    teid = entry.teid;
+    info_s = entry.info_s;
+    return *this;
+  };
 
 public:
+  void set_version(int vers) { this->vers = vers; };
 
-	void
-	set_version(
-			int vers)
-	{ this->vers = vers; };
+  int &set_version() { return vers; };
 
-	int&
-	set_version()
-	{ return vers; };
+  void set_src_addr(const std::string &addr) { this->saddr = addr; };
 
-	void
-	set_src_addr(
-			const std::string& addr)
-	{ this->saddr = addr; };
+  void set_src_port(uint16_t port) { this->sport = port; };
 
-	void
-	set_src_port(
-			uint16_t port)
-	{ this->sport = port; };
+  void set_dst_addr(const std::string &addr) { this->daddr = addr; };
 
-	void
-	set_dst_addr(
-			const std::string& addr)
-	{ this->daddr = addr; };
+  void set_dst_port(uint16_t port) { this->dport = port; };
 
-	void
-	set_dst_port(
-			uint16_t port)
-	{ this->dport = port; };
-
-	void
-	set_teid(
-			uint32_t teid)
-	{ this->teid = teid; };
-
+  void set_teid(uint32_t teid) { this->teid = teid; };
 
 public:
+  int get_version() const { return vers; };
 
-	int
-	get_version() const
-	{ return vers; };
+  const std::string &get_src_addr() const { return saddr; };
 
-	const std::string&
-	get_src_addr() const
-	{ return saddr; };
+  uint16_t get_src_port() const { return sport; };
 
-	uint16_t
-	get_src_port() const
-	{ return sport; };
+  const std::string &get_dst_addr() const { return daddr; };
 
-	const std::string&
-	get_dst_addr() const
-	{ return daddr; };
+  uint16_t get_dst_port() const { return dport; };
 
-	uint16_t
-	get_dst_port() const
-	{ return dport; };
-
-	uint32_t
-	get_teid() const
-	{ return teid; };
-
+  uint32_t get_teid() const { return teid; };
 
 public:
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const cgtplabelentry &entry) {
+    os << rofcore::indent(0) << "<cgtplabelentry ";
+    os << "GTP label: [IPv" << entry.get_version() << " ";
+    os << "teid: " << (unsigned int)entry.get_teid() << " ";
+    os << "src: " << entry.get_src_addr() << ":"
+       << (unsigned int)entry.get_src_port() << " ";
+    os << "dst: " << entry.get_dst_addr() << ":"
+       << (unsigned int)entry.get_dst_port() << " ";
+    os << "] >" << std::endl;
+    return os;
+  };
 
-	friend std::ostream&
-	operator<< (
-			std::ostream& os, const cgtplabelentry& entry) {
-		os << rofcore::indent(0) << "<cgtplabelentry ";
-		os << "GTP label: [IPv" << entry.get_version() << " ";
-		os << "teid: " << (unsigned int)entry.get_teid() << " ";
-		os << "src: " << entry.get_src_addr() << ":" << (unsigned int)entry.get_src_port() << " ";
-		os << "dst: " << entry.get_dst_addr() << ":" << (unsigned int)entry.get_dst_port() << " ";
-		os << "] >" << std::endl;
-		return os;
-	};
-
-	const std::string&
-	str() const {
-		std::stringstream ss;
-		ss << "IPv" << get_version() << ", ";
-		ss << "teid: " << (unsigned int)get_teid() << ", ";
-		ss << "src: " << get_src_addr() << ":" << (unsigned int)get_src_port() << ", ";
-		ss << "dst: " << get_dst_addr() << ":" << (unsigned int)get_dst_port();
-		info_s = ss.str();
-		return info_s;
-	};
+  const std::string &str() const {
+    std::stringstream ss;
+    ss << "IPv" << get_version() << ", ";
+    ss << "teid: " << (unsigned int)get_teid() << ", ";
+    ss << "src: " << get_src_addr() << ":" << (unsigned int)get_src_port()
+       << ", ";
+    ss << "dst: " << get_dst_addr() << ":" << (unsigned int)get_dst_port();
+    info_s = ss.str();
+    return info_s;
+  };
 
 private:
+  // GTP label
+  int vers;          // IP version (4,6,...)
+  std::string saddr; // src addr
+  uint16_t sport;    // src port
+  std::string daddr; // dst addr
+  uint16_t dport;    // dst port
+  uint32_t teid;     // TEID
 
-	// GTP label
-	int					vers;	// IP version (4,6,...)
-	std::string			saddr; 	// src addr
-	uint16_t			sport; 	// src port
-	std::string			daddr; 	// dst addr
-	uint16_t			dport; 	// dst port
-	uint32_t			teid; 	// TEID
-
-	mutable std::string	info_s;
+  mutable std::string info_s;
 };
-
-
 
 class cgtpinjectentry {
 public:
+  /**
+   *
+   */
+  ~cgtpinjectentry(){};
 
-	/**
-	 *
-	 */
-	~cgtpinjectentry()
-	{};
+  /**
+   *
+   */
+  cgtpinjectentry() : version(0){};
 
-	/**
-	 *
-	 */
-	cgtpinjectentry() :
-		version(0)
-	{};
+  /**
+   *
+   */
+  cgtpinjectentry(const std::string &devname, int version,
+                  const std::string &daddr, const std::string &dmask)
+      : devname(devname), version(version), route(daddr), netmask(dmask){};
 
-	/**
-	 *
-	 */
-	cgtpinjectentry(
-			const std::string& devname,
-			int version,
-			const std::string& daddr, const std::string& dmask) :
-				devname(devname),
-				version(version),
-				route(daddr),
-				netmask(dmask)
-	{};
+  /**
+   *
+   */
+  cgtpinjectentry(const cgtpinjectentry &entry) { *this = entry; };
 
-	/**
-	 *
-	 */
-	cgtpinjectentry(
-			const cgtpinjectentry& entry)
-	{ *this = entry; };
-
-	/**
-	 *
-	 */
-	cgtpinjectentry&
-	operator=
-			(const cgtpinjectentry& entry) {
-		if (this == &entry)
-			return *this;
-		devname	= entry.devname;
-		version	= entry.version;
-		route	= entry.route;
-		netmask	= entry.netmask;
-		info_s	= entry.info_s;
-		return *this;
-	};
+  /**
+   *
+   */
+  cgtpinjectentry &operator=(const cgtpinjectentry &entry) {
+    if (this == &entry)
+      return *this;
+    devname = entry.devname;
+    version = entry.version;
+    route = entry.route;
+    netmask = entry.netmask;
+    info_s = entry.info_s;
+    return *this;
+  };
 
 public:
+  void set_devname(const std::string &devname) { this->devname = devname; };
 
-	void
-	set_devname(
-			const std::string& devname)
-	{ this->devname = devname; };
+  void set_version(int version) { this->version = version; };
 
-	void
-	set_version(
-			int version)
-	{ this->version = version; };
+  void set_route(const std::string &daddr) { this->route = daddr; };
 
-	void
-	set_route(
-			const std::string& daddr)
-	{ this->route = daddr; };
-
-	void
-	set_netmask(
-			const std::string& dmask)
-	{ this->netmask = dmask; };
+  void set_netmask(const std::string &dmask) { this->netmask = dmask; };
 
 public:
+  const std::string &get_devname() const { return devname; };
 
-	const std::string&
-	get_devname() const
-	{ return devname; };
+  int get_version() const { return version; };
 
-	int
-	get_version() const
-	{ return version; };
+  const std::string &get_route() const { return route; };
 
-	const std::string&
-	get_route() const
-	{ return route; };
-
-	const std::string&
-	get_netmask() const
-	{ return netmask; };
+  const std::string &get_netmask() const { return netmask; };
 
 public:
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const cgtpinjectentry &entry) {
+    os << rofcore::indent(0) << "<cgtpinjectentry ";
+    os << "devname: " << entry.get_devname() << ", ";
+    os << "IPv" << entry.get_version() << ", ";
+    os << "route: " << entry.get_route() << "/" << entry.get_netmask() << " ";
+    os << " >" << std::endl;
+    return os;
+  };
 
-	friend std::ostream&
-	operator<< (
-			std::ostream& os, const cgtpinjectentry& entry) {
-		os << rofcore::indent(0) << "<cgtpinjectentry ";
-		os << "devname: " << entry.get_devname() << ", ";
-		os << "IPv" << entry.get_version() << ", ";
-		os << "route: " << entry.get_route() << "/" << entry.get_netmask() << " ";
-		os << " >" << std::endl;
-		return os;
-	};
-
-	const std::string&
-	str() const {
-		std::stringstream ss;
-		ss << "devname: " << get_devname() << ", ";
-		ss << "IPv" << get_version() << ", ";
-		ss << "route: " << get_route() << "/" << get_netmask();
-		info_s = ss.str();
-		return info_s;
-	};
+  const std::string &str() const {
+    std::stringstream ss;
+    ss << "devname: " << get_devname() << ", ";
+    ss << "IPv" << get_version() << ", ";
+    ss << "route: " << get_route() << "/" << get_netmask();
+    info_s = ss.str();
+    return info_s;
+  };
 
 private:
-
-	std::string	devname;
-	int 		version;	// IP version (4,6,...)
-	std::string route;		// dst addr
-	std::string netmask;		// dst mask
-	mutable std::string info_s;
+  std::string devname;
+  int version;         // IP version (4,6,...)
+  std::string route;   // dst addr
+  std::string netmask; // dst mask
+  mutable std::string info_s;
 };
-
-
 
 class cgtptermdevprefixentry {
 public:
+  /**
+   *
+   */
+  ~cgtptermdevprefixentry(){};
 
-	/**
-	 *
-	 */
-	~cgtptermdevprefixentry()
-	{};
+  /**
+   *
+   */
+  cgtptermdevprefixentry() : version(0), prefixlen(0){};
 
-	/**
-	 *
-	 */
-	cgtptermdevprefixentry() :
-		version(0),
-		prefixlen(0)
-	{};
+  /**
+   *
+   */
+  cgtptermdevprefixentry(int version, const std::string &addr,
+                         unsigned int prefixlen)
+      : version(version), addr(addr), prefixlen(prefixlen){};
 
-	/**
-	 *
-	 */
-	cgtptermdevprefixentry(
-			int version,
-			const std::string& addr,
-			unsigned int prefixlen) :
-		version(version),
-		addr(addr),
-		prefixlen(prefixlen)
-	{};
+  /**
+   *
+   */
+  cgtptermdevprefixentry(const cgtptermdevprefixentry &prefix) {
+    *this = prefix;
+  };
 
-	/**
-	 *
-	 */
-	cgtptermdevprefixentry(
-			const cgtptermdevprefixentry& prefix)
-	{ *this = prefix; };
-
-	/**
-	 *
-	 */
-	cgtptermdevprefixentry&
-	operator= (
-			const cgtptermdevprefixentry& prefix) {
-		if (this == &prefix)
-			return *this;
-		version = prefix.version;
-		addr = prefix.addr;
-		prefixlen = prefix.prefixlen;
-		info_s = prefix.info_s;
-		return *this;
-	};
+  /**
+   *
+   */
+  cgtptermdevprefixentry &operator=(const cgtptermdevprefixentry &prefix) {
+    if (this == &prefix)
+      return *this;
+    version = prefix.version;
+    addr = prefix.addr;
+    prefixlen = prefix.prefixlen;
+    info_s = prefix.info_s;
+    return *this;
+  };
 
 public:
+  void set_version(int version) { this->version = version; };
 
-	void
-	set_version(
-			int version)
-	{ this->version = version; };
+  void set_addr(const std::string &addr) { this->addr = addr; };
 
-	void
-	set_addr(
-			const std::string& addr)
-	{ this->addr = addr; };
-
-	void
-	set_prefixlen(
-			int prefixlen)
-	{ this->prefixlen = prefixlen; };
+  void set_prefixlen(int prefixlen) { this->prefixlen = prefixlen; };
 
 public:
+  int get_version() const { return version; };
 
-	int
-	get_version() const
-	{ return version; };
+  const std::string &get_addr() const { return addr; };
 
-	const std::string&
-	get_addr() const
-	{ return addr; };
-
-	int
-	get_prefixlen() const
-	{ return prefixlen; };
+  int get_prefixlen() const { return prefixlen; };
 
 public:
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const cgtptermdevprefixentry &prefix) {
+    os << rofcore::indent(0) << "<cgtptermdevprefixentry IPv"
+       << prefix.get_version() << " ";
+    os << "addr: " << prefix.get_addr() << "/" << prefix.get_prefixlen()
+       << ", ";
+    os << " >" << std::endl;
+    return os;
+  };
 
-	friend std::ostream&
-	operator<< (
-			std::ostream& os, const cgtptermdevprefixentry& prefix) {
-		os << rofcore::indent(0) << "<cgtptermdevprefixentry IPv" << prefix.get_version() << " ";
-		os << "addr: " << prefix.get_addr() << "/" << prefix.get_prefixlen() << ", ";
-		os << " >" << std::endl;
-		return os;
-	};
-
-	const std::string&
-	str() const {
-		std::stringstream ss;
-		ss << "IPv" << get_version() << " ";
-		ss << "addr: " << get_addr() << "/" << get_prefixlen();
-		info_s = ss.str();
-		return info_s;
-	};
+  const std::string &str() const {
+    std::stringstream ss;
+    ss << "IPv" << get_version() << " ";
+    ss << "addr: " << get_addr() << "/" << get_prefixlen();
+    info_s = ss.str();
+    return info_s;
+  };
 
 private:
-
-	int version;
-	std::string addr;
-	unsigned int prefixlen;
-	mutable std::string info_s;
+  int version;
+  std::string addr;
+  unsigned int prefixlen;
+  mutable std::string info_s;
 };
-
-
 
 class cgtptermdeventry {
 public:
+  /**
+   *
+   */
+  ~cgtptermdeventry(){};
 
-	/**
-	 *
-	 */
-	~cgtptermdeventry()
-	{};
+  /**
+   *
+   */
+  cgtptermdeventry(){};
 
-	/**
-	 *
-	 */
-	cgtptermdeventry()
-	{};
+  /**
+   *
+   */
+  cgtptermdeventry(const std::string &devname) : devname(devname){};
 
-	/**
-	 *
-	 */
-	cgtptermdeventry(
-			const std::string& devname) :
-				devname(devname)
-	{};
+  /**
+   *
+   */
+  cgtptermdeventry(const cgtptermdeventry &entry) { *this = entry; };
 
-	/**
-	 *
-	 */
-	cgtptermdeventry(
-			const cgtptermdeventry& entry)
-	{ *this = entry; };
-
-	/**
-	 *
-	 */
-	cgtptermdeventry&
-	operator= (
-			const cgtptermdeventry& entry) {
-		if (this == &entry)
-			return *this;
-		devname = entry.devname;
-		info_s = entry.info_s;
-		prefixes.clear();
-		prefixids.clear();
-		for (std::map<unsigned int, cgtptermdevprefixentry>::const_iterator
-				it = entry.prefixes.begin(); it != entry.prefixes.end(); ++it) {
-			const cgtptermdevprefixentry& prefix = it->second;
-			add_prefix(it->first, prefix.get_version(), prefix.get_addr(), prefix.get_prefixlen());
-		}
-		return *this;
-	};
+  /**
+   *
+   */
+  cgtptermdeventry &operator=(const cgtptermdeventry &entry) {
+    if (this == &entry)
+      return *this;
+    devname = entry.devname;
+    info_s = entry.info_s;
+    prefixes.clear();
+    prefixids.clear();
+    for (std::map<unsigned int, cgtptermdevprefixentry>::const_iterator it =
+             entry.prefixes.begin();
+         it != entry.prefixes.end(); ++it) {
+      const cgtptermdevprefixentry &prefix = it->second;
+      add_prefix(it->first, prefix.get_version(), prefix.get_addr(),
+                 prefix.get_prefixlen());
+    }
+    return *this;
+  };
 
 public:
+  /**
+   *
+   */
+  const std::set<unsigned int> &get_prefix_ids() const { return prefixids; };
 
-	/**
-	 *
-	 */
-	const std::set<unsigned int>&
-	get_prefix_ids() const
-	{ return prefixids; };
+  /**
+   *
+   */
+  cgtptermdevprefixentry &add_prefix(unsigned int prefix_id, int version,
+                                     const std::string &addr,
+                                     unsigned int prefixlen) {
+    if (prefixes.find(prefix_id) != prefixes.end()) {
+      prefixes.erase(prefix_id);
+    }
+    prefixes[prefix_id] = cgtptermdevprefixentry(version, addr, prefixlen);
+    prefixids.insert(prefix_id);
+    return prefixes[prefix_id];
+  };
 
-	/**
-	 *
-	 */
-	cgtptermdevprefixentry&
-	add_prefix(
-			unsigned int prefix_id,
-			int version,
-			const std::string& addr,
-			unsigned int prefixlen) {
-		if (prefixes.find(prefix_id) != prefixes.end()) {
-			prefixes.erase(prefix_id);
-		}
-		prefixes[prefix_id] = cgtptermdevprefixentry(version, addr, prefixlen);
-		prefixids.insert(prefix_id);
-		return prefixes[prefix_id];
-	};
+  /**
+   *
+   */
+  cgtptermdevprefixentry &set_prefix(unsigned int prefix_id, int version,
+                                     const std::string &addr,
+                                     unsigned int prefixlen) {
+    if (prefixes.find(prefix_id) == prefixes.end()) {
+      prefixes[prefix_id] = cgtptermdevprefixentry(version, addr, prefixlen);
+      prefixids.insert(prefix_id);
+    }
+    return prefixes[prefix_id];
+  };
 
-	/**
-	 *
-	 */
-	cgtptermdevprefixentry&
-	set_prefix(
-			unsigned int prefix_id,
-			int version,
-			const std::string& addr,
-			unsigned int prefixlen) {
-		if (prefixes.find(prefix_id) == prefixes.end()) {
-			prefixes[prefix_id] = cgtptermdevprefixentry(version, addr, prefixlen);
-			prefixids.insert(prefix_id);
-		}
-		return prefixes[prefix_id];
-	};
+  /**
+   *
+   */
+  cgtptermdevprefixentry &set_prefix(unsigned int prefix_id) {
+    if (prefixes.find(prefix_id) == prefixes.end()) {
+      throw eGtpDBNotFound(
+          "cgtptermdeventry::set_prefix() prefix-id not found");
+    }
+    return prefixes[prefix_id];
+  }
 
-	/**
-	 *
-	 */
-	cgtptermdevprefixentry&
-	set_prefix(
-			unsigned int prefix_id) {
-		if (prefixes.find(prefix_id) == prefixes.end()) {
-			throw eGtpDBNotFound("cgtptermdeventry::set_prefix() prefix-id not found");
-		}
-		return prefixes[prefix_id];
-	}
+  /**
+   *
+   */
+  const cgtptermdevprefixentry &get_prefix(unsigned int prefix_id) const {
+    if (prefixes.find(prefix_id) == prefixes.end()) {
+      throw eGtpDBNotFound(
+          "cgtptermdeventry::get_prefix() prefix-id not found");
+    }
+    return prefixes.at(prefix_id);
+  }
 
-	/**
-	 *
-	 */
-	const cgtptermdevprefixentry&
-	get_prefix(
-			unsigned int prefix_id) const {
-		if (prefixes.find(prefix_id) == prefixes.end()) {
-			throw eGtpDBNotFound("cgtptermdeventry::get_prefix() prefix-id not found");
-		}
-		return prefixes.at(prefix_id);
-	}
+  /**
+   *
+   */
+  void drop_prefix(unsigned int prefix_id) {
+    if (prefixes.find(prefix_id) == prefixes.end()) {
+      return;
+    }
+    prefixes.erase(prefix_id);
+    prefixids.erase(prefix_id);
+  };
 
-	/**
-	 *
-	 */
-	void
-	drop_prefix(
-			unsigned int prefix_id) {
-		if (prefixes.find(prefix_id) == prefixes.end()) {
-			return;
-		}
-		prefixes.erase(prefix_id);
-		prefixids.erase(prefix_id);
-	};
-
-	/**
-	 *
-	 */
-	bool
-	has_prefix(
-			unsigned int prefix_id) const {
-		return (not (prefixes.find(prefix_id) == prefixes.end()));
-	};
+  /**
+   *
+   */
+  bool has_prefix(unsigned int prefix_id) const {
+    return (not(prefixes.find(prefix_id) == prefixes.end()));
+  };
 
 public:
+  void set_devname(const std::string &devname) { this->devname = devname; };
 
-	void
-	set_devname(
-			const std::string& devname)
-	{ this->devname = devname; };
-
-	std::string&
-	set_devname()
-	{ return devname; };
+  std::string &set_devname() { return devname; };
 
 public:
-
-	const std::string&
-	get_devname() const
-	{ return devname; };
+  const std::string &get_devname() const { return devname; };
 
 public:
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const cgtptermdeventry &entry) {
+    os << rofcore::indent(0)
+       << "<cgtptermdeventry tundev: " << entry.get_devname() << ", ";
+    for (std::map<unsigned int, cgtptermdevprefixentry>::const_iterator it =
+             entry.prefixes.begin();
+         it != entry.prefixes.end(); ++it) {
+      rofcore::indent(2);
+      os << it->second;
+    }
+    return os;
+  };
 
-	friend std::ostream&
-	operator<< (
-			std::ostream& os, const cgtptermdeventry& entry) {
-		os << rofcore::indent(0) << "<cgtptermdeventry tundev: " << entry.get_devname() << ", ";
-		for (std::map<unsigned int, cgtptermdevprefixentry>::const_iterator
-				it = entry.prefixes.begin(); it != entry.prefixes.end(); ++it) {
-			rofcore::indent(2); os << it->second;
-		}
-		return os;
-	};
-
-	const std::string&
-	str() const {
-		std::stringstream ss;
-		ss << "tundev: " << get_devname() << ", ";
-		for (std::map<unsigned int, cgtptermdevprefixentry>::const_iterator
-				it = prefixes.begin(); it != prefixes.end(); ++it) {
-			ss << it->second.str() << " ";
-		}
-		info_s = ss.str();
-		return info_s;
-	};
+  const std::string &str() const {
+    std::stringstream ss;
+    ss << "tundev: " << get_devname() << ", ";
+    for (std::map<unsigned int, cgtptermdevprefixentry>::const_iterator it =
+             prefixes.begin();
+         it != prefixes.end(); ++it) {
+      ss << it->second.str() << " ";
+    }
+    info_s = ss.str();
+    return info_s;
+  };
 
 private:
-
-	std::string devname;
-	std::map<unsigned int, cgtptermdevprefixentry> prefixes;
-	std::set<unsigned int> prefixids;
-	mutable std::string info_s;
+  std::string devname;
+  std::map<unsigned int, cgtptermdevprefixentry> prefixes;
+  std::set<unsigned int> prefixids;
+  mutable std::string info_s;
 };
-
-
-
 
 class cgtprelayentry {
 public:
+  /**
+   *
+   */
+  ~cgtprelayentry(){};
 
-	/**
-	 *
-	 */
-	~cgtprelayentry()
-	{};
+  /**
+   *
+   */
+  cgtprelayentry() : rid(0){};
 
-	/**
-	 *
-	 */
-	cgtprelayentry() :
-		rid(0)
-	{};
+  /**
+   *
+   */
+  cgtprelayentry(unsigned int rid, const cgtplabelentry &inc_label,
+                 const cgtplabelentry &out_label)
+      : rid(rid), inc_label(inc_label), out_label(out_label){};
 
-	/**
-	 *
-	 */
-	cgtprelayentry(
-			unsigned int rid,
-			const cgtplabelentry& inc_label,
-			const cgtplabelentry& out_label) :
-				rid(rid),
-				inc_label(inc_label),
-				out_label(out_label)
-	{};
+  /**
+   *
+   */
+  cgtprelayentry(const cgtprelayentry &port) { *this = port; };
 
-	/**
-	 *
-	 */
-	cgtprelayentry(
-			const cgtprelayentry& port)
-	{ *this = port; };
-
-	/**
-	 *
-	 */
-	cgtprelayentry&
-	operator= (
-			const cgtprelayentry& entry) {
-		if (this == &entry)
-			return *this;
-		rid = entry.rid;
-		inc_label = entry.inc_label;
-		out_label = entry.out_label;
-		return *this;
-	};
+  /**
+   *
+   */
+  cgtprelayentry &operator=(const cgtprelayentry &entry) {
+    if (this == &entry)
+      return *this;
+    rid = entry.rid;
+    inc_label = entry.inc_label;
+    out_label = entry.out_label;
+    return *this;
+  };
 
 public:
+  void set_relay_id(unsigned int rid) { this->rid = rid; };
 
-	void
-	set_relay_id(
-			unsigned int rid)
-	{ this->rid = rid; };
+  void set_incoming_label(const cgtplabelentry &inc_label) {
+    this->inc_label = inc_label;
+  };
 
-	void
-	set_incoming_label(
-			const cgtplabelentry& inc_label)
-	{ this->inc_label = inc_label; };
+  cgtplabelentry &set_incoming_label() { return inc_label; };
 
-	cgtplabelentry&
-	set_incoming_label()
-	{ return inc_label; };
+  void set_outgoing_label(const cgtplabelentry &out_label) {
+    this->out_label = out_label;
+  };
 
-	void
-	set_outgoing_label(
-			const cgtplabelentry& out_label)
-	{ this->out_label = out_label; };
-
-	cgtplabelentry&
-	set_outgoing_label()
-	{ return out_label; };
+  cgtplabelentry &set_outgoing_label() { return out_label; };
 
 public:
+  unsigned int get_relay_id() const { return rid; };
 
-	unsigned int
-	get_relay_id() const
-	{ return rid; };
+  const cgtplabelentry &get_incoming_label() const { return inc_label; };
 
-	const cgtplabelentry&
-	get_incoming_label() const
-	{ return inc_label; };
-
-	const cgtplabelentry&
-	get_outgoing_label() const
-	{ return out_label; };
+  const cgtplabelentry &get_outgoing_label() const { return out_label; };
 
 public:
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const cgtprelayentry &entry) {
+    os << rofcore::indent(0)
+       << "<cgtprelayentry relay-id: " << entry.get_relay_id() << " ";
+    os << "incoming GTP label: " << entry.get_incoming_label().str() << " ";
+    os << "outgoing GTP label: " << entry.get_outgoing_label().str() << " >"
+       << std::endl;
+    return os;
+  };
 
-	friend std::ostream&
-	operator<< (
-			std::ostream& os, const cgtprelayentry& entry) {
-		os << rofcore::indent(0) << "<cgtprelayentry relay-id: " << entry.get_relay_id() << " ";
-		os << "incoming GTP label: " << entry.get_incoming_label().str() << " ";
-		os << "outgoing GTP label: " << entry.get_outgoing_label().str() << " >" << std::endl;
-		return os;
-	};
-
-	const std::string&
-	str() const {
-		std::stringstream ss;
-		ss << "relay-id: " << get_relay_id() << ", ";
-		ss << "incoming GTP label: " << get_incoming_label().str() << ", ";
-		ss << "outgoing GTP label: " << get_outgoing_label().str();
-		info_s = ss.str();
-		return info_s;
-	};
+  const std::string &str() const {
+    std::stringstream ss;
+    ss << "relay-id: " << get_relay_id() << ", ";
+    ss << "incoming GTP label: " << get_incoming_label().str() << ", ";
+    ss << "outgoing GTP label: " << get_outgoing_label().str();
+    info_s = ss.str();
+    return info_s;
+  };
 
 private:
-
-	unsigned int		rid;		// relay identifier
-	cgtplabelentry		inc_label;	// incoming GTP label
-	cgtplabelentry		out_label;	// outgoing GTP label
-	mutable std::string	info_s;
+  unsigned int rid;         // relay identifier
+  cgtplabelentry inc_label; // incoming GTP label
+  cgtplabelentry out_label; // outgoing GTP label
+  mutable std::string info_s;
 };
-
-
-
 
 class cgtptermentry {
 public:
+  /**
+   *
+   */
+  ~cgtptermentry(){};
 
-	/**
-	 *
-	 */
-	~cgtptermentry()
-	{};
+  /**
+   *
+   */
+  cgtptermentry() : tid(0){};
 
-	/**
-	 *
-	 */
-	cgtptermentry() :
-		tid(0)
-	{};
+  /**
+   *
+   */
+  cgtptermentry(unsigned int tid, const cgtplabelentry &ingress_label,
+                const cgtplabelentry &egress_label,
+                const cgtpinjectentry &inject_filter,
+                const cgtptermdeventry &tunnel_device)
+      : tid(tid), ingress_label(ingress_label), egress_label(egress_label),
+        inject_filter(inject_filter), tunnel_device(tunnel_device){};
 
-	/**
-	 *
-	 */
-	cgtptermentry(
-			unsigned int tid,
-			const cgtplabelentry& ingress_label,
-			const cgtplabelentry& egress_label,
-			const cgtpinjectentry& inject_filter,
-			const cgtptermdeventry& tunnel_device) :
-				tid(tid),
-				ingress_label(ingress_label),
-				egress_label(egress_label),
-				inject_filter(inject_filter),
-				tunnel_device(tunnel_device)
-	{};
+  /**
+   *
+   */
+  cgtptermentry(const cgtptermentry &port) { *this = port; };
 
-	/**
-	 *
-	 */
-	cgtptermentry(
-			const cgtptermentry& port)
-	{ *this = port; };
-
-	/**
-	 *
-	 */
-	cgtptermentry&
-	operator= (
-			const cgtptermentry& entry) {
-		if (this == &entry)
-			return *this;
-		tid 			= entry.tid;
-		ingress_label 	= entry.ingress_label;
-		egress_label 	= entry.egress_label;
-		inject_filter 	= entry.inject_filter;
-		tunnel_device	= entry.tunnel_device;
-		return *this;
-	};
+  /**
+   *
+   */
+  cgtptermentry &operator=(const cgtptermentry &entry) {
+    if (this == &entry)
+      return *this;
+    tid = entry.tid;
+    ingress_label = entry.ingress_label;
+    egress_label = entry.egress_label;
+    inject_filter = entry.inject_filter;
+    tunnel_device = entry.tunnel_device;
+    return *this;
+  };
 
 public:
+  void set_term_id(unsigned int tid) { this->tid = tid; };
 
-	void
-	set_term_id(
-			unsigned int tid)
-	{ this->tid = tid; };
+  void set_ingress_label(const cgtplabelentry &ingress_label) {
+    this->ingress_label = ingress_label;
+  };
 
-	void
-	set_ingress_label(
-			const cgtplabelentry& ingress_label)
-	{ this->ingress_label = ingress_label; };
+  cgtplabelentry &set_ingress_label() { return ingress_label; };
 
-	cgtplabelentry&
-	set_ingress_label()
-	{ return ingress_label; };
+  void set_egress_label(const cgtplabelentry &egress_label) {
+    this->egress_label = egress_label;
+  };
 
-	void
-	set_egress_label(
-			const cgtplabelentry& egress_label)
-	{ this->egress_label = egress_label; };
+  cgtplabelentry &set_egress_label() { return egress_label; };
 
-	cgtplabelentry&
-	set_egress_label()
-	{ return egress_label; };
+  void set_inject_filter(const cgtpinjectentry &inject_filter) {
+    this->inject_filter = inject_filter;
+  };
 
-	void
-	set_inject_filter(
-			const cgtpinjectentry& inject_filter)
-	{ this->inject_filter = inject_filter; };
+  cgtpinjectentry &set_inject_filter() { return inject_filter; };
 
-	cgtpinjectentry&
-	set_inject_filter()
-	{ return inject_filter; };
+  void set_tunnel_device(const cgtptermdeventry &tunnel) {
+    this->tunnel_device = tunnel;
+  };
 
-	void
-	set_tunnel_device(
-			const cgtptermdeventry& tunnel)
-	{ this->tunnel_device = tunnel; };
-
-	cgtptermdeventry&
-	set_tunnel_device()
-	{ return tunnel_device; };
+  cgtptermdeventry &set_tunnel_device() { return tunnel_device; };
 
 public:
+  unsigned int get_term_id() const { return tid; };
 
-	unsigned int
-	get_term_id() const
-	{ return tid; };
+  const cgtplabelentry &get_ingress_label() const { return ingress_label; };
 
-	const cgtplabelentry&
-	get_ingress_label() const
-	{ return ingress_label; };
+  const cgtplabelentry &get_egress_label() const { return egress_label; };
 
-	const cgtplabelentry&
-	get_egress_label() const
-	{ return egress_label; };
+  const cgtpinjectentry &get_inject_filter() const { return inject_filter; };
 
-	const cgtpinjectentry&
-	get_inject_filter() const
-	{ return inject_filter; };
-
-	const cgtptermdeventry&
-	get_tunnel_device() const
-	{ return tunnel_device; };
+  const cgtptermdeventry &get_tunnel_device() const { return tunnel_device; };
 
 public:
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const cgtptermentry &entry) {
+    os << rofcore::indent(0)
+       << "<cgtptermentry relay-id: " << entry.get_term_id() << " ";
+    os << "ingress GTP label: " << entry.get_ingress_label().str() << " ";
+    os << "egress GTP label: " << entry.get_egress_label().str() << " ";
+    os << "inject filter: " << entry.get_inject_filter().str() << " ";
+    ;
+    os << "tunnel device: " << entry.get_tunnel_device().str() << " >"
+       << std::endl;
+    return os;
+  };
 
-	friend std::ostream&
-	operator<< (
-			std::ostream& os, const cgtptermentry& entry) {
-		os << rofcore::indent(0) << "<cgtptermentry relay-id: " << entry.get_term_id() << " ";
-		os << "ingress GTP label: " << entry.get_ingress_label().str() << " ";
-		os << "egress GTP label: " << entry.get_egress_label().str() << " ";
-		os << "inject filter: " << entry.get_inject_filter().str() << " ";;
-		os << "tunnel device: " << entry.get_tunnel_device().str() << " >" << std::endl;
-		return os;
-	};
-
-	const std::string&
-	str() const {
-		std::stringstream ss;
-		ss << "term-id: " << get_term_id() << ", ";
-		ss << "ingress GTP label: " << get_ingress_label().str() << ", ";
-		ss << "egress GTP label: " << get_egress_label().str() << ", ";
-		ss << "inject filter: " << get_inject_filter().str();
-		ss << "tunnel device: " << get_tunnel_device().str();
-		info_s = ss.str();
-		return info_s;
-	};
+  const std::string &str() const {
+    std::stringstream ss;
+    ss << "term-id: " << get_term_id() << ", ";
+    ss << "ingress GTP label: " << get_ingress_label().str() << ", ";
+    ss << "egress GTP label: " << get_egress_label().str() << ", ";
+    ss << "inject filter: " << get_inject_filter().str();
+    ss << "tunnel device: " << get_tunnel_device().str();
+    info_s = ss.str();
+    return info_s;
+  };
 
 private:
-
-	unsigned int		tid;			// termination point identifier
-	cgtplabelentry		ingress_label;	// ingress GTP label
-	cgtplabelentry		egress_label;	// egress GTP label
-	cgtpinjectentry		inject_filter;	// inject traffic matching this filter into GTP tunnel
-	cgtptermdeventry	tunnel_device;	// termination device for injecting traffic into this GTP tunnel
-	mutable std::string	info_s;
+  unsigned int tid;             // termination point identifier
+  cgtplabelentry ingress_label; // ingress GTP label
+  cgtplabelentry egress_label;  // egress GTP label
+  cgtpinjectentry
+      inject_filter; // inject traffic matching this filter into GTP tunnel
+  cgtptermdeventry tunnel_device; // termination device for injecting traffic
+                                  // into this GTP tunnel
+  mutable std::string info_s;
 };
-
-
-
-
 
 class cgtpcoredb {
 public:
+  /**
+   *
+   */
+  static cgtpcoredb &get_gtpcoredb(const std::string &name);
 
-	/**
-	 *
-	 */
-	static cgtpcoredb&
-	get_gtpcoredb(const std::string& name);
-
-	/**
-	 *
-	 */
-	virtual
-	~cgtpcoredb() {};
+  /**
+   *
+   */
+  virtual ~cgtpcoredb(){};
 
 public:
+  /**
+   *
+   */
+  const std::set<unsigned int> &
+  get_gtp_relay_ids(const rofl::cdpid &dpid) const {
+    return relayids[dpid];
+  };
 
-	/**
-	 *
-	 */
-	const std::set<unsigned int>&
-	get_gtp_relay_ids(const rofl::cdpid& dpid) const {
-		return relayids[dpid];
-	};
+  /**
+   *
+   */
+  cgtprelayentry &add_gtp_relay(const rofl::cdpid &dpid,
+                                const cgtprelayentry &entry) {
+    if (relayentries[dpid].find(entry.get_relay_id()) !=
+        relayentries[dpid].end()) {
+      relayentries[dpid].erase(entry.get_relay_id());
+    }
+    relayids[dpid].insert(entry.get_relay_id());
+    return (relayentries[dpid][entry.get_relay_id()] = entry);
+  };
 
-	/**
-	 *
-	 */
-	cgtprelayentry&
-	add_gtp_relay(
-			const rofl::cdpid& dpid,
-			const cgtprelayentry& entry) {
-		if (relayentries[dpid].find(entry.get_relay_id()) != relayentries[dpid].end()) {
-			relayentries[dpid].erase(entry.get_relay_id());
-		}
-		relayids[dpid].insert(entry.get_relay_id());
-		return (relayentries[dpid][entry.get_relay_id()] = entry);
-	};
+  /**
+   *
+   */
+  cgtprelayentry &set_gtp_relay(const rofl::cdpid &dpid,
+                                const cgtprelayentry &entry) {
+    if (relayentries[dpid].find(entry.get_relay_id()) ==
+        relayentries[dpid].end()) {
+      relayids[dpid].insert(entry.get_relay_id());
+      relayentries[dpid][entry.get_relay_id()] = entry;
+    }
+    return relayentries[dpid][entry.get_relay_id()];
+  };
 
-	/**
-	 *
-	 */
-	cgtprelayentry&
-	set_gtp_relay(
-			const rofl::cdpid& dpid,
-			const cgtprelayentry& entry) {
-		if (relayentries[dpid].find(entry.get_relay_id()) == relayentries[dpid].end()) {
-			relayids[dpid].insert(entry.get_relay_id());
-			relayentries[dpid][entry.get_relay_id()] = entry;
-		}
-		return relayentries[dpid][entry.get_relay_id()];
-	};
+  /**
+   *
+   */
+  cgtprelayentry &set_gtp_relay(const rofl::cdpid &dpid,
+                                unsigned int relay_id) {
+    if (relayentries[dpid].find(relay_id) == relayentries[dpid].end()) {
+      throw eGtpDBNotFound("cgtpcoredb::set_gtp_relay() relay_id not found");
+    }
+    return relayentries[dpid][relay_id];
+  };
 
-	/**
-	 *
-	 */
-	cgtprelayentry&
-	set_gtp_relay(
-			const rofl::cdpid& dpid,
-			unsigned int relay_id) {
-		if (relayentries[dpid].find(relay_id) == relayentries[dpid].end()) {
-			throw eGtpDBNotFound("cgtpcoredb::set_gtp_relay() relay_id not found");
-		}
-		return relayentries[dpid][relay_id];
-	};
+  /**
+   *
+   */
+  const cgtprelayentry &get_gtp_relay(const rofl::cdpid &dpid,
+                                      unsigned int relay_id) const {
+    if (relayentries.at(dpid).find(relay_id) == relayentries.at(dpid).end()) {
+      throw eGtpDBNotFound("cgtpcoredb::get_gtp_relay() relay_id not found");
+    }
+    return relayentries.at(dpid).at(relay_id);
+  };
 
-	/**
-	 *
-	 */
-	const cgtprelayentry&
-	get_gtp_relay(
-			const rofl::cdpid& dpid,
-			unsigned int relay_id) const {
-		if (relayentries.at(dpid).find(relay_id) == relayentries.at(dpid).end()) {
-			throw eGtpDBNotFound("cgtpcoredb::get_gtp_relay() relay_id not found");
-		}
-		return relayentries.at(dpid).at(relay_id);
-	};
+  /**
+   *
+   */
+  void drop_gtp_relay(const rofl::cdpid &dpid, unsigned int relay_id) {
+    if (relayentries.at(dpid).find(relay_id) == relayentries.at(dpid).end()) {
+      return;
+    }
+    relayentries[dpid].erase(relay_id);
+    relayids[dpid].erase(relay_id);
+  };
 
-	/**
-	 *
-	 */
-	void
-	drop_gtp_relay(
-			const rofl::cdpid& dpid,
-			unsigned int relay_id) {
-		if (relayentries.at(dpid).find(relay_id) == relayentries.at(dpid).end()) {
-			return;
-		}
-		relayentries[dpid].erase(relay_id);
-		relayids[dpid].erase(relay_id);
-	};
-
-	/**
-	 *
-	 */
-	bool
-	has_gtp_relay(
-			const rofl::cdpid& dpid,
-			unsigned int relay_id) const {
-		if (relayentries.find(dpid) == relayentries.end()) {
-			return false;
-		}
-		return (not (relayentries.at(dpid).find(relay_id) == relayentries.at(dpid).end()));
-	};
+  /**
+   *
+   */
+  bool has_gtp_relay(const rofl::cdpid &dpid, unsigned int relay_id) const {
+    if (relayentries.find(dpid) == relayentries.end()) {
+      return false;
+    }
+    return (not(relayentries.at(dpid).find(relay_id) ==
+                relayentries.at(dpid).end()));
+  };
 
 public:
+  /**
+   *
+   */
+  const std::set<unsigned int> &
+  get_gtp_term_ids(const rofl::cdpid &dpid) const {
+    return termids[dpid];
+  };
 
-	/**
-	 *
-	 */
-	const std::set<unsigned int>&
-	get_gtp_term_ids(const rofl::cdpid& dpid) const {
-		return termids[dpid];
-	};
+  /**
+   *
+   */
+  cgtptermentry &add_gtp_term(const rofl::cdpid &dpid,
+                              const cgtptermentry &entry) {
+    if (termentries[dpid].find(entry.get_term_id()) !=
+        termentries[dpid].end()) {
+      termentries[dpid].erase(entry.get_term_id());
+    }
+    termids[dpid].insert(entry.get_term_id());
+    return (termentries[dpid][entry.get_term_id()] = entry);
+  };
 
-	/**
-	 *
-	 */
-	cgtptermentry&
-	add_gtp_term(
-			const rofl::cdpid& dpid,
-			const cgtptermentry& entry) {
-		if (termentries[dpid].find(entry.get_term_id()) != termentries[dpid].end()) {
-			termentries[dpid].erase(entry.get_term_id());
-		}
-		termids[dpid].insert(entry.get_term_id());
-		return (termentries[dpid][entry.get_term_id()] = entry);
-	};
+  /**
+   *
+   */
+  cgtptermentry &set_gtp_term(const rofl::cdpid &dpid,
+                              const cgtptermentry &entry) {
+    if (termentries[dpid].find(entry.get_term_id()) ==
+        termentries[dpid].end()) {
+      termids[dpid].insert(entry.get_term_id());
+      termentries[dpid][entry.get_term_id()] = entry;
+    }
+    return termentries[dpid][entry.get_term_id()];
+  };
 
-	/**
-	 *
-	 */
-	cgtptermentry&
-	set_gtp_term(
-			const rofl::cdpid& dpid,
-			const cgtptermentry& entry) {
-		if (termentries[dpid].find(entry.get_term_id()) == termentries[dpid].end()) {
-			termids[dpid].insert(entry.get_term_id());
-			termentries[dpid][entry.get_term_id()] = entry;
-		}
-		return termentries[dpid][entry.get_term_id()];
-	};
+  /**
+   *
+   */
+  cgtptermentry &set_gtp_term(const rofl::cdpid &dpid, unsigned int term_id) {
+    if (termentries[dpid].find(term_id) == termentries[dpid].end()) {
+      throw eGtpDBNotFound("cgtpcoredb::set_gtp_term() term_id not found");
+    }
+    return termentries[dpid][term_id];
+  };
 
-	/**
-	 *
-	 */
-	cgtptermentry&
-	set_gtp_term(
-			const rofl::cdpid& dpid,
-			unsigned int term_id) {
-		if (termentries[dpid].find(term_id) == termentries[dpid].end()) {
-			throw eGtpDBNotFound("cgtpcoredb::set_gtp_term() term_id not found");
-		}
-		return termentries[dpid][term_id];
-	};
+  /**
+   *
+   */
+  const cgtptermentry &get_gtp_term(const rofl::cdpid &dpid,
+                                    unsigned int term_id) const {
+    if (termentries.at(dpid).find(term_id) == termentries.at(dpid).end()) {
+      throw eGtpDBNotFound("cgtpcoredb::get_gtp_term() term_id not found");
+    }
+    return termentries.at(dpid).at(term_id);
+  };
 
-	/**
-	 *
-	 */
-	const cgtptermentry&
-	get_gtp_term(
-			const rofl::cdpid& dpid,
-			unsigned int term_id) const {
-		if (termentries.at(dpid).find(term_id) == termentries.at(dpid).end()) {
-			throw eGtpDBNotFound("cgtpcoredb::get_gtp_term() term_id not found");
-		}
-		return termentries.at(dpid).at(term_id);
-	};
+  /**
+   *
+   */
+  void drop_gtp_term(const rofl::cdpid &dpid, unsigned int term_id) {
+    if (termentries.at(dpid).find(term_id) == termentries.at(dpid).end()) {
+      return;
+    }
+    termentries[dpid].erase(term_id);
+    termids[dpid].erase(term_id);
+  };
 
-	/**
-	 *
-	 */
-	void
-	drop_gtp_term(
-			const rofl::cdpid& dpid,
-			unsigned int term_id) {
-		if (termentries.at(dpid).find(term_id) == termentries.at(dpid).end()) {
-			return;
-		}
-		termentries[dpid].erase(term_id);
-		termids[dpid].erase(term_id);
-	};
-
-	/**
-	 *
-	 */
-	bool
-	has_gtp_term(
-			const rofl::cdpid& dpid,
-			unsigned int term_id) const {
-		if (termentries.find(dpid) == termentries.end()) {
-			return false;
-		}
-		return (not (termentries.at(dpid).find(term_id) == termentries.at(dpid).end()));
-	};
+  /**
+   *
+   */
+  bool has_gtp_term(const rofl::cdpid &dpid, unsigned int term_id) const {
+    if (termentries.find(dpid) == termentries.end()) {
+      return false;
+    }
+    return (
+        not(termentries.at(dpid).find(term_id) == termentries.at(dpid).end()));
+  };
 
 public:
+  /**
+   *
+   */
+  const std::set<std::string> &
+  get_gtp_termdev_ids(const rofl::cdpid &dpid) const {
+    return termdevids[dpid];
+  };
 
-	/**
-	 *
-	 */
-	const std::set<std::string>&
-	get_gtp_termdev_ids(const rofl::cdpid& dpid) const {
-		return termdevids[dpid];
-	};
+  /**
+   *
+   */
+  cgtptermdeventry &add_gtp_termdev(const rofl::cdpid &dpid,
+                                    const cgtptermdeventry &entry) {
+    if (termdeventries[dpid].find(entry.get_devname()) !=
+        termdeventries[dpid].end()) {
+      termdeventries[dpid].erase(entry.get_devname());
+    }
+    termdevids[dpid].insert(entry.get_devname());
+    return (termdeventries[dpid][entry.get_devname()] = entry);
+  };
 
-	/**
-	 *
-	 */
-	cgtptermdeventry&
-	add_gtp_termdev(
-			const rofl::cdpid& dpid,
-			const cgtptermdeventry& entry) {
-		if (termdeventries[dpid].find(entry.get_devname()) != termdeventries[dpid].end()) {
-			termdeventries[dpid].erase(entry.get_devname());
-		}
-		termdevids[dpid].insert(entry.get_devname());
-		return (termdeventries[dpid][entry.get_devname()] = entry);
-	};
+  /**
+   *
+   */
+  cgtptermdeventry &set_gtp_termdev(const rofl::cdpid &dpid,
+                                    const cgtptermdeventry &entry) {
+    if (termdeventries[dpid].find(entry.get_devname()) ==
+        termdeventries[dpid].end()) {
+      termdevids[dpid].insert(entry.get_devname());
+      termdeventries[dpid][entry.get_devname()] = entry;
+    }
+    return termdeventries[dpid][entry.get_devname()];
+  };
 
-	/**
-	 *
-	 */
-	cgtptermdeventry&
-	set_gtp_termdev(
-			const rofl::cdpid& dpid,
-			const cgtptermdeventry& entry) {
-		if (termdeventries[dpid].find(entry.get_devname()) == termdeventries[dpid].end()) {
-			termdevids[dpid].insert(entry.get_devname());
-			termdeventries[dpid][entry.get_devname()] = entry;
-		}
-		return termdeventries[dpid][entry.get_devname()];
-	};
+  /**
+   *
+   */
+  cgtptermdeventry &set_gtp_termdev(const rofl::cdpid &dpid,
+                                    const std::string &devname) {
+    if (termdeventries[dpid].find(devname) == termdeventries[dpid].end()) {
+      throw eGtpDBNotFound(
+          "cgtpcoredb::set_gtp_termdev() termdev_id not found");
+    }
+    return termdeventries[dpid][devname];
+  };
 
-	/**
-	 *
-	 */
-	cgtptermdeventry&
-	set_gtp_termdev(
-			const rofl::cdpid& dpid,
-			const std::string& devname) {
-		if (termdeventries[dpid].find(devname) == termdeventries[dpid].end()) {
-			throw eGtpDBNotFound("cgtpcoredb::set_gtp_termdev() termdev_id not found");
-		}
-		return termdeventries[dpid][devname];
-	};
+  /**
+   *
+   */
+  const cgtptermdeventry &get_gtp_termdev(const rofl::cdpid &dpid,
+                                          const std::string &devname) const {
+    if (termdeventries.at(dpid).find(devname) ==
+        termdeventries.at(dpid).end()) {
+      throw eGtpDBNotFound(
+          "cgtpcoredb::get_gtp_termdev() termdev_id not found");
+    }
+    return termdeventries.at(dpid).at(devname);
+  };
 
-	/**
-	 *
-	 */
-	const cgtptermdeventry&
-	get_gtp_termdev(
-			const rofl::cdpid& dpid,
-			const std::string& devname) const {
-		if (termdeventries.at(dpid).find(devname) == termdeventries.at(dpid).end()) {
-			throw eGtpDBNotFound("cgtpcoredb::get_gtp_termdev() termdev_id not found");
-		}
-		return termdeventries.at(dpid).at(devname);
-	};
+  /**
+   *
+   */
+  void drop_gtp_termdev(const rofl::cdpid &dpid, const std::string &devname) {
+    if (termdeventries.at(dpid).find(devname) ==
+        termdeventries.at(dpid).end()) {
+      return;
+    }
+    termdeventries[dpid].erase(devname);
+    termdevids[dpid].erase(devname);
+  };
 
-	/**
-	 *
-	 */
-	void
-	drop_gtp_termdev(
-			const rofl::cdpid& dpid,
-			const std::string& devname) {
-		if (termdeventries.at(dpid).find(devname) == termdeventries.at(dpid).end()) {
-			return;
-		}
-		termdeventries[dpid].erase(devname);
-		termdevids[dpid].erase(devname);
-	};
-
-	/**
-	 *
-	 */
-	bool
-	has_gtp_termdev(
-			const rofl::cdpid& dpid,
-			const std::string& devname) const {
-		if (termdeventries.find(dpid) == termdeventries.end()) {
-			return false;
-		}
-		return (not (termdeventries.at(dpid).find(devname) == termdeventries.at(dpid).end()));
-	};
+  /**
+   *
+   */
+  bool has_gtp_termdev(const rofl::cdpid &dpid,
+                       const std::string &devname) const {
+    if (termdeventries.find(dpid) == termdeventries.end()) {
+      return false;
+    }
+    return (not(termdeventries.at(dpid).find(devname) ==
+                termdeventries.at(dpid).end()));
+  };
 
 public:
-
-	friend std::ostream&
-	operator<< (std::ostream& os, const cgtpcoredb& db) {
-		os << rofcore::indent(0) << "<cgtpcoredb >" << std::endl;
-		rofcore::indent i(2);
-		for (std::map<rofl::cdpid, std::map<unsigned int, cgtprelayentry> >::const_iterator
-				it = db.relayentries.begin(); it != db.relayentries.end(); ++it) {
-			os << rofcore::indent(0) << "<cdpid: " << it->first.str() << " >" << std::endl;
-			rofcore::indent j(2);
-			for (std::map<unsigned int, cgtprelayentry>::const_iterator
-					jt = it->second.begin(); jt != it->second.end(); ++jt) {
-				os << jt->second;
-			}
-		}
-		for (std::map<rofl::cdpid, std::map<unsigned int, cgtptermentry> >::const_iterator
-				it = db.termentries.begin(); it != db.termentries.end(); ++it) {
-			os << rofcore::indent(0) << "<cdpid: " << it->first.str() << " >" << std::endl;
-			rofcore::indent j(2);
-			for (std::map<unsigned int, cgtptermentry>::const_iterator
-					jt = it->second.begin(); jt != it->second.end(); ++jt) {
-				os << jt->second;
-			}
-		}
-		return os;
-	};
+  friend std::ostream &operator<<(std::ostream &os, const cgtpcoredb &db) {
+    os << rofcore::indent(0) << "<cgtpcoredb >" << std::endl;
+    rofcore::indent i(2);
+    for (std::map<rofl::cdpid,
+                  std::map<unsigned int, cgtprelayentry>>::const_iterator it =
+             db.relayentries.begin();
+         it != db.relayentries.end(); ++it) {
+      os << rofcore::indent(0) << "<cdpid: " << it->first.str() << " >"
+         << std::endl;
+      rofcore::indent j(2);
+      for (std::map<unsigned int, cgtprelayentry>::const_iterator jt =
+               it->second.begin();
+           jt != it->second.end(); ++jt) {
+        os << jt->second;
+      }
+    }
+    for (std::map<rofl::cdpid,
+                  std::map<unsigned int, cgtptermentry>>::const_iterator it =
+             db.termentries.begin();
+         it != db.termentries.end(); ++it) {
+      os << rofcore::indent(0) << "<cdpid: " << it->first.str() << " >"
+         << std::endl;
+      rofcore::indent j(2);
+      for (std::map<unsigned int, cgtptermentry>::const_iterator jt =
+               it->second.begin();
+           jt != it->second.end(); ++jt) {
+        os << jt->second;
+      }
+    }
+    return os;
+  };
 
 private:
-
-
-	std::map<rofl::cdpid, std::map<unsigned int, cgtprelayentry> >	 relayentries;
-	mutable std::map<rofl::cdpid, std::set<unsigned int> >			 relayids;
-	std::map<rofl::cdpid, std::map<unsigned int, cgtptermentry> >	 termentries;
-	mutable std::map<rofl::cdpid, std::set<unsigned int> >			 termids;
-	std::map<rofl::cdpid, std::map<std::string, cgtptermdeventry> >  termdeventries;
-	mutable std::map<rofl::cdpid, std::set<std::string> >			 termdevids;
-	static std::map<std::string, cgtpcoredb*> 						 gtpcoredbs;
+  std::map<rofl::cdpid, std::map<unsigned int, cgtprelayentry>> relayentries;
+  mutable std::map<rofl::cdpid, std::set<unsigned int>> relayids;
+  std::map<rofl::cdpid, std::map<unsigned int, cgtptermentry>> termentries;
+  mutable std::map<rofl::cdpid, std::set<unsigned int>> termids;
+  std::map<rofl::cdpid, std::map<std::string, cgtptermdeventry>> termdeventries;
+  mutable std::map<rofl::cdpid, std::set<std::string>> termdevids;
+  static std::map<std::string, cgtpcoredb *> gtpcoredbs;
 };
 
 }; // end of namespace gtp

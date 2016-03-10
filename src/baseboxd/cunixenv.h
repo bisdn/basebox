@@ -22,103 +22,93 @@
 #include <string>
 #include <stdexcept>
 
-namespace rofl
-{
+namespace rofl {
 
 /*
-* Helper class to manipulate easily arguments in C++ programs. Argmuents are ALWAYS strings
+* Helper class to manipulate easily arguments in C++ programs. Argmuents are
+* ALWAYS strings
 */
 
 #define NO_ARGUMENT no_argument
 #define REQUIRED_ARGUMENT required_argument
 #define OPTIONAL_ARGUMENT optional_argument
 
-class coption
-{
+class coption {
 
 public:
-	bool optional;
-	int value_type;
-	char shortcut;
-	std::string full_name;
-	std::string description;
-	std::string default_value;
-	
-	/* Current state */
-	bool present;
-	std::string current_value;
+  bool optional;
+  int value_type;
+  char shortcut;
+  std::string full_name;
+  std::string description;
+  std::string default_value;
 
+  /* Current state */
+  bool present;
+  std::string current_value;
 
-	/* Constructor */
-	//coption(void){};
+  /* Constructor */
+  // coption(void){};
 
-	coption(bool optional, 
-		int value_type, 
-		char shortcut, 
-		std::string full_name, 
-		std::string description, 
-		std::string default_value);
+  coption(bool optional, int value_type, char shortcut, std::string full_name,
+          std::string description, std::string default_value);
 
-	/* Atempt to parse argument from optarg provided by getopt*/
-	std::string parse_argument(char* optarg);
-	bool is_present(void){return present;}
-	std::string value(void){return current_value;}
+  /* Atempt to parse argument from optarg provided by getopt*/
+  std::string parse_argument(char *optarg);
+  bool is_present(void) { return present; }
+  std::string value(void) { return current_value; }
 };
 
 /* Forward declaration */
 
-/* 
-* Unix parser class 
+/*
+* Unix parser class
 */
-class cunixenv
-{
+class cunixenv {
 public:
+  /**
+   * Constructor
+   */
+  cunixenv(int argc = 0, char **argv = NULL);
 
-	/**
-	 * Constructor
-	 */
-	cunixenv(int argc = 0, char** argv = NULL);
-	
-	/**
-	 * Destructor
-	 */
-	~cunixenv();
+  /**
+   * Destructor
+   */
+  ~cunixenv();
 
-	/*
-	* Add argument to current list of arguments to parse 
-	*/
-	void add_option(const coption &arg);
-	
-	/**
-	 * Parse arguments using getopt
-	 */
-	void parse_args();
+  /*
+  * Add argument to current list of arguments to parse
+  */
+  void add_option(const coption &arg);
 
-	/*
-	 * Get value methods
-	 */
-	std::string get_arg(const std::string &name);
+  /**
+   * Parse arguments using getopt
+   */
+  void parse_args();
 
-	std::string get_arg(const char shortcut);
+  /*
+   * Get value methods
+   */
+  std::string get_arg(const std::string &name);
 
-	bool
-	is_arg_set(const std::string &name);
+  std::string get_arg(const char shortcut);
 
-	void
-	update_default_option(const std::string &option_name, const std::string &value);
+  bool is_arg_set(const std::string &name);
 
-	/**
-	 * Get usage pre-formatted message
-	 */
-	std::string get_usage(char *argv0);
+  void update_default_option(const std::string &option_name,
+                             const std::string &value);
+
+  /**
+   * Get usage pre-formatted message
+   */
+  std::string get_usage(char *argv0);
 
 private:
+  std::vector<coption> arguments;
+  bool parsed;
 
-	std::vector<coption> arguments;
-	bool parsed;
-
-	// copy of values obtained from (int argc, char** argv)
-	std::vector<std::string> cargs;
+  // copy of values obtained from (int argc, char** argv)
+  std::vector<std::string> cargs;
 };
 
 }; // end of namespace

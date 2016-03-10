@@ -16,7 +16,6 @@ extern "C" {
 }
 #endif
 
-
 #include <string>
 #include <iostream>
 
@@ -30,47 +29,41 @@ namespace ethcore {
 
 class cconfig : public Config {
 private:
-	static std::string const CONFPATH;
+  static std::string const CONFPATH;
 
-	std::string		confpath;
+  std::string confpath;
 
 private:
+  static cconfig *scconfig;
 
-    static cconfig *scconfig;
+  /**
+   * @brief	Make copy constructor private for singleton
+   */
+  cconfig(cconfig const &conf){};
 
-    /**
-     * @brief	Make copy constructor private for singleton
-     */
-    cconfig(cconfig const& conf) {};
+  /**
+   *
+   */
+  cconfig(){};
 
-	/**
-	 *
-	 */
-	cconfig() {};
-
-	/**
-	 *
-	 */
-	virtual
-	~cconfig() {};
+  /**
+   *
+   */
+  virtual ~cconfig(){};
 
 public:
+  /**
+   *
+   */
+  static cconfig &get_instance();
 
-	/**
-	 *
-	 */
-    static cconfig&
-    get_instance();
-
-    /**
-     *
-     */
-    void
-    open(std::string const& confpath = cconfig::CONFPATH);
-
+  /**
+   *
+   */
+  void open(std::string const &confpath = cconfig::CONFPATH);
 
 public:
-;
+  ;
 };
 
 }; // end of namespace

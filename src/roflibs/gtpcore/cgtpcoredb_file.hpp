@@ -19,74 +19,53 @@ namespace gtp {
 
 class cgtpcoredb_file : public cgtpcoredb {
 public:
+  /**
+   *
+   */
+  cgtpcoredb_file() : config_file(cgtpcoredb_file::DEFAULT_CONFIG_FILE){};
 
-	/**
-	 *
-	 */
-	cgtpcoredb_file() :
-		config_file(cgtpcoredb_file::DEFAULT_CONFIG_FILE)
-	{};
-
-	/**
-	 *
-	 */
-	virtual
-	~cgtpcoredb_file()
-	{};
+  /**
+   *
+   */
+  virtual ~cgtpcoredb_file(){};
 
 public:
-
-	/**
-	 *
-	 */
-	void
-	read_config(
-			const std::string& config_file,
-			const std::string& prefix = std::string(""));
+  /**
+   *
+   */
+  void read_config(const std::string &config_file,
+                   const std::string &prefix = std::string(""));
 
 private:
+  /**
+   *
+   */
+  void parse_datapath(ethcore::cconfig &config, libconfig::Setting &datapath);
 
-	/**
-	 *
-	 */
-	void
-	parse_datapath(
-			ethcore::cconfig& config,
-			libconfig::Setting& datapath);
+  /**
+   *
+   */
+  void parse_datapath_relay(ethcore::cconfig &config, libconfig::Setting &relay,
+                            const rofl::cdpid &dpid);
 
-	/**
-	 *
-	 */
-	void
-	parse_datapath_relay(
-			ethcore::cconfig& config,
-			libconfig::Setting& relay,
-			const rofl::cdpid& dpid);
-
-	/**
-	 *
-	 */
-	void
-	parse_datapath_term(
-			ethcore::cconfig& config,
-			libconfig::Setting& term,
-			const rofl::cdpid& dpid);
+  /**
+   *
+   */
+  void parse_datapath_term(ethcore::cconfig &config, libconfig::Setting &term,
+                           const rofl::cdpid &dpid);
 
 public:
-
-	friend std::ostream&
-	operator<< (
-			std::ostream& os, const cgtpcoredb_file& portdb) {
-		os << dynamic_cast<const cgtpcoredb&>( portdb );
-		return os;
-	};
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const cgtpcoredb_file &portdb) {
+    os << dynamic_cast<const cgtpcoredb &>(portdb);
+    return os;
+  };
 
 private:
+  static const std::string GTPCORE_CONFIG_DPT_LIST;
+  static const std::string DEFAULT_CONFIG_FILE;
 
-	static const std::string 		GTPCORE_CONFIG_DPT_LIST;
-	static const std::string 		DEFAULT_CONFIG_FILE;
-
-	std::string 					config_file;
+  std::string config_file;
 };
 
 }; // end of namespace ethernet

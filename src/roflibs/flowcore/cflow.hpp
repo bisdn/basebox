@@ -26,132 +26,132 @@ namespace svc {
 
 class eFlowBase : public std::runtime_error {
 public:
-	eFlowBase(const std::string& __arg) : std::runtime_error(__arg) {};
+  eFlowBase(const std::string &__arg) : std::runtime_error(__arg){};
 };
 class eFlowNotFound : public eFlowBase {
 public:
-	eFlowNotFound(const std::string& __arg) : eFlowBase(__arg) {};
+  eFlowNotFound(const std::string &__arg) : eFlowBase(__arg){};
 };
 
 class cflow {
 public:
+  /**
+   *
+   */
+  cflow() : state(STATE_DETACHED){};
 
-	/**
-	 *
-	 */
-	cflow() :
-		state(STATE_DETACHED)
-	{};
+  /**
+   *
+   */
+  ~cflow(){};
 
-	/**
-	 *
-	 */
-	~cflow()
-	{};
+  /**
+   *
+   */
+  cflow(const rofl::cdptid &dptid, const rofl::openflow::cofflowmod &flowmod)
+      : state(STATE_DETACHED), dptid(dptid), flowmod(flowmod){};
 
-	/**
-	 *
-	 */
-	cflow(const rofl::cdptid& dptid,
-			const rofl::openflow::cofflowmod& flowmod) :
-		state(STATE_DETACHED), dptid(dptid), flowmod(flowmod)
-	{};
+  /**
+   *
+   */
+  cflow(const cflow &flow) { *this = flow; };
 
-	/**
-	 *
-	 */
-	cflow(const cflow& flow)
-	{ *this = flow; };
-
-	/**
-	 *
-	 */
-	cflow&
-	operator= (const cflow& flow) {
-		if (this == &flow)
-			return *this;
-		state 		= flow.state;
-		dptid 		= flow.dptid;
-		flowmod		= flow.flowmod;
-		return *this;
-	};
+  /**
+   *
+   */
+  cflow &operator=(const cflow &flow) {
+    if (this == &flow)
+      return *this;
+    state = flow.state;
+    dptid = flow.dptid;
+    flowmod = flow.flowmod;
+    return *this;
+  };
 
 public:
+  /**
+   *
+   */
+  void handle_dpt_open() {
+    try {
+      rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
+      flowmod.set_version(dpt.get_version_negotiated());
+      flowmod.set_command(rofl::openflow::OFPFC_ADD);
+      dpt.send_flow_mod_message(rofl::cauxid(0), flowmod);
 
-	/**
-	 *
-	 */
-	void
-	handle_dpt_open() {
-		try {
-			rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-			flowmod.set_version(dpt.get_version_negotiated());
-			flowmod.set_command(rofl::openflow::OFPFC_ADD);
-			dpt.send_flow_mod_message(rofl::cauxid(0), flowmod);
+      state = STATE_ATTACHED;
 
-			state = STATE_ATTACHED;
+    } catch (rofl::eRofDptNotFound &e) {
+      rofcore::logging::error
+          << "[roflibs][svc][cflow][handle_dpt_open] unable to find data path"
+          << e.what() << std::endl;
+    } catch (rofl::eRofSockTxAgain &e) {
+      rofcore::logging::error
+          << "[roflibs][svc][cflow][handle_dpt_open] control channel congested"
+          << e.what() << std::endl;
+    } catch (rofl::eRofBaseNotConnected &e) {
+      rofcore::logging::error
+          << "[roflibs][svc][cflow][handle_dpt_open] control channel is down"
+          << e.what() << std::endl;
+    } catch (...) {
+      rofcore::logging::error
+          << "[roflibs][svc][cflow][handle_dpt_open] unexpected error"
+          << std::endl;
+    }
+  };
 
-		} catch (rofl::eRofDptNotFound& e) {
-			rofcore::logging::error << "[roflibs][svc][cflow][handle_dpt_open] unable to find data path" << e.what() << std::endl;
-		} catch (rofl::eRofSockTxAgain& e) {
-			rofcore::logging::error << "[roflibs][svc][cflow][handle_dpt_open] control channel congested" << e.what() << std::endl;
-		} catch (rofl::eRofBaseNotConnected& e) {
-			rofcore::logging::error << "[roflibs][svc][cflow][handle_dpt_open] control channel is down" << e.what() << std::endl;
-		} catch (...) {
-			rofcore::logging::error << "[roflibs][svc][cflow][handle_dpt_open] unexpected error" << std::endl;
-		}
-	};
+  /**
+   *
+   */
+  void handle_dpt_close() {
+    try {
+      rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
+      flowmod.set_version(dpt.get_version_negotiated());
+      flowmod.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
+      dpt.send_flow_mod_message(rofl::cauxid(0), flowmod);
 
-	/**
-	 *
-	 */
-	void
-	handle_dpt_close() {
-		try {
-			rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
-			flowmod.set_version(dpt.get_version_negotiated());
-			flowmod.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-			dpt.send_flow_mod_message(rofl::cauxid(0), flowmod);
+      state = STATE_DETACHED;
 
-			state = STATE_DETACHED;
-
-		} catch (rofl::eRofDptNotFound& e) {
-			rofcore::logging::error << "[roflibs][svc][cflow][handle_dpt_close] unable to find data path" << e.what() << std::endl;
-		} catch (rofl::eRofSockTxAgain& e) {
-			rofcore::logging::error << "[roflibs][svc][cflow][handle_dpt_close] control channel congested" << e.what() << std::endl;
-		} catch (rofl::eRofBaseNotConnected& e) {
-			rofcore::logging::error << "[roflibs][svc][cflow][handle_dpt_close] control channel is down" << e.what() << std::endl;
-		} catch (...) {
-			rofcore::logging::error << "[roflibs][svc][cflow][handle_dpt_close] unexpected error" << std::endl;
-		}
-	};
+    } catch (rofl::eRofDptNotFound &e) {
+      rofcore::logging::error
+          << "[roflibs][svc][cflow][handle_dpt_close] unable to find data path"
+          << e.what() << std::endl;
+    } catch (rofl::eRofSockTxAgain &e) {
+      rofcore::logging::error
+          << "[roflibs][svc][cflow][handle_dpt_close] control channel congested"
+          << e.what() << std::endl;
+    } catch (rofl::eRofBaseNotConnected &e) {
+      rofcore::logging::error
+          << "[roflibs][svc][cflow][handle_dpt_close] control channel is down"
+          << e.what() << std::endl;
+    } catch (...) {
+      rofcore::logging::error
+          << "[roflibs][svc][cflow][handle_dpt_close] unexpected error"
+          << std::endl;
+    }
+  };
 
 public:
-
-	/**
-	 *
-	 */
-	const rofl::openflow::cofflowmod&
-	get_flowmod() const { return flowmod; };
+  /**
+   *
+   */
+  const rofl::openflow::cofflowmod &get_flowmod() const { return flowmod; };
 
 public:
-
-	friend std::ostream&
-	operator<< (std::ostream& os, const cflow& greterm) {
-		os << rofcore::indent(0) << "<cflow >" << std::endl;
-		return os;
-	};
+  friend std::ostream &operator<<(std::ostream &os, const cflow &greterm) {
+    os << rofcore::indent(0) << "<cflow >" << std::endl;
+    return os;
+  };
 
 protected:
+  enum ofp_state_t {
+    STATE_DETACHED = 1,
+    STATE_ATTACHED = 2,
+  };
+  enum ofp_state_t state;
 
-	enum ofp_state_t {
-		STATE_DETACHED = 1,
-		STATE_ATTACHED = 2,
-	};
-	enum ofp_state_t 			state;
-
-	rofl::cdptid 				dptid;
-	rofl::openflow::cofflowmod 	flowmod;
+  rofl::cdptid dptid;
+  rofl::openflow::cofflowmod flowmod;
 };
 
 }; // end of namespace flow

@@ -25,304 +25,284 @@ namespace gtp {
 
 class eRelayBase : public std::runtime_error {
 public:
-	eRelayBase(const std::string& __arg) : std::runtime_error(__arg) {};
+  eRelayBase(const std::string &__arg) : std::runtime_error(__arg){};
 };
 class eRelayNotFound : public eRelayBase {
 public:
-	eRelayNotFound(const std::string& __arg) : eRelayBase(__arg) {};
+  eRelayNotFound(const std::string &__arg) : eRelayBase(__arg){};
 };
 
 class crelay {
 public:
+  /**
+   *
+   */
+  crelay()
+      : state(STATE_DETACHED), relay_id(0), ofp_table_id(0),
+        idle_timeout(DEFAULT_IDLE_TIMEOUT){};
 
-	/**
-	 *
-	 */
-	crelay() :
-		state(STATE_DETACHED), relay_id(0), ofp_table_id(0), idle_timeout(DEFAULT_IDLE_TIMEOUT) {};
+  /**
+   *
+   */
+  ~crelay(){};
 
-	/**
-	 *
-	 */
-	~crelay() {};
+  /**
+   *
+   */
+  crelay(unsigned int relay_id, const rofl::cdptid &dptid, uint8_t ofp_table_id)
+      : state(STATE_DETACHED), relay_id(relay_id), dptid(dptid),
+        ofp_table_id(ofp_table_id), idle_timeout(DEFAULT_IDLE_TIMEOUT){};
 
-	/**
-	 *
-	 */
-	crelay(unsigned int relay_id, const rofl::cdptid& dptid, uint8_t ofp_table_id) :
-		state(STATE_DETACHED), relay_id(relay_id), dptid(dptid), ofp_table_id(ofp_table_id), idle_timeout(DEFAULT_IDLE_TIMEOUT) {};
+  /**
+   *
+   */
+  crelay(const crelay &relay) { *this = relay; };
 
-	/**
-	 *
-	 */
-	crelay(const crelay& relay) { *this = relay; };
-
-	/**
-	 *
-	 */
-	crelay&
-	operator= (const crelay& relay) {
-		if (this == &relay)
-			return *this;
-		state = relay.state;
-		relay_id = relay.relay_id;
-		dptid = relay.dptid;
-		ofp_table_id = relay.ofp_table_id;
-		idle_timeout = relay.idle_timeout;
-		return *this;
-	};
+  /**
+   *
+   */
+  crelay &operator=(const crelay &relay) {
+    if (this == &relay)
+      return *this;
+    state = relay.state;
+    relay_id = relay.relay_id;
+    dptid = relay.dptid;
+    ofp_table_id = relay.ofp_table_id;
+    idle_timeout = relay.idle_timeout;
+    return *this;
+  };
 
 public:
-
-	friend std::ostream&
-	operator<< (std::ostream& os, const crelay& relay) {
-		os << rofcore::indent(0) << "<crelay >" << std::endl;
-		return os;
-	};
+  friend std::ostream &operator<<(std::ostream &os, const crelay &relay) {
+    os << rofcore::indent(0) << "<crelay >" << std::endl;
+    return os;
+  };
 
 protected:
+  enum ofp_state_t {
+    STATE_DETACHED = 1,
+    STATE_ATTACHED = 2,
+  };
 
-	enum ofp_state_t {
-		STATE_DETACHED = 1,
-		STATE_ATTACHED = 2,
-	};
+  enum ofp_state_t state;
+  unsigned int relay_id;
+  rofl::cdptid dptid;
+  uint8_t ofp_table_id;
 
-	enum ofp_state_t state;
-	unsigned int relay_id;
-	rofl::cdptid dptid;
-	uint8_t ofp_table_id;
+  static const int DEFAULT_IDLE_TIMEOUT = 15; // seconds
 
-	static const int DEFAULT_IDLE_TIMEOUT = 15; // seconds
-
-	int idle_timeout;
+  int idle_timeout;
 };
-
-
 
 class crelay_in4 : public crelay {
 public:
+  /**
+   *
+   */
+  crelay_in4(){};
 
-	/**
-	 *
-	 */
-	crelay_in4()
-	{};
+  /**
+   *
+   */
+  ~crelay_in4() {
+    try {
+      if (STATE_ATTACHED == state) {
+        handle_dpt_close();
+      }
+    } catch (rofl::eRofDptNotFound &e) {
+    };
+  };
 
-	/**
-	 *
-	 */
-	~crelay_in4() {
-		try {
-			if (STATE_ATTACHED == state) {
-				handle_dpt_close();
-			}
-		} catch (rofl::eRofDptNotFound& e) {};
-	};
+  /**
+   *
+   */
+  crelay_in4(unsigned int relay_id, const rofl::cdptid &dptid,
+             uint8_t ofp_table_id, const clabel_in4 &label_in,
+             const clabel_in4 &label_out)
+      : crelay(relay_id, dptid, ofp_table_id), label_in(label_in),
+        label_out(label_out){};
 
-	/**
-	 *
-	 */
-	crelay_in4(unsigned int relay_id, const rofl::cdptid& dptid, uint8_t ofp_table_id,
-			const clabel_in4& label_in, const clabel_in4& label_out) :
-		crelay(relay_id, dptid, ofp_table_id), label_in(label_in), label_out(label_out)
-	{};
+  /**
+   *
+   */
+  crelay_in4(const crelay_in4 &relay) { *this = relay; };
 
-	/**
-	 *
-	 */
-	crelay_in4(const crelay_in4& relay)
-	{ *this = relay; };
+  /**
+   *
+   */
+  crelay_in4 &operator=(const crelay_in4 &relay) {
+    if (this == &relay)
+      return *this;
+    crelay::operator=(relay);
+    label_in = relay.label_in;
+    label_out = relay.label_out;
+    return *this;
+  };
 
-	/**
-	 *
-	 */
-	crelay_in4&
-	operator= (const crelay_in4& relay) {
-		if (this == &relay)
-			return *this;
-		crelay::operator= (relay);
-		label_in = relay.label_in;
-		label_out = relay.label_out;
-		return *this;
-	};
-
-	/**
-	 *
-	 */
-	bool
-	operator< (const crelay_in4& relay) const {
-		return ((label_in < relay.label_in) && (label_out < relay.label_out));
-	};
+  /**
+   *
+   */
+  bool operator<(const crelay_in4 &relay) const {
+    return ((label_in < relay.label_in) && (label_out < relay.label_out));
+  };
 
 public:
-	
-	/**
-	 * 
-	 */
-	const clabel_in4&
-	get_label_in() const
-	{ return label_in; };
-	
-	/**
-	 *
-	 */
-	const clabel_in4&
-	get_label_out() const
-	{ return label_out; };
+  /**
+   *
+   */
+  const clabel_in4 &get_label_in() const { return label_in; };
+
+  /**
+   *
+   */
+  const clabel_in4 &get_label_out() const { return label_out; };
 
 public:
+  /**
+   *
+   */
+  void handle_dpt_open();
 
-	/**
-	 *
-	 */
-	void
-	handle_dpt_open();
-
-	/**
-	 *
-	 */
-	void
-	handle_dpt_close();
+  /**
+   *
+   */
+  void handle_dpt_close();
 
 public:
+  friend std::ostream &operator<<(std::ostream &os, const crelay_in4 &relay) {
+    os << rofcore::indent(0) << "<crelay_in4 >" << std::endl;
+    os << rofcore::indent(2) << "<label-in >" << std::endl;
+    {
+      rofcore::indent i(4);
+      os << relay.get_label_in();
+    };
+    os << rofcore::indent(2) << "<label-out >" << std::endl;
+    {
+      rofcore::indent i(4);
+      os << relay.get_label_out();
+    };
+    return os;
+  };
 
-	friend std::ostream&
-	operator<< (std::ostream& os, const crelay_in4& relay) {
-		os << rofcore::indent(0) << "<crelay_in4 >" << std::endl;
-		os << rofcore::indent(2) << "<label-in >" << std::endl;
-		{ rofcore::indent i(4); os << relay.get_label_in(); };
-		os << rofcore::indent(2) << "<label-out >" << std::endl;
-		{ rofcore::indent i(4); os << relay.get_label_out(); };
-		return os;
-	};
+  class crelay_in4_find_by_in_label {
+    roflibs::gtp::clabel_in4 in_label;
 
-	class crelay_in4_find_by_in_label {
-		roflibs::gtp::clabel_in4 in_label;
-	public:
-		crelay_in4_find_by_in_label(const roflibs::gtp::clabel_in4& in_label) :
-			in_label(in_label) {};
-		bool operator() (const std::pair<unsigned int, crelay_in4*>& p) {
-			return (p.second->label_in == in_label);
-		};
-	};
+  public:
+    crelay_in4_find_by_in_label(const roflibs::gtp::clabel_in4 &in_label)
+        : in_label(in_label){};
+    bool operator()(const std::pair<unsigned int, crelay_in4 *> &p) {
+      return (p.second->label_in == in_label);
+    };
+  };
 
 private:
-
-	clabel_in4 label_in;
-	clabel_in4 label_out;
+  clabel_in4 label_in;
+  clabel_in4 label_out;
 };
-
-
 
 class crelay_in6 : public crelay {
 public:
+  /**
+   *
+   */
+  crelay_in6(){};
 
-	/**
-	 *
-	 */
-	crelay_in6() {};
+  /**
+   *
+   */
+  ~crelay_in6() {
+    try {
+      if (STATE_ATTACHED == state) {
+        handle_dpt_close();
+      }
+    } catch (rofl::eRofDptNotFound &e) {
+    };
+  };
 
-	/**
-	 *
-	 */
-	~crelay_in6() {
-		try {
-			if (STATE_ATTACHED == state) {
-				handle_dpt_close();
-			}
-		} catch (rofl::eRofDptNotFound& e) {};
-	};
+  /**
+   *
+   */
+  crelay_in6(unsigned int relay_id, const rofl::cdptid &dptid,
+             uint8_t ofp_table_id, const clabel_in6 &label_in,
+             const clabel_in6 &label_out)
+      : crelay(relay_id, dptid, ofp_table_id), label_in(label_in),
+        label_out(label_out){};
 
-	/**
-	 *
-	 */
-	crelay_in6(unsigned int relay_id, const rofl::cdptid& dptid, uint8_t ofp_table_id,
-			const clabel_in6& label_in, const clabel_in6& label_out) :
-		crelay(relay_id, dptid, ofp_table_id), label_in(label_in), label_out(label_out)
-	{};
+  /**
+   *
+   */
+  crelay_in6(const crelay_in6 &relay) { *this = relay; };
 
-	/**
-	 *
-	 */
-	crelay_in6(const crelay_in6& relay)
-	{ *this = relay; };
+  /**
+   *
+   */
+  crelay_in6 &operator=(const crelay_in6 &relay) {
+    if (this == &relay)
+      return *this;
+    label_in = relay.label_in;
+    label_out = relay.label_out;
+    return *this;
+  };
 
-	/**
-	 *
-	 */
-	crelay_in6&
-	operator= (const crelay_in6& relay) {
-		if (this == &relay)
-			return *this;
-		label_in = relay.label_in;
-		label_out = relay.label_out;
-		return *this;
-	};
-
-	/**
-	 *
-	 */
-	bool
-	operator< (const crelay_in6& relay) const {
-		return ((label_in < relay.label_in) && (label_out < relay.label_out));
-	};
+  /**
+   *
+   */
+  bool operator<(const crelay_in6 &relay) const {
+    return ((label_in < relay.label_in) && (label_out < relay.label_out));
+  };
 
 public:
+  /**
+   *
+   */
+  const clabel_in6 &get_label_in() const { return label_in; };
 
-	/**
-	 *
-	 */
-	const clabel_in6&
-	get_label_in() const
-	{ return label_in; };
-
-	/**
-	 *
-	 */
-	const clabel_in6&
-	get_label_out() const
-	{ return label_out; };
+  /**
+   *
+   */
+  const clabel_in6 &get_label_out() const { return label_out; };
 
 public:
+  /**
+   *
+   */
+  void handle_dpt_open();
 
-	/**
-	 *
-	 */
-	void
-	handle_dpt_open();
-
-	/**
-	 *
-	 */
-	void
-	handle_dpt_close();
+  /**
+   *
+   */
+  void handle_dpt_close();
 
 public:
+  friend std::ostream &operator<<(std::ostream &os, const crelay_in6 &relay) {
+    os << rofcore::indent(0) << "<crelay_in6 >" << std::endl;
+    os << rofcore::indent(2) << "<label-in >" << std::endl;
+    {
+      rofcore::indent i(4);
+      os << relay.get_label_in();
+    };
+    os << rofcore::indent(2) << "<label-out >" << std::endl;
+    {
+      rofcore::indent i(4);
+      os << relay.get_label_out();
+    };
+    return os;
+  };
 
-	friend std::ostream&
-	operator<< (std::ostream& os, const crelay_in6& relay) {
-		os << rofcore::indent(0) << "<crelay_in6 >" << std::endl;
-		os << rofcore::indent(2) << "<label-in >" << std::endl;
-		{ rofcore::indent i(4); os << relay.get_label_in(); };
-		os << rofcore::indent(2) << "<label-out >" << std::endl;
-		{ rofcore::indent i(4); os << relay.get_label_out(); };
-		return os;
-	};
+  class crelay_in6_find_by_in_label {
+    roflibs::gtp::clabel_in6 in_label;
 
-	class crelay_in6_find_by_in_label {
-		roflibs::gtp::clabel_in6 in_label;
-	public:
-		crelay_in6_find_by_in_label(const roflibs::gtp::clabel_in6& in_label) :
-			in_label(in_label) {};
-		bool operator() (const std::pair<unsigned int, crelay_in6*>& p) {
-			return (p.second->label_in == in_label);
-		};
-	};
+  public:
+    crelay_in6_find_by_in_label(const roflibs::gtp::clabel_in6 &in_label)
+        : in_label(in_label){};
+    bool operator()(const std::pair<unsigned int, crelay_in6 *> &p) {
+      return (p.second->label_in == in_label);
+    };
+  };
 
 private:
-
-	clabel_in6 label_in;
-	clabel_in6 label_out;
+  clabel_in6 label_in;
+  clabel_in6 label_out;
 };
 
 }; // end of namespace gtp

@@ -25,171 +25,156 @@ namespace eth {
 
 class eMemberPortBase : public std::runtime_error {
 public:
-	eMemberPortBase(const std::string& __arg) : std::runtime_error(__arg) {};
+  eMemberPortBase(const std::string &__arg) : std::runtime_error(__arg){};
 };
 class eMemberPortNotFound : public eMemberPortBase {
 public:
-	eMemberPortNotFound(const std::string& __arg) : eMemberPortBase(__arg) {};
+  eMemberPortNotFound(const std::string &__arg) : eMemberPortBase(__arg){};
 };
 
 class cmemberport : public roflibs::common::openflow::ccookie_owner {
 public:
+  /**
+   *
+   */
+  cmemberport()
+      : dpt_state(STATE_IDLE),
+        cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+        portno(0xffffffff), vid(0xffff), tagged(false), table_id_eth_in(0),
+        table_id_eth_local(0), table_id_eth_out(0){};
 
-	/**
-	 *
-	 */
-	cmemberport() :
-		dpt_state(STATE_IDLE),
-		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-		portno(0xffffffff), vid(0xffff),
-		tagged(false), table_id_eth_in(0), table_id_eth_local(0), table_id_eth_out(0) {};
+  /**
+   *
+   */
+  cmemberport(const rofl::cdptid &dptid, uint8_t in_stage_table_id,
+              uint8_t local_stage_table_id, uint8_t out_stage_table_id,
+              uint32_t portno, const rofl::cmacaddr &hwaddr,
+              uint16_t vid = 0xffff, bool tagged = true)
+      : dpt_state(STATE_IDLE), dptid(dptid),
+        cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
+        portno(portno), vid(vid), tagged(tagged),
+        table_id_eth_in(in_stage_table_id),
+        table_id_eth_local(local_stage_table_id),
+        table_id_eth_out(out_stage_table_id), hwaddr(hwaddr){};
 
-	/**
-	 *
-	 */
-	cmemberport(
-			const rofl::cdptid& dptid, uint8_t in_stage_table_id, uint8_t local_stage_table_id, uint8_t out_stage_table_id,
-			uint32_t portno, const rofl::cmacaddr& hwaddr,
-			uint16_t vid = 0xffff, bool tagged = true) :
-		dpt_state(STATE_IDLE), dptid(dptid),
-		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie()),
-		portno(portno), vid(vid),
-		tagged(tagged), table_id_eth_in(in_stage_table_id),
-		table_id_eth_local(local_stage_table_id), table_id_eth_out(out_stage_table_id), hwaddr(hwaddr) {};
+  /**
+   *
+   */
+  virtual ~cmemberport() {
+    try {
+      if (STATE_ATTACHED == dpt_state) {
+        handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
+      }
+    } catch (rofl::eRofDptNotFound &e) {
+    };
+  };
 
-	/**
-	 *
-	 */
-	virtual
-	~cmemberport() {
-		try {
-			if (STATE_ATTACHED == dpt_state) {
-				handle_dpt_close(rofl::crofdpt::get_dpt(dptid));
-			}
-		} catch (rofl::eRofDptNotFound& e) {};
-	};
+  /**
+   *
+   */
+  cmemberport(const cmemberport &port)
+      : cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie()) {
+    *this = port;
+  };
 
-	/**
-	 *
-	 */
-	cmemberport(const cmemberport& port) :
-		cookie(roflibs::common::openflow::ccookie_owner::acquire_cookie())
-	{ *this = port; };
-
-	/**
-	 *
-	 */
-	cmemberport&
-	operator= (const cmemberport& port) {
-		if (this == &port)
-			return *this;
-		dpt_state	= port.dpt_state;
-		dptid 		= port.dptid;
-		// do not copy cookie here!
-		portno 		= port.portno;
-		vid 		= port.vid;
-		tagged 		= port.tagged;
-		table_id_eth_in = port.table_id_eth_in;
-		table_id_eth_local = port.table_id_eth_local;
-		table_id_eth_out = port.table_id_eth_out;
-		hwaddr		= port.hwaddr;
-		return *this;
-	};
-
-public:
-
-	/**
-	 *
-	 */
-	uint32_t
-	get_port_no() const { return portno; };
-
-	/**
-	 *
-	 */
-	const rofl::cmacaddr&
-	get_hwaddr() const { return hwaddr; };
-
-	/**
-	 *
-	 */
-	bool
-	get_tagged() const { return tagged; };
+  /**
+   *
+   */
+  cmemberport &operator=(const cmemberport &port) {
+    if (this == &port)
+      return *this;
+    dpt_state = port.dpt_state;
+    dptid = port.dptid;
+    // do not copy cookie here!
+    portno = port.portno;
+    vid = port.vid;
+    tagged = port.tagged;
+    table_id_eth_in = port.table_id_eth_in;
+    table_id_eth_local = port.table_id_eth_local;
+    table_id_eth_out = port.table_id_eth_out;
+    hwaddr = port.hwaddr;
+    return *this;
+  };
 
 public:
+  /**
+   *
+   */
+  uint32_t get_port_no() const { return portno; };
 
-	/**
-	 *
-	 */
-	void
-	handle_dpt_open(
-			rofl::crofdpt& dpt);
+  /**
+   *
+   */
+  const rofl::cmacaddr &get_hwaddr() const { return hwaddr; };
 
-	/**
-	 *
-	 */
-	void
-	handle_dpt_close(
-			rofl::crofdpt& dpt);
-
-	/**
-	 *
-	 */
-	virtual void
-	handle_packet_in(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_packet_in& msg);
-
-	/**
-	 *
-	 */
-	virtual void
-	handle_flow_removed(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_flow_removed& msg);
-
-	/**
-	 *
-	 */
-	void
-	handle_port_status(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_port_status& msg);
-
-	/**
-	 *
-	 */
-	void
-	handle_error_message(
-			rofl::crofdpt& dpt, const rofl::cauxid& auxid, rofl::openflow::cofmsg_error& msg);
+  /**
+   *
+   */
+  bool get_tagged() const { return tagged; };
 
 public:
+  /**
+   *
+   */
+  void handle_dpt_open(rofl::crofdpt &dpt);
 
-	friend std::ostream&
-	operator<< (std::ostream& os, const cmemberport& port) {
-		os << rofcore::indent(0) << "<cmemberport "
-				<< "portno: " << (int)port.get_port_no() << " "
-				<< "tagged: " << (int)port.get_tagged() << " "
-				<< ">" << std::endl;
-		return os;
-	};
+  /**
+   *
+   */
+  void handle_dpt_close(rofl::crofdpt &dpt);
+
+  /**
+   *
+   */
+  virtual void handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                                rofl::openflow::cofmsg_packet_in &msg);
+
+  /**
+   *
+   */
+  virtual void handle_flow_removed(rofl::crofdpt &dpt,
+                                   const rofl::cauxid &auxid,
+                                   rofl::openflow::cofmsg_flow_removed &msg);
+
+  /**
+   *
+   */
+  void handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                          rofl::openflow::cofmsg_port_status &msg);
+
+  /**
+   *
+   */
+  void handle_error_message(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                            rofl::openflow::cofmsg_error &msg);
+
+public:
+  friend std::ostream &operator<<(std::ostream &os, const cmemberport &port) {
+    os << rofcore::indent(0) << "<cmemberport "
+       << "portno: " << (int)port.get_port_no() << " "
+       << "tagged: " << (int)port.get_tagged() << " "
+       << ">" << std::endl;
+    return os;
+  };
 
 private:
+  enum dpt_state_t {
+    STATE_IDLE = 1,
+    STATE_DETACHED = 2,
+    STATE_ATTACHED = 3,
+  };
 
-	enum dpt_state_t {
-		STATE_IDLE = 1,
-		STATE_DETACHED = 2,
-		STATE_ATTACHED = 3,
-	};
+  dpt_state_t dpt_state;
 
-	dpt_state_t		dpt_state;
-
-	rofl::cdptid	dptid;
-	uint64_t		cookie;
-	uint32_t		portno;
-	uint16_t 		vid;
-	bool 			tagged;
-	uint8_t			table_id_eth_in;
-	uint8_t			table_id_eth_local; // MAC addresses assigned to local host
-	uint8_t			table_id_eth_out;
-	rofl::cmacaddr  hwaddr;
+  rofl::cdptid dptid;
+  uint64_t cookie;
+  uint32_t portno;
+  uint16_t vid;
+  bool tagged;
+  uint8_t table_id_eth_in;
+  uint8_t table_id_eth_local; // MAC addresses assigned to local host
+  uint8_t table_id_eth_out;
+  rofl::cmacaddr hwaddr;
 };
 
 }; // end of namespace ethernet

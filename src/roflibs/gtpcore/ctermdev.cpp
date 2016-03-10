@@ -10,188 +10,224 @@
 
 using namespace roflibs::gtp;
 
-void
-ctermdev::handle_dpt_open(const rofcore::cprefix_in4& prefix, uint64_t cookie)
-{
-	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+void ctermdev::handle_dpt_open(const rofcore::cprefix_in4 &prefix,
+                               uint64_t cookie) {
+  try {
+    rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
 
-		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
+    rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
-		switch (state) {
-		case STATE_DETACHED: {
-			fe.set_command(rofl::openflow::OFPFC_ADD);
-		} break;
-		case STATE_ATTACHED: {
-			fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
-		} break;
-		}
+    switch (state) {
+    case STATE_DETACHED: {
+      fe.set_command(rofl::openflow::OFPFC_ADD);
+    } break;
+    case STATE_ATTACHED: {
+      fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
+    } break;
+    }
 
-		fe.set_priority(0xd800);
-		fe.set_table_id(ofp_table_id);
-		fe.set_cookie(cookie);
+    fe.set_priority(0xd800);
+    fe.set_table_id(ofp_table_id);
+    fe.set_cookie(cookie);
 
-		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-		fe.set_match().set_ipv4_dst(prefix.get_addr() & prefix.get_mask(), prefix.get_mask());
-		fe.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
-		fe.set_instructions().set_inst_apply_actions().set_actions().
-				set_action_output(rofl::cindex(0)).set_max_len(1526);
+    fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+    fe.set_match().set_ipv4_dst(prefix.get_addr() & prefix.get_mask(),
+                                prefix.get_mask());
+    fe.set_instructions()
+        .set_inst_apply_actions()
+        .set_actions()
+        .add_action_output(rofl::cindex(0))
+        .set_port_no(rofl::openflow::OFPP_CONTROLLER);
+    fe.set_instructions()
+        .set_inst_apply_actions()
+        .set_actions()
+        .set_action_output(rofl::cindex(0))
+        .set_max_len(1526);
 
-		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
+    dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] unable to find data path" << e.what() << std::endl;
-	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] unable to find link" << e.what() << std::endl;
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] unable to find address" << e.what() << std::endl;
-	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] control channel congested" << e.what() << std::endl;
-	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] control channel is down" << e.what() << std::endl;
-	} catch (...) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] unexpected error" << std::endl;
-	}
+  } catch (rofl::eRofDptNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] unable to find data path"
+        << e.what() << std::endl;
+  } catch (rofcore::eNetLinkNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] unable to find link" << e.what()
+        << std::endl;
+  } catch (rofcore::crtlink::eRtLinkNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] unable to find address"
+        << e.what() << std::endl;
+  } catch (rofl::eRofSockTxAgain &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] control channel congested"
+        << e.what() << std::endl;
+  } catch (rofl::eRofBaseNotConnected &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] control channel is down"
+        << e.what() << std::endl;
+  } catch (...) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] unexpected error" << std::endl;
+  }
 }
 
+void ctermdev::handle_dpt_close(const rofcore::cprefix_in4 &prefix,
+                                uint64_t cookie) {
+  try {
+    rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
 
+    rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
-void
-ctermdev::handle_dpt_close(const rofcore::cprefix_in4& prefix, uint64_t cookie)
-{
-	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+    fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
+    fe.set_priority(0xd800);
+    fe.set_table_id(ofp_table_id);
+    fe.set_cookie(cookie);
 
-		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
+    fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
+    fe.set_match().set_ipv4_dst(prefix.get_addr() & prefix.get_mask(),
+                                prefix.get_mask());
 
-		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fe.set_priority(0xd800);
-		fe.set_table_id(ofp_table_id);
-		fe.set_cookie(cookie);
+    dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-		fe.set_match().set_eth_type(rofl::fipv4frame::IPV4_ETHER);
-		fe.set_match().set_ipv4_dst(prefix.get_addr() & prefix.get_mask(), prefix.get_mask());
-
-		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
-
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] unable to find data path" << e.what() << std::endl;
-	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] unable to find link" << e.what() << std::endl;
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] unable to find address" << e.what() << std::endl;
-	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] control channel congested" << e.what() << std::endl;
-	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] control channel is down" << e.what() << std::endl;
-	} catch (...) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] unexpected error" << std::endl;
-	}
+  } catch (rofl::eRofDptNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] unable to find data path"
+        << e.what() << std::endl;
+  } catch (rofcore::eNetLinkNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] unable to find link"
+        << e.what() << std::endl;
+  } catch (rofcore::crtlink::eRtLinkNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] unable to find address"
+        << e.what() << std::endl;
+  } catch (rofl::eRofSockTxAgain &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] control channel congested"
+        << e.what() << std::endl;
+  } catch (rofl::eRofBaseNotConnected &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] control channel is down"
+        << e.what() << std::endl;
+  } catch (...) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] unexpected error" << std::endl;
+  }
 }
 
+void ctermdev::handle_dpt_open(const rofcore::cprefix_in6 &prefix,
+                               uint64_t cookie) {
+  try {
+    rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
 
+    rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
-void
-ctermdev::handle_dpt_open(const rofcore::cprefix_in6& prefix, uint64_t cookie)
-{
-	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+    switch (state) {
+    case STATE_DETACHED: {
+      fe.set_command(rofl::openflow::OFPFC_ADD);
+    } break;
+    case STATE_ATTACHED: {
+      fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
+    } break;
+    }
 
-		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
+    fe.set_priority(0xd800);
+    fe.set_table_id(ofp_table_id);
+    fe.set_cookie(cookie);
 
-		switch (state) {
-		case STATE_DETACHED: {
-			fe.set_command(rofl::openflow::OFPFC_ADD);
-		} break;
-		case STATE_ATTACHED: {
-			fe.set_command(rofl::openflow::OFPFC_MODIFY_STRICT);
-		} break;
-		}
+    fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+    fe.set_match().set_ipv6_dst(prefix.get_addr() & prefix.get_mask(),
+                                prefix.get_mask());
+    fe.set_instructions()
+        .set_inst_apply_actions()
+        .set_actions()
+        .add_action_output(rofl::cindex(0))
+        .set_port_no(rofl::openflow::OFPP_CONTROLLER);
+    fe.set_instructions()
+        .set_inst_apply_actions()
+        .set_actions()
+        .set_action_output(rofl::cindex(0))
+        .set_max_len(1526);
 
-		fe.set_priority(0xd800);
-		fe.set_table_id(ofp_table_id);
-		fe.set_cookie(cookie);
+    dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-		fe.set_match().set_ipv6_dst(prefix.get_addr() & prefix.get_mask(), prefix.get_mask());
-		fe.set_instructions().set_inst_apply_actions().set_actions().
-				add_action_output(rofl::cindex(0)).set_port_no(rofl::openflow::OFPP_CONTROLLER);
-		fe.set_instructions().set_inst_apply_actions().set_actions().
-				set_action_output(rofl::cindex(0)).set_max_len(1526);
-
-		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
-
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] unable to find data path" << e.what() << std::endl;
-	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] unable to find link" << e.what() << std::endl;
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] unable to find address" << e.what() << std::endl;
-	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] control channel congested" << e.what() << std::endl;
-	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] control channel is down" << e.what() << std::endl;
-	} catch (...) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_open] unexpected error" << std::endl;
-	}
+  } catch (rofl::eRofDptNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] unable to find data path"
+        << e.what() << std::endl;
+  } catch (rofcore::eNetLinkNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] unable to find link" << e.what()
+        << std::endl;
+  } catch (rofcore::crtlink::eRtLinkNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] unable to find address"
+        << e.what() << std::endl;
+  } catch (rofl::eRofSockTxAgain &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] control channel congested"
+        << e.what() << std::endl;
+  } catch (rofl::eRofBaseNotConnected &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] control channel is down"
+        << e.what() << std::endl;
+  } catch (...) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_open] unexpected error" << std::endl;
+  }
 }
 
+void ctermdev::handle_dpt_close(const rofcore::cprefix_in6 &prefix,
+                                uint64_t cookie) {
+  try {
+    rofl::crofdpt &dpt = rofl::crofdpt::get_dpt(dptid);
 
+    rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
 
-void
-ctermdev::handle_dpt_close(const rofcore::cprefix_in6& prefix, uint64_t cookie)
-{
-	try {
-		rofl::crofdpt& dpt = rofl::crofdpt::get_dpt(dptid);
+    fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
+    fe.set_priority(0xd800);
+    fe.set_table_id(ofp_table_id);
+    fe.set_cookie(cookie);
 
-		rofl::openflow::cofflowmod fe(dpt.get_version_negotiated());
+    fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
+    fe.set_match().set_ipv6_dst(prefix.get_addr() & prefix.get_mask(),
+                                prefix.get_mask());
 
-		fe.set_command(rofl::openflow::OFPFC_DELETE_STRICT);
-		fe.set_priority(0xd800);
-		fe.set_table_id(ofp_table_id);
-		fe.set_cookie(cookie);
+    dpt.send_flow_mod_message(rofl::cauxid(0), fe);
 
-		fe.set_match().set_eth_type(rofl::fipv6frame::IPV6_ETHER);
-		fe.set_match().set_ipv6_dst(prefix.get_addr() & prefix.get_mask(), prefix.get_mask());
-
-		dpt.send_flow_mod_message(rofl::cauxid(0), fe);
-
-	} catch (rofl::eRofDptNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] unable to find data path" << e.what() << std::endl;
-	} catch (rofcore::eNetLinkNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] unable to find link" << e.what() << std::endl;
-	} catch (rofcore::crtlink::eRtLinkNotFound& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] unable to find address" << e.what() << std::endl;
-	} catch (rofl::eRofSockTxAgain& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] control channel congested" << e.what() << std::endl;
-	} catch (rofl::eRofBaseNotConnected& e) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] control channel is down" << e.what() << std::endl;
-	} catch (...) {
-		rofcore::logging::error << "[rofgtp][ctermdev][handle_dpt_close] unexpected error" << std::endl;
-	}
+  } catch (rofl::eRofDptNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] unable to find data path"
+        << e.what() << std::endl;
+  } catch (rofcore::eNetLinkNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] unable to find link"
+        << e.what() << std::endl;
+  } catch (rofcore::crtlink::eRtLinkNotFound &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] unable to find address"
+        << e.what() << std::endl;
+  } catch (rofl::eRofSockTxAgain &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] control channel congested"
+        << e.what() << std::endl;
+  } catch (rofl::eRofBaseNotConnected &e) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] control channel is down"
+        << e.what() << std::endl;
+  } catch (...) {
+    rofcore::logging::error
+        << "[rofgtp][ctermdev][handle_dpt_close] unexpected error" << std::endl;
+  }
 }
 
-
-
-void
-ctermdev::handle_packet_in(
-		rofl::crofdpt& dpt,
-		const rofl::cauxid& auxid,
-		rofl::openflow::cofmsg_packet_in& msg)
-{
-	roflibs::eth::cethcore::set_eth_core(dpt.get_dptid()).handle_packet_in(dpt, auxid, msg);
+void ctermdev::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                                rofl::openflow::cofmsg_packet_in &msg) {
+  roflibs::eth::cethcore::set_eth_core(dpt.get_dptid())
+      .handle_packet_in(dpt, auxid, msg);
 }
 
-
-
-void
-ctermdev::handle_flow_removed(
-		rofl::crofdpt& dpt,
-		const rofl::cauxid& auxid,
-		rofl::openflow::cofmsg_flow_removed& msg)
-{
-
-}
-
-
+void ctermdev::handle_flow_removed(rofl::crofdpt &dpt,
+                                   const rofl::cauxid &auxid,
+                                   rofl::openflow::cofmsg_flow_removed &msg) {}
