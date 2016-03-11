@@ -95,8 +95,8 @@ public:
 
 public:
   /**
-   * @brief	IEEE802.1D-2004 17.19.7 Remove all filtering database entries for
-   * this port
+   * @brief	IEEE802.1D-2004 17.19.7 Remove all filtering database entries
+   * for this port
    */
   void fdbFlush();
 

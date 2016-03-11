@@ -126,6 +126,8 @@ void ctapdev::enqueue(rofl::cpacket *pkt) {
   rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
   pout_queue.push_back(pkt);
 
+  // todo log enqueue
+
   thread.wakeup();
 }
 

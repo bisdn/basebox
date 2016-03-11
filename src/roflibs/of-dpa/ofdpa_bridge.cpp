@@ -40,22 +40,24 @@ static int find_next_bit(int i, uint32_t x) {
 }
 
 void ofdpa_bridge::add_interface(const rofcore::crtlink &rtl) {
+
+  using rofcore::logging;
+
   // sanity checks
   if (0 == bridge.get_ifindex()) {
-    rofcore::logging::error
-        << __PRETTY_FUNCTION__
-        << " cannot attach interface without bridge: " << rtl << std::endl;
+    logging::error << __PRETTY_FUNCTION__
+                   << " cannot attach interface without bridge: " << rtl
+                   << std::endl;
     return;
   }
   if (AF_BRIDGE != rtl.get_family()) {
-    rofcore::logging::error << __PRETTY_FUNCTION__ << rtl
-                            << " is not a bridge interface " << std::endl;
+    logging::error << __PRETTY_FUNCTION__ << rtl
+                   << " is not a bridge interface " << std::endl;
     return;
   }
   if (bridge.get_ifindex() != rtl.get_master()) {
-    rofcore::logging::error << __PRETTY_FUNCTION__ << rtl
-                            << " is not a slave of this bridge interface "
-                            << std::endl;
+    logging::error << __PRETTY_FUNCTION__ << rtl
+                   << " is not a slave of this bridge interface " << std::endl;
     return;
   }
 
@@ -83,9 +85,8 @@ void ofdpa_bridge::add_interface(const rofcore::crtlink &rtl) {
                                                           vid, egress_untagged);
         assert(group && "invalid group identifier");
         if (rofl::openflow::OFPG_MAX == group) {
-          rofcore::logging::error << __PRETTY_FUNCTION__
-                                  << " failed to set vid on egress "
-                                  << std::endl;
+          logging::error << __PRETTY_FUNCTION__
+                         << " failed to set vid on egress " << std::endl;
           i = j;
           continue;
         }
@@ -152,9 +153,8 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
               fm_driver.enable_port_vid_egress(devname, vid, egress_untagged);
           assert(group && "invalid group identifier");
           if (rofl::openflow::OFPG_MAX == group) {
-            rofcore::logging::error << __PRETTY_FUNCTION__
-                                    << " failed to set vid on egress "
-                                    << std::endl;
+            logging::error << __PRETTY_FUNCTION__
+                           << " failed to set vid on egress " << std::endl;
             i = j;
             continue;
           }
@@ -202,7 +202,7 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
 					egress_untagged = true;
 				}
 
-				// xxx implement update
+				// XXX implement update
 				fm_driver.update_port_vid_egress(devname, vid, egress_untagged);
 
 
@@ -218,41 +218,38 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
 void ofdpa_bridge::update_interface(const rofcore::crtlink &oldlink,
                                     const rofcore::crtlink &newlink) {
   using rofcore::crtlink;
+  using rofcore::logging;
 
   // sanity checks
   if (0 == bridge.get_ifindex()) {
-    rofcore::logging::error << __PRETTY_FUNCTION__
-                            << " cannot update interface without bridge"
-                            << std::endl;
+    logging::error << __PRETTY_FUNCTION__
+                   << " cannot update interface without bridge" << std::endl;
     return;
   }
   if (AF_BRIDGE != newlink.get_family()) {
-    rofcore::logging::error << __PRETTY_FUNCTION__ << newlink
-                            << " is not a bridge interface" << std::endl;
+    logging::error << __PRETTY_FUNCTION__ << newlink
+                   << " is not a bridge interface" << std::endl;
     return;
   }
   //	if (AF_BRIDGE != oldlink.get_family()) {
-  //		rofcore::logging::error << __PRETTY_FUNCTION__ << oldlink << " is
-  //not a bridge interface" << std::endl;
+  //		logging::error << __PRETTY_FUNCTION__ << oldlink << " is
+  // not a bridge interface" << std::endl;
   //		return;
   //	}
   if (bridge.get_ifindex() != newlink.get_master()) {
-    rofcore::logging::error << __PRETTY_FUNCTION__ << newlink
-                            << " is not a slave of this bridge interface"
-                            << std::endl;
+    logging::error << __PRETTY_FUNCTION__ << newlink
+                   << " is not a slave of this bridge interface" << std::endl;
     return;
   }
   if (bridge.get_ifindex() != oldlink.get_master()) {
-    rofcore::logging::error << __PRETTY_FUNCTION__ << newlink
-                            << " is not a slave of this bridge interface"
-                            << std::endl;
+    logging::error << __PRETTY_FUNCTION__ << newlink
+                   << " is not a slave of this bridge interface" << std::endl;
     return;
   }
 
   if (newlink.get_devname().compare(oldlink.get_devname())) {
-    rofcore::logging::info << __PRETTY_FUNCTION__
-                           << " interface rename currently ignored "
-                           << std::endl;
+    logging::info << __PRETTY_FUNCTION__
+                  << " interface rename currently ignored " << std::endl;
     // FIXME this has to be handled differently
     return;
   }

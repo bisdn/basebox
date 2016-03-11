@@ -25,7 +25,6 @@ public:
 
   virtual ~switch_behavior();
 
-  // todo check if we need handle_dpt_open
   virtual void handle_dpt_close(const rofl::cdptid &dptid) {}
 
   virtual void handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
