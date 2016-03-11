@@ -10,6 +10,14 @@
 using namespace rofcore;
 
 cnetlink::cnetlink() : thread(this), mngr(0), check_links(false) {
+
+  sock = nl_socket_alloc();
+  if (NULL == sock) {
+    logging::crit << "cnetlink: failed to create netlink socket" << __FUNCTION__
+                  << std::endl;
+    throw eNetLinkCritical(__FUNCTION__);
+  }
+
   try {
     init_caches();
     thread.start();
@@ -19,15 +27,29 @@ cnetlink::cnetlink() : thread(this), mngr(0), check_links(false) {
   }
 }
 
-cnetlink::~cnetlink() { destroy_caches(); }
+cnetlink::~cnetlink() {
+  destroy_caches();
+  nl_socket_free(sock);
+}
 
 void cnetlink::init_caches() {
-  int rc = nl_cache_mngr_alloc(NULL, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
+
+  int rc = nl_cache_mngr_alloc(sock, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
+
   if (rc < 0) {
     logging::crit
         << "cnetlink::init_caches() failed to allocate netlink cache manager"
         << std::endl;
     throw eNetLinkCritical("cnetlink::init_caches()");
+  }
+
+  // TODO read from /proc/sys/net/core/{r,w}mem_max
+  int rx_size = 212992;
+  int tx_size = 212992;
+
+  if (0 != nl_socket_set_buffer_size(sock, rx_size, tx_size)) {
+    logging::crit << "cnetlink: failed to resize socket buffers" << std::endl;
+    throw eNetLinkCritical(__FUNCTION__);
   }
 
   caches[NL_LINK_CACHE] = NULL;
@@ -135,7 +157,6 @@ void cnetlink::init_caches() {
 
 void cnetlink::destroy_caches() {
   thread.drop_read_fd(nl_cache_mngr_get_fd(mngr));
-
   nl_cache_mngr_free(mngr);
 }
 

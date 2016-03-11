@@ -54,6 +54,7 @@ class cnetlink : public rofl::cthread_env {
   };
 
   rofl::cthread thread;
+  struct nl_sock *sock;
   struct nl_cache_mngr *mngr;
   std::map<enum nl_cache_t, struct nl_cache *> caches;
   std::set<cnetlink_common_observer *> observers;
