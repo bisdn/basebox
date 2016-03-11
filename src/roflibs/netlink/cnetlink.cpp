@@ -51,6 +51,7 @@ void cnetlink::init_caches() {
     logging::crit << "cnetlink: failed to resize socket buffers" << std::endl;
     throw eNetLinkCritical(__FUNCTION__);
   }
+  nl_socket_set_msg_buf_size(sock, rx_size);
 
   caches[NL_LINK_CACHE] = NULL;
   caches[NL_ADDR_CACHE] = NULL;
