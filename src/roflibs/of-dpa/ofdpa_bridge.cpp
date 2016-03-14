@@ -117,6 +117,7 @@ void ofdpa_bridge::add_interface(const rofcore::crtlink &rtl) {
 void ofdpa_bridge::update_vlans(const std::string &devname,
                                 const rtnl_link_bridge_vlan *old_br_vlan,
                                 const rtnl_link_bridge_vlan *new_br_vlan) {
+  using rofcore::logging;
   for (int k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
     int base_bit;
     uint32_t a = old_br_vlan->vlan_bitmap[k];
