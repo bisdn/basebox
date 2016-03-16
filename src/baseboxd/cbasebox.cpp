@@ -307,6 +307,18 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
     return;
   }
 
+#ifdef DEBUG
+  dpt.set_conn(rofl::cauxid(0))
+      .set_trace(true)
+      .set_journal()
+      .log_on_stderr(true)
+      .set_max_entries(64);
+  dpt.set_conn(rofl::cauxid(0))
+      .set_tcp_journal()
+      .log_on_stderr(true)
+      .set_max_entries(16);
+#endif
+
   rofcore::logging::debug << "[cbasebox][handle_dpt_open] dpid: "
                           << dpt.get_dpid().str() << std::endl;
   rofcore::logging::debug << "[cbasebox][handle_dpt_open] dpt: " << dpt
