@@ -395,15 +395,19 @@ void switch_behavior_ofdpa::neigh_ll_created(unsigned int ifindex,
   const crtneigh &rtn =
       cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
 
-  logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
-                << "]: " << std::endl
-                << rtn;
-
   if (bridge.has_bridge_interface()) {
     try {
+      // valid vlan id?
       if (0 > rtn.get_vlan() || 0x1000 < rtn.get_vlan()) {
         logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__
                        << "]: invalid vlan" << rtn.get_vlan() << std::endl;
+        return;
+      }
+
+      // local mac address of parent?
+      if (rtn.get_lladdr() == rtl.get_hwaddr()) {
+        logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+                      << "]: ignore master lladdr" << std::endl;
         return;
       }
 
