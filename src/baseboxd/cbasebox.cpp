@@ -379,6 +379,38 @@ void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
 #endif /* OF_DPA */
 }
 
+void cbasebox::handle_conn_terminated(rofl::crofdpt &dpt,
+                                      const rofl::cauxid &auxid) {
+  assert(0);
+}
+
+void cbasebox::handle_conn_refused(rofl::crofdpt &dpt,
+                                   const rofl::cauxid &auxid) {
+  assert(0);
+}
+
+void cbasebox::handle_conn_failed(rofl::crofdpt &dpt,
+                                  const rofl::cauxid &auxid) {
+  assert(0);
+}
+
+void cbasebox::handle_conn_negotiation_failed(rofl::crofdpt &dpt,
+                                              const rofl::cauxid &auxid) {
+  assert(0);
+}
+
+void cbasebox::handle_conn_congestion_occured(rofl::crofdpt &dpt,
+                                              const rofl::cauxid &auxid) {
+  rofcore::logging::crit << "[cbasebox][" << __FUNCTION__ << "]: XXX not implemented"
+                         << std::endl;
+}
+
+void cbasebox::handle_conn_congestion_solved(rofl::crofdpt &dpt,
+                                             const rofl::cauxid &auxid) {
+  rofcore::logging::crit << "[cbasebox][" << __FUNCTION__ << "]: XXX not implemented"
+                         << std::endl;
+}
+
 void cbasebox::handle_features_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_features_reply &msg) {

@@ -122,19 +122,28 @@ protected:
         .set_max_entries(16);
   }
 
-  /**
-   *
-   */
   virtual void handle_dpt_open(rofl::crofdpt &dpt);
 
-  /**
-   *
-   */
   virtual void handle_dpt_close(const rofl::cdptid &dptid);
 
-  /**
-   *
-   */
+  virtual void handle_conn_terminated(rofl::crofdpt &dpt,
+                                      const rofl::cauxid &auxid);
+
+  virtual void handle_conn_refused(rofl::crofdpt &dpt,
+                                   const rofl::cauxid &auxid);
+
+  virtual void handle_conn_failed(rofl::crofdpt &dpt,
+                                  const rofl::cauxid &auxid);
+
+  virtual void handle_conn_negotiation_failed(rofl::crofdpt &dpt,
+                                              const rofl::cauxid &auxid);
+
+  virtual void handle_conn_congestion_occured(rofl::crofdpt &dpt,
+                                              const rofl::cauxid &auxid);
+
+  virtual void handle_conn_congestion_solved(rofl::crofdpt &dpt,
+                                             const rofl::cauxid &auxid);
+
   virtual void
   handle_features_reply(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                         rofl::openflow::cofmsg_features_reply &msg);
@@ -143,42 +152,24 @@ protected:
   handle_desc_stats_reply(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                           rofl::openflow::cofmsg_desc_stats_reply &msg);
 
-  /**
-   *
-   */
   virtual void handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                                 rofl::openflow::cofmsg_packet_in &msg);
 
-  /**
-   *
-   */
   virtual void handle_flow_removed(rofl::crofdpt &dpt,
                                    const rofl::cauxid &auxid,
                                    rofl::openflow::cofmsg_flow_removed &msg);
 
-  /**
-   *
-   */
   virtual void handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                                   rofl::openflow::cofmsg_port_status &msg);
 
-  /**
-   *
-   */
   virtual void handle_error_message(rofl::crofdpt &dpt,
                                     const rofl::cauxid &auxid,
                                     rofl::openflow::cofmsg_error &msg);
 
-  /**
-   *
-   */
   virtual void handle_port_desc_stats_reply(
       rofl::crofdpt &dpt, const rofl::cauxid &auxid,
       rofl::openflow::cofmsg_port_desc_stats_reply &msg);
 
-  /**
-   *
-   */
   virtual void handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
                                                     uint32_t xid);
 
