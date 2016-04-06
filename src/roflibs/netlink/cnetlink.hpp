@@ -303,8 +303,7 @@ private:
    */
   void handle_read_event(rofl::cthread &thread, int fd);
 
-  //	virtual void
-  //	handle_event(const rofl::cevent& ev);
+  void handle_write_event(rofl::cthread &thread, int fd);
 
 public:
   /**

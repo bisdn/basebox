@@ -153,11 +153,11 @@ void cnetlink::init_caches() {
     obj = nl_cache_get_next(obj);
   }
 
-  thread.add_read_fd(nl_cache_mngr_get_fd(mngr));
+  thread.add_read_fd(nl_cache_mngr_get_fd(mngr), true, EPOLLIN);
 }
 
 void cnetlink::destroy_caches() {
-  thread.drop_read_fd(nl_cache_mngr_get_fd(mngr));
+  thread.drop_read_fd(nl_cache_mngr_get_fd(mngr), false, EPOLLIN);
   nl_cache_mngr_free(mngr);
 }
 
@@ -243,18 +243,10 @@ void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
   // register_filedesc_r(nl_cache_mngr_get_fd(mngr));
 }
 
-// /* virtual */void
-// cnetlink::handle_event(const rofl::cevent& ev)
-//{
-//	switch (ev.get_cmd()) {
-//	case EVENT_UPDATE_LINKS:
-//		update_link_cache();
-//		break;
-//	case EVENT_NONE:
-//	default:
-//		break;
-//	}
-//}
+void cnetlink::handle_write_event(rofl::cthread &thread, int fd) {
+  logging::info << "cnetlink write ready on fd=" << fd << std::endl;
+}
+
 
 void cnetlink::update_link_cache(unsigned int ifindex) {
   logging::notice << __FUNCTION__ << "(): missing ifindex=" << ifindex

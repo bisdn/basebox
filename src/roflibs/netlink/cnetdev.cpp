@@ -7,6 +7,8 @@
 
 #include "cnetdev.hpp"
 
+#include <fcntl.h>
+
 using namespace rofcore;
 
 void cnetdev_owner::netdev_created(cnetdev *netdev) {
@@ -95,6 +97,15 @@ void cnetdev::enable_interface() {
     close(sd);
     throw eNetDevIoctl(
         "cnetdev::enable_interface() ioctl() syscall SIOCSIFFLAGS failed");
+  }
+
+  long sockflags = 0;
+  if ((sockflags = ::fcntl(sd, F_GETFL)) < 0) {
+    throw eNetDevIoctl("eSysCall fcntl (F_GETFL)");
+  }
+  sockflags |= O_NONBLOCK;
+  if ((::fcntl(sd, F_SETFL, sockflags)) < 0) {
+    throw eNetDevIoctl("eSysCall fcntl (F_SETFL)");
   }
 
   close(sd);

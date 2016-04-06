@@ -67,6 +67,7 @@ void ctapdev::tap_open(std::string const &devname,
 
     thread.start();
     thread.add_read_fd(fd);
+    thread.add_write_fd(fd);
 
   } catch (eTapDevOpenFailed &e) {
 
@@ -105,6 +106,7 @@ void ctapdev::tap_close() {
     disable_interface();
 
     thread.drop_read_fd(fd);
+    thread.drop_write_fd(fd);
 
   } catch (eNetDevIoctl &e) {
     rofcore::logging::error << "ctapdev::tap_close() failed: dev:" << devname
@@ -214,10 +216,13 @@ void ctapdev::tx() {
       if ((rc = write(fd, pkt->soframe(), pkt->length())) < 0) {
         switch (errno) {
         case EAGAIN:
-          thread.add_write_fd(fd);
-          throw eNetDevAgain("ctapdev::handle_wevent() EAGAIN");
+          rofcore::logging::debug << "ctapdev::tx() EAGAIN" << std::endl;
+          return;
         default:
-          throw eNetDevCritical("ctapdev::handle_wevent() error occured");
+          // throw eNetDevCritical("ctapdev::handle_wevent() error occured");
+          rofcore::logging::error << "ctapdev::tx() unknown error occured"
+                                  << std::endl;
+          return;
         }
       }
 
