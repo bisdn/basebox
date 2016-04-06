@@ -22,6 +22,7 @@ void ofdpa_bridge::set_bridge_interface(const rofcore::crtlink &rtl) {
   }
 
   this->bridge = rtl;
+  fm_driver.enable_policy_arp(1,1);
 }
 
 static int find_next_bit(int i, uint32_t x) {
@@ -98,13 +99,13 @@ void ofdpa_bridge::add_interface(const rofcore::crtlink &rtl) {
           fm_driver.enable_port_vid_ingress(rtl.get_devname(), vid);
         }
 
-        // todo check if vid is okay as an id as well
-        group = fm_driver.enable_group_l2_multicast(vid, vid, l2_domain[vid],
-                                                    1 != l2_domain[vid].size());
-
-        if (1 == l2_domain[vid].size()) { // todo maybe unnecessary
-          fm_driver.enable_policy_arp(vid, group);
-        }
+//        // todo check if vid is okay as an id as well
+//        group = fm_driver.enable_group_l2_multicast(vid, vid, l2_domain[vid],
+//                                                    1 != l2_domain[vid].size());
+//
+//        if (1 == l2_domain[vid].size()) { // todo maybe unnecessary
+//          fm_driver.enable_policy_arp(vid, group);
+//        }
 
         i = j;
       } else {
@@ -169,14 +170,14 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
           }
 
           // todo check if vid is okay as an id as well
-          group = fm_driver.enable_group_l2_multicast(
-              vid, vid, l2_domain[vid], 1 != l2_domain[vid].size());
-// enable arp flooding as well
-#if DISABLED_TO_TEST
-          if (1 == l2_domain[vid].size()) { // todo maybe unnecessary
-            fm_driver.enable_policy_arp(vid, group);
-          }
-#endif
+//          group = fm_driver.enable_group_l2_multicast(
+//              vid, vid, l2_domain[vid], 1 != l2_domain[vid].size());
+//// enable arp flooding as well
+//#if DISABLED_TO_TEST
+//          if (1 == l2_domain[vid].size()) { // todo maybe unnecessary
+//            fm_driver.enable_policy_arp(vid, group);
+//          }
+//#endif
         } else {
           // vlan removed
         }
