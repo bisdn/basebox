@@ -307,6 +307,12 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
     return;
   }
 
+  if (sa) {
+    delete sa;
+    sa = NULL;
+  }
+
+
 #ifdef DEBUG
   dpt.set_conn(rofl::cauxid(0))
       .set_trace(true)

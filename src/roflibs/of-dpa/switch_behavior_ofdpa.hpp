@@ -69,7 +69,6 @@ private:
   void handle_bridging_table_rm(const rofl::crofdpt &dpt,
                                 rofl::openflow::cofmsg_flow_removed &msg);
 
-  // todo code duplication: align with cethcore
   /**
    *
    */
@@ -78,12 +77,6 @@ private:
     while (not devs[dpid].empty()) {
       std::map<std::string, rofcore::ctapdev *>::iterator it =
           devs[dpid].begin();
-      try {
-        // todo temp. disabled:
-        // hook_port_down(rofl::crofdpt::get_dpt(it->second->get_dptid()),
-        // it->second->get_devname());
-      } catch (rofl::eRofDptNotFound &e) {
-      }
       drop_tap_dev(dpid, it->first);
     }
   }
@@ -185,27 +178,11 @@ private:
    *
    */
   void drop_tap_dev(const rofl::cdptid &dpid, const std::string &devname) {
-    rofl::AcquireReadWriteLock lock(devs_rwlock);
     if (devs[dpid].find(devname) == devs[dpid].end()) {
       return;
     }
     delete devs[dpid][devname];
     devs[dpid].erase(devname);
-  }
-
-  /**
-   *
-   */
-  void drop_tap_dev(const rofl::cdptid &dpid, const rofl::caddress_ll &hwaddr) {
-    std::map<std::string, rofcore::ctapdev *>::const_iterator it;
-    rofl::AcquireReadWriteLock lock(devs_rwlock);
-    if ((it = find_if(devs[dpid].begin(), devs[dpid].end(),
-                      rofcore::ctapdev::ctapdev_find_by_hwaddr(
-                          dpid, hwaddr))) == devs[dpid].end()) {
-      return;
-    }
-    delete it->second;
-    devs[dpid].erase(it->first);
   }
 
   /**
