@@ -355,7 +355,9 @@ void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
 
 #ifdef OF_DPA
   // FIXME implemente close
-  sa->handle_dpt_close(dptid);
+  if (sa) {
+    sa->handle_dpt_close(dptid);
+  }
 #else
   if (flags.test(FLAG_FLOWCORE)) {
     roflibs::svc::cflowcore::set_flow_core(dptid).handle_dpt_close();
@@ -460,7 +462,9 @@ void cbasebox::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                           << msg;
 
 #ifdef OF_DPA
-  sa->handle_packet_in(dpt, auxid, msg);
+  if (sa) {
+    sa->handle_packet_in(dpt, auxid, msg);
+  }
 #else
   roflibs::common::openflow::ccookiebox::get_instance().handle_packet_in(
       dpt, auxid, msg);
@@ -477,7 +481,9 @@ void cbasebox::handle_flow_removed(rofl::crofdpt &dpt,
                           << msg;
 
 #ifdef OF_DPA
-  sa->handle_flow_removed(dpt, auxid, msg);
+  if (sa) {
+    sa->handle_flow_removed(dpt, auxid, msg);
+  }
 #else
   roflibs::common::openflow::ccookiebox::get_instance().handle_flow_removed(
       dpt, auxid, msg);
@@ -539,7 +545,9 @@ void cbasebox::handle_error_message(rofl::crofdpt &dpt,
                          << msg;
 
 #ifdef OF_DPA
-  sa->handle_error_message(dpt, auxid, msg);
+  if (sa) {
+    sa->handle_error_message(dpt, auxid, msg);
+  }
 #else
   if (flags.test(FLAG_FLOWCORE) &&
       roflibs::svc::cflowcore::has_flow_core(dpt.get_dptid())) {
