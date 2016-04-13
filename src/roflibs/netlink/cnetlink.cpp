@@ -153,11 +153,11 @@ void cnetlink::init_caches() {
     obj = nl_cache_get_next(obj);
   }
 
-  thread.add_read_fd(nl_cache_mngr_get_fd(mngr), true/*, EPOLLIN*/);
+  thread.add_read_fd(nl_cache_mngr_get_fd(mngr), true, false);
 }
 
 void cnetlink::destroy_caches() {
-  thread.drop_read_fd(nl_cache_mngr_get_fd(mngr), false/*, EPOLLIN*/);
+  thread.drop_read_fd(nl_cache_mngr_get_fd(mngr), false);
   nl_cache_mngr_free(mngr);
 }
 
