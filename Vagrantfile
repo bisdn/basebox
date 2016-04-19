@@ -1,78 +1,45 @@
 # -*- mode: ruby -*-
 
-# Sometimes the boot stalls. This is due to cloud-init forcing the network to come up. This has a time out of ~ 2-3 minutes. Just wait...
+NAME = 'basebox'
 
-NAME = "baseboxd"
+# If you are using Virtualbox, please make sure you have the vbguest plugin installed.
+#
+# We are bootstrapping salt via bash and don't use Vagrant's provisioning.
+# The recommended Fedora box from getfedora.com does not support this.
+#
+# Tom decided to go with a custom installation of salt (and not using the vagrant salt provision), due to the following problems:
+# - salt, we need > 2015.8.3 otherwise it will crash due to the move to dnf
+# - salt, the bootstrap-script downloads a .repo file into /etc/yum.repos... The URL used however only contains a redirect (and hence html instead of the actual config is written). This breaks dnf.
+# - salt, on fedora 22, fails with CommandExecutionError: Error: unrecognized arguments: --installed usage: dnf repoquery
+# - salt, in 2015.5.9-2, we get "The following packages failed to install/update" due to some issue with 'dnf repoquery --quiet --queryformat'. This can be solved by running "dnf update" before running salt
 
-MIRRORS = <<SCRIPT
-echo "###### Ubuntu Main Repos
-deb http://de.archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse
-deb-src http://de.archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse
+# To test provisining inside the VMto test you can use:
+#   sudo salt-call --local -l debug --file-root=/vagrant/salt/ state.highstate
+#   sudo salt-call --local -l debug --file-root=/vagrant/salt/ state.sls build
+#   dnf -y --enablerepo=updates-testing install salt-minion
 
-###### Ubuntu Update Repos
-deb http://de.archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse
-deb http://de.archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse
-deb http://de.archive.ubuntu.com/ubuntu/ trusty-proposed main restricted universe multiverse
-deb http://de.archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse
-deb-src http://de.archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse
-deb-src http://de.archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse
-deb-src http://de.archive.ubuntu.com/ubuntu/ trusty-proposed main restricted universe multiverse
-deb-src http://de.archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse" > /etc/apt/sources.list
-SCRIPT
-
-UPGRADE = <<SCRIPT
-# Update system
-apt-get -y update
-apt-get -y dist-upgrade
-apt-get -y upgrade
-SCRIPT
-
-DEVBASE = <<SCRIPT
-apt-get -y install git vim man wget
-apt-get -y install build-essential dh-autoreconf pkg-config
-SCRIPT
-
-LIBCONFIG = <<SCRIPT
-apt-get -y install libconfig++-dev
-SCRIPT
-
-LIBNL = <<SCRIPT
-apt-get -y install bison flex
-pushd /opt
-git clone https://github.com/thom311/libnl.git # I tried it out with commit eaa75b7c7d3e6a4df1a2e7591ae295acfae3f73e
-cd libnl
-./autogen.sh
-./configure
-make && make install
-ldconfig
-SCRIPT
-
-ROFL = <<SCRIPT
-pushd /opt
-git clone -b integration-0.7 --depth 1 https://github.com/bisdn/rofl-common.git
-cd rofl-common
-./autogen.sh
-cd build
-../configure
-make && make install
+SALT = <<SCRIPT
+dnf -y update
+dnf -y install salt-minion git # we also need git to make salt succeed
+salt-call --local --file-root=/vagrant/salt/ state.highstate
 SCRIPT
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/trusty64"
   config.vm.hostname = NAME
-
-  config.vm.provision :shell, inline: MIRRORS, keep_color: true
-  config.vm.provision :shell, inline: UPGRADE, keep_color: true
-  config.vm.provision :shell, inline: DEVBASE, keep_color: true
-  config.vm.provision :shell, inline: LIBCONFIG, keep_color: true
-  config.vm.provision :shell, inline: LIBNL, keep_color: true
-  config.vm.provision :shell, inline: ROFL, keep_color: true
-
+  config.vm.box = "fedora/23-cloud-base"
+  config.vm.provision :shell, inline: SALT, keep_color: true
   config.vm.network "forwarded_port", guest: 6653, host: 6653
 
-  config.vm.provider "virtualbox" do |vb|
+  config.vm.provider "virtualbox" do |vb, override|
+    override.vm.synced_folder ".", "/vagrant", type: "virtualbox"
     vb.name = NAME
     vb.memory = 1024
-    vb.gui = false
+    vb.cpus = 1
+  end
+
+  config.vm.provider :libvirt do |libvirt, override|
+    override.vm.synced_folder "./", "/vagrant", { nfs: true }
+    libvirt.memory = 1024
+    libvirt.cpus = 1
   end
 end

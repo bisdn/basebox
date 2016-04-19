@@ -1,0 +1,13 @@
+image: fedora:23
+
+before_script:
+  - 'dnf -y update'
+  - 'dnf install -y salt-minion git'
+  - 'salt-call state.highstate --local --file-root ./salt/'
+  - './autogen.sh'
+  - 'mkdir build'
+  - 'cd build && ../configure'
+
+unit_tests:
+  script:
+    - 'make'
