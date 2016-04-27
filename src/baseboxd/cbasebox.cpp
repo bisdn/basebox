@@ -312,7 +312,6 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
     sa = NULL;
   }
 
-
 #ifdef DEBUG
   dpt.set_conn(rofl::cauxid(0))
       .set_trace(true)
@@ -409,14 +408,14 @@ void cbasebox::handle_conn_negotiation_failed(rofl::crofdpt &dpt,
 
 void cbasebox::handle_conn_congestion_occured(rofl::crofdpt &dpt,
                                               const rofl::cauxid &auxid) {
-  rofcore::logging::crit << "[cbasebox][" << __FUNCTION__ << "]: XXX not implemented"
-                         << std::endl;
+  rofcore::logging::crit << "[cbasebox][" << __FUNCTION__
+                         << "]: XXX not implemented" << std::endl;
 }
 
 void cbasebox::handle_conn_congestion_solved(rofl::crofdpt &dpt,
                                              const rofl::cauxid &auxid) {
-  rofcore::logging::crit << "[cbasebox][" << __FUNCTION__ << "]: XXX not implemented"
-                         << std::endl;
+  rofcore::logging::crit << "[cbasebox][" << __FUNCTION__
+                         << "]: XXX not implemented" << std::endl;
 }
 
 void cbasebox::handle_features_reply(

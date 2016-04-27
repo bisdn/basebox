@@ -22,7 +22,7 @@ void ofdpa_bridge::set_bridge_interface(const rofcore::crtlink &rtl) {
   }
 
   this->bridge = rtl;
-  fm_driver.enable_policy_arp(1,1);
+  fm_driver.enable_policy_arp(1, 1);
 }
 
 static int find_next_bit(int i, uint32_t x) {
@@ -99,13 +99,15 @@ void ofdpa_bridge::add_interface(const rofcore::crtlink &rtl) {
           fm_driver.enable_port_vid_ingress(rtl.get_devname(), vid);
         }
 
-//        // todo check if vid is okay as an id as well
-//        group = fm_driver.enable_group_l2_multicast(vid, vid, l2_domain[vid],
-//                                                    1 != l2_domain[vid].size());
-//
-//        if (1 == l2_domain[vid].size()) { // todo maybe unnecessary
-//          fm_driver.enable_policy_arp(vid, group);
-//        }
+        // // todo check if vid is okay as an id as well
+        // group = fm_driver.enable_group_l2_multicast(vid, vid,
+        //                                             l2_domain[vid],
+        //                                             1 !=
+        //                                             l2_domain[vid].size());
+        //
+        // if (1 == l2_domain[vid].size()) { // todo maybe unnecessary
+        //   fm_driver.enable_policy_arp(vid, group);
+        // }
 
         i = j;
       } else {
@@ -157,14 +159,14 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
             assert(group && "invalid group identifier");
             if (rofl::openflow::OFPG_MAX == group) {
               logging::error << __PRETTY_FUNCTION__
-                  << " failed to set vid on egress " << std::endl;
+                             << " failed to set vid on egress " << std::endl;
               i = j;
               continue;
             }
             l2_domain[vid].push_back(group);
           } catch (std::exception &e) {
-            logging::error << __PRETTY_FUNCTION__ << " caught error1:"
-                << e.what() << std::endl;
+            logging::error << __PRETTY_FUNCTION__
+                           << " caught error1:" << e.what() << std::endl;
           }
 
           try {
@@ -175,19 +177,21 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
               fm_driver.enable_port_vid_ingress(devname, vid);
             }
           } catch (std::exception &e) {
-            logging::error << __PRETTY_FUNCTION__ << " caught error2:"
-                           << e.what() << std::endl;
+            logging::error << __PRETTY_FUNCTION__
+                           << " caught error2:" << e.what() << std::endl;
           }
 
           // todo check if vid is okay as an id as well
-//          group = fm_driver.enable_group_l2_multicast(
-//              vid, vid, l2_domain[vid], 1 != l2_domain[vid].size());
-//// enable arp flooding as well
-//#if DISABLED_TO_TEST
-//          if (1 == l2_domain[vid].size()) { // todo maybe unnecessary
-//            fm_driver.enable_policy_arp(vid, group);
-//          }
-//#endif
+          // group = fm_driver.enable_group_l2_multicast(vid, vid,
+          //                                             l2_domain[vid],
+          //                                             1 !=
+          //                                             l2_domain[vid].size());
+          // // enable arp flooding as well
+          // #if DISABLED_TO_TEST
+          // if (1 == l2_domain[vid].size()) { // todo maybe unnecessary
+          //   fm_driver.enable_policy_arp(vid, group);
+          // }
+          // #endif
         } else {
           // vlan removed
         }
@@ -243,11 +247,11 @@ void ofdpa_bridge::update_interface(const rofcore::crtlink &oldlink,
                    << " is not a bridge interface" << std::endl;
     return;
   }
-  //	if (AF_BRIDGE != oldlink.get_family()) {
-  //		logging::error << __PRETTY_FUNCTION__ << oldlink << " is
-  // not a bridge interface" << std::endl;
-  //		return;
-  //	}
+  // if (AF_BRIDGE != oldlink.get_family()) {
+  //   logging::error << __PRETTY_FUNCTION__ << oldlink << " is
+  //                     not a bridge interface" << std::endl;
+  //   return;
+  // }
   if (bridge.get_ifindex() != newlink.get_master()) {
     logging::error << __PRETTY_FUNCTION__ << newlink
                    << " is not a slave of this bridge interface" << std::endl;

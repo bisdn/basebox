@@ -247,7 +247,6 @@ void cnetlink::handle_write_event(rofl::cthread &thread, int fd) {
   logging::info << "cnetlink write ready on fd=" << fd << std::endl;
 }
 
-
 void cnetlink::update_link_cache(unsigned int ifindex) {
   logging::notice << __FUNCTION__ << "(): missing ifindex=" << ifindex
                   << std::endl;
