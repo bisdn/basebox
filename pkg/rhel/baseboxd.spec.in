@@ -29,17 +29,6 @@ Requires(postun): systemd
 %description
 TODO
 
-%package       devel
-Summary:       TODO
-Group:         System Environment/Daemons
-Requires:      %{name} = %{version}-%{release}
-Requires:      rofl-common-devel
-Requires:      rofl-ofdpa-devel
-Requires:      libnl3-devel
-
-
-%description	devel
-TODO
 
 %prep
 %setup -q -n %{name}-%{version}%{?snapshot}
@@ -75,31 +64,6 @@ install -p -D -m 0644 pkg/systemd/sysconfig.template \
 %{_unitdir}/baseboxd.service
 %config(noreplace) %{_sysconfdir}/sysconfig/baseboxd
 %doc README.md
-
-
-%files devel
-%{_libdir}/libroflibs*.a
-%{_libdir}/libroflibs*.la
-%{_libdir}/libroflibs*.so
-%{_includedir}/roflibs/netlink/cconfig.hpp
-%{_includedir}/roflibs/netlink/ccookiebox.hpp
-%{_includedir}/roflibs/netlink/clogging.hpp
-%{_includedir}/roflibs/netlink/cnetdev.hpp
-%{_includedir}/roflibs/netlink/cnetlink.hpp
-%{_includedir}/roflibs/netlink/cpacketpool.hpp
-%{_includedir}/roflibs/netlink/cprefix.hpp
-%{_includedir}/roflibs/netlink/crtaddr.hpp
-%{_includedir}/roflibs/netlink/crtaddrs.hpp
-%{_includedir}/roflibs/netlink/crtlink.hpp
-%{_includedir}/roflibs/netlink/crtlinks.hpp
-%{_includedir}/roflibs/netlink/crtneigh.hpp
-%{_includedir}/roflibs/netlink/crtneighs.hpp
-%{_includedir}/roflibs/netlink/crtnexthop.hpp
-%{_includedir}/roflibs/netlink/crtnexthops.hpp
-%{_includedir}/roflibs/netlink/crtroute.hpp
-%{_includedir}/roflibs/netlink/crtroutes.hpp
-%{_includedir}/roflibs/netlink/ctapdev.hpp
-%{_includedir}/roflibs/netlink/ctundev.hpp
 
 %changelog
 * Tue Feb  9 2016 Tobias Jungel
