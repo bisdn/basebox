@@ -15,6 +15,22 @@ AC_PROG_LD
 AC_PROG_SED
 PKG_PROG_PKG_CONFIG
 
+AC_CHECK_FUNCS([bzero])
+AC_CHECK_FUNCS([memset])
+AC_CHECK_FUNCS([socket])
+AC_CHECK_FUNCS([strerror])
+AC_CHECK_HEADERS([fcntl.h])
+AC_CHECK_HEADERS([sys/ioctl.h])
+AC_CHECK_HEADERS([sys/socket.h])
+AC_CHECK_HEADERS([sys/time.h])
+AC_CHECK_HEADER_STDBOOL
+AC_FUNC_ERROR_AT_LINE
+AC_TYPE_SIZE_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_TYPE_UINT8_T
+
 LT_INIT
 
 AC_ENABLE_STATIC
@@ -54,24 +70,23 @@ else
 fi
 
 # check for libraries
-PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.26 libnl-route-3.0 >= 3.2.26,
+PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.27 libnl-route-3.0 >= 3.2.27,
   [ CPPFLAGS+="$LIBNL3_CFLAGS"
 	LIBS+="$LIBNL3_LIBS"
 	# the latest changes of libnl are not yet release, hence another check here
     AC_SEARCH_LIBS([rtnl_link_bridge_get_port_vlan], [libnl-route], [],
       [AC_MSG_ERROR([libnl-route is too old, currently you have to use https://github.com/thom311/libnl master])]) ],
-  [ AC_MSG_ERROR([minimum version of libnl-3 is 3.2.26]) ])
+  [ AC_MSG_ERROR([minimum version of libnl-3 is 3.2.27]) ])
 
-PKG_CHECK_MODULES([ROFL], rofl_common >= 0.10.0,
+PKG_CHECK_MODULES([ROFL], rofl_common >= 0.10.7,
   [ CPPFLAGS+="$ROFL_CFLAGS"
 	LIBS+="$ROFL_LIBS" ],
-  [ AC_MSG_ERROR([minimum version of rofl_common is 0.10.0]) ])
+  [ AC_MSG_ERROR([minimum version of rofl_common is 0.10.7]) ])
 
-
-PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.1,
+PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.3,
   [ CPPFLAGS+="$ROFL_OFDPA_CFLAGS"
 	LIBS+="$ROFL_OFDPA_LIBS" ],
-  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.1]) ])
+  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.3]) ])
 
 # todo: add http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx_11.html
 CXXFLAGS="$CXXFLAGS -std=c++11"
