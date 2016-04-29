@@ -80,21 +80,6 @@ PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.1,
 # todo: add http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx_11.html
 CXXFLAGS="$CXXFLAGS -std=c++11"
 
-# version
-#m4_include([config/versioning.m4])
-
-#AM_PATH_PYTHON([2.7])
-
-#	src/roflibs/python/Makefile
-#	src/roflibs/flowcore/Makefile
-#	src/roflibs/8021core/Makefile
-#	src/roflibs/ethcore/Makefile
-#	src/roflibs/ethcore/rstp/Makefile
-#	src/roflibs/ipcore/Makefile
-#	src/roflibs/gtpcore/Makefile
-#	src/roflibs/grecore/Makefile
-
-
 # AC_CONFIG_HEADERS([include/config.h])
 AC_CONFIG_FILES([
 	Makefile

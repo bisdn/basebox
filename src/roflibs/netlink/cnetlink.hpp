@@ -18,7 +18,6 @@
 
 #include <roflibs/netlink/crtlinks.hpp>
 #include <roflibs/netlink/crtroutes.hpp>
-#include <roflibs/netlink/cprefix.hpp>
 #include <roflibs/netlink/clogging.hpp>
 
 #include <rofl/common/cthread.hpp>

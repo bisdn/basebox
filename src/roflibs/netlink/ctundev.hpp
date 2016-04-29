@@ -8,14 +8,9 @@
 #ifndef CTUNDEV_H_
 #define CTUNDEV_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-//#include <linux/if.h>
 #include <linux/if_tun.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -25,16 +20,11 @@ extern "C" {
 #include <netlink/object.h>
 #include <netlink/route/addr.h>
 
-#ifdef __cplusplus
-}
-#endif
-
 #include <list>
 #include <iostream>
 
 #include <roflibs/netlink/cnetdev.hpp>
 #include <roflibs/netlink/clogging.hpp>
-#include <roflibs/netlink/cprefix.hpp>
 #include <roflibs/netlink/cnetlink.hpp>
 
 namespace rofcore {

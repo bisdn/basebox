@@ -35,9 +35,10 @@ public:
       : eSwitchBehaviorBaseErr(__arg) {}
 };
 
-class switch_behavior_ofdpa : public switch_behavior,
-                              public rofcore::cnetdev_owner,
-                              public rofcore::auto_reg_cnetlink_common_observer {
+class switch_behavior_ofdpa
+    : public switch_behavior,
+      public rofcore::cnetdev_owner,
+      public rofcore::auto_reg_cnetlink_common_observer {
 public:
   switch_behavior_ofdpa(rofl::crofdpt &dpt);
 

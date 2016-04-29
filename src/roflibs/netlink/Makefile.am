@@ -15,8 +15,6 @@ libroflibs_netlink_la_SOURCES = \
 	ctapdev.cpp \
 	ctundev.hpp \
 	ctundev.cpp \
-	cprefix.hpp \
-	cprefix.cpp \
 	cpacketpool.hpp \
 	cpacketpool.cpp \
 	crtroute.hpp \
@@ -31,8 +29,6 @@ libroflibs_netlink_la_SOURCES = \
 	crtnexthops.hpp \
 	clogging.cpp \
 	clogging.hpp \
-	cconfig.cpp \
-	cconfig.hpp \
 	ccookiebox.cpp \
 	ccookiebox.hpp
 
@@ -44,7 +40,6 @@ library_include_HEADERS= \
 	cnetdev.hpp \
 	ctapdev.hpp \
 	ctundev.hpp \
-	cprefix.hpp \
 	cpacketpool.hpp \
 	crtroute.hpp \
 	crtroutes.hpp \
@@ -57,7 +52,6 @@ library_include_HEADERS= \
 	crtnexthop.hpp \
 	crtnexthops.hpp \
 	clogging.hpp \
-	cconfig.hpp \
 	ccookiebox.hpp
 
 AM_CPPFLAGS=-fPIC
