@@ -67,10 +67,6 @@ PKG_CHECK_MODULES([ROFL], rofl_common >= 0.10.0,
 	LIBS+="$ROFL_LIBS" ],
   [ AC_MSG_ERROR([minimum version of rofl_common is 0.10.0]) ])
 
-PKG_CHECK_MODULES([LIBCONFIGXX], [libconfig++ >= 1.4],
-  [ CPPFLAGS+="$LIBCONFIGXX_CFLAGS"
-	LIBS+="$LIBCONFIGXX_LIBS"],
-  [ AC_MSG_ERROR([libconfig++ 1.4 or newer not found.])] )
 
 PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.1,
   [ CPPFLAGS+="$ROFL_OFDPA_CFLAGS"

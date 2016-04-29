@@ -16,12 +16,10 @@ BuildRequires: libtool
 BuildRequires: rofl-common-devel
 BuildRequires: rofl-ofdpa-devel
 BuildRequires: libnl3-devel
-BuildRequires: libconfig-devel
 
 Requires:      rofl-common
 Requires:      rofl-ofdpa
 Requires:      libnl3
-Requires:      libconfig
 
 BuildRequires: systemd
 Requires(post): systemd
@@ -38,7 +36,6 @@ Requires:      %{name} = %{version}-%{release}
 Requires:      rofl-common-devel
 Requires:      rofl-ofdpa-devel
 Requires:      libnl3-devel
-Requires:      libconfig-devel
 
 
 %description	devel
