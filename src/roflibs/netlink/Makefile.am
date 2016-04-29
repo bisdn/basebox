@@ -2,8 +2,7 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = 
 
-#noinst_LTLIBRARIES = libroflibs_netlink.la
-lib_LTLIBRARIES = libroflibs_netlink.la
+noinst_LTLIBRARIES = libroflibs_netlink.la
 
 libroflibs_netlink_la_SOURCES = \
 	cnetlink.hpp \
@@ -33,26 +32,6 @@ libroflibs_netlink_la_SOURCES = \
 	ccookiebox.hpp
 
 libroflibs_netlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
-
-library_includedir=$(includedir)/roflibs/netlink
-library_include_HEADERS= \
-	cnetlink.hpp \
-	cnetdev.hpp \
-	ctapdev.hpp \
-	ctundev.hpp \
-	cpacketpool.hpp \
-	crtroute.hpp \
-	crtroutes.hpp \
-	crtaddr.hpp \
-	crtaddrs.hpp \
-	crtlink.hpp \
-	crtlinks.hpp \
-	crtneigh.hpp \
-	crtneighs.hpp \
-	crtnexthop.hpp \
-	crtnexthops.hpp \
-	clogging.hpp \
-	ccookiebox.hpp
 
 AM_CPPFLAGS=-fPIC
 AM_CXXFLAGS=-I$(top_srcdir)/src

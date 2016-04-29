@@ -60,7 +60,6 @@ install -p -D -m 0644 pkg/systemd/sysconfig.template \
 
 %files
 %{_sbindir}/baseboxd
-%{_libdir}/libroflibs*.so.*
 %{_unitdir}/baseboxd.service
 %config(noreplace) %{_sysconfdir}/sysconfig/baseboxd
 %doc README.md

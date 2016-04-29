@@ -13,10 +13,9 @@ baseboxd_SOURCES = \
 	cunixenv.cpp \
 	cunixenv.hpp
 	
-baseboxd_LDADD = -lpthread -lrt \
-		-L../roflibs -lroflibs \
-		-L../roflibs/netlink -lroflibs_netlink \
-		-L../roflibs/of-dpa -lroflibs_ofdpa
+baseboxd_LDADD = -lpthread \
+		 -lrt \
+		 ../roflibs/libroflibs.la
 
 AM_CPPFLAGS = -I$(top_srcdir)/src
 AM_LDFLAGS = 
