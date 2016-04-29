@@ -43,7 +43,6 @@ public:
 };
 
 class cnetlink_common_observer;
-class cnetlink_neighbour_observer;
 
 class cnetlink : public rofl::cthread_env {
   enum nl_cache_t {
@@ -59,16 +58,6 @@ class cnetlink : public rofl::cthread_env {
   std::map<enum nl_cache_t, struct nl_cache *> caches;
   std::set<cnetlink_common_observer *> observers;
 
-  std::map<int,
-           std::map<rofl::caddress_ll, std::set<cnetlink_neighbour_observer *>>>
-      nbobservers_ll;
-  std::map<int, std::map<rofl::caddress_in4,
-                         std::set<cnetlink_neighbour_observer *>>>
-      nbobservers_in4;
-  std::map<int, std::map<rofl::caddress_in6,
-                         std::set<cnetlink_neighbour_observer *>>>
-      nbobservers_in6;
-
   crtlinks
       rtlinks; // all links in system => key:ifindex, value:crtlink instance
   std::map<int, crtroutes_in4>
@@ -76,7 +65,6 @@ class cnetlink : public rofl::cthread_env {
   std::map<int, crtroutes_in6>
       rtroutes_in6; // all routes in system => key:table_id
 
-  bool check_links;
   std::set<int> missing_links;
 
 public:
@@ -148,85 +136,6 @@ public:
     observers.erase(subscriber);
   };
 
-  /**
-   *
-   */
-  void observe_neighbour(cnetlink_neighbour_observer *observer, int ifindex,
-                         const rofl::caddress_ll &dst) {
-    nbobservers_ll[ifindex][dst].insert(observer);
-  };
-
-  /**
-   *
-   */
-  void ignore_neighbour(cnetlink_neighbour_observer *observer, int ifindex,
-                        const rofl::caddress_ll &dst) {
-    nbobservers_ll[ifindex][dst].erase(observer);
-  };
-  /**
-   *
-   */
-  void observe_neighbour(cnetlink_neighbour_observer *observer, int ifindex,
-                         const rofl::caddress_in4 &dst) {
-    nbobservers_in4[ifindex][dst].insert(observer);
-  };
-
-  /**
-   *
-   */
-  void ignore_neighbour(cnetlink_neighbour_observer *observer, int ifindex,
-                        const rofl::caddress_in4 &dst) {
-    nbobservers_in4[ifindex][dst].erase(observer);
-  };
-
-  /**
-   *
-   */
-  void observe_neighbour(cnetlink_neighbour_observer *observer, int ifindex,
-                         const rofl::caddress_in6 &dst) {
-    nbobservers_in6[ifindex][dst].insert(observer);
-  };
-
-  /**
-   *
-   */
-  void ignore_neighbour(cnetlink_neighbour_observer *observer, int ifindex,
-                        const rofl::caddress_in6 &dst) {
-    nbobservers_in6[ifindex][dst].erase(observer);
-  };
-
-  /**
-   *
-   */
-  void ignore_neighbours(cnetlink_neighbour_observer *observer) {
-    /* remove observer for all neigh_in4 instances */
-    if (true) {
-      std::map<int, std::map<rofl::caddress_in4,
-                             std::set<cnetlink_neighbour_observer *>>>::iterator
-          it;
-      for (it = nbobservers_in4.begin(); it != nbobservers_in4.end(); ++it) {
-        std::map<rofl::caddress_in4,
-                 std::set<cnetlink_neighbour_observer *>>::iterator jt;
-        for (jt = it->second.begin(); jt != it->second.end(); ++jt) {
-          jt->second.erase(observer);
-        }
-      }
-    }
-    /* remove observer for all neigh_in6 instances */
-    if (true) {
-      std::map<int, std::map<rofl::caddress_in6,
-                             std::set<cnetlink_neighbour_observer *>>>::iterator
-          it;
-      for (it = nbobservers_in6.begin(); it != nbobservers_in6.end(); ++it) {
-        std::map<rofl::caddress_in6,
-                 std::set<cnetlink_neighbour_observer *>>::iterator jt;
-        for (jt = it->second.begin(); jt != it->second.end(); ++jt) {
-          jt->second.erase(observer);
-        }
-      }
-    }
-  };
-
 public:
   /**
    *
@@ -291,10 +200,6 @@ private:
    *
    */
   void destroy_caches();
-
-  void update_link_cache();
-
-  void update_link_cache(unsigned int ifindex);
 
   virtual void handle_wakeup(rofl::cthread &thread) {}
 
@@ -456,260 +361,6 @@ public:
                      int prefixlen);
 };
 
-class cnetlink_common_observer {
-public:
-  /**
-   *
-   */
-  cnetlink_common_observer() { nl_subscribe(); };
-
-  /**
-   *
-   */
-  virtual ~cnetlink_common_observer() { nl_unsubscribe(); };
-
-  /**
-   *
-   * @param ifindex
-   */
-  void nl_subscribe() { cnetlink::get_instance().subscribe(this); };
-
-  /**
-   *
-   * @param ifindex
-   */
-  void nl_unsubscribe() { cnetlink::get_instance().unsubscribe(this); };
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void link_created(unsigned int ifindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void link_updated(const crtlink &newlink){};
-
-  /**
-   *
-   * @param ifindex
-   */
-  virtual void link_deleted(unsigned int ifindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void addr_in4_created(unsigned int ifindex, uint16_t adindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void addr_in4_updated(unsigned int ifindex, uint16_t adindex){};
-
-  /**
-   *
-   * @param ifindex
-   */
-  virtual void addr_in4_deleted(unsigned int ifindex, uint16_t adindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void addr_in6_created(unsigned int ifindex, uint16_t adindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void addr_in6_updated(unsigned int ifindex, uint16_t adindex){};
-
-  /**
-   *
-   * @param ifindex
-   */
-  virtual void addr_in6_deleted(unsigned int ifindex, uint16_t adindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void route_in4_created(uint8_t table_id, unsigned int rtindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void route_in4_updated(uint8_t table_id, unsigned int rtindex){};
-
-  /**
-   *
-   * @param ifindex
-   */
-  virtual void route_in4_deleted(uint8_t table_id, unsigned int rtindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void route_in6_created(uint8_t table_id, unsigned int rtindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void route_in6_updated(uint8_t table_id, unsigned int rtindex){};
-
-  /**
-   *
-   * @param ifindex
-   */
-  virtual void route_in6_deleted(uint8_t table_id, unsigned int rtindex){};
-
-  virtual void neigh_ll_created(unsigned int ifindex, uint16_t nbindex){};
-
-  virtual void neigh_ll_updated(unsigned int ifindex, uint16_t nbindex){};
-
-  virtual void neigh_ll_deleted(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void neigh_in4_created(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void neigh_in4_updated(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param ifindex
-   */
-  virtual void neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void neigh_in6_created(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void neigh_in6_updated(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param ifindex
-   */
-  virtual void neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex){};
-};
-
-class cnetlink_neighbour_observer {
-public:
-  /**
-   *
-   */
-  cnetlink_neighbour_observer(){};
-
-  /**
-   *
-   */
-  virtual ~cnetlink_neighbour_observer() {
-    cnetlink::get_instance().ignore_neighbours(this);
-  };
-
-  void watch(int ifindex, const rofl::caddress_ll &dst) {
-    cnetlink::get_instance().observe_neighbour(this, ifindex, dst);
-  }
-
-  void unwatch(int ifindex, const rofl::caddress_ll &dst) {
-    cnetlink::get_instance().ignore_neighbour(this, ifindex, dst);
-  }
-
-  /**
-   *
-   * @param ifindex
-   */
-  void watch(int ifindex, const rofl::caddress_in4 &dst) {
-    cnetlink::get_instance().observe_neighbour(this, ifindex, dst);
-  };
-
-  /**
-   *
-   * @param ifindex
-   */
-  void unwatch(int ifindex, const rofl::caddress_in4 &dst) {
-    cnetlink::get_instance().ignore_neighbour(this, ifindex, dst);
-  };
-
-  /**
-   *
-   * @param ifindex
-   */
-  void watch(int ifindex, const rofl::caddress_in6 &dst) {
-    cnetlink::get_instance().observe_neighbour(this, ifindex, dst);
-  };
-
-  /**
-   *
-   * @param ifindex
-   */
-  void unwatch(int ifindex, const rofl::caddress_in6 &dst) {
-    cnetlink::get_instance().ignore_neighbour(this, ifindex, dst);
-  };
-
-  virtual void neigh_ll_created(unsigned int ifindex, uint16_t nbindex){};
-
-  virtual void neigh_ll_updated(unsigned int ifindex, uint16_t nbindex){};
-
-  virtual void neigh_ll_deleted(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void neigh_in4_created(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void neigh_in4_updated(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param ifindex
-   */
-  virtual void neigh_in4_deleted(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void neigh_in6_created(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param rtl
-   */
-  virtual void neigh_in6_updated(unsigned int ifindex, uint16_t nbindex){};
-
-  /**
-   *
-   * @param ifindex
-   */
-  virtual void neigh_in6_deleted(unsigned int ifindex, uint16_t nbindex){};
-};
-
-}; // end of namespace dptmap
+}; // end of namespace rofcore
 
 #endif /* CLINKCACHE_H_ */

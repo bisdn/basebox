@@ -8,6 +8,7 @@ lib_LTLIBRARIES = libroflibs_netlink.la
 libroflibs_netlink_la_SOURCES = \
 	cnetlink.hpp \
 	cnetlink.cpp \
+	cnetlink_observer.hpp \
 	cnetdev.hpp \
 	cnetdev.cpp \
 	ctapdev.hpp \

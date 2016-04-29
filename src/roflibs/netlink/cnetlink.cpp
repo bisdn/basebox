@@ -6,10 +6,11 @@
  */
 
 #include "cnetlink.hpp"
+#include "cnetlink_observer.hpp"
 
 using namespace rofcore;
 
-cnetlink::cnetlink() : thread(this), mngr(0), check_links(false) {
+cnetlink::cnetlink() : thread(this) {
 
   sock = nl_socket_alloc();
   if (NULL == sock) {
@@ -166,96 +167,15 @@ cnetlink &cnetlink::get_instance() {
   return instance;
 }
 
-void cnetlink::update_link_cache() {
-  logging::info << "[cnetlink][" << __FUNCTION__
-                << "] #links=" << get_links().size()
-                << " #cacheitems=" << nl_cache_nitems(caches[NL_LINK_CACHE])
-                << std::endl;
-
-  struct nl_object *obj;
-
-#ifdef DEBUG
-  logging::debug << "existing links in cnetlink:" << std::endl;
-  const std::map<unsigned int, crtlink> &links = rtlinks.get_all_links();
-  std::for_each(links.cbegin(), links.cend(),
-                [](const std::pair<unsigned int, crtlink> &n) {
-                  logging::debug << n.second.get_devname() << std::endl;
-                });
-
-  logging::debug << "existing links in nl_cache:" << std::endl;
-  obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
-  while (0 != obj) {
-    logging::debug << rtnl_link_get_name((struct rtnl_link *)obj) << std::endl;
-    obj = nl_cache_get_next(obj);
-  }
-
-#endif
-
-  check_links = false;
-  struct nl_sock *sk = NULL;
-  if ((sk = nl_socket_alloc()) == NULL) {
-    return;
-  }
-
-  int sd = 0;
-  if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
-    nl_socket_free(sk);
-    return;
-  }
-
-  int rv = nl_cache_refill(sk, caches[NL_LINK_CACHE]);
-
-  nl_close(sk);
-  nl_socket_free(sk);
-  if (rv != 0) {
-    logging::error << "[cnetlink][" << __FUNCTION__
-                   << "] nl_cache_refill failed" << std::endl;
-    return;
-  }
-
-  obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
-  while (0 != obj) {
-    nl_object_get(obj);
-    int i = rtnl_link_get_ifindex((struct rtnl_link *)obj);
-    if (missing_links.find(i) != missing_links.end()) {
-      rtlinks.add_link(crtlink((struct rtnl_link *)obj));
-      missing_links.erase(i);
-    }
-    nl_object_put(obj);
-    obj = nl_cache_get_next(obj);
-  }
-
-  if (missing_links.size()) {
-    // reschedule
-    check_links = true;
-    //		rofl::ciosrv::notify(rofl::cevent(EVENT_UPDATE_LINKS));
-    logging::info << __FUNCTION__ << ": still some links missing" << std::endl;
-  }
-}
-
 void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
   if (fd == nl_cache_mngr_get_fd(mngr)) {
     int rv = nl_cache_mngr_data_ready(mngr);
     logging::debug << "cnetlink #processed=" << rv << std::endl;
   }
-
-  // reregister fd
-  // register_filedesc_r(nl_cache_mngr_get_fd(mngr));
 }
 
 void cnetlink::handle_write_event(rofl::cthread &thread, int fd) {
   logging::info << "cnetlink write ready on fd=" << fd << std::endl;
-}
-
-void cnetlink::update_link_cache(unsigned int ifindex) {
-  logging::notice << __FUNCTION__ << "(): missing ifindex=" << ifindex
-                  << std::endl;
-  missing_links.insert(ifindex);
-
-  if (not check_links) {
-    check_links = true;
-    // rofl::ciosrv::notify(rofl::cevent(EVENT_UPDATE_LINKS));
-  }
 }
 
 /* static C-callback */
@@ -712,21 +632,21 @@ void cnetlink::notify_link_created(unsigned int ifindex) {
        it != observers.end(); ++it) {
     (*it)->link_created(ifindex);
   }
-};
+}
 
 void cnetlink::notify_link_updated(const crtlink &newlink) {
   for (std::set<cnetlink_common_observer *>::iterator it = observers.begin();
        it != observers.end(); ++it) {
     (*it)->link_updated(newlink);
   }
-};
+}
 
 void cnetlink::notify_link_deleted(unsigned int ifindex) {
   for (std::set<cnetlink_common_observer *>::iterator it = observers.begin();
        it != observers.end(); ++it) {
     (*it)->link_deleted(ifindex);
   }
-};
+}
 
 void cnetlink::notify_addr_in4_created(unsigned int ifindex,
                                        unsigned int adindex) {
@@ -741,7 +661,7 @@ void cnetlink::notify_addr_in4_created(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->addr_in4_created(ifindex, adindex);
   }
-};
+}
 
 void cnetlink::notify_addr_in6_created(unsigned int ifindex,
                                        unsigned int adindex) {
@@ -749,7 +669,7 @@ void cnetlink::notify_addr_in6_created(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->addr_in6_created(ifindex, adindex);
   }
-};
+}
 
 void cnetlink::notify_addr_in4_updated(unsigned int ifindex,
                                        unsigned int adindex) {
@@ -764,7 +684,7 @@ void cnetlink::notify_addr_in4_updated(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->addr_in4_updated(ifindex, adindex);
   }
-};
+}
 
 void cnetlink::notify_addr_in6_updated(unsigned int ifindex,
                                        unsigned int adindex) {
@@ -772,7 +692,7 @@ void cnetlink::notify_addr_in6_updated(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->addr_in6_updated(ifindex, adindex);
   }
-};
+}
 
 void cnetlink::notify_addr_in4_deleted(unsigned int ifindex,
                                        unsigned int adindex) {
@@ -787,7 +707,7 @@ void cnetlink::notify_addr_in4_deleted(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->addr_in4_deleted(ifindex, adindex);
   }
-};
+}
 
 void cnetlink::notify_addr_in6_deleted(unsigned int ifindex,
                                        unsigned int adindex) {
@@ -795,7 +715,7 @@ void cnetlink::notify_addr_in6_deleted(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->addr_in6_deleted(ifindex, adindex);
   }
-};
+}
 
 void cnetlink::notify_neigh_ll_created(unsigned int ifindex,
                                        unsigned int nbindex) {
@@ -812,14 +732,7 @@ void cnetlink::notify_neigh_ll_created(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->neigh_ll_created(ifindex, nbindex);
   }
-
-  for (std::set<cnetlink_neighbour_observer *>::iterator it =
-           nbobservers_ll[ifindex][dst].begin();
-       it != nbobservers_ll[ifindex][dst].end(); ++it) {
-
-    (*it)->neigh_ll_created(ifindex, nbindex);
-  }
-};
+}
 
 void cnetlink::notify_neigh_in4_created(unsigned int ifindex,
                                         unsigned int nbindex) {
@@ -837,14 +750,7 @@ void cnetlink::notify_neigh_in4_created(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->neigh_in4_created(ifindex, nbindex);
   }
-
-  for (std::set<cnetlink_neighbour_observer *>::iterator it =
-           nbobservers_in4[ifindex][dst].begin();
-       it != nbobservers_in4[ifindex][dst].end(); ++it) {
-
-    (*it)->neigh_in4_created(ifindex, nbindex);
-  }
-};
+}
 
 void cnetlink::notify_neigh_in6_created(unsigned int ifindex,
                                         unsigned int nbindex) {
@@ -855,13 +761,7 @@ void cnetlink::notify_neigh_in6_created(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->neigh_in6_created(ifindex, nbindex);
   }
-
-  for (std::set<cnetlink_neighbour_observer *>::iterator it =
-           nbobservers_in6[ifindex][dst].begin();
-       it != nbobservers_in6[ifindex][dst].end(); ++it) {
-    (*it)->neigh_in6_created(ifindex, nbindex);
-  }
-};
+}
 
 void cnetlink::notify_neigh_ll_updated(unsigned int ifindex,
                                        unsigned int nbindex) {
@@ -878,13 +778,7 @@ void cnetlink::notify_neigh_ll_updated(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->neigh_ll_updated(ifindex, nbindex);
   }
-
-  for (std::set<cnetlink_neighbour_observer *>::iterator it =
-           nbobservers_ll[ifindex][dst].begin();
-       it != nbobservers_ll[ifindex][dst].end(); ++it) {
-    (*it)->neigh_ll_updated(ifindex, nbindex);
-  }
-};
+}
 
 void cnetlink::notify_neigh_in4_updated(unsigned int ifindex,
                                         unsigned int nbindex) {
@@ -902,13 +796,7 @@ void cnetlink::notify_neigh_in4_updated(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->neigh_in4_updated(ifindex, nbindex);
   }
-
-  for (std::set<cnetlink_neighbour_observer *>::iterator it =
-           nbobservers_in4[ifindex][dst].begin();
-       it != nbobservers_in4[ifindex][dst].end(); ++it) {
-    (*it)->neigh_in4_updated(ifindex, nbindex);
-  }
-};
+}
 
 void cnetlink::notify_neigh_in6_updated(unsigned int ifindex,
                                         unsigned int nbindex) {
@@ -919,13 +807,7 @@ void cnetlink::notify_neigh_in6_updated(unsigned int ifindex,
        it != observers.end(); ++it) {
     (*it)->neigh_in6_updated(ifindex, nbindex);
   }
-
-  for (std::set<cnetlink_neighbour_observer *>::iterator it =
-           nbobservers_in6[ifindex][dst].begin();
-       it != nbobservers_in6[ifindex][dst].end(); ++it) {
-    (*it)->neigh_in6_updated(ifindex, nbindex);
-  }
-};
+}
 
 void cnetlink::notify_neigh_ll_deleted(unsigned int ifindex,
                                        unsigned int nbindex) {
@@ -944,15 +826,7 @@ void cnetlink::notify_neigh_ll_deleted(unsigned int ifindex,
        it != obs.end(); ++it) {
     (*it)->neigh_ll_deleted(ifindex, nbindex);
   }
-
-  // make local copy of set
-  std::set<cnetlink_neighbour_observer *> nbobs_ll(
-      nbobservers_ll[ifindex][dst]);
-  for (std::set<cnetlink_neighbour_observer *>::iterator it = nbobs_ll.begin();
-       it != nbobs_ll.end(); ++it) {
-    (*it)->neigh_ll_deleted(ifindex, nbindex);
-  }
-};
+}
 
 void cnetlink::notify_neigh_in4_deleted(unsigned int ifindex,
                                         unsigned int nbindex) {
@@ -972,15 +846,7 @@ void cnetlink::notify_neigh_in4_deleted(unsigned int ifindex,
        it != obs.end(); ++it) {
     (*it)->neigh_in4_deleted(ifindex, nbindex);
   }
-
-  // make local copy of set
-  std::set<cnetlink_neighbour_observer *> nbobs_in4(
-      nbobservers_in4[ifindex][dst]);
-  for (std::set<cnetlink_neighbour_observer *>::iterator it = nbobs_in4.begin();
-       it != nbobs_in4.end(); ++it) {
-    (*it)->neigh_in4_deleted(ifindex, nbindex);
-  }
-};
+}
 
 void cnetlink::notify_neigh_in6_deleted(unsigned int ifindex,
                                         unsigned int nbindex) {
@@ -993,15 +859,7 @@ void cnetlink::notify_neigh_in6_deleted(unsigned int ifindex,
        it != obs.end(); ++it) {
     (*it)->neigh_in6_deleted(ifindex, nbindex);
   }
-
-  // make local copy of set
-  std::set<cnetlink_neighbour_observer *> nbobs_in6(
-      nbobservers_in6[ifindex][dst]);
-  for (std::set<cnetlink_neighbour_observer *>::iterator it = nbobs_in6.begin();
-       it != nbobs_in6.end(); ++it) {
-    (*it)->neigh_in6_deleted(ifindex, nbindex);
-  }
-};
+}
 
 void cnetlink::notify_route_in4_created(uint8_t table_id,
                                         unsigned int adindex) {
@@ -1009,7 +867,7 @@ void cnetlink::notify_route_in4_created(uint8_t table_id,
        it != observers.end(); ++it) {
     (*it)->route_in4_created(table_id, adindex);
   }
-};
+}
 
 void cnetlink::notify_route_in6_created(uint8_t table_id,
                                         unsigned int adindex) {
@@ -1017,7 +875,7 @@ void cnetlink::notify_route_in6_created(uint8_t table_id,
        it != observers.end(); ++it) {
     (*it)->route_in6_created(table_id, adindex);
   }
-};
+}
 
 void cnetlink::notify_route_in4_updated(uint8_t table_id,
                                         unsigned int adindex) {
@@ -1025,7 +883,7 @@ void cnetlink::notify_route_in4_updated(uint8_t table_id,
        it != observers.end(); ++it) {
     (*it)->route_in4_updated(table_id, adindex);
   }
-};
+}
 
 void cnetlink::notify_route_in6_updated(uint8_t table_id,
                                         unsigned int adindex) {
@@ -1033,7 +891,7 @@ void cnetlink::notify_route_in6_updated(uint8_t table_id,
        it != observers.end(); ++it) {
     (*it)->route_in6_updated(table_id, adindex);
   }
-};
+}
 
 void cnetlink::notify_route_in4_deleted(uint8_t table_id,
                                         unsigned int adindex) {
@@ -1041,7 +899,7 @@ void cnetlink::notify_route_in4_deleted(uint8_t table_id,
        it != observers.end(); ++it) {
     (*it)->route_in4_deleted(table_id, adindex);
   }
-};
+}
 
 void cnetlink::notify_route_in6_deleted(uint8_t table_id,
                                         unsigned int adindex) {
@@ -1049,7 +907,7 @@ void cnetlink::notify_route_in6_deleted(uint8_t table_id,
        it != observers.end(); ++it) {
     (*it)->route_in6_deleted(table_id, adindex);
   }
-};
+}
 
 void cnetlink::add_neigh_ll(int ifindex, uint16_t vlan,
                             const rofl::caddress_ll &addr) {
@@ -1174,7 +1032,7 @@ void cnetlink::add_addr_in4(int ifindex, const rofl::caddress_in4 &laddr,
   rtnl_addr_put(addr);
   nl_close(sk);
   nl_socket_free(sk);
-};
+}
 
 void cnetlink::drop_addr_in4(int ifindex, const rofl::caddress_in4 &laddr,
                              int prefixlen) {
@@ -1217,7 +1075,7 @@ void cnetlink::drop_addr_in4(int ifindex, const rofl::caddress_in4 &laddr,
   rtnl_addr_put(addr);
   nl_close(sk);
   nl_socket_free(sk);
-};
+}
 
 void cnetlink::add_addr_in6(int ifindex, const rofl::caddress_in6 &laddr,
                             int prefixlen) {
@@ -1260,7 +1118,7 @@ void cnetlink::add_addr_in6(int ifindex, const rofl::caddress_in6 &laddr,
   rtnl_addr_put(addr);
   nl_close(sk);
   nl_socket_free(sk);
-};
+}
 
 void cnetlink::drop_addr_in6(int ifindex, const rofl::caddress_in6 &laddr,
                              int prefixlen) {
@@ -1303,4 +1161,4 @@ void cnetlink::drop_addr_in6(int ifindex, const rofl::caddress_in6 &laddr,
   rtnl_addr_put(addr);
   nl_close(sk);
   nl_socket_free(sk);
-};
+}

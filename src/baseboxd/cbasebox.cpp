@@ -196,7 +196,10 @@ int cbasebox::run(int argc, char **argv) {
 #endif
 
 #ifdef OF_DPA
-// FIXME basic init
+  // basic init
+
+  // start netlink
+  (void)rofcore::cnetlink::get_instance();
 #else
   /*
    * enable all cores by default

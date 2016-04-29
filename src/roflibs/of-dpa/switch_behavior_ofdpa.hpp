@@ -9,6 +9,7 @@
 
 #include "roflibs/netlink/cnetdev.hpp"
 #include "roflibs/netlink/cnetlink.hpp"
+#include "roflibs/netlink/cnetlink_observer.hpp"
 #include "roflibs/netlink/ctapdev.hpp"
 #include "roflibs/netlink/ctundev.hpp"
 
@@ -36,7 +37,7 @@ public:
 
 class switch_behavior_ofdpa : public switch_behavior,
                               public rofcore::cnetdev_owner,
-                              public rofcore::cnetlink_common_observer {
+                              public rofcore::auto_reg_cnetlink_common_observer {
 public:
   switch_behavior_ofdpa(rofl::crofdpt &dpt);
 
