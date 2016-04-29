@@ -69,13 +69,11 @@ install -p -D -m 0644 pkg/systemd/sysconfig.template \
 %postun
 %systemd_postun
 
-
 %files
 %{_sbindir}/baseboxd
 %{_libdir}/libroflibs*.so.*
 %{_unitdir}/baseboxd.service
-%{_sysconfdir}/sysconfig/baseboxd
-
+%config(noreplace) %{_sysconfdir}/sysconfig/baseboxd
 %doc README.md
 
 
