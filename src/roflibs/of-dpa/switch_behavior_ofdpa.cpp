@@ -455,6 +455,11 @@ void switch_behavior_ofdpa::neigh_ll_deleted(unsigned int ifindex,
 
   if (bridge.has_bridge_interface()) {
     try {
+      if (rtn.get_lladdr() == rtl.get_hwaddr()) {
+        logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+                      << "]: ignore master lladdr" << std::endl;
+        return;
+      }
       // XXX get dpt using cdptid
       bridge.remove_mac_from_fdb(
           dpt.get_ports().get_port(rtl.get_devname()).get_port_no(),
