@@ -255,3 +255,27 @@ void cbasebox::handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
       << "[cbasebox][handle_port_desc_stats_reply_timeout] dpid: "
       << dpt.get_dpid().str() << std::endl;
 }
+
+void cbasebox::handle_experimenter_message(
+    rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+    rofl::openflow::cofmsg_experimenter &msg) {
+  uint32_t experimenterId = msg.get_exp_id();
+  uint32_t experimenterType = msg.get_exp_type();
+
+  rofcore::logging::info << "[cbasebox][" << __FUNCTION__
+                         << "] Experimenter Message received" << std::endl
+                         << "Experimenter OUI: 0x" << std::hex << experimenterId
+                         << std::dec << std::endl
+                         << "Message Type: 0x" << std::hex << experimenterType
+                         << std::dec << std::endl;
+
+  if (experimenterId == cbasebox::BISDN) {
+    switch (experimenterType) {
+    case cbasebox::QUERY_FLOW_ENTRIES:
+
+      /// TODO
+
+      break;
+    }
+  }
+}
