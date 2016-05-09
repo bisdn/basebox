@@ -40,6 +40,8 @@ private:
                     const rtnl_link_bridge_vlan *old_br_vlan,
                     const rtnl_link_bridge_vlan *new_br_vlan);
 
+  bool ingress_vlan_filtered;
+  bool egress_vlan_filtered;
   rofcore::crtlink bridge;
   rofl::rofl_ofdpa_fm_driver &fm_driver; // todo use shared pointer?
 
