@@ -261,13 +261,18 @@ void cbasebox::handle_experimenter_message(
     rofl::openflow::cofmsg_experimenter &msg) {
   uint32_t experimenterId = msg.get_exp_id();
   uint32_t experimenterType = msg.get_exp_type();
+  uint32_t xidExperimenterCAR = msg.get_xid();
 
-  rofcore::logging::info << "[cbasebox][" << __FUNCTION__
+  rofcore::logging::info << std::endl
+                         << "[cbasebox][" << __FUNCTION__
                          << "] Experimenter Message received" << std::endl
                          << "Experimenter OUI: 0x" << std::hex << experimenterId
                          << std::dec << std::endl
                          << "Message Type: 0x" << std::hex << experimenterType
-                         << std::dec << std::endl;
+                         << std::dec << std::endl
+                         << std::endl;
+
+  dpt.send_experimenter_message(auxid,xidExperimenterCAR,experimenterId, cbasebox::ExperimenterMessageType::RECEIVED_FLOW_ENTRIES_QUERY);
 
   if (experimenterId == cbasebox::BISDN) {
     switch (experimenterType) {
