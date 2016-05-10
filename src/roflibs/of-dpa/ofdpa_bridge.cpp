@@ -214,6 +214,8 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
           // #endif
         } else {
           // vlan removed
+          logging::error << __PRETTY_FUNCTION__
+                         << ": vlan removal not implemented" << std::endl;
         }
 
         i = j;
