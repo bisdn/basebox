@@ -754,9 +754,6 @@ void cnetlink::notify_neigh_in4_created(unsigned int ifindex,
 
 void cnetlink::notify_neigh_in6_created(unsigned int ifindex,
                                         unsigned int nbindex) {
-  const rofl::caddress_in6 &dst =
-      neighs_in6[ifindex].get_neigh(nbindex).get_dst();
-
   for (std::set<cnetlink_common_observer *>::iterator it = observers.begin();
        it != observers.end(); ++it) {
     (*it)->neigh_in6_created(ifindex, nbindex);
@@ -800,9 +797,6 @@ void cnetlink::notify_neigh_in4_updated(unsigned int ifindex,
 
 void cnetlink::notify_neigh_in6_updated(unsigned int ifindex,
                                         unsigned int nbindex) {
-  const rofl::caddress_in6 &dst =
-      neighs_in6[ifindex].get_neigh(nbindex).get_dst();
-
   for (std::set<cnetlink_common_observer *>::iterator it = observers.begin();
        it != observers.end(); ++it) {
     (*it)->neigh_in6_updated(ifindex, nbindex);
@@ -850,9 +844,6 @@ void cnetlink::notify_neigh_in4_deleted(unsigned int ifindex,
 
 void cnetlink::notify_neigh_in6_deleted(unsigned int ifindex,
                                         unsigned int nbindex) {
-  const rofl::caddress_in6 &dst =
-      neighs_in6[ifindex].get_neigh(nbindex).get_dst();
-
   // make local copy of set
   std::set<cnetlink_common_observer *> obs(observers);
   for (std::set<cnetlink_common_observer *>::iterator it = obs.begin();
