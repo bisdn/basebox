@@ -221,11 +221,18 @@ void cnetlink::route_link_cb(struct nl_cache *cache, struct nl_object *obj,
       }
     } break;
     case NL_ACT_CHANGE: {
-      cnetlink::get_instance().notify_link_updated(rtlink);
-      cnetlink::get_instance().set_links().set_link(rtlink);
-      logging::debug
-          << cnetlink::get_instance().get_links().get_link(ifindex).str()
-          << std::endl;
+      switch(rtlink.get_family()) {
+      case AF_UNSPEC:
+        logging::info << "ignore AF_UNSPEC change:" << rtlink;
+        break;
+      default:
+        cnetlink::get_instance().notify_link_updated(rtlink);
+        cnetlink::get_instance().set_links().set_link(rtlink);
+        logging::debug
+            << cnetlink::get_instance().get_links().get_link(ifindex).str()
+            << std::endl;
+        break;
+      }
     } break;
     case NL_ACT_DEL: {
       // xxx check if this has to be handled like new
