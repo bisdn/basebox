@@ -153,18 +153,18 @@ protected:
                                                     uint32_t xid);
 
   enum ExperimenterMessageType {
-      QUERY_FLOW_ENTRIES, ///< query flow entries from controller
-      RECEIVED_FLOW_ENTRIES_QUERY
-    };
+    QUERY_FLOW_ENTRIES, ///< query flow entries from controller
+    RECEIVED_FLOW_ENTRIES_QUERY
+  };
 
-    enum ExperimenterId {
-      BISDN = 0xFF0000B0 ///< should be registered as ONF-Managed Experimenter ID
-                         ///(OUI)
-    };
+  enum ExperimenterId {
+    BISDN = 0xFF0000B0 ///< should be registered as ONF-Managed Experimenter ID
+                       ///(OUI)
+  };
 
-    virtual void
-    handle_experimenter_message(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
-                                rofl::openflow::cofmsg_experimenter &msg);
+  virtual void
+  handle_experimenter_message(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                              rofl::openflow::cofmsg_experimenter &msg);
 
 public:
   friend std::ostream &operator<<(std::ostream &os, const cbasebox &box) {
