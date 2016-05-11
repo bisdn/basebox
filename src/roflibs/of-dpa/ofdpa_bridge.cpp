@@ -173,32 +173,36 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
         if (new_br_vlan->vlan_bitmap[k] & 1 << (j - 1)) {
           // vlan added
 
-          try {
-            uint32_t group =
-                fm_driver.enable_port_vid_egress(devname, vid, egress_untagged);
-            assert(group && "invalid group identifier");
-            if (rofl::openflow::OFPG_MAX == group) {
+          if (egress_vlan_filtered) {
+            try {
+              uint32_t group = fm_driver.enable_port_vid_egress(
+                  devname, vid, egress_untagged);
+              assert(group && "invalid group identifier");
+              if (rofl::openflow::OFPG_MAX == group) {
+                logging::error << __PRETTY_FUNCTION__
+                               << " failed to set vid on egress " << std::endl;
+                i = j;
+                continue;
+              }
+              l2_domain[vid].push_back(group);
+            } catch (std::exception &e) {
               logging::error << __PRETTY_FUNCTION__
-                             << " failed to set vid on egress " << std::endl;
-              i = j;
-              continue;
+                             << " caught error1:" << e.what() << std::endl;
             }
-            l2_domain[vid].push_back(group);
-          } catch (std::exception &e) {
-            logging::error << __PRETTY_FUNCTION__
-                           << " caught error1:" << e.what() << std::endl;
           }
 
-          try {
-            if (new_br_vlan->pvid == vid) {
-              // todo check for existing pvid?
-              fm_driver.enable_port_pvid_ingress(devname, vid);
-            } else {
-              fm_driver.enable_port_vid_ingress(devname, vid);
+          if (ingress_vlan_filtered) {
+            try {
+              if (new_br_vlan->pvid == vid) {
+                // todo check for existing pvid?
+                fm_driver.enable_port_pvid_ingress(devname, vid);
+              } else {
+                fm_driver.enable_port_vid_ingress(devname, vid);
+              }
+            } catch (std::exception &e) {
+              logging::error << __PRETTY_FUNCTION__
+                             << " caught error2:" << e.what() << std::endl;
             }
-          } catch (std::exception &e) {
-            logging::error << __PRETTY_FUNCTION__
-                           << " caught error2:" << e.what() << std::endl;
           }
 
           // todo check if vid is okay as an id as well
@@ -289,6 +293,11 @@ void ofdpa_bridge::update_interface(const rofcore::crtlink &oldlink,
     logging::info << __PRETTY_FUNCTION__
                   << " interface rename currently ignored " << std::endl;
     // FIXME this has to be handled differently
+    return;
+  }
+
+  // handle VLANs
+  if (not ingress_vlan_filtered && not egress_vlan_filtered) {
     return;
   }
 
