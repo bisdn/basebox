@@ -221,7 +221,7 @@ void cnetlink::route_link_cb(struct nl_cache *cache, struct nl_object *obj,
       }
     } break;
     case NL_ACT_CHANGE: {
-      switch(rtlink.get_family()) {
+      switch (rtlink.get_family()) {
       case AF_UNSPEC:
         logging::info << "ignore AF_UNSPEC change:" << rtlink;
         break;
