@@ -216,10 +216,31 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
           //   fm_driver.enable_policy_arp(vid, group);
           // }
           // #endif
+
         } else {
           // vlan removed
-          logging::error << __PRETTY_FUNCTION__
-                         << ": vlan removal not implemented" << std::endl;
+
+          if (ingress_vlan_filtered) {
+            try {
+              if (old_br_vlan->pvid == vid) {
+                fm_driver.disable_port_pvid_ingress(devname, vid);
+              } else {
+                fm_driver.disable_port_vid_ingress(devname, vid);
+              }
+            } catch (std::exception &e) {
+              logging::error << __PRETTY_FUNCTION__
+                             << " caught error3:" << e.what() << std::endl;
+            }
+          }
+
+          if (egress_vlan_filtered) {
+            try {
+              // XXX delete egress group
+            } catch (std::exception &e) {
+              logging::error << __PRETTY_FUNCTION__
+                             << " caught error4:" << e.what() << std::endl;
+            }
+          }
         }
 
         i = j;
