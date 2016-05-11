@@ -235,7 +235,16 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
 
           if (egress_vlan_filtered) {
             try {
-              // XXX delete egress group
+              uint32_t group = fm_driver.disable_port_vid_egress(
+                  devname, vid, egress_untagged);
+              assert(group && "invalid group identifier");
+              if (rofl::openflow::OFPG_MAX == group) {
+                logging::error << __PRETTY_FUNCTION__
+                               << " failed to remove vid on egress " << std::endl;
+                i = j;
+                continue;
+              }
+              l2_domain[vid].remove(group);
             } catch (std::exception &e) {
               logging::error << __PRETTY_FUNCTION__
                              << " caught error4:" << e.what() << std::endl;
