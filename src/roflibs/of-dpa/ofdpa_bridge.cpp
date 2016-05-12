@@ -236,7 +236,10 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
 
           if (egress_vlan_filtered) {
             try {
-              // XXX delete all FM pointing to this group first
+              // delete all FM pointing to this group first
+              fm_driver.remove_bridging_unicast_vlan_all(devname, vid);
+              // make sure they are deleted
+              fm_driver.send_barrier();
               uint32_t group = fm_driver.disable_port_vid_egress(
                   devname, vid, egress_untagged);
               assert(group && "invalid group identifier");
