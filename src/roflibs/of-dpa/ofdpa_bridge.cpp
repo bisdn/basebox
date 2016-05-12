@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <map>
+#include <cstring>
 
 #include <rofl/common/openflow/cofport.h>
 
@@ -340,13 +341,51 @@ void ofdpa_bridge::update_interface(const rofcore::crtlink &oldlink,
 }
 
 void ofdpa_bridge::delete_interface(const rofcore::crtlink &rtl) {
-  // XXX update L2 Multicast Group
+  using rofcore::crtlink;
+  using rofcore::logging;
 
-  // get group id
+  // sanity checks
+  if (0 == bridge.get_ifindex()) {
+    logging::error << __PRETTY_FUNCTION__
+                   << " cannot attach interface without bridge: " << rtl
+                   << std::endl;
+    return;
+  }
+  if (AF_BRIDGE != rtl.get_family()) {
+    logging::error << __PRETTY_FUNCTION__ << rtl
+                   << " is not a bridge interface " << std::endl;
+    return;
+  }
+  if (bridge.get_ifindex() != rtl.get_master()) {
+    logging::error << __PRETTY_FUNCTION__ << rtl
+                   << " is not a slave of this bridge interface " << std::endl;
+    return;
+  }
 
-  // remove id from l2_domain
+  if (not ingress_vlan_filtered) {
+    // ingress
+    fm_driver.disable_port_vid_allow_all(rtl.get_devname());
+  }
 
-  // update enable_group_l2_multicast
+  if (not egress_vlan_filtered) {
+    // egress
+    uint32_t group =
+        fm_driver.disable_port_unfiltered_egress(rtl.get_devname());
+    l2_domain[0].remove(group);
+  }
+
+  if (not ingress_vlan_filtered && not egress_vlan_filtered) {
+    return;
+  }
+
+  const struct rtnl_link_bridge_vlan *br_vlan = rtl.get_br_vlan();
+  struct rtnl_link_bridge_vlan br_vlan_empty;
+  memset(&br_vlan_empty, 0, sizeof(struct rtnl_link_bridge_vlan));
+
+  if (not crtlink::are_br_vlan_equal(br_vlan, &br_vlan_empty)) {
+    // vlan updated
+    update_vlans(rtl.get_devname(), br_vlan, &br_vlan_empty);
+  }
 }
 
 void ofdpa_bridge::add_mac_to_fdb(const uint32_t of_port_no,
