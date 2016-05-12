@@ -445,32 +445,40 @@ void switch_behavior_ofdpa::neigh_ll_deleted(unsigned int ifindex,
   using rofl::crofdpt;
   using rofcore::logging;
 
-  const crtlink &rtl = cnetlink::get_instance().get_links().get_link(ifindex);
-  const crtneigh &rtn =
-      cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
+  try {
+    const crtlink &rtl = cnetlink::get_instance().get_links().get_link(ifindex);
+    const crtneigh &rtn =
+        cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
 
-  logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
-                << "]: " << std::endl
-                << rtn;
-
-  if (bridge.has_bridge_interface()) {
-    try {
-      if (rtn.get_lladdr() == rtl.get_hwaddr()) {
-        logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
-                      << "]: ignore master lladdr" << std::endl;
-        return;
-      }
-      // XXX get dpt using cdptid
-      bridge.remove_mac_from_fdb(
-          dpt.get_ports().get_port(rtl.get_devname()).get_port_no(),
-          rtn.get_vlan(), rtn.get_lladdr());
-    } catch (rofl::openflow::ePortsNotFound &e) {
-      logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__
-                     << "]: invalid port:" << e.what() << std::endl;
-    }
-  } else {
     logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
-                  << "]: no bridge interface" << std::endl;
+                  << "]: " << std::endl
+                  << rtn;
+
+    if (bridge.has_bridge_interface()) {
+      try {
+        if (rtn.get_lladdr() == rtl.get_hwaddr()) {
+          logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+                        << "]: ignore master lladdr" << std::endl;
+          return;
+        }
+        // XXX get dpt using cdptid
+        bridge.remove_mac_from_fdb(
+            dpt.get_ports().get_port(rtl.get_devname()).get_port_no(),
+            rtn.get_vlan(), rtn.get_lladdr());
+      } catch (rofl::openflow::ePortsNotFound &e) {
+        logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__
+                       << "]: invalid port:" << e.what() << std::endl;
+      }
+    } else {
+      logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+                    << "]: no bridge interface" << std::endl;
+    }
+  } catch (crtlink::eRtLinkNotFound &e) {
+    logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__
+                   << "]: eRtLinkNotFound: " << e.what() << std::endl;
+  } catch (crtneigh::eRtNeighNotFound &e) {
+    logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__
+                   << "]: eRtNeighNotFound" << e.what() << std::endl;
   }
 }
 
