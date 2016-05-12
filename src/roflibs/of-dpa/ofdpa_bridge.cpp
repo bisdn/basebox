@@ -181,7 +181,7 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
               assert(group && "invalid group identifier");
               if (rofl::openflow::OFPG_MAX == group) {
                 logging::error << __PRETTY_FUNCTION__
-                               << " failed to set vid on egress " << std::endl;
+                               << " failed to set vid on egress" << std::endl;
                 i = j;
                 continue;
               }
@@ -236,12 +236,14 @@ void ofdpa_bridge::update_vlans(const std::string &devname,
 
           if (egress_vlan_filtered) {
             try {
+              // XXX delete all FM pointing to this group first
               uint32_t group = fm_driver.disable_port_vid_egress(
                   devname, vid, egress_untagged);
               assert(group && "invalid group identifier");
               if (rofl::openflow::OFPG_MAX == group) {
                 logging::error << __PRETTY_FUNCTION__
-                               << " failed to remove vid on egress " << std::endl;
+                               << " failed to remove vid on egress"
+                               << std::endl;
                 i = j;
                 continue;
               }
