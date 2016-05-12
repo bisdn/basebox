@@ -374,6 +374,10 @@ void ofdpa_bridge::delete_interface(const rofcore::crtlink &rtl) {
 
   if (not egress_vlan_filtered) {
     // egress
+    // delete all FM pointing to this group first
+    fm_driver.remove_bridging_unicast_vlan_all(rtl.get_devname(), -1);
+    // make sure they are deleted
+    fm_driver.send_barrier();
     uint32_t group =
         fm_driver.disable_port_unfiltered_egress(rtl.get_devname());
     l2_domain[0].remove(group);
