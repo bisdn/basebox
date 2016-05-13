@@ -224,7 +224,10 @@ void cnetlink::route_link_cb(struct nl_cache *cache, struct nl_object *obj,
       switch (rtlink.get_family()) {
       case AF_UNSPEC:
         logging::info << "ignore AF_UNSPEC change:" << rtlink;
-        break;
+        if (rtlink.get_master()) {
+          break; // ignore AF_UNSPEC changes for slaves
+        }
+        // fallthrough
       default:
         cnetlink::get_instance().notify_link_updated(rtlink);
         cnetlink::get_instance().set_links().set_link(rtlink);
