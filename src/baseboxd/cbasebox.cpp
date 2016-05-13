@@ -263,21 +263,19 @@ void cbasebox::handle_experimenter_message(
   uint32_t experimenterType = msg.get_exp_type();
   uint32_t xidExperimenterCAR = msg.get_xid();
 
-  rofcore::logging::info << std::endl
-                         << "[cbasebox][" << __FUNCTION__
-                         << "] Experimenter query message received" << std::endl
-                         << "Experimenter OUI: 0x" << std::hex << experimenterId
-                         << std::dec << std::endl
-                         << "Message Type: 0x" << std::hex << experimenterType
-                         << std::dec << std::endl
-                         << std::endl;
+  rofcore::logging::debug << "[cbasebox][" << __FUNCTION__
+                          << "] Experimenter query message received"
+                          << std::endl
+                          << "Experimenter OUI: 0x" << std::hex
+                          << experimenterId << std::dec << std::endl
+                          << "Message Type: 0x" << std::hex << experimenterType
+                          << std::dec << std::endl;
 
   dpt.send_experimenter_message(
       auxid, xidExperimenterCAR, experimenterId,
       cbasebox::ExperimenterMessageType::RECEIVED_FLOW_ENTRIES_QUERY);
 
-  rofcore::logging::info
-      << std::endl
+  rofcore::logging::debug
       << "[cbasebox][" << __FUNCTION__
       << "] Acknowledgment of Experimenter query message reception sent"
       << std::endl
@@ -285,8 +283,7 @@ void cbasebox::handle_experimenter_message(
       << std::endl
       << "Message Type: 0x" << std::hex
       << cbasebox::ExperimenterMessageType::RECEIVED_FLOW_ENTRIES_QUERY
-      << std::dec << std::endl
-      << std::endl;
+      << std::dec << std::endl;
 
   if (experimenterId == cbasebox::BISDN) {
     switch (experimenterType) {
