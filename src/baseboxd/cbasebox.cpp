@@ -259,39 +259,12 @@ void cbasebox::handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
 void cbasebox::handle_experimenter_message(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_experimenter &msg) {
-  uint32_t experimenterId = msg.get_exp_id();
-  uint32_t experimenterType = msg.get_exp_type();
-  uint32_t xidExperimenterCAR = msg.get_xid();
 
   rofcore::logging::debug << "[cbasebox][" << __FUNCTION__
-                          << "] Experimenter query message received"
-                          << std::endl
-                          << "Experimenter OUI: 0x" << std::hex
-                          << experimenterId << std::dec << std::endl
-                          << "Message Type: 0x" << std::hex << experimenterType
-                          << std::dec << std::endl;
-
-  dpt.send_experimenter_message(
-      auxid, xidExperimenterCAR, experimenterId,
-      cbasebox::ExperimenterMessageType::RECEIVED_FLOW_ENTRIES_QUERY);
-
-  rofcore::logging::debug
-      << "[cbasebox][" << __FUNCTION__
-      << "] Acknowledgment of Experimenter query message reception sent"
-      << std::endl
-      << "Experimenter OUI: 0x" << std::hex << experimenterId << std::dec
-      << std::endl
-      << "Message Type: 0x" << std::hex
-      << cbasebox::ExperimenterMessageType::RECEIVED_FLOW_ENTRIES_QUERY
-      << std::dec << std::endl;
-
-  if (experimenterId == cbasebox::BISDN) {
-    switch (experimenterType) {
-    case cbasebox::QUERY_FLOW_ENTRIES:
-
-      /// TODO
-
-      break;
-    }
+                          << "] dpid: " << dpt.get_dpid().str()
+                          << " pkt received: " << std::endl
+                          << msg;
+  if (sa) {
+    sa->handle_experimenter_message(dpt, auxid, msg);
   }
 }

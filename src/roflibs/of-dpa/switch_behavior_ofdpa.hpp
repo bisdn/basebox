@@ -39,6 +39,17 @@ class switch_behavior_ofdpa
     : public switch_behavior,
       public rofcore::cnetdev_owner,
       public rofcore::auto_reg_cnetlink_common_observer {
+
+  enum ExperimenterMessageType {
+    QUERY_FLOW_ENTRIES, ///< query flow entries from controller
+    RECEIVED_FLOW_ENTRIES_QUERY
+  };
+
+  enum ExperimenterId {
+    BISDN = 0xFF0000B0 ///< should be registered as ONF-Managed Experimenter ID
+                       ///(OUI)
+  };
+
 public:
   switch_behavior_ofdpa(rofl::crofdpt &dpt);
 
@@ -52,6 +63,10 @@ public:
   virtual void handle_flow_removed(rofl::crofdpt &dpt,
                                    const rofl::cauxid &auxid,
                                    rofl::openflow::cofmsg_flow_removed &msg);
+
+  virtual void
+  handle_experimenter_message(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                              rofl::openflow::cofmsg_experimenter &msg);
 
 private:
   std::map<rofl::cdptid, std::map<std::string, rofcore::ctapdev *>> devs;
@@ -70,6 +85,8 @@ private:
 
   void handle_bridging_table_rm(const rofl::crofdpt &dpt,
                                 rofl::openflow::cofmsg_flow_removed &msg);
+
+  void send_full_state(rofl::crofdpt &dpt);
 
   /**
    *

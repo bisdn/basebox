@@ -49,6 +49,12 @@ public:
     rofcore::logging::warn << __FUNCTION__ << ": unhandled" << std::endl;
   }
 
+  virtual void
+  handle_experimenter_message(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                              rofl::openflow::cofmsg_experimenter &msg) {
+    rofcore::logging::warn << __FUNCTION__ << ": unhandled" << std::endl;
+  }
+
   virtual int get_switch_type() { return -1; }
 
 protected:

@@ -152,16 +152,6 @@ protected:
   virtual void handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
                                                     uint32_t xid);
 
-  enum ExperimenterMessageType {
-    QUERY_FLOW_ENTRIES, ///< query flow entries from controller
-    RECEIVED_FLOW_ENTRIES_QUERY
-  };
-
-  enum ExperimenterId {
-    BISDN = 0xFF0000B0 ///< should be registered as ONF-Managed Experimenter ID
-                       ///(OUI)
-  };
-
   virtual void
   handle_experimenter_message(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                               rofl::openflow::cofmsg_experimenter &msg);
