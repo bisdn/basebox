@@ -152,6 +152,16 @@ public:
     return (not(rtneighs.find(nbindex) == rtneighs.end()));
   }
 
+  std::list<unsigned int>  keys() const {
+    std::list<unsigned int> keys;
+
+    for (const auto &i : rtneighs) {
+      keys.push_back(i.first);
+    }
+
+    return keys;
+  }
+
 public:
   friend std::ostream &operator<<(std::ostream &os,
                                   const crtneighs_ll &rtneighs) {

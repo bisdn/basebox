@@ -190,7 +190,7 @@ void switch_behavior_ofdpa::handle_experimenter_message(
   uint32_t experimenterType = msg.get_exp_type();
   uint32_t xidExperimenterCAR = msg.get_xid();
 
-  rofcore::logging::debug << "[cbasebox][" << __FUNCTION__
+  rofcore::logging::info << "[cbasebox][" << __FUNCTION__
                           << "] Experimenter query message received"
                           << std::endl
                           << "Experimenter OUI: 0x" << std::hex
@@ -201,7 +201,7 @@ void switch_behavior_ofdpa::handle_experimenter_message(
   dpt.send_experimenter_message(auxid, xidExperimenterCAR, experimenterId,
                                 RECEIVED_FLOW_ENTRIES_QUERY);
 
-  rofcore::logging::debug
+  rofcore::logging::info
       << "[cbasebox][" << __FUNCTION__
       << "] Acknowledgment of Experimenter query message reception sent"
       << std::endl
@@ -222,7 +222,17 @@ void switch_behavior_ofdpa::handle_experimenter_message(
 }
 
 void switch_behavior_ofdpa::send_full_state(rofl::crofdpt &dpt) {
+  using rofcore::cnetlink;
 
+  for (const auto &i : cnetlink::get_instance().get_links().keys()) {
+    link_created(i);
+  }
+
+  for (const auto &i : cnetlink::get_instance().neighs_ll) {
+    for (const auto &j : cnetlink::get_instance().neighs_ll[i.first].keys()) {
+      neigh_ll_created(i.first, j);
+    }
+  }
 }
 
 void switch_behavior_ofdpa::handle_bridging_table_rm(
@@ -451,6 +461,10 @@ void switch_behavior_ofdpa::neigh_ll_created(unsigned int ifindex,
         logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
                       << "]: ignore master lladdr" << std::endl;
         return;
+      } else {
+        logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+                      << "]: rtn=" << rtn.get_lladdr()
+                      << " parent=" << rtl.get_hwaddr() << std::endl;
       }
 
       // XXX get dpt using cdptid

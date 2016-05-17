@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <map>
+#include <list>
 
 #include <roflibs/netlink/crtlink.hpp>
 #include <roflibs/netlink/clogging.hpp>
@@ -172,7 +173,17 @@ public:
       return false;
     }
     return true;
-  };
+  }
+
+  std::list<unsigned int>  keys() const {
+    std::list<unsigned int> keys;
+
+    for (const auto &i : rtlinks) {
+      keys.push_back(i.first);
+    }
+
+    return keys;
+  }
 
 public:
   friend std::ostream &operator<<(std::ostream &os, const crtlinks &rtlinks) {
