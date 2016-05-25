@@ -3,7 +3,7 @@
 
 Name:          baseboxd
 Version:       @SPEC_VERSION@
-Release:       1%{?snapshotrel}%{?dist}
+Release:       %{?snapshotrel}%{?dist}
 Summary:       TODO
 
 License:       BISDN
