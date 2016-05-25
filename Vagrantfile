@@ -20,7 +20,8 @@ NAME = 'basebox'
 
 SALT = <<SCRIPT
 dnf -y update
-dnf -y install salt-minion git # we also need git to make salt succeed
+dnf -y --enablerepo updates-testing install salt-minion
+dnf -y install git # we also need git to make salt succeed
 salt-call --local --file-root /vagrant/salt/ state.sls build
 salt-call --local --file-root /vagrant/salt/ state.sls repos
 salt-call --local --file-root /vagrant/salt/ state.sls car-devel

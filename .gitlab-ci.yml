@@ -2,7 +2,8 @@ image: fedora:23
 
 before_script:
   - 'dnf -y update'
-  - 'dnf install -y salt-minion git'
+  - 'dnf install -y git'
+  - 'dnf install -y --enablerepo updates-testing salt-minion'
   - 'salt-call state.sls hosts --local --file-root ./salt/'
   - 'salt-call state.sls build --local --file-root ./salt/'
   - 'salt-call state.sls car-devel --local --file-root ./salt/'
