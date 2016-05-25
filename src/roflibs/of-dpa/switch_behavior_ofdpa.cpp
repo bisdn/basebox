@@ -191,12 +191,11 @@ void switch_behavior_ofdpa::handle_experimenter_message(
   uint32_t xidExperimenterCAR = msg.get_xid();
 
   rofcore::logging::info << "[cbasebox][" << __FUNCTION__
-                          << "] Experimenter query message received"
-                          << std::endl
-                          << "Experimenter OUI: 0x" << std::hex
-                          << experimenterId << std::dec << std::endl
-                          << "Message Type: 0x" << std::hex << experimenterType
-                          << std::dec << std::endl;
+                         << "] Experimenter query message received" << std::endl
+                         << "Experimenter OUI: 0x" << std::hex << experimenterId
+                         << std::dec << std::endl
+                         << "Message Type: 0x" << std::hex << experimenterType
+                         << std::dec << std::endl;
 
   dpt.send_experimenter_message(auxid, xidExperimenterCAR, experimenterId,
                                 RECEIVED_FLOW_ENTRIES_QUERY);

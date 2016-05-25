@@ -175,7 +175,7 @@ public:
     return true;
   }
 
-  std::list<unsigned int>  keys() const {
+  std::list<unsigned int> keys() const {
     std::list<unsigned int> keys;
 
     for (const auto &i : rtlinks) {
