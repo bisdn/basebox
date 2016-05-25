@@ -18,6 +18,8 @@ public:
 
   void set_bridge_interface(const rofcore::crtlink &rtl);
 
+  void apply_default_rules();
+
   const rofcore::crtlink &get_bridge_interface() const { return bridge; }
 
   bool has_bridge_interface() const { return 0 != bridge.get_ifindex(); }

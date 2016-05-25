@@ -214,6 +214,7 @@ void switch_behavior_ofdpa::handle_experimenter_message(
     switch (experimenterType) {
     case QUERY_FLOW_ENTRIES:
 
+      bridge.apply_default_rules();
       send_full_state(dpt);
 
       break;
@@ -382,6 +383,7 @@ void switch_behavior_ofdpa::link_created(unsigned int ifindex) {
         bridge.set_bridge_interface(
             rofcore::cnetlink::get_instance().get_links().get_link(
                 rtl.get_master()));
+        bridge.apply_default_rules();
       }
 
       bridge.add_interface(rtl);

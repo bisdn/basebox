@@ -24,6 +24,17 @@ void ofdpa_bridge::set_bridge_interface(const rofcore::crtlink &rtl) {
   }
 
   this->bridge = rtl;
+}
+
+void ofdpa_bridge::apply_default_rules() {
+  using rofcore::logging;
+
+  if (0 == bridge.get_ifindex()) {
+    logging::error << __PRETTY_FUNCTION__ << " no bridge interface set"
+                   << std::endl;
+    return;
+  }
+
   fm_driver.enable_policy_arp(1, 1);
 }
 
