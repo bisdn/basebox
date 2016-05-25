@@ -83,10 +83,10 @@ PKG_CHECK_MODULES([ROFL], rofl_common >= 0.10.7,
 	LIBS+="$ROFL_LIBS" ],
   [ AC_MSG_ERROR([minimum version of rofl_common is 0.10.7]) ])
 
-PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.3,
+PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa > 0.4,
   [ CPPFLAGS+="$ROFL_OFDPA_CFLAGS"
 	LIBS+="$ROFL_OFDPA_LIBS" ],
-  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.3]) ])
+  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.4]) ])
 
 # todo: add http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx_11.html
 CXXFLAGS="$CXXFLAGS -std=c++11"
