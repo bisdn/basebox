@@ -214,7 +214,9 @@ void cbasebox::handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                           << " pkt received: " << std::endl
                           << msg;
 
-  // FIXME handle port status
+  if (sa) {
+    sa->handle_port_status(dpt, auxid, msg);
+  }
 }
 
 void cbasebox::handle_error_message(rofl::crofdpt &dpt,
