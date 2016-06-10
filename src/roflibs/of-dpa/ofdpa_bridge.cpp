@@ -37,6 +37,7 @@ void ofdpa_bridge::apply_default_rules() {
 
   fm_driver.enable_policy_arp(1, 1);
   fm_driver.enable_policy_dhcp();
+  fm_driver.enable_policy_vrrp();
 }
 
 static int find_next_bit(int i, uint32_t x) {
