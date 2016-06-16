@@ -136,22 +136,26 @@ void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
 
 void cbasebox::handle_conn_terminated(rofl::crofdpt &dpt,
                                       const rofl::cauxid &auxid) {
-  assert(0);
+  rofcore::logging::crit << "[cbasebox][" << __FUNCTION__
+                         << "]: XXX not implemented" << std::endl;
 }
 
 void cbasebox::handle_conn_refused(rofl::crofdpt &dpt,
                                    const rofl::cauxid &auxid) {
-  assert(0);
+  rofcore::logging::crit << "[cbasebox][" << __FUNCTION__
+                         << "]: XXX not implemented" << std::endl;
 }
 
 void cbasebox::handle_conn_failed(rofl::crofdpt &dpt,
                                   const rofl::cauxid &auxid) {
-  assert(0);
+  rofcore::logging::crit << "[cbasebox][" << __FUNCTION__
+                         << "]: XXX not implemented" << std::endl;
 }
 
 void cbasebox::handle_conn_negotiation_failed(rofl::crofdpt &dpt,
                                               const rofl::cauxid &auxid) {
-  assert(0);
+  rofcore::logging::crit << "[cbasebox][" << __FUNCTION__
+                         << "]: XXX not implemented" << std::endl;
 }
 
 void cbasebox::handle_conn_congestion_occured(rofl::crofdpt &dpt,
