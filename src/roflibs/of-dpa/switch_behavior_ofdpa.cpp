@@ -22,7 +22,6 @@ switch_behavior_ofdpa::switch_behavior_ofdpa(rofl::crofdpt &dpt)
   rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__
                           << "] dpt: " << std::endl
                           << dpt;
-  init_ports();
 }
 
 switch_behavior_ofdpa::~switch_behavior_ofdpa() {

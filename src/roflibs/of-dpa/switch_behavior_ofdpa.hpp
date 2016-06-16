@@ -55,6 +55,8 @@ public:
 
   virtual ~switch_behavior_ofdpa();
 
+  virtual void init() { init_ports(); }
+
   virtual int get_switch_type() { return 1; }
 
   virtual void handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,

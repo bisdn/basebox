@@ -57,6 +57,10 @@ public:
 
   virtual int get_switch_type() { return -1; }
 
+  virtual void init() {
+    rofcore::logging::warn << __FUNCTION__ << ": unhandled" << std::endl;
+  }
+
 protected:
   const rofl::cdptid &dptid;
 

@@ -248,6 +248,8 @@ void cbasebox::handle_port_desc_stats_reply(
   /* init behavior */ // todo behavior based on features/descs/stats
   switch_behavior *tmp = this->sa;
   this->sa = switch_behavior_fabric::get_behavior(1, dpt);
+  assert(this->sa);
+  this->sa->init();
 
   if (tmp) {
     delete tmp;
