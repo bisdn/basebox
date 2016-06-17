@@ -59,7 +59,7 @@ void ctapdev::tap_open(std::string const &devname,
                                "IFF_NO_PI on /dev/net/tun failed");
     }
 
-    set_hwaddr(hwaddr);
+    // set_hwaddr(hwaddr);
 
     enable_interface();
 
