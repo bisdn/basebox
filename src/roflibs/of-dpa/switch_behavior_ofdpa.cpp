@@ -55,6 +55,7 @@ void switch_behavior_ofdpa::init_ports() {
                     port.get_hwaddr()); // todo remove pvid from tapdev
       }
     }
+    logging::info << "ports initialized" << std::endl;
 
   } catch (rofl::eRofDptNotFound &e) {
     logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__
@@ -132,31 +133,26 @@ void switch_behavior_ofdpa::handle_srcmac_table(
 void switch_behavior_ofdpa::handle_acl_policy_table(
     const rofl::crofdpt &dpt, rofl::openflow::cofmsg_packet_in &msg) {
   using rofl::openflow::cofport;
+  using rofcore::logging;
 
-// fixme check for reason (ACTION)
+  try {
+    const cofport &port =
+        dpt.get_ports().get_port(msg.get_match().get_in_port());
+    rofcore::ctapdev &dev = set_tap_dev(dpt.get_dptid(), port.get_name());
 
-#if 0 // xxx enable?
-  struct ethhdr *eth = (struct ethhdr*)msg.get_packet().soframe();
-  switch (htobe16(eth->h_proto)) {
-  case ETH_P_8021Q:
-    // fixme currently only arp should be coming in here
-    break;
-  default:
-    rofcore::logging::error << __FUNCTION__
-      << ": unsupported h_proto" << htobe16(eth->h_proto)
-      << std::endl;
-    return;
-    break;
+    rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
+    *pkt = msg.get_packet();
+
+    dev.enqueue(pkt);
+  } catch (rofcore::ePacketPoolExhausted &e) {
+    logging::error << __FUNCTION__ << "ePacketPoolExhausted: " << e.what()
+                   << std::endl;
+  } catch (rofcore::eTunDevNotFound &e) {
+    logging::error << __FUNCTION__ << "eTunDevNotFound: " << e.what()
+                   << std::endl;
+  } catch (std::exception &e) {
+    logging::error << __FUNCTION__ << "exception: " << e.what() << std::endl;
   }
-#endif
-
-  const cofport &port = dpt.get_ports().get_port(msg.get_match().get_in_port());
-  rofcore::ctapdev &dev = set_tap_dev(dpt.get_dptid(), port.get_name());
-
-  rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
-  *pkt = msg.get_packet();
-
-  dev.enqueue(pkt);
 }
 
 void switch_behavior_ofdpa::handle_flow_removed(
