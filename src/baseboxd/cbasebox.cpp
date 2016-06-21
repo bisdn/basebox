@@ -65,10 +65,10 @@ using namespace basebox;
   while (keep_on_running) {
     try {
       // Launch main I/O loop
-      struct timespec ts;
-      ts.tv_sec = 5;
-      ts.tv_nsec = 0;
-      pselect(0, NULL, NULL, NULL, &ts, NULL);
+      struct timeval tv;
+      tv.tv_sec = 10;
+      tv.tv_usec = 0;
+      select(0, NULL, NULL, NULL, &tv);
 
     } catch (std::exception &e) {
       std::cerr << "exception caught, what: " << e.what() << std::endl;
