@@ -467,7 +467,6 @@ void switch_behavior_ofdpa::neigh_ll_created(unsigned int ifindex,
                         << " parent=" << rtl.get_hwaddr() << std::endl;
         }
 
-        puts(__FUNCTION__);
         // XXX get dpt using cdptid
         bridge.add_mac_to_fdb(
             dpt.get_ports().get_port(rtl.get_devname()).get_port_no(),
