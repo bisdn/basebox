@@ -6,7 +6,7 @@ support for Broadcom's OFDPA 2.0.
 If you are looking for older versions of basebox(d) for controlling 
 ovs and xdpd, you find those in the swx branch on github [2].
 
-[1] https://github.com/opennetworklinux/ofdpa-2.0
+[1] https://github.com/Broadcom-Switch/of-dpa/
 
 [2] https://github.com/bisdn/basebox/tree/swx
 
