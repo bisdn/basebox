@@ -59,8 +59,16 @@ void cnetlink::init_caches() {
   caches[NL_ROUTE_CACHE] = NULL;
   caches[NL_NEIGH_CACHE] = NULL;
 
-  rc = nl_cache_mngr_add(mngr, "route/link", (change_func_t)&route_link_cb,
-                         NULL, &caches[NL_LINK_CACHE]);
+  rtnl_link_alloc_cache_flags(sock, AF_UNSPEC, &caches[NL_LINK_CACHE],
+                              NL_CACHE_AF_ITER);
+  if (0 != rc) {
+    logging::error
+        << "cnetlink::init_caches() rtnl_link_alloc_cache_flags failed rc="
+        << rc << std::endl;
+  }
+  rc = nl_cache_mngr_add_cache(mngr, caches[NL_LINK_CACHE],
+                               (change_func_t)&route_link_cb, NULL);
+
   if (0 != rc) {
     logging::error << "cnetlink::init_caches() add route/link to cache mngr"
                    << std::endl;
@@ -77,8 +85,16 @@ void cnetlink::init_caches() {
     logging::error << "cnetlink::init_caches() add route/route to cache mngr"
                    << std::endl;
   }
-  rc = nl_cache_mngr_add(mngr, "route/neigh", (change_func_t)&route_neigh_cb,
-                         NULL, &caches[NL_NEIGH_CACHE]);
+
+  rc = rtnl_neigh_alloc_cache_flags(sock, &caches[NL_NEIGH_CACHE],
+                                    NL_CACHE_AF_ITER);
+  if (0 != rc) {
+    logging::error
+        << "cnetlink::init_caches() rtnl_link_alloc_cache_flags failed rc="
+        << rc << std::endl;
+  }
+  rc = nl_cache_mngr_add_cache(mngr, caches[NL_NEIGH_CACHE],
+                               (change_func_t)&route_neigh_cb, NULL);
   if (0 != rc) {
     logging::error << "cnetlink::init_caches() add route/neigh to cache mngr"
                    << std::endl;
@@ -175,7 +191,65 @@ void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
 }
 
 void cnetlink::handle_write_event(rofl::cthread &thread, int fd) {
-  logging::info << "cnetlink write ready on fd=" << fd << std::endl;
+  logging::debug << "cnetlink write ready on fd=" << fd << std::endl;
+  // currently not in use
+}
+
+void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id,
+                              const std::list<unsigned int> &ttypes) {
+  struct nl_dump_params params;
+  memset(&params, 0, sizeof(struct nl_dump_params));
+  params.dp_type = NL_DUMP_LINE;
+  params.dp_fd = stdout;
+
+  switch (timer_id) {
+  case NL_TIMER_RESYNC: {
+    int r = nl_cache_refill(sock, caches[NL_LINK_CACHE]);
+    if (r < 0) {
+      logging::error << __FUNCTION__ << " failed to refill NL_LINK_CACHE"
+                     << std::endl;
+      return;
+    }
+    r = nl_cache_refill(sock, caches[NL_NEIGH_CACHE]);
+    if (r < 0) {
+      logging::error << __FUNCTION__ << " failed to refill NL_NEIGH_CACHE"
+                     << std::endl;
+      return;
+    }
+
+    struct nl_object *obj = nl_cache_get_first(caches[NL_NEIGH_CACHE]);
+    while (0 != obj) {
+      nl_object_dump(obj, &params);
+      unsigned int ifindex = rtnl_neigh_get_ifindex((struct rtnl_neigh *)obj);
+      switch (rtnl_neigh_get_family((struct rtnl_neigh *)obj)) {
+      case AF_INET:
+      case AF_INET6:
+        break;
+      case AF_BRIDGE: {
+        crtneigh neigh((struct rtnl_neigh *)obj);
+        if (rtlinks.has_link(ifindex)) {
+          // force an update
+          int nbindex = neighs_ll[ifindex].add_neigh(neigh);
+          cnetlink::get_instance().notify_neigh_ll_created(ifindex, nbindex);
+        } else {
+          logging::crit << __FUNCTION__ << " no link ifindex=" << ifindex
+                        << std::endl;
+        }
+      } break;
+      default:
+        break;
+      }
+      obj = nl_cache_get_next(obj);
+    }
+
+    struct rtnl_neigh *neigh = rtnl_neigh_alloc();
+    nl_cache_dump_filter(caches[NL_NEIGH_CACHE], &params, OBJ_CAST(neigh));
+    rtnl_neigh_put(neigh);
+    thread.add_timer(NL_TIMER_RESYNC, rofl::ctimespec().expire_in(5));
+  } break;
+  default:
+    break;
+  }
 }
 
 /* static C-callback */
@@ -184,7 +258,7 @@ void cnetlink::route_link_cb(struct nl_cache *cache, struct nl_object *obj,
   nl_object_get(obj); // increment reference counter by one
   if (std::string(nl_object_get_type(obj)) != std::string("route/link")) {
     logging::warn
-        << "cnetlink::route_link_cb() ignoring non link object received"
+        << "cnetlink::route_link_cb() neigh without link object received"
         << std::endl;
     return;
   }
@@ -258,6 +332,9 @@ void cnetlink::route_link_cb(struct nl_cache *cache, struct nl_object *obj,
     logging::error << "cnetlink::route_link_cb() oops, route_link_cb() caught "
                       "eRtLinkNotFound"
                    << std::endl;
+  } catch (std::exception &e) {
+    logging::crit << "cnetlink::route_neigh_cb() oops unknown exception"
+                  << e.what() << std::endl;
   }
 }
 
@@ -361,6 +438,9 @@ void cnetlink::route_addr_cb(struct nl_cache *cache, struct nl_object *obj,
     logging::error << "cnetlink::route_addr_cb() oops, route_addr_cb() was "
                       "called with an invalid address [2]"
                    << std::endl;
+  } catch (std::exception &e) {
+    logging::crit << "cnetlink::route_neigh_cb() oops unknown exception"
+                  << e.what() << std::endl;
   }
 
   nl_object_put(obj); // release reference to object
@@ -487,6 +567,9 @@ void cnetlink::route_route_cb(struct nl_cache *cache, struct nl_object *obj,
     logging::error << "cnetlink::route_route_cb() oops, route_route_cb() was "
                       "called with an invalid route"
                    << std::endl;
+  } catch (std::exception &e) {
+    logging::crit << "cnetlink::route_neigh_cb() oops unknown exception"
+                  << e.what() << std::endl;
   }
 
   nl_object_put(obj); // release reference to object
@@ -496,7 +579,7 @@ void cnetlink::route_route_cb(struct nl_cache *cache, struct nl_object *obj,
 void cnetlink::route_neigh_cb(struct nl_cache *cache, struct nl_object *obj,
                               int action, void *data) {
   if (std::string(nl_object_get_type(obj)) != std::string("route/neigh")) {
-    logging::debug
+    logging::crit
         << "cnetlink::route_neigh_cb() ignoring non neighbor object received"
         << std::endl;
     return;
@@ -510,8 +593,8 @@ void cnetlink::route_neigh_cb(struct nl_cache *cache, struct nl_object *obj,
   int family = rtnl_neigh_get_family((struct rtnl_neigh *)obj);
 
   if (0 == ifindex) {
-    logging::info << "cnetlink::route_neigh_cb() ignoring not existing link"
-                  << std::endl;
+    logging::error << __FUNCTION__ << "() ignoring not existing link"
+                   << std::endl;
     return;
   }
 
@@ -529,16 +612,15 @@ void cnetlink::route_neigh_cb(struct nl_cache *cache, struct nl_object *obj,
         cnetlink::get_instance().notify_neigh_in4_created(ifindex, nbindex);
       } break;
       case AF_INET6: {
-        logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_in6"
-                       << std::endl
-                       << crtneigh_in6((struct rtnl_neigh *)obj);
+        logging::info << "[roflibs][cnetlink][route_neigh_cb] new neigh_in6"
+                      << std::endl
+                      << crtneigh_in6((struct rtnl_neigh *)obj);
         unsigned int nbindex =
             cnetlink::get_instance().neighs_in6[ifindex].add_neigh(
                 crtneigh_in6((struct rtnl_neigh *)obj));
         cnetlink::get_instance().notify_neigh_in6_created(ifindex, nbindex);
       } break;
       case PF_BRIDGE: {
-        // xxx implement bridge handling
         logging::debug << "[roflibs][cnetlink][route_neigh_cb] new neigh_ll"
                        << std::endl
                        << crtneigh((struct rtnl_neigh *)obj);
@@ -572,7 +654,6 @@ void cnetlink::route_neigh_cb(struct nl_cache *cache, struct nl_object *obj,
         cnetlink::get_instance().notify_neigh_in6_updated(ifindex, nbindex);
       } break;
       case PF_BRIDGE: {
-        // xxx implement bridge handling
         logging::debug << "[roflibs][cnetlink][route_neigh_cb] updated neigh_ll"
                        << std::endl
                        << crtneigh((struct rtnl_neigh *)obj);
@@ -608,7 +689,6 @@ void cnetlink::route_neigh_cb(struct nl_cache *cache, struct nl_object *obj,
         cnetlink::get_instance().neighs_in6[ifindex].drop_neigh(nbindex);
       } break;
       case PF_BRIDGE: {
-        // xxx implement bridge handling
         logging::debug << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_ll"
                        << std::endl
                        << crtneigh((struct rtnl_neigh *)obj);
@@ -632,9 +712,17 @@ void cnetlink::route_neigh_cb(struct nl_cache *cache, struct nl_object *obj,
     logging::error << "cnetlink::route_neigh_cb() oops, route_neigh_cb() was "
                       "called with an invalid neighbor"
                    << std::endl;
+  } catch (std::exception &e) {
+    logging::crit << "cnetlink::route_neigh_cb() oops unknown exception"
+                  << e.what() << std::endl;
   }
 
   nl_object_put(obj); // release reference to object
+  cnetlink::get_instance().set_neigh_timeout();
+}
+
+void cnetlink::set_neigh_timeout() {
+  thread.add_timer(NL_TIMER_RESYNC, rofl::ctimespec().expire_in(5));
 }
 
 void cnetlink::notify_link_created(unsigned int ifindex) {

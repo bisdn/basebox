@@ -51,6 +51,10 @@ class cnetlink : public rofl::cthread_env {
     NL_NEIGH_CACHE = 3,
   };
 
+  enum timer {
+    NL_TIMER_RESYNC,
+  };
+
   rofl::cthread thread;
   struct nl_sock *sock;
   struct nl_cache_mngr *mngr;
@@ -188,7 +192,7 @@ private:
   /**
    *
    */
-  virtual ~cnetlink();
+  ~cnetlink() override;
 
   /**
    *
@@ -200,14 +204,19 @@ private:
    */
   void destroy_caches();
 
-  virtual void handle_wakeup(rofl::cthread &thread) {}
+  void handle_wakeup(rofl::cthread &thread) override{};
 
   /**
    *
    */
-  void handle_read_event(rofl::cthread &thread, int fd);
+  void handle_read_event(rofl::cthread &thread, int fd) override;
 
-  void handle_write_event(rofl::cthread &thread, int fd);
+  void handle_write_event(rofl::cthread &thread, int fd) override;
+
+  void handle_timeout(rofl::cthread &thread, uint32_t timer_id,
+                      const std::list<unsigned int> &ttypes) override;
+
+  void set_neigh_timeout();
 
 public:
   /**
