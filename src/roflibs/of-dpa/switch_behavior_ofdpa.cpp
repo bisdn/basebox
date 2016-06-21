@@ -11,6 +11,8 @@
 
 namespace basebox {
 
+using rofcore::logging;
+
 struct vlan_hdr {
   struct ethhdr eth; // vid + cfi + pcp
   uint16_t vlan;     // ethernet type
@@ -19,9 +21,9 @@ struct vlan_hdr {
 switch_behavior_ofdpa::switch_behavior_ofdpa(rofl::crofdpt &dpt)
     : switch_behavior(dpt.get_dptid()), fm_driver(dpt), bridge(fm_driver),
       dpt(dpt) {
-  rofcore::logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__
-                          << "] dpt: " << std::endl
-                          << dpt;
+  logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__
+                 << "] dpt: " << std::endl
+                 << dpt;
 }
 
 switch_behavior_ofdpa::~switch_behavior_ofdpa() {
@@ -37,7 +39,6 @@ switch_behavior_ofdpa::~switch_behavior_ofdpa() {
 
 void switch_behavior_ofdpa::init_ports() {
   using rofl::openflow::cofport;
-  using rofcore::logging;
   using std::map;
   using std::set;
 
@@ -66,7 +67,6 @@ void switch_behavior_ofdpa::init_ports() {
 void switch_behavior_ofdpa::handle_packet_in(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_packet_in &msg) {
-  using rofcore::logging;
   logging::debug << __FUNCTION__ << ": handle message" << std::endl << msg;
 
   if (this->dptid != dpt.get_dptid()) {
@@ -93,7 +93,6 @@ void switch_behavior_ofdpa::handle_srcmac_table(
   using rofl::openflow::cofport;
   using rofcore::cnetlink;
   using rofcore::crtlink;
-  using rofcore::logging;
   using rofl::caddress_ll;
 
   logging::info << __FUNCTION__ << ": in_port=" << msg.get_match().get_in_port()
@@ -133,7 +132,6 @@ void switch_behavior_ofdpa::handle_srcmac_table(
 void switch_behavior_ofdpa::handle_acl_policy_table(
     const rofl::crofdpt &dpt, rofl::openflow::cofmsg_packet_in &msg) {
   using rofl::openflow::cofport;
-  using rofcore::logging;
 
   try {
     const cofport &port =
@@ -159,8 +157,6 @@ void switch_behavior_ofdpa::handle_flow_removed(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_flow_removed &msg) {
 
-  using rofcore::logging;
-
   if (this->dptid != dpt.get_dptid()) {
     logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__
                    << "] wrong dptid received" << std::endl;
@@ -185,17 +181,17 @@ void switch_behavior_ofdpa::handle_experimenter_message(
   uint32_t experimenterType = msg.get_exp_type();
   uint32_t xidExperimenterCAR = msg.get_xid();
 
-  rofcore::logging::info << "[cbasebox][" << __FUNCTION__
-                         << "] Experimenter query message received" << std::endl
-                         << "Experimenter OUI: 0x" << std::hex << experimenterId
-                         << std::dec << std::endl
-                         << "Message Type: 0x" << std::hex << experimenterType
-                         << std::dec << std::endl;
+  logging::info << "[cbasebox][" << __FUNCTION__
+                << "] Experimenter query message received" << std::endl
+                << "Experimenter OUI: 0x" << std::hex << experimenterId
+                << std::dec << std::endl
+                << "Message Type: 0x" << std::hex << experimenterType
+                << std::dec << std::endl;
 
   dpt.send_experimenter_message(auxid, xidExperimenterCAR, experimenterId,
                                 RECEIVED_FLOW_ENTRIES_QUERY);
 
-  rofcore::logging::info
+  logging::info
       << "[cbasebox][" << __FUNCTION__
       << "] Acknowledgment of Experimenter query message reception sent"
       << std::endl
@@ -234,7 +230,6 @@ void switch_behavior_ofdpa::handle_bridging_table_rm(
     const rofl::crofdpt &dpt, rofl::openflow::cofmsg_flow_removed &msg) {
   using rofl::cmacaddr;
   using rofl::openflow::cofport;
-  using rofcore::logging;
   using rofcore::cnetlink;
   using rofcore::ctapdev;
 
@@ -268,7 +263,6 @@ void switch_behavior_ofdpa::handle_bridging_table_rm(
 void switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev,
                                     rofl::cpacket *pkt) {
   using rofl::openflow::cofport;
-  using rofcore::logging;
   using std::map;
 
   assert(pkt && "invalid enque");
@@ -346,53 +340,55 @@ void switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev,
   }
 }
 
-void switch_behavior_ofdpa::link_created(unsigned int ifindex) {
-  using rofcore::logging;
+void switch_behavior_ofdpa::link_created(unsigned int ifindex) noexcept {
+  try {
+    const rofcore::crtlink &rtl =
+        rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+    logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+                  << "]:" << std::endl
+                  << rtl;
 
-  const rofcore::crtlink &rtl =
-      rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
-  logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
-                << "]:" << std::endl
-                << rtl;
-
-  // currently ignore all interfaces besides the tap devs
-  if (not has_tap_dev(dptid, rtl.get_devname())) {
-    logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
-                    << "]: ignore interface " << rtl.get_devname()
-                    << " with dptid=" << dptid << std::endl
-                    << rtl;
-    return;
-  }
-
-  if (AF_BRIDGE == rtl.get_family()) {
-
-    // check for new bridge slaves
-    if (rtl.get_master()) {
-      // slave interface
-      logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
-                    << "]: is new slave interface" << std::endl;
-
-      // use only first bridge an of interface is attached to
-      if (not bridge.has_bridge_interface()) {
-        bridge.set_bridge_interface(
-            rofcore::cnetlink::get_instance().get_links().get_link(
-                rtl.get_master()));
-        bridge.apply_default_rules();
-      }
-
-      bridge.add_interface(rtl);
-    } else {
-      // bridge (master)
-      logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
-                    << "]: is new bridge" << std::endl;
+    // currently ignore all interfaces besides the tap devs
+    if (not has_tap_dev(dptid, rtl.get_devname())) {
+      logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
+                      << "]: ignore interface " << rtl.get_devname()
+                      << " with dptid=" << dptid << std::endl
+                      << rtl;
+      return;
     }
+
+    if (AF_BRIDGE == rtl.get_family()) {
+
+      // check for new bridge slaves
+      if (rtl.get_master()) {
+        // slave interface
+        logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+                      << "]: is new slave interface" << std::endl;
+
+        // use only first bridge an of interface is attached to
+        if (not bridge.has_bridge_interface()) {
+          bridge.set_bridge_interface(
+              rofcore::cnetlink::get_instance().get_links().get_link(
+                  rtl.get_master()));
+          bridge.apply_default_rules();
+        }
+
+        bridge.add_interface(rtl);
+      } else {
+        // bridge (master)
+        logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+                      << "]: is new bridge" << std::endl;
+      }
+    }
+  } catch (std::exception &e) {
+    logging::error << __FUNCTION__ << " failed: " << e.what() << std::endl;
   }
 }
 
-void switch_behavior_ofdpa::link_updated(const rofcore::crtlink &newlink) {
+void switch_behavior_ofdpa::link_updated(
+    const rofcore::crtlink &newlink) noexcept {
   using rofcore::crtlink;
   using rofcore::cnetlink;
-  using rofcore::logging;
 
   // currently ignore all interfaces besides the tap devs
   if (not has_tap_dev(dptid, newlink.get_devname())) {
@@ -403,99 +399,115 @@ void switch_behavior_ofdpa::link_updated(const rofcore::crtlink &newlink) {
     return;
   }
 
-  const crtlink &oldlink =
-      cnetlink::get_instance().get_links().get_link(newlink.get_ifindex());
-  logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
-                  << "] oldlink:" << std::endl
-                  << oldlink;
-  logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
-                  << "] newlink:" << std::endl
-                  << newlink;
+  try {
+    const crtlink &oldlink =
+        cnetlink::get_instance().get_links().get_link(newlink.get_ifindex());
+    logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
+                    << "] oldlink:" << std::endl
+                    << oldlink;
+    logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
+                    << "] newlink:" << std::endl
+                    << newlink;
 
-  bridge.update_interface(oldlink, newlink);
+    bridge.update_interface(oldlink, newlink);
+  } catch (std::exception &e) {
+    logging::error << __FUNCTION__ << " failed: " << e.what() << std::endl;
+  }
 }
 
-void switch_behavior_ofdpa::link_deleted(unsigned int ifindex) {
-  const rofcore::crtlink &rtl =
-      rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
+void switch_behavior_ofdpa::link_deleted(unsigned int ifindex) noexcept {
+  try {
+    const rofcore::crtlink &rtl =
+        rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
 
-  // currently ignore all interfaces besides the tap devs
-  if (not has_tap_dev(dptid, rtl.get_devname())) {
-    rofcore::logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
-                             << "]: ignore interface " << rtl.get_devname()
-                             << " with dptid=" << dptid << std::endl
-                             << rtl;
-    return;
+    // currently ignore all interfaces besides the tap devs
+    if (not has_tap_dev(dptid, rtl.get_devname())) {
+      logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
+                      << "]: ignore interface " << rtl.get_devname()
+                      << " with dptid=" << dptid << std::endl
+                      << rtl;
+      return;
+    }
+
+    bridge.delete_interface(rtl);
+  } catch (std::exception &e) {
+    logging::error << __FUNCTION__ << " failed: " << e.what() << std::endl;
   }
-
-  bridge.delete_interface(rtl);
 }
 
 void switch_behavior_ofdpa::neigh_ll_created(unsigned int ifindex,
-                                             uint16_t nbindex) {
+                                             uint16_t nbindex) noexcept {
   using rofcore::crtneigh;
   using rofcore::crtlink;
   using rofcore::cnetlink;
   using rofl::crofdpt;
-  using rofcore::logging;
 
-  const crtlink &rtl = cnetlink::get_instance().get_links().get_link(ifindex);
-  const crtneigh &rtn =
-      cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
+  try {
+    const crtlink &rtl = cnetlink::get_instance().get_links().get_link(ifindex);
+    const crtneigh &rtn =
+        cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
 
-  if (bridge.has_bridge_interface()) {
-    try {
-      // valid vlan id?
-      if (0 > rtn.get_vlan() || 0x1000 < rtn.get_vlan()) {
+    if (bridge.has_bridge_interface()) {
+      try {
+        // valid vlan id?
+        if (0 > rtn.get_vlan() || 0x1000 < rtn.get_vlan()) {
+          logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__
+                         << "]: invalid vlan" << rtn.get_vlan() << std::endl;
+          return;
+        }
+
+        // local mac address of parent?
+        if (rtn.get_lladdr() == rtl.get_hwaddr()) {
+          logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+                        << "]: ignore master lladdr" << std::endl;
+          return;
+        } else {
+          logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+                        << "]: rtn=" << rtn.get_lladdr()
+                        << " parent=" << rtl.get_hwaddr() << std::endl;
+        }
+
+        puts(__FUNCTION__);
+        // XXX get dpt using cdptid
+        bridge.add_mac_to_fdb(
+            dpt.get_ports().get_port(rtl.get_devname()).get_port_no(),
+            rtn.get_vlan(), rtn.get_lladdr(), true);
+      } catch (rofl::openflow::ePortsNotFound &e) {
         logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__
-                       << "]: invalid vlan" << rtn.get_vlan() << std::endl;
-        return;
+                       << "ePortsNotFound: " << e.what() << std::endl;
       }
-
-      // local mac address of parent?
-      if (rtn.get_lladdr() == rtl.get_hwaddr()) {
-        logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
-                      << "]: ignore master lladdr" << std::endl;
-        return;
-      } else {
-        logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
-                      << "]: rtn=" << rtn.get_lladdr()
-                      << " parent=" << rtl.get_hwaddr() << std::endl;
-      }
-
-      // XXX get dpt using cdptid
-      bridge.add_mac_to_fdb(
-          dpt.get_ports().get_port(rtl.get_devname()).get_port_no(),
-          rtn.get_vlan(), rtn.get_lladdr(), true);
-    } catch (rofl::openflow::ePortsNotFound &e) {
-      logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__
-                     << "ePortsNotFound: " << e.what() << std::endl;
+    } else {
+      logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
+                    << "]: no bridge interface" << std::endl;
     }
-  } else {
-    logging::info << "[switch_behavior_ofdpa][" << __FUNCTION__
-                  << "]: no bridge interface" << std::endl;
+  } catch (std::exception &e) {
+    logging::error << __FUNCTION__ << "() failed: " << e.what() << std::endl;
   }
 }
 
 void switch_behavior_ofdpa::neigh_ll_updated(unsigned int ifindex,
-                                             uint16_t nbindex) {
+                                             uint16_t nbindex) noexcept {
   using rofcore::cnetlink;
   using rofcore::crtneigh;
-  const crtneigh &rtn =
-      cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
 
-  rofcore::logging::warn << "[switch_behavior_ofdpa][" << __FUNCTION__
-                         << "]: NOT handled neighbor:" << std::endl
-                         << rtn;
+  try {
+    const crtneigh &rtn =
+        cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
+
+    logging::warn << "[switch_behavior_ofdpa][" << __FUNCTION__
+                  << "]: NOT handled neighbor:" << std::endl
+                  << rtn;
+  } catch (std::exception &e) {
+    logging::error << __FUNCTION__ << " failed: " << e.what() << std::endl;
+  }
 }
 
 void switch_behavior_ofdpa::neigh_ll_deleted(unsigned int ifindex,
-                                             uint16_t nbindex) {
+                                             uint16_t nbindex) noexcept {
   using rofcore::crtneigh;
   using rofcore::crtlink;
   using rofcore::cnetlink;
   using rofl::crofdpt;
-  using rofcore::logging;
 
   try {
     const crtlink &rtl = cnetlink::get_instance().get_links().get_link(ifindex);

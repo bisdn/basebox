@@ -241,17 +241,20 @@ private:
   void enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket *> pkts);
 
   /* netlink */
-  virtual void link_created(unsigned int ifindex);
+  void link_created(unsigned int ifindex) noexcept override;
 
-  virtual void link_updated(const rofcore::crtlink &newlink);
+  void link_updated(const rofcore::crtlink &newlink) noexcept override;
 
-  virtual void link_deleted(unsigned int ifindex);
+  void link_deleted(unsigned int ifindex) noexcept override;
 
-  virtual void neigh_ll_created(unsigned int ifindex, uint16_t nbindex);
+  void neigh_ll_created(unsigned int ifindex,
+                        uint16_t nbindex) noexcept override;
 
-  virtual void neigh_ll_updated(unsigned int ifindex, uint16_t nbindex);
+  void neigh_ll_updated(unsigned int ifindex,
+                        uint16_t nbindex) noexcept override;
 
-  virtual void neigh_ll_deleted(unsigned int ifindex, uint16_t nbindex);
+  void neigh_ll_deleted(unsigned int ifindex,
+                        uint16_t nbindex) noexcept override;
 };
 }
 /* namespace basebox */
