@@ -10,6 +10,8 @@
 
 #include <iostream>
 #include <map>
+#include <list>
+#include <algorithm>
 
 #include <roflibs/netlink/crtneigh.hpp>
 #include <roflibs/netlink/clogging.hpp>
