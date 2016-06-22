@@ -12,24 +12,14 @@ libroflibs_netlink_la_SOURCES = \
 	cnetdev.cpp \
 	ctapdev.hpp \
 	ctapdev.cpp \
-	ctundev.hpp \
-	ctundev.cpp \
 	cpacketpool.hpp \
 	cpacketpool.cpp \
-	crtroute.hpp \
-	crtroutes.hpp \
-	crtaddr.hpp \
-	crtaddrs.hpp \
 	crtlink.hpp \
 	crtlinks.hpp \
 	crtneigh.hpp \
 	crtneighs.hpp \
-	crtnexthop.hpp \
-	crtnexthops.hpp \
 	clogging.cpp \
-	clogging.hpp \
-	ccookiebox.cpp \
-	ccookiebox.hpp
+	clogging.hpp
 
 libroflibs_netlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
 

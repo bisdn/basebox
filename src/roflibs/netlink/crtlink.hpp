@@ -8,12 +8,13 @@
 #ifndef CRTLINK_H_
 #define CRTLINK_H_ 1
 
-#include <exception>
 #include <algorithm>
-#include <ostream>
-#include <string>
+#include <cassert>
+#include <exception>
 #include <map>
+#include <ostream>
 #include <set>
+#include <string>
 
 #include <rofl/common/caddress.h>
 #include <rofl/common/cmemory.h>
@@ -24,7 +25,6 @@
 #include <inttypes.h>
 #include <linux/if_arp.h>
 
-#include <roflibs/netlink/crtaddrs.hpp>
 #include <roflibs/netlink/crtneighs.hpp>
 
 namespace rofcore {
@@ -33,15 +33,15 @@ class crtlink {
 public:
   class eRtLinkBase : public std::runtime_error {
   public:
-    eRtLinkBase(const std::string &__arg) : std::runtime_error(__arg){};
+    eRtLinkBase(const std::string &__arg) : std::runtime_error(__arg){}
   };
   class eRtLinkNotFound : public eRtLinkBase {
   public:
-    eRtLinkNotFound(const std::string &__arg) : eRtLinkBase(__arg){};
+    eRtLinkNotFound(const std::string &__arg) : eRtLinkBase(__arg){}
   };
   class eRtLinkExists : public eRtLinkBase {
   public:
-    eRtLinkExists(const std::string &__arg) : eRtLinkBase(__arg){};
+    eRtLinkExists(const std::string &__arg) : eRtLinkBase(__arg){}
   };
 
 public:
@@ -52,7 +52,7 @@ public:
       : flags(0), operstate(0), af(0), arptype(0), ifindex(0), mtu(0),
         master(0) {
     memset(&br_vlan, 0, sizeof(struct rtnl_link_bridge_vlan));
-  };
+  }
 
   /**
    *
@@ -92,17 +92,17 @@ public:
 
     nl_object_put(
         (struct nl_object *)link); // decrement reference counter by one
-  };
+  }
 
   /**
    *
    */
-  virtual ~crtlink(){};
+  virtual ~crtlink(){}
 
   /**
    *
    */
-  crtlink(const crtlink &rtlink) { *this = rtlink; };
+  crtlink(const crtlink &rtlink) { *this = rtlink; }
 
   /**
    *
@@ -123,14 +123,9 @@ public:
     master = rtlink.master;
 
     memcpy(&br_vlan, &rtlink.br_vlan, sizeof(rtnl_link_bridge_vlan));
-    //		addrs_in4	= rtlink.addrs_in4;
-    //		addrs_in6	= rtlink.addrs_in6;
-    //		neighs_ll	= rtlink.neighs_ll;
-    //		neighs_in4	= rtlink.neighs_in4;
-    //		neighs_in6	= rtlink.neighs_in6;
 
     return *this;
-  };
+  }
 
   /**
    *
@@ -140,112 +135,48 @@ public:
             (maddr == rtlink.maddr));
   }
 
-#if 0
-public:
-
-	/**
-	 *
-	 */
-	const crtaddrs_in4&
-	get_addrs_in4() const { return addrs_in4; };
-
-	/**
-	 *
-	 */
-	crtaddrs_in4&
-	set_addrs_in4() { return addrs_in4; };
-
-	/**
-	 *
-	 */
-	const crtaddrs_in6&
-	get_addrs_in6() const { return addrs_in6; };
-
-	/**
-	 *
-	 */
-	crtaddrs_in6&
-	set_addrs_in6() { return addrs_in6; };
-
-	/**
-	 *
-	 */
-	const crtneighs_ll&
-	get_neighs_ll() const { return neighs_ll; };
-
-	/**
-	 *
-	 */
-	crtneighs_ll&
-	set_neighs_ll() { return neighs_ll; };
-
-	/**
-	 *
-	 */
-	const crtneighs_in4&
-	get_neighs_in4() const { return neighs_in4; };
-
-	/**
-	 *
-	 */
-	crtneighs_in4&
-	set_neighs_in4() { return neighs_in4; };
-
-	/**
-	 *
-	 */
-	const crtneighs_in6&
-	get_neighs_in6() const { return neighs_in6; };
-
-	/**
-	 *
-	 */
-	crtneighs_in6&
-	set_neighs_in6() { return neighs_in6; };
-#endif
-
 public:
   /**
    *
    */
-  const std::string &get_devname() const { return devname; };
+  const std::string &get_devname() const { return devname; }
 
   /**
    *
    */
-  const rofl::cmacaddr &get_hwaddr() const { return maddr; };
+  const rofl::cmacaddr &get_hwaddr() const { return maddr; }
 
   /**
    *
    */
-  const rofl::cmacaddr &get_broadcast() const { return bcast; };
+  const rofl::cmacaddr &get_broadcast() const { return bcast; }
 
   /**
    *
    */
-  unsigned int get_flags() const { return flags; };
+  unsigned int get_flags() const { return flags; }
 
-  unsigned int get_operstate() const { return operstate; };
-
-  /**
-   *
-   */
-  int get_family() const { return af; };
+  unsigned int get_operstate() const { return operstate; }
 
   /**
    *
    */
-  unsigned int get_arptype() const { return arptype; };
+  int get_family() const { return af; }
 
   /**
    *
    */
-  int get_ifindex() const { return ifindex; };
+  unsigned int get_arptype() const { return arptype; }
 
   /**
    *
    */
-  unsigned int get_mtu() const { return mtu; };
+  int get_ifindex() const { return ifindex; }
+
+  /**
+   *
+   */
+  unsigned int get_mtu() const { return mtu; }
 
   int get_master() const { return master; }
 
@@ -379,14 +310,8 @@ public:
          << " >" << std::endl;
     }
 
-    //		{ rofcore::indent i(2); os << rtlink.addrs_in4; };
-    //		{ rofcore::indent i(2); os << rtlink.addrs_in6; };
-    //		{ rofcore::indent i(2); os << rtlink.neighs_ll; };
-    //		{ rofcore::indent i(2); os << rtlink.neighs_in4; };
-    //		{ rofcore::indent i(2); os << rtlink.neighs_in6; };
-
     return os;
-  };
+  }
 
   /**
    *
@@ -443,14 +368,8 @@ public:
          << std::endl;
     }
 
-    //		if (not addrs_in4.empty())  ss << addrs_in4.str();
-    //		if (not addrs_in6.empty())  ss << addrs_in6.str();
-    //		if (not neighs_ll.empty())  ss << neighs_ll.str();
-    //		if (not neighs_in4.empty()) ss << neighs_in4.str();
-    //		if (not neighs_in6.empty()) ss << neighs_in6.str();
-
     return ss.str();
-  };
+  }
 
   /**
    *
@@ -459,14 +378,14 @@ public:
     int ifindex;
 
   public:
-    crtlink_find_by_ifindex(unsigned int ifindex) : ifindex(ifindex){};
-    bool operator()(crtlink const &rtl) { return (ifindex == rtl.ifindex); };
+    crtlink_find_by_ifindex(unsigned int ifindex) : ifindex(ifindex){}
+    bool operator()(crtlink const &rtl) { return (ifindex == rtl.ifindex); }
     bool operator()(std::pair<unsigned int, crtlink> const &p) {
       return (ifindex == p.second.ifindex);
-    };
+    }
     bool operator()(std::pair<unsigned int, crtlink *> const &p) {
       return (ifindex == p.second->ifindex);
-    };
+    }
   };
 
   /**
@@ -476,16 +395,11 @@ public:
     std::string devname;
 
   public:
-    crtlink_find_by_devname(std::string const &devname) : devname(devname){};
-    bool operator()(crtlink const &rtl) { return (devname == rtl.devname); };
+    crtlink_find_by_devname(std::string const &devname) : devname(devname){}
+    bool operator()(crtlink const &rtl) { return (devname == rtl.devname); }
     bool operator()(std::pair<unsigned int, crtlink> const &p) {
       return (devname == p.second.devname);
-    };
-#if 0
-		bool operator() (std::pair<unsigned int, crtlink*> const& p) {
-			return (devname == p.second->devname);
-		};
-#endif
+    }
   };
 
 private:
@@ -501,13 +415,8 @@ private:
   int master;           // ifindex of master interface
 
   struct rtnl_link_bridge_vlan br_vlan;
-  //	crtaddrs_in4			addrs_in4;
-  //	crtaddrs_in6			addrs_in6;
-  //	crtneighs_ll			neighs_ll;
-  //	crtneighs_in4			neighs_in4;
-  //	crtneighs_in6			neighs_in6;
 };
 
-}; // end of namespace dptmap
+} // end of namespace dptmap
 
 #endif /* CRTLINK_H_ */

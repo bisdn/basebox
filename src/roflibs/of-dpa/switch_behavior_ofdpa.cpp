@@ -145,8 +145,8 @@ void switch_behavior_ofdpa::handle_acl_policy_table(
   } catch (rofcore::ePacketPoolExhausted &e) {
     logging::error << __FUNCTION__ << "ePacketPoolExhausted: " << e.what()
                    << std::endl;
-  } catch (rofcore::eTunDevNotFound &e) {
-    logging::error << __FUNCTION__ << "eTunDevNotFound: " << e.what()
+  } catch (rofcore::eTapDevNotFound &e) {
+    logging::error << __FUNCTION__ << "eTapDevNotFound: " << e.what()
                    << std::endl;
   } catch (std::exception &e) {
     logging::error << __FUNCTION__ << "exception: " << e.what() << std::endl;

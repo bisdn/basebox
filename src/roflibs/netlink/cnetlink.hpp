@@ -17,7 +17,6 @@
 #include <exception>
 
 #include <roflibs/netlink/crtlinks.hpp>
-#include <roflibs/netlink/crtroutes.hpp>
 #include <roflibs/netlink/clogging.hpp>
 
 #include <rofl/common/cthread.hpp>
@@ -45,10 +44,8 @@ class cnetlink_common_observer;
 
 class cnetlink : public rofl::cthread_env {
   enum nl_cache_t {
-    NL_LINK_CACHE = 0,
-    NL_ADDR_CACHE = 1,
-    NL_ROUTE_CACHE = 2,
-    NL_NEIGH_CACHE = 3,
+    NL_LINK_CACHE,
+    NL_NEIGH_CACHE,
   };
 
   enum timer {
@@ -63,152 +60,55 @@ class cnetlink : public rofl::cthread_env {
 
   crtlinks
       rtlinks; // all links in system => key:ifindex, value:crtlink instance
-  std::map<int, crtroutes_in4>
-      rtroutes_in4; // all routes in system => key:table_id
-  std::map<int, crtroutes_in6>
-      rtroutes_in6; // all routes in system => key:table_id
 
   std::set<int> missing_links;
 
 public:
-  std::map<int, crtaddrs_in4> addrs_in4;
-  std::map<int, crtaddrs_in6> addrs_in6;
   std::map<int, crtneighs_ll> neighs_ll;
-  std::map<int, crtneighs_in4> neighs_in4;
-  std::map<int, crtneighs_in6> neighs_in6;
 
-public:
   friend std::ostream &operator<<(std::ostream &os, const cnetlink &netlink) {
     os << rofcore::indent(0) << "<cnetlink>" << std::endl;
     rofcore::indent i(2);
     os << netlink.rtlinks;
-    for (std::map<int, crtroutes_in4>::const_iterator it =
-             netlink.rtroutes_in4.begin();
-         it != netlink.rtroutes_in4.end(); ++it) {
-      os << it->second;
-    }
-    for (std::map<int, crtroutes_in6>::const_iterator it =
-             netlink.rtroutes_in6.begin();
-         it != netlink.rtroutes_in6.end(); ++it) {
-      os << it->second;
-    }
     return os;
   };
 
-public:
-  /**
-   *
-   */
   static void route_link_cb(struct nl_cache *cache, struct nl_object *obj,
                             int action, void *data);
 
-  /**
-   *
-   */
-  static void route_addr_cb(struct nl_cache *cache, struct nl_object *obj,
-                            int action, void *data);
-
-  /**
-   *
-   */
-  static void route_route_cb(struct nl_cache *cache, struct nl_object *obj,
-                             int action, void *data);
-
-  /**
-   *
-   */
   static void route_neigh_cb(struct nl_cache *cache, struct nl_object *obj,
                              int action, void *data);
 
-  /**
-   *
-   */
   static cnetlink &get_instance();
 
-  /**
-   *
-   */
   void subscribe(cnetlink_common_observer *subscriber) {
     observers.insert(subscriber);
   };
 
-  /**
-   *
-   */
   void unsubscribe(cnetlink_common_observer *subscriber) {
     observers.erase(subscriber);
   };
 
-public:
-  /**
-   *
-   */
   const crtlinks &get_links() const { return rtlinks; };
 
-  /**
-   *
-   */
   crtlinks &set_links() { return rtlinks; };
-
-  /**
-   *
-   */
-  const crtroutes_in4 &get_routes_in4(int table_id) const {
-    return rtroutes_in4.at(table_id);
-  };
-
-  /**
-   *
-   */
-  crtroutes_in4 &set_routes_in4(int table_id) {
-    return rtroutes_in4[table_id];
-  };
-
-  /**
-   *
-   */
-  const crtroutes_in6 &get_routes_in6(int table_id) const {
-    return rtroutes_in6.at(table_id);
-  };
-
-  /**
-   *
-   */
-  crtroutes_in6 &set_routes_in6(int table_id) {
-    return rtroutes_in6[table_id];
-  };
 
 private:
   enum cnetlink_event_t {
-    EVENT_NONE = 0,
-    EVENT_UPDATE_LINKS = 1,
+    EVENT_NONE,
+    EVENT_UPDATE_LINKS,
   };
 
-  /**
-   *
-   */
   cnetlink();
 
-  /**
-   *
-   */
   ~cnetlink() override;
 
-  /**
-   *
-   */
   void init_caches();
 
-  /**
-   *
-   */
   void destroy_caches();
 
   void handle_wakeup(rofl::cthread &thread) override{};
 
-  /**
-   *
-   */
   void handle_read_event(rofl::cthread &thread, int fd) override;
 
   void handle_write_event(rofl::cthread &thread, int fd) override;
@@ -219,154 +119,21 @@ private:
   void set_neigh_timeout();
 
 public:
-  /**
-   *
-   */
   void notify_link_created(unsigned int ifindex);
 
-  /**
-   *
-   */
   void notify_link_updated(const crtlink &newlink);
 
-  /**
-   *
-   */
   void notify_link_deleted(unsigned int ifindex);
 
-  /**
-   *
-   */
-  void notify_addr_in4_created(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_addr_in6_created(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_addr_in4_updated(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_addr_in6_updated(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_addr_in4_deleted(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_addr_in6_deleted(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
   void notify_neigh_ll_created(unsigned int ifindex, unsigned int adindex);
 
-  /**
-   *
-   */
-  void notify_neigh_in4_created(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_neigh_in6_created(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
   void notify_neigh_ll_updated(unsigned int ifindex, unsigned int adindex);
 
-  /**
-   *
-   */
-  void notify_neigh_in4_updated(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_neigh_in6_updated(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
   void notify_neigh_ll_deleted(unsigned int ifindex, unsigned int adindex);
 
-  /**
-   *
-   */
-  void notify_neigh_in4_deleted(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_neigh_in6_deleted(unsigned int ifindex, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_route_in4_created(uint8_t table_id, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_route_in6_created(uint8_t table_id, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_route_in4_updated(uint8_t table_id, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_route_in6_updated(uint8_t table_id, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_route_in4_deleted(uint8_t table_id, unsigned int adindex);
-
-  /**
-   *
-   */
-  void notify_route_in6_deleted(uint8_t table_id, unsigned int adindex);
-
-public:
   void add_neigh_ll(int ifindex, uint16_t vlan, const rofl::caddress_ll &addr);
 
   void drop_neigh_ll(int ifindex, uint16_t vlan, const rofl::caddress_ll &addr);
-
-  /**
-   *
-   */
-  void add_addr_in4(int ifindex, const rofl::caddress_in4 &local,
-                    int prefixlen);
-
-  /**
-   *
-   */
-  void drop_addr_in4(int ifindex, const rofl::caddress_in4 &local,
-                     int prefixlen);
-
-  /**
-   *
-   */
-  void add_addr_in6(int ifindex, const rofl::caddress_in6 &local,
-                    int prefixlen);
-
-  /**
-   *
-   */
-  void drop_addr_in6(int ifindex, const rofl::caddress_in6 &local,
-                     int prefixlen);
 };
 
 }; // end of namespace rofcore

@@ -20,8 +20,6 @@
 
 #include "roflibs/netlink/clogging.hpp"
 #include "roflibs/netlink/cnetlink.hpp"
-#include "roflibs/netlink/ctundev.hpp"
-#include "roflibs/netlink/ccookiebox.hpp"
 
 #include <baseboxd/switch_behavior.hpp>
 

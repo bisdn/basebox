@@ -11,7 +11,6 @@
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/cnetlink_observer.hpp"
 #include "roflibs/netlink/ctapdev.hpp"
-#include "roflibs/netlink/ctundev.hpp"
 
 #include <rofl/common/locking.hpp>
 
@@ -138,7 +137,7 @@ private:
                                 const std::string &devname) {
     rofl::AcquireReadWriteLock lock(devs_rwlock);
     if (devs[dpid].find(devname) == devs[dpid].end()) {
-      throw rofcore::eTunDevNotFound(
+      throw rofcore::eTapDevNotFound(
           "cbasebox::set_tap_dev() devname not found");
     }
     return *(devs[dpid][devname]);
@@ -154,7 +153,7 @@ private:
     if ((it = find_if(devs[dpid].begin(), devs[dpid].end(),
                       rofcore::ctapdev::ctapdev_find_by_hwaddr(
                           dpid, hwaddr))) == devs[dpid].end()) {
-      throw rofcore::eTunDevNotFound(
+      throw rofcore::eTapDevNotFound(
           "cbasebox::set_tap_dev() hwaddr not found");
     }
     return *(it->second);
@@ -167,10 +166,10 @@ private:
                                       const std::string &devname) const {
     rofl::AcquireReadLock lock(devs_rwlock);
     if (devs.find(dpid) == devs.end()) {
-      throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() dpid not found");
+      throw rofcore::eTapDevNotFound("cbasebox::get_tap_dev() dpid not found");
     }
     if (devs.at(dpid).find(devname) == devs.at(dpid).end()) {
-      throw rofcore::eTunDevNotFound(
+      throw rofcore::eTapDevNotFound(
           "cbasebox::get_tap_dev() devname not found");
     }
     return *(devs.at(dpid).at(devname));
@@ -183,13 +182,13 @@ private:
                                       const rofl::caddress_ll &hwaddr) const {
     rofl::AcquireReadLock lock(devs_rwlock);
     if (devs.find(dpid) == devs.end()) {
-      throw rofcore::eTunDevNotFound("cbasebox::get_tap_dev() dpid not found");
+      throw rofcore::eTapDevNotFound("cbasebox::get_tap_dev() dpid not found");
     }
     std::map<std::string, rofcore::ctapdev *>::const_iterator it;
     if ((it = find_if(devs.at(dpid).begin(), devs.at(dpid).end(),
                       rofcore::ctapdev::ctapdev_find_by_hwaddr(
                           dpid, hwaddr))) == devs.at(dpid).end()) {
-      throw rofcore::eTunDevNotFound(
+      throw rofcore::eTapDevNotFound(
           "cbasebox::get_tap_dev() hwaddr not found");
     }
     return *(it->second);
