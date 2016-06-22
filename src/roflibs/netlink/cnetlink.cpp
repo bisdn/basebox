@@ -197,11 +197,6 @@ void cnetlink::handle_write_event(rofl::cthread &thread, int fd) {
 
 void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id,
                               const std::list<unsigned int> &ttypes) {
-  struct nl_dump_params params;
-  memset(&params, 0, sizeof(struct nl_dump_params));
-  params.dp_type = NL_DUMP_LINE;
-  params.dp_fd = stdout;
-
   switch (timer_id) {
   case NL_TIMER_RESYNC: {
     int r = nl_cache_refill(sock, caches[NL_LINK_CACHE]);
@@ -219,7 +214,6 @@ void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id,
 
     struct nl_object *obj = nl_cache_get_first(caches[NL_NEIGH_CACHE]);
     while (0 != obj) {
-      nl_object_dump(obj, &params);
       unsigned int ifindex = rtnl_neigh_get_ifindex((struct rtnl_neigh *)obj);
       switch (rtnl_neigh_get_family((struct rtnl_neigh *)obj)) {
       case AF_INET:
@@ -242,9 +236,6 @@ void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id,
       obj = nl_cache_get_next(obj);
     }
 
-    struct rtnl_neigh *neigh = rtnl_neigh_alloc();
-    nl_cache_dump_filter(caches[NL_NEIGH_CACHE], &params, OBJ_CAST(neigh));
-    rtnl_neigh_put(neigh);
     thread.add_timer(NL_TIMER_RESYNC, rofl::ctimespec().expire_in(5));
   } break;
   default:
