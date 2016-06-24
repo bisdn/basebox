@@ -33,15 +33,15 @@ class crtlink {
 public:
   class eRtLinkBase : public std::runtime_error {
   public:
-    eRtLinkBase(const std::string &__arg) : std::runtime_error(__arg){}
+    eRtLinkBase(const std::string &__arg) : std::runtime_error(__arg) {}
   };
   class eRtLinkNotFound : public eRtLinkBase {
   public:
-    eRtLinkNotFound(const std::string &__arg) : eRtLinkBase(__arg){}
+    eRtLinkNotFound(const std::string &__arg) : eRtLinkBase(__arg) {}
   };
   class eRtLinkExists : public eRtLinkBase {
   public:
-    eRtLinkExists(const std::string &__arg) : eRtLinkBase(__arg){}
+    eRtLinkExists(const std::string &__arg) : eRtLinkBase(__arg) {}
   };
 
 public:
@@ -97,7 +97,7 @@ public:
   /**
    *
    */
-  virtual ~crtlink(){}
+  virtual ~crtlink() {}
 
   /**
    *
@@ -378,7 +378,7 @@ public:
     int ifindex;
 
   public:
-    crtlink_find_by_ifindex(unsigned int ifindex) : ifindex(ifindex){}
+    crtlink_find_by_ifindex(unsigned int ifindex) : ifindex(ifindex) {}
     bool operator()(crtlink const &rtl) { return (ifindex == rtl.ifindex); }
     bool operator()(std::pair<unsigned int, crtlink> const &p) {
       return (ifindex == p.second.ifindex);
@@ -395,7 +395,7 @@ public:
     std::string devname;
 
   public:
-    crtlink_find_by_devname(std::string const &devname) : devname(devname){}
+    crtlink_find_by_devname(std::string const &devname) : devname(devname) {}
     bool operator()(crtlink const &rtl) { return (devname == rtl.devname); }
     bool operator()(std::pair<unsigned int, crtlink> const &p) {
       return (devname == p.second.devname);

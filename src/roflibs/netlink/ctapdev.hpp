@@ -46,7 +46,7 @@ public:
   eTapDevNotFound(const std::string &__arg) : eTapDevBase(__arg){};
 };
 
-class ctapdev : public cnetdev, rofl::cthread_env {
+class ctapdev : public rofl::cthread_env {
 
   int fd;                                // tap device file descriptor
   std::list<rofl::cpacket *> pout_queue; // queue of outgoing packets
@@ -56,6 +56,7 @@ class ctapdev : public cnetdev, rofl::cthread_env {
   uint16_t pvid;
   rofl::cmacaddr hwaddr;
   rofl::cthread thread;
+  cnetdev_owner *netdev_owner;
 
   enum ctapdev_timer_t {
     CTAPDEV_TIMER_OPEN_PORT = 1,
@@ -76,6 +77,8 @@ public:
    *
    */
   virtual ~ctapdev();
+
+  const std::string &get_devname() const { return devname; }
 
   /**
    * @brief	Enqueues a single rofl::cpacket instance on cnetdev.
@@ -103,7 +106,7 @@ protected:
   /**
    * @brief	open tapX device
    */
-  void tap_open(std::string const &devname, rofl::cmacaddr const &hwaddr);
+  void tap_open(rofl::cmacaddr const &hwaddr);
 
   /**
    * @brief	close tapX device

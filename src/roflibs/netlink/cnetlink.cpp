@@ -330,7 +330,7 @@ void cnetlink::route_neigh_cb(struct nl_cache *cache, struct nl_object *obj,
       case AF_INET:
       case AF_INET6:
       default:
-         break;
+        break;
       }
     } break;
     case NL_ACT_DEL: {

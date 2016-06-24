@@ -14,10 +14,10 @@ extern int errno;
 ctapdev::ctapdev(cnetdev_owner *netdev_owner, const rofl::cdptid &dptid,
                  std::string const &devname, uint16_t pvid,
                  rofl::cmacaddr const &hwaddr, pthread_t tid)
-    : cnetdev(netdev_owner, devname, tid), fd(-1), dptid(dptid),
-      devname(devname), pvid(pvid), hwaddr(hwaddr), thread(this) {
+    : fd(-1), dptid(dptid), devname(devname), pvid(pvid), hwaddr(hwaddr),
+      thread(this), netdev_owner(netdev_owner) {
   try {
-    tap_open(devname, hwaddr);
+    tap_open(hwaddr);
   } catch (...) {
     thread.add_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec().expire_in(1));
   }
@@ -28,8 +28,7 @@ ctapdev::~ctapdev() {
   thread.stop();
 }
 
-void ctapdev::tap_open(std::string const &devname,
-                       rofl::cmacaddr const &hwaddr) {
+void ctapdev::tap_open(rofl::cmacaddr const &hwaddr) {
   try {
     struct ifreq ifr;
     int rc;
@@ -60,8 +59,6 @@ void ctapdev::tap_open(std::string const &devname,
     }
 
     // set_hwaddr(hwaddr);
-
-    enable_interface();
 
     // netdev_owner->netdev_open(this);
 
@@ -100,10 +97,6 @@ void ctapdev::tap_close() {
     if (fd == -1) {
       return;
     }
-
-    // netdev_owner->netdev_close(this);
-
-    disable_interface();
 
     thread.drop_read_fd(fd);
     thread.drop_write_fd(fd);
@@ -253,7 +246,7 @@ void ctapdev::handle_timeout(rofl::cthread &thread, uint32_t timer_id,
   switch (timer_id) {
   case CTAPDEV_TIMER_OPEN_PORT: {
     try {
-      tap_open(devname, hwaddr);
+      tap_open(hwaddr);
     } catch (...) {
       thread.add_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec().expire_in(1));
     }

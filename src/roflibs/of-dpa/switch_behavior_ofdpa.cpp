@@ -27,7 +27,7 @@ switch_behavior_ofdpa::switch_behavior_ofdpa(rofl::crofdpt &dpt)
 }
 
 switch_behavior_ofdpa::~switch_behavior_ofdpa() {
-  // todo need this?
+  // TODO need this?
   //	try {
   //		if (STATE_ATTACHED == state) {
   //			handle_dpt_close();
@@ -53,7 +53,7 @@ void switch_behavior_ofdpa::init_ports() {
                         << " with portno=" << port.get_port_no()
                         << " at dptid=" << dptid << std::endl;
         add_tap_dev(dptid, port.get_name(), 1,
-                    port.get_hwaddr()); // todo remove pvid from tapdev
+                    port.get_hwaddr()); // TODO remove pvid from tapdev
       }
     }
     logging::info << "ports initialized" << std::endl;
@@ -107,7 +107,7 @@ void switch_behavior_ofdpa::handle_srcmac_table(
                    << std::dec << std::endl;
   }
 
-  // todo this has to be improved
+  // TODO this has to be improved
   const cofport &port = dpt.get_ports().get_port(msg.get_match().get_in_port());
   const crtlink &rtl =
       cnetlink::get_instance().get_links().get_link(port.get_name());
@@ -226,8 +226,12 @@ void switch_behavior_ofdpa::send_full_state(rofl::crofdpt &dpt) {
   }
 }
 
+
 void switch_behavior_ofdpa::handle_bridging_table_rm(
     const rofl::crofdpt &dpt, rofl::openflow::cofmsg_flow_removed &msg) {
+// XXX FIXME disabled for tapdev refactoring:
+// this is used only for srcmac learning, which is disabled
+#if 0
   using rofl::cmacaddr;
   using rofl::openflow::cofport;
   using rofcore::cnetlink;
@@ -246,21 +250,23 @@ void switch_behavior_ofdpa::handle_bridging_table_rm(
     return;
   }
 
-  // todo this has to be improved
-  uint32_t portno = msg.get_cookie(); // fixme cookiebox here??
+  // TODO this has to be improved 
+  uint32_t portno = msg.get_cookie();
   const cofport &port = dpt.get_ports().get_port(portno);
   const ctapdev &tapdev = get_tap_dev(dpt.get_dptid(), port.get_name());
 
   try {
     // update bridge fdb
-    cnetlink::get_instance().drop_neigh_ll(tapdev.get_ifindex(), vlan, eth_dst);
+    cnetlink::get_instance().drop_neigh_ll(tapdev.get_ifindex(), vlan,
+    eth_dst);
   } catch (rofcore::eNetLinkFailed &e) {
     logging::crit << __FUNCTION__ << ": netlink failed: " << e.what()
                   << std::endl;
   }
+#endif
 }
 
-void switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev,
+void switch_behavior_ofdpa::enqueue(rofcore::ctapdev *netdev,
                                     rofl::cpacket *pkt) {
   using rofl::openflow::cofport;
   using std::map;
@@ -284,7 +290,7 @@ void switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev,
           "switch_behavior_ofdpa::enqueue() dpt not found");
     }
 
-    // todo move to separate function:
+    // TODO move to separate function:
     uint32_t portno;
     try {
       // XXX get dpt using cdptid
@@ -332,7 +338,7 @@ void switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev,
   rofcore::cpacketpool::get_instance().release_pkt(pkt);
 }
 
-void switch_behavior_ofdpa::enqueue(rofcore::cnetdev *netdev,
+void switch_behavior_ofdpa::enqueue(rofcore::ctapdev *netdev,
                                     std::vector<rofl::cpacket *> pkts) {
   for (std::vector<rofl::cpacket *>::iterator it = pkts.begin();
        it != pkts.end(); ++it) {

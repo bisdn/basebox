@@ -235,9 +235,9 @@ private:
   }
 
   /* IO */
-  void enqueue(rofcore::cnetdev *netdev, rofl::cpacket *pkt);
+  void enqueue(rofcore::ctapdev *netdev, rofl::cpacket *pkt);
 
-  void enqueue(rofcore::cnetdev *netdev, std::vector<rofl::cpacket *> pkts);
+  void enqueue(rofcore::ctapdev *netdev, std::vector<rofl::cpacket *> pkts);
 
   /* netlink */
   void link_created(unsigned int ifindex) noexcept override;
