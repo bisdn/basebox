@@ -20,30 +20,33 @@
 
 #include <rofl/common/cthread.hpp>
 #include <rofl/common/cdptid.h>
-#include <roflibs/netlink/cnetdev.hpp>
-#include <roflibs/netlink/clogging.hpp>
+#include <rofl/common/cpacket.h>
+
+#include "roflibs/netlink/clogging.hpp"
 
 namespace rofcore {
 
-class eTapDevBase : public eNetDevBase {
+class tap_callback;
+
+class eTapDevBase : public std::runtime_error {
 public:
-  eTapDevBase(const std::string &__arg) : eNetDevBase(__arg){};
+  eTapDevBase(const std::string &__arg) : std::runtime_error(__arg){}
 };
 class eTapDevSysCallFailed : public eTapDevBase {
 public:
-  eTapDevSysCallFailed(const std::string &__arg) : eTapDevBase(__arg){};
+  eTapDevSysCallFailed(const std::string &__arg) : eTapDevBase(__arg){}
 };
 class eTapDevOpenFailed : public eTapDevSysCallFailed {
 public:
-  eTapDevOpenFailed(const std::string &__arg) : eTapDevSysCallFailed(__arg){};
+  eTapDevOpenFailed(const std::string &__arg) : eTapDevSysCallFailed(__arg){}
 };
 class eTapDevIoctlFailed : public eTapDevSysCallFailed {
 public:
-  eTapDevIoctlFailed(const std::string &__arg) : eTapDevSysCallFailed(__arg){};
+  eTapDevIoctlFailed(const std::string &__arg) : eTapDevSysCallFailed(__arg){}
 };
 class eTapDevNotFound : public eTapDevBase {
 public:
-  eTapDevNotFound(const std::string &__arg) : eTapDevBase(__arg){};
+  eTapDevNotFound(const std::string &__arg) : eTapDevBase(__arg){}
 };
 
 class ctapdev : public rofl::cthread_env {
@@ -51,12 +54,10 @@ class ctapdev : public rofl::cthread_env {
   int fd;                                // tap device file descriptor
   std::list<rofl::cpacket *> pout_queue; // queue of outgoing packets
   mutable rofl::crwlock pout_queue_rwlock;
-  rofl::cdptid dptid;
   std::string devname;
   uint16_t pvid;
-  rofl::cmacaddr hwaddr;
   rofl::cthread thread;
-  cnetdev_owner *netdev_owner;
+  tap_callback &cb;
 
   enum ctapdev_timer_t {
     CTAPDEV_TIMER_OPEN_PORT = 1,
@@ -67,11 +68,9 @@ public:
    *
    * @param netdev_owner
    * @param devname
-   * @param hwaddr
    */
-  ctapdev(cnetdev_owner *netdev_owner, const rofl::cdptid &dptid,
-          std::string const &devname, uint16_t pvid,
-          rofl::cmacaddr const &hwaddr, pthread_t tid = 0);
+  ctapdev(tap_callback &cb, std::string const &devname,
+          pthread_t tid = 0);
 
   /**
    *
@@ -93,12 +92,7 @@ public:
   /**
    *
    */
-  rofl::cdptid get_dptid() const { return dptid; };
-
-  /**
-   *
-   */
-  uint16_t get_pvid() const { return pvid; };
+  uint16_t get_pvid() const { return pvid; }
 
 protected:
   void tx();
@@ -106,7 +100,7 @@ protected:
   /**
    * @brief	open tapX device
    */
-  void tap_open(rofl::cmacaddr const &hwaddr);
+  void tap_open();
 
   /**
    * @brief	close tapX device
@@ -132,46 +126,8 @@ protected:
   virtual void handle_timeout(rofl::cthread &thread, uint32_t timer_id,
                               const std::list<unsigned int> &ttypes);
 
-public:
-  class ctapdev_find_by_devname {
-    rofl::cdptid dptid;
-    std::string devname;
-
-  public:
-    ctapdev_find_by_devname(const rofl::cdptid &dptid,
-                            const std::string &devname)
-        : dptid(dptid), devname(devname){};
-    bool operator()(const std::pair<std::string, ctapdev *> &p) const {
-      return ((p.second->dptid == dptid) && (p.second->devname == devname));
-    };
-  };
-
-  class ctapdev_find_by_hwaddr {
-    rofl::cdptid dptid;
-    rofl::caddress_ll hwaddr;
-
-  public:
-    ctapdev_find_by_hwaddr(const rofl::cdptid &dptid,
-                           const rofl::caddress_ll &hwaddr)
-        : dptid(dptid), hwaddr(hwaddr){};
-    bool operator()(const std::pair<std::string, ctapdev *> &p) const {
-      return ((p.second->dptid == dptid) && (p.second->hwaddr == hwaddr));
-    };
-  };
-
-  class ctapdev_find_by_pvid {
-    rofl::cdptid dptid;
-    uint16_t pvid;
-
-  public:
-    ctapdev_find_by_pvid(const rofl::cdptid &dptid, uint16_t pvid)
-        : dptid(dptid), pvid(pvid){};
-    bool operator()(const std::pair<std::string, ctapdev *> &p) const {
-      return ((p.second->dptid == dptid) && (p.second->pvid == pvid));
-    };
-  };
 };
 
-}; // end of namespace rofcore
+} // end of namespace rofcore
 
 #endif /* CTAPDEV_H_ */

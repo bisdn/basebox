@@ -3,16 +3,15 @@
 
 #include <string>
 
-#include <baseboxd/switch_behavior.hpp>
+#include <rofl/common/locking.hpp>
 
-#include <roflibs/of-dpa/ofdpa_bridge.hpp>
+#include "baseboxd/switch_behavior.hpp"
 
-#include "roflibs/netlink/cnetdev.hpp"
+#include "roflibs/of-dpa/ofdpa_bridge.hpp"
+
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/cnetlink_observer.hpp"
-#include "roflibs/netlink/ctapdev.hpp"
-
-#include <rofl/common/locking.hpp>
+#include "roflibs/netlink/tap_manager.hpp"
 
 namespace basebox {
 
@@ -36,7 +35,7 @@ public:
 
 class switch_behavior_ofdpa
     : public switch_behavior,
-      public rofcore::cnetdev_owner,
+      public rofcore::tap_callback,
       public rofcore::auto_reg_cnetlink_common_observer {
 
   enum ExperimenterMessageType {
@@ -54,7 +53,7 @@ public:
 
   virtual ~switch_behavior_ofdpa();
 
-  virtual void init() { init_ports(); }
+  void init(rofl::crofdpt &dpt) override;
 
   virtual int get_switch_type() { return 1; }
 
@@ -70,13 +69,12 @@ public:
                               rofl::openflow::cofmsg_experimenter &msg);
 
 private:
-  std::map<rofl::cdptid, std::map<std::string, rofcore::ctapdev *>> devs;
+  rofcore::tap_manager *tap_man;
   rofl::rofl_ofdpa_fm_driver fm_driver;
   ofdpa_bridge bridge;
   rofl::crofdpt &dpt;
-  mutable rofl::crwlock devs_rwlock;
-
-  void init_ports();
+  std::map<int, uint32_t> port_id_to_of_port;
+  std::map<uint32_t, int> of_port_to_port_id;
 
   void handle_srcmac_table(const rofl::crofdpt &dpt,
                            rofl::openflow::cofmsg_packet_in &msg);
@@ -89,155 +87,8 @@ private:
 
   void send_full_state(rofl::crofdpt &dpt);
 
-  /**
-   *
-   */
-  void clear_tap_devs(const rofl::cdptid &dpid) {
-    rofl::AcquireReadWriteLock lock(devs_rwlock);
-    while (not devs[dpid].empty()) {
-      std::map<std::string, rofcore::ctapdev *>::iterator it =
-          devs[dpid].begin();
-      drop_tap_dev(dpid, it->first);
-    }
-  }
-
-  /**
-   *
-   */
-  rofcore::ctapdev &add_tap_dev(const rofl::cdptid &dpid,
-                                const std::string &devname, uint16_t pvid,
-                                const rofl::caddress_ll &hwaddr) {
-    rofl::AcquireReadWriteLock lock(devs_rwlock);
-    if (devs[dpid].find(devname) != devs[dpid].end()) {
-      delete devs[dpid][devname];
-    }
-    devs[dpid][devname] =
-        new rofcore::ctapdev(this, dpid, devname, pvid, hwaddr);
-    return *(devs[dpid][devname]);
-  }
-
-  /**
-   *
-   */
-  rofcore::ctapdev &set_tap_dev(const rofl::cdptid &dpid,
-                                const std::string &devname, uint16_t pvid,
-                                const rofl::caddress_ll &hwaddr) {
-    rofl::AcquireReadWriteLock lock(devs_rwlock);
-    if (devs[dpid].find(devname) == devs[dpid].end()) {
-      devs[dpid][devname] =
-          new rofcore::ctapdev(this, dpid, devname, pvid, hwaddr);
-    }
-    return *(devs[dpid][devname]);
-  }
-
-  /**
-   *
-   */
-  rofcore::ctapdev &set_tap_dev(const rofl::cdptid &dpid,
-                                const std::string &devname) {
-    rofl::AcquireReadWriteLock lock(devs_rwlock);
-    if (devs[dpid].find(devname) == devs[dpid].end()) {
-      throw rofcore::eTapDevNotFound(
-          "cbasebox::set_tap_dev() devname not found");
-    }
-    return *(devs[dpid][devname]);
-  }
-
-  /**
-   *
-   */
-  rofcore::ctapdev &set_tap_dev(const rofl::cdptid &dpid,
-                                const rofl::caddress_ll &hwaddr) {
-    std::map<std::string, rofcore::ctapdev *>::iterator it;
-    rofl::AcquireReadWriteLock lock(devs_rwlock);
-    if ((it = find_if(devs[dpid].begin(), devs[dpid].end(),
-                      rofcore::ctapdev::ctapdev_find_by_hwaddr(
-                          dpid, hwaddr))) == devs[dpid].end()) {
-      throw rofcore::eTapDevNotFound(
-          "cbasebox::set_tap_dev() hwaddr not found");
-    }
-    return *(it->second);
-  }
-
-  /**
-   *
-   */
-  const rofcore::ctapdev &get_tap_dev(const rofl::cdptid &dpid,
-                                      const std::string &devname) const {
-    rofl::AcquireReadLock lock(devs_rwlock);
-    if (devs.find(dpid) == devs.end()) {
-      throw rofcore::eTapDevNotFound("cbasebox::get_tap_dev() dpid not found");
-    }
-    if (devs.at(dpid).find(devname) == devs.at(dpid).end()) {
-      throw rofcore::eTapDevNotFound(
-          "cbasebox::get_tap_dev() devname not found");
-    }
-    return *(devs.at(dpid).at(devname));
-  }
-
-  /**
-   *
-   */
-  const rofcore::ctapdev &get_tap_dev(const rofl::cdptid &dpid,
-                                      const rofl::caddress_ll &hwaddr) const {
-    rofl::AcquireReadLock lock(devs_rwlock);
-    if (devs.find(dpid) == devs.end()) {
-      throw rofcore::eTapDevNotFound("cbasebox::get_tap_dev() dpid not found");
-    }
-    std::map<std::string, rofcore::ctapdev *>::const_iterator it;
-    if ((it = find_if(devs.at(dpid).begin(), devs.at(dpid).end(),
-                      rofcore::ctapdev::ctapdev_find_by_hwaddr(
-                          dpid, hwaddr))) == devs.at(dpid).end()) {
-      throw rofcore::eTapDevNotFound(
-          "cbasebox::get_tap_dev() hwaddr not found");
-    }
-    return *(it->second);
-  }
-
-  /**
-   *
-   */
-  void drop_tap_dev(const rofl::cdptid &dpid, const std::string &devname) {
-    if (devs[dpid].find(devname) == devs[dpid].end()) {
-      return;
-    }
-    delete devs[dpid][devname];
-    devs[dpid].erase(devname);
-  }
-
-  /**
-   *
-   */
-  bool has_tap_dev(const rofl::cdptid &dpid, const std::string &devname) const {
-    rofl::AcquireReadLock lock(devs_rwlock);
-    if (devs.find(dpid) == devs.end()) {
-      return false;
-    }
-    return (not(devs.at(dpid).find(devname) == devs.at(dpid).end()));
-  }
-
-  /**
-   *
-   */
-  bool has_tap_dev(const rofl::cdptid &dpid,
-                   const rofl::caddress_ll &hwaddr) const {
-    rofl::AcquireReadLock lock(devs_rwlock);
-    if (devs.find(dpid) == devs.end()) {
-      return false;
-    }
-    std::map<std::string, rofcore::ctapdev *>::const_iterator it;
-    if ((it = find_if(devs.at(dpid).begin(), devs.at(dpid).end(),
-                      rofcore::ctapdev::ctapdev_find_by_hwaddr(
-                          dpid, hwaddr))) == devs.at(dpid).end()) {
-      return false;
-    }
-    return true;
-  }
-
   /* IO */
-  void enqueue(rofcore::ctapdev *netdev, rofl::cpacket *pkt);
-
-  void enqueue(rofcore::ctapdev *netdev, std::vector<rofl::cpacket *> pkts);
+  int enqueue(rofcore::ctapdev *netdev, rofl::cpacket *pkt) override;
 
   /* netlink */
   void link_created(unsigned int ifindex) noexcept override;

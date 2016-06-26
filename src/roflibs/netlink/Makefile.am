@@ -8,8 +8,8 @@ libroflibs_netlink_la_SOURCES = \
 	cnetlink.hpp \
 	cnetlink.cpp \
 	cnetlink_observer.hpp \
-	cnetdev.hpp \
-	cnetdev.cpp \
+	tap_manager.hpp \
+	tap_manager.cpp \
 	ctapdev.hpp \
 	ctapdev.cpp \
 	cpacketpool.hpp \

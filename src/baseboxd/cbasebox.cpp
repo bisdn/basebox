@@ -249,7 +249,7 @@ void cbasebox::handle_port_desc_stats_reply(
   switch_behavior *tmp = this->sa;
   this->sa = switch_behavior_fabric::get_behavior(1, dpt);
   assert(this->sa);
-  this->sa->init();
+  this->sa->init(dpt);
 
   if (tmp) {
     delete tmp;

@@ -1,13 +1,15 @@
-#include "switch_behavior_ofdpa.hpp"
-#include "ofdpa_datatypes.h"
-#include "roflibs/netlink/clogging.hpp"
-
 #include <map>
+#include <deque>
 #include <linux/if_ether.h>
 
 #include <rofl/ofdpa/rofl_ofdpa_fm_driver.hpp>
 #include <rofl/common/openflow/cofport.h>
 #include <rofl/common/openflow/cofports.h>
+
+#include "switch_behavior_ofdpa.hpp"
+#include "ofdpa_datatypes.h"
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/cpacketpool.hpp"
 
 namespace basebox {
 
@@ -24,43 +26,39 @@ switch_behavior_ofdpa::switch_behavior_ofdpa(rofl::crofdpt &dpt)
   logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__
                  << "] dpt: " << std::endl
                  << dpt;
+  tap_man = new rofcore::tap_manager();
 }
 
 switch_behavior_ofdpa::~switch_behavior_ofdpa() {
-  // TODO need this?
-  //	try {
-  //		if (STATE_ATTACHED == state) {
-  //			handle_dpt_close();
-  //		}
-  //	} catch (rofl::eRofDptNotFound& e) {}
-
-  clear_tap_devs(dptid);
+  delete tap_man;
 }
 
-void switch_behavior_ofdpa::init_ports() {
+void switch_behavior_ofdpa::init(rofl::crofdpt &dpt) {
   using rofl::openflow::cofport;
-  using std::map;
-  using std::set;
+  
+  std::deque<std::string> ports;
 
   /* init 1:1 port mapping */
   try {
-    for (const auto &i : dpt.get_ports().keys()) { // XXX get dpt using cdptid
-      const cofport &port =
-          dpt.get_ports().get_port(i); // XXX get dpt using cdptid
-      if (not has_tap_dev(dptid, port.get_name())) {
-        logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
-                        << "] adding port " << port.get_name()
-                        << " with portno=" << port.get_port_no()
-                        << " at dptid=" << dptid << std::endl;
-        add_tap_dev(dptid, port.get_name(), 1,
-                    port.get_hwaddr()); // TODO remove pvid from tapdev
-      }
+    for (const auto &i : dpt.get_ports().keys()) {
+      const cofport &port = dpt.get_ports().get_port(i);
+      ports.push_back(port.get_name());
     }
+
+    std::deque<std::pair<int, std::string>> devs =
+        tap_man->create_tapdevs(ports, *this);
+
+    for (auto i : devs) {
+      const rofl::openflow::cofport &port = dpt.get_ports().get_port(i.second);
+      of_port_to_port_id[port.get_port_no()] = i.first;
+      port_id_to_of_port[i.first] = port.get_port_no();
+    }
+
     logging::info << "ports initialized" << std::endl;
 
-  } catch (rofl::eRofDptNotFound &e) {
+  } catch (std::exception &e) {
     logging::error << "[switch_behavior_ofdpa][" << __FUNCTION__
-                   << "] ERROR: eRofDptNotFound" << std::endl;
+                   << "] ERROR: unknown error " << e.what() << std::endl;
   }
 }
 
@@ -136,12 +134,11 @@ void switch_behavior_ofdpa::handle_acl_policy_table(
   try {
     const cofport &port =
         dpt.get_ports().get_port(msg.get_match().get_in_port());
-    rofcore::ctapdev &dev = set_tap_dev(dpt.get_dptid(), port.get_name());
 
     rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
     *pkt = msg.get_packet();
 
-    dev.enqueue(pkt);
+    tap_man->get_dev(of_port_to_port_id.at(port.get_port_no())).enqueue(pkt);
   } catch (rofcore::ePacketPoolExhausted &e) {
     logging::error << __FUNCTION__ << "ePacketPoolExhausted: " << e.what()
                    << std::endl;
@@ -266,11 +263,12 @@ void switch_behavior_ofdpa::handle_bridging_table_rm(
 #endif
 }
 
-void switch_behavior_ofdpa::enqueue(rofcore::ctapdev *netdev,
+int switch_behavior_ofdpa::enqueue(rofcore::ctapdev *tapdev,
                                     rofl::cpacket *pkt) {
   using rofl::openflow::cofport;
   using std::map;
 
+  assert(tapdev && "no tapdev");
   assert(pkt && "invalid enque");
   struct ethhdr *eth = (struct ethhdr *)pkt->soframe();
 
@@ -278,13 +276,10 @@ void switch_behavior_ofdpa::enqueue(rofcore::ctapdev *netdev,
     logging::debug << "[switch_behavior_ofdpa][" << __FUNCTION__
                    << "]: drop multicast packet" << std::endl;
     rofcore::cpacketpool::get_instance().release_pkt(pkt);
-    return;
+    return -ENOTSUP;
   }
 
   try {
-    rofcore::ctapdev *tapdev = dynamic_cast<rofcore::ctapdev *>(netdev);
-    assert(tapdev);
-
     if (not dpt.is_established()) { // XXX get dpt using cdptid
       throw eLinkNoDptAttached(
           "switch_behavior_ofdpa::enqueue() dpt not found");
@@ -299,7 +294,7 @@ void switch_behavior_ofdpa::enqueue(rofcore::ctapdev *netdev,
       logging::error << __FUNCTION__ << ": invalid port for packet "
                                         "out"
                      << std::endl;
-      return;
+      return -EINVAL;
     }
 
     /* only send packet-out if we can determine a port-no */
@@ -336,14 +331,7 @@ void switch_behavior_ofdpa::enqueue(rofcore::ctapdev *netdev,
   }
 
   rofcore::cpacketpool::get_instance().release_pkt(pkt);
-}
-
-void switch_behavior_ofdpa::enqueue(rofcore::ctapdev *netdev,
-                                    std::vector<rofl::cpacket *> pkts) {
-  for (std::vector<rofl::cpacket *>::iterator it = pkts.begin();
-       it != pkts.end(); ++it) {
-    enqueue(netdev, *it);
-  }
+  return 0;
 }
 
 void switch_behavior_ofdpa::link_created(unsigned int ifindex) noexcept {
@@ -355,7 +343,7 @@ void switch_behavior_ofdpa::link_created(unsigned int ifindex) noexcept {
                   << rtl;
 
     // currently ignore all interfaces besides the tap devs
-    if (not has_tap_dev(dptid, rtl.get_devname())) {
+    if (not dpt.get_ports().has_port(rtl.get_devname())) {
       logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
                       << "]: ignore interface " << rtl.get_devname()
                       << " with dptid=" << dptid << std::endl
@@ -397,7 +385,7 @@ void switch_behavior_ofdpa::link_updated(
   using rofcore::cnetlink;
 
   // currently ignore all interfaces besides the tap devs
-  if (not has_tap_dev(dptid, newlink.get_devname())) {
+  if (not dpt.get_ports().has_port(newlink.get_devname())) {
     logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
                     << "]: ignore interface " << newlink.get_devname()
                     << " with dptid=" << dptid << std::endl
@@ -427,7 +415,7 @@ void switch_behavior_ofdpa::link_deleted(unsigned int ifindex) noexcept {
         rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
 
     // currently ignore all interfaces besides the tap devs
-    if (not has_tap_dev(dptid, rtl.get_devname())) {
+    if (not dpt.get_ports().has_port(rtl.get_devname())) {
       logging::notice << "[switch_behavior_ofdpa][" << __FUNCTION__
                       << "]: ignore interface " << rtl.get_devname()
                       << " with dptid=" << dptid << std::endl

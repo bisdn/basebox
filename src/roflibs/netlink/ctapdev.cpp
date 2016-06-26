@@ -5,20 +5,24 @@
  *      Author: andreas
  */
 
-#include "ctapdev.hpp"
+#include <sys/socket.h>
+#include <linux/if.h>
 
-using namespace rofcore;
+#include "ctapdev.hpp"
+#include "roflibs/netlink/tap_manager.hpp"
+#include "roflibs/netlink/cpacketpool.hpp"
 
 extern int errno;
 
-ctapdev::ctapdev(cnetdev_owner *netdev_owner, const rofl::cdptid &dptid,
-                 std::string const &devname, uint16_t pvid,
-                 rofl::cmacaddr const &hwaddr, pthread_t tid)
-    : fd(-1), dptid(dptid), devname(devname), pvid(pvid), hwaddr(hwaddr),
-      thread(this), netdev_owner(netdev_owner) {
+namespace rofcore {
+
+ctapdev::ctapdev(tap_callback &cb, std::string const &devname,
+                 pthread_t tid)
+    : fd(-1), devname(devname), thread(this), cb(cb)
+       {
   try {
-    tap_open(hwaddr);
-  } catch (...) {
+    tap_open(); /// XXX FIXME exceptions are wrong handled here
+  } catch (std::exception &e) {
     thread.add_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec().expire_in(1));
   }
 }
@@ -28,7 +32,7 @@ ctapdev::~ctapdev() {
   thread.stop();
 }
 
-void ctapdev::tap_open(rofl::cmacaddr const &hwaddr) {
+void ctapdev::tap_open() {
   try {
     struct ifreq ifr;
     int rc;
@@ -58,53 +62,28 @@ void ctapdev::tap_open(rofl::cmacaddr const &hwaddr) {
                                "IFF_NO_PI on /dev/net/tun failed");
     }
 
-    // set_hwaddr(hwaddr);
-
-    // netdev_owner->netdev_open(this);
-
     thread.start();
     thread.add_read_fd(fd);
     thread.add_write_fd(fd);
 
   } catch (eTapDevOpenFailed &e) {
-
     rofcore::logging::error
         << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl
         << rofl::eSysCall("open");
-
-    throw eNetDevCritical(e.what());
-
   } catch (eTapDevIoctlFailed &e) {
-
     rofcore::logging::error
         << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl
         << rofl::eSysCall("ctapdev ioctl");
-
-    throw eNetDevCritical(e.what());
-
-  } catch (eNetDevIoctl &e) {
-
-    rofcore::logging::error
-        << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl
-        << rofl::eSysCall("cnetdev ioctl");
-
-    throw eNetDevCritical(e.what());
   }
 }
 
 void ctapdev::tap_close() {
-  try {
-    if (fd == -1) {
-      return;
-    }
-
-    thread.drop_read_fd(fd);
-    thread.drop_write_fd(fd);
-
-  } catch (eNetDevIoctl &e) {
-    rofcore::logging::error << "ctapdev::tap_close() failed: dev:" << devname
-                            << std::endl;
+  if (fd == -1) {
+    return;
   }
+
+  thread.drop_read_fd(fd);
+  thread.drop_write_fd(fd);
 
   close(fd);
 
@@ -118,10 +97,10 @@ void ctapdev::enqueue(rofl::cpacket *pkt) {
   }
 
   // store pkt in outgoing queue
-  rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
-  pout_queue.push_back(pkt);
-
-  // todo log enqueue
+  {
+    rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
+    pout_queue.push_back(pkt);
+  }
 
   thread.wakeup();
 }
@@ -136,10 +115,12 @@ void ctapdev::enqueue(std::vector<rofl::cpacket *> pkts) {
   }
 
   // store pkts in outgoing queue
-  rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
-  for (std::vector<rofl::cpacket *>::iterator it = pkts.begin();
-       it != pkts.end(); ++it) {
-    pout_queue.push_back(*it);
+  {
+    rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
+    for (std::vector<rofl::cpacket *>::iterator it = pkts.begin();
+         it != pkts.end(); ++it) {
+      pout_queue.push_back(*it);
+    }
   }
 
   thread.wakeup();
@@ -157,42 +138,24 @@ void ctapdev::handle_read_event(rofl::cthread &thread, int fd) {
     if (rc < 0) {
       switch (errno) {
       case EAGAIN:
-        throw eNetDevAgain(
-            "ctapdev::handle_revent() EAGAIN when reading from /dev/net/tun");
+        rofcore::logging::error
+            << "ctapdev::handle_revent() EAGAIN, retrying later" << std::endl;
       default:
-        throw eNetDevCritical(
-            "ctapdev::handle_revent() error when reading from /dev/net/tun");
+        rofcore::logging::error << "ctapdev::handle_revent() error occured"
+                                << std::endl;
       }
     } else {
       pkt = cpacketpool::get_instance().acquire_pkt();
 
       pkt->unpack(mem.somem(), rc);
 
-      netdev_owner->enqueue(this, pkt);
+      cb.enqueue(this, pkt);
     }
 
   } catch (ePacketPoolExhausted &e) {
     rofcore::logging::error << "ctapdev::handle_revent() packet pool "
                                "exhausted, no idle slots available"
                             << std::endl;
-
-  } catch (eNetDevAgain &e) {
-
-    rofcore::logging::error << "ctapdev::handle_revent() EAGAIN, retrying later"
-                            << std::endl;
-
-    if (pkt)
-      cpacketpool::get_instance().release_pkt(pkt);
-
-  } catch (eNetDevCritical &e) {
-    rofcore::logging::error << "ctapdev::handle_revent() error occured"
-                            << std::endl;
-
-    if (pkt)
-      cpacketpool::get_instance().release_pkt(pkt);
-
-    delete this;
-    return;
   }
 }
 
@@ -200,44 +163,24 @@ void ctapdev::handle_write_event(rofl::cthread &thread, int fd) { tx(); }
 
 void ctapdev::tx() {
   rofl::cpacket *pkt = NULL;
-  try {
-    rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
-    while (not pout_queue.empty()) {
+  rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
+  while (not pout_queue.empty()) {
 
-      pkt = pout_queue.front();
-      int rc = 0;
-      if ((rc = write(fd, pkt->soframe(), pkt->length())) < 0) {
-        switch (errno) {
-        case EAGAIN:
-          rofcore::logging::debug << "ctapdev::tx() EAGAIN" << std::endl;
-          return;
-        default:
-          // throw eNetDevCritical("ctapdev::handle_wevent() error occured");
-          rofcore::logging::error << "ctapdev::tx() unknown error occured"
-                                  << std::endl;
-          return;
-        }
+    pkt = pout_queue.front();
+    int rc = 0;
+    if ((rc = write(fd, pkt->soframe(), pkt->length())) < 0) {
+      switch (errno) {
+      case EAGAIN:
+        rofcore::logging::debug << "ctapdev::tx() EAGAIN" << std::endl;
+        return;
+      default:
+        rofcore::logging::error << "ctapdev::tx() unknown error occured"
+                                << std::endl;
+        return;
       }
-
-      cpacketpool::get_instance().release_pkt(pkt);
-
-      pout_queue.pop_front();
     }
-
-  } catch (eNetDevAgain &e) {
-
-    // keep fd in wfds
-    rofcore::logging::error << "ctapdev::handle_wevent() EAGAIN, retrying later"
-                            << std::endl;
-
-  } catch (eNetDevCritical &e) {
-
-    rofcore::logging::error << "ctapdev::handle_wevent() critical error occured"
-                            << std::endl;
     cpacketpool::get_instance().release_pkt(pkt);
-
-    throw;
-    // delete this; return;
+    pout_queue.pop_front();
   }
 }
 
@@ -246,10 +189,12 @@ void ctapdev::handle_timeout(rofl::cthread &thread, uint32_t timer_id,
   switch (timer_id) {
   case CTAPDEV_TIMER_OPEN_PORT: {
     try {
-      tap_open(hwaddr);
+      tap_open();
     } catch (...) {
       thread.add_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec().expire_in(1));
     }
   } break;
   }
 }
+
+} // namespace rofcore

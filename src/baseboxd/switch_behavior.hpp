@@ -57,7 +57,7 @@ public:
 
   virtual int get_switch_type() { return -1; }
 
-  virtual void init() {
+  virtual void init(rofl::crofdpt &dpt) {
     rofcore::logging::warn << __FUNCTION__ << ": unhandled" << std::endl;
   }
 
