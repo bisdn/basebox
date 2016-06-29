@@ -2,12 +2,11 @@
 
 namespace rofcore {
 
-tap_manager::~tap_manager() {
-  destroy_tapdevs();
-}
+tap_manager::~tap_manager() { destroy_tapdevs(); }
 
 std::deque<std::pair<int, std::string>>
-tap_manager::create_tapdevs(std::deque<std::string> &port_names, tap_callback &cb) {
+tap_manager::create_tapdevs(std::deque<std::string> &port_names,
+                            tap_callback &cb) {
   std::deque<std::pair<int, std::string>> r;
 
   for (auto &port_name : port_names) {

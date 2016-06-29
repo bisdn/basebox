@@ -16,10 +16,8 @@ extern int errno;
 
 namespace rofcore {
 
-ctapdev::ctapdev(tap_callback &cb, std::string const &devname,
-                 pthread_t tid)
-    : fd(-1), devname(devname), thread(this), cb(cb)
-       {
+ctapdev::ctapdev(tap_callback &cb, std::string const &devname, pthread_t tid)
+    : fd(-1), devname(devname), thread(this), cb(cb) {
   try {
     tap_open(); /// XXX FIXME exceptions are wrong handled here
   } catch (std::exception &e) {

@@ -40,7 +40,7 @@ private:
   tap_manager(const tap_manager &other) = delete; // non construction-copyable
   tap_manager &operator=(const tap_manager &) = delete; // non copyable
 
-  std::vector<ctapdev*> devs;
+  std::vector<ctapdev *> devs;
 };
 
 } // namespace rofcore

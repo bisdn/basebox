@@ -30,23 +30,23 @@ class tap_callback;
 
 class eTapDevBase : public std::runtime_error {
 public:
-  eTapDevBase(const std::string &__arg) : std::runtime_error(__arg){}
+  eTapDevBase(const std::string &__arg) : std::runtime_error(__arg) {}
 };
 class eTapDevSysCallFailed : public eTapDevBase {
 public:
-  eTapDevSysCallFailed(const std::string &__arg) : eTapDevBase(__arg){}
+  eTapDevSysCallFailed(const std::string &__arg) : eTapDevBase(__arg) {}
 };
 class eTapDevOpenFailed : public eTapDevSysCallFailed {
 public:
-  eTapDevOpenFailed(const std::string &__arg) : eTapDevSysCallFailed(__arg){}
+  eTapDevOpenFailed(const std::string &__arg) : eTapDevSysCallFailed(__arg) {}
 };
 class eTapDevIoctlFailed : public eTapDevSysCallFailed {
 public:
-  eTapDevIoctlFailed(const std::string &__arg) : eTapDevSysCallFailed(__arg){}
+  eTapDevIoctlFailed(const std::string &__arg) : eTapDevSysCallFailed(__arg) {}
 };
 class eTapDevNotFound : public eTapDevBase {
 public:
-  eTapDevNotFound(const std::string &__arg) : eTapDevBase(__arg){}
+  eTapDevNotFound(const std::string &__arg) : eTapDevBase(__arg) {}
 };
 
 class ctapdev : public rofl::cthread_env {
@@ -69,8 +69,7 @@ public:
    * @param netdev_owner
    * @param devname
    */
-  ctapdev(tap_callback &cb, std::string const &devname,
-          pthread_t tid = 0);
+  ctapdev(tap_callback &cb, std::string const &devname, pthread_t tid = 0);
 
   /**
    *
@@ -125,7 +124,6 @@ protected:
    */
   virtual void handle_timeout(rofl::cthread &thread, uint32_t timer_id,
                               const std::list<unsigned int> &ttypes);
-
 };
 
 } // end of namespace rofcore
