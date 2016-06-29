@@ -171,9 +171,13 @@ void ctapdev::tx() {
       case EAGAIN:
         rofcore::logging::debug << "ctapdev::tx() EAGAIN" << std::endl;
         return;
+      case EIO:
+        // tap not enabled drop packet
+        break;
       default:
-        rofcore::logging::error << "ctapdev::tx() unknown error occured"
-                                << std::endl;
+        rofcore::logging::error
+            << "ctapdev::tx() unknown error occured rc=" << rc
+            << " errno=" << errno << " '" << strerror(errno) << std::endl;
         return;
       }
     }
