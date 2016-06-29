@@ -8,8 +8,6 @@ baseboxd_SOURCES = \
 	baseboxd.cpp \
 	cbasebox.hpp \
 	cbasebox.cpp \
-	switch_behavior.hpp \
-	switch_behavior.cpp \
 	cunixenv.cpp \
 	cunixenv.hpp
 	

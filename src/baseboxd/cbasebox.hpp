@@ -16,12 +16,14 @@
 #include <string>
 #include <iostream>
 #include <exception>
+
 #include <rofl/common/crofbase.h>
 
 #include "roflibs/netlink/clogging.hpp"
 #include "roflibs/netlink/cnetlink.hpp"
-
-#include <baseboxd/switch_behavior.hpp>
+#include "roflibs/netlink/cnetlink_observer.hpp"
+#include "roflibs/netlink/tap_manager.hpp"
+#include "roflibs/of-dpa/ofdpa_bridge.hpp"
 
 namespace basebox {
 
@@ -32,7 +34,20 @@ public:
 
 static rofl::crofdpt invalid(NULL, rofl::cdptid(0));
 
-class cbasebox : public rofl::crofbase, public virtual rofl::cthread_env {
+class cbasebox : public rofl::crofbase,
+                 public virtual rofl::cthread_env,
+                 public rofcore::tap_callback,
+                 public rofcore::auto_reg_cnetlink_common_observer {
+
+  enum ExperimenterMessageType {
+    QUERY_FLOW_ENTRIES, ///< query flow entries from controller
+    RECEIVED_FLOW_ENTRIES_QUERY
+  };
+
+  enum ExperimenterId {
+    BISDN = 0xFF0000B0 ///< should be registered as ONF-Managed Experimenter ID
+                       ///(OUI)
+  };
 
   static bool keep_on_running;
   rofl::cthread thread;
@@ -42,15 +57,16 @@ class cbasebox : public rofl::crofbase, public virtual rofl::cthread_env {
    */
   cbasebox(const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
                rofl::openflow::cofhello_elem_versionbitmap())
-      : thread(this), sa(switch_behavior_fabric::get_behavior(-1, invalid)) {
+      : thread(this), fm_driver(), bridge(fm_driver) {
     rofl::crofbase::set_versionbitmap(versionbitmap);
     thread.start();
+    tap_man = new rofcore::tap_manager();
   }
 
   /**
    *
    */
-  virtual ~cbasebox() {}
+  virtual ~cbasebox() { delete tap_man; }
 
   /**
    *
@@ -161,12 +177,47 @@ public:
   }
 
 private:
-  rofl::cdpid dpid;
+  rofl::cdptid dptid;
+  rofcore::tap_manager *tap_man;
+  rofl::rofl_ofdpa_fm_driver fm_driver;
+  ofdpa_bridge bridge;
+  std::map<int, uint32_t> port_id_to_of_port;
+  std::map<uint32_t, int> of_port_to_port_id;
 
-  // behavior of the switch (currently only a single switch)
-  switch_behavior *sa;
-};
+  /* IO */
+  int enqueue(rofcore::ctapdev *netdev, rofl::cpacket *pkt) override;
 
-} // end of namespace ethcore
+  /* OF handler */
+  void handle_srcmac_table(rofl::crofdpt &dpt,
+                           rofl::openflow::cofmsg_packet_in &msg);
+
+  void handle_acl_policy_table(rofl::crofdpt &dpt,
+                               rofl::openflow::cofmsg_packet_in &msg);
+
+  void handle_bridging_table_rm(rofl::crofdpt &dpt,
+                                rofl::openflow::cofmsg_flow_removed &msg);
+
+  void init(rofl::crofdpt &dpt);
+
+  void send_full_state(rofl::crofdpt &dpt);
+
+  /* netlink */
+  void link_created(unsigned int ifindex) noexcept override;
+
+  void link_updated(const rofcore::crtlink &newlink) noexcept override;
+
+  void link_deleted(unsigned int ifindex) noexcept override;
+
+  void neigh_ll_created(unsigned int ifindex,
+                        uint16_t nbindex) noexcept override;
+
+  void neigh_ll_updated(unsigned int ifindex,
+                        uint16_t nbindex) noexcept override;
+
+  void neigh_ll_deleted(unsigned int ifindex,
+                        uint16_t nbindex) noexcept override;
+}; // class cbasebox
+
+} // end of namespace basebox
 
 #endif /* CROFBASE_HPP_ */

@@ -5,8 +5,6 @@ SUBDIRS =
 noinst_LTLIBRARIES = libroflibs_ofdpa.la
 
 libroflibs_ofdpa_la_SOURCES = \
-	switch_behavior_ofdpa.cpp \
-	switch_behavior_ofdpa.hpp \
 	ofdpa_bridge.hpp \
 	ofdpa_bridge.cpp \
 	ofdpa_datatypes.h
