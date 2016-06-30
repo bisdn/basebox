@@ -376,13 +376,13 @@ void cbasebox::handle_acl_policy_table(rofl::crofdpt &dpt,
 
     tap_man->get_dev(of_port_to_port_id.at(port.get_port_no())).enqueue(pkt);
   } catch (rofcore::ePacketPoolExhausted &e) {
-    logging::error << __FUNCTION__ << "ePacketPoolExhausted: " << e.what()
+    logging::error << __FUNCTION__ << " ePacketPoolExhausted: " << e.what()
                    << std::endl;
   } catch (rofcore::eTapDevNotFound &e) {
-    logging::error << __FUNCTION__ << "eTapDevNotFound: " << e.what()
+    logging::error << __FUNCTION__ << " eTapDevNotFound: " << e.what()
                    << std::endl;
   } catch (std::exception &e) {
-    logging::error << __FUNCTION__ << "exception: " << e.what() << std::endl;
+    logging::error << __FUNCTION__ << " exception: " << e.what() << std::endl;
   }
 }
 
