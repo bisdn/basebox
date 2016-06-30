@@ -159,22 +159,42 @@ void ctapdev::handle_read_event(rofl::cthread &thread, int fd) {
 
 void ctapdev::handle_write_event(rofl::cthread &thread, int fd) { tx(); }
 
+static inline void release_packets(std::deque<rofl::cpacket *> &q) {
+  for (auto i : q) {
+    cpacketpool::get_instance().release_pkt(i);
+  }
+}
+
 void ctapdev::tx() {
   rofl::cpacket *pkt = NULL;
-  rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
-  while (not pout_queue.empty()) {
+  std::deque<rofl::cpacket *> out_queue;
 
-    pkt = pout_queue.front();
+  {
+    rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
+    out_queue = std::move(pout_queue);
+  }
+
+  while (not out_queue.empty()) {
+
+    pkt = out_queue.front();
     int rc = 0;
     if ((rc = write(fd, pkt->soframe(), pkt->length())) < 0) {
       switch (errno) {
       case EAGAIN:
         rofcore::logging::debug << "ctapdev::tx() EAGAIN" << std::endl;
+        {
+          rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
+          std::move(out_queue.rbegin(), out_queue.rend(),
+                    std::front_inserter(pout_queue));
+        }
         return;
       case EIO:
         // tap not enabled drop packet
-        break;
+        release_packets(out_queue);
+        return;
       default:
+        // will drop packets
+        release_packets(out_queue);
         rofcore::logging::error
             << "ctapdev::tx() unknown error occured rc=" << rc
             << " errno=" << errno << " '" << strerror(errno) << std::endl;
@@ -182,7 +202,7 @@ void ctapdev::tx() {
       }
     }
     cpacketpool::get_instance().release_pkt(pkt);
-    pout_queue.pop_front();
+    out_queue.pop_front();
   }
 }
 
