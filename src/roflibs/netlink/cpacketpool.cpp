@@ -15,8 +15,11 @@ cpacketpool::cpacketpool(unsigned int n_pkts, unsigned int pkt_size) {
   for (unsigned int i = 0; i < n_pkts; ++i) {
     rofl::cpacket *pkt = new rofl::cpacket(pkt_size);
     pktpool.push_back(pkt);
-    idlepool.insert(pkt);
+    idlepool.push_back(pkt);
   }
+
+  pktpool.shrink_to_fit();
+  idlepool.shrink_to_fit();
 }
 
 cpacketpool::cpacketpool(cpacketpool const &packetpool) {}
@@ -43,14 +46,16 @@ rofl::cpacket *cpacketpool::acquire_pkt() {
     throw ePacketPoolExhausted(
         "cpacketpool::acquire_pkt() packetpool exhausted");
   }
-  rofl::cpacket *pkt = *(idlepool.begin());
-  idlepool.erase(pkt);
+  rofl::cpacket *pkt = idlepool.front();
+  idlepool.pop_front();
   return pkt;
 }
 
 void cpacketpool::release_pkt(rofl::cpacket *pkt) {
   assert(pkt);
-  rofl::AcquireReadWriteLock rwlock(pool_rwlock);
   pkt->clear();
-  idlepool.insert(pkt);
+  {
+    rofl::AcquireReadWriteLock rwlock(pool_rwlock);
+    idlepool.push_back(pkt);
+  }
 }

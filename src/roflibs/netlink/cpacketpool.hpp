@@ -10,7 +10,7 @@
 
 #include <exception>
 #include <vector>
-#include <set>
+#include <deque>
 
 #include <rofl/common/cpacket.h>
 #include <rofl/common/locking.hpp>
@@ -41,7 +41,7 @@ class cpacketpool {
   ~cpacketpool();
 
   std::vector<rofl::cpacket *> pktpool;
-  std::set<rofl::cpacket *> idlepool;
+  std::deque<rofl::cpacket *> idlepool;
 
   // lock for peer controllers
   mutable rofl::crwlock pool_rwlock;

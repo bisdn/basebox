@@ -16,7 +16,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <list>
+#include <deque>
 
 #include <rofl/common/cthread.hpp>
 #include <rofl/common/cdptid.h>
@@ -52,7 +52,7 @@ public:
 class ctapdev : public rofl::cthread_env {
 
   int fd;                                // tap device file descriptor
-  std::list<rofl::cpacket *> pout_queue; // queue of outgoing packets
+  std::deque<rofl::cpacket *> pout_queue; // queue of outgoing packets
   mutable rofl::crwlock pout_queue_rwlock;
   std::string devname;
   uint16_t pvid;
