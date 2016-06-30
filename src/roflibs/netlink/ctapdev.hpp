@@ -51,7 +51,7 @@ public:
 
 class ctapdev : public rofl::cthread_env {
 
-  int fd;                                // tap device file descriptor
+  int fd;                                 // tap device file descriptor
   std::deque<rofl::cpacket *> pout_queue; // queue of outgoing packets
   mutable rofl::crwlock pout_queue_rwlock;
   std::string devname;
