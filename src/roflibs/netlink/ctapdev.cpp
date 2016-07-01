@@ -80,8 +80,8 @@ void ctapdev::tap_close() {
     return;
   }
 
-  thread.drop_read_fd(fd);
-  thread.drop_write_fd(fd);
+  thread.drop_read_fd(fd, false);
+  thread.drop_write_fd(fd, false);
 
   close(fd);
 
