@@ -4,8 +4,6 @@ build.pkg:
       - autoconf
       - automake
       - binutils
-      - bison
-      - flex
       - gcc
       - gcc-c++
       - glibc-devel
