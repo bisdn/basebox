@@ -68,10 +68,12 @@ void ctapdev::tap_open() {
     rofcore::logging::error
         << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl
         << rofl::eSysCall("open");
+    throw;
   } catch (eTapDevIoctlFailed &e) {
     rofcore::logging::error
         << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl
         << rofl::eSysCall("ctapdev ioctl");
+    throw;
   }
 }
 
