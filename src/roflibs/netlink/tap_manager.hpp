@@ -16,7 +16,7 @@ public:
   virtual int enqueue(rofcore::ctapdev *, rofl::cpacket *) = 0;
 };
 
-class tap_manager {
+class tap_manager final {
 
 public:
   tap_manager(){};
