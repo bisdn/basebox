@@ -1,6 +1,7 @@
 #include <deque>
 #include <string>
 #include <vector>
+#include <map>
 
 #include <rofl/common/cpacket.h>
 
@@ -41,6 +42,7 @@ private:
   tap_manager &operator=(const tap_manager &) = delete; // non copyable
 
   std::vector<ctapdev *> devs;
+  std::map<std::string, int> devname_to_spot;
 };
 
 } // namespace rofcore
