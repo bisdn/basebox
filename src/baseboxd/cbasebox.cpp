@@ -489,7 +489,7 @@ int cbasebox::enqueue(rofcore::ctapdev *tapdev, rofl::cpacket *pkt) {
 
   try {
     rofl::crofdpt &dpt = set_dpt(this->dptid, true);
-    if (not dpt.is_established()) { // XXX get dpt using cdptid
+    if (not dpt.is_established()) {
       logging::warn << "[cbasebox][" << __FUNCTION__
                     << "] not connected, dropping packet" << std::endl;
       rv = -ENOTCONN;

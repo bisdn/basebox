@@ -66,7 +66,7 @@ class cbasebox : public rofl::crofbase,
   /**
    *
    */
-  virtual ~cbasebox() { delete tap_man; }
+  ~cbasebox() override { delete tap_man; }
 
   /**
    *
@@ -95,10 +95,10 @@ public:
   static void stop();
 
 protected:
-  virtual void handle_wakeup(rofl::cthread &thread);
+  void handle_wakeup(rofl::cthread &thread) override;
 
-  virtual void handle_conn_established(rofl::crofdpt &dpt,
-                                       const rofl::cauxid &auxid) {
+  void handle_conn_established(rofl::crofdpt &dpt,
+                               const rofl::cauxid &auxid) override {
     dpt.set_conn(auxid).set_trace(true);
 
     crofbase::add_ctl(rofl::cctlid(0))
@@ -115,60 +115,58 @@ protected:
         .set_max_entries(16);
   }
 
-  virtual void handle_dpt_open(rofl::crofdpt &dpt);
+  void handle_dpt_open(rofl::crofdpt &dpt) override;
 
-  virtual void handle_dpt_close(const rofl::cdptid &dptid);
+  void handle_dpt_close(const rofl::cdptid &dptid) override;
 
-  virtual void handle_conn_terminated(rofl::crofdpt &dpt,
-                                      const rofl::cauxid &auxid);
+  void handle_conn_terminated(rofl::crofdpt &dpt,
+                              const rofl::cauxid &auxid) override;
 
-  virtual void handle_conn_refused(rofl::crofdpt &dpt,
-                                   const rofl::cauxid &auxid);
+  void handle_conn_refused(rofl::crofdpt &dpt,
+                           const rofl::cauxid &auxid) override;
 
-  virtual void handle_conn_failed(rofl::crofdpt &dpt,
-                                  const rofl::cauxid &auxid);
+  void handle_conn_failed(rofl::crofdpt &dpt,
+                          const rofl::cauxid &auxid) override;
 
-  virtual void handle_conn_negotiation_failed(rofl::crofdpt &dpt,
-                                              const rofl::cauxid &auxid);
+  void handle_conn_negotiation_failed(rofl::crofdpt &dpt,
+                                      const rofl::cauxid &auxid) override;
 
-  virtual void handle_conn_congestion_occured(rofl::crofdpt &dpt,
-                                              const rofl::cauxid &auxid);
+  void handle_conn_congestion_occured(rofl::crofdpt &dpt,
+                                      const rofl::cauxid &auxid) override;
 
-  virtual void handle_conn_congestion_solved(rofl::crofdpt &dpt,
-                                             const rofl::cauxid &auxid);
+  void handle_conn_congestion_solved(rofl::crofdpt &dpt,
+                                     const rofl::cauxid &auxid) override;
 
-  virtual void
+  void
   handle_features_reply(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
-                        rofl::openflow::cofmsg_features_reply &msg);
+                        rofl::openflow::cofmsg_features_reply &msg) override;
 
-  virtual void
-  handle_desc_stats_reply(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
-                          rofl::openflow::cofmsg_desc_stats_reply &msg);
-
-  virtual void handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
-                                rofl::openflow::cofmsg_packet_in &msg);
-
-  virtual void handle_flow_removed(rofl::crofdpt &dpt,
-                                   const rofl::cauxid &auxid,
-                                   rofl::openflow::cofmsg_flow_removed &msg);
-
-  virtual void handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
-                                  rofl::openflow::cofmsg_port_status &msg);
-
-  virtual void handle_error_message(rofl::crofdpt &dpt,
-                                    const rofl::cauxid &auxid,
-                                    rofl::openflow::cofmsg_error &msg);
-
-  virtual void handle_port_desc_stats_reply(
+  void handle_desc_stats_reply(
       rofl::crofdpt &dpt, const rofl::cauxid &auxid,
-      rofl::openflow::cofmsg_port_desc_stats_reply &msg);
+      rofl::openflow::cofmsg_desc_stats_reply &msg) override;
 
-  virtual void handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
-                                                    uint32_t xid);
+  void handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                        rofl::openflow::cofmsg_packet_in &msg) override;
 
-  virtual void
-  handle_experimenter_message(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
-                              rofl::openflow::cofmsg_experimenter &msg);
+  void handle_flow_removed(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                           rofl::openflow::cofmsg_flow_removed &msg) override;
+
+  void handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                          rofl::openflow::cofmsg_port_status &msg) override;
+
+  void handle_error_message(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                            rofl::openflow::cofmsg_error &msg) override;
+
+  void handle_port_desc_stats_reply(
+      rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+      rofl::openflow::cofmsg_port_desc_stats_reply &msg) override;
+
+  void handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
+                                            uint32_t xid) override;
+
+  void handle_experimenter_message(
+      rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+      rofl::openflow::cofmsg_experimenter &msg) override;
 
 public:
   friend std::ostream &operator<<(std::ostream &os, const cbasebox &box) {
