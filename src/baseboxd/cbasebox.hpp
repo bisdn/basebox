@@ -95,7 +95,7 @@ public:
   static void stop();
 
 protected:
-  virtual void handle_wakeup(rofl::cthread &thread) {}
+  virtual void handle_wakeup(rofl::cthread &thread);
 
   virtual void handle_conn_established(rofl::crofdpt &dpt,
                                        const rofl::cauxid &auxid) {

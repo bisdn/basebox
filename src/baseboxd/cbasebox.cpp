@@ -127,10 +127,13 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
   // todo timeout?
 }
 
-void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
+void cbasebox::handle_wakeup(rofl::cthread &thread) {
+  logging::crit << "[cbasebox][handle_wakeup] XXX not implemented" << std::endl;
+}
 
-  logging::debug << "[cbasebox][handle_dpt_close] dptid: " << dptid.str()
-                 << std::endl;
+void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
+  logging::notice << "[cbasebox][handle_dpt_close] dptid: " << dptid.str()
+                  << std::endl;
 }
 
 void cbasebox::handle_conn_terminated(rofl::crofdpt &dpt,
