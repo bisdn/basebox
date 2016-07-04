@@ -5,6 +5,8 @@
 #ifndef SRC_ROFLIBS_OF_DPA_OFDPA_DATATYPES_H_
 #define SRC_ROFLIBS_OF_DPA_OFDPA_DATATYPES_H_
 
+#include <cstdint>
+
 static const uint32_t OFDPA_EXP_ID = 0x001018;
 
 /* OXM Flow match field types for OpenFlow Experimental */

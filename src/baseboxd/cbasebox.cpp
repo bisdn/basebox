@@ -8,7 +8,7 @@
 #include "cunixenv.hpp"
 
 #include "roflibs/netlink/cpacketpool.hpp"
-#include "roflibs/of-dpa/ofdpa_datatypes.h"
+#include "roflibs/of-dpa/ofdpa_datatypes.hpp"
 
 namespace basebox {
 

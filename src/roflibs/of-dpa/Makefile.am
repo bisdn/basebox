@@ -7,7 +7,7 @@ noinst_LTLIBRARIES = libroflibs_ofdpa.la
 libroflibs_ofdpa_la_SOURCES = \
 	ofdpa_bridge.hpp \
 	ofdpa_bridge.cpp \
-	ofdpa_datatypes.h
+	ofdpa_datatypes.hpp
 
 libroflibs_ofdpa_la_LIBADD = 
 
