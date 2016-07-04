@@ -1,5 +1,5 @@
-%define snapshotrel @SPEC_SNAPSHOTREL@
-%define snapshot @SPEC_SNAPSHOT@
+%global snapshotrel @SPEC_SNAPSHOTREL@%{nil}
+%global snapshot @SPEC_SNAPSHOT@%{nil}
 
 Name:          baseboxd
 Version:       @SPEC_VERSION@
