@@ -1,9 +1,6 @@
-/*
- * cbasebox.hpp
- *
- *  Created on: 05.08.2014
- *      Author: andreas
- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef CROFBASE_HPP_
 #define CROFBASE_HPP_
