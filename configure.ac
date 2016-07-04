@@ -71,18 +71,18 @@ fi
 
 # check for libraries
 PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.28 libnl-route-3.0 >= 3.2.28,
-  [ CPPFLAGS+="$LIBNL3_CFLAGS"
-	LIBS+="$LIBNL3_LIBS"],
+  [ CPPFLAGS="$CPPFLAGS $LIBNL3_CFLAGS"
+	LIBS="$LIBS $LIBNL3_LIBS"],
   [ AC_MSG_ERROR([minimum version of libnl-3 is 3.2.28]) ])
 
 PKG_CHECK_MODULES([ROFL], rofl_common >= 0.10.9,
-  [ CPPFLAGS+="$ROFL_CFLAGS"
-	LIBS+="$ROFL_LIBS" ],
+  [ CPPFLAGS="$CPPFLAGS $ROFL_CFLAGS"
+	LIBS="$LIBS $ROFL_LIBS" ],
   [ AC_MSG_ERROR([minimum version of rofl_common is 0.10.9]) ])
 
 PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.5,
-  [ CPPFLAGS+="$ROFL_OFDPA_CFLAGS"
-	LIBS+="$ROFL_OFDPA_LIBS" ],
+  [ CPPFLAGS="$CPPFLAGS $ROFL_OFDPA_CFLAGS"
+	LIBS="$LIBS $ROFL_OFDPA_LIBS" ],
   [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.5]) ])
 
 # todo: add http://www.gnu.org/software/autoconf-archive/ax_cxx_compile_stdcxx_11.html
