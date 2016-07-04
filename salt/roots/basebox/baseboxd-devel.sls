@@ -8,5 +8,5 @@ basebox.build.pkg:
       - rofl-common-devel
       - rofl-ofdpa-devel
     - require:
-      - pkgrepo: toanju-baseboxd
-      - pkgrepo: toanju-rofl-common
+      - pkgrepo: bisdn-baseboxd
+      - pkgrepo: bisdn-rofl

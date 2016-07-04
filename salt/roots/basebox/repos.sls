@@ -1,25 +1,25 @@
 yum:
   pkg.installed
 
-toanju-baseboxd:
+bisdn-baseboxd:
   pkgrepo.managed:
-    - humanname: Copr repo for baseboxd owned by toanju
-    - baseurl: https://copr-be.cloud.fedoraproject.org/results/toanju/baseboxd/fedora-$releasever-$basearch/
+    - humanname: Copr repo for baseboxd owned by bisdn
+    - baseurl: https://copr-be.cloud.fedoraproject.org/results/bisdn/baseboxd/fedora-$releasever-$basearch/
     - skip_if_unavailable: True
     - gpgcheck: 1
-    - gpgkey: https://copr-be.cloud.fedoraproject.org/results/toanju/baseboxd/pubkey.gpg
+    - gpgkey: https://copr-be.cloud.fedoraproject.org/results/bisdn/baseboxd/pubkey.gpg
     - enabled: 1
     - enabled_metadata: 1
     - require:
       - pkg: yum
 
-toanju-rofl-common:
+bisdn-rofl:
   pkgrepo.managed:
-    - humanname: Copr repo for rofl-common owned by toanju
-    - baseurl: https://copr-be.cloud.fedoraproject.org/results/toanju/rofl-common/fedora-$releasever-$basearch/
+    - humanname: Copr repo for rofl owned by bisdn
+    - baseurl: https://copr-be.cloud.fedoraproject.org/results/bisdn/rofl/fedora-$releasever-$basearch/
     - skip_if_unavailable: True
     - gpgcheck: 1
-    - gpgkey: https://copr-be.cloud.fedoraproject.org/results/toanju/rofl-common/pubkey.gpg
+    - gpgkey: https://copr-be.cloud.fedoraproject.org/results/bisdn/rofl/pubkey.gpg
     - enabled: 1
     - enabled_metadata: 1
     - require:
