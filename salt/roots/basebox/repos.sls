@@ -1,15 +1,6 @@
 yum:
   pkg.installed
 
-BISDN-priv:
-  pkgrepo.managed:
-    - humanname: BISDN-priv
-    - baseurl: http://ftp.bisdn.de/ftp-priv/pub/linux/fedora/23/stable/
-    - gpgcheck: 0
-    - enabled: 1
-    - require:
-      - pkg: yum
-
 toanju-baseboxd:
   pkgrepo.managed:
     - humanname: Copr repo for baseboxd owned by toanju
