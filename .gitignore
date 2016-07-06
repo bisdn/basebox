@@ -23,7 +23,9 @@ Makefile
 /config.*
 /configure
 /VERSION
-/build*
 /tags
+/libtool
+
+/build*
 
 !.gitignore
