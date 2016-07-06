@@ -12,11 +12,13 @@
 #include <netlink/route/neighbour.h>
 
 #include <exception>
-
-#include <roflibs/netlink/crtlinks.hpp>
-#include <roflibs/netlink/clogging.hpp>
+#include <deque>
 
 #include <rofl/common/cthread.hpp>
+
+#include "roflibs/netlink/crtlinks.hpp"
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/nl_obj.hpp"
 
 namespace rofcore {
 
@@ -55,10 +57,15 @@ class cnetlink : public rofl::cthread_env {
   std::map<enum nl_cache_t, struct nl_cache *> caches;
   std::set<cnetlink_common_observer *> observers;
 
+  std::deque<std::pair<int, nl_obj>> nl_objs;
+
   crtlinks
       rtlinks; // all links in system => key:ifindex, value:crtlink instance
 
   std::set<int> missing_links;
+
+  void route_link_apply(int action, const nl_obj &obj);
+  void route_neigh_apply(int action, const nl_obj &obj);
 
 public:
   std::map<int, crtneighs_ll> neighs_ll;
@@ -70,11 +77,8 @@ public:
     return os;
   };
 
-  static void route_link_cb(struct nl_cache *cache, struct nl_object *obj,
-                            int action, void *data);
-
-  static void route_neigh_cb(struct nl_cache *cache, struct nl_object *obj,
-                             int action, void *data);
+  static void nl_cb(struct nl_cache *cache, struct nl_object *obj, int action,
+                    void *data);
 
   static cnetlink &get_instance();
 
@@ -104,7 +108,7 @@ private:
 
   void destroy_caches();
 
-  void handle_wakeup(rofl::cthread &thread) override{};
+  void handle_wakeup(rofl::cthread &thread) override;
 
   void handle_read_event(rofl::cthread &thread, int fd) override;
 

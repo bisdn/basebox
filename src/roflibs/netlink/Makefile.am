@@ -19,7 +19,9 @@ libroflibs_netlink_la_SOURCES = \
 	crtneigh.hpp \
 	crtneighs.hpp \
 	clogging.cpp \
-	clogging.hpp
+	clogging.hpp \
+	nl_obj.hpp \
+	nl_obj.cpp
 
 libroflibs_netlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
