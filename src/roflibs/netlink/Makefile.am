@@ -21,7 +21,9 @@ libroflibs_netlink_la_SOURCES = \
 	clogging.cpp \
 	clogging.hpp \
 	nl_obj.hpp \
-	nl_obj.cpp
+	nl_obj.cpp \
+	ofdpa_bridge.hpp \
+	ofdpa_bridge.cpp
 
 libroflibs_netlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
 

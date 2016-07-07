@@ -17,8 +17,8 @@
 #include <rofl/common/crofbase.h>
 
 #include "roflibs/netlink/cnetlink_observer.hpp"
+#include "roflibs/netlink/ofdpa_bridge.hpp"
 #include "roflibs/netlink/tap_manager.hpp"
-#include "roflibs/of-dpa/ofdpa_bridge.hpp"
 
 namespace basebox {
 

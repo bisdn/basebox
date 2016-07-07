@@ -7,8 +7,6 @@ noinst_LTLIBRARIES = libroflibs_ofdpa.la
 libroflibs_ofdpa_la_SOURCES = \
 	cbasebox.hpp \
 	cbasebox.cpp \
-	ofdpa_bridge.hpp \
-	ofdpa_bridge.cpp \
 	ofdpa_datatypes.hpp
 
 libroflibs_ofdpa_la_LIBADD = 
