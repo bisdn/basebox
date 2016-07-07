@@ -5,8 +5,9 @@
 #include <assert.h>
 
 #include "cbasebox.hpp"
-#include "cunixenv.hpp"
 
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/cpacketpool.hpp"
 #include "roflibs/of-dpa/ofdpa_datatypes.hpp"
 
@@ -20,77 +21,6 @@ struct vlan_hdr {
 } __attribute__((packed));
 
 /*static*/ bool cbasebox::keep_on_running = true;
-
-/*static*/ int cbasebox::run(int argc, char **argv) {
-  rofl::cunixenv env_parser(argc, argv);
-
-  /* update defaults */
-  env_parser.add_option(
-      rofl::coption(true, REQUIRED_ARGUMENT, 'p', "port", "set port", "6653"));
-
-  // command line arguments
-  env_parser.parse_args();
-
-  /*
-   * extract help flag
-   */
-  if (env_parser.is_arg_set("help")) {
-    std::cout << env_parser.get_usage((char *)"baseboxd");
-    exit(0);
-  }
-
-  /*
-   * extract debug level
-   */
-  int rofl_debug = 0, core_debug = 0;
-  if (env_parser.is_arg_set("debug")) {
-    core_debug = rofl_debug = atoi(env_parser.get_arg("debug").c_str());
-  }
-
-  logging::set_debug_level(core_debug);
-
-  rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
-  versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
-  logging::notice << "[baseboxd][main] using OpenFlow version-bitmap:"
-                  << std::endl
-                  << versionbitmap;
-  basebox::cbasebox &box = basebox::cbasebox::get_instance(versionbitmap);
-
-  std::stringstream portno;
-  if (env_parser.is_arg_set("port")) {
-    portno << env_parser.get_arg("port").c_str();
-  } else {
-    portno << (int)6653;
-  }
-
-  rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"),
-                        atoi(portno.str().c_str()));
-  box.dpt_sock_listen(baddr);
-
-  // start netlink
-  (void)rofcore::cnetlink::get_instance();
-
-  while (keep_on_running) {
-    try {
-      // Launch main I/O loop
-      struct timeval tv;
-      tv.tv_sec = 10;
-      tv.tv_usec = 0;
-      select(0, NULL, NULL, NULL, &tv);
-
-    } catch (std::exception &e) {
-      std::cerr << "exception caught, what: " << e.what() << std::endl;
-    }
-  }
-
-  return EXIT_SUCCESS;
-}
-
-/*static*/
-void cbasebox::stop() {
-  cbasebox::keep_on_running = false;
-  //	thread.stop();
-}
 
 void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
 

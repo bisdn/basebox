@@ -16,8 +16,6 @@
 
 #include <rofl/common/crofbase.h>
 
-#include "roflibs/netlink/clogging.hpp"
-#include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/cnetlink_observer.hpp"
 #include "roflibs/netlink/tap_manager.hpp"
 #include "roflibs/of-dpa/ofdpa_bridge.hpp"
@@ -81,15 +79,9 @@ public:
     return box;
   }
 
-  /**
-   *
-   */
-  static int run(int argc, char **argv);
+  static bool running() { return keep_on_running; }
 
-  /**
-   *
-   */
-  static void stop();
+  static void stop() { keep_on_running = false; };
 
 protected:
   void handle_wakeup(rofl::cthread &thread) override;
