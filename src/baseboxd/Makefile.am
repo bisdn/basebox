@@ -6,8 +6,6 @@ sbin_PROGRAMS = baseboxd
 
 baseboxd_SOURCES = \
 	baseboxd.cpp \
-	cbasebox.hpp \
-	cbasebox.cpp \
 	cunixenv.cpp \
 	cunixenv.hpp
 	
