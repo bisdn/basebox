@@ -84,18 +84,15 @@ void cnetlink::init_caches() {
 
   struct nl_object *obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
   while (0 != obj) {
-    nl_object_get(obj);
     logging::debug << "cnetlink::" << __FUNCTION__ << "(): adding "
                    << rtnl_link_get_name((struct rtnl_link *)obj)
                    << " to rtlinks" << std::endl;
     rtlinks.add_link(crtlink((struct rtnl_link *)obj));
-    nl_object_put(obj);
     obj = nl_cache_get_next(obj);
   }
 
   obj = nl_cache_get_first(caches[NL_NEIGH_CACHE]);
   while (0 != obj) {
-    nl_object_get(obj);
     unsigned int ifindex = rtnl_neigh_get_ifindex((struct rtnl_neigh *)obj);
     switch (rtnl_neigh_get_family((struct rtnl_neigh *)obj)) {
     case AF_BRIDGE:
@@ -108,7 +105,6 @@ void cnetlink::init_caches() {
     default:
       break;
     }
-    nl_object_put(obj);
     obj = nl_cache_get_next(obj);
   }
 
