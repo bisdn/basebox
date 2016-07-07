@@ -5,8 +5,8 @@ SUBDIRS =
 noinst_LTLIBRARIES = libroflibs_ofdpa.la
 
 libroflibs_ofdpa_la_SOURCES = \
-	cbasebox.hpp \
 	cbasebox.cpp \
+	cbasebox.hpp \
 	ofdpa_datatypes.hpp
 
 libroflibs_ofdpa_la_LIBADD = 

@@ -5,25 +5,25 @@ SUBDIRS =
 noinst_LTLIBRARIES = libroflibs_netlink.la
 
 libroflibs_netlink_la_SOURCES = \
-	cnetlink.hpp \
+	clogging.cpp \
+	clogging.hpp \
 	cnetlink.cpp \
+	cnetlink.hpp \
 	cnetlink_observer.hpp \
-	tap_manager.hpp \
-	tap_manager.cpp \
-	ctapdev.hpp \
-	ctapdev.cpp \
-	cpacketpool.hpp \
 	cpacketpool.cpp \
+	cpacketpool.hpp \
 	crtlink.hpp \
 	crtlinks.hpp \
 	crtneigh.hpp \
 	crtneighs.hpp \
-	clogging.cpp \
-	clogging.hpp \
-	nl_obj.hpp \
+	ctapdev.cpp \
+	ctapdev.hpp \
 	nl_obj.cpp \
+	nl_obj.hpp \
+	ofdpa_bridge.cpp \
 	ofdpa_bridge.hpp \
-	ofdpa_bridge.cpp
+	tap_manager.cpp \
+	tap_manager.hpp
 
 libroflibs_netlink_la_LIBADD= -lrt ${LIBNL3_LIBS}
 
