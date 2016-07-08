@@ -2,23 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <linux/if.h>
+#include <linux/if_tun.h>
+
+#include <cerrno>
 
 #include "ctapdev.hpp"
 #include "roflibs/netlink/tap_manager.hpp"
 #include "roflibs/netlink/cpacketpool.hpp"
-
-extern int errno;
+#include "roflibs/netlink/clogging.hpp"
 
 namespace rofcore {
 
 ctapdev::ctapdev(tap_callback &cb, std::string const &devname, pthread_t tid)
     : fd(-1), devname(devname), thread(this), cb(cb) {
-  try {
-    tap_open(); /// XXX FIXME exceptions are wrong handled here
-  } catch (std::exception &e) {
-    thread.add_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec().expire_in(1));
+  if (devname.size() > IFNAMSIZ) {
+    throw std::length_error("devname.size() > IFNAMSIZ");
   }
 }
 
@@ -28,50 +29,36 @@ ctapdev::~ctapdev() {
 }
 
 void ctapdev::tap_open() {
-  try {
-    struct ifreq ifr;
-    int rc;
+  struct ifreq ifr;
+  int rc;
 
-    if (fd > -1) {
-      tap_close();
-    }
-
-    if ((fd = open("/dev/net/tun", O_RDWR | O_NONBLOCK)) < 0) {
-      throw eTapDevOpenFailed(
-          "ctapdev::tap_open() opening /dev/net/tun failed");
-    }
-
-    memset(&ifr, 0, sizeof(ifr));
-
-    /* Flags: IFF_TUN   - TUN device (no Ethernet headers)
-     *        IFF_TAP   - TAP device
-     *
-     *        IFF_NO_PI - Do not provide packet information
-     */
-    ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
-    strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
-
-    if ((rc = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0) {
-      close(fd);
-      throw eTapDevIoctlFailed("ctapdev::tap_open() setting flags IFF_TAP | "
-                               "IFF_NO_PI on /dev/net/tun failed");
-    }
-
-    thread.start();
-    thread.add_read_fd(fd);
-    thread.add_write_fd(fd);
-
-  } catch (eTapDevOpenFailed &e) {
-    rofcore::logging::error
-        << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl
-        << rofl::eSysCall("open");
-    throw;
-  } catch (eTapDevIoctlFailed &e) {
-    rofcore::logging::error
-        << "ctapdev::tap_open() open() failed, dev:" << devname << std::endl
-        << rofl::eSysCall("ctapdev ioctl");
-    throw;
+  if (fd != -1) {
+    return;
   }
+
+  if ((fd = open("/dev/net/tun", O_RDWR)) < 0) {
+    assert(0 && "CRITICAL: could not open /dev/net/tun");
+  }
+
+  memset(&ifr, 0, sizeof(ifr));
+
+  /* Flags: IFF_TUN   - TUN device (no Ethernet headers)
+   *        IFF_TAP   - TAP device
+   *
+   *        IFF_NO_PI - Do not provide packet information
+   */
+  ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
+  strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
+
+  if ((rc = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0) {
+    close(fd);
+    fd = -1;
+    assert(0 && "CRITICAL: ioctl TUNSETIFF failed");
+  }
+
+  thread.add_read_fd(fd);
+  thread.add_write_fd(fd);
+  thread.start();
 }
 
 void ctapdev::tap_close() {
@@ -202,19 +189,6 @@ void ctapdev::tx() {
     }
     cpacketpool::get_instance().release_pkt(pkt);
     out_queue.pop_front();
-  }
-}
-
-void ctapdev::handle_timeout(rofl::cthread &thread, uint32_t timer_id,
-                             const std::list<unsigned int> &ttypes) {
-  switch (timer_id) {
-  case CTAPDEV_TIMER_OPEN_PORT: {
-    try {
-      tap_open();
-    } catch (...) {
-      thread.add_timer(CTAPDEV_TIMER_OPEN_PORT, rofl::ctimespec().expire_in(1));
-    }
-  } break;
   }
 }
 
