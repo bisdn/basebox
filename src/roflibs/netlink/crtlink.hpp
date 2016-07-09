@@ -20,9 +20,10 @@
 #include <netlink/route/link.h>
 #include <netlink/route/link/bridge.h>
 #include <inttypes.h>
+#include <linux/if.h>
 #include <linux/if_arp.h>
 
-#include <roflibs/netlink/crtneighs.hpp>
+#include "roflibs/netlink/crtneighs.hpp"
 
 namespace rofcore {
 
