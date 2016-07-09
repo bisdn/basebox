@@ -4,6 +4,7 @@
 
 #include "cunixenv.hpp"
 #include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/of-dpa/cbasebox.hpp"
 
 int main(int argc, char **argv) {
@@ -41,7 +42,12 @@ int main(int argc, char **argv) {
   logging::notice << "[baseboxd][main] using OpenFlow version-bitmap:"
                   << std::endl
                   << versionbitmap;
-  basebox::cbasebox &box = basebox::cbasebox::get_instance(versionbitmap);
+
+  // start netlink
+  rofcore::nbi *nbi = &rofcore::cnetlink::get_instance();
+  // XXX FIXME move tap_manager here
+  std::unique_ptr<basebox::cbasebox> box(
+      new basebox::cbasebox(nbi, versionbitmap));
 
   std::stringstream portno;
   if (env_parser.is_arg_set("port")) {
@@ -52,10 +58,7 @@ int main(int argc, char **argv) {
 
   rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"),
                         atoi(portno.str().c_str()));
-  box.dpt_sock_listen(baddr);
-
-  // start netlink
-  (void)rofcore::cnetlink::get_instance();
+  box->dpt_sock_listen(baddr);
 
   while (basebox::cbasebox::running()) {
     try {

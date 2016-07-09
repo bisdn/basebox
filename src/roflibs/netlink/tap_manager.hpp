@@ -33,9 +33,11 @@ public:
    * @return: pairs of ID,dev_name of the created devices
    */
   std::deque<std::pair<int, std::string>>
-  create_tapdevs(std::deque<std::string> &, tap_callback &);
+  register_tapdevs(std::deque<std::string> &, tap_callback &);
 
-  int create_tapdev(const std::string &, tap_callback &);
+  void start();
+
+  void stop();
 
   void destroy_tapdevs();
 
@@ -44,6 +46,8 @@ public:
 private:
   tap_manager(const tap_manager &other) = delete; // non construction-copyable
   tap_manager &operator=(const tap_manager &) = delete; // non copyable
+
+  int create_tapdev(const std::string &, tap_callback &);
 
   std::vector<ctapdev *> devs;
   std::map<std::string, int> devname_to_spot;

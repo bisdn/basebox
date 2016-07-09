@@ -13,9 +13,11 @@
 #include <exception>
 
 #include <rofl/common/crofbase.h>
+#include <rofl/common/crofdpt.h>
+#include <rofl/ofdpa/rofl_ofdpa_fm_driver.hpp>
 
-#include "roflibs/netlink/cnetlink_observer.hpp"
-#include "roflibs/netlink/ofdpa_bridge.hpp"
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/sai.hpp"
 #include "roflibs/netlink/tap_manager.hpp"
 
 namespace basebox {
@@ -25,12 +27,10 @@ public:
   eBaseBoxBase(const std::string &__arg) : std::runtime_error(__arg) {}
 };
 
-static rofl::crofdpt invalid(NULL, rofl::cdptid(0));
-
 class cbasebox : public rofl::crofbase,
                  public virtual rofl::cthread_env,
                  public rofcore::tap_callback,
-                 public rofcore::auto_reg_cnetlink_common_observer {
+                 public rofcore::switch_interface {
 
   enum ExperimenterMessageType {
     QUERY_FLOW_ENTRIES, ///< query flow entries from controller
@@ -44,38 +44,23 @@ class cbasebox : public rofl::crofbase,
 
   static bool keep_on_running;
   rofl::cthread thread;
+  rofcore::nbi *nbi;
 
-  /**
-   *
-   */
-  cbasebox(const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
+  cbasebox(const cbasebox &) = delete;
+  cbasebox &operator=(const cbasebox &) = delete;
+
+public:
+  cbasebox(rofcore::nbi *nbi,
+           const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
                rofl::openflow::cofhello_elem_versionbitmap())
-      : thread(this), fm_driver(), bridge(fm_driver) {
+      : thread(this), nbi(nbi) {
+    nbi->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
     thread.start();
     tap_man = new rofcore::tap_manager();
   }
 
-  /**
-   *
-   */
   ~cbasebox() override { delete tap_man; }
-
-  /**
-   *
-   */
-  cbasebox(const cbasebox &ethbase);
-
-public:
-  /**
-   *
-   */
-  static cbasebox &get_instance(
-      const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
-          rofl::openflow::cofhello_elem_versionbitmap()) {
-    static cbasebox box(versionbitmap);
-    return box;
-  }
 
   static bool running() { return keep_on_running; }
 
@@ -156,6 +141,30 @@ protected:
       rofl::openflow::cofmsg_experimenter &msg) override;
 
 public:
+  // switch_interface
+  int l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept override;
+  int l2_addr_add(uint32_t port, uint16_t vid,
+                  const rofl::cmacaddr &mac) noexcept override;
+  int l2_addr_remove(uint32_t port, uint16_t vid,
+                     const rofl::cmacaddr &mac) noexcept override;
+
+  int ingress_port_vlan_accept_all(uint32_t port) noexcept override;
+  int ingress_port_vlan_drop_accept_all(uint32_t port) noexcept override;
+  int ingress_port_vlan_add(uint32_t port, uint16_t vid,
+                            bool pvid) noexcept override;
+  int ingress_port_vlan_remove(uint32_t port, uint16_t vid,
+                               bool pvid) noexcept override;
+
+  int egress_port_vlan_accept_all(uint32_t port) noexcept override;
+  int egress_port_vlan_drop_accept_all(uint32_t port) noexcept override;
+  int egress_port_vlan_add(uint32_t port, uint16_t vid,
+                           bool untagged) noexcept override;
+  int egress_port_vlan_remove(uint32_t port, uint16_t vid,
+                              bool untagged) noexcept override;
+
+  int subscribe_to(enum swi_flags flags) noexcept override;
+
+  /* print this */
   friend std::ostream &operator<<(std::ostream &os, const cbasebox &box) {
     os << rofcore::indent(0) << "<cbasebox>" << std::endl;
     return os;
@@ -165,7 +174,6 @@ private:
   rofl::cdptid dptid;
   rofcore::tap_manager *tap_man;
   rofl::rofl_ofdpa_fm_driver fm_driver;
-  ofdpa_bridge bridge;
   std::map<int, uint32_t> port_id_to_of_port;
   std::map<uint32_t, int> of_port_to_port_id;
 
@@ -184,23 +192,6 @@ private:
 
   void init(rofl::crofdpt &dpt);
 
-  void send_full_state(rofl::crofdpt &dpt);
-
-  /* netlink */
-  void link_created(unsigned int ifindex) noexcept override;
-
-  void link_updated(const rofcore::crtlink &newlink) noexcept override;
-
-  void link_deleted(unsigned int ifindex) noexcept override;
-
-  void neigh_ll_created(unsigned int ifindex,
-                        uint16_t nbindex) noexcept override;
-
-  void neigh_ll_updated(unsigned int ifindex,
-                        uint16_t nbindex) noexcept override;
-
-  void neigh_ll_deleted(unsigned int ifindex,
-                        uint16_t nbindex) noexcept override;
 }; // class cbasebox
 
 } // end of namespace basebox

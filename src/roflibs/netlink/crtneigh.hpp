@@ -20,24 +20,24 @@ class crtneigh {
 public:
   class eRtNeighBase : public std::runtime_error {
   public:
-    eRtNeighBase(const std::string &__arg) : std::runtime_error(__arg){}
+    eRtNeighBase(const std::string &__arg) : std::runtime_error(__arg) {}
   };
   class eRtNeighNotFound : public eRtNeighBase {
   public:
-    eRtNeighNotFound(const std::string &__arg) : eRtNeighBase(__arg){}
+    eRtNeighNotFound(const std::string &__arg) : eRtNeighBase(__arg) {}
   };
   class eRtNeighExists : public eRtNeighBase {
   public:
-    eRtNeighExists(const std::string &__arg) : eRtNeighBase(__arg){}
+    eRtNeighExists(const std::string &__arg) : eRtNeighBase(__arg) {}
   };
 
 public:
   crtneigh()
       : state(0), flags(0), ifindex(0),
         lladdr(rofl::cmacaddr("00:00:00:00:00:00")), family(0), type(0),
-        vlan(0){}
+        vlan(0) {}
 
-  virtual ~crtneigh() {};
+  virtual ~crtneigh(){};
 
   crtneigh(const crtneigh &rtneigh) { *this = rtneigh; }
 
@@ -61,9 +61,6 @@ public:
         lladdr(rofl::cmacaddr("00:00:00:00:00:00")), family(0), type(0) {
     char s_buf[128];
 
-    nl_object_get(
-        (struct nl_object *)neigh); // increment reference counter by one
-
     state = rtnl_neigh_get_state(neigh);
     flags = rtnl_neigh_get_flags(neigh);
     ifindex = rtnl_neigh_get_ifindex(neigh);
@@ -78,9 +75,6 @@ public:
           nl_addr2str(rtnl_neigh_get_lladdr(neigh), s_buf, sizeof(s_buf)));
     else
       lladdr = rofl::cmacaddr("00:00:00:00:00:00");
-
-    nl_object_put(
-        (struct nl_object *)neigh); // decrement reference counter by one
   }
 
   bool operator==(const crtneigh &rtneigh) {
@@ -164,7 +158,7 @@ class crtneigh_ll_find : public std::unary_function<crtneigh, bool> {
   crtneigh rtneigh;
 
 public:
-  crtneigh_ll_find(const crtneigh &rtneigh) : rtneigh(rtneigh){}
+  crtneigh_ll_find(const crtneigh &rtneigh) : rtneigh(rtneigh) {}
   bool operator()(const crtneigh &rtn) { return (rtneigh == rtn); }
   bool operator()(const std::pair<unsigned int, crtneigh> &p) {
     return (rtneigh == p.second);
@@ -173,9 +167,9 @@ public:
 
 class crtneigh_in4 : public crtneigh {
 public:
-  crtneigh_in4(){}
+  crtneigh_in4() {}
 
-  ~crtneigh_in4() override {};
+  ~crtneigh_in4() override{};
 
   crtneigh_in4(const crtneigh_in4 &neigh) { *this = neigh; }
 
@@ -252,7 +246,7 @@ public:
     rofl::caddress_in4 dst;
 
   public:
-    crtneigh_in4_find_by_dst(const rofl::caddress_in4 &dst) : dst(dst){}
+    crtneigh_in4_find_by_dst(const rofl::caddress_in4 &dst) : dst(dst) {}
     bool operator()(const std::pair<uint16_t, crtneigh_in4> &p) {
       return (p.second.dst == dst);
     }
@@ -266,7 +260,7 @@ class crtneigh_in4_find : public std::unary_function<crtneigh_in4, bool> {
   crtneigh_in4 rtneigh;
 
 public:
-  crtneigh_in4_find(const crtneigh_in4 &rtneigh) : rtneigh(rtneigh){}
+  crtneigh_in4_find(const crtneigh_in4 &rtneigh) : rtneigh(rtneigh) {}
   bool operator()(const crtneigh_in4 &rtn) { return (rtneigh == rtn); }
   bool operator()(const std::pair<unsigned int, crtneigh_in4> &p) {
     return (rtneigh == p.second);
@@ -275,9 +269,9 @@ public:
 
 class crtneigh_in6 : public crtneigh {
 public:
-  crtneigh_in6(){}
+  crtneigh_in6() {}
 
-  ~crtneigh_in6() override {};
+  ~crtneigh_in6() override{};
 
   crtneigh_in6(const crtneigh_in6 &neigh) { *this = neigh; }
 
@@ -354,7 +348,7 @@ public:
     rofl::caddress_in6 dst;
 
   public:
-    crtneigh_in6_find_by_dst(const rofl::caddress_in6 &dst) : dst(dst){}
+    crtneigh_in6_find_by_dst(const rofl::caddress_in6 &dst) : dst(dst) {}
     bool operator()(const std::pair<uint16_t, crtneigh_in6> &p) {
       return (p.second.dst == dst);
     }
@@ -368,7 +362,7 @@ class crtneigh_in6_find : public std::unary_function<crtneigh_in6, bool> {
   crtneigh_in6 rtneigh;
 
 public:
-  crtneigh_in6_find(const crtneigh_in6 &rtneigh) : rtneigh(rtneigh){}
+  crtneigh_in6_find(const crtneigh_in6 &rtneigh) : rtneigh(rtneigh) {}
   bool operator()(const crtneigh_in6 &rtn) { return (rtneigh == rtn); }
   bool operator()(const std::pair<unsigned int, crtneigh_in6> &p) {
     return (rtneigh == p.second);
