@@ -2,20 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef CRTNEIGH_H_
-#define CRTNEIGH_H_ 1
+#pragma once
 
 #include <ostream>
+#include <cinttypes>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <inttypes.h>
 #include <netlink/route/neighbour.h>
 #include <linux/neighbour.h>
-#ifdef __cplusplus
-}
-#endif
 
 #include <rofl/common/caddress.h>
 
@@ -27,39 +20,27 @@ class crtneigh {
 public:
   class eRtNeighBase : public std::runtime_error {
   public:
-    eRtNeighBase(const std::string &__arg) : std::runtime_error(__arg){};
+    eRtNeighBase(const std::string &__arg) : std::runtime_error(__arg){}
   };
   class eRtNeighNotFound : public eRtNeighBase {
   public:
-    eRtNeighNotFound(const std::string &__arg) : eRtNeighBase(__arg){};
+    eRtNeighNotFound(const std::string &__arg) : eRtNeighBase(__arg){}
   };
   class eRtNeighExists : public eRtNeighBase {
   public:
-    eRtNeighExists(const std::string &__arg) : eRtNeighBase(__arg){};
+    eRtNeighExists(const std::string &__arg) : eRtNeighBase(__arg){}
   };
 
 public:
-  /**
-   *
-   */
   crtneigh()
       : state(0), flags(0), ifindex(0),
         lladdr(rofl::cmacaddr("00:00:00:00:00:00")), family(0), type(0),
-        vlan(0){};
+        vlan(0){}
 
-  /**
-   *
-   */
-  virtual ~crtneigh(){};
+  virtual ~crtneigh() {};
 
-  /**
-   *
-   */
-  crtneigh(const crtneigh &rtneigh) { *this = rtneigh; };
+  crtneigh(const crtneigh &rtneigh) { *this = rtneigh; }
 
-  /**
-   *
-   */
   crtneigh &operator=(const crtneigh &neigh) {
     if (this == &neigh)
       return *this;
@@ -73,11 +54,8 @@ public:
     vlan = neigh.vlan;
 
     return *this;
-  };
+  }
 
-  /**
-   *
-   */
   crtneigh(struct rtnl_neigh *neigh)
       : state(0), flags(0), ifindex(0),
         lladdr(rofl::cmacaddr("00:00:00:00:00:00")), family(0), type(0) {
@@ -103,26 +81,17 @@ public:
 
     nl_object_put(
         (struct nl_object *)neigh); // decrement reference counter by one
-  };
+  }
 
-  /**
-   *
-   */
   bool operator==(const crtneigh &rtneigh) {
     return ((ifindex == rtneigh.ifindex) && (family == rtneigh.family) &&
             (type == rtneigh.type) && (vlan == rtneigh.vlan) &&
             (lladdr == rtneigh.lladdr));
-  };
+  }
 
 public:
-  /**
-   *
-   */
-  int get_state() const { return state; };
+  int get_state() const { return state; }
 
-  /**
-   *
-   */
   std::string get_state_s() const {
     std::string str;
 
@@ -151,37 +120,19 @@ public:
     }
 
     return str;
-  };
+  }
 
-  /**
-   *
-   */
-  unsigned int get_flags() const { return flags; };
+  unsigned int get_flags() const { return flags; }
 
-  /**
-   *
-   */
-  int get_ifindex() const { return ifindex; };
+  int get_ifindex() const { return ifindex; }
 
-  /**
-   *
-   */
-  const rofl::cmacaddr &get_lladdr() const { return lladdr; };
+  const rofl::cmacaddr &get_lladdr() const { return lladdr; }
 
-  /**
-   *
-   */
-  int get_family() const { return family; };
+  int get_family() const { return family; }
 
-  /**
-   *
-   */
-  int get_type() const { return type; };
+  int get_type() const { return type; }
 
-  /**
-   *
-   */
-  int get_vlan() const { return vlan; };
+  int get_vlan() const { return vlan; }
 
 public:
   friend std::ostream &operator<<(std::ostream &os, crtneigh const &neigh) {
@@ -197,7 +148,7 @@ public:
     os << rofcore::indent(2) << "<type: " << neigh.type << " >" << std::endl;
     os << rofcore::indent(2) << "<vlan: " << neigh.vlan << " >" << std::endl;
     return os;
-  };
+  }
 
 private:
   int state;
@@ -209,56 +160,33 @@ private:
   int vlan;
 };
 
-/**
- *
- */
 class crtneigh_ll_find : public std::unary_function<crtneigh, bool> {
   crtneigh rtneigh;
 
 public:
-  crtneigh_ll_find(const crtneigh &rtneigh) : rtneigh(rtneigh){};
-  bool operator()(const crtneigh &rtn) { return (rtneigh == rtn); };
+  crtneigh_ll_find(const crtneigh &rtneigh) : rtneigh(rtneigh){}
+  bool operator()(const crtneigh &rtn) { return (rtneigh == rtn); }
   bool operator()(const std::pair<unsigned int, crtneigh> &p) {
     return (rtneigh == p.second);
-  };
-#if 0
-	bool operator() (const std::pair<unsigned int, crtneigh*>& p) {
-		return (rtneigh == *(p.second));
-	};
-#endif
+  }
 };
 
 class crtneigh_in4 : public crtneigh {
 public:
-  /**
-   *
-   */
-  crtneigh_in4(){};
+  crtneigh_in4(){}
 
-  /**
-   *
-   */
-  virtual ~crtneigh_in4(){};
+  ~crtneigh_in4() override {};
 
-  /**
-   *
-   */
-  crtneigh_in4(const crtneigh_in4 &neigh) { *this = neigh; };
+  crtneigh_in4(const crtneigh_in4 &neigh) { *this = neigh; }
 
-  /**
-   *
-   */
   crtneigh_in4 &operator=(const crtneigh_in4 &neigh) {
     if (this == &neigh)
       return *this;
     crtneigh::operator=(neigh);
     dst = neigh.dst;
     return *this;
-  };
+  }
 
-  /**
-   *
-   */
   crtneigh_in4(struct rtnl_neigh *neigh) : crtneigh(neigh) {
 
     nl_object_get(
@@ -279,20 +207,14 @@ public:
 
     nl_object_put(
         (struct nl_object *)neigh); // decrement reference counter by one
-  };
+  }
 
-  /**
-   *
-   */
   bool operator==(const crtneigh_in4 &rtneigh) {
     return ((crtneigh::operator==(rtneigh)) && (dst == rtneigh.dst));
-  };
+  }
 
 public:
-  /**
-   *
-   */
-  const rofl::caddress_in4 get_dst() const { return dst; };
+  const rofl::caddress_in4 get_dst() const { return dst; }
 
 public:
   friend std::ostream &operator<<(std::ostream &os, const crtneigh_in4 &neigh) {
@@ -302,7 +224,7 @@ public:
     os << rofcore::indent(2) << "<dst: " << neigh.dst.str() << " >"
        << std::endl;
     return os;
-  };
+  }
 
   std::string str() const {
     /*
@@ -324,75 +246,49 @@ public:
     if (get_flags() & NUD_FAILED)
       ss << "FAILED";
     return ss.str();
-  };
+  }
 
-  /**
-   *
-   */
   class crtneigh_in4_find_by_dst {
     rofl::caddress_in4 dst;
 
   public:
-    crtneigh_in4_find_by_dst(const rofl::caddress_in4 &dst) : dst(dst){};
+    crtneigh_in4_find_by_dst(const rofl::caddress_in4 &dst) : dst(dst){}
     bool operator()(const std::pair<uint16_t, crtneigh_in4> &p) {
       return (p.second.dst == dst);
-    };
+    }
   };
 
 private:
   rofl::caddress_in4 dst;
 };
 
-/**
- *
- */
 class crtneigh_in4_find : public std::unary_function<crtneigh_in4, bool> {
   crtneigh_in4 rtneigh;
 
 public:
-  crtneigh_in4_find(const crtneigh_in4 &rtneigh) : rtneigh(rtneigh){};
-  bool operator()(const crtneigh_in4 &rtn) { return (rtneigh == rtn); };
+  crtneigh_in4_find(const crtneigh_in4 &rtneigh) : rtneigh(rtneigh){}
+  bool operator()(const crtneigh_in4 &rtn) { return (rtneigh == rtn); }
   bool operator()(const std::pair<unsigned int, crtneigh_in4> &p) {
     return (rtneigh == p.second);
-  };
-#if 0
-	bool operator() (const std::pair<unsigned int, crtneigh_in4*>& p) {
-		return (rtneigh == *(p.second));
-	};
-#endif
+  }
 };
 
 class crtneigh_in6 : public crtneigh {
 public:
-  /**
-   *
-   */
-  crtneigh_in6(){};
+  crtneigh_in6(){}
 
-  /**
-   *
-   */
-  virtual ~crtneigh_in6(){};
+  ~crtneigh_in6() override {};
 
-  /**
-   *
-   */
-  crtneigh_in6(const crtneigh_in6 &neigh) { *this = neigh; };
+  crtneigh_in6(const crtneigh_in6 &neigh) { *this = neigh; }
 
-  /**
-   *
-   */
   crtneigh_in6 &operator=(const crtneigh_in6 &neigh) {
     if (this == &neigh)
       return *this;
     crtneigh::operator=(neigh);
     dst = neigh.dst;
     return *this;
-  };
+  }
 
-  /**
-   *
-   */
   crtneigh_in6(struct rtnl_neigh *neigh) : crtneigh(neigh) {
 
     nl_object_get(
@@ -413,20 +309,14 @@ public:
 
     nl_object_put(
         (struct nl_object *)neigh); // decrement reference counter by one
-  };
+  }
 
-  /**
-   *
-   */
   bool operator==(const crtneigh_in6 &rtneigh) {
     return ((crtneigh::operator==(rtneigh)) && (dst == rtneigh.dst));
-  };
+  }
 
 public:
-  /**
-   *
-   */
-  const rofl::caddress_in6 get_dst() const { return dst; };
+  const rofl::caddress_in6 get_dst() const { return dst; }
 
 public:
   friend std::ostream &operator<<(std::ostream &os, const crtneigh_in6 &neigh) {
@@ -436,7 +326,7 @@ public:
     os << rofcore::indent(2) << "<dst: " << neigh.dst.str() << " >"
        << std::endl;
     return os;
-  };
+  }
 
   std::string str() const {
     /*
@@ -458,44 +348,31 @@ public:
     if (get_flags() & NUD_FAILED)
       ss << "FAILED";
     return ss.str();
-  };
+  }
 
-  /**
-   *
-   */
   class crtneigh_in6_find_by_dst {
     rofl::caddress_in6 dst;
 
   public:
-    crtneigh_in6_find_by_dst(const rofl::caddress_in6 &dst) : dst(dst){};
+    crtneigh_in6_find_by_dst(const rofl::caddress_in6 &dst) : dst(dst){}
     bool operator()(const std::pair<uint16_t, crtneigh_in6> &p) {
       return (p.second.dst == dst);
-    };
+    }
   };
 
 private:
   rofl::caddress_in6 dst;
 };
 
-/**
- *
- */
 class crtneigh_in6_find : public std::unary_function<crtneigh_in6, bool> {
   crtneigh_in6 rtneigh;
 
 public:
-  crtneigh_in6_find(const crtneigh_in6 &rtneigh) : rtneigh(rtneigh){};
-  bool operator()(const crtneigh_in6 &rtn) { return (rtneigh == rtn); };
+  crtneigh_in6_find(const crtneigh_in6 &rtneigh) : rtneigh(rtneigh){}
+  bool operator()(const crtneigh_in6 &rtn) { return (rtneigh == rtn); }
   bool operator()(const std::pair<unsigned int, crtneigh_in6> &p) {
     return (rtneigh == p.second);
-  };
-#if 0
-	bool operator() (const std::pair<unsigned int, crtneigh_in6*>& p) {
-		return (rtneigh == *(p.second));
-	};
-#endif
+  }
 };
 
-}; // end of namespace
-
-#endif /* CRTNEIGH_H_ */
+} // end of namespace
