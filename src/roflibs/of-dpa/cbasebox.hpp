@@ -5,8 +5,6 @@
 #ifndef CROFBASE_HPP_
 #define CROFBASE_HPP_
 
-#define OF_DPA
-
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -81,7 +79,7 @@ public:
 
   static bool running() { return keep_on_running; }
 
-  static void stop() { keep_on_running = false; };
+  static void stop() { keep_on_running = false; }
 
 protected:
   void handle_wakeup(rofl::cthread &thread) override;

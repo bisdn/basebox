@@ -46,6 +46,7 @@ int tap_manager::create_tapdev(const std::string &port_name, tap_callback &cb) {
     r = devs.size();
     devs.push_back(dev);
 
+    dev->tap_open();
     devname_to_spot.insert(std::make_pair(port_name, r));
   }
   return r;
