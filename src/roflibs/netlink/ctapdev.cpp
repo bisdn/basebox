@@ -12,7 +12,7 @@
 #include "ctapdev.hpp"
 #include "roflibs/netlink/tap_manager.hpp"
 #include "roflibs/netlink/cpacketpool.hpp"
-#include "roflibs/netlink/clogging.hpp"
+#include <glog/logging.h>
 
 namespace rofcore {
 
@@ -122,11 +122,10 @@ void ctapdev::handle_read_event(rofl::cthread &thread, int fd) {
     if (rc < 0) {
       switch (errno) {
       case EAGAIN:
-        rofcore::logging::error
-            << "ctapdev::handle_revent() EAGAIN, retrying later" << std::endl;
+        LOG(ERROR) << "ctapdev::handle_revent() EAGAIN, retrying later"
+                   << std::endl;
       default:
-        rofcore::logging::error << "ctapdev::handle_revent() error occured"
-                                << std::endl;
+        LOG(ERROR) << "ctapdev::handle_revent() error occured" << std::endl;
       }
     } else {
       pkt = cpacketpool::get_instance().acquire_pkt();
@@ -137,9 +136,9 @@ void ctapdev::handle_read_event(rofl::cthread &thread, int fd) {
     }
 
   } catch (ePacketPoolExhausted &e) {
-    rofcore::logging::error << "ctapdev::handle_revent() packet pool "
-                               "exhausted, no idle slots available"
-                            << std::endl;
+    LOG(ERROR) << "ctapdev::handle_revent() packet pool "
+                  "exhausted, no idle slots available"
+               << std::endl;
   }
 }
 
@@ -167,7 +166,7 @@ void ctapdev::tx() {
     if ((rc = write(fd, pkt->soframe(), pkt->length())) < 0) {
       switch (errno) {
       case EAGAIN:
-        rofcore::logging::debug << "ctapdev::tx() EAGAIN" << std::endl;
+        VLOG(1) << "ctapdev::tx() EAGAIN" << std::endl;
         {
           rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
           std::move(out_queue.rbegin(), out_queue.rend(),
@@ -181,9 +180,9 @@ void ctapdev::tx() {
       default:
         // will drop packets
         release_packets(out_queue);
-        rofcore::logging::error
-            << "ctapdev::tx() unknown error occured rc=" << rc
-            << " errno=" << errno << " '" << strerror(errno) << std::endl;
+        LOG(ERROR) << "ctapdev::tx() unknown error occured rc=" << rc
+                   << " errno=" << errno << " '" << strerror(errno)
+                   << std::endl;
         return;
       }
     }

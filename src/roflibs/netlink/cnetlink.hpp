@@ -17,7 +17,7 @@
 #include <rofl/common/cthread.hpp>
 
 #include "roflibs/netlink/crtlinks.hpp"
-#include "roflibs/netlink/clogging.hpp"
+#include <glog/logging.h>
 #include "roflibs/netlink/nl_obj.hpp"
 #include "roflibs/netlink/sai.hpp"
 #include "roflibs/netlink/ofdpa_bridge.hpp"
@@ -110,8 +110,7 @@ class cnetlink : public rofl::cthread_env, public rofcore::nbi {
 
 public:
   friend std::ostream &operator<<(std::ostream &os, const cnetlink &netlink) {
-    os << rofcore::indent(0) << "<cnetlink>" << std::endl;
-    rofcore::indent i(2);
+    os << "<cnetlink>" << std::endl;
     os << netlink.rtlinks;
     return os;
   }

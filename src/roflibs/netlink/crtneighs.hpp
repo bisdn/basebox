@@ -11,7 +11,7 @@
 #include <algorithm>
 
 #include <roflibs/netlink/crtneigh.hpp>
-#include <roflibs/netlink/clogging.hpp>
+#include <glog/logging.h>
 
 namespace rofcore {
 
@@ -164,10 +164,8 @@ public:
 public:
   friend std::ostream &operator<<(std::ostream &os,
                                   const crtneighs_ll &rtneighs) {
-    os << rofcore::indent(0)
-       << "<crtneighs_ll #rtneighs: " << rtneighs.rtneighs.size() << " >"
+    os << "<crtneighs_ll #rtneighs: " << rtneighs.rtneighs.size() << " >"
        << std::endl;
-    rofcore::indent i(2);
     for (std::map<unsigned int, crtneigh>::const_iterator it =
              rtneighs.rtneighs.begin();
          it != rtneighs.rtneighs.end(); ++it) {
@@ -328,10 +326,8 @@ public:
 public:
   friend std::ostream &operator<<(std::ostream &os,
                                   const crtneighs_in4 &rtneighs) {
-    os << rofcore::indent(0)
-       << "<crtneighs_in4 #rtneighs: " << rtneighs.rtneighs.size() << " >"
+    os << "<crtneighs_in4 #rtneighs: " << rtneighs.rtneighs.size() << " >"
        << std::endl;
-    rofcore::indent i(2);
     for (std::map<unsigned int, crtneigh_in4>::const_iterator it =
              rtneighs.rtneighs.begin();
          it != rtneighs.rtneighs.end(); ++it) {
@@ -493,10 +489,8 @@ public:
 public:
   friend std::ostream &operator<<(std::ostream &os,
                                   const crtneighs_in6 &rtneighs) {
-    os << rofcore::indent(0)
-       << "<crtneighs_in6 #rtneighs: " << rtneighs.rtneighs.size() << " >"
+    os << "<crtneighs_in6 #rtneighs: " << rtneighs.rtneighs.size() << " >"
        << std::endl;
-    rofcore::indent i(2);
     for (std::map<unsigned int, crtneigh_in6>::const_iterator it =
              rtneighs.rtneighs.begin();
          it != rtneighs.rtneighs.end(); ++it) {

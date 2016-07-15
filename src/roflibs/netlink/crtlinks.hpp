@@ -10,7 +10,7 @@
 #include <list>
 
 #include <roflibs/netlink/crtlink.hpp>
-#include <roflibs/netlink/clogging.hpp>
+#include <glog/logging.h>
 
 namespace rofcore {
 
@@ -184,9 +184,7 @@ public:
 
 public:
   friend std::ostream &operator<<(std::ostream &os, const crtlinks &rtlinks) {
-    os << rofcore::indent(0) << "<crtlinks #rtlinks: " << rtlinks.rtlinks.size()
-       << " >" << std::endl;
-    rofcore::indent i(2);
+    os << "<crtlinks #rtlinks: " << rtlinks.rtlinks.size() << " >" << std::endl;
     for (std::map<unsigned int, crtlink>::const_iterator it =
              rtlinks.rtlinks.begin();
          it != rtlinks.rtlinks.end(); ++it) {
