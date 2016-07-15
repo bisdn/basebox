@@ -6,8 +6,6 @@
 
 using namespace rofcore;
 
-cpacketpool *cpacketpool::packetpool = (cpacketpool *)0;
-
 cpacketpool::cpacketpool(unsigned int n_pkts, unsigned int pkt_size) {
   for (unsigned int i = 0; i < n_pkts; ++i) {
     rofl::cpacket *pkt = new rofl::cpacket(pkt_size);
@@ -31,10 +29,8 @@ cpacketpool::~cpacketpool() {
 
 cpacketpool &cpacketpool::get_instance(unsigned int n_pkts,
                                        unsigned int pkt_size) {
-  if (0 == cpacketpool::packetpool) {
-    cpacketpool::packetpool = new cpacketpool(n_pkts, pkt_size);
-  }
-  return *(cpacketpool::packetpool);
+  static cpacketpool instance(n_pkts, pkt_size);
+  return instance;
 }
 
 rofl::cpacket *cpacketpool::acquire_pkt() {
