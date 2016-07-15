@@ -6,11 +6,11 @@
 #define CRTLINKS_H_
 
 #include <iostream>
-#include <map>
 #include <list>
+#include <map>
 
-#include <roflibs/netlink/crtlink.hpp>
 #include <glog/logging.h>
+#include <roflibs/netlink/crtlink.hpp>
 
 namespace rofcore {
 

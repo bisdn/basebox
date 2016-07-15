@@ -5,22 +5,21 @@
 #ifndef CNETLINK_H_
 #define CNETLINK_H_ 1
 
+#include <deque>
+#include <exception>
+
+#include <glog/logging.h>
 #include <netlink/cache.h>
 #include <netlink/object.h>
-#include <netlink/route/link.h>
 #include <netlink/route/addr.h>
+#include <netlink/route/link.h>
 #include <netlink/route/neighbour.h>
-
-#include <exception>
-#include <deque>
-
 #include <rofl/common/cthread.hpp>
 
 #include "roflibs/netlink/crtlinks.hpp"
-#include <glog/logging.h>
 #include "roflibs/netlink/nl_obj.hpp"
-#include "roflibs/netlink/sai.hpp"
 #include "roflibs/netlink/ofdpa_bridge.hpp"
+#include "roflibs/netlink/sai.hpp"
 
 namespace rofcore {
 
