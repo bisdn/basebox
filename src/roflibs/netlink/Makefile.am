@@ -9,7 +9,6 @@ libroflibs_netlink_la_SOURCES = \
 	clogging.hpp \
 	cnetlink.cpp \
 	cnetlink.hpp \
-	cnetlink_observer.hpp \
 	cpacketpool.cpp \
 	cpacketpool.hpp \
 	crtlink.hpp \
@@ -22,6 +21,7 @@ libroflibs_netlink_la_SOURCES = \
 	nl_obj.hpp \
 	ofdpa_bridge.cpp \
 	ofdpa_bridge.hpp \
+	sai.hpp \
 	tap_manager.cpp \
 	tap_manager.hpp
 

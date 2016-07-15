@@ -3,17 +3,25 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "roflibs/netlink/tap_manager.hpp"
+#include "roflibs/netlink/cnetlink.hpp"
 
 namespace rofcore {
 
 tap_manager::~tap_manager() { destroy_tapdevs(); }
 
-std::deque<std::pair<int, std::string>>
-tap_manager::create_tapdevs(std::deque<std::string> &port_names,
-                            tap_callback &cb) {
-  using std::string;
+void tap_manager::start() {
+  cnetlink::get_instance().start();
+  for (auto dev : devs) {
+    dev->tap_open();
+  }
+}
 
-  std::deque<std::pair<int, string>> r;
+void tap_manager::stop() { cnetlink::get_instance().stop(); }
+
+std::deque<std::pair<int, std::string>>
+tap_manager::register_tapdevs(std::deque<std::string> &port_names,
+                              tap_callback &cb) {
+  std::deque<std::pair<int, std::string>> r;
   int i = 0;
 
   for (auto &port_name : port_names) {
@@ -41,12 +49,13 @@ int tap_manager::create_tapdev(const std::string &port_name, tap_callback &cb) {
     try {
       dev = new ctapdev(cb, port_name);
     } catch (std::exception &e) {
+      // TODO log error
       return -EINVAL;
     }
     r = devs.size();
     devs.push_back(dev);
 
-    dev->tap_open();
+    cnetlink::get_instance().register_link(r, port_name);
     devname_to_spot.insert(std::make_pair(port_name, r));
   }
   return r;

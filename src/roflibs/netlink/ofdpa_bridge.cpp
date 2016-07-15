@@ -2,46 +2,34 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ofdpa_bridge.hpp"
-
-#include "roflibs/netlink/clogging.hpp"
-
 #include <cassert>
-#include <map>
 #include <cstring>
+#include <map>
 
 #include <rofl/common/openflow/cofport.h>
 
-namespace basebox {
+#include "roflibs/netlink/clogging.hpp"
+#include "roflibs/netlink/sai.hpp"
+#include "ofdpa_bridge.hpp"
 
-ofdpa_bridge::ofdpa_bridge(rofl::rofl_ofdpa_fm_driver &fm_driver)
-    : ingress_vlan_filtered(true), egress_vlan_filtered(false),
-      fm_driver(fm_driver) {}
+namespace rofcore {
+
+ofdpa_bridge::ofdpa_bridge(switch_interface *sw)
+    : sw(sw), ingress_vlan_filtered(true), egress_vlan_filtered(false) {}
 
 ofdpa_bridge::~ofdpa_bridge() {}
 
-void ofdpa_bridge::set_bridge_interface(const rofcore::crtlink &rtl) {
+void ofdpa_bridge::set_bridge_interface(const crtlink &rtl) {
+  assert(sw);
   if (AF_BRIDGE != rtl.get_family() || 0 != rtl.get_master()) {
-    rofcore::logging::error << __PRETTY_FUNCTION__
-                            << " not a bridge master: " << rtl << std::endl;
-    return;
-  }
-
-  this->bridge = rtl;
-}
-
-void ofdpa_bridge::apply_default_rules(rofl::crofdpt &dpt) {
-  using rofcore::logging;
-
-  if (0 == bridge.get_ifindex()) {
-    logging::error << __PRETTY_FUNCTION__ << " no bridge interface set"
+    logging::error << __PRETTY_FUNCTION__ << " not a bridge master: " << rtl
                    << std::endl;
     return;
   }
 
-  fm_driver.enable_policy_arp(dpt, 1, 1);
-  fm_driver.enable_policy_dhcp(dpt);
-  fm_driver.enable_policy_vrrp(dpt);
+  this->bridge = rtl;
+
+  sw->subscribe_to(switch_interface::SWIF_ARP);
 }
 
 static int find_next_bit(int i, uint32_t x) {
@@ -59,10 +47,8 @@ static int find_next_bit(int i, uint32_t x) {
   return j ? j + i : 0;
 }
 
-void ofdpa_bridge::add_interface(rofl::crofdpt &dpt,
-                                 const rofcore::crtlink &rtl) {
-
-  using rofcore::logging;
+void ofdpa_bridge::add_interface(uint32_t port, const crtlink &rtl) {
+  assert(sw);
 
   // sanity checks
   if (0 == bridge.get_ifindex()) {
@@ -84,14 +70,12 @@ void ofdpa_bridge::add_interface(rofl::crofdpt &dpt,
 
   if (not ingress_vlan_filtered) {
     // ingress
-    fm_driver.enable_port_vid_allow_all(dpt, rtl.get_devname());
+    sw->ingress_port_vlan_accept_all(port);
   }
 
   if (not egress_vlan_filtered) {
     // egress
-    uint32_t group =
-        fm_driver.enable_port_unfiltered_egress(dpt, rtl.get_devname());
-    l2_domain[0].push_back(group);
+    sw->egress_port_vlan_accept_all(port);
   }
 
   if (not ingress_vlan_filtered && not egress_vlan_filtered) {
@@ -119,24 +103,12 @@ void ofdpa_bridge::add_interface(rofl::crofdpt &dpt,
         }
 
         if (egress_vlan_filtered) {
-          uint32_t group = fm_driver.enable_port_vid_egress(
-              dpt, rtl.get_devname(), vid, egress_untagged);
-          assert(group && "invalid group identifier");
-          if (rofl::openflow::OFPG_MAX == group) {
-            logging::error << __PRETTY_FUNCTION__
-                           << " failed to set vid on egress " << std::endl;
-            i = j;
-            continue;
-          }
-          l2_domain[vid].push_back(group);
+          sw->egress_port_vlan_add(port, vid, egress_untagged);
+          // XXX add to L2 domain here?
         }
 
         if (ingress_vlan_filtered) {
-          if (br_vlan->pvid == vid) {
-            fm_driver.enable_port_pvid_ingress(dpt, rtl.get_devname(), vid);
-          } else {
-            fm_driver.enable_port_vid_ingress(dpt, rtl.get_devname(), vid);
-          }
+          sw->ingress_port_vlan_add(port, vid, br_vlan->pvid == vid);
         }
 
         // // todo check if vid is okay as an id as well
@@ -157,10 +129,10 @@ void ofdpa_bridge::add_interface(rofl::crofdpt &dpt,
   }
 }
 
-void ofdpa_bridge::update_vlans(rofl::crofdpt &dpt, const std::string &devname,
+void ofdpa_bridge::update_vlans(uint32_t port, const std::string &devname,
                                 const rtnl_link_bridge_vlan *old_br_vlan,
                                 const rtnl_link_bridge_vlan *new_br_vlan) {
-  using rofcore::logging;
+  assert(sw);
   for (int k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
     int base_bit;
     uint32_t a = old_br_vlan->vlan_bitmap[k];
@@ -194,35 +166,12 @@ void ofdpa_bridge::update_vlans(rofl::crofdpt &dpt, const std::string &devname,
           // vlan added
 
           if (egress_vlan_filtered) {
-            try {
-              uint32_t group = fm_driver.enable_port_vid_egress(
-                  dpt, devname, vid, egress_untagged);
-              assert(group && "invalid group identifier");
-              if (rofl::openflow::OFPG_MAX == group) {
-                logging::error << __PRETTY_FUNCTION__
-                               << " failed to set vid on egress" << std::endl;
-                i = j;
-                continue;
-              }
-              l2_domain[vid].push_back(group);
-            } catch (std::exception &e) {
-              logging::error << __PRETTY_FUNCTION__
-                             << " caught error1:" << e.what() << std::endl;
-            }
+            sw->egress_port_vlan_add(port, vid, egress_untagged);
+            // XXX add to L2 domain here?
           }
 
           if (ingress_vlan_filtered) {
-            try {
-              if (new_br_vlan->pvid == vid) {
-                // todo check for existing pvid?
-                fm_driver.enable_port_pvid_ingress(dpt, devname, vid);
-              } else {
-                fm_driver.enable_port_vid_ingress(dpt, devname, vid);
-              }
-            } catch (std::exception &e) {
-              logging::error << __PRETTY_FUNCTION__
-                             << " caught error2:" << e.what() << std::endl;
-            }
+            sw->ingress_port_vlan_add(port, vid, new_br_vlan->pvid == vid);
           }
 
           // todo check if vid is okay as an id as well
@@ -241,39 +190,14 @@ void ofdpa_bridge::update_vlans(rofl::crofdpt &dpt, const std::string &devname,
           // vlan removed
 
           if (ingress_vlan_filtered) {
-            try {
-              if (old_br_vlan->pvid == vid) {
-                fm_driver.disable_port_pvid_ingress(dpt, devname, vid);
-              } else {
-                fm_driver.disable_port_vid_ingress(dpt, devname, vid);
-              }
-            } catch (std::exception &e) {
-              logging::error << __PRETTY_FUNCTION__
-                             << " caught error3:" << e.what() << std::endl;
-            }
+            sw->ingress_port_vlan_remove(port, vid, old_br_vlan->pvid == vid);
           }
 
           if (egress_vlan_filtered) {
-            try {
-              // delete all FM pointing to this group first
-              fm_driver.remove_bridging_unicast_vlan_all(dpt, devname, vid);
-              // make sure they are deleted
-              fm_driver.send_barrier(dpt);
-              uint32_t group = fm_driver.disable_port_vid_egress(
-                  dpt, devname, vid, egress_untagged);
-              assert(group && "invalid group identifier");
-              if (rofl::openflow::OFPG_MAX == group) {
-                logging::error << __PRETTY_FUNCTION__
-                               << " failed to remove vid on egress"
-                               << std::endl;
-                i = j;
-                continue;
-              }
-              l2_domain[vid].remove(group);
-            } catch (std::exception &e) {
-              logging::error << __PRETTY_FUNCTION__
-                             << " caught error4:" << e.what() << std::endl;
-            }
+            // delete all FM pointing to this group first
+            sw->l2_addr_remove_all_in_vlan(port, vid);
+            sw->egress_port_vlan_remove(port, vid, egress_untagged);
+            // XXX update L2 domain
           }
         }
 
@@ -312,12 +236,8 @@ void ofdpa_bridge::update_vlans(rofl::crofdpt &dpt, const std::string &devname,
   }
 }
 
-void ofdpa_bridge::update_interface(rofl::crofdpt &dpt,
-                                    const rofcore::crtlink &oldlink,
-                                    const rofcore::crtlink &newlink) {
-  using rofcore::crtlink;
-  using rofcore::logging;
-
+void ofdpa_bridge::update_interface(uint32_t port, const crtlink &oldlink,
+                                    const crtlink &newlink) {
   // sanity checks
   if (0 == bridge.get_ifindex()) {
     logging::error << __PRETTY_FUNCTION__
@@ -360,16 +280,13 @@ void ofdpa_bridge::update_interface(rofl::crofdpt &dpt,
   if (not crtlink::are_br_vlan_equal(newlink.get_br_vlan(),
                                      oldlink.get_br_vlan())) {
     // vlan updated
-    update_vlans(dpt, oldlink.get_devname(), oldlink.get_br_vlan(),
+    update_vlans(port, oldlink.get_devname(), oldlink.get_br_vlan(),
                  newlink.get_br_vlan());
   }
 }
 
-void ofdpa_bridge::delete_interface(rofl::crofdpt &dpt,
-                                    const rofcore::crtlink &rtl) {
-  using rofcore::crtlink;
-  using rofcore::logging;
-
+void ofdpa_bridge::delete_interface(uint32_t port, const crtlink &rtl) {
+  assert(sw);
   // sanity checks
   if (0 == bridge.get_ifindex()) {
     logging::error << __PRETTY_FUNCTION__
@@ -390,18 +307,15 @@ void ofdpa_bridge::delete_interface(rofl::crofdpt &dpt,
 
   if (not ingress_vlan_filtered) {
     // ingress
-    fm_driver.disable_port_vid_allow_all(dpt, rtl.get_devname());
+    sw->ingress_port_vlan_drop_accept_all(port);
   }
 
   if (not egress_vlan_filtered) {
     // egress
     // delete all FM pointing to this group first
-    fm_driver.remove_bridging_unicast_vlan_all(dpt, rtl.get_devname(), -1);
-    // make sure they are deleted
-    fm_driver.send_barrier(dpt);
-    uint32_t group =
-        fm_driver.disable_port_unfiltered_egress(dpt, rtl.get_devname());
-    l2_domain[0].remove(group);
+    sw->l2_addr_remove_all_in_vlan(port, -1);
+    // XXX FIXME barrier?
+    sw->egress_port_vlan_drop_accept_all(port);
   }
 
   if (not ingress_vlan_filtered && not egress_vlan_filtered) {
@@ -414,21 +328,20 @@ void ofdpa_bridge::delete_interface(rofl::crofdpt &dpt,
 
   if (not crtlink::are_br_vlan_equal(br_vlan, &br_vlan_empty)) {
     // vlan updated
-    update_vlans(dpt, rtl.get_devname(), br_vlan, &br_vlan_empty);
+    update_vlans(port, rtl.get_devname(), br_vlan, &br_vlan_empty);
   }
 }
 
-void ofdpa_bridge::add_mac_to_fdb(rofl::crofdpt &dpt, const uint32_t of_port_no,
-                                  const uint16_t vlan,
-                                  const rofl::cmacaddr &mac, bool permanent) {
-  fm_driver.add_bridging_unicast_vlan(dpt, mac, vlan, of_port_no, permanent,
-                                      egress_vlan_filtered);
+void ofdpa_bridge::add_mac_to_fdb(const uint32_t port, const uint16_t vid,
+                                  const rofl::cmacaddr &mac) {
+  assert(sw);
+  sw->l2_addr_add(port, vid, mac);
 }
 
-void ofdpa_bridge::remove_mac_from_fdb(rofl::crofdpt &dpt,
-                                       const uint32_t of_port_no, uint16_t vid,
+void ofdpa_bridge::remove_mac_from_fdb(const uint32_t port, uint16_t vid,
                                        const rofl::cmacaddr &mac) {
-  fm_driver.remove_bridging_unicast_vlan(dpt, mac, vid, of_port_no);
+  assert(sw);
+  sw->l2_addr_remove(port, vid, mac);
 }
 
 } /* namespace basebox */

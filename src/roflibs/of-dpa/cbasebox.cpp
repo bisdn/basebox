@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <assert.h>
+#include <cassert>
+#include <cerrno>
+#include <linux/if_ether.h>
 
 #include "cbasebox.hpp"
 
-#include "roflibs/netlink/clogging.hpp"
-#include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/netlink/cpacketpool.hpp"
 #include "roflibs/of-dpa/ofdpa_datatypes.hpp"
 
@@ -219,33 +219,12 @@ void cbasebox::handle_experimenter_message(
   uint32_t experimenterType = msg.get_exp_type();
   uint32_t xidExperimenterCAR = msg.get_xid();
 
-  logging::info << "[cbasebox][" << __FUNCTION__
-                << "] Experimenter query message received" << std::endl
-                << "Experimenter OUI: 0x" << std::hex << experimenterId
-                << std::dec << std::endl
-                << "Message Type: 0x" << std::hex << experimenterType
-                << std::dec << std::endl;
-
-  // XXX FIXME check ID before reply
-  dpt.send_experimenter_message(auxid, xidExperimenterCAR, experimenterId,
-                                RECEIVED_FLOW_ENTRIES_QUERY);
-
-  logging::info
-      << "[cbasebox][" << __FUNCTION__
-      << "] Acknowledgment of Experimenter query message reception sent"
-      << std::endl
-      << "Experimenter OUI: 0x" << std::hex << experimenterId << std::dec
-      << std::endl
-      << "Message Type: 0x" << std::hex << RECEIVED_FLOW_ENTRIES_QUERY
-      << std::dec << std::endl;
-
   if (experimenterId == BISDN) {
     switch (experimenterType) {
     case QUERY_FLOW_ENTRIES:
-
-      bridge.apply_default_rules(dpt);
-      send_full_state(dpt);
-
+      dpt.send_experimenter_message(auxid, xidExperimenterCAR, experimenterId,
+                                    RECEIVED_FLOW_ENTRIES_QUERY);
+      nbi->resend_state();
       break;
     }
   }
@@ -253,6 +232,7 @@ void cbasebox::handle_experimenter_message(
 
 void cbasebox::handle_srcmac_table(rofl::crofdpt &dpt,
                                    rofl::openflow::cofmsg_packet_in &msg) {
+#if 0 // XXX FIXME currently disabled
   using rofl::openflow::cofport;
   using rofcore::cnetlink;
   using rofcore::crtlink;
@@ -291,6 +271,7 @@ void cbasebox::handle_srcmac_table(rofl::crofdpt &dpt,
   } catch (rofcore::eNetLinkFailed &e) {
     logging::crit << __FUNCTION__ << ": netlink failed" << std::endl;
   }
+#endif
 }
 
 void cbasebox::handle_acl_policy_table(rofl::crofdpt &dpt,
@@ -315,9 +296,8 @@ void cbasebox::handle_acl_policy_table(rofl::crofdpt &dpt,
 
 void cbasebox::handle_bridging_table_rm(
     rofl::crofdpt &dpt, rofl::openflow::cofmsg_flow_removed &msg) {
-// XXX FIXME disabled for tapdev refactoring:
+#if 0 // XXX FIXME disabled for tapdev refactoring:
 // this is used only for srcmac learning, which is disabled
-#if 0
   using rofl::cmacaddr;
   using rofl::openflow::cofport;
   using rofcore::cnetlink;
@@ -365,7 +345,7 @@ void cbasebox::init(rofl::crofdpt &dpt) {
     }
 
     std::deque<std::pair<int, std::string>> devs =
-        tap_man->create_tapdevs(ports, *this);
+        tap_man->register_tapdevs(ports, *this);
 
     for (auto i : devs) {
       const rofl::openflow::cofport &port = dpt.get_ports().get_port(i.second);
@@ -373,25 +353,13 @@ void cbasebox::init(rofl::crofdpt &dpt) {
       port_id_to_of_port[i.first] = port.get_port_no();
     }
 
+    tap_man->start();
+
     logging::info << "ports initialized" << std::endl;
 
   } catch (std::exception &e) {
     logging::error << "[cbasebox][" << __FUNCTION__ << "] ERROR: unknown error "
                    << e.what() << std::endl;
-  }
-}
-
-void cbasebox::send_full_state(rofl::crofdpt &dpt) {
-  using rofcore::cnetlink;
-
-  for (const auto &i : cnetlink::get_instance().get_links().keys()) {
-    link_created(i);
-  }
-
-  for (const auto &i : cnetlink::get_instance().neighs_ll) {
-    for (const auto &j : cnetlink::get_instance().neighs_ll[i.first].keys()) {
-      neigh_ll_created(i.first, j);
-    }
   }
 }
 
@@ -463,222 +431,176 @@ errout:
   return rv;
 }
 
-/* netlink */
-void cbasebox::link_created(unsigned int ifindex) noexcept {
+int cbasebox::l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept {
+  int rv = 0;
   try {
-    const rofcore::crtlink &rtl =
-        rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
-    logging::info << "[cbasebox][" << __FUNCTION__ << "]:" << std::endl << rtl;
-
-    rofl::crofdpt &dpt = set_dpt(this->dptid, true);
-    // currently ignore all interfaces besides the tap devs
-    if (not dpt.get_ports().has_port(rtl.get_devname())) {
-      logging::notice << "[cbasebox][" << __FUNCTION__ << "]: ignore interface "
-                      << rtl.get_devname() << " with dptid=" << dptid
-                      << std::endl
-                      << rtl;
-      return;
-    }
-
-    if (AF_BRIDGE == rtl.get_family()) {
-
-      // check for new bridge slaves
-      if (rtl.get_master()) {
-        // slave interface
-        logging::info << "[cbasebox][" << __FUNCTION__
-                      << "]: is new slave interface" << std::endl;
-
-        // use only first bridge an of interface is attached to
-        if (not bridge.has_bridge_interface()) {
-          bridge.set_bridge_interface(
-              rofcore::cnetlink::get_instance().get_links().get_link(
-                  rtl.get_master()));
-          bridge.apply_default_rules(dpt);
-        }
-
-        bridge.add_interface(dpt, rtl);
-      } else {
-        // bridge (master)
-        logging::info << "[cbasebox][" << __FUNCTION__ << "]: is new bridge"
-                      << std::endl;
-      }
-    }
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    uint32_t of_port = port_id_to_of_port.at(port);
+    fm_driver.remove_bridging_unicast_vlan_all(dpt, of_port, vid);
   } catch (rofl::eRofBaseNotFound &e) {
-    logging::crit << "[cbasebox][" << __FUNCTION__ << "]: " << e.what()
-                  << std::endl;
-  } catch (std::exception &e) {
-    logging::error << __FUNCTION__ << " failed: " << e.what() << std::endl;
+    // TODO log error
+    rv = -EINVAL;
   }
+  return rv;
 }
 
-void cbasebox::link_updated(const rofcore::crtlink &newlink) noexcept {
-  using rofcore::crtlink;
-  using rofcore::cnetlink;
-
+int cbasebox::l2_addr_add(uint32_t port, uint16_t vid,
+                          const rofl::cmacaddr &mac) noexcept {
+  int rv = 0;
   try {
-    rofl::crofdpt &dpt = set_dpt(this->dptid, true);
-    // currently ignore all interfaces besides the tap devs
-    if (not dpt.get_ports().has_port(newlink.get_devname())) {
-      logging::notice << "[cbasebox][" << __FUNCTION__ << "]: ignore interface "
-                      << newlink.get_devname() << " with dptid=" << dptid
-                      << std::endl
-                      << newlink;
-      return;
-    }
-
-    const crtlink &oldlink =
-        cnetlink::get_instance().get_links().get_link(newlink.get_ifindex());
-    logging::notice << "[cbasebox][" << __FUNCTION__
-                    << "] oldlink:" << std::endl
-                    << oldlink;
-    logging::notice << "[cbasebox][" << __FUNCTION__
-                    << "] newlink:" << std::endl
-                    << newlink;
-
-    bridge.update_interface(dpt, oldlink, newlink);
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    // XXX have the knowlege here about filtered/unfiltered?
+    uint32_t of_port = port_id_to_of_port.at(port);
+    fm_driver.add_bridging_unicast_vlan(dpt, of_port, vid, mac, true, false);
   } catch (rofl::eRofBaseNotFound &e) {
-    logging::crit << "[cbasebox][" << __FUNCTION__ << "]: " << e.what()
-                  << std::endl;
-  } catch (std::exception &e) {
-    logging::error << __FUNCTION__ << " failed: " << e.what() << std::endl;
+    // TODO log error
+    rv = -EINVAL;
   }
+  return rv;
 }
 
-void cbasebox::link_deleted(unsigned int ifindex) noexcept {
+int cbasebox::l2_addr_remove(uint32_t port, uint16_t vid,
+                             const rofl::cmacaddr &mac) noexcept {
+  int rv = 0;
   try {
-    const rofcore::crtlink &rtl =
-        rofcore::cnetlink::get_instance().get_links().get_link(ifindex);
-
-    rofl::crofdpt &dpt = set_dpt(this->dptid, true);
-    // currently ignore all interfaces besides the tap devs
-    if (not dpt.get_ports().has_port(rtl.get_devname())) {
-      logging::notice << "[cbasebox][" << __FUNCTION__ << "]: ignore interface "
-                      << rtl.get_devname() << " with dptid=" << dptid
-                      << std::endl
-                      << rtl;
-      return;
-    }
-
-    bridge.delete_interface(dpt, rtl);
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    uint32_t of_port = port_id_to_of_port.at(port);
+    fm_driver.remove_bridging_unicast_vlan(dpt, of_port, vid, mac);
   } catch (rofl::eRofBaseNotFound &e) {
-    logging::crit << "[cbasebox][" << __FUNCTION__ << "]: " << e.what()
-                  << std::endl;
-  } catch (std::exception &e) {
-    logging::error << __FUNCTION__ << " failed: " << e.what() << std::endl;
+    // TODO log error
+    rv = -EINVAL;
   }
+  return rv;
 }
 
-void cbasebox::neigh_ll_created(unsigned int ifindex,
-                                uint16_t nbindex) noexcept {
-  using rofcore::crtneigh;
-  using rofcore::crtlink;
-  using rofcore::cnetlink;
-  using rofl::crofdpt;
-
+int cbasebox::ingress_port_vlan_accept_all(uint32_t port) noexcept {
+  int rv = 0;
   try {
-    const crtlink &rtl = cnetlink::get_instance().get_links().get_link(ifindex);
-    const crtneigh &rtn =
-        cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    uint32_t of_port = port_id_to_of_port.at(port);
+    fm_driver.enable_port_vid_allow_all(dpt, of_port);
+  } catch (rofl::eRofBaseNotFound &e) {
+    // TODO log error
+    rv = -EINVAL;
+  }
+  return rv;
+}
 
-    if (bridge.has_bridge_interface()) {
-      try {
-        // valid vlan id?
-        if (0 > rtn.get_vlan() || 0x1000 < rtn.get_vlan()) {
-          logging::error << "[cbasebox][" << __FUNCTION__ << "]: invalid vlan"
-                         << rtn.get_vlan() << std::endl;
-          return;
-        }
+int cbasebox::ingress_port_vlan_drop_accept_all(uint32_t port) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    uint32_t of_port = port_id_to_of_port.at(port);
+    fm_driver.disable_port_vid_allow_all(dpt, of_port);
+  } catch (rofl::eRofBaseNotFound &e) {
+    // TODO log error
+    rv = -EINVAL;
+  }
+  return rv;
+}
 
-        // local mac address of parent?
-        if (rtn.get_lladdr() == rtl.get_hwaddr()) {
-          logging::info << "[cbasebox][" << __FUNCTION__
-                        << "]: ignore master lladdr" << std::endl;
-          return;
-        } else {
-          logging::info << "[cbasebox][" << __FUNCTION__
-                        << "]: rtn=" << rtn.get_lladdr()
-                        << " parent=" << rtl.get_hwaddr() << std::endl;
-        }
-
-        crofdpt &dpt = set_dpt(this->dptid, true);
-        bridge.add_mac_to_fdb(
-            dpt, dpt.get_ports().get_port(rtl.get_devname()).get_port_no(),
-            rtn.get_vlan(), rtn.get_lladdr(), true);
-      } catch (rofl::eRofBaseNotFound &e) {
-        logging::crit << "[cbasebox][" << __FUNCTION__ << "]: " << e.what()
-                      << std::endl;
-      } catch (rofl::openflow::ePortsNotFound &e) {
-        logging::error << "[cbasebox][" << __FUNCTION__
-                       << "ePortsNotFound: " << e.what() << std::endl;
-      }
+int cbasebox::ingress_port_vlan_add(uint32_t port, uint16_t vid,
+                                    bool pvid) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    uint32_t of_port = port_id_to_of_port.at(port);
+    if (pvid) {
+      fm_driver.enable_port_pvid_ingress(dpt, of_port, vid);
     } else {
-      logging::info << "[cbasebox][" << __FUNCTION__ << "]: no bridge interface"
-                    << std::endl;
+      fm_driver.enable_port_vid_ingress(dpt, of_port, vid);
     }
-  } catch (std::exception &e) {
-    logging::error << __FUNCTION__ << "() failed: " << e.what() << std::endl;
+  } catch (rofl::eRofBaseNotFound &e) {
+    // TODO log error
+    rv = -EINVAL;
   }
+  return rv;
 }
 
-void cbasebox::neigh_ll_updated(unsigned int ifindex,
-                                uint16_t nbindex) noexcept {
-  using rofcore::cnetlink;
-  using rofcore::crtneigh;
-
+int cbasebox::ingress_port_vlan_remove(uint32_t port, uint16_t vid,
+                                       bool pvid) noexcept {
+  int rv = 0;
   try {
-    const crtneigh &rtn =
-        cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
-
-    logging::warn << "[cbasebox][" << __FUNCTION__
-                  << "]: NOT handled neighbor:" << std::endl
-                  << rtn;
-  } catch (std::exception &e) {
-    logging::error << __FUNCTION__ << " failed: " << e.what() << std::endl;
-  }
-}
-
-void cbasebox::neigh_ll_deleted(unsigned int ifindex,
-                                uint16_t nbindex) noexcept {
-  using rofcore::crtneigh;
-  using rofcore::crtlink;
-  using rofcore::cnetlink;
-  using rofl::crofdpt;
-
-  try {
-    const crtlink &rtl = cnetlink::get_instance().get_links().get_link(ifindex);
-    const crtneigh &rtn =
-        cnetlink::get_instance().neighs_ll[ifindex].get_neigh(nbindex);
-
-    logging::info << "[cbasebox][" << __FUNCTION__ << "]: " << std::endl << rtn;
-
-    if (bridge.has_bridge_interface()) {
-      try {
-        if (rtn.get_lladdr() == rtl.get_hwaddr()) {
-          logging::info << "[cbasebox][" << __FUNCTION__
-                        << "]: ignore master lladdr" << std::endl;
-          return;
-        }
-        rofl::crofdpt &dpt = set_dpt(this->dptid, true);
-        bridge.remove_mac_from_fdb(
-            dpt, dpt.get_ports().get_port(rtl.get_devname()).get_port_no(),
-            rtn.get_vlan(), rtn.get_lladdr());
-      } catch (rofl::eRofBaseNotFound &e) {
-        logging::crit << "[cbasebox][" << __FUNCTION__ << "]: " << e.what()
-                      << std::endl;
-      } catch (rofl::openflow::ePortsNotFound &e) {
-        logging::error << "[cbasebox][" << __FUNCTION__
-                       << "]: invalid port:" << e.what() << std::endl;
-      }
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    uint32_t of_port = port_id_to_of_port.at(port);
+    if (pvid) {
+      fm_driver.disable_port_pvid_ingress(dpt, of_port, vid);
     } else {
-      logging::info << "[cbasebox][" << __FUNCTION__ << "]: no bridge interface"
-                    << std::endl;
+      fm_driver.disable_port_vid_ingress(dpt, of_port, vid);
     }
-  } catch (crtlink::eRtLinkNotFound &e) {
-    logging::error << "[cbasebox][" << __FUNCTION__
-                   << "]: eRtLinkNotFound: " << e.what() << std::endl;
-  } catch (crtneigh::eRtNeighNotFound &e) {
-    logging::error << "[cbasebox][" << __FUNCTION__ << "]: eRtNeighNotFound"
-                   << e.what() << std::endl;
+  } catch (rofl::eRofBaseNotFound &e) {
+    // TODO log error
+    rv = -EINVAL;
   }
+  return rv;
 }
+
+int cbasebox::egress_port_vlan_accept_all(uint32_t port) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    uint32_t of_port = port_id_to_of_port.at(port);
+    fm_driver.enable_port_unfiltered_egress(dpt, of_port);
+  } catch (rofl::eRofBaseNotFound &e) {
+    // TODO log error
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int cbasebox::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    uint32_t of_port = port_id_to_of_port.at(port);
+    fm_driver.disable_port_unfiltered_egress(dpt, of_port);
+  } catch (rofl::eRofBaseNotFound &e) {
+    // TODO log error
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int cbasebox::egress_port_vlan_add(uint32_t port, uint16_t vid,
+                                   bool untagged) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    uint32_t of_port = port_id_to_of_port.at(port);
+    fm_driver.enable_port_vid_egress(dpt, of_port, vid, untagged);
+  } catch (rofl::eRofBaseNotFound &e) {
+    // TODO log error
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int cbasebox::egress_port_vlan_remove(uint32_t port, uint16_t vid,
+                                      bool untagged) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    uint32_t of_port = port_id_to_of_port.at(port);
+    fm_driver.disable_port_vid_egress(dpt, of_port, vid, untagged);
+  } catch (rofl::eRofBaseNotFound &e) {
+    // TODO log error
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int cbasebox::subscribe_to(enum swi_flags flags) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    if (flags & switch_interface::SWIF_ARP) {
+      fm_driver.enable_policy_arp(dpt, 0, -1);
+    }
+  } catch (rofl::eRofBaseNotFound &e) {
+    // TODO log error
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
 } // namespace basebox
