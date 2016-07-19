@@ -540,7 +540,7 @@ int cbasebox::egress_port_vlan_accept_all(uint32_t port) noexcept {
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     uint32_t of_port = port_id_to_of_port.at(port);
-    fm_driver.enable_port_unfiltered_egress(dpt, of_port);
+    fm_driver.enable_group_l2_unfiltered_interface(dpt, of_port);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
@@ -553,7 +553,7 @@ int cbasebox::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     uint32_t of_port = port_id_to_of_port.at(port);
-    fm_driver.disable_port_unfiltered_egress(dpt, of_port);
+    fm_driver.disable_group_l2_unfiltered_interface(dpt, of_port);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
@@ -567,7 +567,7 @@ int cbasebox::egress_port_vlan_add(uint32_t port, uint16_t vid,
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     uint32_t of_port = port_id_to_of_port.at(port);
-    fm_driver.enable_port_vid_egress(dpt, of_port, vid, untagged);
+    fm_driver.enable_group_l2_interface(dpt, of_port, vid, untagged);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
@@ -581,7 +581,7 @@ int cbasebox::egress_port_vlan_remove(uint32_t port, uint16_t vid,
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     uint32_t of_port = port_id_to_of_port.at(port);
-    fm_driver.disable_port_vid_egress(dpt, of_port, vid, untagged);
+    fm_driver.disable_group_l2_interface(dpt, of_port, vid, untagged);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
