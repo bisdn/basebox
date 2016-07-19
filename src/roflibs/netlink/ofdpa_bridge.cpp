@@ -104,22 +104,11 @@ void ofdpa_bridge::add_interface(uint32_t port, const crtlink &rtl) {
 
         if (egress_vlan_filtered) {
           sw->egress_port_vlan_add(port, vid, egress_untagged);
-          // XXX add to L2 domain here?
         }
 
         if (ingress_vlan_filtered) {
           sw->ingress_port_vlan_add(port, vid, br_vlan->pvid == vid);
         }
-
-        // // todo check if vid is okay as an id as well
-        // group = fm_driver.enable_group_l2_multicast(vid, vid,
-        //                                             l2_domain[vid],
-        //                                             1 !=
-        //                                             l2_domain[vid].size());
-        //
-        // if (1 == l2_domain[vid].size()) { // todo maybe unnecessary
-        //   fm_driver.enable_policy_arp(vid, group);
-        // }
 
         i = j;
       } else {
@@ -167,24 +156,11 @@ void ofdpa_bridge::update_vlans(uint32_t port, const std::string &devname,
 
           if (egress_vlan_filtered) {
             sw->egress_port_vlan_add(port, vid, egress_untagged);
-            // XXX add to L2 domain here?
           }
 
           if (ingress_vlan_filtered) {
             sw->ingress_port_vlan_add(port, vid, new_br_vlan->pvid == vid);
           }
-
-          // todo check if vid is okay as an id as well
-          // group = fm_driver.enable_group_l2_multicast(vid, vid,
-          //                                             l2_domain[vid],
-          //                                             1 !=
-          //                                             l2_domain[vid].size());
-          // // enable arp flooding as well
-          // #if DISABLED_TO_TEST
-          // if (1 == l2_domain[vid].size()) { // todo maybe unnecessary
-          //   fm_driver.enable_policy_arp(vid, group);
-          // }
-          // #endif
 
         } else {
           // vlan removed
@@ -197,7 +173,6 @@ void ofdpa_bridge::update_vlans(uint32_t port, const std::string &devname,
             // delete all FM pointing to this group first
             sw->l2_addr_remove_all_in_vlan(port, vid);
             sw->egress_port_vlan_remove(port, vid, egress_untagged);
-            // XXX update L2 domain
           }
         }
 
@@ -314,7 +289,6 @@ void ofdpa_bridge::delete_interface(uint32_t port, const crtlink &rtl) {
     // egress
     // delete all FM pointing to this group first
     sw->l2_addr_remove_all_in_vlan(port, -1);
-    // XXX FIXME barrier?
     sw->egress_port_vlan_drop_accept_all(port);
   }
 
