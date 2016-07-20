@@ -5,8 +5,6 @@ SUBDIRS =
 noinst_LTLIBRARIES = libroflibs_netlink.la
 
 libroflibs_netlink_la_SOURCES = \
-	clogging.cpp \
-	clogging.hpp \
 	cnetlink.cpp \
 	cnetlink.hpp \
 	cpacketpool.cpp \

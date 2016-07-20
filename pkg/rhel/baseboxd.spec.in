@@ -16,10 +16,14 @@ BuildRequires: libtool
 BuildRequires: rofl-common-devel
 BuildRequires: rofl-ofdpa-devel
 BuildRequires: libnl3-devel
+BuildRequires: glog-devel
+BuildRequires: gflags-devel
 
 Requires:      rofl-common
 Requires:      rofl-ofdpa
 Requires:      libnl3
+Requires:      glog
+Requires:      gflags
 
 BuildRequires: systemd
 Requires(post): systemd

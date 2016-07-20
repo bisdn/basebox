@@ -277,34 +277,27 @@ public:
    *
    */
   friend std::ostream &operator<<(std::ostream &os, crtlink const &rtlink) {
-    os << rofcore::indent(0) << "<crtlink: >" << std::endl;
-    os << rofcore::indent(2) << "<devname: " << rtlink.devname << " >"
+    os << "<crtlink: >" << std::endl;
+    os << "<devname: " << rtlink.devname << " >" << std::endl;
+    os << "<hwaddr: >" << std::endl;
+    os << rtlink.maddr;
+    os << "<bcast: >" << std::endl;
+    os << rtlink.bcast;
+    os << "<flags: " << (std::hex) << rtlink.flags << (std::dec) << " >"
        << std::endl;
-    os << rofcore::indent(2) << "<hwaddr: >" << std::endl;
-    os << rofcore::indent(4) << rtlink.maddr;
-    os << rofcore::indent(2) << "<bcast: >" << std::endl;
-    os << rofcore::indent(4) << rtlink.bcast;
-    os << rofcore::indent(2) << "<flags: " << (std::hex) << rtlink.flags
-       << (std::dec) << " >" << std::endl;
-    os << rofcore::indent(2) << "<operstate: " << (std::hex) << rtlink.operstate
-       << (std::dec) << " >" << std::endl;
-    os << rofcore::indent(2) << "<af: " << rtlink.af << " >" << std::endl;
-    os << rofcore::indent(2) << "<arptype: " << rtlink.arptype << " >"
+    os << "<operstate: " << (std::hex) << rtlink.operstate << (std::dec) << " >"
        << std::endl;
-    os << rofcore::indent(2) << "<ifindex: " << rtlink.ifindex << " >"
-       << std::endl;
-    os << rofcore::indent(2) << "<mtu: " << rtlink.mtu << " >" << std::endl;
-    os << rofcore::indent(2) << "<master: " << rtlink.master << " >"
-       << std::endl;
+    os << "<af: " << rtlink.af << " >" << std::endl;
+    os << "<arptype: " << rtlink.arptype << " >" << std::endl;
+    os << "<ifindex: " << rtlink.ifindex << " >" << std::endl;
+    os << "<mtu: " << rtlink.mtu << " >" << std::endl;
+    os << "<master: " << rtlink.master << " >" << std::endl;
 
     if (AF_BRIDGE == rtlink.af) {
-      os << rofcore::indent(2) << "<pvid: " << rtlink.br_vlan.pvid << " >"
+      os << "<pvid: " << rtlink.br_vlan.pvid << " >" << std::endl;
+      os << "<vlans (all): " << dump_bitmap(rtlink.br_vlan.vlan_bitmap) << " >"
          << std::endl;
-      os << rofcore::indent(2)
-         << "<vlans (all): " << dump_bitmap(rtlink.br_vlan.vlan_bitmap) << " >"
-         << std::endl;
-      os << rofcore::indent(2)
-         << "<vlans (untagged): " << dump_bitmap(rtlink.br_vlan.untagged_bitmap)
+      os << "<vlans (untagged): " << dump_bitmap(rtlink.br_vlan.untagged_bitmap)
          << " >" << std::endl;
     }
 

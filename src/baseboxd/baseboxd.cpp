@@ -3,12 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "cunixenv.hpp"
-#include "roflibs/netlink/clogging.hpp"
+#include <glog/logging.h>
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/of-dpa/cbasebox.hpp"
 
 int main(int argc, char **argv) {
-  using rofcore::logging;
 
   rofl::cunixenv env_parser(argc, argv);
 
@@ -27,21 +26,12 @@ int main(int argc, char **argv) {
     exit(0);
   }
 
-  /*
-   * extract debug level
-   */
-  int rofl_debug = 0, core_debug = 0;
-  if (env_parser.is_arg_set("debug")) {
-    core_debug = rofl_debug = atoi(env_parser.get_arg("debug").c_str());
-  }
-
-  logging::set_debug_level(core_debug);
+  google::InitGoogleLogging(argv[0]);
 
   rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
   versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
-  logging::notice << "[baseboxd][main] using OpenFlow version-bitmap:"
-                  << std::endl
-                  << versionbitmap;
+  LOG(INFO) << "[baseboxd][main] using OpenFlow version-bitmap:" << std::endl
+            << versionbitmap;
 
   // start netlink
   rofcore::nbi *nbi = &rofcore::cnetlink::get_instance();

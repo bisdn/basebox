@@ -57,7 +57,7 @@ cunixenv::cunixenv(int argc, char **argv) {
   */
 
   // Prepare debug debug level
-  // ss << rofl::logging::emerg_;
+  // ss << rofl::LOG(FATAL)_;
   coption debug =
       coption(true, REQUIRED_ARGUMENT, 'd', "debug", "debug level", ss.str());
   arguments.push_back(debug);

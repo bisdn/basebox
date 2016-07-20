@@ -16,7 +16,7 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/ofdpa/rofl_ofdpa_fm_driver.hpp>
 
-#include "roflibs/netlink/clogging.hpp"
+#include <glog/logging.h>
 #include "roflibs/netlink/sai.hpp"
 #include "roflibs/netlink/tap_manager.hpp"
 
@@ -166,7 +166,7 @@ public:
 
   /* print this */
   friend std::ostream &operator<<(std::ostream &os, const cbasebox &box) {
-    os << rofcore::indent(0) << "<cbasebox>" << std::endl;
+    os << "<cbasebox>" << std::endl;
     return os;
   }
 
