@@ -4,15 +4,13 @@
 
 #pragma once
 
-#include <ostream>
 #include <cinttypes>
-
-#include <netlink/route/neighbour.h>
-#include <linux/neighbour.h>
-
-#include <rofl/common/caddress.h>
+#include <ostream>
 
 #include <glog/logging.h>
+#include <linux/neighbour.h>
+#include <netlink/route/neighbour.h>
+#include <rofl/common/caddress.h>
 
 namespace rofcore {
 

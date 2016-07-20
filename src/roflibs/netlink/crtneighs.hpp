@@ -5,13 +5,13 @@
 #ifndef CRTNEIGHS_H_
 #define CRTNEIGHS_H_
 
-#include <iostream>
-#include <map>
-#include <list>
 #include <algorithm>
+#include <iostream>
+#include <list>
+#include <map>
 
-#include <roflibs/netlink/crtneigh.hpp>
 #include <glog/logging.h>
+#include <roflibs/netlink/crtneigh.hpp>
 
 namespace rofcore {
 

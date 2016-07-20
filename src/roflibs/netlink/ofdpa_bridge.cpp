@@ -6,9 +6,9 @@
 #include <cstring>
 #include <map>
 
+#include <glog/logging.h>
 #include <rofl/common/openflow/cofport.h>
 
-#include <glog/logging.h>
 #include "roflibs/netlink/sai.hpp"
 #include "ofdpa_bridge.hpp"
 

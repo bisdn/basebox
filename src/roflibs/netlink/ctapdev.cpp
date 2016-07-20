@@ -9,10 +9,11 @@
 
 #include <cerrno>
 
+#include <glog/logging.h>
+
 #include "ctapdev.hpp"
 #include "roflibs/netlink/tap_manager.hpp"
 #include "roflibs/netlink/cpacketpool.hpp"
-#include <glog/logging.h>
 
 namespace rofcore {
 

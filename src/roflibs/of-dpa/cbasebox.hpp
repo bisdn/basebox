@@ -8,15 +8,15 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include <string>
-#include <iostream>
 #include <exception>
+#include <iostream>
+#include <string>
 
+#include <glog/logging.h>
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
 #include <rofl/ofdpa/rofl_ofdpa_fm_driver.hpp>
 
-#include <glog/logging.h>
 #include "roflibs/netlink/sai.hpp"
 #include "roflibs/netlink/tap_manager.hpp"
 
