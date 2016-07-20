@@ -10,6 +10,7 @@
 
 #include <exception>
 #include <iostream>
+#include <set>
 #include <string>
 
 #include <glog/logging.h>
@@ -143,8 +144,8 @@ protected:
 public:
   // switch_interface
   int l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept override;
-  int l2_addr_add(uint32_t port, uint16_t vid,
-                  const rofl::cmacaddr &mac) noexcept override;
+  int l2_addr_add(uint32_t port, uint16_t vid, const rofl::cmacaddr &mac,
+                  bool filtered) noexcept override;
   int l2_addr_remove(uint32_t port, uint16_t vid,
                      const rofl::cmacaddr &mac) noexcept override;
 
@@ -176,6 +177,8 @@ private:
   rofl::rofl_ofdpa_fm_driver fm_driver;
   std::map<int, uint32_t> port_id_to_of_port;
   std::map<uint32_t, int> of_port_to_port_id;
+
+  std::map<uint16_t, std::set<uint32_t>> l2_domain;
 
   /* IO */
   int enqueue(rofcore::ctapdev *netdev, rofl::cpacket *pkt) override;

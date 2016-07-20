@@ -15,7 +15,7 @@
 namespace rofcore {
 
 ofdpa_bridge::ofdpa_bridge(switch_interface *sw)
-    : sw(sw), ingress_vlan_filtered(true), egress_vlan_filtered(false) {}
+    : sw(sw), ingress_vlan_filtered(true), egress_vlan_filtered(true) {}
 
 ofdpa_bridge::~ofdpa_bridge() {}
 
@@ -309,7 +309,7 @@ void ofdpa_bridge::delete_interface(uint32_t port, const crtlink &rtl) {
 void ofdpa_bridge::add_mac_to_fdb(const uint32_t port, const uint16_t vid,
                                   const rofl::cmacaddr &mac) {
   assert(sw);
-  sw->l2_addr_add(port, vid, mac);
+  sw->l2_addr_add(port, vid, mac, egress_vlan_filtered);
 }
 
 void ofdpa_bridge::remove_mac_from_fdb(const uint32_t port, uint16_t vid,
