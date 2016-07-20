@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 
 #include "cunixenv.hpp"
@@ -27,6 +28,7 @@ int main(int argc, char **argv) {
     exit(0);
   }
 
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
 
   rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
