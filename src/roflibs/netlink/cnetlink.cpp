@@ -268,22 +268,17 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
       switch (rtlink.get_family()) {
       case AF_BRIDGE:
         /* new bridge */
-        cnetlink::get_instance().set_links().add_link(
-            rtlink); // overwrite old link
-        LOG(INFO)
-            << "link new (bridge "
-            << ((0 == rtlink.get_master()) ? "master" : "slave") << "): "
-            << cnetlink::get_instance().get_links().get_link(ifindex).str()
-            << std::endl;
+        set_links().add_link(rtlink); // overwrite old link
+        LOG(INFO) << "link new (bridge "
+                  << ((0 == rtlink.get_master()) ? "master" : "slave")
+                  << "): " << get_links().get_link(ifindex).str() << std::endl;
         link_created(rtlink);
 
         break;
       default:
-        cnetlink::get_instance().set_links().add_link(rtlink);
-        LOG(INFO)
-            << "link new: "
-            << cnetlink::get_instance().get_links().get_link(ifindex).str()
-            << std::endl;
+        set_links().add_link(rtlink);
+        LOG(INFO) << "link new: " << get_links().get_link(ifindex).str()
+                  << std::endl;
         link_created(rtlink);
         break;
       }
@@ -298,19 +293,17 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
       // fallthrough
       default:
         link_updated(rtlink);
-        cnetlink::get_instance().set_links().set_link(rtlink);
-        VLOG(1) << cnetlink::get_instance().get_links().get_link(ifindex).str()
-                << std::endl;
+        set_links().set_link(rtlink);
+        VLOG(1) << get_links().get_link(ifindex).str() << std::endl;
         break;
       }
     } break;
     case NL_ACT_DEL: {
       // xxx check if this has to be handled like new
       link_deleted(rtlink);
-      LOG(INFO) << "link deleted: "
-                << cnetlink::get_instance().get_links().get_link(ifindex).str()
+      LOG(INFO) << "link deleted: " << get_links().get_link(ifindex).str()
                 << std::endl;
-      cnetlink::get_instance().set_links().drop_link(ifindex);
+      set_links().drop_link(ifindex);
     } break;
     default: { LOG(WARNING) << "route/link: unknown NL action" << std::endl; }
     }
@@ -352,7 +345,7 @@ void cnetlink::route_neigh_apply(int action, const nl_obj &obj) {
         VLOG(1) << "[roflibs][cnetlink][route_neigh_cb] new neigh_ll"
                 << std::endl
                 << n;
-        cnetlink::get_instance().neighs_ll[ifindex].add_neigh(n);
+        neighs_ll[ifindex].add_neigh(n);
         neigh_ll_created(ifindex, n);
       } break;
       case AF_INET6:
@@ -367,7 +360,7 @@ void cnetlink::route_neigh_apply(int action, const nl_obj &obj) {
         VLOG(1) << "[roflibs][cnetlink][route_neigh_cb] updated neigh_ll"
                 << std::endl
                 << n;
-        cnetlink::get_instance().neighs_ll[ifindex].set_neigh(n);
+        neighs_ll[ifindex].set_neigh(n);
         neigh_ll_updated(ifindex, n);
       } break;
       case AF_INET:
@@ -382,10 +375,9 @@ void cnetlink::route_neigh_apply(int action, const nl_obj &obj) {
         VLOG(1) << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_ll"
                 << std::endl
                 << n;
-        unsigned int nbindex =
-            cnetlink::get_instance().neighs_ll[ifindex].get_neigh(n);
+        unsigned int nbindex = neighs_ll[ifindex].get_neigh(n);
         neigh_ll_deleted(ifindex, n);
-        cnetlink::get_instance().neighs_ll[ifindex].drop_neigh(nbindex);
+        neighs_ll[ifindex].drop_neigh(nbindex);
       } break;
       case AF_INET:
       case AF_INET6:
@@ -410,7 +402,7 @@ void cnetlink::route_neigh_apply(int action, const nl_obj &obj) {
                << e.what() << std::endl;
   }
 
-  cnetlink::get_instance().set_neigh_timeout();
+  set_neigh_timeout();
 }
 
 void cnetlink::set_neigh_timeout() {
@@ -512,8 +504,7 @@ void cnetlink::link_created(const crtlink &rtl) noexcept {
         // use only first bridge an of interface is attached to
         if (nullptr == bridge) {
           bridge = new ofdpa_bridge(this->swi);
-          bridge->set_bridge_interface(
-              cnetlink::get_instance().get_links().get_link(rtl.get_master()));
+          bridge->set_bridge_interface(get_links().get_link(rtl.get_master()));
         }
 
         bridge->add_interface(ifindex_to_registered_port.at(rtl.get_ifindex()),
@@ -531,8 +522,7 @@ void cnetlink::link_created(const crtlink &rtl) noexcept {
 
 void cnetlink::link_updated(const crtlink &newlink) noexcept {
   try {
-    const crtlink &oldlink =
-        cnetlink::get_instance().get_links().get_link(newlink.get_ifindex());
+    const crtlink &oldlink = get_links().get_link(newlink.get_ifindex());
     LOG(INFO) << "[cnetlink][" << __FUNCTION__ << "] oldlink:" << std::endl
               << oldlink;
     LOG(INFO) << "[cnetlink][" << __FUNCTION__ << "] newlink:" << std::endl
@@ -560,7 +550,7 @@ void cnetlink::link_deleted(const crtlink &rtl) noexcept {
 void cnetlink::neigh_ll_created(unsigned int ifindex,
                                 const crtneigh &rtn) noexcept {
   try {
-    const crtlink &rtl = cnetlink::get_instance().get_links().get_link(ifindex);
+    const crtlink &rtl = get_links().get_link(ifindex);
 
     if (nullptr != bridge) {
       try {
@@ -612,7 +602,7 @@ void cnetlink::neigh_ll_updated(unsigned int ifindex,
 void cnetlink::neigh_ll_deleted(unsigned int ifindex,
                                 const crtneigh &rtn) noexcept {
   try {
-    const crtlink &rtl = cnetlink::get_instance().get_links().get_link(ifindex);
+    const crtlink &rtl = get_links().get_link(ifindex);
 
     LOG(INFO) << "[cnetlink][" << __FUNCTION__ << "]: " << std::endl << rtn;
 
