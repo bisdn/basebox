@@ -5,28 +5,26 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "cunixenv.hpp"
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/of-dpa/cbasebox.hpp"
 
+static bool validate_port(const char *flagname, google::int32 value) {
+  if (value > 0 && value < 32768) // value is ok
+    return true;
+  return false;
+}
+
+DEFINE_int32(port, 6653, "Listening port");
+
 int main(int argc, char **argv) {
 
-  rofl::cunixenv env_parser(argc, argv);
-
-  /* update defaults */
-  env_parser.add_option(
-      rofl::coption(true, REQUIRED_ARGUMENT, 'p', "port", "set port", "6653"));
-
-  // command line arguments
-  env_parser.parse_args();
-
-  /*
-   * extract help flag
-   */
-  if (env_parser.is_arg_set("help")) {
-    std::cout << env_parser.get_usage((char *)"baseboxd");
-    exit(0);
+  if (!google::RegisterFlagValidator(&FLAGS_port, &validate_port)) {
+    std::cerr << "Failed to register port validator" << std::endl;
+    exit(1);
   }
+
+  gflags::SetUsageMessage("");
+  gflags::SetVersionString(PACKAGE_VERSION);
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
@@ -42,15 +40,9 @@ int main(int argc, char **argv) {
   std::unique_ptr<basebox::cbasebox> box(
       new basebox::cbasebox(nbi, versionbitmap));
 
-  std::stringstream portno;
-  if (env_parser.is_arg_set("port")) {
-    portno << env_parser.get_arg("port").c_str();
-  } else {
-    portno << (int)6653;
-  }
 
   rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"),
-                        atoi(portno.str().c_str()));
+                        FLAGS_port);
   box->dpt_sock_listen(baddr);
 
   while (basebox::cbasebox::running()) {

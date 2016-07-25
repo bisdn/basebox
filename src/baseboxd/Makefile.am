@@ -5,9 +5,7 @@ SUBDIRS =
 sbin_PROGRAMS = baseboxd
 
 baseboxd_SOURCES = \
-	baseboxd.cpp \
-	cunixenv.cpp \
-	cunixenv.hpp
+	baseboxd.cpp
 	
 baseboxd_LDADD = -lpthread \
 		 -lrt \
