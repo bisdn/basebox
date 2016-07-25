@@ -48,7 +48,6 @@ private:
   bool ingress_vlan_filtered;
   bool egress_vlan_filtered;
   rofcore::crtlink bridge;
-  std::map<uint16_t, std::list<uint32_t>> l2_domain;
 };
 
 } /* namespace basebox */
