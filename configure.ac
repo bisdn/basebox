@@ -80,10 +80,10 @@ PKG_CHECK_MODULES([ROFL], rofl_common >= 0.10.9,
 	LIBS="$LIBS $ROFL_LIBS" ],
   [ AC_MSG_ERROR([minimum version of rofl_common is 0.10.9]) ])
 
-PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.5,
+PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.6,
   [ CPPFLAGS="$CPPFLAGS $ROFL_OFDPA_CFLAGS"
 	LIBS="$LIBS $ROFL_OFDPA_LIBS" ],
-  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.5]) ])
+  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.6]) ])
 
 AC_CHECK_LIB([gflags], [main], [GFLAGS_LIBS="-lgflags"],
   AC_MSG_ERROR([libgflags not found]) )
