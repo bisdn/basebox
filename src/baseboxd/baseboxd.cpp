@@ -8,7 +8,7 @@
 #include "roflibs/netlink/cnetlink.hpp"
 #include "roflibs/of-dpa/cbasebox.hpp"
 
-static bool validate_port(const char *flagname, google::int32 value) {
+static bool validate_port(const char *flagname, gflags::int32 value) {
   if (value > 0 && value < 32768) // value is ok
     return true;
   return false;
@@ -18,7 +18,7 @@ DEFINE_int32(port, 6653, "Listening port");
 
 int main(int argc, char **argv) {
 
-  if (!google::RegisterFlagValidator(&FLAGS_port, &validate_port)) {
+  if (!gflags::RegisterFlagValidator(&FLAGS_port, &validate_port)) {
     std::cerr << "Failed to register port validator" << std::endl;
     exit(1);
   }
