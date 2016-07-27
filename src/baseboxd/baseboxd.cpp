@@ -31,8 +31,7 @@ int main(int argc, char **argv) {
 
   rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
   versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
-  LOG(INFO) << "[baseboxd][main] using OpenFlow version-bitmap:" << std::endl
-            << versionbitmap;
+  LOG(INFO) << "using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
   // start netlink
   rofcore::nbi *nbi = &rofcore::cnetlink::get_instance();
@@ -40,9 +39,7 @@ int main(int argc, char **argv) {
   std::unique_ptr<basebox::cbasebox> box(
       new basebox::cbasebox(nbi, versionbitmap));
 
-
-  rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"),
-                        FLAGS_port);
+  rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"), FLAGS_port);
   box->dpt_sock_listen(baddr);
 
   while (basebox::cbasebox::running()) {
