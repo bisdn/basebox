@@ -11,8 +11,7 @@ cnetlink::cnetlink(switch_interface *swi)
 
   sock = nl_socket_alloc();
   if (NULL == sock) {
-    LOG(FATAL) << "cnetlink: failed to create netlink socket" << __FUNCTION__
-               << std::endl;
+    LOG(FATAL) << "cnetlink: failed to create netlink socket" << __FUNCTION__;
     throw eNetLinkCritical(__FUNCTION__);
   }
 
@@ -20,8 +19,7 @@ cnetlink::cnetlink(switch_interface *swi)
     init_caches();
     thread.start();
   } catch (...) {
-    LOG(ERROR) << "cnetlink: caught unkown exception during " << __FUNCTION__
-               << std::endl;
+    LOG(ERROR) << "cnetlink: caught unkown exception during " << __FUNCTION__;
   }
 }
 
@@ -37,8 +35,7 @@ void cnetlink::init_caches() {
 
   if (rc < 0) {
     LOG(FATAL)
-        << "cnetlink::init_caches() failed to allocate netlink cache manager"
-        << std::endl;
+        << "cnetlink::init_caches() failed to allocate netlink cache manager";
     throw eNetLinkCritical("cnetlink::init_caches()");
   }
 
@@ -47,7 +44,7 @@ void cnetlink::init_caches() {
   int tx_size = 212992;
 
   if (0 != nl_socket_set_buffer_size(sock, rx_size, tx_size)) {
-    LOG(FATAL) << "cnetlink: failed to resize socket buffers" << std::endl;
+    LOG(FATAL) << "cnetlink: failed to resize socket buffers";
     throw eNetLinkCritical(__FUNCTION__);
   }
   nl_socket_set_msg_buf_size(sock, rx_size);
@@ -60,13 +57,12 @@ void cnetlink::init_caches() {
   if (0 != rc) {
     LOG(ERROR)
         << "cnetlink::init_caches() rtnl_link_alloc_cache_flags failed rc="
-        << rc << std::endl;
+        << rc;
   }
   rc = nl_cache_mngr_add_cache(mngr, caches[NL_LINK_CACHE],
                                (change_func_t)&nl_cb, NULL);
   if (0 != rc) {
-    LOG(ERROR) << "cnetlink::init_caches() add route/link to cache mngr"
-               << std::endl;
+    LOG(ERROR) << "cnetlink::init_caches() add route/link to cache mngr";
   }
 
   rc = rtnl_neigh_alloc_cache_flags(sock, &caches[NL_NEIGH_CACHE],
@@ -74,20 +70,18 @@ void cnetlink::init_caches() {
   if (0 != rc) {
     LOG(ERROR)
         << "cnetlink::init_caches() rtnl_link_alloc_cache_flags failed rc="
-        << rc << std::endl;
+        << rc;
   }
   rc = nl_cache_mngr_add_cache(mngr, caches[NL_NEIGH_CACHE],
                                (change_func_t)&nl_cb, NULL);
   if (0 != rc) {
-    LOG(ERROR) << "cnetlink::init_caches() add route/neigh to cache mngr"
-               << std::endl;
+    LOG(ERROR) << "cnetlink::init_caches() add route/neigh to cache mngr";
   }
 
   struct nl_object *obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
   while (0 != obj) {
     VLOG(1) << "cnetlink::" << __FUNCTION__ << "(): adding "
-            << rtnl_link_get_name((struct rtnl_link *)obj) << " to rtlinks"
-            << std::endl;
+            << rtnl_link_get_name((struct rtnl_link *)obj) << " to rtlinks";
     rtlinks.add_link(crtlink((struct rtnl_link *)obj));
     obj = nl_cache_get_next(obj);
   }
@@ -154,7 +148,7 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
 void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
   if (fd == nl_cache_mngr_get_fd(mngr)) {
     int rv = nl_cache_mngr_data_ready(mngr);
-    VLOG(1) << "cnetlink #processed=" << rv << std::endl;
+    VLOG(1) << "cnetlink #processed=" << rv;
     // notify update
     if (running) {
       this->thread.wakeup();
@@ -163,7 +157,7 @@ void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
 }
 
 void cnetlink::handle_write_event(rofl::cthread &thread, int fd) {
-  VLOG(1) << "cnetlink write ready on fd=" << fd << std::endl;
+  VLOG(1) << "cnetlink write ready on fd=" << fd;
   // currently not in use
 }
 
@@ -173,14 +167,12 @@ void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id,
   case NL_TIMER_RESYNC: {
     int r = nl_cache_refill(sock, caches[NL_LINK_CACHE]);
     if (r < 0) {
-      LOG(ERROR) << __FUNCTION__ << " failed to refill NL_LINK_CACHE"
-                 << std::endl;
+      LOG(ERROR) << __FUNCTION__ << " failed to refill NL_LINK_CACHE";
       return;
     }
     r = nl_cache_refill(sock, caches[NL_NEIGH_CACHE]);
     if (r < 0) {
-      LOG(ERROR) << __FUNCTION__ << " failed to refill NL_NEIGH_CACHE"
-                 << std::endl;
+      LOG(ERROR) << __FUNCTION__ << " failed to refill NL_NEIGH_CACHE";
       return;
     }
 
@@ -198,8 +190,7 @@ void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id,
           neighs_ll[ifindex].add_neigh(neigh);
           neigh_ll_created(ifindex, neigh);
         } else {
-          LOG(FATAL) << __FUNCTION__ << " no link ifindex=" << ifindex
-                     << std::endl;
+          LOG(FATAL) << __FUNCTION__ << " no link ifindex=" << ifindex;
         }
       } break;
       default:
@@ -271,14 +262,13 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
         set_links().add_link(rtlink); // overwrite old link
         LOG(INFO) << "link new (bridge "
                   << ((0 == rtlink.get_master()) ? "master" : "slave")
-                  << "): " << get_links().get_link(ifindex).str() << std::endl;
+                  << "): " << get_links().get_link(ifindex).str();
         link_created(rtlink);
 
         break;
       default:
         set_links().add_link(rtlink);
-        LOG(INFO) << "link new: " << get_links().get_link(ifindex).str()
-                  << std::endl;
+        LOG(INFO) << "link new: " << get_links().get_link(ifindex).str();
         link_created(rtlink);
         break;
       }
@@ -286,40 +276,35 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
     case NL_ACT_CHANGE: {
       switch (rtlink.get_family()) {
       case AF_UNSPEC:
-        LOG(INFO) << "ignore AF_UNSPEC change:" << rtlink;
-        if (rtlink.get_master()) {
-          break; // ignore AF_UNSPEC changes for slaves
-        }
+        VLOG(1) << "currently ignoring AF_UNSPEC changes. this change is wrt "
+                << rtlink.get_devname();
+        break;
       // fallthrough
       default:
         link_updated(rtlink);
         set_links().set_link(rtlink);
-        VLOG(1) << get_links().get_link(ifindex).str() << std::endl;
         break;
       }
     } break;
     case NL_ACT_DEL: {
       // xxx check if this has to be handled like new
       link_deleted(rtlink);
-      LOG(INFO) << "link deleted: " << get_links().get_link(ifindex).str()
-                << std::endl;
+      LOG(INFO) << "link deleted: " << get_links().get_link(ifindex).str();
       set_links().drop_link(ifindex);
     } break;
-    default: { LOG(WARNING) << "route/link: unknown NL action" << std::endl; }
+    default: { LOG(WARNING) << "route/link: unknown NL action"; }
     }
 
   } catch (eNetLinkNotFound &e) {
     // NL_ACT_CHANGE => ifindex not found
     LOG(ERROR) << "cnetlink::route_link_cb() oops, route_link_cb() caught "
-                  "eNetLinkNotFound"
-               << std::endl;
+                  "eNetLinkNotFound";
   } catch (crtlink::eRtLinkNotFound &e) {
     LOG(ERROR) << "cnetlink::route_link_cb() oops, route_link_cb() caught "
-                  "eRtLinkNotFound"
-               << std::endl;
+                  "eRtLinkNotFound";
   } catch (std::exception &e) {
     LOG(FATAL) << "cnetlink::route_neigh_cb() oops unknown exception"
-               << e.what() << std::endl;
+               << e.what();
   }
 }
 
@@ -331,7 +316,7 @@ void cnetlink::route_neigh_apply(int action, const nl_obj &obj) {
   int family = rtnl_neigh_get_family(neigh);
 
   if (0 == ifindex) {
-    LOG(ERROR) << __FUNCTION__ << "() ignoring not existing link" << std::endl;
+    LOG(ERROR) << __FUNCTION__ << "() ignoring not existing link";
     return;
   }
 
@@ -342,9 +327,7 @@ void cnetlink::route_neigh_apply(int action, const nl_obj &obj) {
     case NL_ACT_NEW: {
       switch (family) {
       case PF_BRIDGE: {
-        VLOG(1) << "[roflibs][cnetlink][route_neigh_cb] new neigh_ll"
-                << std::endl
-                << n;
+        VLOG(1) << __FUNCTION__ << ": new neigh_ll" << std::endl << n;
         neighs_ll[ifindex].add_neigh(n);
         neigh_ll_created(ifindex, n);
       } break;
@@ -357,9 +340,7 @@ void cnetlink::route_neigh_apply(int action, const nl_obj &obj) {
     case NL_ACT_CHANGE: {
       switch (family) {
       case PF_BRIDGE: {
-        VLOG(1) << "[roflibs][cnetlink][route_neigh_cb] updated neigh_ll"
-                << std::endl
-                << n;
+        VLOG(1) << __FUNCTION__ << ": updated neigh_ll" << std::endl << n;
         neighs_ll[ifindex].set_neigh(n);
         neigh_ll_updated(ifindex, n);
       } break;
@@ -372,9 +353,7 @@ void cnetlink::route_neigh_apply(int action, const nl_obj &obj) {
     case NL_ACT_DEL: {
       switch (family) {
       case PF_BRIDGE: {
-        VLOG(1) << "[roflibs][cnetlink][route_neigh_cb] deleted neigh_ll"
-                << std::endl
-                << n;
+        VLOG(1) << __FUNCTION__ << ": deleted neigh_ll" << std::endl << n;
         unsigned int nbindex = neighs_ll[ifindex].get_neigh(n);
         neigh_ll_deleted(ifindex, n);
         neighs_ll[ifindex].drop_neigh(nbindex);
@@ -385,21 +364,19 @@ void cnetlink::route_neigh_apply(int action, const nl_obj &obj) {
         break;
       }
     } break;
-    default: { LOG(WARNING) << "route/addr: unknown NL action" << std::endl; }
+    default: { LOG(WARNING) << "route/addr: unknown NL action"; }
     }
-    VLOG(2) << "[roflibs][cnetlink][route_neigh_cb] status" << std::endl
+    VLOG(2) << __FUNCTION__ << ": status" << std::endl
             << cnetlink::get_instance();
   } catch (eNetLinkNotFound &e) {
     LOG(ERROR) << "cnetlink::route_neigh_cb() oops, route_neigh_cb() was "
-                  "called with an invalid link"
-               << std::endl;
+                  "called with an invalid link";
   } catch (crtneigh::eRtNeighNotFound &e) {
     LOG(ERROR) << "cnetlink::route_neigh_cb() oops, route_neigh_cb() was "
-                  "called with an invalid neighbor"
-               << std::endl;
+                  "called with an invalid neighbor";
   } catch (std::exception &e) {
     LOG(FATAL) << "cnetlink::route_neigh_cb() oops unknown exception"
-               << e.what() << std::endl;
+               << e.what();
   }
 
   set_neigh_timeout();
@@ -498,8 +475,8 @@ void cnetlink::link_created(const crtlink &rtl) noexcept {
       // check for new bridge slaves
       if (rtl.get_master()) {
         // slave interface
-        LOG(INFO) << "[cnetlink][" << __FUNCTION__
-                  << "]: is new slave interface" << std::endl;
+        LOG(INFO) << __FUNCTION__ << ": " << rtl.get_devname()
+                  << " is new slave interface";
 
         // use only first bridge an of interface is attached to
         if (nullptr == bridge) {
@@ -511,30 +488,31 @@ void cnetlink::link_created(const crtlink &rtl) noexcept {
                               rtl);
       } else {
         // bridge (master)
-        LOG(INFO) << "[cnetlink][" << __FUNCTION__ << "]: is new bridge"
-                  << std::endl;
+        LOG(INFO) << __FUNCTION__ << ": is new bridge";
       }
     }
   } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << " failed: " << e.what() << std::endl;
+    LOG(ERROR) << __FUNCTION__ << " failed: " << e.what();
   }
 }
 
 void cnetlink::link_updated(const crtlink &newlink) noexcept {
   try {
     const crtlink &oldlink = get_links().get_link(newlink.get_ifindex());
-    LOG(INFO) << "[cnetlink][" << __FUNCTION__ << "] oldlink:" << std::endl
-              << oldlink;
-    LOG(INFO) << "[cnetlink][" << __FUNCTION__ << "] newlink:" << std::endl
-              << newlink;
+    VLOG(1) << __FUNCTION__ << ":" << std::endl
+            << "=== oldlink ===" << std::endl
+            << oldlink << "=== newlink ===" << std::endl
+            << newlink;
 
     if (nullptr != bridge) {
       bridge->update_interface(
           ifindex_to_registered_port.at(newlink.get_ifindex()), oldlink,
           newlink);
+
+      LOG(INFO) << __FUNCTION__ << "(): " << newlink.str();
     }
   } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << " failed: " << e.what() << std::endl;
+    LOG(ERROR) << __FUNCTION__ << " failed: " << e.what();
   }
 }
 
@@ -543,7 +521,7 @@ void cnetlink::link_deleted(const crtlink &rtl) noexcept {
     bridge->delete_interface(ifindex_to_registered_port.at(rtl.get_ifindex()),
                              rtl);
   } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << " failed: " << e.what() << std::endl;
+    LOG(ERROR) << __FUNCTION__ << " failed: " << e.what();
   }
 }
 
@@ -556,46 +534,38 @@ void cnetlink::neigh_ll_created(unsigned int ifindex,
       try {
         // valid vlan id?
         if (0 > rtn.get_vlan() || 0x1000 < rtn.get_vlan()) {
-          LOG(ERROR) << "[cnetlink][" << __FUNCTION__ << "]: invalid vlan"
-                     << rtn.get_vlan() << std::endl;
+          VLOG(1) << __FUNCTION__ << ": invalid vlan" << rtn.get_vlan();
           return;
         }
 
         // local mac address of parent?
         if (rtn.get_lladdr() == rtl.get_hwaddr()) {
-          LOG(INFO) << "[cnetlink][" << __FUNCTION__
-                    << "]: ignore master lladdr" << std::endl;
+          VLOG(1) << __FUNCTION__ << ": ignore master lladdr";
           return;
         } else {
-          LOG(INFO) << "[cnetlink][" << __FUNCTION__
-                    << "]: rtn=" << rtn.get_lladdr()
-                    << " parent=" << rtl.get_hwaddr() << std::endl;
+          LOG(INFO) << __FUNCTION__ << ": rtn=" << rtn;
+          VLOG(1) << __FUNCTION__ << ": parent=" << rtl.get_hwaddr();
         }
 
         auto port = ifindex_to_registered_port.at(rtl.get_ifindex());
         bridge->add_mac_to_fdb(port, rtn.get_vlan(), rtn.get_lladdr());
       } catch (std::out_of_range &e) {
-        LOG(ERROR) << "[cnetlink][" << __FUNCTION__ << ": port " << rtl
-                   << " not in ifindex_to_registered_port: " << e.what()
-                   << std::endl;
+        LOG(ERROR) << __FUNCTION__ << ": port " << rtl
+                   << " not in ifindex_to_registered_port: " << e.what();
       }
-    } else {
-      LOG(INFO) << "[cnetlink][" << __FUNCTION__ << "]: no bridge interface"
-                << std::endl;
     }
   } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << "() failed: " << e.what() << std::endl;
+    LOG(ERROR) << __FUNCTION__ << "() failed: " << e.what();
   }
 }
 
 void cnetlink::neigh_ll_updated(unsigned int ifindex,
                                 const crtneigh &rtn) noexcept {
   try {
-    LOG(WARNING) << "[cnetlink][" << __FUNCTION__
-                 << "]: NOT handled neighbor:" << std::endl
+    LOG(WARNING) << __FUNCTION__ << "]: NOT handled neighbor:" << std::endl
                  << rtn;
   } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << " failed: " << e.what() << std::endl;
+    LOG(ERROR) << __FUNCTION__ << " failed: " << e.what();
   }
 }
 
@@ -604,32 +574,27 @@ void cnetlink::neigh_ll_deleted(unsigned int ifindex,
   try {
     const crtlink &rtl = get_links().get_link(ifindex);
 
-    LOG(INFO) << "[cnetlink][" << __FUNCTION__ << "]: " << std::endl << rtn;
+    LOG(INFO) << __FUNCTION__ << ": " << rtn;
 
     if (nullptr != bridge) {
       try {
         if (rtn.get_lladdr() == rtl.get_hwaddr()) {
-          LOG(INFO) << "[cnetlink][" << __FUNCTION__
-                    << "]: ignore master lladdr" << std::endl;
+          LOG(INFO) << __FUNCTION__ << ": ignore master lladdr";
           return;
         }
         auto port = ifindex_to_registered_port.at(rtl.get_ifindex());
         bridge->remove_mac_from_fdb(port, rtn.get_vlan(), rtn.get_lladdr());
       } catch (std::out_of_range &e) {
-        LOG(ERROR) << "[cnetlink][" << __FUNCTION__ << ": port " << rtl
-                   << " not in ifindex_to_registered_port: " << e.what()
-                   << std::endl;
+        LOG(ERROR) << __FUNCTION__ << ": port " << rtl
+                   << " not in ifindex_to_registered_port: " << e.what();
       }
     } else {
-      LOG(INFO) << "[cnetlink][" << __FUNCTION__ << "]: no bridge interface"
-                << std::endl;
+      LOG(INFO) << __FUNCTION__ << ": no bridge interface";
     }
   } catch (crtlink::eRtLinkNotFound &e) {
-    LOG(ERROR) << "[cnetlink][" << __FUNCTION__
-               << "]: eRtLinkNotFound: " << e.what() << std::endl;
+    LOG(ERROR) << __FUNCTION__ << ": eRtLinkNotFound: " << e.what();
   } catch (crtneigh::eRtNeighNotFound &e) {
-    LOG(ERROR) << "[cnetlink][" << __FUNCTION__ << "]: eRtNeighNotFound"
-               << e.what() << std::endl;
+    LOG(ERROR) << __FUNCTION__ << ": eRtNeighNotFound" << e.what();
   }
 }
 

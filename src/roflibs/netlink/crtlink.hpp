@@ -285,7 +285,7 @@ public:
     os << rtlink.bcast;
     os << "<flags: " << (std::hex) << rtlink.flags << (std::dec) << " >"
        << std::endl;
-    os << "<operstate: " << (std::hex) << rtlink.operstate << (std::dec) << " >"
+    os << "<operstate: " << std::hex << (unsigned)rtlink.operstate << " >"
        << std::endl;
     os << "<af: " << rtlink.af << " >" << std::endl;
     os << "<arptype: " << rtlink.arptype << " >" << std::endl;

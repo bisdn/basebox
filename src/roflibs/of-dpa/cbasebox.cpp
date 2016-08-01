@@ -23,9 +23,9 @@ struct vlan_hdr {
 void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
 
   if (rofl::openflow13::OFP_VERSION < dpt.get_version()) {
-    LOG(ERROR) << "[cbasebox][handle_dpt_open] datapath "
+    LOG(ERROR) << __FUNCTION__ << "] datapath "
                << "attached with invalid OpenFlow protocol version: "
-               << (int)dpt.get_version() << std::endl;
+               << (int)dpt.get_version();
     return;
   }
 
@@ -41,9 +41,8 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
       .set_max_entries(16);
 #endif
 
-  VLOG(1) << "[cbasebox][handle_dpt_open] dpid: " << dpt.get_dpid().str()
-          << std::endl;
-  VLOG(1) << "[cbasebox][handle_dpt_open] dpt: " << dpt << std::endl;
+  VLOG(1) << __FUNCTION__ << "] dpid: " << dpt.get_dpid().str()
+          << " dpt: " << dpt;
 
   dpt.send_features_request(rofl::cauxid(0));
   dpt.send_desc_stats_request(rofl::cauxid(0), 0);
@@ -53,69 +52,59 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
 }
 
 void cbasebox::handle_wakeup(rofl::cthread &thread) {
-  LOG(FATAL) << "[cbasebox][handle_wakeup] XXX not implemented" << std::endl;
+  LOG(WARNING) << __FUNCTION__ << "] XXX not implemented";
 }
 
 void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
-  LOG(INFO) << "[cbasebox][handle_dpt_close] dptid: " << dptid.str()
-            << std::endl;
+  LOG(INFO) << __FUNCTION__ << "] dptid: " << dptid.str();
 }
 
 void cbasebox::handle_conn_terminated(rofl::crofdpt &dpt,
                                       const rofl::cauxid &auxid) {
-  LOG(FATAL) << "[cbasebox][" << __FUNCTION__ << "]: XXX not implemented"
-             << std::endl;
+  LOG(WARNING) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void cbasebox::handle_conn_refused(rofl::crofdpt &dpt,
                                    const rofl::cauxid &auxid) {
-  LOG(FATAL) << "[cbasebox][" << __FUNCTION__ << "]: XXX not implemented"
-             << std::endl;
+  LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void cbasebox::handle_conn_failed(rofl::crofdpt &dpt,
                                   const rofl::cauxid &auxid) {
-  LOG(FATAL) << "[cbasebox][" << __FUNCTION__ << "]: XXX not implemented"
-             << std::endl;
+  LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void cbasebox::handle_conn_negotiation_failed(rofl::crofdpt &dpt,
                                               const rofl::cauxid &auxid) {
-  LOG(FATAL) << "[cbasebox][" << __FUNCTION__ << "]: XXX not implemented"
-             << std::endl;
+  LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void cbasebox::handle_conn_congestion_occured(rofl::crofdpt &dpt,
                                               const rofl::cauxid &auxid) {
-  LOG(FATAL) << "[cbasebox][" << __FUNCTION__ << "]: XXX not implemented"
-             << std::endl;
+  LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void cbasebox::handle_conn_congestion_solved(rofl::crofdpt &dpt,
                                              const rofl::cauxid &auxid) {
-  LOG(FATAL) << "[cbasebox][" << __FUNCTION__ << "]: XXX not implemented"
-             << std::endl;
+  LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void cbasebox::handle_features_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_features_reply &msg) {
-  VLOG(1) << "[cbasebox][handle_features_reply] dpid: " << dpt.get_dpid().str()
-          << std::endl
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str() << std::endl
           << msg;
 }
 
 void cbasebox::handle_desc_stats_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_desc_stats_reply &msg) {
-  VLOG(1) << "[cbasebox][handle_desc_stats_reply] dpt: " << std::endl
-          << dpt << std::endl
-          << msg;
+  VLOG(1) << __FUNCTION__ << ": dpt=" << std::endl << dpt << std::endl << msg;
 }
 
 void cbasebox::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                                 rofl::openflow::cofmsg_packet_in &msg) {
-  VLOG(1) << "[cbasebox][handle_packet_in] dpid: " << dpt.get_dpid().str()
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
           << " pkt received: " << std::endl
           << msg;
 
@@ -123,8 +112,8 @@ void cbasebox::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
 
 #if 0 // XXX FIXME check if needed
   if (this->dptid != dpt.get_dptid()) {
-    LOG(ERROR) << "[cbasebox][" << __FUNCTION__
-                   << "] wrong dptid received" << std::endl;
+    LOG(ERROR) << __FUNCTION__
+                   << "] wrong dptid received";
     return;
   }
 #endif
@@ -145,14 +134,14 @@ void cbasebox::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
 void cbasebox::handle_flow_removed(rofl::crofdpt &dpt,
                                    const rofl::cauxid &auxid,
                                    rofl::openflow::cofmsg_flow_removed &msg) {
-  VLOG(1) << "[cbasebox][handle_flow_removed] dpid: " << dpt.get_dpid().str()
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
           << " pkt received: " << std::endl
           << msg;
 
 #if 0 // XXX FIXME check if needed
   if (this->dptid != dpt.get_dptid()) {
-    LOG(ERROR) << "[cbasebox][" << __FUNCTION__
-                   << "] wrong dptid received" << std::endl;
+    LOG(ERROR) << __FUNCTION__
+                   << "] wrong dptid received";
     return;
   }
 #endif
@@ -168,47 +157,45 @@ void cbasebox::handle_flow_removed(rofl::crofdpt &dpt,
 
 void cbasebox::handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                                   rofl::openflow::cofmsg_port_status &msg) {
-  VLOG(1) << "[cbasebox][handle_port_status] dpid: " << dpt.get_dpid().str()
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
           << " pkt received: " << std::endl
           << msg;
 
   // XXX FIXME not implemented
-  LOG(WARNING) << __FUNCTION__ << ": not implemented" << std::endl;
+  LOG(WARNING) << __FUNCTION__ << ": not implemented";
 }
 
 void cbasebox::handle_error_message(rofl::crofdpt &dpt,
                                     const rofl::cauxid &auxid,
                                     rofl::openflow::cofmsg_error &msg) {
-  LOG(INFO) << "[cbasebox][handle_error_message] dpid: " << dpt.get_dpid().str()
+  LOG(INFO) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
             << " pkt received: " << std::endl
             << msg;
 
   // XXX FIXME not implemented
-  LOG(WARNING) << __FUNCTION__ << ": not implemented" << std::endl;
+  LOG(WARNING) << __FUNCTION__ << ": not implemented";
 }
 
 void cbasebox::handle_port_desc_stats_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_port_desc_stats_reply &msg) {
-
-  VLOG(1) << "[cbasebox][handle_port_desc_stats_reply] dpid: "
-          << dpt.get_dpid().str() << " pkt received: " << std::endl
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
+          << " pkt received: " << std::endl
           << msg;
   init(dpt);
 }
 
 void cbasebox::handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
                                                     uint32_t xid) {
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str();
 
-  VLOG(1) << "[cbasebox][handle_port_desc_stats_reply_timeout] dpid: "
-          << dpt.get_dpid().str() << std::endl;
+  LOG(WARNING) << ": not implemented";
 }
 
 void cbasebox::handle_experimenter_message(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_experimenter &msg) {
-
-  VLOG(1) << "[cbasebox][" << __FUNCTION__ << "] dpid: " << dpt.get_dpid().str()
+  VLOG(1) << __FUNCTION__ << "] dpid: " << dpt.get_dpid().str()
           << " pkt received: " << std::endl
           << msg;
 
@@ -236,7 +223,7 @@ void cbasebox::handle_srcmac_table(rofl::crofdpt &dpt,
   using rofl::caddress_ll;
 
   LOG(INFO) << __FUNCTION__ << ": in_port=" << msg.get_match().get_in_port()
-                << std::endl;
+               ;
 
   struct ethhdr *eth = (struct ethhdr *)msg.get_packet().soframe();
 
@@ -244,7 +231,7 @@ void cbasebox::handle_srcmac_table(rofl::crofdpt &dpt,
   if (ETH_P_8021Q == be16toh(eth->h_proto)) {
     vlan = be16toh(((struct vlan_hdr *)eth)->vlan) & 0xfff;
     VLOG(1) << __FUNCTION__ << ": vlan=0x" << std::hex << vlan
-                   << std::dec << std::endl;
+                   << std::dec;
   }
 
   // TODO this has to be improved
@@ -264,11 +251,12 @@ void cbasebox::handle_srcmac_table(rofl::crofdpt &dpt,
                           false);
   } catch (rofcore::eNetLinkNotFound &e) {
     LOG(INFO) << __FUNCTION__ << ": cannot add neighbor to interface"
-                    << std::endl;
+                   ;
   } catch (rofcore::eNetLinkFailed &e) {
-    LOG(FATAL) << __FUNCTION__ << ": netlink failed" << std::endl;
+    LOG(ERROR) << __FUNCTION__ << ": netlink failed";
   }
 #endif
+  LOG(WARNING) << ": not implemented";
 }
 
 void cbasebox::handle_acl_policy_table(rofl::crofdpt &dpt,
@@ -284,10 +272,9 @@ void cbasebox::handle_acl_policy_table(rofl::crofdpt &dpt,
 
     tap_man->get_dev(of_port_to_port_id.at(port.get_port_no())).enqueue(pkt);
   } catch (rofcore::ePacketPoolExhausted &e) {
-    LOG(ERROR) << __FUNCTION__ << " ePacketPoolExhausted: " << e.what()
-               << std::endl;
+    LOG(ERROR) << __FUNCTION__ << " ePacketPoolExhausted: " << e.what();
   } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << " exception: " << e.what() << std::endl;
+    LOG(ERROR) << __FUNCTION__ << " exception: " << e.what();
   }
 }
 
@@ -309,7 +296,7 @@ void cbasebox::handle_bridging_table_rm(
     vlan = msg.get_match().get_vlan_vid() & 0xfff;
   } catch (rofl::openflow::eOxmNotFound &e) {
     LOG(ERROR) << __FUNCTION__ << ": failed to get eth_dst or vlan"
-                   << std::endl;
+                  ;
     return;
   }
 
@@ -323,10 +310,11 @@ void cbasebox::handle_bridging_table_rm(
     cnetlink::get_instance().drop_neigh_ll(tapdev.get_ifindex(), vlan,
     eth_dst);
   } catch (rofcore::eNetLinkFailed &e) {
-    LOG(FATAL) << __FUNCTION__ << ": netlink failed: " << e.what()
-                  << std::endl;
+    LOG(ERROR) << __FUNCTION__ << ": netlink failed: " << e.what()
+                 ;
   }
 #endif
+  LOG(WARNING) << ": not implemented";
 }
 
 void cbasebox::init(rofl::crofdpt &dpt) {
@@ -352,11 +340,10 @@ void cbasebox::init(rofl::crofdpt &dpt) {
 
     tap_man->start();
 
-    LOG(INFO) << "ports initialized" << std::endl;
+    LOG(INFO) << "ports initialized";
 
   } catch (std::exception &e) {
-    LOG(ERROR) << "[cbasebox][" << __FUNCTION__ << "] ERROR: unknown error "
-               << e.what() << std::endl;
+    LOG(ERROR) << __FUNCTION__ << "] ERROR: unknown error " << e.what();
   }
 }
 
@@ -370,8 +357,7 @@ int cbasebox::enqueue(rofcore::ctapdev *tapdev, rofl::cpacket *pkt) {
   struct ethhdr *eth = (struct ethhdr *)pkt->soframe();
 
   if (eth->h_dest[0] == 0x33 && eth->h_dest[1] == 0x33) {
-    VLOG(1) << "[cbasebox][" << __FUNCTION__ << "]: drop multicast packet"
-            << std::endl;
+    VLOG(1) << __FUNCTION__ << ": drop multicast packet";
     rv = -ENOTSUP;
     goto errout;
   }
@@ -379,8 +365,7 @@ int cbasebox::enqueue(rofcore::ctapdev *tapdev, rofl::cpacket *pkt) {
   try {
     rofl::crofdpt &dpt = set_dpt(this->dptid, true);
     if (not dpt.is_established()) {
-      LOG(WARNING) << "[cbasebox][" << __FUNCTION__
-                   << "] not connected, dropping packet" << std::endl;
+      LOG(WARNING) << __FUNCTION__ << "] not connected, dropping packet";
       rv = -ENOTCONN;
       goto errout;
     }
@@ -391,9 +376,7 @@ int cbasebox::enqueue(rofcore::ctapdev *tapdev, rofl::cpacket *pkt) {
 
     /* only send packet-out if we can determine a port-no */
     if (portno) {
-      VLOG(1) << "[cbasebox][" << __FUNCTION__
-              << "]: send pkt-out, pkt:" << std::endl
-              << *pkt;
+      VLOG(1) << __FUNCTION__ << ": send pkt-out, pkt:" << std::endl << *pkt;
 
       rofl::openflow::cofactions actions(dpt.get_version());
       //			//actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
@@ -407,16 +390,14 @@ int cbasebox::enqueue(rofcore::ctapdev *tapdev, rofl::cpacket *pkt) {
           actions, pkt->soframe(), pkt->length());
     }
   } catch (rofl::eRofDptNotFound &e) {
-    LOG(ERROR) << "[cbasebox][" << __FUNCTION__
-               << "] no data path attached, dropping outgoing packet"
-               << std::endl;
+    LOG(ERROR) << __FUNCTION__
+               << "] no data path attached, dropping outgoing packet";
 
   } catch (rofl::eRofBaseNotFound &e) {
-    LOG(FATAL) << "[cbasebox][" << __FUNCTION__ << "]: " << e.what()
-               << std::endl;
+    LOG(ERROR) << __FUNCTION__ << ": " << e.what();
 
   } catch (rofl::openflow::ePortsNotFound &e) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid port for packet out" << std::endl;
+    LOG(ERROR) << __FUNCTION__ << ": invalid port for packet out";
     rv = -EINVAL;
     goto errout;
   }
