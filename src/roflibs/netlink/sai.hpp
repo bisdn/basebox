@@ -13,7 +13,8 @@ public:
   virtual int l2_addr_remove_all_in_vlan(uint32_t port,
                                          uint16_t vid) noexcept = 0;
   virtual int l2_addr_add(uint32_t port, uint16_t vid,
-                          const rofl::cmacaddr &mac) noexcept = 0;
+                          const rofl::cmacaddr &mac,
+                          bool filtered) noexcept = 0;
   virtual int l2_addr_remove(uint32_t port, uint16_t vid,
                              const rofl::cmacaddr &mac) noexcept = 0;
 
