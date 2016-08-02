@@ -52,7 +52,7 @@ void cnetlink::init_caches() {
   caches[NL_LINK_CACHE] = NULL;
   caches[NL_NEIGH_CACHE] = NULL;
 
-  rtnl_link_alloc_cache_flags(sock, AF_UNSPEC, &caches[NL_LINK_CACHE],
+  rc = rtnl_link_alloc_cache_flags(sock, AF_UNSPEC, &caches[NL_LINK_CACHE],
                               NL_CACHE_AF_ITER);
   if (0 != rc) {
     LOG(ERROR)
