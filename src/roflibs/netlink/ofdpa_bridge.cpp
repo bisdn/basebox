@@ -67,21 +67,25 @@ void ofdpa_bridge::add_interface(uint32_t port, const crtlink &rtl) {
     return;
   }
 
+  const struct rtnl_link_bridge_vlan *br_vlan = rtl.get_br_vlan();
+
   if (not ingress_vlan_filtered) {
-    // ingress
     sw->ingress_port_vlan_accept_all(port);
+    if (br_vlan->pvid) {
+      VLOG(2) << __FUNCTION__ << " port=" << port << " pvid=" << br_vlan->pvid;
+      sw->ingress_port_vlan_add(port, br_vlan->pvid, true);
+    }
   }
 
   if (not egress_vlan_filtered) {
     // egress
+    // TODO: as soon as pop_vlan on egress works update this
     sw->egress_port_vlan_accept_all(port);
   }
 
   if (not ingress_vlan_filtered && not egress_vlan_filtered) {
     return;
   }
-
-  const struct rtnl_link_bridge_vlan *br_vlan = rtl.get_br_vlan();
 
   for (int k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
     int base_bit;
@@ -244,6 +248,27 @@ void ofdpa_bridge::update_interface(uint32_t port, const crtlink &oldlink,
               << std::endl;
     // FIXME this has to be handled differently
     return;
+  }
+
+  if (not ingress_vlan_filtered) {
+    if (oldlink.get_br_vlan()->pvid != newlink.get_br_vlan()->pvid) {
+
+      if (newlink.get_br_vlan()->pvid) {
+        VLOG(2) << __FUNCTION__ << " port=" << port
+                << " old pvid=" << oldlink.get_br_vlan()->pvid
+                << " new pvid=" << newlink.get_br_vlan()->pvid;
+        sw->ingress_port_vlan_add(port, newlink.get_br_vlan()->pvid, true);
+        if (oldlink.get_br_vlan()->pvid) {
+          // just remove the vid and not the rewrite for untagged packets, hence
+          // pvid=false is fine here
+          // TODO maybe update the interface, because this might be missleading
+          sw->ingress_port_vlan_remove(port, oldlink.get_br_vlan()->pvid,
+                                       false); 
+        }
+      } else {
+        sw->ingress_port_vlan_remove(port, oldlink.get_br_vlan()->pvid, true);
+      }
+    }
   }
 
   // handle VLANs
