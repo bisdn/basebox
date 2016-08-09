@@ -83,6 +83,8 @@ class cnetlink : public rofl::cthread_env, public rofcore::nbi {
 
   ~cnetlink() override;
 
+  int load_from_file(const std::string &path);
+
   void init_caches();
 
   void destroy_caches();
