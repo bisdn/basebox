@@ -1,12 +1,46 @@
 # baseboxd
 
+## Installation
+
+### Fedora
+
+Currently packages are built only for the latest supported releases. The
+packages can be installed using dnf:
+
+```
+dnf -y copr enable bisdn/rofl
+dnf -y copr enable bisdn/baseboxd
+dnf -y install baseboxd
+```
+
+### Other distros
+
+Currently only intallation from source is supported. To build baseboxd you need
+the following dependencies installed:
+
+* [libnl3](https://github.com/thom311/libnl) (>= 3.2.28)
+* [rofl-common](https://github.com/bisdn/rofl-common) (>= 0.10.9)
+* [rofl-ofdpa](https://github.com/bisdn/rofl-ofdpa) (>= 0.6)
+* [gflags](https://github.com/gflags/gflags)
+* [glog](https://github.com/google/glog) (>= 0.3.3)
+
+Then you can install baseboxd:
+
+```
+git clone https://github.com/bisdn/basebox.git
+cd basebox
+./autogen.sh
+./configure
+make install
+```
+
 ## Usage
 
 ### bridge setup
 
 ```
 ip link add type bridge
-echo 1 > /sys/class/net/bridge0/bridge/vlan_filtering
+ip link set bridge0 vlan_filtering 1
 ip link set bridge0 up
 ```
 
@@ -63,6 +97,12 @@ bridge fdb del 68:05:ca:30:63:69 dev port1 master vlan 1
 |     OpenFlow     |
 '------------------'
 ```
+
+## License
+
+baseboxd is licensed under the [Mozilla Public License
+Version 2.0](https://www.mozilla.org/en-US/MPL/2.0/). A local copy can be found
+[here](COPYING)
 
 ## Notes
 
