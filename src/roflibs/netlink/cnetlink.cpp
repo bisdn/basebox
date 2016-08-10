@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+#include <fstream>
 
 #include "cnetlink.hpp"
 
@@ -29,6 +30,22 @@ cnetlink::~cnetlink() {
   nl_socket_free(sock);
 }
 
+int cnetlink::load_from_file(const std::string &path) {
+  std::ifstream file;
+  int out = -1;
+  file.open(path);
+  if (file.is_open()) {
+    while (!file.eof()) {
+      file >> out;
+    }
+  }
+  if (out < 0) {
+    LOG(FATAL) << "cnetlink: failed to load " << path;
+    throw eNetLinkCritical(__FUNCTION__);
+  }
+  return out;
+}
+
 void cnetlink::init_caches() {
 
   int rc = nl_cache_mngr_alloc(sock, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
@@ -39,9 +56,8 @@ void cnetlink::init_caches() {
     throw eNetLinkCritical("cnetlink::init_caches()");
   }
 
-  // TODO read from /proc/sys/net/core/{r,w}mem_max
-  int rx_size = 212992;
-  int tx_size = 212992;
+  int rx_size = load_from_file("/proc/sys/net/core/rmem_max");
+  int tx_size = load_from_file("/proc/sys/net/core/wmem_max");
 
   if (0 != nl_socket_set_buffer_size(sock, rx_size, tx_size)) {
     LOG(FATAL) << "cnetlink: failed to resize socket buffers";
@@ -53,7 +69,7 @@ void cnetlink::init_caches() {
   caches[NL_NEIGH_CACHE] = NULL;
 
   rc = rtnl_link_alloc_cache_flags(sock, AF_UNSPEC, &caches[NL_LINK_CACHE],
-                              NL_CACHE_AF_ITER);
+                                   NL_CACHE_AF_ITER);
   if (0 != rc) {
     LOG(ERROR)
         << "cnetlink::init_caches() rtnl_link_alloc_cache_flags failed rc="
