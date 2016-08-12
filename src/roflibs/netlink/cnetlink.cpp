@@ -20,7 +20,7 @@ cnetlink::cnetlink(switch_interface *swi)
     init_caches();
     thread.start();
   } catch (...) {
-    LOG(ERROR) << "cnetlink: caught unkown exception during " << __FUNCTION__;
+    LOG(FATAL) << "cnetlink: caught unkown exception during " << __FUNCTION__;
   }
 }
 
@@ -71,27 +71,27 @@ void cnetlink::init_caches() {
   rc = rtnl_link_alloc_cache_flags(sock, AF_UNSPEC, &caches[NL_LINK_CACHE],
                                    NL_CACHE_AF_ITER);
   if (0 != rc) {
-    LOG(ERROR)
+    LOG(FATAL)
         << "cnetlink::init_caches() rtnl_link_alloc_cache_flags failed rc="
         << rc;
   }
   rc = nl_cache_mngr_add_cache(mngr, caches[NL_LINK_CACHE],
                                (change_func_t)&nl_cb, NULL);
   if (0 != rc) {
-    LOG(ERROR) << "cnetlink::init_caches() add route/link to cache mngr";
+    LOG(FATAL) << "cnetlink::init_caches() add route/link to cache mngr";
   }
 
   rc = rtnl_neigh_alloc_cache_flags(sock, &caches[NL_NEIGH_CACHE],
                                     NL_CACHE_AF_ITER);
   if (0 != rc) {
-    LOG(ERROR)
+    LOG(FATAL)
         << "cnetlink::init_caches() rtnl_link_alloc_cache_flags failed rc="
         << rc;
   }
   rc = nl_cache_mngr_add_cache(mngr, caches[NL_NEIGH_CACHE],
                                (change_func_t)&nl_cb, NULL);
   if (0 != rc) {
-    LOG(ERROR) << "cnetlink::init_caches() add route/neigh to cache mngr";
+    LOG(FATAL) << "cnetlink::init_caches() add route/neigh to cache mngr";
   }
 
   struct nl_object *obj = nl_cache_get_first(caches[NL_LINK_CACHE]);
