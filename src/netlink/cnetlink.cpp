@@ -4,17 +4,33 @@
 #include <fstream>
 #include <glog/logging.h>
 #include <iterator>
+#include <cassert>
+
 #include <sys/socket.h>
 #include <linux/if.h>
+#include <netlink/object.h>
+#include <netlink/route/addr.h>
+#include <netlink/route/link.h>
+#include <netlink/route/neighbour.h>
+#include <netlink/route/route.h>
 
 #include "cnetlink.hpp"
+
 #define LINK_CAST(obj) reinterpret_cast<struct rtnl_link *>(obj)
 #define NEIGH_CAST(obj) reinterpret_cast<struct rtnl_neigh *>(obj)
+#define ROUTE_CAST(obj) reinterpret_cast<struct rtnl_route *>(obj)
+#define ADDR_CAST(obj) reinterpret_cast<struct rtnl_addr *>(obj)
+
 namespace basebox {
 
 cnetlink::cnetlink(switch_interface *swi)
-    : swi(swi), thread(this), bridge(nullptr), nl_proc_max(10), running(false),
-      rfd_scheduled(false) {
+    : swi(swi), thread(this), caches(NL_MAX_CACHE, nullptr), bridge(nullptr),
+      nl_proc_max(10), running(false), rfd_scheduled(false), l3(swi) {
+
+  memset(&params, 0, sizeof(struct nl_dump_params));
+  params.dp_type = NL_DUMP_LINE;
+  params.dp_buf = &dump_buf[0];
+  params.dp_buflen = sizeof(dump_buf);
 
   sock = nl_socket_alloc();
   if (NULL == sock) {
@@ -58,17 +74,14 @@ void cnetlink::init_caches() {
   int rc = nl_cache_mngr_alloc(sock, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
 
   if (rc < 0) {
-    LOG(FATAL)
-        << "cnetlink::init_caches() failed to allocate netlink cache manager";
-    throw eNetLinkCritical("cnetlink::init_caches()");
+    LOG(FATAL) << __FUNCTION__ << ": failed to allocate netlink cache manager";
   }
 
   int rx_size = load_from_file("/proc/sys/net/core/rmem_max");
   int tx_size = load_from_file("/proc/sys/net/core/wmem_max");
 
   if (0 != nl_socket_set_buffer_size(sock, rx_size, tx_size)) {
-    LOG(FATAL) << "cnetlink: failed to resize socket buffers";
-    throw eNetLinkCritical(__FUNCTION__);
+    LOG(FATAL) << ": failed to resize socket buffers";
   }
   nl_socket_set_msg_buf_size(sock, rx_size);
 
@@ -78,27 +91,48 @@ void cnetlink::init_caches() {
   rc = rtnl_link_alloc_cache_flags(sock, AF_UNSPEC, &caches[NL_LINK_CACHE],
                                    NL_CACHE_AF_ITER);
   if (0 != rc) {
-    LOG(FATAL)
-        << "cnetlink::init_caches() rtnl_link_alloc_cache_flags failed rc="
-        << rc;
+    LOG(FATAL) << __FUNCTION__
+               << ": rtnl_link_alloc_cache_flags failed rc=" << rc;
   }
   rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_LINK_CACHE],
                                   (change_func_v2_t)&nl_cb_v2, NULL);
   if (0 != rc) {
-    LOG(FATAL) << "cnetlink::init_caches() add route/link to cache mngr";
+    LOG(FATAL) << __FUNCTION__ << ": add route/link to cache mngr";
   }
 
+  /* init route cache */
+  rc = rtnl_route_alloc_cache(sock, AF_UNSPEC, 0, &caches[NL_ROUTE_CACHE]);
+  if (rc < 0) {
+    LOG(FATAL) << __FUNCTION__ << ": add route/route to cache mngr";
+  }
+  rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_ROUTE_CACHE],
+                                  (change_func_v2_t)&nl_cb_v2, NULL);
+  if (rc < 0) {
+    LOG(FATAL) << __FUNCTION__ << ": add route/route to cache mngr";
+  }
+
+  /* init addr cache*/
+  rc = rtnl_addr_alloc_cache(sock, &caches[NL_ADDR_CACHE]);
+  if (rc < 0) {
+    LOG(FATAL) << __FUNCTION__ << ": add route/addr to cache mngr";
+  }
+  rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_ADDR_CACHE],
+                                  (change_func_v2_t)&nl_cb_v2, NULL);
+  if (rc < 0) {
+    LOG(FATAL) << __FUNCTION__ << ": add route/addr to cache mngr";
+  }
+
+  /* init neigh cache */
   rc = rtnl_neigh_alloc_cache_flags(sock, &caches[NL_NEIGH_CACHE],
                                     NL_CACHE_AF_ITER);
   if (0 != rc) {
-    LOG(FATAL)
-        << "cnetlink::init_caches() rtnl_link_alloc_cache_flags failed rc="
-        << rc;
+    LOG(FATAL) << __FUNCTION__
+               << ": rtnl_link_alloc_cache_flags failed rc=" << rc;
   }
   rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_NEIGH_CACHE],
                                   (change_func_v2_t)&nl_cb_v2, NULL);
   if (0 != rc) {
-    LOG(FATAL) << "cnetlink::init_caches() add route/neigh to cache mngr";
+    LOG(FATAL) << __FUNCTION__ << ": add route/neigh to cache mngr";
   }
 
   thread.wakeup();
@@ -126,6 +160,10 @@ void cnetlink::unregister_link(uint32_t id, std::string port_name) {
   }
 }
 
+struct rtnl_link *cnetlink::get_link_by_ifindex(int ifindex) const {
+  return rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
+}
+
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
   bool do_wakeup = false;
 
@@ -150,7 +188,17 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     case RTM_NEWNEIGH:
     case RTM_DELNEIGH:
       route_neigh_apply(obj);
+      break;
+    case RTM_NEWROUTE:
+    case RTM_DELROUTE:
+      route_route_apply(obj);
+      break;
+    case RTM_NEWADDR:
+    case RTM_DELADDR:
+      route_addr_apply(obj);
+      break;
     default:
+      LOG(INFO) << __FUNCTION__ << " unknown netlink object";
       break;
     }
 
@@ -293,6 +341,86 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
   cnetlink::get_instance().nl_objs.emplace_back(action, old_obj, new_obj);
 }
 
+void cnetlink::route_addr_apply(const nl_obj &obj) {
+  int family;
+
+  switch (obj.get_action()) {
+  case NL_ACT_NEW:
+    assert(obj.get_new_obj());
+
+    if (VLOG_IS_ON(2)) {
+      nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
+      LOG(INFO) << __FUNCTION__ << ": new addr " << std::string(dump_buf);
+    }
+
+    switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_new_obj()))) {
+    case AF_INET:
+      LOG(INFO) << __FUNCTION__ << " got new v4 addr";
+      l3.add_l3_termination(ADDR_CAST(obj.get_new_obj()));
+      break;
+    case AF_INET6:
+      LOG(INFO) << __FUNCTION__ << " new v6 not yet supported";
+      break;
+    default:
+      LOG(WARNING) << __FUNCTION__ << " unsupported family: " << family;
+      break;
+    }
+    break;
+
+  case NL_ACT_CHANGE:
+    assert(obj.get_new_obj());
+    assert(obj.get_old_obj());
+
+    if (VLOG_IS_ON(2)) {
+      nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
+      LOG(INFO) << __FUNCTION__ << ": change new addr "
+                << std::string(dump_buf);
+      nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
+      LOG(INFO) << __FUNCTION__ << ": change old addr "
+                << std::string(dump_buf);
+    }
+
+    switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_new_obj()))) {
+    case AF_INET:
+      LOG(WARNING) << __FUNCTION__ << " changed v4 not supported";
+      break;
+    case AF_INET6:
+      LOG(INFO) << __FUNCTION__ << " changed v6 not supported";
+      break;
+    default:
+      LOG(WARNING) << __FUNCTION__ << " unsupported family: " << family;
+      break;
+    }
+    break;
+
+  case NL_ACT_DEL:
+    assert(obj.get_old_obj());
+
+    if (VLOG_IS_ON(2)) {
+      nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
+      LOG(INFO) << __FUNCTION__ << ": del addr " << std::string(dump_buf);
+    }
+
+    switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_old_obj()))) {
+    case AF_INET:
+      l3.del_l3_termination(ADDR_CAST(obj.get_old_obj()));
+      break;
+    case AF_INET6:
+      LOG(INFO) << __FUNCTION__ << " del v6 not yet supported";
+      break;
+    default:
+      LOG(WARNING) << __FUNCTION__ << " unsupported family: " << family;
+      break;
+    }
+    break;
+
+  default:
+    LOG(ERROR) << __FUNCTION__ << " invalid netlink action "
+               << obj.get_action();
+    break;
+  }
+}
+
 void cnetlink::route_link_apply(const nl_obj &obj) {
   int ifindex;
   if (obj.get_action() == NL_ACT_NEW) {
@@ -344,11 +472,29 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
     switch (obj.get_action()) {
     case NL_ACT_NEW:
       assert(obj.get_new_obj());
+
+      if (VLOG_IS_ON(2)) {
+        nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
+        LOG(INFO) << __FUNCTION__ << ": change new link "
+                  << std::string(dump_buf);
+      }
+
       link_created(LINK_CAST(obj.get_new_obj()), s1->second);
       break;
+
     case NL_ACT_CHANGE:
       assert(obj.get_new_obj());
       assert(obj.get_old_obj());
+
+      if (VLOG_IS_ON(2)) {
+        nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
+        LOG(INFO) << __FUNCTION__ << ": change new link "
+                  << std::string(dump_buf);
+        nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
+        LOG(INFO) << __FUNCTION__ << ": change old link "
+                  << std::string(dump_buf);
+      }
+
       if (rtnl_link_get_family(LINK_CAST(obj.get_new_obj())) == AF_UNSPEC) {
         VLOG(1) << __FUNCTION__ << ": ignoring AF_UNSPEC change of "
                 << rtnl_link_get_name(LINK_CAST(obj.get_old_obj()));
@@ -357,71 +503,335 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
                      s1->second);
       }
       break;
+
     case NL_ACT_DEL: {
+      assert(obj.get_old_obj());
+
+      if (VLOG_IS_ON(2)) {
+        nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
+        LOG(INFO) << __FUNCTION__ << ": del link " << std::string(dump_buf);
+      }
+
       link_deleted(LINK_CAST(obj.get_old_obj()), s1->second);
       uint32_t port_id = get_port_id(ifindex);
       ifindex_to_registered_port.erase(ifindex);
       registered_port_to_ifindex.erase(port_id);
-    } break;
-    default: { LOG(WARNING) << "route/link: unknown NL action"; }
+
+      break;
+    }
+    default:
+      LOG(ERROR) << __FUNCTION__ << " invalid netlink action "
+                 << obj.get_action();
+      break;
     }
 
-  } catch (std::exception &e) {
-    LOG(FATAL) << "cnetlink::route_neigh_cb() oops unknown exception "
-               << e.what();
+  } catch (std::exception &e) { // XXX likely can be dropped now
+    LOG(FATAL) << __FUNCTION__ << ": oops unknown exception " << e.what();
   }
 }
 
 void cnetlink::route_neigh_apply(const nl_obj &obj) {
 
   try {
+    int family;
     switch (obj.get_action()) {
     case NL_ACT_NEW:
       assert(obj.get_new_obj());
-      switch (rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj()))) {
+
+      if (VLOG_IS_ON(2)) {
+        nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
+        LOG(INFO) << __FUNCTION__ << ": new neigh " << std::string(dump_buf);
+      }
+
+      family = rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj()));
+
+      switch (family) {
       case PF_BRIDGE:
         neigh_ll_created(NEIGH_CAST(obj.get_new_obj()));
         break;
-      case AF_INET6:
       case AF_INET:
+        l3.add_l3_neigh(NEIGH_CAST(obj.get_new_obj()));
+        break;
+      case AF_INET6:
+        LOG(INFO) << __FUNCTION__ << ": new neigh_v6 not supported yet "
+                  << obj.get_new_obj();
+        break;
       default:
+        LOG(ERROR) << __FUNCTION__ << ": invalid family " << family;
         break;
       }
       break;
-    case NL_ACT_CHANGE: {
+
+    case NL_ACT_CHANGE:
       assert(obj.get_new_obj());
       assert(obj.get_old_obj());
+      assert(rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj())) ==
+             rtnl_neigh_get_family(NEIGH_CAST(obj.get_old_obj())));
+
+      if (VLOG_IS_ON(2)) {
+        nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
+        LOG(INFO) << __FUNCTION__ << ": change new neigh "
+                  << std::string(dump_buf);
+        nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
+        LOG(INFO) << __FUNCTION__ << ": change old neigh "
+                  << std::string(dump_buf);
+      }
+
+      family = rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj()));
+
       switch (rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj()))) {
-      case PF_BRIDGE: {
+      case PF_BRIDGE:
         neigh_ll_updated(NEIGH_CAST(obj.get_old_obj()),
                          NEIGH_CAST(obj.get_new_obj()));
-      } break;
-      case AF_INET:
-      case AF_INET6:
-      default:
         break;
-      }
-    } break;
-    case NL_ACT_DEL:
-      assert(obj.get_old_obj());
-      switch (rtnl_neigh_get_family(NEIGH_CAST(obj.get_old_obj()))) {
-      case PF_BRIDGE:
-        VLOG(1) << __FUNCTION__ << ": deleted neigh_ll"; // XXX print addr
-        neigh_ll_deleted(NEIGH_CAST(obj.get_old_obj()));
+      case AF_INET6:
+        LOG(INFO) << __FUNCTION__ << ": update neigh_v6 not supported";
         break;
       case AF_INET:
-      case AF_INET6:
+        l3.update_l3_neigh(NEIGH_CAST(obj.get_old_obj()),
+                           NEIGH_CAST(obj.get_new_obj()));
+        break;
       default:
+        LOG(ERROR) << __FUNCTION__ << ": invalid family " << family;
         break;
       }
       break;
-    default: { LOG(WARNING) << "route/addr: unknown NL action"; }
+
+    case NL_ACT_DEL:
+      assert(obj.get_old_obj());
+
+      if (VLOG_IS_ON(2)) {
+        nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
+        LOG(INFO) << __FUNCTION__ << ": del neigh " << std::string(dump_buf);
+      }
+
+      family = rtnl_neigh_get_family(NEIGH_CAST(obj.get_old_obj()));
+
+      switch (rtnl_neigh_get_family(NEIGH_CAST(obj.get_old_obj()))) {
+      case PF_BRIDGE:
+        neigh_ll_deleted(NEIGH_CAST(obj.get_old_obj()));
+        break;
+      case AF_INET6:
+        LOG(INFO) << __FUNCTION__ << ": delete neigh_v6 not supported "
+                  << obj.get_old_obj();
+        break;
+      case AF_INET:
+        l3.del_l3_neigh(NEIGH_CAST(obj.get_old_obj()));
+        break;
+      default:
+        LOG(ERROR) << __FUNCTION__ << ": invalid family " << family;
+        break;
+      }
+      break;
+    default:
+      LOG(ERROR) << __FUNCTION__ << " invalid netlink action "
+                 << obj.get_action();
     }
   } catch (std::exception &e) {
-    LOG(FATAL) << "cnetlink::route_neigh_cb() oops unknown exception"
-               << e.what();
+    LOG(FATAL) << __FUNCTION__ << ": oops unknown exception " << e.what();
   }
 }
+
+void cnetlink::route_route_apply(const nl_obj &obj) {
+  int family;
+
+  switch (obj.get_action()) {
+  case NL_ACT_NEW:
+    assert(obj.get_new_obj());
+
+    if (VLOG_IS_ON(2)) {
+      nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
+      LOG(INFO) << __FUNCTION__ << ": new route " << std::string(dump_buf);
+    }
+
+    switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
+    case AF_INET:
+      LOG(INFO) << __FUNCTION__ << ": new v4 route not yet suppported";
+      break;
+    case AF_INET6:
+      LOG(INFO) << __FUNCTION__ << ": new v6 route not yet suppported";
+      break;
+    default:
+      LOG(WARNING) << __FUNCTION__ << " family not supported: " << family;
+      break;
+    }
+    break;
+
+  case NL_ACT_CHANGE:
+    assert(obj.get_new_obj());
+    assert(obj.get_old_obj());
+
+    if (VLOG_IS_ON(2)) {
+      nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
+      LOG(INFO) << __FUNCTION__ << ": change new route "
+                << std::string(dump_buf);
+      nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
+      LOG(INFO) << __FUNCTION__ << ": change old route "
+                << std::string(dump_buf);
+    }
+
+    switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
+    case AF_INET:
+      LOG(INFO) << __FUNCTION__ << ": changed v4 route not yet suppported";
+      break;
+    case AF_INET6:
+      LOG(INFO) << __FUNCTION__ << ": changed v6 route not yet suppported";
+      break;
+    default:
+      LOG(WARNING) << __FUNCTION__ << " family not supported: " << family;
+      break;
+    }
+    break;
+
+  case NL_ACT_DEL:
+    assert(obj.get_old_obj());
+
+    if (VLOG_IS_ON(2)) {
+      nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
+      LOG(INFO) << __FUNCTION__ << ": del route " << std::string(dump_buf);
+    }
+
+    switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_old_obj()))) {
+    case AF_INET:
+      LOG(INFO) << __FUNCTION__ << ": changed v4 route not yet suppported";
+      break;
+    case AF_INET6:
+      LOG(INFO) << __FUNCTION__ << ": changed v6 route not yet suppported";
+      break;
+    default:
+      LOG(WARNING) << __FUNCTION__ << " family not supported: " << family;
+      break;
+    }
+    break;
+
+  default:
+    LOG(ERROR) << __FUNCTION__ << " invalid action " << obj.get_action();
+    break;
+  }
+
+#if 0
+  if (RT_TABLE_LOCAL == rtnl_route_get_table(route)) {
+    VLOG(2) << __FUNCTION__ << " skip local route";
+    return;
+  }
+  int nh_cnt = rtnl_route_get_nnexthops(route);
+  LOG(INFO) << "having nh_cnt=" << nh_cnt;
+
+  // dump ALL NHs
+  rtnl_route_foreach_nexthop(route,
+                             [](struct rtnl_nexthop *nh, void *pp) {
+                               rtnl_route_nh_dump(nh,
+                                                  (struct nl_dump_params *)pp);
+                             },
+                             &params);
+
+  // XXX schedule for further checks
+  if (nh_cnt) {
+    struct rtnl_nexthop *nh = rtnl_route_nexthop_n(route, 0);
+    assert(nh && "no NH");
+    struct nl_addr *gw = rtnl_route_nh_get_gateway(nh);
+    if (gw) {
+      LOG(INFO) << "gw is " << gw;
+      struct rtnl_neigh *neigh = rtnl_neigh_get(
+          caches[NL_NEIGH_CACHE], rtnl_route_nh_get_ifindex(nh), gw);
+      if (neigh) {
+        LOG(INFO) << "having neigh";
+      } else {
+        LOG(INFO) << "no neigh";
+      }
+    }
+  }
+  nl_object_dump(OBJ_CAST(route), &params);
+#endif
+}
+
+void cnetlink::set_neigh_timeout() {
+  //  thread.add_timer(NL_TIMER_RESYNC, rofl::ctimespec().expire_in(5));
+}
+
+#if 0
+void cnetlink::add_neigh_ll(int ifindex, uint16_t vlan,
+                            const rofl::caddress_ll &addr) {
+  if (AF_BRIDGE != get_links().get_link(ifindex).get_family()) {
+    throw eNetLinkNotFound("cnetlink::add_neigh_ll(): no bridge link");
+  }
+
+  struct rtnl_neigh *neigh = rtnl_neigh_alloc();
+
+  rtnl_neigh_set_ifindex(neigh, ifindex);
+  rtnl_neigh_set_family(neigh, PF_BRIDGE);
+  rtnl_neigh_set_state(neigh, NUD_NOARP | NUD_REACHABLE);
+  rtnl_neigh_set_flags(neigh, NTF_MASTER);
+  rtnl_neigh_set_vlan(neigh, vlan);
+
+  struct nl_addr *_addr = nl_addr_build(AF_LLC, addr.somem(), addr.memlen());
+  rtnl_neigh_set_lladdr(neigh, _addr);
+  nl_addr_put(_addr);
+
+  struct nl_sock *sk = NULL;
+  if ((sk = nl_socket_alloc()) == NULL) {
+    rtnl_neigh_put(neigh);
+    throw eNetLinkFailed("cnetlink::add_neigh_ll() nl_socket_alloc()");
+  }
+
+  int sd = 0;
+  if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
+    rtnl_neigh_put(neigh);
+    nl_socket_free(sk);
+    throw eNetLinkFailed("cnetlink::add_neigh_ll() nl_connect()");
+  }
+
+  int rc;
+  if ((rc = rtnl_neigh_add(sk, neigh, NLM_F_CREATE)) < 0) {
+    rtnl_neigh_put(neigh);
+    nl_socket_free(sk);
+    throw eNetLinkFailed("cnetlink::add_neigh_ll() rtnl_neigh_add()");
+  }
+
+  nl_close(sk);
+  nl_socket_free(sk);
+  rtnl_neigh_put(neigh);
+}
+
+void cnetlink::drop_neigh_ll(int ifindex, uint16_t vlan,
+                             const rofl::caddress_ll &addr) {
+  struct rtnl_neigh *neigh = rtnl_neigh_alloc();
+
+  rtnl_neigh_set_ifindex(neigh, ifindex);
+  rtnl_neigh_set_family(neigh, PF_BRIDGE);
+  rtnl_neigh_set_state(neigh, NUD_NOARP | NUD_REACHABLE);
+  rtnl_neigh_set_flags(neigh, NTF_MASTER);
+  rtnl_neigh_set_vlan(neigh, vlan);
+
+  struct nl_addr *_addr = nl_addr_build(AF_LLC, addr.somem(), addr.memlen());
+  rtnl_neigh_set_lladdr(neigh, _addr);
+  nl_addr_put(_addr);
+
+  struct nl_sock *sk = NULL;
+  if ((sk = nl_socket_alloc()) == NULL) {
+    rtnl_neigh_put(neigh);
+    throw eNetLinkFailed("cnetlink::drop_neigh_ll() nl_socket_alloc()");
+  }
+
+  int sd = 0;
+  if ((sd = nl_connect(sk, NETLINK_ROUTE)) < 0) {
+    rtnl_neigh_put(neigh);
+    nl_socket_free(sk);
+    throw eNetLinkFailed("cnetlink::drop_neigh_ll() nl_connect()");
+  }
+
+  int rc;
+  if ((rc = rtnl_neigh_delete(sk, neigh, 0)) < 0) {
+    rtnl_neigh_put(neigh);
+    nl_socket_free(sk);
+    throw eNetLinkFailed("cnetlink::drop_neigh_ll() rtnl_neigh_delete()");
+  }
+
+  nl_close(sk);
+  nl_socket_free(sk);
+  rtnl_neigh_put(neigh);
+}
+#endif
 
 void cnetlink::link_created(rtnl_link *link, uint32_t port_id) noexcept {
   assert(link);
@@ -539,6 +949,7 @@ void cnetlink::resend_state() noexcept {
 void cnetlink::register_switch(switch_interface *swi) noexcept {
   assert(swi);
   this->swi = swi;
+  l3.register_switch_interface(swi);
 }
 
 void cnetlink::unregister_switch(switch_interface *swi) noexcept {

@@ -136,10 +136,13 @@ void controller::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     this->handle_srcmac_table(dpt, msg);
     break;
 
+  case OFDPA_FLOW_TABLE_ID_UNICAST_ROUTING:
   case OFDPA_FLOW_TABLE_ID_ACL_POLICY:
-    this->handle_acl_policy_table(dpt, msg);
+    this->send_packet_in_to_cpu(dpt, msg);
     break;
   default:
+    LOG(WARNING) << __FUNCTION__ << ": unexpected packet-in from table "
+                 << msg.get_table_id() << ". Dropping packet.";
     break;
   }
 }
@@ -222,7 +225,6 @@ void controller::handle_error_message(rofl::crofdpt &dpt,
             << " pkt received: " << std::endl
             << msg;
 
-  // XXX FIXME not implemented
   LOG(WARNING) << __FUNCTION__ << ": not implemented";
 }
 
@@ -389,8 +391,8 @@ void controller::handle_srcmac_table(rofl::crofdpt &dpt,
   LOG(WARNING) << ": not implemented";
 }
 
-void controller::handle_acl_policy_table(
-    rofl::crofdpt &dpt, rofl::openflow::cofmsg_packet_in &msg) {
+void controller::send_packet_in_to_cpu(rofl::crofdpt &dpt,
+                                       rofl::openflow::cofmsg_packet_in &msg) {
   using rofl::openflow::cofport;
 
   basebox::packet *pkt = nullptr;
@@ -470,7 +472,7 @@ int controller::enqueue(uint32_t port_id, basebox::packet *pkt) noexcept {
   struct ethhdr *eth = (struct ethhdr *)pkt->data;
 
   if (eth->h_dest[0] == 0x33 && eth->h_dest[1] == 0x33) {
-    VLOG(1) << __FUNCTION__ << ": drop multicast packet";
+    VLOG(2) << __FUNCTION__ << ": drop multicast packet";
     rv = -ENOTSUP;
     goto errout;
   }
@@ -595,6 +597,178 @@ int controller::l2_addr_remove(uint32_t port, uint16_t vid,
     LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
+  return rv;
+}
+
+int controller::l3_termination_add(uint32_t sport, uint16_t vid,
+                                   const rofl::cmacaddr &dmac) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.enable_tmac_ipv4_unicast_mac(
+                                  dpt.get_version(), sport, vid, dmac));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  return rv;
+}
+
+int controller::l3_termination_remove(uint32_t sport, uint16_t vid,
+                                      const rofl::cmacaddr &dmac) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.disable_tmac_ipv4_unicast_mac(
+                                  dpt.get_version(), sport, vid, dmac));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  return rv;
+}
+
+int controller::l3_egress_create(uint32_t port, uint16_t vid,
+                                 const rofl::caddress_ll &src_mac,
+                                 const rofl::caddress_ll &dst_mac,
+                                 uint32_t *l3_interface_id) noexcept {
+  int rv = 0;
+  uint32_t _egress_interface_id;
+  bool increment = false;
+
+  if (freed_egress_interfaces_ids.size()) {
+    _egress_interface_id = *freed_egress_interfaces_ids.begin();
+  } else {
+    _egress_interface_id = egress_interface_id;
+    increment = true;
+  }
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    // TODO unfiltered interface
+    dpt.send_group_mod_message(rofl::cauxid(0),
+                               fm_driver.enable_group_l3_unicast(
+                                   dpt.get_version(), _egress_interface_id,
+                                   src_mac, dst_mac,
+                                   fm_driver.group_id_l2_interface(port, vid)));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  if (increment) {
+    egress_interface_id++;
+  } else {
+    freed_egress_interfaces_ids.erase(freed_egress_interfaces_ids.begin());
+  }
+
+  *l3_interface_id = _egress_interface_id;
+  return rv;
+}
+
+int controller::l3_egress_remove(uint32_t l3_interface_id) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_group_l3_unicast(dpt.get_version(), l3_interface_id));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  if (l3_interface_id == egress_interface_id + 1) {
+    egress_interface_id--;
+    // TODO free even more ids from set?
+  } else {
+    freed_egress_interfaces_ids.insert(l3_interface_id);
+  }
+
+  return rv;
+}
+
+int controller::l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
+                                    uint32_t l3_interface_id) noexcept {
+  int rv = 0;
+
+  if (l3_interface_id > 0x0fffffff)
+    return -EINVAL;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    if (l3_interface_id)
+      l3_interface_id = fm_driver.group_id_l3_unicast(l3_interface_id);
+
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_ipv4_unicast_host(dpt.get_version(), ipv4_dst,
+                                           l3_interface_id));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  return rv;
+}
+
+int controller::l3_unicast_host_remove(
+    const rofl::caddress_in4 &ipv4_dst) noexcept {
+  int rv = 0;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_ipv4_unicast_host(dpt.get_version(), ipv4_dst));
+    dpt.send_barrier_request(rofl::cauxid(0));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
   return rv;
 }
 
@@ -742,13 +916,58 @@ int controller::egress_port_vlan_add(uint32_t port, uint16_t vid,
                                      bool untagged) noexcept {
   int rv = 0;
   try {
-    rofl::crofdpt &dpt = set_dpt(dptid, true);
-
     // create filtered egress interface
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
     rofl::openflow::cofgroupmod gm = fm_driver.enable_group_l2_interface(
         dpt.get_version(), port, vid, untagged);
     dpt.send_group_mod_message(rofl::cauxid(0), gm);
-    uint32_t group_id = gm.get_group_id();
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int controller::egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept {
+  int rv = 0;
+  try {
+    // remove filtered egress interface
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_group_l2_interface(dpt.get_version(), port, vid));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int controller::egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
+                                            bool untagged) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    // create filtered egress interface
+    rv = egress_port_vlan_add(port, vid, untagged);
+    if (rv < 0)
+      return rv;
+    dpt.send_barrier_request(rofl::cauxid(0));
+
+    uint32_t group_id = fm_driver.group_id_l2_interface(port, vid);
     l2_domain[vid].insert(group_id);
 
     // remove old L2 flooding group
@@ -762,10 +981,11 @@ int controller::egress_port_vlan_add(uint32_t port, uint16_t vid,
     dpt.send_barrier_request(rofl::cauxid(0));
 
     // add new L2 flooding group
-    gm = fm_driver.enable_group_l2_flood(dpt.get_version(), vid, vid,
-                                         l2_domain[vid]);
-    dpt.send_group_mod_message(rofl::cauxid(0), gm);
-    group_id = gm.get_group_id();
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_group_l2_flood(dpt.get_version(), vid, vid,
+                                        l2_domain[vid]));
+    group_id = fm_driver.group_id_l2_flood(vid, vid);
 
     dpt.send_barrier_request(rofl::cauxid(0));
     dpt.send_flow_mod_message(
@@ -785,8 +1005,8 @@ int controller::egress_port_vlan_add(uint32_t port, uint16_t vid,
   return rv;
 }
 
-int controller::egress_port_vlan_remove(uint32_t port, uint16_t vid,
-                                        bool untagged) noexcept {
+int controller::egress_bridge_port_vlan_remove(uint32_t port,
+                                               uint16_t vid) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -818,9 +1038,16 @@ int controller::egress_port_vlan_remove(uint32_t port, uint16_t vid,
     }
 
     // remove filtered egress interface
+    rv = egress_port_vlan_remove(port, vid);
     dpt.send_group_mod_message(
         rofl::cauxid(0),
         fm_driver.disable_group_l2_interface(dpt.get_version(), port, vid));
+
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to remove vid=" << vid
+                 << " from port=" << port;
+    }
+
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
