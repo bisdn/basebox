@@ -552,15 +552,15 @@ int cbasebox::egress_port_vlan_add(uint32_t port, uint16_t vid,
 
     // remove old L2 flooding group
     fm_driver.remove_bridging_dlf_vlan(dpt, vid);
-    fm_driver.send_barrier(dpt);
+    dpt.send_barrier_request(rofl::cauxid(0));
     fm_driver.disable_group_l2_flood(dpt, vid, vid);
-    fm_driver.send_barrier(dpt);
+    dpt.send_barrier_request(rofl::cauxid(0));
 
     // add new L2 flooding group
     group_id = fm_driver.enable_group_l2_flood(dpt, vid, vid, l2_domain[vid]);
-    fm_driver.send_barrier(dpt);
+    dpt.send_barrier_request(rofl::cauxid(0));
     fm_driver.add_bridging_dlf_vlan(dpt, vid, group_id);
-    fm_driver.send_barrier(dpt);
+    dpt.send_barrier_request(rofl::cauxid(0));
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
@@ -579,16 +579,16 @@ int cbasebox::egress_port_vlan_remove(uint32_t port, uint16_t vid,
 
     // remove old L2 flooding group
     fm_driver.remove_bridging_dlf_vlan(dpt, vid);
-    fm_driver.send_barrier(dpt);
+    dpt.send_barrier_request(rofl::cauxid(0));
     fm_driver.disable_group_l2_flood(dpt, vid, vid);
-    fm_driver.send_barrier(dpt);
+    dpt.send_barrier_request(rofl::cauxid(0));
 
     if (l2_domain[vid].size()) {
       // add new L2 flooding group
       group_id = fm_driver.enable_group_l2_flood(dpt, vid, vid, l2_domain[vid]);
-      fm_driver.send_barrier(dpt);
+      dpt.send_barrier_request(rofl::cauxid(0));
       fm_driver.add_bridging_dlf_vlan(dpt, vid, group_id);
-      fm_driver.send_barrier(dpt);
+      dpt.send_barrier_request(rofl::cauxid(0));
     }
 
     // remove filtered egress interface
