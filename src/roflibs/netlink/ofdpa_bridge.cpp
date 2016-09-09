@@ -7,6 +7,9 @@
 #include <map>
 
 #include <glog/logging.h>
+#include <netlink/route/link.h>
+#include <netlink/route/link/bridge.h>
+#include <netlink/route/neighbour.h>
 #include <rofl/common/openflow/cofport.h>
 
 #include "roflibs/netlink/sai.hpp"
@@ -15,20 +18,41 @@
 namespace rofcore {
 
 ofdpa_bridge::ofdpa_bridge(switch_interface *sw)
-    : sw(sw), ingress_vlan_filtered(true), egress_vlan_filtered(true) {}
+    : bridge(nullptr), sw(sw), ingress_vlan_filtered(true),
+      egress_vlan_filtered(true) {}
 
-ofdpa_bridge::~ofdpa_bridge() {}
+ofdpa_bridge::~ofdpa_bridge() {
+  if (bridge)
+    rtnl_link_put(bridge);
+}
 
-void ofdpa_bridge::set_bridge_interface(const crtlink &rtl) {
-  assert(sw);
-  if (AF_BRIDGE != rtl.get_family() || 0 != rtl.get_master()) {
-    LOG(ERROR) << __FUNCTION__ << " not a bridge master: " << rtl;
-    return;
-  }
+void ofdpa_bridge::set_bridge_interface(rtnl_link *bridge) {
+  assert(bridge);
 
-  this->bridge = rtl;
+  this->bridge = bridge;
+  nl_object_get(OBJ_CAST(bridge));
 
   sw->subscribe_to(switch_interface::SWIF_ARP);
+}
+
+static bool br_vlan_cmp(const rtnl_link_bridge_vlan *lhs,
+                        const rtnl_link_bridge_vlan *rhs) {
+  assert(lhs);
+  assert(rhs);
+  if (lhs->pvid != rhs->pvid) {
+    return false;
+  }
+
+  if (memcmp(lhs->vlan_bitmap, rhs->vlan_bitmap, sizeof(rhs->vlan_bitmap))) {
+    return false;
+  }
+
+  if (memcmp(lhs->untagged_bitmap, rhs->untagged_bitmap,
+             sizeof(rhs->untagged_bitmap))) {
+    return false;
+  }
+
+  return true;
 }
 
 static int find_next_bit(int i, uint32_t x) {
@@ -46,26 +70,24 @@ static int find_next_bit(int i, uint32_t x) {
   return j ? j + i : 0;
 }
 
-void ofdpa_bridge::add_interface(uint32_t port, const crtlink &rtl) {
+void ofdpa_bridge::add_interface(uint32_t port, rtnl_link *link) {
   assert(sw);
+  assert(rtnl_link_get_family(link) == AF_BRIDGE);
 
   // sanity checks
-  if (0 == bridge.get_ifindex()) {
-    LOG(ERROR) << __FUNCTION__
-               << " cannot attach interface without bridge: " << rtl;
-    return;
-  }
-  if (AF_BRIDGE != rtl.get_family()) {
-    LOG(ERROR) << __FUNCTION__ << rtl << " is not a bridge interface ";
-    return;
-  }
-  if (bridge.get_ifindex() != rtl.get_master()) {
-    LOG(ERROR) << __FUNCTION__ << rtl
-               << " is not a slave of this bridge interface ";
+  if (bridge == nullptr) {
+    LOG(WARNING) << __FUNCTION__ << " cannot update interface without bridge";
     return;
   }
 
-  const struct rtnl_link_bridge_vlan *br_vlan = rtl.get_br_vlan();
+  if (rtnl_link_get_ifindex(bridge) != rtnl_link_get_master(link)) {
+    LOG(INFO) << __FUNCTION__ << ": link " << rtnl_link_get_name(link)
+              << " is no slave of " << rtnl_link_get_name(bridge);
+    return;
+  }
+
+  const struct rtnl_link_bridge_vlan *br_vlan =
+      rtnl_link_bridge_get_port_vlan(link);
 
   if (not ingress_vlan_filtered) {
     sw->ingress_port_vlan_accept_all(port);
@@ -212,56 +234,55 @@ void ofdpa_bridge::update_vlans(uint32_t port, const std::string &devname,
   }
 }
 
-void ofdpa_bridge::update_interface(uint32_t port, const crtlink &oldlink,
-                                    const crtlink &newlink) {
+void ofdpa_bridge::update_interface(uint32_t port, rtnl_link *old_link,
+                                    rtnl_link *new_link) {
+  assert(rtnl_link_get_family(new_link) == AF_BRIDGE);
+  assert(rtnl_link_get_family(old_link) == AF_BRIDGE);
+
   // sanity checks
-  if (0 == bridge.get_ifindex()) {
-    LOG(ERROR) << __FUNCTION__ << " cannot update interface without bridge";
-    return;
-  }
-  if (AF_BRIDGE != newlink.get_family()) {
-    LOG(ERROR) << __FUNCTION__ << newlink << " is not a bridge interface";
-    return;
-  }
-  // if (AF_BRIDGE != oldlink.get_family()) {
-  //   LOG(ERROR) << __FUNCTION__ << oldlink << " is
-  //                     not a bridge interface";
-  //   return;
-  // }
-  if (bridge.get_ifindex() != newlink.get_master()) {
-    LOG(ERROR) << __FUNCTION__ << newlink
-               << " is not a slave of this bridge interface";
-    return;
-  }
-  if (bridge.get_ifindex() != oldlink.get_master()) {
-    LOG(ERROR) << __FUNCTION__ << newlink
-               << " is not a slave of this bridge interface";
+  if (bridge == nullptr) {
+    LOG(WARNING) << __FUNCTION__ << " cannot update interface without bridge";
     return;
   }
 
-  if (newlink.get_devname().compare(oldlink.get_devname())) {
-    LOG(INFO) << __FUNCTION__ << " interface rename currently ignored ";
-    // FIXME this has to be handled differently
+  if (rtnl_link_get_ifindex(bridge) != rtnl_link_get_master(new_link)) {
+    LOG(INFO) << __FUNCTION__ << ": link " << rtnl_link_get_name(new_link)
+              << " is no slave of " << rtnl_link_get_name(bridge);
     return;
   }
+
+  if (0 != strcmp(rtnl_link_get_name(old_link), rtnl_link_get_name(new_link))) {
+    LOG(INFO) << __FUNCTION__ << ": ignore rename of link "
+              << rtnl_link_get_name(old_link) << " to "
+              << rtnl_link_get_name(new_link);
+    // TODO this has to be handled differently
+    return;
+  }
+
+  struct rtnl_link_bridge_vlan *old_br_vlan =
+      rtnl_link_bridge_get_port_vlan(old_link);
+  assert(old_br_vlan);
+  struct rtnl_link_bridge_vlan *new_br_vlan =
+      rtnl_link_bridge_get_port_vlan(new_link);
+  assert(new_br_vlan);
 
   if (not ingress_vlan_filtered) {
-    if (oldlink.get_br_vlan()->pvid != newlink.get_br_vlan()->pvid) {
-
-      if (newlink.get_br_vlan()->pvid) {
-        VLOG(2) << __FUNCTION__ << " port=" << port
-                << " old pvid=" << oldlink.get_br_vlan()->pvid
-                << " new pvid=" << newlink.get_br_vlan()->pvid;
-        sw->ingress_port_vlan_add(port, newlink.get_br_vlan()->pvid, true);
-        if (oldlink.get_br_vlan()->pvid) {
+    if (old_br_vlan->pvid != new_br_vlan->pvid) {
+      if (new_br_vlan->pvid) {
+        VLOG(2) << __FUNCTION__ << ": pvid changed of link "
+                << rtnl_link_get_name(new_link) << " port=" << port
+                << " old pvid=" << old_br_vlan->pvid
+                << " new pvid=" << new_br_vlan->pvid;
+        sw->ingress_port_vlan_add(port, new_br_vlan->pvid, true);
+        if (old_br_vlan->pvid) {
           // just remove the vid and not the rewrite for untagged packets, hence
           // pvid=false is fine here
           // TODO maybe update the interface, because this might be missleading
-          sw->ingress_port_vlan_remove(port, oldlink.get_br_vlan()->pvid,
-                                       false);
+          sw->ingress_port_vlan_remove(port, old_br_vlan->pvid, false);
         }
       } else {
-        sw->ingress_port_vlan_remove(port, oldlink.get_br_vlan()->pvid, true);
+        // vlan removed
+        sw->ingress_port_vlan_remove(port, old_br_vlan->pvid, true);
       }
     }
   }
@@ -271,29 +292,23 @@ void ofdpa_bridge::update_interface(uint32_t port, const crtlink &oldlink,
     return;
   }
 
-  if (not crtlink::are_br_vlan_equal(newlink.get_br_vlan(),
-                                     oldlink.get_br_vlan())) {
-    // vlan updated
-    update_vlans(port, oldlink.get_devname(), oldlink.get_br_vlan(),
-                 newlink.get_br_vlan());
+  if (!br_vlan_cmp(old_br_vlan, new_br_vlan)) {
+    update_vlans(port, rtnl_link_get_name(old_link), old_br_vlan, new_br_vlan);
   }
 }
 
-void ofdpa_bridge::delete_interface(uint32_t port, const crtlink &rtl) {
+void ofdpa_bridge::delete_interface(uint32_t port, rtnl_link *link) {
   assert(sw);
+  assert(rtnl_link_get_family(link) == AF_BRIDGE);
+
   // sanity checks
-  if (0 == bridge.get_ifindex()) {
-    LOG(ERROR) << __FUNCTION__
-               << " cannot attach interface without bridge: " << rtl;
+  if (bridge == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": cannot attach interface without bridge";
     return;
   }
-  if (AF_BRIDGE != rtl.get_family()) {
-    LOG(ERROR) << __FUNCTION__ << rtl << " is not a bridge interface ";
-    return;
-  }
-  if (bridge.get_ifindex() != rtl.get_master()) {
-    LOG(ERROR) << __FUNCTION__ << rtl
-               << " is not a slave of this bridge interface ";
+  if (rtnl_link_get_ifindex(bridge) != rtnl_link_get_master(link)) {
+    LOG(INFO) << __FUNCTION__ << ": link " << rtnl_link_get_name(link)
+              << " is no slave of " << rtnl_link_get_name(bridge);
     return;
   }
 
@@ -313,26 +328,41 @@ void ofdpa_bridge::delete_interface(uint32_t port, const crtlink &rtl) {
     return;
   }
 
-  const struct rtnl_link_bridge_vlan *br_vlan = rtl.get_br_vlan();
+  const struct rtnl_link_bridge_vlan *br_vlan =
+      rtnl_link_bridge_get_port_vlan(link);
   struct rtnl_link_bridge_vlan br_vlan_empty;
   memset(&br_vlan_empty, 0, sizeof(struct rtnl_link_bridge_vlan));
 
-  if (not crtlink::are_br_vlan_equal(br_vlan, &br_vlan_empty)) {
+  if (!br_vlan_cmp(br_vlan, &br_vlan_empty)) {
     // vlan updated
-    update_vlans(port, rtl.get_devname(), br_vlan, &br_vlan_empty);
+    update_vlans(port, rtnl_link_get_name(link), br_vlan, &br_vlan_empty);
   }
 }
 
-void ofdpa_bridge::add_mac_to_fdb(const uint32_t port, const uint16_t vid,
-                                  const rofl::cmacaddr &mac) {
+void ofdpa_bridge::add_mac_to_fdb(const uint32_t port, uint16_t vlan,
+                                  nl_addr *mac) {
   assert(sw);
-  sw->l2_addr_add(port, vid, mac, egress_vlan_filtered);
+  assert(mac);
+
+  rofl::caddress_ll _mac((uint8_t *)nl_addr_get_binary_addr(mac),
+                         nl_addr_get_len(mac));
+
+  LOG(INFO) << __FUNCTION__ << ": add mac=" << _mac << " to bridge "
+            << rtnl_link_get_name(bridge) << " on port=" << port
+            << " vlan=" << (unsigned)vlan;
+  sw->l2_addr_add(port, vlan, _mac, egress_vlan_filtered);
 }
 
-void ofdpa_bridge::remove_mac_from_fdb(const uint32_t port, uint16_t vid,
-                                       const rofl::cmacaddr &mac) {
+void ofdpa_bridge::remove_mac_from_fdb(const uint32_t port, rtnl_neigh *neigh) {
   assert(sw);
-  sw->l2_addr_remove(port, vid, mac);
+  nl_addr *addr = rtnl_neigh_get_lladdr(neigh);
+  if (nl_addr_cmp(rtnl_link_get_addr(bridge), addr) == 0) {
+    // ignore ll addr of bridge on slave
+    return;
+  }
+  rofl::caddress_ll mac((uint8_t *)nl_addr_get_binary_addr(addr),
+                        nl_addr_get_len(addr));
+  sw->l2_addr_remove(port, rtnl_neigh_get_vlan(neigh), mac);
 }
 
 } /* namespace basebox */
