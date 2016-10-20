@@ -22,7 +22,7 @@ ofdpa_bridge::~ofdpa_bridge() {}
 void ofdpa_bridge::set_bridge_interface(const crtlink &rtl) {
   assert(sw);
   if (AF_BRIDGE != rtl.get_family() || 0 != rtl.get_master()) {
-    LOG(ERROR) << __FUNCTION__ << " not a bridge master: " << rtl << std::endl;
+    LOG(ERROR) << __FUNCTION__ << " not a bridge master: " << rtl;
     return;
   }
 
@@ -52,18 +52,16 @@ void ofdpa_bridge::add_interface(uint32_t port, const crtlink &rtl) {
   // sanity checks
   if (0 == bridge.get_ifindex()) {
     LOG(ERROR) << __FUNCTION__
-               << " cannot attach interface without bridge: " << rtl
-               << std::endl;
+               << " cannot attach interface without bridge: " << rtl;
     return;
   }
   if (AF_BRIDGE != rtl.get_family()) {
-    LOG(ERROR) << __FUNCTION__ << rtl << " is not a bridge interface "
-               << std::endl;
+    LOG(ERROR) << __FUNCTION__ << rtl << " is not a bridge interface ";
     return;
   }
   if (bridge.get_ifindex() != rtl.get_master()) {
     LOG(ERROR) << __FUNCTION__ << rtl
-               << " is not a slave of this bridge interface " << std::endl;
+               << " is not a slave of this bridge interface ";
     return;
   }
 
@@ -218,34 +216,31 @@ void ofdpa_bridge::update_interface(uint32_t port, const crtlink &oldlink,
                                     const crtlink &newlink) {
   // sanity checks
   if (0 == bridge.get_ifindex()) {
-    LOG(ERROR) << __FUNCTION__ << " cannot update interface without bridge"
-               << std::endl;
+    LOG(ERROR) << __FUNCTION__ << " cannot update interface without bridge";
     return;
   }
   if (AF_BRIDGE != newlink.get_family()) {
-    LOG(ERROR) << __FUNCTION__ << newlink << " is not a bridge interface"
-               << std::endl;
+    LOG(ERROR) << __FUNCTION__ << newlink << " is not a bridge interface";
     return;
   }
   // if (AF_BRIDGE != oldlink.get_family()) {
   //   LOG(ERROR) << __FUNCTION__ << oldlink << " is
-  //                     not a bridge interface" << std::endl;
+  //                     not a bridge interface";
   //   return;
   // }
   if (bridge.get_ifindex() != newlink.get_master()) {
     LOG(ERROR) << __FUNCTION__ << newlink
-               << " is not a slave of this bridge interface" << std::endl;
+               << " is not a slave of this bridge interface";
     return;
   }
   if (bridge.get_ifindex() != oldlink.get_master()) {
     LOG(ERROR) << __FUNCTION__ << newlink
-               << " is not a slave of this bridge interface" << std::endl;
+               << " is not a slave of this bridge interface";
     return;
   }
 
   if (newlink.get_devname().compare(oldlink.get_devname())) {
-    LOG(INFO) << __FUNCTION__ << " interface rename currently ignored "
-              << std::endl;
+    LOG(INFO) << __FUNCTION__ << " interface rename currently ignored ";
     // FIXME this has to be handled differently
     return;
   }
@@ -263,7 +258,7 @@ void ofdpa_bridge::update_interface(uint32_t port, const crtlink &oldlink,
           // pvid=false is fine here
           // TODO maybe update the interface, because this might be missleading
           sw->ingress_port_vlan_remove(port, oldlink.get_br_vlan()->pvid,
-                                       false); 
+                                       false);
         }
       } else {
         sw->ingress_port_vlan_remove(port, oldlink.get_br_vlan()->pvid, true);
@@ -289,18 +284,16 @@ void ofdpa_bridge::delete_interface(uint32_t port, const crtlink &rtl) {
   // sanity checks
   if (0 == bridge.get_ifindex()) {
     LOG(ERROR) << __FUNCTION__
-               << " cannot attach interface without bridge: " << rtl
-               << std::endl;
+               << " cannot attach interface without bridge: " << rtl;
     return;
   }
   if (AF_BRIDGE != rtl.get_family()) {
-    LOG(ERROR) << __FUNCTION__ << rtl << " is not a bridge interface "
-               << std::endl;
+    LOG(ERROR) << __FUNCTION__ << rtl << " is not a bridge interface ";
     return;
   }
   if (bridge.get_ifindex() != rtl.get_master()) {
     LOG(ERROR) << __FUNCTION__ << rtl
-               << " is not a slave of this bridge interface " << std::endl;
+               << " is not a slave of this bridge interface ";
     return;
   }
 
