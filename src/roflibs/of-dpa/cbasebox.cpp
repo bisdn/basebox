@@ -157,12 +157,38 @@ void cbasebox::handle_flow_removed(rofl::crofdpt &dpt,
 
 void cbasebox::handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                                   rofl::openflow::cofmsg_port_status &msg) {
+  using rofcore::nbi;
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
           << " pkt received: " << std::endl
           << msg;
 
-  // XXX FIXME not implemented
-  LOG(WARNING) << __FUNCTION__ << ": not implemented";
+  switch (msg.get_reason()) {
+  case rofl::openflow::OFPPR_MODIFY: {
+    enum nbi::port_status status = (nbi::port_status)0;
+    if (msg.get_port().get_config() & rofl::openflow13::OFPPC_PORT_DOWN) {
+      status = (nbi::port_status)(status | nbi::PORT_STATUS_ADMIN_DOWN);
+    }
+
+    if (msg.get_port().get_state() & rofl::openflow13::OFPPS_LINK_DOWN) {
+      status = (nbi::port_status)(status | nbi::PORT_STATUS_LOWER_DOWN);
+    }
+
+    try {
+      this->nbi->port_status_changed(
+          of_port_to_port_id.at(msg.get_port().get_port_no()), status);
+    } catch (std::out_of_range &e) {
+      LOG(WARNING) << __FUNCTION__ << ": unknown port with OF portno="
+                   << msg.get_port().get_port_no();
+    }
+  } break;
+  case rofl::openflow::OFPPR_ADD:
+  case rofl::openflow::OFPPR_DELETE:
+    LOG(WARNING) << __FUNCTION__ << ": not implemented";
+    break;
+  default:
+    LOG(ERROR) << __FUNCTION__ << ": invalid port status";
+    break;
+  }
 }
 
 void cbasebox::handle_error_message(rofl::crofdpt &dpt,

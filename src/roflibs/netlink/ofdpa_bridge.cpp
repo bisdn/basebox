@@ -263,7 +263,7 @@ void ofdpa_bridge::update_interface(uint32_t port, const crtlink &oldlink,
           // pvid=false is fine here
           // TODO maybe update the interface, because this might be missleading
           sw->ingress_port_vlan_remove(port, oldlink.get_br_vlan()->pvid,
-                                       false); 
+                                       false);
         }
       } else {
         sw->ingress_port_vlan_remove(port, oldlink.get_br_vlan()->pvid, true);

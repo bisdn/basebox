@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include <fstream>
+#include <iterator>
 
 #include "cnetlink.hpp"
 
@@ -156,6 +157,70 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     nl_objs.pop_front();
   }
 
+  std::deque<std::pair<uint32_t, enum port_status>> _pc_changes;
+
+  {
+    std::lock_guard<std::mutex> scoped_lock(pc_mutex);
+    std::copy(make_move_iterator(port_status_changes.begin()),
+              make_move_iterator(port_status_changes.end()),
+              std::back_inserter(_pc_changes));
+    port_status_changes.clear();
+  }
+
+  for (auto change : _pc_changes) {
+    int ifindex, rv;
+    rtnl_link *lchange, *link;
+
+    // get ifindex
+    try {
+      ifindex = registered_port_to_ifindex.at(change.first);
+    } catch (std::out_of_range &e) {
+      LOG(ERROR) << __FUNCTION__ << ": out_of_range";
+      continue;
+    }
+
+    // lookup link
+    link = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
+    if (!link) {
+      LOG(ERROR) << __FUNCTION__ << ": link not found with ifindex=" << ifindex;
+      continue;
+    }
+
+    // change request
+    lchange = rtnl_link_alloc();
+    if (!lchange) {
+      LOG(ERROR) << __FUNCTION__ << ": out of memory";
+      continue;
+    }
+
+    int flags = rtnl_link_get_flags(link);
+
+    // check running state change
+    if (!((flags & IFF_RUNNING) && !(change.second & PORT_STATUS_LOWER_DOWN))) {
+      // changed
+      // XXX needs implementation in tap manager
+    }
+
+    // check admin state change
+    if (!((flags & IFF_UP) && !(change.second & PORT_STATUS_ADMIN_DOWN))) {
+      if (change.second & PORT_STATUS_ADMIN_DOWN) {
+        rtnl_link_unset_flags(lchange, IFF_UP);
+        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
+                  << " was enabled";
+      } else {
+        rtnl_link_set_flags(lchange, IFF_UP);
+        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
+                  << " was disabled";
+      }
+    }
+
+    // apply changes
+    if ((rv = rtnl_link_change(sock, link, lchange, 0)) < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": Unable to change link, "
+                 << nl_geterror(rv);
+    }
+  }
+
   if (nl_objs.size()) {
     this->thread.wakeup();
   }
@@ -262,7 +327,13 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
       if (r.second) {
         s1 = r.first;
       } else {
-        assert(0 && "insertion to ifindex_to_registered_port.insert failed");
+        assert(0 && "insertion to ifindex_to_registered_port failed");
+      }
+
+      r = registered_port_to_ifindex.insert(
+          std::make_pair(s2->second, ifindex));
+      if (!r.second) {
+        assert(0 && "insertion to registered_port_to_ifindex failed");
       }
     }
   }
@@ -622,6 +693,19 @@ void cnetlink::resend_state() noexcept {
 void cnetlink::register_switch(switch_interface *swi) noexcept {
   assert(swi);
   this->swi = swi;
+}
+
+void cnetlink::port_status_changed(uint32_t port_no,
+                                   enum port_status ps) noexcept {
+  try {
+    auto pps = std::make_pair(port_no, ps);
+    std::lock_guard<std::mutex> scoped_lock(pc_mutex);
+    port_status_changes.push_back(pps);
+  } catch (std::exception &e) {
+    LOG(ERROR) << __FUNCTION__ << ": unknown exception " << e.what();
+    return;
+  }
+  thread.wakeup();
 }
 
 } // namespace rofcore
