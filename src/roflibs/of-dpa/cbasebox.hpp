@@ -19,7 +19,6 @@
 #include <rofl/ofdpa/rofl_ofdpa_fm_driver.hpp>
 
 #include "roflibs/netlink/sai.hpp"
-#include "roflibs/netlink/tap_manager.hpp"
 
 namespace basebox {
 
@@ -30,7 +29,6 @@ public:
 
 class cbasebox : public rofl::crofbase,
                  public virtual rofl::cthread_env,
-                 public rofcore::tap_callback,
                  public rofcore::switch_interface {
 
   enum ExperimenterMessageType {
@@ -44,7 +42,6 @@ class cbasebox : public rofl::crofbase,
   };
 
   static bool keep_on_running;
-  rofl::cthread thread;
   rofcore::nbi *nbi;
 
   cbasebox(const cbasebox &) = delete;
@@ -54,14 +51,12 @@ public:
   cbasebox(rofcore::nbi *nbi,
            const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
                rofl::openflow::cofhello_elem_versionbitmap())
-      : thread(this), nbi(nbi) {
+      : nbi(nbi) {
     nbi->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
-    thread.start();
-    tap_man = new rofcore::tap_manager();
   }
 
-  ~cbasebox() override { delete tap_man; }
+  ~cbasebox() override {}
 
   static bool running() { return keep_on_running; }
 
@@ -163,6 +158,9 @@ public:
   int egress_port_vlan_remove(uint32_t port, uint16_t vid,
                               bool untagged) noexcept override;
 
+  /* IO */
+  int enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept override;
+
   int subscribe_to(enum swi_flags flags) noexcept override;
 
   /* print this */
@@ -173,15 +171,8 @@ public:
 
 private:
   rofl::cdptid dptid;
-  rofcore::tap_manager *tap_man;
   rofl::rofl_ofdpa_fm_driver fm_driver;
-  std::map<int, uint32_t> port_id_to_of_port;
-  std::map<uint32_t, int> of_port_to_port_id;
-
   std::map<uint16_t, std::set<uint32_t>> l2_domain;
-
-  /* IO */
-  int enqueue(rofcore::ctapdev *netdev, rofl::cpacket *pkt) override;
 
   /* OF handler */
   void handle_srcmac_table(rofl::crofdpt &dpt,
@@ -192,9 +183,6 @@ private:
 
   void handle_bridging_table_rm(rofl::crofdpt &dpt,
                                 rofl::openflow::cofmsg_flow_removed &msg);
-
-  void init(rofl::crofdpt &dpt);
-
 }; // class cbasebox
 
 } // end of namespace basebox

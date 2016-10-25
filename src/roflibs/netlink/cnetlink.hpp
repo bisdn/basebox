@@ -9,7 +9,6 @@
 #include <exception>
 #include <mutex>
 
-#include <glog/logging.h>
 #include <netlink/cache.h>
 #include <netlink/object.h>
 #include <netlink/route/addr.h>
@@ -41,7 +40,7 @@ public:
   eNetLinkFailed(const std::string &__arg) : eNetLinkBase(__arg){};
 };
 
-class cnetlink : public rofl::cthread_env, public rofcore::nbi {
+class cnetlink : public rofl::cthread_env {
   enum nl_cache_t {
     NL_LINK_CACHE,
     NL_NEIGH_CACHE,
@@ -58,10 +57,10 @@ class cnetlink : public rofl::cthread_env, public rofcore::nbi {
   struct nl_sock *sock;
   struct nl_cache_mngr *mngr;
   std::map<enum nl_cache_t, struct nl_cache *> caches;
-  std::map<std::string, int> registered_ports;
-  std::map<int, int> ifindex_to_registered_port;
-  std::map<int, int> registered_port_to_ifindex;
-  std::deque<std::pair<uint32_t, enum port_status>> port_status_changes;
+  std::map<std::string, uint32_t> registered_ports;
+  std::map<int, uint32_t> ifindex_to_registered_port;
+  std::map<uint32_t, int> registered_port_to_ifindex;
+  std::deque<std::pair<uint32_t, enum nbi::port_status>> port_status_changes;
   std::mutex pc_mutex;
 
   ofdpa_bridge *bridge;
@@ -120,11 +119,17 @@ public:
     return os;
   }
 
-  void resend_state() noexcept override;
+  void resend_state() noexcept;
 
-  void register_switch(switch_interface *) noexcept override;
+  void register_switch(switch_interface *) noexcept;
 
-  void port_status_changed(uint32_t, enum port_status) noexcept override;
+  void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
+
+#if 0
+  int enqueue(int port_id, rofl::cpacket *pkt) noexcept {
+    return 0;
+  } // XXX FIXME this has to be moved
+#endif
 
   static void nl_cb(struct nl_cache *cache, struct nl_object *obj, int action,
                     void *data);
@@ -135,7 +140,7 @@ public:
 
   crtlinks &set_links() { return rtlinks; };
 
-  void register_link(int, std::string);
+  void register_link(uint32_t, std::string);
 
   void start() {
     running = true;

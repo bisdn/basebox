@@ -174,8 +174,7 @@ void cbasebox::handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     }
 
     try {
-      this->nbi->port_status_changed(
-          of_port_to_port_id.at(msg.get_port().get_port_no()), status);
+      this->nbi->port_status_changed(msg.get_port().get_port_no(), status);
     } catch (std::out_of_range &e) {
       LOG(WARNING) << __FUNCTION__ << ": unknown port with OF portno="
                    << msg.get_port().get_port_no();
@@ -208,7 +207,25 @@ void cbasebox::handle_port_desc_stats_reply(
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
           << " pkt received: " << std::endl
           << msg;
-  init(dpt);
+
+  using rofcore::nbi;
+  using rofl::openflow::cofport;
+
+  std::deque<struct nbi::port_notification_data> notifications;
+  for (auto i : msg.get_ports().keys()) {
+    const cofport &port = msg.get_ports().get_port(i);
+    notifications.emplace_back(nbi::port_notification_data{
+        nbi::PORT_EVENT_ADD, port.get_port_no(), port.get_name()});
+  }
+
+  /* init 1:1 port mapping */
+  try {
+    this->nbi->port_notification(notifications);
+    LOG(INFO) << "ports initialized";
+
+  } catch (std::exception &e) {
+    LOG(ERROR) << __FUNCTION__ << ": unknown error " << e.what();
+  }
 }
 
 void cbasebox::handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
@@ -296,9 +313,11 @@ void cbasebox::handle_acl_policy_table(rofl::crofdpt &dpt,
     rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
     *pkt = msg.get_packet();
 
-    tap_man->get_dev(of_port_to_port_id.at(port.get_port_no())).enqueue(pkt);
+    nbi->enqueue(port.get_port_no(), pkt);
   } catch (rofcore::ePacketPoolExhausted &e) {
     LOG(ERROR) << __FUNCTION__ << " ePacketPoolExhausted: " << e.what();
+  } catch (std::out_of_range &e) {
+    LOG(ERROR) << __FUNCTION__ << ": invalid range";
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << " exception: " << e.what();
   }
@@ -343,42 +362,11 @@ void cbasebox::handle_bridging_table_rm(
   LOG(WARNING) << ": not implemented";
 }
 
-void cbasebox::init(rofl::crofdpt &dpt) {
-  using rofl::openflow::cofport;
-
-  std::deque<std::string> ports;
-
-  /* init 1:1 port mapping */
-  try {
-    for (const auto &i : dpt.get_ports().keys()) {
-      const cofport &port = dpt.get_ports().get_port(i);
-      ports.push_back(port.get_name());
-    }
-
-    std::deque<std::pair<int, std::string>> devs =
-        tap_man->register_tapdevs(ports, *this);
-
-    for (auto i : devs) {
-      const rofl::openflow::cofport &port = dpt.get_ports().get_port(i.second);
-      of_port_to_port_id[port.get_port_no()] = i.first;
-      port_id_to_of_port[i.first] = port.get_port_no();
-    }
-
-    tap_man->start();
-
-    LOG(INFO) << "ports initialized";
-
-  } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << "] ERROR: unknown error " << e.what();
-  }
-}
-
-int cbasebox::enqueue(rofcore::ctapdev *tapdev, rofl::cpacket *pkt) {
+int cbasebox::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
   using rofl::openflow::cofport;
   using std::map;
   int rv = 0;
 
-  assert(tapdev && "no tapdev");
   assert(pkt && "invalid enque");
   struct ethhdr *eth = (struct ethhdr *)pkt->soframe();
 
@@ -391,37 +379,35 @@ int cbasebox::enqueue(rofcore::ctapdev *tapdev, rofl::cpacket *pkt) {
   try {
     rofl::crofdpt &dpt = set_dpt(this->dptid, true);
     if (not dpt.is_established()) {
-      LOG(WARNING) << __FUNCTION__ << "] not connected, dropping packet";
+      LOG(WARNING) << __FUNCTION__ << " not connected, dropping packet";
       rv = -ENOTCONN;
       goto errout;
     }
-
-    // TODO move to separate function:
-    uint32_t portno =
-        dpt.get_ports().get_port(tapdev->get_devname()).get_port_no();
-
-    /* only send packet-out if we can determine a port-no */
-    if (portno) {
+    
+    /* only send packet-out if the port with port_id is actually existing */
+    if (dpt.get_ports().has_port(port_id)) {
       VLOG(1) << __FUNCTION__ << ": send pkt-out, pkt:" << std::endl << *pkt;
 
       rofl::openflow::cofactions actions(dpt.get_version());
       //			//actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
       //			//actions.set_action_set_field(rofl::cindex(1)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(tapdev->get_pvid()));
-      actions.set_action_output(rofl::cindex(0)).set_port_no(portno);
+      actions.set_action_output(rofl::cindex(0)).set_port_no(port_id);
 
       dpt.send_packet_out_message(
           rofl::cauxid(0),
           rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()),
           rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()),
           actions, pkt->soframe(), pkt->length());
+    } else {
+      LOG(ERROR) << __FUNCTION__ << ": packet sent to invalid port_id " << port_id;
     }
   } catch (rofl::eRofDptNotFound &e) {
     LOG(ERROR) << __FUNCTION__
                << "] no data path attached, dropping outgoing packet";
-
+    rv = -ENOTCONN;
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << __FUNCTION__ << ": " << e.what();
-
+    rv = -EINVAL;
   } catch (rofl::openflow::ePortsNotFound &e) {
     LOG(ERROR) << __FUNCTION__ << ": invalid port for packet out";
     rv = -EINVAL;
@@ -438,8 +424,7 @@ int cbasebox::l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    uint32_t of_port = port_id_to_of_port.at(port);
-    fm_driver.remove_bridging_unicast_vlan_all(dpt, of_port, vid);
+    fm_driver.remove_bridging_unicast_vlan_all(dpt, port, vid);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
@@ -453,8 +438,7 @@ int cbasebox::l2_addr_add(uint32_t port, uint16_t vid,
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     // XXX have the knowlege here about filtered/unfiltered?
-    uint32_t of_port = port_id_to_of_port.at(port);
-    fm_driver.add_bridging_unicast_vlan(dpt, of_port, vid, mac, true, filtered);
+    fm_driver.add_bridging_unicast_vlan(dpt, port, vid, mac, true, filtered);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
@@ -467,8 +451,7 @@ int cbasebox::l2_addr_remove(uint32_t port, uint16_t vid,
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    uint32_t of_port = port_id_to_of_port.at(port);
-    fm_driver.remove_bridging_unicast_vlan(dpt, of_port, vid, mac);
+    fm_driver.remove_bridging_unicast_vlan(dpt, port, vid, mac);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
@@ -480,8 +463,7 @@ int cbasebox::ingress_port_vlan_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    uint32_t of_port = port_id_to_of_port.at(port);
-    fm_driver.enable_port_vid_allow_all(dpt, of_port);
+    fm_driver.enable_port_vid_allow_all(dpt, port);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
@@ -493,8 +475,7 @@ int cbasebox::ingress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    uint32_t of_port = port_id_to_of_port.at(port);
-    fm_driver.disable_port_vid_allow_all(dpt, of_port);
+    fm_driver.disable_port_vid_allow_all(dpt, port);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
@@ -507,11 +488,10 @@ int cbasebox::ingress_port_vlan_add(uint32_t port, uint16_t vid,
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    uint32_t of_port = port_id_to_of_port.at(port);
     if (pvid) {
-      fm_driver.enable_port_pvid_ingress(dpt, of_port, vid);
+      fm_driver.enable_port_pvid_ingress(dpt, port, vid);
     } else {
-      fm_driver.enable_port_vid_ingress(dpt, of_port, vid);
+      fm_driver.enable_port_vid_ingress(dpt, port, vid);
     }
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
@@ -525,11 +505,10 @@ int cbasebox::ingress_port_vlan_remove(uint32_t port, uint16_t vid,
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    uint32_t of_port = port_id_to_of_port.at(port);
     if (pvid) {
-      fm_driver.disable_port_pvid_ingress(dpt, of_port, vid);
+      fm_driver.disable_port_pvid_ingress(dpt, port, vid);
     } else {
-      fm_driver.disable_port_vid_ingress(dpt, of_port, vid);
+      fm_driver.disable_port_vid_ingress(dpt, port, vid);
     }
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
@@ -542,8 +521,7 @@ int cbasebox::egress_port_vlan_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    uint32_t of_port = port_id_to_of_port.at(port);
-    fm_driver.enable_group_l2_unfiltered_interface(dpt, of_port);
+    fm_driver.enable_group_l2_unfiltered_interface(dpt, port);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
@@ -555,8 +533,7 @@ int cbasebox::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    uint32_t of_port = port_id_to_of_port.at(port);
-    fm_driver.disable_group_l2_unfiltered_interface(dpt, of_port);
+    fm_driver.disable_group_l2_unfiltered_interface(dpt, port);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;
@@ -571,9 +548,8 @@ int cbasebox::egress_port_vlan_add(uint32_t port, uint16_t vid,
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
     // create filtered egress interface
-    uint32_t of_port = port_id_to_of_port.at(port);
     uint32_t group_id =
-        fm_driver.enable_group_l2_interface(dpt, of_port, vid, untagged);
+        fm_driver.enable_group_l2_interface(dpt, port, vid, untagged);
     l2_domain[vid].insert(group_id);
 
     // remove old L2 flooding group
@@ -599,8 +575,7 @@ int cbasebox::egress_port_vlan_remove(uint32_t port, uint16_t vid,
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    uint32_t of_port = port_id_to_of_port.at(port);
-    uint32_t group_id = fm_driver.group_id_l2_interface(of_port, vid);
+    uint32_t group_id = fm_driver.group_id_l2_interface(port, vid);
     l2_domain[vid].erase(group_id);
 
     // remove old L2 flooding group
@@ -618,7 +593,7 @@ int cbasebox::egress_port_vlan_remove(uint32_t port, uint16_t vid,
     }
 
     // remove filtered egress interface
-    fm_driver.disable_group_l2_interface(dpt, of_port, vid);
+    fm_driver.disable_group_l2_interface(dpt, port, vid);
   } catch (rofl::eRofBaseNotFound &e) {
     // TODO log error
     rv = -EINVAL;

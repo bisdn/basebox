@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include <fstream>
+#include <glog/logging.h>
 #include <iterator>
 
 #include "cnetlink.hpp"
@@ -133,7 +134,7 @@ cnetlink &cnetlink::get_instance() {
   return instance;
 }
 
-void cnetlink::register_link(int id, std::string port_name) {
+void cnetlink::register_link(uint32_t id, std::string port_name) {
   registered_ports.insert(std::make_pair(port_name, id));
 }
 
@@ -157,7 +158,7 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     nl_objs.pop_front();
   }
 
-  std::deque<std::pair<uint32_t, enum port_status>> _pc_changes;
+  std::deque<std::pair<uint32_t, enum nbi::port_status>> _pc_changes;
 
   {
     std::lock_guard<std::mutex> scoped_lock(pc_mutex);
@@ -196,14 +197,15 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     int flags = rtnl_link_get_flags(link);
 
     // check running state change
-    if (!((flags & IFF_RUNNING) && !(change.second & PORT_STATUS_LOWER_DOWN))) {
+    if (!((flags & IFF_RUNNING) &&
+          !(change.second & nbi::PORT_STATUS_LOWER_DOWN))) {
       // changed
       // XXX needs implementation in tap manager
     }
 
     // check admin state change
-    if (!((flags & IFF_UP) && !(change.second & PORT_STATUS_ADMIN_DOWN))) {
-      if (change.second & PORT_STATUS_ADMIN_DOWN) {
+    if (!((flags & IFF_UP) && !(change.second & nbi::PORT_STATUS_ADMIN_DOWN))) {
+      if (change.second & nbi::PORT_STATUS_ADMIN_DOWN) {
         rtnl_link_unset_flags(lchange, IFF_UP);
         LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
                   << " was enabled";
@@ -322,18 +324,20 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
       // not a registered port
       return;
     } else {
-      auto r = ifindex_to_registered_port.insert(
+      auto r1 = ifindex_to_registered_port.insert(
           std::make_pair(ifindex, s2->second));
-      if (r.second) {
-        s1 = r.first;
+      if (r1.second) {
+        s1 = r1.first;
       } else {
-        assert(0 && "insertion to ifindex_to_registered_port failed");
+        LOG(FATAL) << __FUNCTION__
+                   << ": insertion to ifindex_to_registered_port failed";
       }
 
-      r = registered_port_to_ifindex.insert(
+      auto r2 = registered_port_to_ifindex.insert(
           std::make_pair(s2->second, ifindex));
-      if (!r.second) {
-        assert(0 && "insertion to registered_port_to_ifindex failed");
+      if (!r2.second) {
+        LOG(FATAL) << __FUNCTION__
+                   << ": insertion to registered_port_to_ifindex failed";
       }
     }
   }
@@ -696,7 +700,7 @@ void cnetlink::register_switch(switch_interface *swi) noexcept {
 }
 
 void cnetlink::port_status_changed(uint32_t port_no,
-                                   enum port_status ps) noexcept {
+                                   enum nbi::port_status ps) noexcept {
   try {
     auto pps = std::make_pair(port_no, ps);
     std::lock_guard<std::mutex> scoped_lock(pc_mutex);

@@ -6,6 +6,8 @@
 #include <glog/logging.h>
 
 #include "roflibs/netlink/cnetlink.hpp"
+#include "roflibs/netlink/nbi_impl.hpp"
+#include "roflibs/netlink/tap_manager.hpp"
 #include "roflibs/of-dpa/cbasebox.hpp"
 
 static bool validate_port(const char *flagname, gflags::int32 value) {
@@ -33,9 +35,7 @@ int main(int argc, char **argv) {
   versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
   LOG(INFO) << "using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
-  // start netlink
-  rofcore::nbi *nbi = &rofcore::cnetlink::get_instance();
-  // XXX FIXME move tap_manager here
+  rofcore::nbi_impl *nbi = new rofcore::nbi_impl();
   std::unique_ptr<basebox::cbasebox> box(
       new basebox::cbasebox(nbi, versionbitmap));
 
@@ -54,6 +54,8 @@ int main(int argc, char **argv) {
       std::cerr << "exception caught, what: " << e.what() << std::endl;
     }
   }
+
+  delete nbi;
 
   return EXIT_SUCCESS;
 }

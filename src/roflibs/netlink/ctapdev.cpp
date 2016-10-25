@@ -17,8 +17,9 @@
 
 namespace rofcore {
 
-ctapdev::ctapdev(tap_callback &cb, std::string const &devname, pthread_t tid)
-    : fd(-1), devname(devname), thread(this), cb(cb) {
+ctapdev::ctapdev(tap_callback &cb, std::string const &devname, uint32_t port_id,
+                 pthread_t tid)
+    : fd(-1), devname(devname), thread(this), cb(cb), port_id(port_id) {
   if (devname.size() > IFNAMSIZ) {
     throw std::length_error("devname.size() > IFNAMSIZ");
   }
@@ -133,7 +134,7 @@ void ctapdev::handle_read_event(rofl::cthread &thread, int fd) {
 
       pkt->unpack(mem.somem(), rc);
 
-      cb.enqueue(this, pkt);
+      cb.enqueue_to_switch(port_id, pkt);
     }
 
   } catch (ePacketPoolExhausted &e) {
