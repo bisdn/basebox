@@ -7,6 +7,7 @@
 
 #include <deque>
 #include <exception>
+#include <mutex>
 
 #include <glog/logging.h>
 #include <netlink/cache.h>
@@ -59,6 +60,9 @@ class cnetlink : public rofl::cthread_env, public rofcore::nbi {
   std::map<enum nl_cache_t, struct nl_cache *> caches;
   std::map<std::string, int> registered_ports;
   std::map<int, int> ifindex_to_registered_port;
+  std::map<int, int> registered_port_to_ifindex;
+  std::deque<std::pair<uint32_t, enum port_status>> port_status_changes;
+  std::mutex pc_mutex;
 
   ofdpa_bridge *bridge;
 
@@ -119,6 +123,8 @@ public:
   void resend_state() noexcept override;
 
   void register_switch(switch_interface *) noexcept override;
+
+  void port_status_changed(uint32_t, enum port_status) noexcept override;
 
   static void nl_cb(struct nl_cache *cache, struct nl_object *obj, int action,
                     void *data);

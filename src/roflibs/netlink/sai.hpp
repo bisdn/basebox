@@ -37,7 +37,13 @@ public:
 
 class nbi {
 public:
+  enum port_status {
+    PORT_STATUS_LOWER_DOWN = 0x01,
+    PORT_STATUS_ADMIN_DOWN = 0x02,
+  };
   virtual void register_switch(switch_interface *) noexcept = 0;
   virtual void resend_state() noexcept = 0;
+  virtual void port_status_changed(uint32_t port,
+                                   enum port_status) noexcept = 0;
 };
 } // namespace rofcore
