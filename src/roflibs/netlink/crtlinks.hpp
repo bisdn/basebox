@@ -9,7 +9,6 @@
 #include <list>
 #include <map>
 
-#include <glog/logging.h>
 #include <roflibs/netlink/crtlink.hpp>
 
 namespace rofcore {

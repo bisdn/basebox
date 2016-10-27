@@ -10,44 +10,36 @@ namespace rofcore {
 tap_manager::~tap_manager() { destroy_tapdevs(); }
 
 void tap_manager::start() {
-  cnetlink::get_instance().start();
   for (auto dev : devs) {
     dev->tap_open();
   }
 }
 
-void tap_manager::stop() { cnetlink::get_instance().stop(); }
-
-std::deque<std::pair<int, std::string>>
-tap_manager::register_tapdevs(std::deque<std::string> &port_names,
-                              tap_callback &cb) {
-  std::deque<std::pair<int, std::string>> r;
+std::map<uint32_t, int> tap_manager::register_tapdevs(
+    std::deque<nbi::port_notification_data> &notifications, tap_callback &cb) {
   int i = 0;
 
-  for (auto &port_name : port_names) {
-    i = create_tapdev(port_name, cb);
+  for (auto &ntfi : notifications) {
+    i = create_tapdev(ntfi.port_id, ntfi.name, cb);
 
     if (i < 0) {
-      destroy_tapdevs();
-      r.clear();
-      break;
-    } else {
-      r.push_back(std::make_pair(i, std::move(port_name)));
+      LOG(FATAL) << __FUNCTION__ << ": failed to create tapdev";
     }
   }
 
-  return r;
+  return port_id_to_tapdev_id;
 }
 
-int tap_manager::create_tapdev(const std::string &port_name, tap_callback &cb) {
+int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
+                               tap_callback &cb) {
   int r;
-  auto it = devname_to_spot.find(port_name);
-  if (it != devname_to_spot.end()) {
+  auto it = port_id_to_tapdev_id.find(port_id);
+  if (it != port_id_to_tapdev_id.end()) {
     r = it->second;
   } else {
     ctapdev *dev;
     try {
-      dev = new ctapdev(cb, port_name);
+      dev = new ctapdev(cb, port_name, port_id);
     } catch (std::exception &e) {
       // TODO log error
       return -EINVAL;
@@ -55,8 +47,8 @@ int tap_manager::create_tapdev(const std::string &port_name, tap_callback &cb) {
     r = devs.size();
     devs.push_back(dev);
 
-    cnetlink::get_instance().register_link(r, port_name);
-    devname_to_spot.insert(std::make_pair(port_name, r));
+    cnetlink::get_instance().register_link(port_id, port_name);
+    port_id_to_tapdev_id.insert(std::make_pair(port_id, r));
   }
   return r;
 }
@@ -66,7 +58,7 @@ void tap_manager::destroy_tapdevs() {
   for (auto &dev : ddevs) {
     delete dev;
   }
-  devname_to_spot.clear();
+  port_id_to_tapdev_id.clear();
 }
 
 } // namespace rofcore

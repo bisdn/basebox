@@ -23,6 +23,7 @@ class ctapdev : public rofl::cthread_env {
   std::string devname;
   rofl::cthread thread;
   tap_callback &cb;
+  uint32_t port_id;
 
   enum ctapdev_timer_t {
     CTAPDEV_TIMER_OPEN_PORT = 1,
@@ -34,7 +35,8 @@ public:
    * @param netdev_owner
    * @param devname
    */
-  ctapdev(tap_callback &cb, std::string const &devname, pthread_t tid = 0);
+  ctapdev(tap_callback &cb, std::string const &devname, uint32_t port_id,
+          pthread_t tid = 0);
 
   /**
    *

@@ -15,6 +15,8 @@ libroflibs_netlink_la_SOURCES = \
 	crtneighs.hpp \
 	ctapdev.cpp \
 	ctapdev.hpp \
+	nbi_impl.cpp \
+	nbi_impl.hpp \
 	nl_obj.cpp \
 	nl_obj.hpp \
 	ofdpa_bridge.cpp \
