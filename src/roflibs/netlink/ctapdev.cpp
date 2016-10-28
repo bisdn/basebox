@@ -35,27 +35,24 @@ void ctapdev::tap_open() {
   int rc;
 
   if (fd != -1) {
+    VLOG(1) << __FUNCTION__ << ": tapdev " << devname
+            << " is alredy open using fd=" << fd;
     return;
   }
 
   if ((fd = open("/dev/net/tun", O_RDWR)) < 0) {
-    assert(0 && "CRITICAL: could not open /dev/net/tun");
+    LOG(FATAL) << __FUNCTION__
+               << ": could not open /dev/net/tun (module loaded?)";
   }
 
   memset(&ifr, 0, sizeof(ifr));
-
-  /* Flags: IFF_TUN   - TUN device (no Ethernet headers)
-   *        IFF_TAP   - TAP device
-   *
-   *        IFF_NO_PI - Do not provide packet information
-   */
   ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
   strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
 
   if ((rc = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0) {
     close(fd);
     fd = -1;
-    assert(0 && "CRITICAL: ioctl TUNSETIFF failed");
+    LOG(FATAL) << __FUNCTION__ << ": ioctl TUNSETIFF failed on fd=" << fd;
   }
 
   thread.add_read_fd(fd);

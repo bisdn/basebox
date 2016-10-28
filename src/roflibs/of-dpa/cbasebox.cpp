@@ -162,27 +162,38 @@ void cbasebox::handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
           << " pkt received: " << std::endl
           << msg;
 
+  std::deque<nbi::port_notification_data> ntfys;
+  uint32_t port_no = msg.get_port().get_port_no();
+
+  enum nbi::port_status status = (nbi::port_status)0;
+  if (msg.get_port().get_config() & rofl::openflow13::OFPPC_PORT_DOWN) {
+    status = (nbi::port_status)(status | nbi::PORT_STATUS_ADMIN_DOWN);
+  }
+
+  if (msg.get_port().get_state() & rofl::openflow13::OFPPS_LINK_DOWN) {
+    status = (nbi::port_status)(status | nbi::PORT_STATUS_LOWER_DOWN);
+  }
+
   switch (msg.get_reason()) {
   case rofl::openflow::OFPPR_MODIFY: {
-    enum nbi::port_status status = (nbi::port_status)0;
-    if (msg.get_port().get_config() & rofl::openflow13::OFPPC_PORT_DOWN) {
-      status = (nbi::port_status)(status | nbi::PORT_STATUS_ADMIN_DOWN);
-    }
-
-    if (msg.get_port().get_state() & rofl::openflow13::OFPPS_LINK_DOWN) {
-      status = (nbi::port_status)(status | nbi::PORT_STATUS_LOWER_DOWN);
-    }
 
     try {
-      this->nbi->port_status_changed(msg.get_port().get_port_no(), status);
+      this->nbi->port_status_changed(port_no, status);
     } catch (std::out_of_range &e) {
-      LOG(WARNING) << __FUNCTION__ << ": unknown port with OF portno="
-                   << msg.get_port().get_port_no();
+      LOG(WARNING) << __FUNCTION__
+                   << ": unknown port with OF portno=" << port_no;
     }
   } break;
   case rofl::openflow::OFPPR_ADD:
+    ntfys.emplace_back(nbi::port_notification_data{nbi::PORT_EVENT_ADD, port_no,
+                                                   msg.get_port().get_name()});
+    this->nbi->port_notification(ntfys);
+    this->nbi->port_status_changed(port_no, status);
+    break;
   case rofl::openflow::OFPPR_DELETE:
-    LOG(WARNING) << __FUNCTION__ << ": not implemented";
+    ntfys.emplace_back(nbi::port_notification_data{nbi::PORT_EVENT_DEL, port_no,
+                                                   msg.get_port().get_name()});
+    this->nbi->port_notification(ntfys);
     break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": invalid port status";
@@ -212,15 +223,30 @@ void cbasebox::handle_port_desc_stats_reply(
   using rofl::openflow::cofport;
 
   std::deque<struct nbi::port_notification_data> notifications;
+  std::deque<std::pair<uint32_t, enum nbi::port_status>> stats;
   for (auto i : msg.get_ports().keys()) {
     const cofport &port = msg.get_ports().get_port(i);
     notifications.emplace_back(nbi::port_notification_data{
         nbi::PORT_EVENT_ADD, port.get_port_no(), port.get_name()});
+
+    enum nbi::port_status status = (nbi::port_status)0;
+    if (port.get_config() & rofl::openflow13::OFPPC_PORT_DOWN) {
+      status = (nbi::port_status)(status | nbi::PORT_STATUS_ADMIN_DOWN);
+    }
+
+    if (port.get_state() & rofl::openflow13::OFPPS_LINK_DOWN) {
+      status = (nbi::port_status)(status | nbi::PORT_STATUS_LOWER_DOWN);
+    }
+    stats.emplace_back(port.get_port_no(), status);
   }
 
   /* init 1:1 port mapping */
   try {
     this->nbi->port_notification(notifications);
+
+    for(auto status : stats) {
+      this->nbi->port_status_changed(status.first, status.second);
+    }
     LOG(INFO) << "ports initialized";
 
   } catch (std::exception &e) {

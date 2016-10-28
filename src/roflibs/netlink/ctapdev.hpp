@@ -13,10 +13,13 @@
 
 namespace rofcore {
 
-class tap_callback;
+class tap_callback {
+public:
+  //  virtual ~tap_callback(){};
+  virtual int enqueue_to_switch(uint32_t port_id, rofl::cpacket *) = 0;
+};
 
 class ctapdev : public rofl::cthread_env {
-
   int fd;                                 // tap device file descriptor
   std::deque<rofl::cpacket *> pout_queue; // queue of outgoing packets
   mutable rofl::crwlock pout_queue_rwlock;

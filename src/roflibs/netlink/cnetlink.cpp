@@ -135,7 +135,19 @@ cnetlink &cnetlink::get_instance() {
 }
 
 void cnetlink::register_link(uint32_t id, std::string port_name) {
-  registered_ports.insert(std::make_pair(port_name, id));
+  {
+    std::lock_guard<std::mutex> lock(rp_mutex);
+    registered_ports.insert(std::make_pair(port_name, id));
+  }
+  start();
+}
+
+void cnetlink::unregister_link(uint32_t id, std::string port_name) {
+  {
+    std::lock_guard<std::mutex> lock(rp_mutex);
+    registered_ports.erase(port_name);
+  }
+  start();
 }
 
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
@@ -158,14 +170,12 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     nl_objs.pop_front();
   }
 
-  std::deque<std::pair<uint32_t, enum nbi::port_status>> _pc_changes;
+  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_changes;
+  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_back;
 
   {
     std::lock_guard<std::mutex> scoped_lock(pc_mutex);
-    std::copy(make_move_iterator(port_status_changes.begin()),
-              make_move_iterator(port_status_changes.end()),
-              std::back_inserter(_pc_changes));
-    port_status_changes.clear();
+    _pc_changes.swap(port_status_changes);
   }
 
   for (auto change : _pc_changes) {
@@ -174,11 +184,24 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
 
     // get ifindex
     try {
-      ifindex = registered_port_to_ifindex.at(change.first);
+      ifindex = get_ifindex(std::get<0>(change));
     } catch (std::out_of_range &e) {
-      LOG(ERROR) << __FUNCTION__ << ": out_of_range";
+      // XXX not yet registered push back, this should be done async
+      int n_retries = std::get<2>(change);
+      if (n_retries < 10) {
+        std::get<2>(change) = ++n_retries;
+        _pc_back.push_back(change);
+      } else {
+        LOG(ERROR) << __FUNCTION__
+                   << ": no ifindex of port_id=" << std::get<0>(change)
+                   << " found";
+      }
       continue;
     }
+
+    VLOG(1) << __FUNCTION__ << ": update link with ifindex=" << ifindex
+            << " port_id=" << std::get<0>(change) << " status=" << std::hex
+            << std::get<1>(change) << std::dec << ") ";
 
     // lookup link
     link = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
@@ -195,17 +218,9 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     }
 
     int flags = rtnl_link_get_flags(link);
-
-    // check running state change
-    if (!((flags & IFF_RUNNING) &&
-          !(change.second & nbi::PORT_STATUS_LOWER_DOWN))) {
-      // changed
-      // XXX needs implementation in tap manager
-    }
-
     // check admin state change
-    if (!((flags & IFF_UP) && !(change.second & nbi::PORT_STATUS_ADMIN_DOWN))) {
-      if (change.second & nbi::PORT_STATUS_ADMIN_DOWN) {
+    if (!((flags & IFF_UP) && !(std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN))) {
+      if (std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN) {
         rtnl_link_unset_flags(lchange, IFF_UP);
         LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
                   << " was enabled";
@@ -221,6 +236,14 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
       LOG(ERROR) << __FUNCTION__ << ": Unable to change link, "
                  << nl_geterror(rv);
     }
+  }
+
+  {
+    std::lock_guard<std::mutex> scoped_lock(pc_mutex);
+    std::copy(make_move_iterator(_pc_back.begin()),
+              make_move_iterator(_pc_back.end()),
+              std::back_inserter(port_status_changes));
+    this->thread.wakeup();
   }
 
   if (nl_objs.size()) {
@@ -286,7 +309,8 @@ void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id,
   } break;
   case NL_TIMER_RESEND_STATE:
     for (const auto &i : rtlinks.keys()) {
-      link_created(rtlinks.get_link(i));
+      const crtlink &link = rtlinks.get_link(i);
+      link_created(link, get_port_id(link.get_ifindex()));
     }
 
     for (const auto &i : neighs_ll) {
@@ -319,9 +343,11 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
   if (s1 == ifindex_to_registered_port.end()) {
     // try search using name
     char *portname = rtnl_link_get_name((struct rtnl_link *)obj.get_obj());
+    std::lock_guard<std::mutex> lock(rp_mutex);
     auto s2 = registered_ports.find(std::string(portname));
     if (s2 == registered_ports.end()) {
       // not a registered port
+      LOG(INFO) << __FUNCTION__ << ": port " << portname << " not registered";
       return;
     } else {
       auto r1 = ifindex_to_registered_port.insert(
@@ -339,6 +365,8 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
         LOG(FATAL) << __FUNCTION__
                    << ": insertion to registered_port_to_ifindex failed";
       }
+      VLOG(1) << __FUNCTION__ << ": port " << portname
+              << " registered, storted ifindex=" << ifindex;
     }
   }
 
@@ -354,13 +382,13 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
         LOG(INFO) << "link new (bridge "
                   << ((0 == rtlink.get_master()) ? "master" : "slave")
                   << "): " << get_links().get_link(ifindex).str();
-        link_created(rtlink);
+        link_created(rtlink, s1->second);
 
         break;
       default:
         set_links().add_link(rtlink);
         LOG(INFO) << "link new: " << get_links().get_link(ifindex).str();
-        link_created(rtlink);
+        link_created(rtlink, s1->second);
         break;
       }
     } break;
@@ -372,16 +400,17 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
         break;
       // fallthrough
       default:
-        link_updated(rtlink);
+        link_updated(rtlink, s1->second);
         set_links().set_link(rtlink);
         break;
       }
     } break;
     case NL_ACT_DEL: {
-      // xxx check if this has to be handled like new
-      link_deleted(rtlink);
+      // XXX check if this has to be handled like new
+      link_deleted(rtlink, s1->second);
       LOG(INFO) << "link deleted: " << get_links().get_link(ifindex).str();
       set_links().drop_link(ifindex);
+      ifindex_to_registered_port.erase(ifindex);
     } break;
     default: { LOG(WARNING) << "route/link: unknown NL action"; }
     }
@@ -559,7 +588,7 @@ void cnetlink::drop_neigh_ll(int ifindex, uint16_t vlan,
   rtnl_neigh_put(neigh);
 }
 
-void cnetlink::link_created(const crtlink &rtl) noexcept {
+void cnetlink::link_created(const crtlink &rtl, uint32_t port_id) noexcept {
   try {
     if (AF_BRIDGE == rtl.get_family()) {
 
@@ -575,8 +604,7 @@ void cnetlink::link_created(const crtlink &rtl) noexcept {
           bridge->set_bridge_interface(get_links().get_link(rtl.get_master()));
         }
 
-        bridge->add_interface(ifindex_to_registered_port.at(rtl.get_ifindex()),
-                              rtl);
+        bridge->add_interface(port_id, rtl);
       } else {
         // bridge (master)
         LOG(INFO) << __FUNCTION__ << ": is new bridge";
@@ -587,7 +615,7 @@ void cnetlink::link_created(const crtlink &rtl) noexcept {
   }
 }
 
-void cnetlink::link_updated(const crtlink &newlink) noexcept {
+void cnetlink::link_updated(const crtlink &newlink, uint32_t port_id) noexcept {
   try {
     const crtlink &oldlink = get_links().get_link(newlink.get_ifindex());
     VLOG(1) << __FUNCTION__ << ":" << std::endl
@@ -596,9 +624,7 @@ void cnetlink::link_updated(const crtlink &newlink) noexcept {
             << newlink;
 
     if (nullptr != bridge) {
-      bridge->update_interface(
-          ifindex_to_registered_port.at(newlink.get_ifindex()), oldlink,
-          newlink);
+      bridge->update_interface(port_id, oldlink, newlink);
 
       LOG(INFO) << __FUNCTION__ << "(): " << newlink.str();
     }
@@ -607,10 +633,9 @@ void cnetlink::link_updated(const crtlink &newlink) noexcept {
   }
 }
 
-void cnetlink::link_deleted(const crtlink &rtl) noexcept {
+void cnetlink::link_deleted(const crtlink &rtl, uint32_t port_id) noexcept {
   try {
-    bridge->delete_interface(ifindex_to_registered_port.at(rtl.get_ifindex()),
-                             rtl);
+    bridge->delete_interface(port_id, rtl);
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << " failed: " << e.what();
   }
@@ -702,7 +727,7 @@ void cnetlink::register_switch(switch_interface *swi) noexcept {
 void cnetlink::port_status_changed(uint32_t port_no,
                                    enum nbi::port_status ps) noexcept {
   try {
-    auto pps = std::make_pair(port_no, ps);
+    auto pps = std::make_tuple(port_no, ps, 0);
     std::lock_guard<std::mutex> scoped_lock(pc_mutex);
     port_status_changes.push_back(pps);
   } catch (std::exception &e) {
