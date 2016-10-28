@@ -25,26 +25,21 @@ void nbi_impl::register_switch(switch_interface *swi) noexcept {
 
 void nbi_impl::port_notification(
     std::deque<port_notification_data> &notifications) noexcept {
-  std::deque<port_notification_data> add;
-  std::deque<port_notification_data> del;
 
   for (auto &&ntfy : notifications) {
     switch (ntfy.ev) {
     case PORT_EVENT_ADD:
-      add.push_back(ntfy);
+      cnetlink::get_instance().register_link(ntfy.port_id, ntfy.name);
+      tap_man->create_tapdev(ntfy.port_id, ntfy.name, *this);
       break;
     case PORT_EVENT_DEL:
-      del.push_back(ntfy);
+      tap_man->destroy_tapdev(ntfy.port_id, ntfy.name);
+      cnetlink::get_instance().unregister_link(ntfy.port_id, ntfy.name);
       break;
     default:
       break;
     }
   }
-
-  // XXX del not implemented
-  tap_man->register_tapdevs(add, *this);
-  cnetlink::get_instance().start();
-  tap_man->start();
 }
 
 void nbi_impl::port_status_changed(uint32_t port_no,
@@ -60,7 +55,7 @@ int nbi_impl::enqueue_to_switch(uint32_t port_id, rofl::cpacket *packet) {
 
 int nbi_impl::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
   try {
-    tap_man->get_dev(tap_man->get_tapdev_id(port_id)).enqueue(pkt);
+    tap_man->get_dev(port_id)->enqueue(pkt);
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << ": failed to enqueue packet: " << e.what();
   }

@@ -8,6 +8,7 @@
 #include <deque>
 #include <exception>
 #include <mutex>
+#include <tuple>
 
 #include <netlink/cache.h>
 #include <netlink/object.h>
@@ -58,9 +59,10 @@ class cnetlink : public rofl::cthread_env {
   struct nl_cache_mngr *mngr;
   std::map<enum nl_cache_t, struct nl_cache *> caches;
   std::map<std::string, uint32_t> registered_ports;
+  std::mutex rp_mutex;
   std::map<int, uint32_t> ifindex_to_registered_port;
   std::map<uint32_t, int> registered_port_to_ifindex;
-  std::deque<std::pair<uint32_t, enum nbi::port_status>> port_status_changes;
+  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> port_status_changes;
   std::mutex pc_mutex;
 
   ofdpa_bridge *bridge;
@@ -103,14 +105,22 @@ class cnetlink : public rofl::cthread_env {
 
   void set_neigh_timeout();
 
-  void link_created(const crtlink &link) noexcept;
-  void link_updated(const crtlink &link) noexcept;
-  void link_deleted(const crtlink &link) noexcept;
+  void link_created(const crtlink &link, uint32_t port_id) noexcept;
+  void link_updated(const crtlink &link, uint32_t port_id) noexcept;
+  void link_deleted(const crtlink &link, uint32_t port_id) noexcept;
   void neigh_ll_created(unsigned int ifindex, const crtneigh &neigh) noexcept;
 
   void neigh_ll_updated(unsigned int ifindex, const crtneigh &neigh) noexcept;
 
   void neigh_ll_deleted(unsigned int ifindex, const crtneigh &neigh) noexcept;
+
+  uint32_t get_port_id(int ifindex) {
+    return ifindex_to_registered_port.at(ifindex);
+  }
+
+  int get_ifindex(uint32_t port_id) {
+    return registered_port_to_ifindex.at(port_id);
+  }
 
 public:
   friend std::ostream &operator<<(std::ostream &os, const cnetlink &netlink) {
@@ -125,12 +135,6 @@ public:
 
   void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
 
-#if 0
-  int enqueue(int port_id, rofl::cpacket *pkt) noexcept {
-    return 0;
-  } // XXX FIXME this has to be moved
-#endif
-
   static void nl_cb(struct nl_cache *cache, struct nl_object *obj, int action,
                     void *data);
 
@@ -142,7 +146,11 @@ public:
 
   void register_link(uint32_t, std::string);
 
+  void unregister_link(uint32_t id, std::string port_name);
+
   void start() {
+    if (running)
+      return;
     running = true;
     thread.wakeup();
   }
