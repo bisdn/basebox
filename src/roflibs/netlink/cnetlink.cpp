@@ -347,7 +347,8 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
     auto s2 = registered_ports.find(std::string(portname));
     if (s2 == registered_ports.end()) {
       // not a registered port
-      LOG(INFO) << __FUNCTION__ << ": port " << portname << " not registered";
+      LOG(INFO) << __FUNCTION__ << ": port " << portname
+                << " having ifindex=" << ifindex << " not registered";
       return;
     } else {
       auto r1 = ifindex_to_registered_port.insert(
@@ -410,7 +411,9 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
       link_deleted(rtlink, s1->second);
       LOG(INFO) << "link deleted: " << get_links().get_link(ifindex).str();
       set_links().drop_link(ifindex);
+      uint32_t port_id = get_port_id(ifindex);
       ifindex_to_registered_port.erase(ifindex);
+      registered_port_to_ifindex.erase(port_id);
     } break;
     default: { LOG(WARNING) << "route/link: unknown NL action"; }
     }
@@ -688,6 +691,11 @@ void cnetlink::neigh_ll_updated(unsigned int ifindex,
 void cnetlink::neigh_ll_deleted(unsigned int ifindex,
                                 const crtneigh &rtn) noexcept {
   try {
+    auto i2r = ifindex_to_registered_port.find(ifindex);
+    if (i2r == ifindex_to_registered_port.end()) {
+      VLOG(2) << __FUNCTION__ << ": port with ifindex=" << ifindex;
+    }
+
     const crtlink &rtl = get_links().get_link(ifindex);
 
     LOG(INFO) << __FUNCTION__ << ": " << rtn;
@@ -698,8 +706,8 @@ void cnetlink::neigh_ll_deleted(unsigned int ifindex,
           LOG(INFO) << __FUNCTION__ << ": ignore master lladdr";
           return;
         }
-        auto port = ifindex_to_registered_port.at(rtl.get_ifindex());
-        bridge->remove_mac_from_fdb(port, rtn.get_vlan(), rtn.get_lladdr());
+        bridge->remove_mac_from_fdb(i2r->second, rtn.get_vlan(),
+                                    rtn.get_lladdr());
       } catch (std::out_of_range &e) {
         LOG(ERROR) << __FUNCTION__ << ": port " << rtl
                    << " not in ifindex_to_registered_port: " << e.what();
