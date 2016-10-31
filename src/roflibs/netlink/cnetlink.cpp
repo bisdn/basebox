@@ -27,6 +27,7 @@ cnetlink::cnetlink(switch_interface *swi)
 }
 
 cnetlink::~cnetlink() {
+  thread.stop();
   delete bridge;
   destroy_caches();
   nl_socket_free(sock);
@@ -147,7 +148,7 @@ void cnetlink::unregister_link(uint32_t id, std::string port_name) {
     std::lock_guard<std::mutex> lock(rp_mutex);
     registered_ports.erase(port_name);
   }
-  start();
+  thread.wakeup();
 }
 
 void cnetlink::handle_wakeup(rofl::cthread &thread) {

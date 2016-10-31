@@ -18,8 +18,6 @@ struct vlan_hdr {
   uint16_t vlan;     // ethernet type
 } __attribute__((packed));
 
-/*static*/ bool cbasebox::keep_on_running = true;
-
 void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
 
   if (rofl::openflow13::OFP_VERSION < dpt.get_version()) {

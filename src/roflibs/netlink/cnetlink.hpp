@@ -156,7 +156,10 @@ public:
     thread.wakeup();
   }
 
-  void stop() { running = false; }
+  void stop() {
+    running = false;
+    thread.wakeup();
+  }
 
   void add_neigh_ll(int ifindex, uint16_t vlan, const rofl::caddress_ll &addr);
 
