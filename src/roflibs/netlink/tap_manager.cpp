@@ -23,6 +23,9 @@ int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
       LOG(ERROR) << __FUNCTION__ << ": failed to create tapdev " << port_name;
       r = -EINVAL;
     }
+  } else {
+    LOG(INFO) << __FUNCTION__ << ": " << port_name
+              << " with port_id=" << port_id << " already existing";
   }
   return r;
 }
@@ -34,8 +37,9 @@ int tap_manager::destroy_tapdev(uint32_t port_id,
     return 0;
   }
 
-  delete it->second;
+  auto dev = it->second;
   devs.erase(it);
+  delete dev;
 
   return 0;
 }

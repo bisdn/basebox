@@ -33,8 +33,8 @@ void nbi_impl::port_notification(
       tap_man->create_tapdev(ntfy.port_id, ntfy.name, *this);
       break;
     case PORT_EVENT_DEL:
-      tap_man->destroy_tapdev(ntfy.port_id, ntfy.name);
       cnetlink::get_instance().unregister_link(ntfy.port_id, ntfy.name);
+      tap_man->destroy_tapdev(ntfy.port_id, ntfy.name);
       break;
     default:
       break;
