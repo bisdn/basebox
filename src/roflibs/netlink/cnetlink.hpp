@@ -133,6 +133,7 @@ public:
   void resend_state() noexcept;
 
   void register_switch(switch_interface *) noexcept;
+  void unregister_switch(switch_interface *) noexcept;
 
   void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
 

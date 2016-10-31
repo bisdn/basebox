@@ -14,9 +14,7 @@ nbi_impl::nbi_impl() : tap_man(new tap_manager()) {
   (void)nl;
 }
 
-nbi_impl::~nbi_impl() {
-  cnetlink::get_instance().stop();
-}
+nbi_impl::~nbi_impl() { cnetlink::get_instance().stop(); }
 
 void nbi_impl::resend_state() noexcept {
   cnetlink::get_instance().resend_state();

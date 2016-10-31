@@ -10,6 +10,7 @@
 
 #include <exception>
 #include <iostream>
+#include <mutex>
 #include <set>
 #include <string>
 
@@ -168,6 +169,7 @@ private:
   rofl::cdptid dptid;
   rofl::rofl_ofdpa_fm_driver fm_driver;
   std::map<uint16_t, std::set<uint32_t>> l2_domain;
+  std::mutex conn_mutex;
 
   /* OF handler */
   void handle_srcmac_table(rofl::crofdpt &dpt,

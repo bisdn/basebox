@@ -148,7 +148,6 @@ void cnetlink::unregister_link(uint32_t id, std::string port_name) {
     std::lock_guard<std::mutex> lock(rp_mutex);
     registered_ports.erase(port_name);
   }
-  thread.wakeup();
 }
 
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
@@ -734,6 +733,11 @@ void cnetlink::resend_state() noexcept {
 void cnetlink::register_switch(switch_interface *swi) noexcept {
   assert(swi);
   this->swi = swi;
+}
+
+void cnetlink::unregister_switch(switch_interface *swi) noexcept {
+  // TODO we should remove the swi here
+  stop();
 }
 
 void cnetlink::port_status_changed(uint32_t port_no,
