@@ -45,7 +45,7 @@ int tap_manager::destroy_tapdev(uint32_t port_id,
 }
 
 void tap_manager::destroy_tapdevs() {
-  std::map<uint32_t, ctapdev*> ddevs;
+  std::map<uint32_t, ctapdev *> ddevs;
   ddevs.swap(devs);
   for (auto &dev : ddevs) {
     delete dev.second;

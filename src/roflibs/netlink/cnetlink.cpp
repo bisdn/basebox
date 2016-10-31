@@ -219,7 +219,8 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
 
     int flags = rtnl_link_get_flags(link);
     // check admin state change
-    if (!((flags & IFF_UP) && !(std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN))) {
+    if (!((flags & IFF_UP) &&
+          !(std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN))) {
       if (std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN) {
         rtnl_link_unset_flags(lchange, IFF_UP);
         LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)

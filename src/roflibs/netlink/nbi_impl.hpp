@@ -22,7 +22,8 @@ public:
   // nbi
   void register_switch(switch_interface *) noexcept override;
   void resend_state() noexcept override;
-  void port_notification(std::deque<port_notification_data>&) noexcept override;
+  void
+  port_notification(std::deque<port_notification_data> &) noexcept override;
   void port_status_changed(uint32_t port, enum port_status) noexcept override;
   int enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept override;
 

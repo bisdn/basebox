@@ -57,7 +57,7 @@ public:
   virtual void register_switch(switch_interface *) noexcept = 0;
   virtual void resend_state() noexcept = 0;
   virtual void
-      port_notification(std::deque<port_notification_data>&) noexcept = 0;
+  port_notification(std::deque<port_notification_data> &) noexcept = 0;
   virtual void port_status_changed(uint32_t port,
                                    enum port_status) noexcept = 0;
   virtual int enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept = 0;

@@ -62,7 +62,8 @@ class cnetlink : public rofl::cthread_env {
   std::mutex rp_mutex;
   std::map<int, uint32_t> ifindex_to_registered_port;
   std::map<uint32_t, int> registered_port_to_ifindex;
-  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> port_status_changes;
+  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>>
+      port_status_changes;
   std::mutex pc_mutex;
 
   ofdpa_bridge *bridge;

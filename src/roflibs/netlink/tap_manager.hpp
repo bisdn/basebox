@@ -35,7 +35,7 @@ private:
   tap_manager(const tap_manager &other) = delete; // non construction-copyable
   tap_manager &operator=(const tap_manager &) = delete; // non copyable
 
-  std::map<uint32_t, ctapdev*> devs;
+  std::map<uint32_t, ctapdev *> devs;
 };
 
 } // namespace rofcore

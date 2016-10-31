@@ -244,7 +244,7 @@ void cbasebox::handle_port_desc_stats_reply(
   try {
     this->nbi->port_notification(notifications);
 
-    for(auto status : stats) {
+    for (auto status : stats) {
       this->nbi->port_status_changed(status.first, status.second);
     }
     LOG(INFO) << "ports initialized";
@@ -409,7 +409,7 @@ int cbasebox::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
       rv = -ENOTCONN;
       goto errout;
     }
-    
+
     /* only send packet-out if the port with port_id is actually existing */
     if (dpt.get_ports().has_port(port_id)) {
       VLOG(1) << __FUNCTION__ << ": send pkt-out, pkt:" << std::endl << *pkt;
@@ -425,7 +425,8 @@ int cbasebox::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
           rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()),
           actions, pkt->soframe(), pkt->length());
     } else {
-      LOG(ERROR) << __FUNCTION__ << ": packet sent to invalid port_id " << port_id;
+      LOG(ERROR) << __FUNCTION__ << ": packet sent to invalid port_id "
+                 << port_id;
     }
   } catch (rofl::eRofDptNotFound &e) {
     LOG(ERROR) << __FUNCTION__
