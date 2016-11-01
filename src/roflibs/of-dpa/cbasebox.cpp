@@ -20,6 +20,8 @@ struct vlan_hdr {
 
 void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
 
+  std::lock_guard<std::mutex> lock(conn_mutex);
+
   if (rofl::openflow13::OFP_VERSION < dpt.get_version()) {
     LOG(ERROR) << __FUNCTION__ << "] datapath "
                << "attached with invalid OpenFlow protocol version: "
@@ -54,7 +56,37 @@ void cbasebox::handle_wakeup(rofl::cthread &thread) {
 }
 
 void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
-  LOG(INFO) << __FUNCTION__ << "] dptid: " << dptid.str();
+  using rofcore::nbi;
+
+  std::lock_guard<std::mutex> lock(conn_mutex);
+
+  VLOG(1) << __FUNCTION__ << ": dptid=0x" << std::hex << dptid.get_dptid()
+          << std::dec;
+
+  VLOG(1) << __FUNCTION__ << ": this->dptid=0x" << std::hex
+          << this->dptid.get_dptid() << std::dec;
+
+  std::deque<nbi::port_notification_data> ntfys;
+  try {
+    // TODO check this->dptid and dptid?
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    for (auto &id : dpt.get_ports().keys()) {
+      auto &port = dpt.get_ports().get_port(id);
+      ntfys.emplace_back(nbi::port_notification_data{
+          nbi::PORT_EVENT_DEL, port.get_port_no(), port.get_name()});
+    }
+
+    this->nbi->port_notification(ntfys);
+
+  } catch (rofl::eRofDptNotFound &e) {
+    LOG(ERROR) << __FUNCTION__
+               << ": no data path attached, dropping outgoing packet";
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << __FUNCTION__ << ": " << e.what();
+  } catch (rofl::openflow::ePortsNotFound &e) {
+    LOG(ERROR) << __FUNCTION__ << ": invalid port for packet out";
+  }
 }
 
 void cbasebox::handle_conn_terminated(rofl::crofdpt &dpt,
@@ -451,7 +483,13 @@ int cbasebox::l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     fm_driver.remove_bridging_unicast_vlan_all(dpt, port, vid);
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
@@ -465,7 +503,13 @@ int cbasebox::l2_addr_add(uint32_t port, uint16_t vid,
     // XXX have the knowlege here about filtered/unfiltered?
     fm_driver.add_bridging_unicast_vlan(dpt, port, vid, mac, true, filtered);
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
@@ -478,7 +522,13 @@ int cbasebox::l2_addr_remove(uint32_t port, uint16_t vid,
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     fm_driver.remove_bridging_unicast_vlan(dpt, port, vid, mac);
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
@@ -490,7 +540,13 @@ int cbasebox::ingress_port_vlan_accept_all(uint32_t port) noexcept {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     fm_driver.enable_port_vid_allow_all(dpt, port);
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
@@ -502,7 +558,13 @@ int cbasebox::ingress_port_vlan_drop_accept_all(uint32_t port) noexcept {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     fm_driver.disable_port_vid_allow_all(dpt, port);
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
@@ -519,7 +581,13 @@ int cbasebox::ingress_port_vlan_add(uint32_t port, uint16_t vid,
       fm_driver.enable_port_vid_ingress(dpt, port, vid);
     }
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
@@ -536,7 +604,13 @@ int cbasebox::ingress_port_vlan_remove(uint32_t port, uint16_t vid,
       fm_driver.disable_port_vid_ingress(dpt, port, vid);
     }
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
@@ -548,7 +622,13 @@ int cbasebox::egress_port_vlan_accept_all(uint32_t port) noexcept {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     fm_driver.enable_group_l2_unfiltered_interface(dpt, port);
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
@@ -560,7 +640,13 @@ int cbasebox::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     fm_driver.disable_group_l2_unfiltered_interface(dpt, port);
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
@@ -589,7 +675,13 @@ int cbasebox::egress_port_vlan_add(uint32_t port, uint16_t vid,
     fm_driver.add_bridging_dlf_vlan(dpt, vid, group_id);
     dpt.send_barrier_request(rofl::cauxid(0));
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
@@ -620,7 +712,13 @@ int cbasebox::egress_port_vlan_remove(uint32_t port, uint16_t vid,
     // remove filtered egress interface
     fm_driver.disable_group_l2_interface(dpt, port, vid);
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
@@ -634,7 +732,13 @@ int cbasebox::subscribe_to(enum swi_flags flags) noexcept {
       fm_driver.enable_policy_arp(dpt, 0, -1);
     }
   } catch (rofl::eRofBaseNotFound &e) {
-    // TODO log error
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
   return rv;
