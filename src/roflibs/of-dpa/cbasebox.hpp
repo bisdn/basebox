@@ -41,7 +41,6 @@ class cbasebox : public rofl::crofbase,
                        ///(OUI)
   };
 
-  static bool keep_on_running;
   rofcore::nbi *nbi;
 
   cbasebox(const cbasebox &) = delete;
@@ -57,10 +56,6 @@ public:
   }
 
   ~cbasebox() override {}
-
-  static bool running() { return keep_on_running; }
-
-  static void stop() { keep_on_running = false; }
 
 protected:
   void handle_wakeup(rofl::cthread &thread) override;

@@ -17,7 +17,7 @@ class nbi_impl : public nbi, public tap_callback {
 
 public:
   nbi_impl();
-  virtual ~nbi_impl(){};
+  virtual ~nbi_impl();
 
   // nbi
   void register_switch(switch_interface *) noexcept override;
