@@ -639,7 +639,9 @@ void cnetlink::link_updated(const crtlink &newlink, uint32_t port_id) noexcept {
 
 void cnetlink::link_deleted(const crtlink &rtl, uint32_t port_id) noexcept {
   try {
-    bridge->delete_interface(port_id, rtl);
+    if (bridge != nullptr) {
+      bridge->delete_interface(port_id, rtl);
+    }
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << " failed: " << e.what();
   }
