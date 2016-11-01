@@ -152,6 +152,8 @@ void cnetlink::unregister_link(uint32_t id, std::string port_name) {
 }
 
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
+  bool do_wakeup = false;
+
   // loop through nl_objs
   for (int cnt = 0; cnt < 10 && nl_objs.size() && running;
        cnt++) { // TODO cnt_max as member
@@ -240,15 +242,15 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     }
   }
 
-  {
+  if (_pc_back.size()) {
     std::lock_guard<std::mutex> scoped_lock(pc_mutex);
     std::copy(make_move_iterator(_pc_back.begin()),
               make_move_iterator(_pc_back.end()),
               std::back_inserter(port_status_changes));
-    this->thread.wakeup();
+    do_wakeup = true;
   }
 
-  if (nl_objs.size()) {
+  if (do_wakeup || nl_objs.size()) {
     this->thread.wakeup();
   }
 }
