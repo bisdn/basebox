@@ -87,7 +87,7 @@ PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.7,
 	LIBS="$LIBS $ROFL_OFDPA_LIBS" ],
   [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.7]) ])
 
-AC_CHECK_LIB([gflags], [main], [GFLAGS_LIBS="-lgflags"],
+AC_CHECK_LIB([gflags], [getenv], [GFLAGS_LIBS="-lgflags"],
   AC_MSG_ERROR([libgflags not found]) )
 
 PKG_CHECK_MODULES([GLOG], libglog >= 0.3.3,
