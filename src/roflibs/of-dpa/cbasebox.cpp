@@ -21,10 +21,14 @@ struct vlan_hdr {
 void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
 
   std::lock_guard<std::mutex> lock(conn_mutex);
+  this->dptid = dpt.get_dptid();
 
-  if (rofl::openflow13::OFP_VERSION < dpt.get_version()) {
-    LOG(ERROR) << __FUNCTION__ << "] datapath "
-               << "attached with invalid OpenFlow protocol version: "
+  LOG(INFO) << __FUNCTION__ << ": opening connection to dptid=0x" << std::hex
+            << dptid.get_dptid() << std::dec;
+
+  if (rofl::openflow13::OFP_VERSION != dpt.get_version()) {
+    LOG(ERROR) << __FUNCTION__
+               << ": datapath attached with invalid OpenFlow protocol version: "
                << (int)dpt.get_version();
     return;
   }
@@ -41,18 +45,13 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
       .set_max_entries(16);
 #endif
 
-  VLOG(1) << __FUNCTION__ << "] dpid: " << dpt.get_dpid().str()
-          << " dpt: " << dpt;
-
   dpt.send_features_request(rofl::cauxid(0));
   dpt.send_desc_stats_request(rofl::cauxid(0), 0);
   dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
-
-  // todo timeout?
 }
 
 void cbasebox::handle_wakeup(rofl::cthread &thread) {
-  LOG(WARNING) << __FUNCTION__ << "] XXX not implemented";
+  LOG(ERROR) << __FUNCTION__ << ": unexpected wakeup";
 }
 
 void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
@@ -60,11 +59,8 @@ void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
 
   std::lock_guard<std::mutex> lock(conn_mutex);
 
-  VLOG(1) << __FUNCTION__ << ": dptid=0x" << std::hex << dptid.get_dptid()
-          << std::dec;
-
-  VLOG(1) << __FUNCTION__ << ": this->dptid=0x" << std::hex
-          << this->dptid.get_dptid() << std::dec;
+  LOG(INFO) << __FUNCTION__ << ": closing connection to dptid=0x" << std::hex
+            << dptid.get_dptid() << std::dec;
 
   std::deque<nbi::port_notification_data> ntfys;
   try {
@@ -87,6 +83,8 @@ void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
   } catch (rofl::openflow::ePortsNotFound &e) {
     LOG(ERROR) << __FUNCTION__ << ": invalid port for packet out";
   }
+
+  this->dptid = rofl::cdptid(0);
 }
 
 void cbasebox::handle_conn_terminated(rofl::crofdpt &dpt,
@@ -137,8 +135,6 @@ void cbasebox::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
           << " pkt received: " << std::endl
           << msg;
-
-  VLOG(1) << __FUNCTION__ << ": handle message" << std::endl << msg;
 
 #if 0 // XXX FIXME check if needed
   if (this->dptid != dpt.get_dptid()) {
