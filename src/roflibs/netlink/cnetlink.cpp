@@ -343,7 +343,7 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
   int ifindex = rtnl_link_get_ifindex((struct rtnl_link *)obj.get_obj());
 
   auto s1 = ifindex_to_registered_port.find(ifindex);
-  if (s1 == ifindex_to_registered_port.end()) {
+  if (action == NL_ACT_NEW && s1 == ifindex_to_registered_port.end()) {
     // try search using name
     char *portname = rtnl_link_get_name((struct rtnl_link *)obj.get_obj());
     std::lock_guard<std::mutex> lock(rp_mutex);
@@ -370,7 +370,7 @@ void cnetlink::route_link_apply(int action, const nl_obj &obj) {
                    << ": insertion to registered_port_to_ifindex failed";
       }
       VLOG(1) << __FUNCTION__ << ": port " << portname
-              << " registered, storted ifindex=" << ifindex;
+              << " registered, stored ifindex=" << ifindex;
     }
   }
 
