@@ -1,4 +1,4 @@
-AC_INIT(baseboxd, m4_esyscmd_s([./version.sh]), baseboxd-devel@roflibs.org, baseboxd, http://www.roflibs.org)
+AC_INIT(baseboxd, m4_esyscmd_s([./version.sh]), [https://github.com/bisdn/basebox], baseboxd, [https://github.com/bisdn/basebox])
 
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
