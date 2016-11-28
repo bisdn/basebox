@@ -725,7 +725,7 @@ int cbasebox::subscribe_to(enum swi_flags flags) noexcept {
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     if (flags & switch_interface::SWIF_ARP) {
-      fm_driver.enable_policy_arp(dpt, 0, -1);
+      fm_driver.enable_policy_arp(dpt);
     }
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
