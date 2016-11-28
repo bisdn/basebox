@@ -4,7 +4,7 @@ NAME = 'basebox'
 
 Vagrant.configure("2") do |config|
   config.vm.hostname = NAME
-  config.vm.box = "fedora/23-cloud-base"
+  config.vm.box = "fedora/25-cloud-base"
   config.vm.network "forwarded_port", guest: 6653, host: 6653
   config.vm.synced_folder "salt/roots/", "/srv/salt/"
 
