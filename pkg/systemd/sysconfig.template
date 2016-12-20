@@ -3,3 +3,6 @@
 # set the listening port
 # --port 6653
 OPTIONS=""
+
+GLOG_logtostderr=1
+#GLOG_v=0
