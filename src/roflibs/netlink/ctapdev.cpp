@@ -17,6 +17,12 @@
 
 namespace rofcore {
 
+static inline void release_packets(std::deque<rofl::cpacket *> &q) {
+  for (auto i : q) {
+    cpacketpool::get_instance().release_pkt(i);
+  }
+}
+
 ctapdev::ctapdev(tap_callback &cb, std::string const &devname, uint32_t port_id,
                  pthread_t tid)
     : fd(-1), devname(devname), thread(this), cb(cb), port_id(port_id) {
@@ -28,6 +34,8 @@ ctapdev::ctapdev(tap_callback &cb, std::string const &devname, uint32_t port_id,
 ctapdev::~ctapdev() {
   tap_close();
   thread.stop();
+
+  release_packets(pout_queue);
 }
 
 void ctapdev::tap_open() {
@@ -58,6 +66,10 @@ void ctapdev::tap_open() {
   thread.add_read_fd(fd, true, false);
   thread.add_write_fd(fd, true, false);
   thread.start();
+
+  LOG(INFO) << __FUNCTION__ << ": created tapdev " << devname
+            << " port_id=" << port_id << " fd=" << fd
+            << " tid=" << thread.get_thread_id();
 }
 
 void ctapdev::tap_close() {
@@ -65,12 +77,26 @@ void ctapdev::tap_close() {
     return;
   }
 
-  thread.drop_read_fd(fd, false);
-  thread.drop_write_fd(fd, false);
+  try {
+    thread.drop_read_fd(fd);
+  } catch (std::exception &e) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to drop read fd=" << fd;
+  }
 
-  close(fd);
+  try {
+    thread.drop_write_fd(fd);
+  } catch (std::exception &e) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to drop write fd=" << fd;
+  }
+
+  int rv = close(fd);
+  if (rv < 0)
+    LOG(ERROR) << __FUNCTION__ << ": failed to close fd=" << fd;
 
   fd = -1;
+
+  LOG(INFO) << __FUNCTION__ << ": closed tapdev " << devname
+            << " port_id=" << port_id << " tid=" << thread.get_thread_id();
 }
 
 void ctapdev::enqueue(rofl::cpacket *pkt) {
@@ -88,66 +114,39 @@ void ctapdev::enqueue(rofl::cpacket *pkt) {
   thread.wakeup();
 }
 
-void ctapdev::enqueue(std::vector<rofl::cpacket *> pkts) {
-  if (fd == -1) {
-    for (std::vector<rofl::cpacket *>::iterator it = pkts.begin();
-         it != pkts.end(); ++it) {
-      cpacketpool::get_instance().release_pkt((*it));
-    }
-    return;
-  }
-
-  // store pkts in outgoing queue
-  {
-    rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
-    for (std::vector<rofl::cpacket *>::iterator it = pkts.begin();
-         it != pkts.end(); ++it) {
-      pout_queue.push_back(*it);
-    }
-  }
-
-  thread.wakeup();
-}
-
 void ctapdev::handle_read_event(rofl::cthread &thread, int fd) {
-  rofl::cpacket *pkt = NULL;
+  rofl::cpacket *pkt = nullptr;
   try {
+    pkt = cpacketpool::get_instance().acquire_pkt();
 
-    rofl::cmemory mem(1518);
-
-    int rc = read(fd, mem.somem(), mem.memlen());
+    ssize_t n_bytes = read(fd, pkt->soframe(), pkt->length());
 
     // error occured (or non-blocking)
-    if (rc < 0) {
+    if (n_bytes < 0) {
       switch (errno) {
       case EAGAIN:
-        LOG(ERROR) << "ctapdev::handle_revent() EAGAIN, retrying later"
-                   << std::endl;
+        LOG(ERROR) << __FUNCTION__
+                   << ": EAGAIN XXX not implemented packet is dropped";
+        cpacketpool::get_instance().release_pkt(pkt);
       default:
-        LOG(ERROR) << "ctapdev::handle_revent() error occured" << std::endl;
+        LOG(ERROR) << __FUNCTION__ << ": unknown error occured";
+        cpacketpool::get_instance().release_pkt(pkt);
       }
     } else {
-      pkt = cpacketpool::get_instance().acquire_pkt();
-
-      pkt->unpack(mem.somem(), rc);
-
+      VLOG(1) << __FUNCTION__ << ": read " << n_bytes << " bytes from fd=" << fd
+              << " (" << devname << ") into pkt=" << pkt
+              << "enqueuing as port_id=" << port_id
+              << " tid=" << pthread_self();
       cb.enqueue_to_switch(port_id, pkt);
     }
 
   } catch (ePacketPoolExhausted &e) {
-    LOG(ERROR) << "ctapdev::handle_revent() packet pool "
-                  "exhausted, no idle slots available"
-               << std::endl;
+    LOG(ERROR) << __FUNCTION__
+               << ": packet pool exhausted, no idle slots available";
   }
 }
 
 void ctapdev::handle_write_event(rofl::cthread &thread, int fd) { tx(); }
-
-static inline void release_packets(std::deque<rofl::cpacket *> &q) {
-  for (auto i : q) {
-    cpacketpool::get_instance().release_pkt(i);
-  }
-}
 
 void ctapdev::tx() {
   rofl::cpacket *pkt = NULL;
@@ -155,7 +154,7 @@ void ctapdev::tx() {
 
   {
     rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
-    out_queue = std::move(pout_queue);
+    std::swap(out_queue, pout_queue);
   }
 
   while (not out_queue.empty()) {
@@ -165,7 +164,7 @@ void ctapdev::tx() {
     if ((rc = write(fd, pkt->soframe(), pkt->length())) < 0) {
       switch (errno) {
       case EAGAIN:
-        VLOG(1) << "ctapdev::tx() EAGAIN" << std::endl;
+        VLOG(1) << __FUNCTION__ << ": EAGAIN";
         {
           rofl::AcquireReadWriteLock rwlock(pout_queue_rwlock);
           std::move(out_queue.rbegin(), out_queue.rend(),
@@ -174,14 +173,14 @@ void ctapdev::tx() {
         return;
       case EIO:
         // tap not enabled drop packet
+        VLOG(1) << __FUNCTION__ << ": EIO";
         release_packets(out_queue);
         return;
       default:
         // will drop packets
         release_packets(out_queue);
-        LOG(ERROR) << "ctapdev::tx() unknown error occured rc=" << rc
-                   << " errno=" << errno << " '" << strerror(errno)
-                   << std::endl;
+        LOG(ERROR) << __FUNCTION__ << ": unknown error occured rc=" << rc
+                   << " errno=" << errno << " '" << strerror(errno);
         return;
       }
     }

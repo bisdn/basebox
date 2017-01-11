@@ -28,10 +28,6 @@ class ctapdev : public rofl::cthread_env {
   tap_callback &cb;
   uint32_t port_id;
 
-  enum ctapdev_timer_t {
-    CTAPDEV_TIMER_OPEN_PORT = 1,
-  };
-
 public:
   /**
    *
@@ -55,8 +51,6 @@ public:
    * be removed
    */
   virtual void enqueue(rofl::cpacket *pkt);
-
-  virtual void enqueue(std::vector<rofl::cpacket *> pkts);
 
   /**
    * @brief	open tapX device

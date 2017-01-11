@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cerrno>
 #include <linux/if_ether.h>
+#include <stdio.h>
 
 #include "cbasebox.hpp"
 
@@ -357,21 +358,31 @@ void cbasebox::handle_srcmac_table(rofl::crofdpt &dpt,
 void cbasebox::handle_acl_policy_table(rofl::crofdpt &dpt,
                                        rofl::openflow::cofmsg_packet_in &msg) {
   using rofl::openflow::cofport;
+  using rofcore::cpacketpool;
 
+  rofl::cpacket *pkt = nullptr;
   try {
     const cofport &port =
         dpt.get_ports().get_port(msg.get_match().get_in_port());
 
-    rofl::cpacket *pkt = rofcore::cpacketpool::get_instance().acquire_pkt();
-    *pkt = msg.get_packet();
+    pkt = cpacketpool::get_instance().acquire_pkt();
+    const rofl::cpacket &pkt_in = msg.get_packet();
+
+    pkt->unpack(pkt_in.soframe(), pkt_in.length());
 
     nbi->enqueue(port.get_port_no(), pkt);
   } catch (rofcore::ePacketPoolExhausted &e) {
     LOG(ERROR) << __FUNCTION__ << " ePacketPoolExhausted: " << e.what();
   } catch (std::out_of_range &e) {
     LOG(ERROR) << __FUNCTION__ << ": invalid range";
+    if (pkt) {
+      cpacketpool::get_instance().release_pkt(pkt);
+    }
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << " exception: " << e.what();
+    if (pkt) {
+      cpacketpool::get_instance().release_pkt(pkt);
+    }
   }
 }
 
@@ -438,11 +449,24 @@ int cbasebox::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
 
     /* only send packet-out if the port with port_id is actually existing */
     if (dpt.get_ports().has_port(port_id)) {
-      VLOG(1) << __FUNCTION__ << ": send pkt-out, pkt:" << std::endl << *pkt;
+
+      char src_mac[32];
+      char dst_mac[32];
+
+      snprintf(dst_mac, sizeof(dst_mac), "%02X:%02X:%02X:%02X:%02X:%02X",
+               eth->h_dest[0], eth->h_dest[1], eth->h_dest[2],
+               eth->h_dest[3], eth->h_dest[4], eth->h_dest[5]);
+      snprintf(src_mac, sizeof(src_mac), "%02X:%02X:%02X:%02X:%02X:%02X",
+               eth->h_source[0], eth->h_source[1], eth->h_source[2],
+               eth->h_source[3], eth->h_source[4], eth->h_source[5]);
+
+      //VLOG(1) << __FUNCTION__ << ": send pkt-out, pkt:" << std::endl << *pkt;
+      LOG(INFO) << __FUNCTION__ << ": send packet out to port_id=" << port_id
+                << " eth.dst=" << std::string(dst_mac)
+                << " eth.src=" << std::string(src_mac)
+                << " called from tid=" << pthread_self();
 
       rofl::openflow::cofactions actions(dpt.get_version());
-      //			//actions.set_action_push_vlan(rofl::cindex(0)).set_eth_type(rofl::fvlanframe::VLAN_CTAG_ETHER);
-      //			//actions.set_action_set_field(rofl::cindex(1)).set_oxm(rofl::openflow::coxmatch_ofb_vlan_vid(tapdev->get_pvid()));
       actions.set_action_output(rofl::cindex(0)).set_port_no(port_id);
 
       dpt.send_packet_out_message(
@@ -456,7 +480,7 @@ int cbasebox::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
     }
   } catch (rofl::eRofDptNotFound &e) {
     LOG(ERROR) << __FUNCTION__
-               << "] no data path attached, dropping outgoing packet";
+               << ": no data path attached, dropping outgoing packet";
     rv = -ENOTCONN;
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << __FUNCTION__ << ": " << e.what();
@@ -464,7 +488,6 @@ int cbasebox::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
   } catch (rofl::openflow::ePortsNotFound &e) {
     LOG(ERROR) << __FUNCTION__ << ": invalid port for packet out";
     rv = -EINVAL;
-    goto errout;
   }
 
 errout:
