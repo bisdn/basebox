@@ -22,14 +22,6 @@ class ePacketPoolExhausted : public ePacketPoolBase {
 public:
   ePacketPoolExhausted(const std::string &__arg) : ePacketPoolBase(__arg){};
 };
-class ePacketPoolInval : public ePacketPoolBase {
-public:
-  ePacketPoolInval(const std::string &__arg) : ePacketPoolBase(__arg){};
-};
-class ePacketPoolInvalPkt : public ePacketPoolInval {
-public:
-  ePacketPoolInvalPkt(const std::string &__arg) : ePacketPoolInval(__arg){};
-};
 
 class cpacketpool {
   static cpacketpool *packetpool;
@@ -41,11 +33,10 @@ class cpacketpool {
   std::deque<rofl::cpacket *> idlepool;
 
   // lock for peer controllers
-  mutable rofl::crwlock pool_rwlock;
+  rofl::crwlock pool_rwlock;
 
 public:
-  static cpacketpool &get_instance(unsigned int n_pkts = 256,
-                                   unsigned int pkt_size = 1518);
+  static cpacketpool &get_instance();
 
   rofl::cpacket *acquire_pkt();
 

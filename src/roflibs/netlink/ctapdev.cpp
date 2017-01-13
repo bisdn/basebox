@@ -133,9 +133,9 @@ void ctapdev::handle_read_event(rofl::cthread &thread, int fd) {
         cpacketpool::get_instance().release_pkt(pkt);
       }
     } else {
-      VLOG(1) << __FUNCTION__ << ": read " << n_bytes << " bytes from fd=" << fd
+      VLOG(2) << __FUNCTION__ << ": read " << n_bytes << " bytes from fd=" << fd
               << " (" << devname << ") into pkt=" << pkt
-              << "enqueuing as port_id=" << port_id
+              << " enqueuing as port_id=" << port_id
               << " tid=" << pthread_self();
       cb.enqueue_to_switch(port_id, pkt);
     }
