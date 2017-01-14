@@ -59,7 +59,7 @@ int nbi_impl::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
   int rv = 0;
   assert(pkt);
   try {
-    tap_man->get_dev(port_id)->enqueue(pkt);
+    tap_man->enqueue(port_id, pkt);
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to enqueue packet for port_id=" << port_id << ": "

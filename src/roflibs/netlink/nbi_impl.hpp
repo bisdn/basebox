@@ -11,7 +11,7 @@ namespace rofcore {
 
 class tap_manager;
 
-class nbi_impl : public nbi, public tap_callback {
+class nbi_impl : public nbi, public switch_callback {
   std::unique_ptr<tap_manager> tap_man;
   switch_interface *swi;
 

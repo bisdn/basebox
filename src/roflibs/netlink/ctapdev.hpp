@@ -2,8 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef CTAPDEV_H_
-#define CTAPDEV_H_ 1
+#pragma once
 
 #include <deque>
 #include <exception>
@@ -13,29 +12,16 @@
 
 namespace rofcore {
 
-class tap_callback {
-public:
-  //  virtual ~tap_callback(){};
-  virtual int enqueue_to_switch(uint32_t port_id, rofl::cpacket *) = 0;
-};
-
-class ctapdev : public rofl::cthread_env {
-  int fd;                                 // tap device file descriptor
-  std::deque<rofl::cpacket *> pout_queue; // queue of outgoing packets
-  mutable rofl::crwlock pout_queue_rwlock;
+class ctapdev {
+  int fd; // tap device file descriptor
   std::string devname;
-  rofl::cthread thread;
-  tap_callback &cb;
-  uint32_t port_id;
 
 public:
   /**
    *
-   * @param netdev_owner
    * @param devname
    */
-  ctapdev(tap_callback &cb, std::string const &devname, uint32_t port_id,
-          pthread_t tid = 0);
+  ctapdev(std::string const &devname);
 
   /**
    *
@@ -43,14 +29,6 @@ public:
   virtual ~ctapdev();
 
   const std::string &get_devname() const { return devname; }
-
-  /**
-   * @brief	Enqueues a single rofl::cpacket instance on cnetdev.
-   *
-   * rofl::cpacket instance must have been allocated on heap and must
-   * be removed
-   */
-  virtual void enqueue(rofl::cpacket *pkt);
 
   /**
    * @brief	open tapX device
@@ -63,22 +41,7 @@ public:
    */
   void tap_close();
 
-protected:
-  void tx();
-
-  /**
-   * @brief	handle read events on file descriptor
-   */
-  virtual void handle_read_event(rofl::cthread &thread, int fd);
-
-  /**
-   * @brief	handle write events on file descriptor
-   */
-  virtual void handle_write_event(rofl::cthread &thread, int fd);
-
-  virtual void handle_wakeup(rofl::cthread &thread) { tx(); }
+  int get_fd() const { return fd; }
 };
 
 } // end of namespace rofcore
-
-#endif /* CTAPDEV_H_ */
