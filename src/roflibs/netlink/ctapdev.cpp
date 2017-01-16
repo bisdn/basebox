@@ -55,8 +55,8 @@ void ctapdev::tap_open() {
     LOG(FATAL) << __FUNCTION__ << ": ioctl TUNSETIFF failed on fd=" << fd;
   }
 
-  thread.add_read_fd(fd);
-  thread.add_write_fd(fd);
+  thread.add_read_fd(fd, true, false);
+  thread.add_write_fd(fd, true, false);
   thread.start();
 }
 
