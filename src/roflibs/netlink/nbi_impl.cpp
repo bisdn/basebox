@@ -5,6 +5,7 @@
 #include "tap_manager.hpp"
 
 #include "roflibs/netlink/ctapdev.hpp"
+#include "roflibs/netlink/cpacketpool.hpp"
 
 namespace rofcore {
 
@@ -46,7 +47,6 @@ void nbi_impl::port_notification(
 
 void nbi_impl::port_status_changed(uint32_t port_no,
                                    enum nbi::port_status ps) noexcept {
-  // TODO keep info of state?
   cnetlink::get_instance().port_status_changed(port_no, ps);
 }
 
@@ -56,12 +56,18 @@ int nbi_impl::enqueue_to_switch(uint32_t port_id, rofl::cpacket *packet) {
 }
 
 int nbi_impl::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
+  int rv = 0;
+  assert(pkt);
   try {
     tap_man->get_dev(port_id)->enqueue(pkt);
   } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to enqueue packet: " << e.what();
+    LOG(ERROR) << __FUNCTION__
+               << ": failed to enqueue packet for port_id=" << port_id << ": "
+               << e.what();
+    rofcore::cpacketpool::get_instance().release_pkt(pkt);
+    rv = -1;
   }
-  return 0;
+  return rv;
 }
 
 } // namespace rofcore

@@ -34,6 +34,8 @@ int tap_manager::destroy_tapdev(uint32_t port_id,
                                 const std::string &port_name) {
   auto it = devs.find(port_id);
   if (it == devs.end()) {
+    LOG(WARNING) << __FUNCTION__ << ": called for invalid port_id=" << port_id
+                 << " port_name=" << port_name;
     return 0;
   }
 
