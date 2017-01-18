@@ -22,7 +22,7 @@ class tap_manager;
 
 class switch_callback {
 public:
-  virtual int enqueue_to_switch(uint32_t port_id, rofl::cpacket *) = 0;
+  virtual int enqueue_to_switch(uint32_t port_id, basebox::packet *) = 0;
 };
 
 class tap_io : public rofl::cthread_env {
@@ -32,14 +32,14 @@ class tap_io : public rofl::cthread_env {
   };
 
   rofl::cthread thread;
-  std::deque<std::pair<int, rofl::cpacket *>> pout_queue;
+  std::deque<std::pair<int, basebox::packet *>> pout_queue;
   std::mutex pout_queue_mutex;
 
   std::deque<std::tuple<enum tap_io_event, int, uint32_t, switch_callback *>>
       events;
   std::mutex events_mutex;
 
-  std::deque<std::pair<int, rofl::cpacket *>> pin_queue;
+  std::deque<std::pair<int, basebox::packet *>> pin_queue;
   std::map<int, std::pair<uint32_t, switch_callback *>> sw_cbs;
 
 public:
@@ -49,7 +49,7 @@ public:
   // port_id should be removed at some point and be rather data
   void register_tap(int fd, uint32_t port_id, switch_callback &cb);
   void unregister_tap(int fd, uint32_t port_id);
-  void enqueue(int fd, rofl::cpacket *pkt);
+  void enqueue(int fd, basebox::packet *pkt);
 
 protected:
   void handle_read_event(rofl::cthread &thread, int fd);
@@ -78,7 +78,7 @@ public:
 
   void destroy_tapdevs();
 
-  int enqueue(uint32_t port_id, rofl::cpacket *pkt);
+  int enqueue(uint32_t port_id, basebox::packet *pkt);
 
 private:
   tap_manager(const tap_manager &other) = delete; // non construction-copyable

@@ -5,7 +5,7 @@
 #include "tap_manager.hpp"
 
 #include "netlink/ctapdev.hpp"
-#include "of-dpa/packetpool.hpp"
+#include "utils.hpp"
 
 namespace basebox {
 
@@ -46,12 +46,12 @@ void nbi_impl::port_status_changed(uint32_t port_no,
   cnetlink::get_instance().port_status_changed(port_no, ps);
 }
 
-int nbi_impl::enqueue_to_switch(uint32_t port_id, rofl::cpacket *packet) {
+int nbi_impl::enqueue_to_switch(uint32_t port_id, basebox::packet *packet) {
   swi->enqueue(port_id, packet);
   return 0;
 }
 
-int nbi_impl::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
+int nbi_impl::enqueue(uint32_t port_id, basebox::packet *pkt) noexcept {
   int rv = 0;
   assert(pkt);
   try {
@@ -60,7 +60,7 @@ int nbi_impl::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
     LOG(ERROR) << __FUNCTION__
                << ": failed to enqueue packet for port_id=" << port_id << ": "
                << e.what();
-    basebox::packetpool::get_instance().release_pkt(pkt);
+    std::free(pkt);
     rv = -1;
   }
   return rv;

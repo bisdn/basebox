@@ -4,12 +4,13 @@
 
 #include <cassert>
 #include <cerrno>
+#include <cstring>
 #include <linux/if_ether.h>
 #include <stdio.h>
 
 #include "controller.hpp"
 #include "datatypes.hpp"
-#include "packetpool.hpp"
+#include "utils.hpp"
 
 namespace basebox {
 
@@ -391,31 +392,33 @@ void controller::handle_srcmac_table(rofl::crofdpt &dpt,
 void controller::handle_acl_policy_table(
     rofl::crofdpt &dpt, rofl::openflow::cofmsg_packet_in &msg) {
   using rofl::openflow::cofport;
-  using basebox::packetpool;
 
-  rofl::cpacket *pkt = nullptr;
+  basebox::packet *pkt = nullptr;
   try {
     const cofport &port =
         dpt.get_ports().get_port(msg.get_match().get_in_port());
-
-    pkt = packetpool::get_instance().acquire_pkt();
     const rofl::cpacket &pkt_in = msg.get_packet();
 
-    pkt->unpack(pkt_in.soframe(), pkt_in.length());
+    if (pkt_in.length() >= basebox::packet_data_len) {
+      return;
+    }
+
+    pkt = (basebox::packet *)std::malloc(sizeof(basebox::packet));
+
+    if (pkt == nullptr)
+      return;
+
+    std::memcpy(pkt->data, pkt_in.soframe(), pkt_in.length());
+    pkt->len = pkt_in.length();
 
     nbi->enqueue(port.get_port_no(), pkt);
-  } catch (basebox::ePacketPoolExhausted &e) {
-    LOG(ERROR) << __FUNCTION__ << " ePacketPoolExhausted: " << e.what();
+
   } catch (std::out_of_range &e) {
     LOG(ERROR) << __FUNCTION__ << ": invalid range";
-    if (pkt) {
-      packetpool::get_instance().release_pkt(pkt);
-    }
+    std::free(pkt);
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << " exception: " << e.what();
-    if (pkt) {
-      packetpool::get_instance().release_pkt(pkt);
-    }
+    std::free(pkt);
   }
 }
 
@@ -458,13 +461,13 @@ void controller::handle_bridging_table_rm(
   LOG(WARNING) << ": not implemented";
 }
 
-int controller::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
+int controller::enqueue(uint32_t port_id, basebox::packet *pkt) noexcept {
   using rofl::openflow::cofport;
   using std::map;
   int rv = 0;
 
   assert(pkt && "invalid enque");
-  struct ethhdr *eth = (struct ethhdr *)pkt->soframe();
+  struct ethhdr *eth = (struct ethhdr *)pkt->data;
 
   if (eth->h_dest[0] == 0x33 && eth->h_dest[1] == 0x33) {
     VLOG(1) << __FUNCTION__ << ": drop multicast packet";
@@ -507,7 +510,7 @@ int controller::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
           rofl::cauxid(0),
           rofl::openflow::base::get_ofp_no_buffer(dpt.get_version()),
           rofl::openflow::base::get_ofpp_controller_port(dpt.get_version()),
-          actions, pkt->soframe(), pkt->length());
+          actions, (uint8_t *)pkt->data, pkt->len);
     } else {
       LOG(ERROR) << __FUNCTION__ << ": packet sent to invalid port_id "
                  << port_id;
@@ -526,7 +529,7 @@ int controller::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
 
 errout:
 
-  basebox::packetpool::get_instance().release_pkt(pkt);
+  std::free(pkt);
   return rv;
 }
 

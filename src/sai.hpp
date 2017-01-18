@@ -4,7 +4,8 @@
 #include <deque>
 
 #include <rofl/common/caddress.h>
-#include <rofl/common/cpacket.h>
+
+#include "utils.hpp"
 
 namespace basebox {
 class switch_interface {
@@ -50,7 +51,7 @@ public:
   virtual int egress_port_vlan_remove(uint32_t port, uint16_t vid,
                                       bool untagged) noexcept = 0;
 
-  virtual int enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept = 0;
+  virtual int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept = 0;
   virtual int subscribe_to(enum swi_flags flags) noexcept = 0;
 
   virtual int get_statistics(uint64_t port_no, uint32_t number_of_counters,
@@ -79,6 +80,6 @@ public:
   port_notification(std::deque<port_notification_data> &) noexcept = 0;
   virtual void port_status_changed(uint32_t port,
                                    enum port_status) noexcept = 0;
-  virtual int enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept = 0;
+  virtual int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept = 0;
 };
 } // namespace basebox

@@ -66,6 +66,7 @@ basebox_grpc_SOURCES = \
 baseboxd_SOURCES = \
 	baseboxd.cpp \
 	sai.hpp \
+	utils.hpp \
 	$(basebox_grpc_SOURCES) \
 	$(SOURCES_NETLINK)
 	
