@@ -101,8 +101,7 @@ class cnetlink : public rofl::cthread_env {
 
   void handle_write_event(rofl::cthread &thread, int fd) override;
 
-  void handle_timeout(rofl::cthread &thread, uint32_t timer_id,
-                      const std::list<unsigned int> &ttypes) override;
+  void handle_timeout(rofl::cthread &thread, uint32_t timer_id) override;
 
   void set_neigh_timeout();
 

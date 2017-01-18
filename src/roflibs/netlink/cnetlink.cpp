@@ -270,8 +270,7 @@ void cnetlink::handle_write_event(rofl::cthread &thread, int fd) {
   // currently not in use
 }
 
-void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id,
-                              const std::list<unsigned int> &ttypes) {
+void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
   switch (timer_id) {
   case NL_TIMER_RESYNC: {
     int r = nl_cache_refill(sock, caches[NL_LINK_CACHE]);

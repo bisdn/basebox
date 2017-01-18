@@ -25,7 +25,7 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
   this->dptid = dpt.get_dptid();
 
   LOG(INFO) << __FUNCTION__ << ": opening connection to dptid=0x" << std::hex
-            << dptid.get_dptid() << std::dec;
+            << dptid << std::dec;
 
   if (rofl::openflow13::OFP_VERSION != dpt.get_version()) {
     LOG(ERROR) << __FUNCTION__
@@ -61,7 +61,7 @@ void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
   std::lock_guard<std::mutex> lock(conn_mutex);
 
   LOG(INFO) << __FUNCTION__ << ": closing connection to dptid=0x" << std::hex
-            << dptid.get_dptid() << std::dec;
+            << dptid << std::dec;
 
   std::deque<nbi::port_notification_data> ntfys;
   try {
@@ -121,7 +121,7 @@ void cbasebox::handle_conn_congestion_solved(rofl::crofdpt &dpt,
 void cbasebox::handle_features_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_features_reply &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str() << std::endl
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid() << std::endl
           << msg;
 }
 
@@ -133,12 +133,12 @@ void cbasebox::handle_desc_stats_reply(
 
 void cbasebox::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                                 rofl::openflow::cofmsg_packet_in &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
 
 #if 0 // XXX FIXME check if needed
-  if (this->dptid != dpt.get_dptid()) {
+  if (this->dptid != dpt) {
     LOG(ERROR) << __FUNCTION__
                    << "] wrong dptid received";
     return;
@@ -161,12 +161,12 @@ void cbasebox::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
 void cbasebox::handle_flow_removed(rofl::crofdpt &dpt,
                                    const rofl::cauxid &auxid,
                                    rofl::openflow::cofmsg_flow_removed &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
 
 #if 0 // XXX FIXME check if needed
-  if (this->dptid != dpt.get_dptid()) {
+  if (this->dptid != dpt) {
     LOG(ERROR) << __FUNCTION__
                    << "] wrong dptid received";
     return;
@@ -185,7 +185,7 @@ void cbasebox::handle_flow_removed(rofl::crofdpt &dpt,
 void cbasebox::handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                                   rofl::openflow::cofmsg_port_status &msg) {
   using rofcore::nbi;
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
 
@@ -231,7 +231,7 @@ void cbasebox::handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
 void cbasebox::handle_error_message(rofl::crofdpt &dpt,
                                     const rofl::cauxid &auxid,
                                     rofl::openflow::cofmsg_error &msg) {
-  LOG(INFO) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
+  LOG(INFO) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
             << " pkt received: " << std::endl
             << msg;
 
@@ -242,7 +242,7 @@ void cbasebox::handle_error_message(rofl::crofdpt &dpt,
 void cbasebox::handle_port_desc_stats_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_port_desc_stats_reply &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str()
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
 
@@ -283,7 +283,7 @@ void cbasebox::handle_port_desc_stats_reply(
 
 void cbasebox::handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
                                                     uint32_t xid) {
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid().str();
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid();
 
   LOG(WARNING) << ": not implemented";
 }
@@ -291,7 +291,7 @@ void cbasebox::handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
 void cbasebox::handle_experimenter_message(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_experimenter &msg) {
-  VLOG(1) << __FUNCTION__ << "] dpid: " << dpt.get_dpid().str()
+  VLOG(1) << __FUNCTION__ << ": dpid: " << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
 
@@ -411,7 +411,7 @@ void cbasebox::handle_bridging_table_rm(
   // TODO this has to be improved 
   uint32_t portno = msg.get_cookie();
   const cofport &port = dpt.get_ports().get_port(portno);
-  const ctapdev &tapdev = get_tap_dev(dpt.get_dptid(), port.get_name());
+  const ctapdev &tapdev = get_tap_dev(dpt, port.get_name());
 
   try {
     // update bridge fdb
