@@ -41,9 +41,12 @@ void tap_io::enqueue(int fd, rofl::cpacket *pkt) {
     return;
   }
 
-  // store pkt in outgoing queue
-  std::lock_guard<std::mutex> guard(pout_queue_mutex);
-  pout_queue.emplace_back(std::make_pair(fd, pkt));
+  {
+    // store pkt in outgoing queue
+    std::lock_guard<std::mutex> guard(pout_queue_mutex);
+    pout_queue.emplace_back(std::make_pair(fd, pkt));
+  }
+  thread.wakeup();
 }
 
 void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
@@ -78,7 +81,10 @@ void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
   }
 }
 
-void tap_io::handle_write_event(rofl::cthread &thread, int fd) { tx(); }
+void tap_io::handle_write_event(rofl::cthread &thread, int fd) {
+  thread.drop_write_fd(fd);
+  tx();
+}
 
 void tap_io::tx() {
   std::pair<int, rofl::cpacket *> pkt;
@@ -103,6 +109,7 @@ void tap_io::tx() {
           std::move(out_queue.rbegin(), out_queue.rend(),
                     std::front_inserter(pout_queue));
         }
+        thread.add_write_fd(pkt.first, true, false);
         return;
       case EIO:
         // tap not enabled drop packet
@@ -134,7 +141,6 @@ void tap_io::handle_events() {
       sw_cbs.emplace(
           std::make_pair(fd, std::make_pair(std::get<2>(ev), std::get<3>(ev))));
       thread.add_read_fd(fd, true, false);
-      thread.add_write_fd(fd, true, false);
       break;
     case TAP_IO_REM:
       thread.drop_read_fd(fd);
