@@ -44,9 +44,10 @@ void ctapdev::tap_open() {
   strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
 
   if ((rc = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0) {
+    LOG(FATAL) << __FUNCTION__ << ": ioctl TUNSETIFF failed on fd=" << fd
+               << " errno=" << errno << " reason: " << strerror(errno);
     close(fd);
     fd = -1;
-    LOG(FATAL) << __FUNCTION__ << ": ioctl TUNSETIFF failed on fd=" << fd;
   }
 
   LOG(INFO) << __FUNCTION__ << ": created tapdev " << devname << " fd=" << fd
