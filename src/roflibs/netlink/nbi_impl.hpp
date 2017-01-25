@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "sai.hpp"
 #include "tap_manager.hpp"
 
