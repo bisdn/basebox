@@ -143,14 +143,14 @@ void tap_io::handle_events() {
       thread.add_read_fd(fd, true, false);
       break;
     case TAP_IO_REM:
-      thread.drop_read_fd(fd);
-      thread.drop_write_fd(fd);
+      thread.drop_fd(fd, false);
       sw_cbs.erase(fd);
       break;
     default:
       break;
     }
   }
+  events.clear();
 }
 
 tap_manager::~tap_manager() { destroy_tapdevs(); }
