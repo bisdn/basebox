@@ -34,18 +34,6 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
     return;
   }
 
-#ifdef DEBUG
-  dpt.set_conn(rofl::cauxid(0))
-      .set_trace(true)
-      .set_journal()
-      .log_on_stderr(true)
-      .set_max_entries(64);
-  dpt.set_conn(rofl::cauxid(0))
-      .set_tcp_journal()
-      .log_on_stderr(true)
-      .set_max_entries(16);
-#endif
-
   dpt.send_features_request(rofl::cauxid(0));
   dpt.send_desc_stats_request(rofl::cauxid(0), 0);
   dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);

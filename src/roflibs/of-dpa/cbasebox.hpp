@@ -63,20 +63,6 @@ protected:
 
   void handle_conn_established(rofl::crofdpt &dpt,
                                const rofl::cauxid &auxid) override {
-    dpt.set_conn(auxid).set_trace(true);
-
-    crofbase::add_ctl(rofl::cctlid(0))
-        .set_conn(rofl::cauxid(0))
-        .set_trace(true)
-        .set_journal()
-        .log_on_stderr(true)
-        .set_max_entries(64);
-
-    crofbase::set_ctl(rofl::cctlid(0))
-        .set_conn(rofl::cauxid(0))
-        .set_tcp_journal()
-        .log_on_stderr(true)
-        .set_max_entries(16);
   }
 
   void handle_dpt_open(rofl::crofdpt &dpt) override;
