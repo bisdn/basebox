@@ -43,7 +43,7 @@ class tap_io : public rofl::cthread_env {
   std::map<int, std::pair<uint32_t, switch_callback *>> sw_cbs;
 
 public:
-  tap_io() : thread(this) { thread.start(); };
+  tap_io() : thread(this) { thread.start("tap_io"); };
   virtual ~tap_io();
 
   // port_id should be removed at some point and be rather data

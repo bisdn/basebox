@@ -20,7 +20,7 @@ cnetlink::cnetlink(switch_interface *swi)
 
   try {
     init_caches();
-    thread.start();
+    thread.start("netlink");
   } catch (...) {
     LOG(FATAL) << "cnetlink: caught unkown exception during " << __FUNCTION__;
   }
