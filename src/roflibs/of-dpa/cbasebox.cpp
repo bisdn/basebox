@@ -109,8 +109,7 @@ void cbasebox::handle_conn_congestion_solved(rofl::crofdpt &dpt,
 void cbasebox::handle_features_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_features_reply &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid() << std::endl
-          << msg;
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid() << std::endl << msg;
 }
 
 void cbasebox::handle_desc_stats_reply(

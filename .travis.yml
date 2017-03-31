@@ -1,0 +1,16 @@
+sudo: required
+dist: trusty
+language: cpp
+#compiler:
+#  - gcc
+#  - clang
+before_install:
+  - sudo apt-get install -y -qq clang-format-3.8
+install:
+  - ./autogen.sh
+script:
+  - find .. -regex '.*\.\(hh?\|cc?\|hpp\|cpp\)$$' | xargs clang-format-3.8 -i -style=file
+  - git diff --exit-code
+branches:
+  only:
+    - master
