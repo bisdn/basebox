@@ -13,14 +13,18 @@ dnf -y copr enable bisdn/baseboxd
 dnf -y install baseboxd
 ```
 
+### RHEL
+
+Copr repos are provided at https://copr.fedorainfracloud.org/coprs/bisdn/
+
 ### Other distros
 
 Currently only intallation from source is supported. To build baseboxd you need
 the following dependencies installed:
 
 * [libnl3](https://github.com/thom311/libnl) (>= 3.2.28)
-* [rofl-common](https://github.com/bisdn/rofl-common) (>= 0.10.9)
-* [rofl-ofdpa](https://github.com/bisdn/rofl-ofdpa) (>= 0.6)
+* [rofl-common](https://github.com/bisdn/rofl-common) (>= 0.11)
+* [rofl-ofdpa](https://github.com/bisdn/rofl-ofdpa) (>= 0.8)
 * [gflags](https://github.com/gflags/gflags)
 * [glog](https://github.com/google/glog) (>= 0.3.3)
 
