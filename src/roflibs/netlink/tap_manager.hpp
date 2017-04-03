@@ -59,6 +59,7 @@ protected:
     tx();
   }
   void handle_timeout(rofl::cthread &thread, uint32_t timer_id) {}
+
 private:
   void tx();
   void handle_events();
