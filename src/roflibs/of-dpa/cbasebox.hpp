@@ -59,8 +59,6 @@ public:
   ~cbasebox() override {}
 
 protected:
-  void handle_wakeup(rofl::cthread &thread) override;
-
   void handle_conn_established(rofl::crofdpt &dpt,
                                const rofl::cauxid &auxid) override {}
 

@@ -39,10 +39,6 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
   dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 }
 
-void cbasebox::handle_wakeup(rofl::cthread &thread) {
-  LOG(ERROR) << __FUNCTION__ << ": unexpected wakeup";
-}
-
 void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
   using rofcore::nbi;
 
