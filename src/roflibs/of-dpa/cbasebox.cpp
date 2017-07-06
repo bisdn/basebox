@@ -34,6 +34,9 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
     return;
   }
 
+  // set max queue size in rofl
+  dpt.set_conn(rofl::cauxid(0)).set_txqueue_max_size(128 * 1024);
+
   dpt.send_features_request(rofl::cauxid(0));
   dpt.send_desc_stats_request(rofl::cauxid(0), 0);
   dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
@@ -92,7 +95,7 @@ void cbasebox::handle_conn_negotiation_failed(rofl::crofdpt &dpt,
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
-void cbasebox::handle_conn_congestion_occured(rofl::crofdpt &dpt,
+void cbasebox::handle_conn_congestion_occurred(rofl::crofdpt &dpt,
                                               const rofl::cauxid &auxid) {
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
