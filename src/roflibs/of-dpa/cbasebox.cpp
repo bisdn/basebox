@@ -92,7 +92,7 @@ void cbasebox::handle_conn_negotiation_failed(rofl::crofdpt &dpt,
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
-void cbasebox::handle_conn_congestion_occured(rofl::crofdpt &dpt,
+void cbasebox::handle_conn_congestion_occurred(rofl::crofdpt &dpt,
                                               const rofl::cauxid &auxid) {
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
