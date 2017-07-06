@@ -77,10 +77,10 @@ PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.28 libnl-route-3.0 >= 3.2.28,
 	LIBS="$LIBS $LIBNL3_LIBS"],
   [ AC_MSG_ERROR([minimum version of libnl-3 is 3.2.28]) ])
 
-PKG_CHECK_MODULES([ROFL], rofl_common >= 0.11.2,
+PKG_CHECK_MODULES([ROFL], rofl_common >= 0.11.3,
   [ CPPFLAGS="$CPPFLAGS $ROFL_CFLAGS"
 	LIBS="$LIBS $ROFL_LIBS" ],
-  [ AC_MSG_ERROR([minimum version of rofl_common is 0.11.2]) ])
+  [ AC_MSG_ERROR([minimum version of rofl_common is 0.11.3]) ])
 
 PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.8,
   [ CPPFLAGS="$CPPFLAGS $ROFL_OFDPA_CFLAGS"
