@@ -9,11 +9,7 @@
 
 namespace rofcore {
 
-nbi_impl::nbi_impl() : tap_man(new tap_manager()) {
-  // start netlink
-  cnetlink *nl = &cnetlink::get_instance();
-  (void)nl;
-}
+nbi_impl::nbi_impl() : tap_man(new tap_manager()) {}
 
 nbi_impl::~nbi_impl() { cnetlink::get_instance().stop(); }
 
