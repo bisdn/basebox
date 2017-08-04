@@ -79,7 +79,7 @@ protected:
                                       const rofl::cauxid &auxid) override;
 
   void handle_conn_congestion_occurred(rofl::crofdpt &dpt,
-                                      const rofl::cauxid &auxid) override;
+                                       const rofl::cauxid &auxid) override;
 
   void handle_conn_congestion_solved(rofl::crofdpt &dpt,
                                      const rofl::cauxid &auxid) override;
