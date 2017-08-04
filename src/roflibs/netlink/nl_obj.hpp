@@ -34,6 +34,9 @@ private:
     case NL_ACT_NEW:
       obj = new_obj;
       break;
+    default:
+      obj = nullptr;
+      break;
     }
     return obj;
   }
