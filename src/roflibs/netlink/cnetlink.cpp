@@ -466,8 +466,10 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link,
 }
 
 void cnetlink::link_deleted(rtnl_link *link, uint32_t port_id) noexcept {
+  assert(link);
+
   try {
-    if (bridge != nullptr) {
+    if (bridge != nullptr && rtnl_link_get_family(link) == AF_BRIDGE) {
       bridge->delete_interface(port_id, link);
     }
   } catch (std::exception &e) {
