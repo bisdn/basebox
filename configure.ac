@@ -77,15 +77,15 @@ PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.29 libnl-route-3.0 >= 3.2.29,
 	LIBS="$LIBS $LIBNL3_LIBS"],
   [ AC_MSG_ERROR([minimum version of libnl-3 is 3.2.29]) ])
 
-PKG_CHECK_MODULES([ROFL], rofl_common >= 0.12.0,
+PKG_CHECK_MODULES([ROFL], rofl_common >= 0.12.1,
   [ CPPFLAGS="$CPPFLAGS $ROFL_CFLAGS"
 	LIBS="$LIBS $ROFL_LIBS" ],
-  [ AC_MSG_ERROR([minimum version of rofl_common is 0.12.0]) ])
+  [ AC_MSG_ERROR([minimum version of rofl_common is 0.12.1]) ])
 
-PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.8,
+PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.9,
   [ CPPFLAGS="$CPPFLAGS $ROFL_OFDPA_CFLAGS"
 	LIBS="$LIBS $ROFL_OFDPA_LIBS" ],
-  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.8]) ])
+  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.9]) ])
 
 AC_CHECK_LIB([gflags], [getenv], [GFLAGS_LIBS="-lgflags"],
   AC_MSG_ERROR([libgflags not found]) )
