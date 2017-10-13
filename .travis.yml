@@ -5,11 +5,11 @@ language: cpp
 #  - gcc
 #  - clang
 before_install:
-  - sudo apt-get install -y -qq clang-format-3.8
+  - sudo apt-get install -y -qq clang-format-4.0
 install:
   - ./autogen.sh
 script:
-  - find .. -regex '.*\.\(hh?\|cc?\|hpp\|cpp\)$$' | xargs clang-format-3.8 -i -style=file
+  - find .. -regex '.*\.\(hh?\|cc?\|hpp\|cpp\)$$' | xargs clang-format-4.0 -i -style=file
   - git diff --exit-code
 branches:
   only:
