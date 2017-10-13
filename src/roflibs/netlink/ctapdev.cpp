@@ -18,8 +18,8 @@
 namespace rofcore {
 
 ctapdev::ctapdev(std::string const &devname) : fd(-1), devname(devname) {
-  if (devname.size() > IFNAMSIZ) {
-    throw std::length_error("devname.size() > IFNAMSIZ");
+  if (devname.size() > IFNAMSIZ || devname.size() == 0) {
+    throw std::length_error("invalid devname size");
   }
 }
 

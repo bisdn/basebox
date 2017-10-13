@@ -9,5 +9,5 @@ build.pkg:
       - glibc-devel
       - libtool
       - make
-      - pkgconfig
+      - pkgconf-pkg-config
       - git

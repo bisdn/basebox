@@ -7,8 +7,12 @@
 
 #include <cstdint>
 #include <list>
+#include <string>
 
-#include "roflibs/netlink/crtlink.hpp"
+struct rtnl_link_bridge_vlan;
+struct rtnl_link;
+struct rtnl_neigh;
+struct nl_addr;
 
 namespace rofcore {
 
@@ -20,34 +24,31 @@ public:
 
   virtual ~ofdpa_bridge();
 
-  void set_bridge_interface(const rofcore::crtlink &rtl);
+  void set_bridge_interface(rtnl_link *);
 
-  const rofcore::crtlink &get_bridge_interface() const { return bridge; }
+  bool has_bridge_interface() const { return bridge != nullptr; }
 
-  bool has_bridge_interface() const { return 0 != bridge.get_ifindex(); }
+  void add_interface(uint32_t port, rtnl_link *);
 
-  void add_interface(uint32_t port, const rofcore::crtlink &rtl);
+  void update_interface(uint32_t port, rtnl_link *old_link,
+                        rtnl_link *new_link);
 
-  void update_interface(uint32_t port, const rofcore::crtlink &oldlink,
-                        const rofcore::crtlink &newlink);
+  void delete_interface(uint32_t port, rtnl_link *);
 
-  void delete_interface(uint32_t port, const rofcore::crtlink &rtl);
+  void add_mac_to_fdb(const uint32_t port, uint16_t vlan, nl_addr *mac);
+  void add_mac_to_fdb(const uint32_t port, rtnl_neigh *, rtnl_link *);
 
-  void add_mac_to_fdb(const uint32_t port, const uint16_t vid,
-                      const rofl::cmacaddr &mac);
-
-  void remove_mac_from_fdb(const uint32_t port, uint16_t vid,
-                           const rofl::cmacaddr &mac);
+  void remove_mac_from_fdb(const uint32_t port, rtnl_neigh *);
 
 private:
   void update_vlans(uint32_t port, const std::string &devname,
                     const rtnl_link_bridge_vlan *old_br_vlan,
                     const rtnl_link_bridge_vlan *new_br_vlan);
 
+  rtnl_link *bridge;
   switch_interface *sw;
   bool ingress_vlan_filtered;
   bool egress_vlan_filtered;
-  rofcore::crtlink bridge;
 };
 
 } /* namespace basebox */

@@ -34,6 +34,9 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
     return;
   }
 
+  // set max queue size in rofl
+  dpt.set_conn(rofl::cauxid(0)).set_txqueue_max_size(128 * 1024);
+
   dpt.send_features_request(rofl::cauxid(0));
   dpt.send_desc_stats_request(rofl::cauxid(0), 0);
   dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
@@ -92,8 +95,8 @@ void cbasebox::handle_conn_negotiation_failed(rofl::crofdpt &dpt,
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
-void cbasebox::handle_conn_congestion_occured(rofl::crofdpt &dpt,
-                                              const rofl::cauxid &auxid) {
+void cbasebox::handle_conn_congestion_occurred(rofl::crofdpt &dpt,
+                                               const rofl::cauxid &auxid) {
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
@@ -484,7 +487,9 @@ int cbasebox::l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    fm_driver.remove_bridging_unicast_vlan_all(dpt, port, vid);
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.remove_bridging_unicast_vlan_all(
+                                  dpt.get_version(), port, vid));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -504,7 +509,10 @@ int cbasebox::l2_addr_add(uint32_t port, uint16_t vid,
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     // XXX have the knowlege here about filtered/unfiltered?
-    fm_driver.add_bridging_unicast_vlan(dpt, port, vid, mac, true, filtered);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.add_bridging_unicast_vlan(dpt.get_version(), port, vid, mac,
+                                            true, filtered));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -523,7 +531,9 @@ int cbasebox::l2_addr_remove(uint32_t port, uint16_t vid,
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    fm_driver.remove_bridging_unicast_vlan(dpt, port, vid, mac);
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.remove_bridging_unicast_vlan(
+                                  dpt.get_version(), port, vid, mac));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -541,7 +551,9 @@ int cbasebox::ingress_port_vlan_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    fm_driver.enable_port_vid_allow_all(dpt, port);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_port_vid_allow_all(dpt.get_version(), port));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -559,7 +571,9 @@ int cbasebox::ingress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    fm_driver.disable_port_vid_allow_all(dpt, port);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_port_vid_allow_all(dpt.get_version(), port));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -579,9 +593,16 @@ int cbasebox::ingress_port_vlan_add(uint32_t port, uint16_t vid,
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     if (pvid) {
-      fm_driver.enable_port_pvid_ingress(dpt, port, vid);
+      dpt.send_flow_mod_message(
+          rofl::cauxid(0),
+          fm_driver.enable_port_vid_ingress(dpt.get_version(), port, vid));
+      dpt.send_flow_mod_message(
+          rofl::cauxid(0),
+          fm_driver.enable_port_pvid_ingress(dpt.get_version(), port, vid));
     } else {
-      fm_driver.enable_port_vid_ingress(dpt, port, vid);
+      dpt.send_flow_mod_message(
+          rofl::cauxid(0),
+          fm_driver.enable_port_vid_ingress(dpt.get_version(), port, vid));
     }
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
@@ -602,9 +623,16 @@ int cbasebox::ingress_port_vlan_remove(uint32_t port, uint16_t vid,
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     if (pvid) {
-      fm_driver.disable_port_pvid_ingress(dpt, port, vid);
+      dpt.send_flow_mod_message(
+          rofl::cauxid(0),
+          fm_driver.disable_port_pvid_ingress(dpt.get_version(), port, vid));
+      dpt.send_flow_mod_message(
+          rofl::cauxid(0),
+          fm_driver.disable_port_vid_ingress(dpt.get_version(), port, vid));
     } else {
-      fm_driver.disable_port_vid_ingress(dpt, port, vid);
+      dpt.send_flow_mod_message(
+          rofl::cauxid(0),
+          fm_driver.disable_port_vid_ingress(dpt.get_version(), port, vid));
     }
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
@@ -623,7 +651,9 @@ int cbasebox::egress_port_vlan_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    fm_driver.enable_group_l2_unfiltered_interface(dpt, port);
+    dpt.send_group_mod_message(rofl::cauxid(0),
+                               fm_driver.enable_group_l2_unfiltered_interface(
+                                   dpt.get_version(), port));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -641,7 +671,9 @@ int cbasebox::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    fm_driver.disable_group_l2_unfiltered_interface(dpt, port);
+    dpt.send_group_mod_message(rofl::cauxid(0),
+                               fm_driver.disable_group_l2_unfiltered_interface(
+                                   dpt.get_version(), port));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -662,20 +694,32 @@ int cbasebox::egress_port_vlan_add(uint32_t port, uint16_t vid,
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
     // create filtered egress interface
-    uint32_t group_id =
-        fm_driver.enable_group_l2_interface(dpt, port, vid, untagged);
+    rofl::openflow::cofgroupmod gm = fm_driver.enable_group_l2_interface(
+        dpt.get_version(), port, vid, untagged);
+    dpt.send_group_mod_message(rofl::cauxid(0), gm);
+    uint32_t group_id = gm.get_group_id();
     l2_domain[vid].insert(group_id);
 
     // remove old L2 flooding group
-    fm_driver.remove_bridging_dlf_vlan(dpt, vid);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.remove_bridging_dlf_vlan(dpt.get_version(), vid));
     dpt.send_barrier_request(rofl::cauxid(0));
-    fm_driver.disable_group_l2_flood(dpt, vid, vid);
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_group_l2_flood(dpt.get_version(), vid, vid));
     dpt.send_barrier_request(rofl::cauxid(0));
 
     // add new L2 flooding group
-    group_id = fm_driver.enable_group_l2_flood(dpt, vid, vid, l2_domain[vid]);
+    gm = fm_driver.enable_group_l2_flood(dpt.get_version(), vid, vid,
+                                         l2_domain[vid]);
+    dpt.send_group_mod_message(rofl::cauxid(0), gm);
+    group_id = gm.get_group_id();
+
     dpt.send_barrier_request(rofl::cauxid(0));
-    fm_driver.add_bridging_dlf_vlan(dpt, vid, group_id);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.add_bridging_dlf_vlan(dpt.get_version(), vid, group_id));
     dpt.send_barrier_request(rofl::cauxid(0));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
@@ -699,21 +743,33 @@ int cbasebox::egress_port_vlan_remove(uint32_t port, uint16_t vid,
     l2_domain[vid].erase(group_id);
 
     // remove old L2 flooding group
-    fm_driver.remove_bridging_dlf_vlan(dpt, vid);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.remove_bridging_dlf_vlan(dpt.get_version(), vid));
     dpt.send_barrier_request(rofl::cauxid(0));
-    fm_driver.disable_group_l2_flood(dpt, vid, vid);
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_group_l2_flood(dpt.get_version(), vid, vid));
     dpt.send_barrier_request(rofl::cauxid(0));
 
     if (l2_domain[vid].size()) {
       // add new L2 flooding group
-      group_id = fm_driver.enable_group_l2_flood(dpt, vid, vid, l2_domain[vid]);
+      rofl::openflow::cofgroupmod gm = fm_driver.enable_group_l2_flood(
+          dpt.get_version(), vid, vid, l2_domain[vid]);
+      dpt.send_group_mod_message(rofl::cauxid(0), gm);
+      group_id = gm.get_group_id();
+
       dpt.send_barrier_request(rofl::cauxid(0));
-      fm_driver.add_bridging_dlf_vlan(dpt, vid, group_id);
+      dpt.send_flow_mod_message(
+          rofl::cauxid(0),
+          fm_driver.add_bridging_dlf_vlan(dpt.get_version(), vid, group_id));
       dpt.send_barrier_request(rofl::cauxid(0));
     }
 
     // remove filtered egress interface
-    fm_driver.disable_group_l2_interface(dpt, port, vid);
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_group_l2_interface(dpt.get_version(), port, vid));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -732,7 +788,8 @@ int cbasebox::subscribe_to(enum swi_flags flags) noexcept {
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     if (flags & switch_interface::SWIF_ARP) {
-      fm_driver.enable_policy_arp(dpt);
+      dpt.send_flow_mod_message(rofl::cauxid(0),
+                                fm_driver.enable_policy_arp(dpt.get_version()));
     }
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";

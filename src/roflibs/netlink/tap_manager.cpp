@@ -56,7 +56,7 @@ void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
 
     ssize_t n_bytes = read(fd, pkt->soframe(), pkt->length());
 
-    // error occured (or non-blocking)
+    // error occurred (or non-blocking)
     if (n_bytes < 0) {
       switch (errno) {
       case EAGAIN:
@@ -64,7 +64,7 @@ void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
                    << ": EAGAIN XXX not implemented packet is dropped";
         cpacketpool::get_instance().release_pkt(pkt);
       default:
-        LOG(ERROR) << __FUNCTION__ << ": unknown error occured";
+        LOG(ERROR) << __FUNCTION__ << ": unknown error occurred";
         cpacketpool::get_instance().release_pkt(pkt);
       }
     } else {
@@ -119,7 +119,7 @@ void tap_io::tx() {
       default:
         // will drop packets
         release_packets(out_queue);
-        LOG(ERROR) << __FUNCTION__ << ": unknown error occured rc=" << rc
+        LOG(ERROR) << __FUNCTION__ << ": unknown error occurred rc=" << rc
                    << " errno=" << errno << " '" << strerror(errno);
         return;
       }

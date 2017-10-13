@@ -9,10 +9,6 @@ libroflibs_netlink_la_SOURCES = \
 	cnetlink.hpp \
 	cpacketpool.cpp \
 	cpacketpool.hpp \
-	crtlink.hpp \
-	crtlinks.hpp \
-	crtneigh.hpp \
-	crtneighs.hpp \
 	ctapdev.cpp \
 	ctapdev.hpp \
 	nbi_impl.cpp \

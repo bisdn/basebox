@@ -17,7 +17,6 @@
 #include <netlink/route/neighbour.h>
 #include <rofl/common/cthread.hpp>
 
-#include "roflibs/netlink/crtlinks.hpp"
 #include "roflibs/netlink/nl_obj.hpp"
 #include "roflibs/netlink/ofdpa_bridge.hpp"
 #include "roflibs/netlink/sai.hpp"
@@ -31,10 +30,6 @@ public:
 class eNetLinkCritical : public eNetLinkBase {
 public:
   eNetLinkCritical(const std::string &__arg) : eNetLinkBase(__arg){};
-};
-class eNetLinkNotFound : public eNetLinkBase {
-public:
-  eNetLinkNotFound(const std::string &__arg) : eNetLinkBase(__arg){};
 };
 class eNetLinkFailed : public eNetLinkBase {
 public:
@@ -67,18 +62,13 @@ class cnetlink : public rofl::cthread_env {
   std::mutex pc_mutex;
 
   ofdpa_bridge *bridge;
-
+  int nl_proc_max;
   bool running;
-  std::deque<std::pair<int, nl_obj>> nl_objs;
+  bool rfd_scheduled;
+  std::deque<nl_obj> nl_objs;
 
-  crtlinks
-      rtlinks; // all links in system => key:ifindex, value:crtlink instance
-  std::map<int, crtneighs_ll> neighs_ll;
-
-  std::set<int> missing_links;
-
-  void route_link_apply(int action, const nl_obj &obj);
-  void route_neigh_apply(int action, const nl_obj &obj);
+  void route_link_apply(const nl_obj &obj);
+  void route_neigh_apply(const nl_obj &obj);
 
   enum cnetlink_event_t {
     EVENT_NONE,
@@ -103,16 +93,14 @@ class cnetlink : public rofl::cthread_env {
 
   void handle_timeout(rofl::cthread &thread, uint32_t timer_id) override;
 
-  void set_neigh_timeout();
+  void link_created(rtnl_link *, uint32_t port_id) noexcept;
+  void link_updated(rtnl_link *old_link, rtnl_link *new_link,
+                    uint32_t port_id) noexcept;
+  void link_deleted(rtnl_link *, uint32_t port_id) noexcept;
 
-  void link_created(const crtlink &link, uint32_t port_id) noexcept;
-  void link_updated(const crtlink &link, uint32_t port_id) noexcept;
-  void link_deleted(const crtlink &link, uint32_t port_id) noexcept;
-  void neigh_ll_created(unsigned int ifindex, const crtneigh &neigh) noexcept;
-
-  void neigh_ll_updated(unsigned int ifindex, const crtneigh &neigh) noexcept;
-
-  void neigh_ll_deleted(unsigned int ifindex, const crtneigh &neigh) noexcept;
+  void neigh_ll_created(rtnl_neigh *neigh) noexcept;
+  void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
+  void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
 
   uint32_t get_port_id(int ifindex) {
     return ifindex_to_registered_port.at(ifindex);
@@ -123,12 +111,6 @@ class cnetlink : public rofl::cthread_env {
   }
 
 public:
-  friend std::ostream &operator<<(std::ostream &os, const cnetlink &netlink) {
-    os << "<cnetlink>" << std::endl;
-    os << netlink.rtlinks;
-    return os;
-  }
-
   void resend_state() noexcept;
 
   void register_switch(switch_interface *) noexcept;
@@ -138,12 +120,11 @@ public:
 
   static void nl_cb(struct nl_cache *cache, struct nl_object *obj, int action,
                     void *data);
+  static void nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
+                       struct nl_object *new_obj, uint64_t diff, int action,
+                       void *data);
 
   static cnetlink &get_instance();
-
-  const crtlinks &get_links() const { return rtlinks; };
-
-  crtlinks &set_links() { return rtlinks; };
 
   void register_link(uint32_t, std::string);
 
@@ -160,12 +141,8 @@ public:
     running = false;
     thread.wakeup();
   }
-
-  void add_neigh_ll(int ifindex, uint16_t vlan, const rofl::caddress_ll &addr);
-
-  void drop_neigh_ll(int ifindex, uint16_t vlan, const rofl::caddress_ll &addr);
 };
 
-}; // end of namespace rofcore
+} // end of namespace rofcore
 
 #endif /* CLINKCACHE_H_ */
