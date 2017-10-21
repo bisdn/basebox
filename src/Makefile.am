@@ -5,31 +5,39 @@ sbin_PROGRAMS = baseboxd
 PROTO_FILES = \
 	grpc/proto/ietf-interfaces.proto \
 	grpc/proto/openconfig-interfaces.proto
+GRPC_PROTO_FILES = \
+	grpc/proto/stats-service.proto
 
 PROTO_SOURCES = \
 	ietf-interfaces.pb.cc \
 	ietf-interfaces.pb.h \
 	openconfig-interfaces.pb.cc \
-	openconfig-interfaces.pb.h
+	openconfig-interfaces.pb.h \
+	stats-service.pb.cc \
+	stats-service.pb.h
 
-#GRPC_SOURCES = todo
+GRPC_SOURCES = \
+	stats-service.grpc.pb.cc \
+	stats-service.grpc.pb.h
 
 #openconfig-interfaces.proto ietf-interfaces.proto
 BUILT_SOURCES = \
-	$(PROTO_SOURCES)
+	$(PROTO_SOURCES) \
+	$(GRPC_SOURCES)
 
 CLEANFILES = \
-	$(PROTO_SOURCES)
+	$(PROTO_SOURCES) \
+	$(GRPC_SOURCES)
 
 PROTOC=/usr/bin/protoc
 GRPC_CPP_PLUGIN_PATH=/usr/bin/grpc_cpp_plugin
 PROTOS_PATH=./grpc/proto
 
-$(GRPC_SOURCES):
+$(GRPC_SOURCES): $(GRPC_PROTO_FILES)
 	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $^
 
 # can be optimized though since protoc is called #PROTO_SOURCES times:
-$(PROTO_SOURCES): $(PROTO_FILES)
+$(PROTO_SOURCES): $(PROTO_FILES) $(GRPC_PROTO_FILES)
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $^
 
 SOURCES_NETLINK = \
@@ -48,7 +56,8 @@ SOURCES_NETLINK = \
 	netlink/tap_manager.hpp
 
 nodist_baseboxd_SOURCES = \
-	$(PROTO_SOURCES)
+	$(PROTO_SOURCES) \
+	$(GRPC_SOURCES)
 
 baseboxd_SOURCES = \
 	baseboxd.cpp \
