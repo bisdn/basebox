@@ -23,4 +23,16 @@ bisdn-rofl:
     - enabled: 1
     - enabled_metadata: 1
     - require:
+
+toanju-bisdn:
+  pkgrepo.managed:
+    - humanname: Copr repo for google owned by toanju
+    - baseurl: https://copr-be.cloud.fedoraproject.org/results/toanju/google/fedora-$releasever-$basearch/
+    - skip_if_unavailable: True
+    - gpgcheck: 1
+    - gpgkey: https://copr-be.cloud.fedoraproject.org/results/toanju/google/pubkey.gpg
+    - enabled: 1
+    - enabled_metadata: 1
+    - require:
+      - pkg: yum
       - pkg: yum
