@@ -9,6 +9,8 @@ basebox.build.pkg:
       - rofl-ofdpa-devel
       - glog-devel
       - gflags-devel
+      - grpc-devel
+      - grpc-plugins.x86_64
     - require:
       - pkgrepo: bisdn-baseboxd
       - pkgrepo: bisdn-rofl
