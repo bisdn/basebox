@@ -51,9 +51,10 @@ public:
   cbasebox(rofcore::nbi *nbi,
            const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
                rofl::openflow::cofhello_elem_versionbitmap())
-      : nbi(nbi) {
+      : nbi(nbi), bb_thread(this) {
     nbi->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
+    bb_thread.start();
   }
 
   ~cbasebox() override {}
@@ -115,6 +116,14 @@ protected:
       rofl::crofdpt &dpt, const rofl::cauxid &auxid,
       rofl::openflow::cofmsg_experimenter &msg) override;
 
+  void request_port_stats();
+
+  void handle_port_stats_reply(
+      rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+      rofl::openflow::cofmsg_port_stats_reply &msg) override;
+
+  void handle_timeout(rofl::cthread &thread, uint32_t timer_id) override;
+
 public:
   // switch_interface
   int l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept override;
@@ -153,6 +162,16 @@ private:
   rofl::rofl_ofdpa_fm_driver fm_driver;
   std::map<uint16_t, std::set<uint32_t>> l2_domain;
   std::mutex conn_mutex;
+  rofl::cthread bb_thread;
+  std::mutex stats_mutex;
+  rofl::openflow::cofportstatsarray stats_array;
+
+  enum timer_t {
+    /* handle_timeout will be called as well from crofbase, hence we need some
+       id head room */
+    TIMER_port_stats_request = 10 // timer_id for querying port statistics
+  };
+  const int port_stats_request_interval = 2; // time in seconds
 
   /* OF handler */
   void handle_srcmac_table(rofl::crofdpt &dpt,

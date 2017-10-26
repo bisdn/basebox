@@ -262,6 +262,10 @@ void cbasebox::handle_port_desc_stats_reply(
     }
     LOG(INFO) << "ports initialized";
 
+    bb_thread.add_timer(
+        TIMER_port_stats_request,
+        rofl::ctimespec().expire_in(port_stats_request_interval));
+
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << ": unknown error " << e.what();
   }
@@ -293,6 +297,49 @@ void cbasebox::handle_experimenter_message(
       nbi->resend_state();
       break;
     }
+  }
+}
+
+void cbasebox::request_port_stats() {
+  rofl::crofdpt &dpt = set_dpt(dptid, true);
+  const uint16_t stats_flags = 0;
+  const int timeout_in_secs = 3;
+  uint32_t xid = 0;
+  rofl::openflow::cofport_stats_request request(
+      dpt.get_version(), rofl::openflow13::OFPP_ANY); // request for all ports
+
+  dpt.send_port_stats_request(rofl::cauxid(0), stats_flags, request,
+                              timeout_in_secs, &xid);
+  VLOG(3) << __FUNCTION__ << " sent, xid=" << xid;
+}
+
+void cbasebox::handle_port_stats_reply(
+    rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+    rofl::openflow::cofmsg_port_stats_reply &msg) {
+  VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
+          << " pkt received: " << std::endl
+          << msg;
+
+  std::lock_guard<std::mutex> lock(stats_mutex);
+  stats_array = msg.get_port_stats_array();
+}
+
+void cbasebox::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
+  try {
+    switch (timer_id) {
+    case TIMER_port_stats_request:
+      thread.add_timer(
+          TIMER_port_stats_request,
+          rofl::ctimespec().expire_in(port_stats_request_interval));
+      request_port_stats();
+      break;
+    default:
+      rofl::crofbase::handle_timeout(thread, timer_id);
+      break;
+    }
+  } catch (std::exception &error) {
+    LOG(ERROR) << "Exception for timer_id: " << timer_id << " caught "
+               << error.what();
   }
 }
 
