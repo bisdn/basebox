@@ -9,7 +9,7 @@ namespace rofl {
 class cpacket;
 } // namespace rofl
 
-namespace rofcore {
+namespace basebox {
 
 class tap_manager;
 
@@ -33,4 +33,4 @@ public:
   int enqueue_to_switch(uint32_t port_id, rofl::cpacket *) override;
 };
 
-} // namespace rofcore
+} // namespace basebox

@@ -4,10 +4,10 @@
 #include "nbi_impl.hpp"
 #include "tap_manager.hpp"
 
-#include "roflibs/netlink/ctapdev.hpp"
-#include "roflibs/netlink/cpacketpool.hpp"
+#include "netlink/ctapdev.hpp"
+#include "of-dpa/packetpool.hpp"
 
-namespace rofcore {
+namespace basebox {
 
 nbi_impl::nbi_impl() : tap_man(new tap_manager()) {}
 
@@ -60,10 +60,10 @@ int nbi_impl::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
     LOG(ERROR) << __FUNCTION__
                << ": failed to enqueue packet for port_id=" << port_id << ": "
                << e.what();
-    rofcore::cpacketpool::get_instance().release_pkt(pkt);
+    basebox::packetpool::get_instance().release_pkt(pkt);
     rv = -1;
   }
   return rv;
 }
 
-} // namespace rofcore
+} // namespace basebox

@@ -12,10 +12,10 @@
 
 #include <rofl/common/cpacket.h>
 
-#include "roflibs/netlink/ctapdev.hpp"
-#include "roflibs/netlink/sai.hpp"
+#include "netlink/ctapdev.hpp"
+#include "sai.hpp"
 
-namespace rofcore {
+namespace basebox {
 
 class tap_io;
 class tap_manager;
@@ -86,7 +86,7 @@ private:
 
   std::map<uint32_t, ctapdev *> devs;
 
-  rofcore::tap_io io;
+  basebox::tap_io io;
 };
 
-} // namespace rofcore
+} // namespace basebox

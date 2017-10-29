@@ -4,11 +4,11 @@
 
 #include <glog/logging.h>
 
-#include "cpacketpool.hpp"
+#include "packetpool.hpp"
 
-using namespace rofcore;
+using namespace basebox;
 
-cpacketpool::cpacketpool(unsigned int n_pkts, unsigned int pkt_size) {
+packetpool::packetpool(unsigned int n_pkts, unsigned int pkt_size) {
   for (unsigned int i = 0; i < n_pkts; ++i) {
     rofl::cpacket *pkt = new rofl::cpacket(pkt_size);
     pktpool.push_back(pkt);
@@ -20,9 +20,9 @@ cpacketpool::cpacketpool(unsigned int n_pkts, unsigned int pkt_size) {
   idlepool.shrink_to_fit();
 }
 
-cpacketpool::cpacketpool(cpacketpool const &packetpool) {}
+packetpool::packetpool(packetpool const &pool) {}
 
-cpacketpool::~cpacketpool() {
+packetpool::~packetpool() {
   for (std::vector<rofl::cpacket *>::iterator it = pktpool.begin();
        it != pktpool.end(); ++it) {
     delete (*it);
@@ -30,16 +30,16 @@ cpacketpool::~cpacketpool() {
   pktpool.clear();
 }
 
-cpacketpool &cpacketpool::get_instance() {
-  static cpacketpool instance;
+packetpool &packetpool::get_instance() {
+  static packetpool instance;
   return instance;
 }
 
-rofl::cpacket *cpacketpool::acquire_pkt() {
+rofl::cpacket *packetpool::acquire_pkt() {
   rofl::AcquireReadWriteLock rwlock(pool_rwlock);
   if (idlepool.empty()) {
     throw ePacketPoolExhausted(
-        "cpacketpool::acquire_pkt() packetpool exhausted");
+        "packetpool::acquire_pkt() packetpool exhausted");
   }
   rofl::cpacket *pkt = idlepool.front();
   idlepool.pop_front();
@@ -47,7 +47,7 @@ rofl::cpacket *cpacketpool::acquire_pkt() {
   return pkt;
 }
 
-void cpacketpool::release_pkt(rofl::cpacket *pkt) {
+void packetpool::release_pkt(rofl::cpacket *pkt) {
   assert(pkt);
   pkt->clear();
   VLOG(3) << __FUNCTION__ << ": pkt=" << pkt;

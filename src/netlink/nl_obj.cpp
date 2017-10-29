@@ -1,7 +1,7 @@
 #include "nl_obj.hpp"
 #include <glog/logging.h>
 
-namespace rofcore {
+namespace basebox {
 
 nl_obj::nl_obj(int action, struct nl_object *old_obj, struct nl_object *new_obj)
     : action(action), old_obj(old_obj), new_obj(new_obj) {
@@ -73,4 +73,4 @@ void nl_obj::increment_refcount() {
   VLOG(2) << "incremented refcounts nl_obj=" << this << " (old_obj=" << old_obj
           << " new_obj=" << new_obj << ")";
 }
-} // namespace rofcore
+} // namespace basebox

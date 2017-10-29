@@ -17,11 +17,11 @@
 #include <netlink/route/neighbour.h>
 #include <rofl/common/cthread.hpp>
 
-#include "roflibs/netlink/nl_obj.hpp"
-#include "roflibs/netlink/ofdpa_bridge.hpp"
-#include "roflibs/netlink/sai.hpp"
+#include "netlink/nl_bridge.hpp"
+#include "netlink/nl_obj.hpp"
+#include "sai.hpp"
 
-namespace rofcore {
+namespace basebox {
 
 class eNetLinkBase : public std::runtime_error {
 public:
@@ -143,6 +143,6 @@ public:
   }
 };
 
-} // end of namespace rofcore
+} // end of namespace basebox
 
 #endif /* CLINKCACHE_H_ */

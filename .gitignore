@@ -18,14 +18,14 @@ Makefile
 .deps
 .libs
 
-/aclocal.m4
-/autom4te.cache
-/config.*
-/configure
-/VERSION
-/tags
-/libtool
+aclocal.m4
+autom4te.cache
+config.*
+configure
+VERSION
+tags
+libtool
 
-/build*
+build*
 
 !.gitignore

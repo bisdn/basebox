@@ -10,7 +10,7 @@
 #include "cnetlink.hpp"
 #define LINK_CAST(obj) reinterpret_cast<struct rtnl_link *>(obj)
 #define NEIGH_CAST(obj) reinterpret_cast<struct rtnl_neigh *>(obj)
-namespace rofcore {
+namespace basebox {
 
 cnetlink::cnetlink(switch_interface *swi)
     : swi(swi), thread(this), bridge(nullptr), nl_proc_max(10), running(false),
@@ -559,4 +559,4 @@ void cnetlink::port_status_changed(uint32_t port_no,
   thread.wakeup();
 }
 
-} // namespace rofcore
+} // namespace basebox

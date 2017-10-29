@@ -7,10 +7,9 @@
 #include <linux/if_ether.h>
 #include <stdio.h>
 
-#include "cbasebox.hpp"
-
-#include "roflibs/netlink/cpacketpool.hpp"
-#include "roflibs/of-dpa/ofdpa_datatypes.hpp"
+#include "controller.hpp"
+#include "datatypes.hpp"
+#include "packetpool.hpp"
 
 namespace basebox {
 
@@ -19,7 +18,7 @@ struct vlan_hdr {
   uint16_t vlan;     // ethernet type
 } __attribute__((packed));
 
-void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
+void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 
   std::lock_guard<std::mutex> lock(conn_mutex);
   this->dptid = dpt.get_dptid();
@@ -42,8 +41,8 @@ void cbasebox::handle_dpt_open(rofl::crofdpt &dpt) {
   dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
 }
 
-void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
-  using rofcore::nbi;
+void controller::handle_dpt_close(const rofl::cdptid &dptid) {
+  using basebox::nbi;
 
   std::lock_guard<std::mutex> lock(conn_mutex);
 
@@ -75,50 +74,50 @@ void cbasebox::handle_dpt_close(const rofl::cdptid &dptid) {
   this->dptid = rofl::cdptid(0);
 }
 
-void cbasebox::handle_conn_terminated(rofl::crofdpt &dpt,
-                                      const rofl::cauxid &auxid) {
+void controller::handle_conn_terminated(rofl::crofdpt &dpt,
+                                        const rofl::cauxid &auxid) {
   LOG(WARNING) << __FUNCTION__ << ": XXX not implemented";
 }
 
-void cbasebox::handle_conn_refused(rofl::crofdpt &dpt,
-                                   const rofl::cauxid &auxid) {
+void controller::handle_conn_refused(rofl::crofdpt &dpt,
+                                     const rofl::cauxid &auxid) {
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
-void cbasebox::handle_conn_failed(rofl::crofdpt &dpt,
-                                  const rofl::cauxid &auxid) {
+void controller::handle_conn_failed(rofl::crofdpt &dpt,
+                                    const rofl::cauxid &auxid) {
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
-void cbasebox::handle_conn_negotiation_failed(rofl::crofdpt &dpt,
-                                              const rofl::cauxid &auxid) {
+void controller::handle_conn_negotiation_failed(rofl::crofdpt &dpt,
+                                                const rofl::cauxid &auxid) {
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
-void cbasebox::handle_conn_congestion_occurred(rofl::crofdpt &dpt,
+void controller::handle_conn_congestion_occurred(rofl::crofdpt &dpt,
+                                                 const rofl::cauxid &auxid) {
+  LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
+}
+
+void controller::handle_conn_congestion_solved(rofl::crofdpt &dpt,
                                                const rofl::cauxid &auxid) {
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
-void cbasebox::handle_conn_congestion_solved(rofl::crofdpt &dpt,
-                                             const rofl::cauxid &auxid) {
-  LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
-}
-
-void cbasebox::handle_features_reply(
+void controller::handle_features_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_features_reply &msg) {
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid() << std::endl << msg;
 }
 
-void cbasebox::handle_desc_stats_reply(
+void controller::handle_desc_stats_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_desc_stats_reply &msg) {
   VLOG(1) << __FUNCTION__ << ": dpt=" << std::endl << dpt << std::endl << msg;
 }
 
-void cbasebox::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
-                                rofl::openflow::cofmsg_packet_in &msg) {
+void controller::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                                  rofl::openflow::cofmsg_packet_in &msg) {
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
@@ -144,9 +143,9 @@ void cbasebox::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
   }
 }
 
-void cbasebox::handle_flow_removed(rofl::crofdpt &dpt,
-                                   const rofl::cauxid &auxid,
-                                   rofl::openflow::cofmsg_flow_removed &msg) {
+void controller::handle_flow_removed(rofl::crofdpt &dpt,
+                                     const rofl::cauxid &auxid,
+                                     rofl::openflow::cofmsg_flow_removed &msg) {
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
@@ -168,9 +167,10 @@ void cbasebox::handle_flow_removed(rofl::crofdpt &dpt,
   }
 }
 
-void cbasebox::handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
-                                  rofl::openflow::cofmsg_port_status &msg) {
-  using rofcore::nbi;
+void controller::handle_port_status(rofl::crofdpt &dpt,
+                                    const rofl::cauxid &auxid,
+                                    rofl::openflow::cofmsg_port_status &msg) {
+  using basebox::nbi;
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
@@ -214,9 +214,9 @@ void cbasebox::handle_port_status(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
   }
 }
 
-void cbasebox::handle_error_message(rofl::crofdpt &dpt,
-                                    const rofl::cauxid &auxid,
-                                    rofl::openflow::cofmsg_error &msg) {
+void controller::handle_error_message(rofl::crofdpt &dpt,
+                                      const rofl::cauxid &auxid,
+                                      rofl::openflow::cofmsg_error &msg) {
   LOG(INFO) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
             << " pkt received: " << std::endl
             << msg;
@@ -225,14 +225,14 @@ void cbasebox::handle_error_message(rofl::crofdpt &dpt,
   LOG(WARNING) << __FUNCTION__ << ": not implemented";
 }
 
-void cbasebox::handle_port_desc_stats_reply(
+void controller::handle_port_desc_stats_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_port_desc_stats_reply &msg) {
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
 
-  using rofcore::nbi;
+  using basebox::nbi;
   using rofl::openflow::cofport;
 
   std::deque<struct nbi::port_notification_data> notifications;
@@ -271,14 +271,14 @@ void cbasebox::handle_port_desc_stats_reply(
   }
 }
 
-void cbasebox::handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
-                                                    uint32_t xid) {
+void controller::handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
+                                                      uint32_t xid) {
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid();
 
   LOG(WARNING) << ": not implemented";
 }
 
-void cbasebox::handle_experimenter_message(
+void controller::handle_experimenter_message(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_experimenter &msg) {
   VLOG(1) << __FUNCTION__ << ": dpid: " << dpt.get_dpid()
@@ -300,7 +300,7 @@ void cbasebox::handle_experimenter_message(
   }
 }
 
-void cbasebox::request_port_stats() {
+void controller::request_port_stats() {
   rofl::crofdpt &dpt = set_dpt(dptid, true);
   const uint16_t stats_flags = 0;
   const int timeout_in_secs = 3;
@@ -313,7 +313,7 @@ void cbasebox::request_port_stats() {
   VLOG(3) << __FUNCTION__ << " sent, xid=" << xid;
 }
 
-void cbasebox::handle_port_stats_reply(
+void controller::handle_port_stats_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_port_stats_reply &msg) {
   VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
@@ -324,7 +324,7 @@ void cbasebox::handle_port_stats_reply(
   stats_array = msg.get_port_stats_array();
 }
 
-void cbasebox::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
+void controller::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
   try {
     switch (timer_id) {
     case TIMER_port_stats_request:
@@ -343,12 +343,12 @@ void cbasebox::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
   }
 }
 
-void cbasebox::handle_srcmac_table(rofl::crofdpt &dpt,
-                                   rofl::openflow::cofmsg_packet_in &msg) {
+void controller::handle_srcmac_table(rofl::crofdpt &dpt,
+                                     rofl::openflow::cofmsg_packet_in &msg) {
 #if 0 // XXX FIXME currently disabled
   using rofl::openflow::cofport;
-  using rofcore::cnetlink;
-  using rofcore::crtlink;
+  using basebox::cnetlink;
+  using basebox::crtlink;
   using rofl::caddress_ll;
 
   LOG(INFO) << __FUNCTION__ << ": in_port=" << msg.get_match().get_in_port()
@@ -378,55 +378,55 @@ void cbasebox::handle_srcmac_table(rofl::crofdpt &dpt,
     cnetlink::get_instance().add_neigh_ll(rtl.get_ifindex(), vlan, srcmac);
     bridge.add_mac_to_fdb(dpt, msg.get_match().get_in_port(), vlan, srcmac,
                           false);
-  } catch (rofcore::eNetLinkNotFound &e) {
+  } catch (basebox::eNetLinkNotFound &e) {
     LOG(INFO) << __FUNCTION__ << ": cannot add neighbor to interface"
                    ;
-  } catch (rofcore::eNetLinkFailed &e) {
+  } catch (basebox::eNetLinkFailed &e) {
     LOG(ERROR) << __FUNCTION__ << ": netlink failed";
   }
 #endif
   LOG(WARNING) << ": not implemented";
 }
 
-void cbasebox::handle_acl_policy_table(rofl::crofdpt &dpt,
-                                       rofl::openflow::cofmsg_packet_in &msg) {
+void controller::handle_acl_policy_table(
+    rofl::crofdpt &dpt, rofl::openflow::cofmsg_packet_in &msg) {
   using rofl::openflow::cofport;
-  using rofcore::cpacketpool;
+  using basebox::packetpool;
 
   rofl::cpacket *pkt = nullptr;
   try {
     const cofport &port =
         dpt.get_ports().get_port(msg.get_match().get_in_port());
 
-    pkt = cpacketpool::get_instance().acquire_pkt();
+    pkt = packetpool::get_instance().acquire_pkt();
     const rofl::cpacket &pkt_in = msg.get_packet();
 
     pkt->unpack(pkt_in.soframe(), pkt_in.length());
 
     nbi->enqueue(port.get_port_no(), pkt);
-  } catch (rofcore::ePacketPoolExhausted &e) {
+  } catch (basebox::ePacketPoolExhausted &e) {
     LOG(ERROR) << __FUNCTION__ << " ePacketPoolExhausted: " << e.what();
   } catch (std::out_of_range &e) {
     LOG(ERROR) << __FUNCTION__ << ": invalid range";
     if (pkt) {
-      cpacketpool::get_instance().release_pkt(pkt);
+      packetpool::get_instance().release_pkt(pkt);
     }
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << " exception: " << e.what();
     if (pkt) {
-      cpacketpool::get_instance().release_pkt(pkt);
+      packetpool::get_instance().release_pkt(pkt);
     }
   }
 }
 
-void cbasebox::handle_bridging_table_rm(
+void controller::handle_bridging_table_rm(
     rofl::crofdpt &dpt, rofl::openflow::cofmsg_flow_removed &msg) {
 #if 0 // XXX FIXME disabled for tapdev refactoring:
 // this is used only for srcmac learning, which is disabled
   using rofl::cmacaddr;
   using rofl::openflow::cofport;
-  using rofcore::cnetlink;
-  using rofcore::ctapdev;
+  using basebox::cnetlink;
+  using basebox::ctapdev;
 
   LOG(INFO) << __FUNCTION__ << ": handle message" << std::endl << msg;
 
@@ -450,7 +450,7 @@ void cbasebox::handle_bridging_table_rm(
     // update bridge fdb
     cnetlink::get_instance().drop_neigh_ll(tapdev.get_ifindex(), vlan,
     eth_dst);
-  } catch (rofcore::eNetLinkFailed &e) {
+  } catch (basebox::eNetLinkFailed &e) {
     LOG(ERROR) << __FUNCTION__ << ": netlink failed: " << e.what()
                  ;
   }
@@ -458,7 +458,7 @@ void cbasebox::handle_bridging_table_rm(
   LOG(WARNING) << ": not implemented";
 }
 
-int cbasebox::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
+int controller::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
   using rofl::openflow::cofport;
   using std::map;
   int rv = 0;
@@ -526,11 +526,12 @@ int cbasebox::enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept {
 
 errout:
 
-  rofcore::cpacketpool::get_instance().release_pkt(pkt);
+  basebox::packetpool::get_instance().release_pkt(pkt);
   return rv;
 }
 
-int cbasebox::l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept {
+int controller::l2_addr_remove_all_in_vlan(uint32_t port,
+                                           uint16_t vid) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -550,8 +551,8 @@ int cbasebox::l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept {
   return rv;
 }
 
-int cbasebox::l2_addr_add(uint32_t port, uint16_t vid,
-                          const rofl::cmacaddr &mac, bool filtered) noexcept {
+int controller::l2_addr_add(uint32_t port, uint16_t vid,
+                            const rofl::cmacaddr &mac, bool filtered) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -573,8 +574,8 @@ int cbasebox::l2_addr_add(uint32_t port, uint16_t vid,
   return rv;
 }
 
-int cbasebox::l2_addr_remove(uint32_t port, uint16_t vid,
-                             const rofl::cmacaddr &mac) noexcept {
+int controller::l2_addr_remove(uint32_t port, uint16_t vid,
+                               const rofl::cmacaddr &mac) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -594,7 +595,7 @@ int cbasebox::l2_addr_remove(uint32_t port, uint16_t vid,
   return rv;
 }
 
-int cbasebox::ingress_port_vlan_accept_all(uint32_t port) noexcept {
+int controller::ingress_port_vlan_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -614,7 +615,7 @@ int cbasebox::ingress_port_vlan_accept_all(uint32_t port) noexcept {
   return rv;
 }
 
-int cbasebox::ingress_port_vlan_drop_accept_all(uint32_t port) noexcept {
+int controller::ingress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -634,8 +635,8 @@ int cbasebox::ingress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   return rv;
 }
 
-int cbasebox::ingress_port_vlan_add(uint32_t port, uint16_t vid,
-                                    bool pvid) noexcept {
+int controller::ingress_port_vlan_add(uint32_t port, uint16_t vid,
+                                      bool pvid) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -664,8 +665,8 @@ int cbasebox::ingress_port_vlan_add(uint32_t port, uint16_t vid,
   return rv;
 }
 
-int cbasebox::ingress_port_vlan_remove(uint32_t port, uint16_t vid,
-                                       bool pvid) noexcept {
+int controller::ingress_port_vlan_remove(uint32_t port, uint16_t vid,
+                                         bool pvid) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -694,7 +695,7 @@ int cbasebox::ingress_port_vlan_remove(uint32_t port, uint16_t vid,
   return rv;
 }
 
-int cbasebox::egress_port_vlan_accept_all(uint32_t port) noexcept {
+int controller::egress_port_vlan_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -714,7 +715,7 @@ int cbasebox::egress_port_vlan_accept_all(uint32_t port) noexcept {
   return rv;
 }
 
-int cbasebox::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
+int controller::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -734,8 +735,8 @@ int cbasebox::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   return rv;
 }
 
-int cbasebox::egress_port_vlan_add(uint32_t port, uint16_t vid,
-                                   bool untagged) noexcept {
+int controller::egress_port_vlan_add(uint32_t port, uint16_t vid,
+                                     bool untagged) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -781,8 +782,8 @@ int cbasebox::egress_port_vlan_add(uint32_t port, uint16_t vid,
   return rv;
 }
 
-int cbasebox::egress_port_vlan_remove(uint32_t port, uint16_t vid,
-                                      bool untagged) noexcept {
+int controller::egress_port_vlan_remove(uint32_t port, uint16_t vid,
+                                        bool untagged) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -830,7 +831,7 @@ int cbasebox::egress_port_vlan_remove(uint32_t port, uint16_t vid,
   return rv;
 }
 
-int cbasebox::subscribe_to(enum swi_flags flags) noexcept {
+int controller::subscribe_to(enum swi_flags flags) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
