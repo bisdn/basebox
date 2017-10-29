@@ -19,7 +19,7 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/ofdpa/rofl_ofdpa_fm_driver.hpp>
 
-#include "roflibs/netlink/sai.hpp"
+#include "sai.hpp"
 
 namespace basebox {
 
@@ -28,9 +28,9 @@ public:
   eBaseBoxBase(const std::string &__arg) : std::runtime_error(__arg) {}
 };
 
-class cbasebox : public rofl::crofbase,
-                 public virtual rofl::cthread_env,
-                 public rofcore::switch_interface {
+class controller : public rofl::crofbase,
+                   public virtual rofl::cthread_env,
+                   public basebox::switch_interface {
 
   enum ExperimenterMessageType {
     QUERY_FLOW_ENTRIES, ///< query flow entries from controller
@@ -42,22 +42,22 @@ class cbasebox : public rofl::crofbase,
                        ///(OUI)
   };
 
-  rofcore::nbi *nbi;
+  basebox::nbi *nbi;
 
-  cbasebox(const cbasebox &) = delete;
-  cbasebox &operator=(const cbasebox &) = delete;
+  controller(const controller &) = delete;
+  controller &operator=(const controller &) = delete;
 
 public:
-  cbasebox(rofcore::nbi *nbi,
-           const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
-               rofl::openflow::cofhello_elem_versionbitmap())
+  controller(basebox::nbi *nbi,
+             const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
+                 rofl::openflow::cofhello_elem_versionbitmap())
       : nbi(nbi), bb_thread(this) {
     nbi->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
     bb_thread.start();
   }
 
-  ~cbasebox() override {}
+  ~controller() override {}
 
 protected:
   void handle_conn_established(rofl::crofdpt &dpt,
@@ -152,8 +152,8 @@ public:
   int subscribe_to(enum swi_flags flags) noexcept override;
 
   /* print this */
-  friend std::ostream &operator<<(std::ostream &os, const cbasebox &box) {
-    os << "<cbasebox>" << std::endl;
+  friend std::ostream &operator<<(std::ostream &os, const controller &box) {
+    os << "<controller>" << std::endl;
     return os;
   }
 
@@ -182,7 +182,7 @@ private:
 
   void handle_bridging_table_rm(rofl::crofdpt &dpt,
                                 rofl::openflow::cofmsg_flow_removed &msg);
-}; // class cbasebox
+}; // class controller
 
 } // end of namespace basebox
 
