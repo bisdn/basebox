@@ -5,10 +5,12 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include "basebox_api.h"
 #include "netlink/nbi_impl.hpp"
 #include "netlink/tap_manager.hpp"
 #include "of-dpa/controller.hpp"
 
+namespace baseboxd { 
 static volatile sig_atomic_t got_SIGINT = 0;
 
 static bool validate_port(const char *flagname, gflags::int32 value) {
@@ -21,6 +23,12 @@ DEFINE_int32(port, 6653, "Listening port");
 
 static void int_sig_handler(int sig) { got_SIGINT = 1; }
 
+void* startGRPC(void *arg) {
+  assert(arg);
+  static_cast<ApiServer *>(arg)->runGRPCServer();
+  return nullptr;
+}
+
 int main(int argc, char **argv) {
   bool running = true;
 
@@ -28,6 +36,10 @@ int main(int argc, char **argv) {
     std::cerr << "Failed to register port validator" << std::endl;
     exit(1);
   }
+  ApiServer grpcConnector;
+
+  pthread_t tid;
+  pthread_create(&tid, NULL, startGRPC, &grpcConnector);
 
   gflags::SetUsageMessage("");
   gflags::SetVersionString(PACKAGE_VERSION);
@@ -88,4 +100,5 @@ int main(int argc, char **argv) {
 
   LOG(INFO) << "bye";
   return EXIT_SUCCESS;
+} 
 }
