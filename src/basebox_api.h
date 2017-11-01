@@ -11,8 +11,6 @@
 #include "basebox_grpc_topology.h"
 
 
-
-namespace baseboxd {
 using rofl::openflow::cofport_stats_reply;
 using namespace openconfig_interfaces;
 using namespace ietf_network;
@@ -33,4 +31,4 @@ private:
   NetworkStats stats;
   void initStructures();
 };
-}
+

@@ -59,11 +59,18 @@ SOURCES_NETLINK = \
 nodist_baseboxd_SOURCES = \
 	$(PROTO_SOURCES) \
 	$(GRPC_SOURCES)
+		
+basebox_grpc_SOURCES = \
+	basebox_grpc_statistics.cc \
+	basebox_grpc_statistics.h \
+	basebox_grpc_topology.cc \
+	basebox_grpc_topology.h \
+	basebox_api.cc \
+	basebox_api.h
 
 baseboxd_SOURCES = \
-	basebox_api.cc \
-	basebox_api.h \
 	baseboxd.cpp \
+	$(basebox_grpc_SOURCES) \
 	$(SOURCES_NETLINK)
 	
 baseboxd_LDADD = \
