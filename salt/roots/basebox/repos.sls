@@ -23,6 +23,7 @@ bisdn-rofl:
     - enabled: 1
     - enabled_metadata: 1
     - require:
+      - pkg: yum
 
 toanju-bisdn:
   pkgrepo.managed:
@@ -34,5 +35,4 @@ toanju-bisdn:
     - enabled: 1
     - enabled_metadata: 1
     - require:
-      - pkg: yum
       - pkg: yum

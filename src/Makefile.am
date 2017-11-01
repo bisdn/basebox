@@ -3,22 +3,23 @@ SUBDIRS = of-dpa
 sbin_PROGRAMS = baseboxd
 
 PROTO_FILES = \
-	grpc/proto/ietf-interfaces.proto \
+	grpc/proto/ietf-network.proto \
 	grpc/proto/openconfig-interfaces.proto
+
 GRPC_PROTO_FILES = \
-	grpc/proto/stats-service.proto
+	grpc/proto/services-definition.proto
 
 PROTO_SOURCES = \
-	ietf-interfaces.pb.cc \
-	ietf-interfaces.pb.h \
+	ietf-network.pb.cc \
+	ietf-network.pb.h \
 	openconfig-interfaces.pb.cc \
-	openconfig-interfaces.pb.h \
-	stats-service.pb.cc \
-	stats-service.pb.h
+	openconfig-interfaces.pb.h  \
+	services-definition.pb.cc \
+	services-definition.pb.h
 
 GRPC_SOURCES = \
-	stats-service.grpc.pb.cc \
-	stats-service.grpc.pb.h
+	services-definition.grpc.pb.cc \
+	services-definition.grpc.pb.h
 
 #openconfig-interfaces.proto ietf-interfaces.proto
 BUILT_SOURCES = \
@@ -60,6 +61,8 @@ nodist_baseboxd_SOURCES = \
 	$(GRPC_SOURCES)
 
 baseboxd_SOURCES = \
+	basebox_api.cc \
+	basebox_api.h \
 	baseboxd.cpp \
 	$(SOURCES_NETLINK)
 	
