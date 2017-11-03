@@ -12,10 +12,10 @@
 #include <netlink/route/neighbour.h>
 #include <rofl/common/openflow/cofport.h>
 
-#include "roflibs/netlink/sai.hpp"
-#include "ofdpa_bridge.hpp"
+#include "sai.hpp"
+#include "nl_bridge.hpp"
 
-namespace rofcore {
+namespace basebox {
 
 ofdpa_bridge::ofdpa_bridge(switch_interface *sw)
     : bridge(nullptr), sw(sw), ingress_vlan_filtered(true),

@@ -10,7 +10,7 @@
 #include <rofl/common/cthread.hpp>
 #include <rofl/common/cpacket.h>
 
-namespace rofcore {
+namespace basebox {
 
 class ctapdev {
   int fd; // tap device file descriptor
@@ -44,4 +44,4 @@ public:
   int get_fd() const { return fd; }
 };
 
-} // end of namespace rofcore
+} // end of namespace basebox

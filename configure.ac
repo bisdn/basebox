@@ -3,7 +3,7 @@ AC_INIT(baseboxd, m4_esyscmd_s([./version.sh]), [https://github.com/bisdn/basebo
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([subdir-objects -Wall -Werror foreign])
 
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -102,10 +102,7 @@ CXXFLAGS="$CXXFLAGS -std=c++11"
 AC_CONFIG_FILES([
 	Makefile
 	src/Makefile
-	src/baseboxd/Makefile
-	src/roflibs/Makefile
-	src/roflibs/netlink/Makefile
-	src/roflibs/of-dpa/Makefile
+	src/of-dpa/Makefile
 	pkg/rhel/baseboxd.spec
 	])
 AC_OUTPUT

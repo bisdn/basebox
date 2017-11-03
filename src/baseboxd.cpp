@@ -5,9 +5,9 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
-#include "roflibs/netlink/nbi_impl.hpp"
-#include "roflibs/netlink/tap_manager.hpp"
-#include "roflibs/of-dpa/cbasebox.hpp"
+#include "netlink/nbi_impl.hpp"
+#include "netlink/tap_manager.hpp"
+#include "of-dpa/controller.hpp"
 
 static volatile sig_atomic_t got_SIGINT = 0;
 
@@ -58,9 +58,9 @@ int main(int argc, char **argv) {
 
   sigemptyset(&sigset);
 
-  rofcore::nbi_impl *nbi = new rofcore::nbi_impl();
-  std::unique_ptr<basebox::cbasebox> box(
-      new basebox::cbasebox(nbi, versionbitmap));
+  basebox::nbi_impl *nbi = new basebox::nbi_impl();
+  std::unique_ptr<basebox::controller> box(
+      new basebox::controller(nbi, versionbitmap));
 
   rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"), FLAGS_port);
   box->dpt_sock_listen(baddr);

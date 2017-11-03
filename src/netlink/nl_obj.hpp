@@ -3,7 +3,7 @@
 #include <netlink/cache.h>
 #include <netlink/object.h>
 
-namespace rofcore {
+namespace basebox {
 
 class nl_obj {
 public:
@@ -48,4 +48,4 @@ private:
   struct nl_object *new_obj;
 };
 
-} // namespace rofcore
+} // namespace basebox

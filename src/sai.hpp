@@ -6,7 +6,7 @@
 #include <rofl/common/caddress.h>
 #include <rofl/common/cpacket.h>
 
-namespace rofcore {
+namespace basebox {
 class switch_interface {
 public:
   enum swi_flags {
@@ -62,4 +62,4 @@ public:
                                    enum port_status) noexcept = 0;
   virtual int enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept = 0;
 };
-} // namespace rofcore
+} // namespace basebox

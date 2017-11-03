@@ -14,7 +14,7 @@ struct rtnl_link;
 struct rtnl_neigh;
 struct nl_addr;
 
-namespace rofcore {
+namespace basebox {
 
 class switch_interface;
 

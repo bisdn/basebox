@@ -3,15 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <glog/logging.h>
-#include "roflibs/netlink/tap_manager.hpp"
-#include "roflibs/netlink/cpacketpool.hpp"
+#include "netlink/tap_manager.hpp"
+#include "of-dpa/packetpool.hpp"
 
-namespace rofcore {
+namespace basebox {
 
 static inline void
 release_packets(std::deque<std::pair<int, rofl::cpacket *>> &q) {
   for (auto i : q) {
-    cpacketpool::get_instance().release_pkt(i.second);
+    packetpool::get_instance().release_pkt(i.second);
   }
 }
 
@@ -37,7 +37,7 @@ void tap_io::unregister_tap(int fd, uint32_t port_id) {
 
 void tap_io::enqueue(int fd, rofl::cpacket *pkt) {
   if (fd == -1) {
-    cpacketpool::get_instance().release_pkt(pkt);
+    packetpool::get_instance().release_pkt(pkt);
     return;
   }
 
@@ -52,7 +52,7 @@ void tap_io::enqueue(int fd, rofl::cpacket *pkt) {
 void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
   rofl::cpacket *pkt = nullptr;
   try {
-    pkt = cpacketpool::get_instance().acquire_pkt();
+    pkt = packetpool::get_instance().acquire_pkt();
 
     ssize_t n_bytes = read(fd, pkt->soframe(), pkt->length());
 
@@ -62,10 +62,10 @@ void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
       case EAGAIN:
         LOG(ERROR) << __FUNCTION__
                    << ": EAGAIN XXX not implemented packet is dropped";
-        cpacketpool::get_instance().release_pkt(pkt);
+        packetpool::get_instance().release_pkt(pkt);
       default:
         LOG(ERROR) << __FUNCTION__ << ": unknown error occurred";
-        cpacketpool::get_instance().release_pkt(pkt);
+        packetpool::get_instance().release_pkt(pkt);
       }
     } else {
       VLOG(1) << __FUNCTION__ << ": read " << n_bytes << " bytes from fd=" << fd
@@ -124,7 +124,7 @@ void tap_io::tx() {
         return;
       }
     }
-    cpacketpool::get_instance().release_pkt(pkt.second);
+    packetpool::get_instance().release_pkt(pkt.second);
     out_queue.pop_front();
   }
 }
@@ -216,9 +216,9 @@ int tap_manager::enqueue(uint32_t port_id, rofl::cpacket *pkt) {
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << ": failed to enqueue packet " << pkt
                << " to port_id=" << port_id;
-    cpacketpool::get_instance().release_pkt(pkt);
+    packetpool::get_instance().release_pkt(pkt);
   }
   return 0;
 }
 
-} // namespace rofcore
+} // namespace basebox

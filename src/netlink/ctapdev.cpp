@@ -12,10 +12,10 @@
 #include <glog/logging.h>
 
 #include "ctapdev.hpp"
-#include "roflibs/netlink/tap_manager.hpp"
-#include "roflibs/netlink/cpacketpool.hpp"
+#include "netlink/tap_manager.hpp"
+#include "of-dpa/packetpool.hpp"
 
-namespace rofcore {
+namespace basebox {
 
 ctapdev::ctapdev(std::string const &devname) : fd(-1), devname(devname) {
   if (devname.size() > IFNAMSIZ || devname.size() == 0) {
@@ -69,4 +69,4 @@ void ctapdev::tap_close() {
             << " tid=" << pthread_self();
 }
 
-} // namespace rofcore
+} // namespace basebox
