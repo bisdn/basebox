@@ -3,7 +3,8 @@
 
 Interfaces *NetworkStats::netstats = new Interfaces();
 
-Status NetworkStats::GetStatistics(ServerContext *context, const Empty *request, ServerWriter<Interfaces_Interface> *writer) {
+Status NetworkStats::GetStatistics(ServerContext *context, const Empty *request,
+                                   ServerWriter<Interfaces_Interface> *writer) {
   LOG(INFO) << __FUNCTION__ << " RECEIVED GRPC CALL";
 
   std::lock_guard<std::mutex> lock(stats_mutex);
@@ -14,7 +15,10 @@ Status NetworkStats::GetStatistics(ServerContext *context, const Empty *request,
   return Status::OK;
 }
 
-void NetworkStats::addStatistics(const std::string &nodeInfo, const std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>> &ports) {
+void NetworkStats::addStatistics(
+    const std::string &nodeInfo,
+    const std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>>
+        &ports) {
 
   std::lock_guard<std::mutex> lock(stats_mutex);
 

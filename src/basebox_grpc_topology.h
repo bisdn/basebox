@@ -11,12 +11,17 @@ using ::google::protobuf::RepeatedPtrField;
 class NetworkImpl final : public ::api::NetworkDescriptor::Service {
 public:
   typedef ::api::Empty Empty;
-  NetworkImpl() {};
-  Status GetTopology(ServerContext *context, const Empty *request, Networks *response) override;
-  void addNode(const std::string &nodeInfo, const std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>> &ports);
-  void addLink(const std::string &nodeSrc, const std::string &portSrc, const std::string &nodeDst, const std::string &portDst);
+  NetworkImpl(){};
+  Status GetTopology(ServerContext *context, const Empty *request,
+                     Networks *response) override;
+  void addNode(
+      const std::string &nodeInfo,
+      const std::list<
+          std::pair<std::string, rofl::openflow::cofport_stats_reply>> &ports);
+  void addLink(const std::string &nodeSrc, const std::string &portSrc,
+               const std::string &nodeDst, const std::string &portDst);
   void flush();
-  virtual ~NetworkImpl() {};
+  virtual ~NetworkImpl(){};
 
 private:
   static Networks_Network *networktopology;

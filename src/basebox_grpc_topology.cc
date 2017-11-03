@@ -3,7 +3,8 @@
 
 Networks_Network *NetworkImpl::networktopology = new Networks_Network();
 
-Status NetworkImpl::GetTopology(ServerContext *context, const Empty *request, Networks *response) {
+Status NetworkImpl::GetTopology(ServerContext *context, const Empty *request,
+                                Networks *response) {
   LOG(INFO) << __FUNCTION__ << " RECEIVED GRPC CALL";
 
   Networks_Network *temp = new Networks_Network();
@@ -19,7 +20,10 @@ Status NetworkImpl::GetTopology(ServerContext *context, const Empty *request, Ne
   return Status::OK;
 }
 
-void NetworkImpl::addNode(const std::string &nodeInfo, const std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>> &ports) {
+void NetworkImpl::addNode(
+    const std::string &nodeInfo,
+    const std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>>
+        &ports) {
 
   std::lock_guard<std::mutex> lock(topology_mutex);
 
@@ -31,7 +35,10 @@ void NetworkImpl::addNode(const std::string &nodeInfo, const std::list<std::pair
   }
 }
 
-void NetworkImpl::addLink(const std::string &nodeSrc, const std::string &portSrc, const std::string &nodeDst, const std::string &portDst) {
+void NetworkImpl::addLink(const std::string &nodeSrc,
+                          const std::string &portSrc,
+                          const std::string &nodeDst,
+                          const std::string &portDst) {
 
   std::lock_guard<std::mutex> lock(topology_mutex);
 
