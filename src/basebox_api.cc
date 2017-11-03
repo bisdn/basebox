@@ -13,7 +13,10 @@ void ApiServer::runGRPCServer() {
   server->Wait();
 }
 
-int ApiServer::addNode(const std::string &nodeInfo, const std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>> &ports) {
+int ApiServer::addNode(
+    const std::string &nodeInfo,
+    const std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>>
+        &ports) {
 
   topology.addNode(nodeInfo, ports);
   stats.addStatistics(nodeInfo, ports);
@@ -21,7 +24,8 @@ int ApiServer::addNode(const std::string &nodeInfo, const std::list<std::pair<st
   return 0;
 }
 
-int ApiServer::addLink(const std::string &nodeSrc, const std::string &portSrc, const std::string &nodeDst, const std::string &portDst) {
+int ApiServer::addLink(const std::string &nodeSrc, const std::string &portSrc,
+                       const std::string &nodeDst, const std::string &portDst) {
   topology.addLink(nodeSrc, portSrc, nodeDst, portDst);
   return 0;
 }
@@ -33,9 +37,9 @@ void ApiServer::flush() {
 
 void ApiServer::initStructures() {
   std::pair<std::string, rofl::openflow::cofport_stats_reply> pair;
-    rofl::openflow::cofport_stats_reply temp;
-    temp.set_tx_packets(64);
-    temp.set_rx_packets(128);
+  rofl::openflow::cofport_stats_reply temp;
+  temp.set_tx_packets(64);
+  temp.set_rx_packets(128);
   pair = std::make_pair("2", temp);
 
   std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>> ports;

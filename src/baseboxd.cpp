@@ -22,7 +22,7 @@ DEFINE_int32(port, 6653, "Listening port");
 
 static void int_sig_handler(int sig) { got_SIGINT = 1; }
 
-void* startGRPC(void *arg) {
+void *startGRPC(void *arg) {
   assert(arg);
   static_cast<ApiServer *>(arg)->runGRPCServer();
   return nullptr;
@@ -99,4 +99,4 @@ int main(int argc, char **argv) {
 
   LOG(INFO) << "bye";
   return EXIT_SUCCESS;
-} 
+}

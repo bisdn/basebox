@@ -12,8 +12,12 @@ class NetworkStats final : public ::api::NetworkStatistics::Service {
 public:
   typedef ::api::Empty Empty;
   NetworkStats() {}
-  Status GetStatistics(ServerContext *context, const Empty *request, ServerWriter<Interfaces_Interface> *writer);
-  void addStatistics(const std::string &nodeInfo, const std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>> &ports);
+  Status GetStatistics(ServerContext *context, const Empty *request,
+                       ServerWriter<Interfaces_Interface> *writer);
+  void addStatistics(
+      const std::string &nodeInfo,
+      const std::list<
+          std::pair<std::string, rofl::openflow::cofport_stats_reply>> &ports);
   void flush();
   virtual ~NetworkStats() {}
 
