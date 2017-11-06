@@ -24,15 +24,15 @@ void NetworkImpl::addNode(
     const std::string &nodeInfo,
     const std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>>
         &ports) {
-
-  std::lock_guard<std::mutex> lock(topology_mutex);
-
+  
   Network_Node *node = networktopology->add_node();
+
   node->set_node_id(nodeInfo);
   for (auto port : ports) {
     Network_Node_TerminationPoint *tp = node->add_termination_point();
     tp->set_tp_id(port.first);
   }
+
 }
 
 void NetworkImpl::addLink(const std::string &nodeSrc,
