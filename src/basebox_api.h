@@ -22,6 +22,7 @@ public:
       const std::string &nodeInfo,
       const std::list<
           std::pair<std::string, rofl::openflow::cofport_stats_reply>> &ports);
+
   int addLink(const std::string &nodeSrc, const std::string &portSrc,
               const std::string &nodeDst, const std::string &portDst);
   void flush();

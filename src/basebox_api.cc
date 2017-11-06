@@ -31,15 +31,6 @@ int ApiServer::addLink(const std::string &nodeSrc, const std::string &portSrc,
 }
 
 void ApiServer::initStructures() {
-
-//  std::pair<std::string, rofl::openflow::cofport_stats_reply> pair;
-//  rofl::openflow::cofport_stats_reply temp;
-//  temp.set_tx_packets(0);
-//  temp.set_rx_packets(0);
-//  pair = std::make_pair("", NULL);
-//
-//  std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>> ports;
-//  ports.push_back(pair);
     topology = new NetworkImpl();
     stats = new NetworkStats();
 

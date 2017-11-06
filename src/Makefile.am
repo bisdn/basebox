@@ -68,9 +68,14 @@ basebox_grpc_SOURCES = \
 	basebox_api.cc \
 	basebox_api.h
 
+sai_SOURCES = \
+	sai_handler.h \
+	sai_handler.cpp
+
 baseboxd_SOURCES = \
 	baseboxd.cpp \
 	$(basebox_grpc_SOURCES) \
+	$(sai_SOURCES) = \
 	$(SOURCES_NETLINK)
 	
 baseboxd_LDADD = \
