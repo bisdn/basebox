@@ -1,13 +1,9 @@
 #include "basebox_grpc_statistics.h"
 #include <glog/logging.h>
 
-Interfaces *NetworkStats::netstats = new Interfaces();
-
 ::grpc::Status NetworkStats::GetStatistics(::grpc::ServerContext *context, const Empty *request,
                                    ::grpc::ServerWriter<Interfaces_Interface> *writer) {
   LOG(INFO) << __FUNCTION__ << " RECEIVED GRPC CALL";
-
-  std::lock_guard<std::mutex> lock(stats_mutex);
 
   for (int i = 0; i < netstats->interface_size(); i++) {
     writer->Write(netstats->interface(i));
@@ -19,8 +15,6 @@ void NetworkStats::addStatistics(
     const std::string &nodeInfo,
     const std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>>
         &ports) {
-
-  std::lock_guard<std::mutex> lock(stats_mutex);
 
   for (auto port : ports) {
     Interfaces_Interface *intf = netstats->add_interface();
@@ -58,6 +52,5 @@ void NetworkImpl::fakeStatistic() {
 */
 
 void NetworkStats::flush() {
-  std::lock_guard<std::mutex> lock(stats_mutex);
   netstats->clear_interface();
 }

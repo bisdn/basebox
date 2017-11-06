@@ -9,7 +9,7 @@ using namespace ietf_network;
 class NetworkImpl final : public ::api::NetworkDescriptor::Service {
 public:
   typedef ::api::Empty Empty;
-  NetworkImpl(){};
+  NetworkImpl(){ NetworkImpl::networktopology = new Networks_Network(); };
   ::grpc::Status GetTopology(::grpc::ServerContext *context, const Empty *request,
                      Networks *response) override;
   void addNode(
@@ -22,7 +22,6 @@ public:
   virtual ~NetworkImpl(){};
 
 private:
-  static Networks_Network *networktopology;
+  Networks_Network *networktopology;
   void fakeStatistic();
-  std::mutex topology_mutex;
 };

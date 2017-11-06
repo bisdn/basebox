@@ -4,6 +4,7 @@
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+#include <sai.h>
 
 #include "basebox_api.h"
 #include "netlink/nbi_impl.hpp"
@@ -38,25 +39,6 @@ int main(int argc, char **argv) {
   versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
   LOG(INFO) << "using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
-//  // block sigint to establish handler
-//  sigset_t sigset;
-//  sigemptyset(&sigset);
-//  sigaddset(&sigset, SIGINT);
-//  if (sigprocmask(SIG_BLOCK, &sigset, NULL) < 0) {
-//    LOG(FATAL) << __FUNCTION__ << ": sigprocmask failed to block SIGINT";
-//  }
-//
-//  struct sigaction sa;
-//  sa.sa_handler = int_sig_handler;
-//  sigemptyset(&sa.sa_mask);
-//  sa.sa_flags = SA_RESTART; /* Restart functions if interrupted by handler */
-//
-//  if (sigaction(SIGINT, &sa, NULL) < 0) {
-//    LOG(FATAL) << __FUNCTION__ << ": failed to set signal handler for SIGINT";
-//  }
-//
-//  sigemptyset(&sigset);
-//
   basebox::nbi_impl *nbi = new basebox::nbi_impl();
   std::unique_ptr<basebox::controller> box(
       new basebox::controller(nbi, versionbitmap));
@@ -65,7 +47,6 @@ int main(int argc, char **argv) {
   box->dpt_sock_listen(baddr);
 
   grpcConnector.runGRPCServer();
-  grpcConnector.shutdown();
 
   delete nbi;
 
