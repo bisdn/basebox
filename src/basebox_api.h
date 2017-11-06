@@ -10,7 +10,6 @@
 #include "basebox_grpc_statistics.h"
 #include "basebox_grpc_topology.h"
 
-using rofl::openflow::cofport_stats_reply;
 using namespace openconfig_interfaces;
 using namespace ietf_network;
 class ApiServer {
@@ -26,11 +25,13 @@ public:
   int addLink(const std::string &nodeSrc, const std::string &portSrc,
               const std::string &nodeDst, const std::string &portDst);
   void flush();
+  void shutdown();
 
   virtual ~ApiServer() {}
 
 private:
   NetworkImpl topology;
-  NetworkStats stats;
+  NetworkStats stats; 
+  std::unique_ptr<::grpc::Server> server;
   void initStructures();
 };

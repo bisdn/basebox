@@ -8,7 +8,7 @@ void ApiServer::runGRPCServer() {
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&topology);
   builder.RegisterService(&stats);
-  std::unique_ptr<::grpc::Server> server(builder.BuildAndStart());
+  server = builder.BuildAndStart();
   LOG(INFO) << "gRPC server listening on " << server_address;
   server->Wait();
 }
@@ -36,16 +36,23 @@ void ApiServer::flush() {
 }
 
 void ApiServer::initStructures() {
-  std::pair<std::string, rofl::openflow::cofport_stats_reply> pair;
-  rofl::openflow::cofport_stats_reply temp;
-  temp.set_tx_packets(64);
-  temp.set_rx_packets(128);
-  pair = std::make_pair("2", temp);
 
-  std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>> ports;
-  ports.push_back(pair);
+//  std::pair<std::string, rofl::openflow::cofport_stats_reply> pair;
+//  rofl::openflow::cofport_stats_reply temp;
+//  temp.set_tx_packets(0);
+//  temp.set_rx_packets(0);
+//  pair = std::make_pair("", NULL);
+//
+//  std::list<std::pair<std::string, rofl::openflow::cofport_stats_reply>> ports;
+//  ports.push_back(pair);
 
-  topology.addNode("2", ports);
-  topology.addLink("2", "1", "3", "1");
-  stats.addStatistics("2", ports);
+//  topology.addNode("", {});
+//  topology.addLink("", "", "", "");
+//  stats.addStatistics("", {});
 }
+
+void ApiServer::shutdown() {
+    LOG(INFO) << "Requested Shutdown"; 
+    server->Shutdown();    
+}
+
