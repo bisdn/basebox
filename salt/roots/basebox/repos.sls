@@ -25,14 +25,15 @@ bisdn-rofl:
     - require:
       - pkg: yum
 
-toanju-bisdn:
+bisdn-baseboxd-testing-copr:
   pkgrepo.managed:
-    - humanname: Copr repo for google owned by toanju
-    - baseurl: https://copr-be.cloud.fedoraproject.org/results/toanju/google/fedora-$releasever-$basearch/
+    - name: bisdn-baseboxd-testing
+    - humanname: Copr repo for baseboxd-testing owned by bisdn
+    - baseurl: https://copr-be.cloud.fedoraproject.org/results/bisdn/baseboxd-testing/fedora-$releasever-$basearch/
+    - type: rpm-md
     - skip_if_unavailable: True
     - gpgcheck: 1
-    - gpgkey: https://copr-be.cloud.fedoraproject.org/results/toanju/google/pubkey.gpg
+    - gpgkey: https://copr-be.cloud.fedoraproject.org/results/bisdn/baseboxd-testing/pubkey.gpg
+    - repo_gpgcheck: 0
     - enabled: 1
     - enabled_metadata: 1
-    - require:
-      - pkg: yum

@@ -5,14 +5,12 @@
 #include "rofl/common/openflow/cofportstats.h"
 
 using namespace ietf_network;
-using namespace grpc;
-using ::google::protobuf::RepeatedPtrField;
 
 class NetworkImpl final : public ::api::NetworkDescriptor::Service {
 public:
   typedef ::api::Empty Empty;
   NetworkImpl(){};
-  Status GetTopology(ServerContext *context, const Empty *request,
+  ::grpc::Status GetTopology(::grpc::ServerContext *context, const Empty *request,
                      Networks *response) override;
   void addNode(
       const std::string &nodeInfo,

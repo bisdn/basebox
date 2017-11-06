@@ -35,10 +35,6 @@ int main(int argc, char **argv) {
     std::cerr << "Failed to register port validator" << std::endl;
     exit(1);
   }
-  ApiServer grpcConnector;
-
-  pthread_t tid;
-  pthread_create(&tid, NULL, startGRPC, &grpcConnector);
 
   gflags::SetUsageMessage("");
   gflags::SetVersionString(PACKAGE_VERSION);
@@ -76,6 +72,11 @@ int main(int argc, char **argv) {
   rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"), FLAGS_port);
   box->dpt_sock_listen(baddr);
 
+  ApiServer grpcConnector;
+//
+//  pthread_t tid;
+//  pthread_create(&tid, NULL, startGRPC, &grpcConnector);
+
   while (running) {
     try {
       // Launch main I/O loop
@@ -89,6 +90,9 @@ int main(int argc, char **argv) {
         running = false;
         LOG(INFO) << "received SIGINT, shutting down";
       }
+
+      grpcConnector.runGRPCServer();
+      LOG(INFO) << "asdfbn";
 
     } catch (std::exception &e) {
       std::cerr << "exception caught, what: " << e.what() << std::endl;

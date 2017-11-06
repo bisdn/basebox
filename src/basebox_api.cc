@@ -3,12 +3,12 @@
 
 void ApiServer::runGRPCServer() {
   std::string server_address("0.0.0.0:5000");
-  ServerBuilder builder;
+  ::grpc::ServerBuilder builder;
 
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&topology);
   builder.RegisterService(&stats);
-  std::unique_ptr<Server> server(builder.BuildAndStart());
+  std::unique_ptr<::grpc::Server> server(builder.BuildAndStart());
   LOG(INFO) << "gRPC server listening on " << server_address;
   server->Wait();
 }

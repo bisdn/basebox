@@ -3,7 +3,7 @@
 
 Networks_Network *NetworkImpl::networktopology = new Networks_Network();
 
-Status NetworkImpl::GetTopology(ServerContext *context, const Empty *request,
+::grpc::Status NetworkImpl::GetTopology(::grpc::ServerContext *context, const Empty *request,
                                 Networks *response) {
   LOG(INFO) << __FUNCTION__ << " RECEIVED GRPC CALL";
 
@@ -14,10 +14,10 @@ Status NetworkImpl::GetTopology(ServerContext *context, const Empty *request,
   temp->CopyFrom(*networktopology);
   temp->set_network_id("0");
 
-  RepeatedPtrField<Networks_Network> *netarg = response->mutable_network();
+  google::protobuf::RepeatedPtrField<Networks_Network> *netarg = response->mutable_network();
   netarg->AddAllocated(temp);
 
-  return Status::OK;
+  return ::grpc::Status::OK;
 }
 
 void NetworkImpl::addNode(
