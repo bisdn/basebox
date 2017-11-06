@@ -19,7 +19,7 @@ public:
   void addLink(const std::string &nodeSrc, const std::string &portSrc,
                const std::string &nodeDst, const std::string &portDst);
   void flush();
-  virtual ~NetworkImpl(){};
+  virtual ~NetworkImpl(){ delete networktopology; };
 
 private:
   Networks_Network *networktopology;

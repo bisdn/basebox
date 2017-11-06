@@ -10,9 +10,7 @@ class NetworkStats final : public ::api::NetworkStatistics::Service {
 public:
   typedef ::api::Empty Empty;
 
-  NetworkStats() {
-      NetworkStats::netstats = new Interfaces();
-  }
+  NetworkStats() { NetworkStats::netstats = new Interfaces(); }
   
   ::grpc::Status GetStatistics(::grpc::ServerContext *context, const Empty *request,
                        ::grpc::ServerWriter<Interfaces_Interface> *writer);
@@ -21,7 +19,7 @@ public:
       const std::list<
           std::pair<std::string, rofl::openflow::cofport_stats_reply>> &ports);
   void flush();
-  virtual ~NetworkStats() { }
+  virtual ~NetworkStats() { delete netstats; }
 
 private:
   Interfaces *netstats;
