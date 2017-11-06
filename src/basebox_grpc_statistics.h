@@ -9,7 +9,11 @@ using namespace openconfig_interfaces;
 class NetworkStats final : public ::api::NetworkStatistics::Service {
 public:
   typedef ::api::Empty Empty;
-  NetworkStats() {}
+
+  NetworkStats() {
+      NetworkStats::netstats = new Interfaces();
+  }
+  
   ::grpc::Status GetStatistics(::grpc::ServerContext *context, const Empty *request,
                        ::grpc::ServerWriter<Interfaces_Interface> *writer);
   void addStatistics(
@@ -17,10 +21,9 @@ public:
       const std::list<
           std::pair<std::string, rofl::openflow::cofport_stats_reply>> &ports);
   void flush();
-  virtual ~NetworkStats() {}
+  virtual ~NetworkStats() { }
 
 private:
-  static Interfaces *netstats;
+  Interfaces *netstats;
   void fakeStatistic();
-  std::mutex stats_mutex;
 };

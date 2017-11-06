@@ -25,13 +25,15 @@ public:
   int addLink(const std::string &nodeSrc, const std::string &portSrc,
               const std::string &nodeDst, const std::string &portDst);
   void flush();
-  void shutdown();
 
-  virtual ~ApiServer() {}
+  virtual ~ApiServer() {
+    delete topology;
+    delete stats;
+  }
 
 private:
-  NetworkImpl topology;
-  NetworkStats stats; 
+  NetworkImpl* topology;
+  NetworkStats* stats; 
   std::unique_ptr<::grpc::Server> server;
   void initStructures();
 };

@@ -1,15 +1,11 @@
 #include "basebox_grpc_topology.h"
 #include <glog/logging.h>
 
-Networks_Network *NetworkImpl::networktopology = new Networks_Network();
-
 ::grpc::Status NetworkImpl::GetTopology(::grpc::ServerContext *context, const Empty *request,
                                 Networks *response) {
   LOG(INFO) << __FUNCTION__ << " RECEIVED GRPC CALL";
 
   Networks_Network *temp = new Networks_Network();
-
-  std::lock_guard<std::mutex> lock(topology_mutex);
 
   temp->CopyFrom(*networktopology);
   temp->set_network_id("0");
@@ -40,8 +36,6 @@ void NetworkImpl::addLink(const std::string &nodeSrc,
                           const std::string &nodeDst,
                           const std::string &portDst) {
 
-  std::lock_guard<std::mutex> lock(topology_mutex);
-
   Network_Link *link = networktopology->add_link();
 
   int linkid = networktopology->link_size() + 1;
@@ -55,8 +49,6 @@ void NetworkImpl::addLink(const std::string &nodeSrc,
 }
 
 void NetworkImpl::flush() {
-  std::lock_guard<std::mutex> lock(topology_mutex);
-
   networktopology->clear_network_id();
   networktopology->clear_link();
   networktopology->clear_node();
