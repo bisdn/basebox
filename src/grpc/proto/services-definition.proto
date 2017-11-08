@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 import "openconfig-interfaces.proto";
-import "ietf-network.proto";
 
 package api;
 
@@ -9,9 +8,4 @@ message Empty {}
 
 service NetworkStatistics {
     rpc GetStatistics(Empty) returns (openconfig_interfaces.Interfaces_Interface) {};
-}
-
-service NetworkDescriptor {
-    //Get topology RPC call
-    rpc GetTopology(Empty) returns (ietf_network.Networks) {};
 }
