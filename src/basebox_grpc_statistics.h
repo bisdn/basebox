@@ -13,7 +13,7 @@ public:
   NetworkStats() { NetworkStats::netstats = new Interfaces(); }
   
   ::grpc::Status GetStatistics(::grpc::ServerContext *context, const Empty *request,
-                       ::grpc::ServerWriter<Interfaces_Interface> *writer);
+                       Interfaces *response);
   void addStatistics(
       const std::string &nodeInfo,
       const std::list<

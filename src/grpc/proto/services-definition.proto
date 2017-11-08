@@ -8,7 +8,7 @@ package api;
 message Empty {}
 
 service NetworkStatistics {
-    rpc GetStatistics(Empty) returns (stream openconfig_interfaces.Interfaces_Interface) {};
+    rpc GetStatistics(Empty) returns (openconfig_interfaces.Interfaces_Interface) {};
 }
 
 service NetworkDescriptor {

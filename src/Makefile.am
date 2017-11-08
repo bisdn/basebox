@@ -79,7 +79,7 @@ baseboxd_LDADD = \
 	-lpthread \
 	-lrt
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/include/sai/
+AM_CPPFLAGS = -I$(top_srcdir)/src
 AM_LDFLAGS = 
 
 MAINTAINERCLEANFILES = Makefile.in
