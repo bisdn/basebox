@@ -1,7 +1,6 @@
 # -*- mode: ruby -*-
 # If you are using Virtualbox, please make sure you have the vbguest plugin installed.
 NAME = 'basebox'
-
 Vagrant.configure("2") do |config|
   config.vm.hostname = NAME
   config.vm.box = "fedora/26-cloud-base"
@@ -16,7 +15,6 @@ Vagrant.configure("2") do |config|
 
   config.vm.provider "virtualbox" do |vb, override|
     override.vm.synced_folder ".", "/vagrant", type: "virtualbox"
-    vb.name = NAME
     vb.memory = 1024
     vb.cpus = 2
   end
