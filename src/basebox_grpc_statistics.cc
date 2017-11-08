@@ -2,12 +2,10 @@
 #include <glog/logging.h>
 
 ::grpc::Status NetworkStats::GetStatistics(::grpc::ServerContext *context, const Empty *request,
-                                   ::grpc::ServerWriter<Interfaces_Interface> *writer) {
+                                   Interfaces *response) {
   LOG(INFO) << __FUNCTION__ << " RECEIVED GRPC CALL";
 
-  for (int i = 0; i < netstats->interface_size(); i++) {
-    writer->Write(netstats->interface(i));
-  }
+  response->CopyFrom(*netstats);
   return ::grpc::Status::OK;
 }
 
