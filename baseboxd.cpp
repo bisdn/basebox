@@ -19,7 +19,7 @@ static bool validate_port(const char *flagname, gflags::int32 value) {
   return false;
 }
 
-DEFINE_int32(port, 6653, "Listening port");
+DEFINE_int32(port, 6654, "Listening port");
 
 
 int main(int argc, char **argv) {
