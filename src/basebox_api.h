@@ -10,8 +10,8 @@
 #include "basebox_grpc_statistics.h"
 #include "basebox_grpc_topology.h"
 
-using namespace openconfig_interfaces;
-using namespace ietf_network;
+namespace basebox {
+
 class ApiServer {
 public:
   ApiServer() { initStructures(); }
@@ -38,3 +38,5 @@ private:
   std::unique_ptr<::grpc::Server> server;
   void initStructures();
 };
+
+} // namespace basebox

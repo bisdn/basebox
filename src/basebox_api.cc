@@ -1,6 +1,8 @@
 #include "basebox_api.h"
 #include <glog/logging.h>
 
+namespace basebox {
+
 void ApiServer::runGRPCServer() {
   std::string server_address("0.0.0.0:5000");
   ::grpc::ServerBuilder builder;
@@ -42,3 +44,5 @@ void ApiServer::flush() {
   topology->flush();
   stats->flush();
 }
+
+} // namespace basebox

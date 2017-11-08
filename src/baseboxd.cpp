@@ -11,7 +11,7 @@
 #include "of-dpa/controller.hpp"
 
 static volatile sig_atomic_t got_SIGINT = 0;
-ApiServer grpcConnector;
+basebox::ApiServer grpcConnector;
 
 static bool validate_port(const char *flagname, gflags::int32 value) {
   if (value > 0 && value < 32768) // value is ok

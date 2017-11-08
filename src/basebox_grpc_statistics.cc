@@ -1,9 +1,16 @@
 #include "basebox_grpc_statistics.h"
 #include <glog/logging.h>
 
+namespace basebox {
+
+using openconfig_interfaces::Interface_State;
+using openconfig_interfaces::Interface_State_Counters;
+using openconfig_interfaces::Interfaces;
+using openconfig_interfaces::Interfaces_Interface;
+
 ::grpc::Status NetworkStats::GetStatistics(::grpc::ServerContext *context, const Empty *request,
                                    Interfaces *response) {
-  LOG(INFO) << __FUNCTION__ << " RECEIVED GRPC CALL";
+  VLOG(2) << __FUNCTION__ << ": received grpc call";
 
   response->CopyFrom(*netstats);
   return ::grpc::Status::OK;
@@ -34,21 +41,9 @@ void NetworkStats::addStatistics(
     counters->set_in_octets(port.second.get_rx_bytes());
   }
 }
-/*
-void NetworkImpl::fakeStatistic() {
-    for (int i = 0; i < 5; i++) {
-        Network_Node* node = networktopology->add_node();
-        Network_Node_TerminationPoint* tp = node->add_termination_point();
-        tp->set_tp_id(std::to_string(i));
-
-        Interface_State_Counters *counters = tp->mutable_port_stats();
-        counters->set_out_errors(8);
-        counters->set_in_errors(8);
-        counters->set_in_fcs_errors(8);
-    }
-}
-*/
 
 void NetworkStats::flush() {
   netstats->clear_interface();
 }
+
+} // namespace basebox

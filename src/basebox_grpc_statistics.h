@@ -4,16 +4,16 @@
 #include "services-definition.grpc.pb.h"
 #include "rofl/common/openflow/cofportstats.h"
 
-using namespace openconfig_interfaces;
+namespace basebox {
 
 class NetworkStats final : public ::api::NetworkStatistics::Service {
 public:
   typedef ::api::Empty Empty;
 
-  NetworkStats() { NetworkStats::netstats = new Interfaces(); }
+  NetworkStats() { NetworkStats::netstats = new openconfig_interfaces::Interfaces(); }
   
   ::grpc::Status GetStatistics(::grpc::ServerContext *context, const Empty *request,
-                       Interfaces *response);
+                       openconfig_interfaces::Interfaces *response);
   void addStatistics(
       const std::string &nodeInfo,
       const std::list<
@@ -22,6 +22,8 @@ public:
   virtual ~NetworkStats() { delete netstats; }
 
 private:
-  Interfaces *netstats;
+  openconfig_interfaces::Interfaces *netstats;
   void fakeStatistic();
 };
+
+} // namespace basebox
