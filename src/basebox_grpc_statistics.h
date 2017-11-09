@@ -13,7 +13,7 @@ public:
   typedef ::api::Empty Empty;
 
   NetworkStats(std::shared_ptr<switch_interface> swi);
-  virtual ~NetworkStats();
+  virtual ~NetworkStats(){};
 
   ::grpc::Status
   GetStatistics(::grpc::ServerContext *context, const Empty *request,
@@ -21,7 +21,6 @@ public:
 
 private:
   std::shared_ptr<switch_interface> swi;
-  openconfig_interfaces::Interfaces *ifaces; // XXX really needed?
 };
 
 } // namespace basebox

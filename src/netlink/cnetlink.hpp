@@ -54,7 +54,7 @@ class cnetlink : public rofl::cthread_env {
   struct nl_cache_mngr *mngr;
   std::map<enum nl_cache_t, struct nl_cache *> caches;
   std::map<std::string, uint32_t> registered_ports;
-  std::mutex rp_mutex;
+  mutable std::mutex rp_mutex;
   std::map<int, uint32_t> ifindex_to_registered_port;
   std::map<uint32_t, int> registered_port_to_ifindex;
   std::deque<std::tuple<uint32_t, enum nbi::port_status, int>>
@@ -129,6 +129,11 @@ public:
   void register_link(uint32_t, std::string);
 
   void unregister_link(uint32_t id, std::string port_name);
+
+  std::map<std::string, uint32_t> get_registered_ports() const {
+    std::lock_guard<std::mutex> lock(rp_mutex);
+    return registered_ports;
+  }
 
   void start() {
     if (running)
