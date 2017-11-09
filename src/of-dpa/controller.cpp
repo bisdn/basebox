@@ -852,61 +852,63 @@ int controller::subscribe_to(enum swi_flags flags) noexcept {
   return rv;
 }
 
-int controller::get_statistics(uint64_t port_no, uint32_t number_of_counters, const sai_port_stat_t *counter_ids, uint64_t *counters) noexcept {
-    int rv = 0;
+int controller::get_statistics(uint64_t port_no, uint32_t number_of_counters,
+                               const sai_port_stat_t *counter_ids,
+                               uint64_t *counters) noexcept {
+  int rv = 0;
 
-    if(!(counter_ids && counters))
-        return -1;
-        
-    if (!port_no)
-        return -1;
+  if (!(counter_ids && counters))
+    return -1;
 
-    std::lock_guard<std::mutex> lock(stats_mutex);
+  if (!port_no)
+    return -1;
 
-    if (!stats_array.has_port_stats(port_no))
-        return -1;
+  std::lock_guard<std::mutex> lock(stats_mutex);
 
-    for (uint32_t i = 0; i < number_of_counters; i++) {
-        switch (counter_ids[i]) {
-            case (SAI_PORT_STAT_RX_PACKETS):
-                counters[i] = stats_array.get_port_stats(port_no).get_rx_packets();
-                break;
-            case (SAI_PORT_STAT_TX_PACKETS):
-                counters[i] = stats_array.get_port_stats(port_no).get_tx_packets();
-                break;
-            case (SAI_PORT_STAT_RX_BYTES):
-                counters[i] = stats_array.get_port_stats(port_no).get_rx_bytes();
-                break;
-            case (SAI_PORT_STAT_TX_BYTES):
-                counters[i] = stats_array.get_port_stats(port_no).get_tx_bytes();
-                break;
-            case (SAI_PORT_STAT_RX_DROPPED):
-                counters[i] = stats_array.get_port_stats(port_no).get_rx_dropped();
-                break;
-            case (SAI_PORT_STAT_TX_DROPPED):
-                counters[i] = stats_array.get_port_stats(port_no).get_tx_dropped();
-                break;
-            case (SAI_PORT_STAT_RX_ERRORS):
-                counters[i] = stats_array.get_port_stats(port_no).get_rx_errors();
-                break;
-            case (SAI_PORT_STAT_TX_ERRORS):
-                counters[i] = stats_array.get_port_stats(port_no).get_tx_errors();
-                break;
-            case (SAI_PORT_STAT_RX_FRAME_ERR):
-                counters[i] = stats_array.get_port_stats(port_no).get_rx_frame_err();
-                break;
-            case ( SAI_PORT_STAT_RX_OVER_ERR):
-                counters[i] = stats_array.get_port_stats(port_no).get_rx_over_err();
-                break;
-            case (SAI_PORT_STAT_RX_CRC_ERR):
-                counters[i] = stats_array.get_port_stats(port_no).get_rx_crc_err();
-                break;
-            case (SAI_PORT_STAT_COLLISIONS):
-                counters[i] = stats_array.get_port_stats(port_no).get_collisions();
-                break;
-        }
+  if (!stats_array.has_port_stats(port_no))
+    return -1;
+
+  for (uint32_t i = 0; i < number_of_counters; i++) {
+    switch (counter_ids[i]) {
+    case (SAI_PORT_STAT_RX_PACKETS):
+      counters[i] = stats_array.get_port_stats(port_no).get_rx_packets();
+      break;
+    case (SAI_PORT_STAT_TX_PACKETS):
+      counters[i] = stats_array.get_port_stats(port_no).get_tx_packets();
+      break;
+    case (SAI_PORT_STAT_RX_BYTES):
+      counters[i] = stats_array.get_port_stats(port_no).get_rx_bytes();
+      break;
+    case (SAI_PORT_STAT_TX_BYTES):
+      counters[i] = stats_array.get_port_stats(port_no).get_tx_bytes();
+      break;
+    case (SAI_PORT_STAT_RX_DROPPED):
+      counters[i] = stats_array.get_port_stats(port_no).get_rx_dropped();
+      break;
+    case (SAI_PORT_STAT_TX_DROPPED):
+      counters[i] = stats_array.get_port_stats(port_no).get_tx_dropped();
+      break;
+    case (SAI_PORT_STAT_RX_ERRORS):
+      counters[i] = stats_array.get_port_stats(port_no).get_rx_errors();
+      break;
+    case (SAI_PORT_STAT_TX_ERRORS):
+      counters[i] = stats_array.get_port_stats(port_no).get_tx_errors();
+      break;
+    case (SAI_PORT_STAT_RX_FRAME_ERR):
+      counters[i] = stats_array.get_port_stats(port_no).get_rx_frame_err();
+      break;
+    case (SAI_PORT_STAT_RX_OVER_ERR):
+      counters[i] = stats_array.get_port_stats(port_no).get_rx_over_err();
+      break;
+    case (SAI_PORT_STAT_RX_CRC_ERR):
+      counters[i] = stats_array.get_port_stats(port_no).get_rx_crc_err();
+      break;
+    case (SAI_PORT_STAT_COLLISIONS):
+      counters[i] = stats_array.get_port_stats(port_no).get_collisions();
+      break;
     }
-    return rv; 
+  }
+  return rv;
 }
 
 } // namespace basebox
