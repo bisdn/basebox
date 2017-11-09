@@ -852,10 +852,18 @@ int controller::subscribe_to(enum swi_flags flags) noexcept {
   return rv;
 }
 
-int controller::get_statistics(uint64_t port_no, uint32_t number_of_counters, const sai_port_stat_t *counter_ids, uint64_t *counters) {
+int controller::get_statistics(uint64_t port_no, uint32_t number_of_counters, const sai_port_stat_t *counter_ids, uint64_t *counters) noexcept {
     int rv = 0;
 
     if(!(counter_ids && counters))
+        return -1;
+        
+    if (!port_no)
+        return -1;
+
+    std::lock_guard<std::mutex> lock(stats_mutex);
+
+    if (!stats_array.has_port_stats(port_no))
         return -1;
 
     for (uint32_t i = 0; i < number_of_counters; i++) {

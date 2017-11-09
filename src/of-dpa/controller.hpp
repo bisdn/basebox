@@ -148,16 +148,12 @@ public:
 
   int get_statistics(uint64_t port_no, uint32_t number_of_counters,
                      const sai_port_stat_t *counter_ids,
-                     uint64_t *counters) override {
-    LOG(FATAL) << ": not implemented";
-  }
+                     uint64_t *counters) noexcept override;
 
   /* IO */
   int enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept override;
 
   int subscribe_to(enum swi_flags flags) noexcept override;
-
-  int get_statistics(uint64_t port_no, uint32_t number_of_counters, const sai_port_stat_t *counter_ids, uint64_t *counters);
 
   /* print this */
   friend std::ostream &operator<<(std::ostream &os, const controller &box) {
