@@ -14,15 +14,21 @@ BuildRequires: autoconf
 BuildRequires: automake
 BuildRequires: gflags-devel
 BuildRequires: glog-devel
+BuildRequires: grpc-devel
+BuildRequires: grpc-plugins
 BuildRequires: libnl3-devel
 BuildRequires: libtool
+BuildRequires: protobuf-compiler
+BuildRequires: protobuf-devel
 BuildRequires: rofl-common-devel
 BuildRequires: rofl-ofdpa-devel
 BuildRequires: systemd
 
 Requires:      gflags
 Requires:      glog
+Requires:      grpc
 Requires:      libnl3
+Requires:      protobuf
 Requires:      rofl-common
 Requires:      rofl-ofdpa
 

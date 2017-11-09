@@ -48,7 +48,6 @@ SOURCES_NETLINK = \
 	netlink/nl_bridge.hpp \
 	netlink/nl_obj.cpp \
 	netlink/nl_obj.hpp \
-	netlink/sai.hpp \
 	netlink/tap_manager.cpp \
 	netlink/tap_manager.hpp
 
@@ -60,10 +59,13 @@ basebox_grpc_SOURCES = \
 	basebox_grpc_statistics.cc \
 	basebox_grpc_statistics.h \
 	basebox_api.cc \
-	basebox_api.h
+	basebox_api.h \
+	$(PROTO_FILES) \
+	$(GRPC_PROTO_FILES)
 
 baseboxd_SOURCES = \
 	baseboxd.cpp \
+	sai.hpp \
 	$(basebox_grpc_SOURCES) \
 	$(SOURCES_NETLINK)
 	
