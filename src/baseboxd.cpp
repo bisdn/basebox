@@ -10,9 +10,6 @@
 #include "netlink/tap_manager.hpp"
 #include "of-dpa/controller.hpp"
 
-static volatile sig_atomic_t got_SIGINT = 0;
-basebox::ApiServer grpcConnector;
-
 static bool validate_port(const char *flagname, gflags::int32 value) {
   if (value > 0 && value < 32768) // value is ok
     return true;
@@ -20,7 +17,6 @@ static bool validate_port(const char *flagname, gflags::int32 value) {
 }
 
 DEFINE_int32(port, 6653, "Listening port");
-
 
 int main(int argc, char **argv) {
   if (!gflags::RegisterFlagValidator(&FLAGS_port, &validate_port)) {
@@ -39,12 +35,13 @@ int main(int argc, char **argv) {
   LOG(INFO) << "using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
   basebox::nbi_impl *nbi = new basebox::nbi_impl();
-  std::unique_ptr<basebox::controller> box(
+  std::shared_ptr<basebox::controller> box(
       new basebox::controller(nbi, versionbitmap));
 
   rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"), FLAGS_port);
   box->dpt_sock_listen(baddr);
 
+  basebox::ApiServer grpcConnector(box);
   grpcConnector.runGRPCServer();
 
   delete nbi;

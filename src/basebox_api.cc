@@ -11,7 +11,9 @@
 
 namespace basebox {
 
-ApiServer::ApiServer() : stats(new NetworkStats()) {}
+ApiServer::ApiServer(std::shared_ptr<switch_interface> swi)
+    : stats(new NetworkStats(swi)) {}
+
 ApiServer::~ApiServer() { delete stats; }
 
 void ApiServer::runGRPCServer() {
@@ -23,10 +25,6 @@ void ApiServer::runGRPCServer() {
   server = builder.BuildAndStart();
   LOG(INFO) << "gRPC server listening on " << server_address;
   server->Wait();
-}
-
-void ApiServer::initStructures() {
-    stats = new NetworkStats();
 }
 
 } // namespace basebox
