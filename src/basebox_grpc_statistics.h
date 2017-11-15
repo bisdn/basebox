@@ -2,7 +2,6 @@
 
 #include <grpc++/grpc++.h>
 
-#include "rofl/common/openflow/cofportstats.h"
 #include "sai.hpp"
 #include "services-definition.grpc.pb.h"
 

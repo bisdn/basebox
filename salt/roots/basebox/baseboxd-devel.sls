@@ -9,6 +9,7 @@ basebox.build.pkg:
       - grpc-devel
       - grpc-plugins
       - libnl3-devel
+      - protobuf-devel
       - rofl-common-devel
       - rofl-ofdpa-devel
     - require:
