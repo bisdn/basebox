@@ -12,20 +12,26 @@ Source0:       http://www.bisdn.de/releases/basebox/%{name}-%{version}%{?snapsho
 
 BuildRequires: autoconf
 BuildRequires: automake
+BuildRequires: gflags-devel
+BuildRequires: glog-devel
+BuildRequires: grpc-devel
+BuildRequires: grpc-plugins
+BuildRequires: libnl3-devel
 BuildRequires: libtool
+BuildRequires: protobuf-compiler
+BuildRequires: protobuf-devel
 BuildRequires: rofl-common-devel
 BuildRequires: rofl-ofdpa-devel
-BuildRequires: libnl3-devel
-BuildRequires: glog-devel
-BuildRequires: gflags-devel
+BuildRequires: systemd
 
+Requires:      gflags
+Requires:      glog
+Requires:      grpc
+Requires:      libnl3
+Requires:      protobuf
 Requires:      rofl-common
 Requires:      rofl-ofdpa
-Requires:      libnl3
-Requires:      glog
-Requires:      gflags
 
-BuildRequires: systemd
 Requires(post): systemd
 Requires(preun): systemd
 Requires(postun): systemd

@@ -3,7 +3,7 @@ AC_INIT(baseboxd, m4_esyscmd_s([./version.sh]), [https://github.com/bisdn/basebo
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([subdir-objects -Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign -Wno-portability subdir-objects])
 
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -72,6 +72,16 @@ else
 fi
 
 # check for libraries
+PKG_CHECK_MODULES([PROTOBUF], protobuf >= 3.4.0,
+  [ CPPFLAGS="$CPPFLAGS $PROTOBUF_CFLAGS"
+	LIBS="$LIBS $PROTOBUF_LIBS"],
+  [ AC_MSG_ERROR([minimum version of libprotobuf is 3.4.0]) ])
+
+PKG_CHECK_MODULES([GRPC], grpc >= 4.0.0 grpc++ >= 1.6.6,
+  [ CPPFLAGS="$CPPFLAGS $GRPC_CFLAGS"
+	LIBS="$LIBS $GRPC_LIBS"],
+  [ AC_MSG_ERROR([minimum version of libgrpc is 4.0.0]) ])
+
 PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.29 libnl-route-3.0 >= 3.2.29,
   [ CPPFLAGS="$CPPFLAGS $LIBNL3_CFLAGS"
 	LIBS="$LIBS $LIBNL3_LIBS"],

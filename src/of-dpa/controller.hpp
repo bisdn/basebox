@@ -146,6 +146,10 @@ public:
   int egress_port_vlan_remove(uint32_t port, uint16_t vid,
                               bool untagged) noexcept override;
 
+  int get_statistics(uint64_t port_no, uint32_t number_of_counters,
+                     const sai_port_stat_t *counter_ids,
+                     uint64_t *counters) noexcept override;
+
   /* IO */
   int enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept override;
 
