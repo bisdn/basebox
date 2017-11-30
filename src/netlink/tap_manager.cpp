@@ -163,8 +163,8 @@ int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
       dev->tap_open();
       int fd = dev->get_fd();
 
-      LOG(INFO) << __FUNCTION__ << ": portname=" << port_name << " fd=" << fd
-                << " ptr=" << dev;
+      LOG(INFO) << __FUNCTION__ << ": port_id=" << port_id
+                << " portname=" << port_name << " fd=" << fd << " ptr=" << dev;
 
       io.register_tap(fd, port_id, cb);
 
