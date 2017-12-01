@@ -44,7 +44,7 @@ make install
 
 ```
 ip link add type bridge
-ip link set bridge0 vlan_filtering 1
+ip link set bridge0 type bridge vlan_filtering 1
 ip link set bridge0 up
 ```
 
