@@ -486,22 +486,22 @@ int controller::enqueue(uint32_t port_id, basebox::packet *pkt) noexcept {
     /* only send packet-out if the port with port_id is actually existing */
     if (dpt.get_ports().has_port(port_id)) {
 
-      char src_mac[32];
-      char dst_mac[32];
-
       if (VLOG_IS_ON(3)) {
+        char src_mac[32];
+        char dst_mac[32];
+
         snprintf(dst_mac, sizeof(dst_mac), "%02X:%02X:%02X:%02X:%02X:%02X",
                  eth->h_dest[0], eth->h_dest[1], eth->h_dest[2], eth->h_dest[3],
                  eth->h_dest[4], eth->h_dest[5]);
         snprintf(src_mac, sizeof(src_mac), "%02X:%02X:%02X:%02X:%02X:%02X",
                  eth->h_source[0], eth->h_source[1], eth->h_source[2],
                  eth->h_source[3], eth->h_source[4], eth->h_source[5]);
+        LOG(INFO) << __FUNCTION__ << ": send packet out to port_id=" << port_id
+                  << " pkg.len=" << pkt->len
+                  << " eth.dst=" << std::string(dst_mac)
+                  << " eth.src=" << std::string(src_mac)
+                  << " called from tid=" << pthread_self();
       }
-
-      VLOG(3) << __FUNCTION__ << ": send packet out to port_id=" << port_id
-              << " eth.dst=" << std::string(dst_mac)
-              << " eth.src=" << std::string(src_mac)
-              << " called from tid=" << pthread_self();
 
       rofl::openflow::cofactions actions(dpt.get_version());
       actions.set_action_output(rofl::cindex(0)).set_port_no(port_id);
