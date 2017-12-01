@@ -4,14 +4,14 @@
 
 #include <glog/logging.h>
 #include "netlink/tap_manager.hpp"
-#include "of-dpa/packetpool.hpp"
+#include "utils.hpp"
 
 namespace basebox {
 
 static inline void
-release_packets(std::deque<std::pair<int, rofl::cpacket *>> &q) {
+release_packets(std::deque<std::pair<int, basebox::packet *>> &q) {
   for (auto i : q) {
-    packetpool::get_instance().release_pkt(i.second);
+    std::free(i.second);
   }
 }
 
@@ -35,9 +35,9 @@ void tap_io::unregister_tap(int fd, uint32_t port_id) {
   thread.wakeup();
 }
 
-void tap_io::enqueue(int fd, rofl::cpacket *pkt) {
+void tap_io::enqueue(int fd, basebox::packet *pkt) {
   if (fd == -1) {
-    packetpool::get_instance().release_pkt(pkt);
+    std::free(pkt);
     return;
   }
 
@@ -50,34 +50,30 @@ void tap_io::enqueue(int fd, rofl::cpacket *pkt) {
 }
 
 void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
-  rofl::cpacket *pkt = nullptr;
-  try {
-    pkt = packetpool::get_instance().acquire_pkt();
+  basebox::packet *pkt =
+      (basebox::packet *)std::malloc(sizeof(basebox::packet));
 
-    ssize_t n_bytes = read(fd, pkt->soframe(), pkt->length());
+  if (pkt == nullptr)
+    return;
 
-    // error occurred (or non-blocking)
-    if (n_bytes < 0) {
-      switch (errno) {
-      case EAGAIN:
-        LOG(ERROR) << __FUNCTION__
-                   << ": EAGAIN XXX not implemented packet is dropped";
-        packetpool::get_instance().release_pkt(pkt);
-      default:
-        LOG(ERROR) << __FUNCTION__ << ": unknown error occurred";
-        packetpool::get_instance().release_pkt(pkt);
-      }
-    } else {
-      VLOG(1) << __FUNCTION__ << ": read " << n_bytes << " bytes from fd=" << fd
-              << " into pkt=" << pkt << " tid=" << pthread_self();
-      // std::map<int, std::pair<uint32_t, switch_callback *>> sw_cbs;
-      std::pair<uint32_t, switch_callback *> &cb = sw_cbs.at(fd);
-      cb.second->enqueue_to_switch(cb.first, pkt);
+  pkt->len = read(fd, pkt->data, basebox::packet_data_len);
+
+  if (pkt->len > 0) {
+    VLOG(1) << __FUNCTION__ << ": read " << pkt->len << " bytes from fd=" << fd
+            << " into pkt=" << pkt << " tid=" << pthread_self();
+    std::pair<uint32_t, switch_callback *> &cb = sw_cbs.at(fd);
+    cb.second->enqueue_to_switch(cb.first, pkt);
+  } else {
+    // error occured (or non-blocking)
+    switch (errno) {
+    case EAGAIN:
+      LOG(ERROR) << __FUNCTION__
+                 << ": EAGAIN XXX not implemented packet is dropped";
+      std::free(pkt);
+    default:
+      LOG(ERROR) << __FUNCTION__ << ": unknown error occured";
+      std::free(pkt);
     }
-
-  } catch (ePacketPoolExhausted &e) {
-    LOG(ERROR) << __FUNCTION__
-               << ": packet pool exhausted, no idle slots available";
   }
 }
 
@@ -87,8 +83,8 @@ void tap_io::handle_write_event(rofl::cthread &thread, int fd) {
 }
 
 void tap_io::tx() {
-  std::pair<int, rofl::cpacket *> pkt;
-  std::deque<std::pair<int, rofl::cpacket *>> out_queue;
+  std::pair<int, basebox::packet *> pkt;
+  std::deque<std::pair<int, basebox::packet *>> out_queue;
 
   {
     std::lock_guard<std::mutex> guard(pout_queue_mutex);
@@ -99,8 +95,7 @@ void tap_io::tx() {
 
     pkt = out_queue.front();
     int rc = 0;
-    if ((rc = write(pkt.first, pkt.second->soframe(), pkt.second->length())) <
-        0) {
+    if ((rc = write(pkt.first, pkt.second->data, pkt.second->len)) < 0) {
       switch (errno) {
       case EAGAIN:
         VLOG(1) << __FUNCTION__ << ": EAGAIN";
@@ -124,7 +119,7 @@ void tap_io::tx() {
         return;
       }
     }
-    packetpool::get_instance().release_pkt(pkt.second);
+    std::free(pkt.second);
     out_queue.pop_front();
   }
 }
@@ -168,6 +163,9 @@ int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
       dev->tap_open();
       int fd = dev->get_fd();
 
+      LOG(INFO) << __FUNCTION__ << ": portname=" << port_name << " fd=" << fd
+                << " ptr=" << dev;
+
       io.register_tap(fd, port_id, cb);
 
     } catch (std::exception &e) {
@@ -209,14 +207,14 @@ void tap_manager::destroy_tapdevs() {
   }
 }
 
-int tap_manager::enqueue(uint32_t port_id, rofl::cpacket *pkt) {
+int tap_manager::enqueue(uint32_t port_id, basebox::packet *pkt) {
   try {
     int fd = devs.at(port_id)->get_fd();
     io.enqueue(fd, pkt);
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << ": failed to enqueue packet " << pkt
                << " to port_id=" << port_id;
-    packetpool::get_instance().release_pkt(pkt);
+    std::free(pkt);
   }
   return 0;
 }

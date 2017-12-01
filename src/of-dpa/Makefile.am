@@ -7,9 +7,7 @@ noinst_LTLIBRARIES = libbb_ofdpa.la
 libbb_ofdpa_la_SOURCES = \
 	controller.cpp \
 	controller.hpp \
-	datatypes.hpp \
-	packetpool.cpp \
-	packetpool.hpp
+	datatypes.hpp
 
 AM_CPPFLAGS=-fPIC
 AM_CXXFLAGS=-I$(top_srcdir)/src

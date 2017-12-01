@@ -5,10 +5,6 @@
 #include "sai.hpp"
 #include "tap_manager.hpp"
 
-namespace rofl {
-class cpacket;
-} // namespace rofl
-
 namespace basebox {
 
 class tap_manager;
@@ -27,10 +23,10 @@ public:
   void
   port_notification(std::deque<port_notification_data> &) noexcept override;
   void port_status_changed(uint32_t port, enum port_status) noexcept override;
-  int enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept override;
+  int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept override;
 
   // tap_callback
-  int enqueue_to_switch(uint32_t port_id, rofl::cpacket *) override;
+  int enqueue_to_switch(uint32_t port_id, struct basebox::packet *) override;
 };
 
 } // namespace basebox

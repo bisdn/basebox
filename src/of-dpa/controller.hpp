@@ -151,7 +151,7 @@ public:
                      uint64_t *counters) noexcept override;
 
   /* IO */
-  int enqueue(uint32_t port_id, rofl::cpacket *pkt) noexcept override;
+  int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept override;
 
   int subscribe_to(enum swi_flags flags) noexcept override;
 

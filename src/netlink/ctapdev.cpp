@@ -13,7 +13,6 @@
 
 #include "ctapdev.hpp"
 #include "netlink/tap_manager.hpp"
-#include "of-dpa/packetpool.hpp"
 
 namespace basebox {
 
