@@ -9,7 +9,9 @@
 
 namespace basebox {
 
-nbi_impl::nbi_impl() : tap_man(new tap_manager()) {}
+nbi_impl::nbi_impl() : tap_man(new tap_manager()) {
+  cnetlink::get_instance().start();
+}
 
 nbi_impl::~nbi_impl() { cnetlink::get_instance().stop(); }
 
