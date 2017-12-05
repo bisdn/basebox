@@ -102,8 +102,13 @@ class cnetlink : public rofl::cthread_env {
   void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
   void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
 
-  uint32_t get_port_id(int ifindex) {
-    return ifindex_to_registered_port.at(ifindex);
+  uint32_t get_port_id(int ifindex) const {
+    auto it = ifindex_to_registered_port.find(ifindex);
+    if (it == ifindex_to_registered_port.end()) {
+      return 0;
+    } else {
+      return it->second;
+    }
   }
 
   int get_ifindex(uint32_t port_id) {
