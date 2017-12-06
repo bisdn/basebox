@@ -475,8 +475,7 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
 
       if (VLOG_IS_ON(2)) {
         nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": change new link "
-                  << std::string(dump_buf);
+        LOG(INFO) << __FUNCTION__ << ": new link " << std::string(dump_buf);
       }
 
       link_created(LINK_CAST(obj.get_new_obj()), s1->second);
