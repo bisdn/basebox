@@ -2,8 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef CNETLINK_H_
-#define CNETLINK_H_ 1
+#pragma once
 
 #include <deque>
 #include <exception>
@@ -100,8 +99,6 @@ class cnetlink : public rofl::cthread_env {
 
   void handle_timeout(rofl::cthread &thread, uint32_t timer_id) override;
 
-  void set_neigh_timeout();
-
   void link_created(rtnl_link *, uint32_t port_id) noexcept;
   void link_updated(rtnl_link *old_link, rtnl_link *new_link,
                     uint32_t port_id) noexcept;
@@ -160,16 +157,6 @@ public:
     running = false;
     thread.wakeup();
   }
-
-#if 0
-    void add_neigh_ll(int ifindex, uint16_t vlan,
-                      const rofl::caddress_ll &addr);
-
-    void drop_neigh_ll(int ifindex, uint16_t vlan,
-                       const rofl::caddress_ll &addr);
-#endif
 };
 
 } // end of namespace basebox
-
-#endif /* CLINKCACHE_H_ */

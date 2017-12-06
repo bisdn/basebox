@@ -145,7 +145,6 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to setup l3 neigh port_id=" << port_id
                << ", vid=" << vid << "; rv=" << rv;
-    return rv;
   }
 
   return rv;
