@@ -191,7 +191,7 @@ private:
   std::mutex stats_mutex;
   rofl::openflow::cofportstatsarray stats_array;
   uint32_t egress_interface_id;
-  std::set<int> freed_egress_interfaces_ids;
+  std::set<uint32_t> freed_egress_interfaces_ids;
 
   enum timer_t {
     /* handle_timeout will be called as well from crofbase, hence we need some

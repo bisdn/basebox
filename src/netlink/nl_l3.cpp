@@ -63,10 +63,10 @@ namespace basebox {
 
 class l3_interface final {
 public:
-  l3_interface(int l3_interface_id)
+  l3_interface(uint32_t l3_interface_id)
       : l3_interface_id(l3_interface_id), refcnt(1) {}
 
-  int l3_interface_id;
+  uint32_t l3_interface_id;
   int refcnt;
 };
 
