@@ -21,8 +21,6 @@ public:
 
   int add_l3_termination(struct rtnl_addr *a);
   int del_l3_termination(struct rtnl_addr *a);
-  int add_l3_local(struct rtnl_addr *a);
-  int del_l3_local(struct rtnl_addr *a);
 
   int add_l3_neigh(struct rtnl_neigh *n);
   int update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new);

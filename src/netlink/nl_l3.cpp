@@ -202,16 +202,6 @@ int nl_l3::del_l3_termination(struct rtnl_addr *a) {
   return rv;
 }
 
-int nl_l3::add_l3_local(struct rtnl_addr *a) {
-  LOG(FATAL) << __FUNCTION__ << ": not implemented";
-  return 0;
-}
-
-int nl_l3::del_l3_local(struct rtnl_addr *a) {
-  LOG(FATAL) << __FUNCTION__ << ": not implemented";
-  return 0;
-}
-
 int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   int rv;
 
