@@ -22,7 +22,7 @@ struct vlan_hdr {
 void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 
   std::lock_guard<std::mutex> lock(conn_mutex);
-  this->dptid = dpt.get_dptid();
+  dptid = dpt.get_dptid();
 
   LOG(INFO) << __FUNCTION__ << ": opening connection to dptid=0x" << std::hex
             << dptid << std::dec;
@@ -43,8 +43,6 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 }
 
 void controller::handle_dpt_close(const rofl::cdptid &dptid) {
-  using basebox::nbi;
-
   std::lock_guard<std::mutex> lock(conn_mutex);
 
   LOG(INFO) << __FUNCTION__ << ": closing connection to dptid=0x" << std::hex
@@ -52,7 +50,7 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
 
   std::deque<nbi::port_notification_data> ntfys;
   try {
-    // TODO check this->dptid and dptid?
+    // TODO check dptid and dptid?
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
     for (auto &id : dpt.get_ports().keys()) {
@@ -61,7 +59,7 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
           nbi::PORT_EVENT_DEL, port.get_port_no(), port.get_name()});
     }
 
-    this->nbi->port_notification(ntfys);
+    nb->port_notification(ntfys);
 
   } catch (rofl::eRofDptNotFound &e) {
     LOG(ERROR) << __FUNCTION__
@@ -124,7 +122,7 @@ void controller::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
           << msg;
 
 #if 0 // XXX FIXME check if needed
-  if (this->dptid != dpt) {
+  if (dptid != dpt) {
     LOG(ERROR) << __FUNCTION__
                    << "] wrong dptid received";
     return;
@@ -133,12 +131,12 @@ void controller::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
 
   switch (msg.get_table_id()) {
   case OFDPA_FLOW_TABLE_ID_SA_LOOKUP:
-    this->handle_srcmac_table(dpt, msg);
+    handle_srcmac_table(dpt, msg);
     break;
 
   case OFDPA_FLOW_TABLE_ID_UNICAST_ROUTING:
   case OFDPA_FLOW_TABLE_ID_ACL_POLICY:
-    this->send_packet_in_to_cpu(dpt, msg);
+    send_packet_in_to_cpu(dpt, msg);
     break;
   default:
     LOG(WARNING) << __FUNCTION__ << ": unexpected packet-in from table "
@@ -155,7 +153,7 @@ void controller::handle_flow_removed(rofl::crofdpt &dpt,
           << msg;
 
 #if 0 // XXX FIXME check if needed
-  if (this->dptid != dpt) {
+  if (dptid != dpt) {
     LOG(ERROR) << __FUNCTION__
                    << "] wrong dptid received";
     return;
@@ -164,7 +162,7 @@ void controller::handle_flow_removed(rofl::crofdpt &dpt,
 
   switch (msg.get_table_id()) {
   case OFDPA_FLOW_TABLE_ID_BRIDGING:
-    this->handle_bridging_table_rm(dpt, msg);
+    handle_bridging_table_rm(dpt, msg);
     break;
   default:
     break;
@@ -195,7 +193,7 @@ void controller::handle_port_status(rofl::crofdpt &dpt,
   case rofl::openflow::OFPPR_MODIFY: {
 
     try {
-      this->nbi->port_status_changed(port_no, status);
+      nb->port_status_changed(port_no, status);
     } catch (std::out_of_range &e) {
       LOG(WARNING) << __FUNCTION__
                    << ": unknown port with OF portno=" << port_no;
@@ -204,13 +202,13 @@ void controller::handle_port_status(rofl::crofdpt &dpt,
   case rofl::openflow::OFPPR_ADD:
     ntfys.emplace_back(nbi::port_notification_data{nbi::PORT_EVENT_ADD, port_no,
                                                    msg.get_port().get_name()});
-    this->nbi->port_notification(ntfys);
-    this->nbi->port_status_changed(port_no, status);
+    nb->port_notification(ntfys);
+    nb->port_status_changed(port_no, status);
     break;
   case rofl::openflow::OFPPR_DELETE:
     ntfys.emplace_back(nbi::port_notification_data{nbi::PORT_EVENT_DEL, port_no,
                                                    msg.get_port().get_name()});
-    this->nbi->port_notification(ntfys);
+    nb->port_notification(ntfys);
     break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": invalid port status";
@@ -258,10 +256,10 @@ void controller::handle_port_desc_stats_reply(
 
   /* init 1:1 port mapping */
   try {
-    this->nbi->port_notification(notifications);
+    nb->port_notification(notifications);
 
     for (auto status : stats) {
-      this->nbi->port_status_changed(status.first, status.second);
+      nb->port_status_changed(status.first, status.second);
     }
     LOG(INFO) << "ports initialized";
 
@@ -297,7 +295,7 @@ void controller::handle_experimenter_message(
     case QUERY_FLOW_ENTRIES:
       dpt.send_experimenter_message(auxid, xidExperimenterCAR, experimenterId,
                                     RECEIVED_FLOW_ENTRIES_QUERY);
-      nbi->resend_state();
+      nb->resend_state();
       break;
     }
   }
@@ -413,7 +411,7 @@ void controller::send_packet_in_to_cpu(rofl::crofdpt &dpt,
     std::memcpy(pkt->data, pkt_in.soframe(), pkt_in.length());
     pkt->len = pkt_in.length();
 
-    nbi->enqueue(port.get_port_no(), pkt);
+    nb->enqueue(port.get_port_no(), pkt);
 
   } catch (std::out_of_range &e) {
     LOG(ERROR) << __FUNCTION__ << ": invalid range";
@@ -478,7 +476,7 @@ int controller::enqueue(uint32_t port_id, basebox::packet *pkt) noexcept {
   }
 
   try {
-    rofl::crofdpt &dpt = set_dpt(this->dptid, true);
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
     if (not dpt.is_established()) {
       LOG(WARNING) << __FUNCTION__ << " not connected, dropping packet";
       rv = -ENOTCONN;
