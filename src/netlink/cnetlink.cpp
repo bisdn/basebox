@@ -198,7 +198,8 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
       route_addr_apply(obj);
       break;
     default:
-      LOG(INFO) << __FUNCTION__ << " unknown netlink object";
+      LOG(ERROR) << __FUNCTION__ << ": unexprected netlink type "
+                 << obj.get_msg_type();
       break;
     }
 
@@ -355,14 +356,13 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      LOG(INFO) << __FUNCTION__ << " got new v4 addr";
       l3.add_l3_termination(ADDR_CAST(obj.get_new_obj()));
       break;
     case AF_INET6:
-      LOG(INFO) << __FUNCTION__ << " new v6 not yet supported";
+      VLOG(2) << __FUNCTION__ << ": new IPv6 addr (not supported)";
       break;
     default:
-      LOG(WARNING) << __FUNCTION__ << " unsupported family: " << family;
+      LOG(ERROR) << __FUNCTION__ << ": unsupported family " << family;
       break;
     }
     break;
@@ -382,13 +382,13 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      LOG(WARNING) << __FUNCTION__ << " changed v4 not supported";
+      LOG(WARNING) << __FUNCTION__ << ": changed IPv4 (not supported)";
       break;
     case AF_INET6:
-      LOG(INFO) << __FUNCTION__ << " changed v6 not supported";
+      VLOG(2) << __FUNCTION__ << ": changed IPv6 not supported";
       break;
     default:
-      LOG(WARNING) << __FUNCTION__ << " unsupported family: " << family;
+      LOG(WARNING) << __FUNCTION__ << ": unsupported family: " << family;
       break;
     }
     break;
@@ -406,16 +406,16 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
       l3.del_l3_termination(ADDR_CAST(obj.get_old_obj()));
       break;
     case AF_INET6:
-      LOG(INFO) << __FUNCTION__ << " del v6 not yet supported";
+      VLOG(2) << __FUNCTION__ << ": deleted IPv6 (not supported)";
       break;
     default:
-      LOG(WARNING) << __FUNCTION__ << " unsupported family: " << family;
+      LOG(WARNING) << __FUNCTION__ << ": unsupported family: " << family;
       break;
     }
     break;
 
   default:
-    LOG(ERROR) << __FUNCTION__ << " invalid netlink action "
+    LOG(ERROR) << __FUNCTION__ << ": invalid netlink action "
                << obj.get_action();
     break;
   }
@@ -519,7 +519,7 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
       break;
     }
     default:
-      LOG(ERROR) << __FUNCTION__ << " invalid netlink action "
+      LOG(ERROR) << __FUNCTION__ << ": invalid netlink action "
                  << obj.get_action();
       break;
     }
@@ -552,8 +552,8 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
         l3.add_l3_neigh(NEIGH_CAST(obj.get_new_obj()));
         break;
       case AF_INET6:
-        LOG(INFO) << __FUNCTION__ << ": new neigh_v6 not supported yet "
-                  << obj.get_new_obj();
+        VLOG(2) << __FUNCTION__ << ": new IPv6 neighbour (not supported) "
+                << obj.get_new_obj();
         break;
       default:
         LOG(ERROR) << __FUNCTION__ << ": invalid family " << family;
@@ -584,7 +584,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
                          NEIGH_CAST(obj.get_new_obj()));
         break;
       case AF_INET6:
-        LOG(INFO) << __FUNCTION__ << ": update neigh_v6 not supported";
+        LOG(INFO) << __FUNCTION__ << ": change IPv6 neighbour (not supported)";
         break;
       case AF_INET:
         l3.update_l3_neigh(NEIGH_CAST(obj.get_old_obj()),
@@ -611,8 +611,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
         neigh_ll_deleted(NEIGH_CAST(obj.get_old_obj()));
         break;
       case AF_INET6:
-        LOG(INFO) << __FUNCTION__ << ": delete neigh_v6 not supported "
-                  << obj.get_old_obj();
+        VLOG(2) << __FUNCTION__ << ": delete IPv6 neighbour (not supported)";
         break;
       case AF_INET:
         l3.del_l3_neigh(NEIGH_CAST(obj.get_old_obj()));
@@ -623,7 +622,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
       }
       break;
     default:
-      LOG(ERROR) << __FUNCTION__ << " invalid netlink action "
+      LOG(ERROR) << __FUNCTION__ << ": invalid netlink action "
                  << obj.get_action();
     }
   } catch (std::exception &e) {
@@ -645,13 +644,13 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      LOG(INFO) << __FUNCTION__ << ": new v4 route not yet suppported";
+      VLOG(2) << __FUNCTION__ << ": new IPv4 route (not suppported)";
       break;
     case AF_INET6:
-      LOG(INFO) << __FUNCTION__ << ": new v6 route not yet suppported";
+      VLOG(2) << __FUNCTION__ << ": new IPv6 route (not suppported)";
       break;
     default:
-      LOG(WARNING) << __FUNCTION__ << " family not supported: " << family;
+      LOG(WARNING) << __FUNCTION__ << ": family not supported: " << family;
       break;
     }
     break;
@@ -662,22 +661,20 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     if (VLOG_IS_ON(2)) {
       nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": change new route "
-                << std::string(dump_buf);
+      VLOG(2) << __FUNCTION__ << ": change new route " << std::string(dump_buf);
       nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": change old route "
-                << std::string(dump_buf);
+      VLOG(2) << __FUNCTION__ << ": change old route " << std::string(dump_buf);
     }
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      LOG(INFO) << __FUNCTION__ << ": changed v4 route not yet suppported";
+      VLOG(2) << __FUNCTION__ << ": changed IPv4 route (not suppported)";
       break;
     case AF_INET6:
-      LOG(INFO) << __FUNCTION__ << ": changed v6 route not yet suppported";
+      VLOG(2) << __FUNCTION__ << ": changed IPv6 route (not suppported)";
       break;
     default:
-      LOG(WARNING) << __FUNCTION__ << " family not supported: " << family;
+      LOG(WARNING) << __FUNCTION__ << ": family not supported: " << family;
       break;
     }
     break;
@@ -692,25 +689,26 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_old_obj()))) {
     case AF_INET:
-      LOG(INFO) << __FUNCTION__ << ": changed v4 route not yet suppported";
+      VLOG(2) << __FUNCTION__ << ": changed IPv4 route (not suppported)";
       break;
     case AF_INET6:
-      LOG(INFO) << __FUNCTION__ << ": changed v6 route not yet suppported";
+      VLOG(2) << __FUNCTION__ << ": changed IPv6 route (not suppported)";
       break;
     default:
-      LOG(WARNING) << __FUNCTION__ << " family not supported: " << family;
+      LOG(WARNING) << __FUNCTION__ << ": family not supported: " << family;
       break;
     }
     break;
 
   default:
-    LOG(ERROR) << __FUNCTION__ << " invalid action " << obj.get_action();
+    LOG(ERROR) << __FUNCTION__ << ": invalid action " << obj.get_action();
     break;
   }
 }
 
 void cnetlink::link_created(rtnl_link *link, uint32_t port_id) noexcept {
   assert(link);
+
   try {
     if (AF_BRIDGE == rtnl_link_get_family(link)) {
 
@@ -736,7 +734,7 @@ void cnetlink::link_created(rtnl_link *link, uint32_t port_id) noexcept {
       }
     }
   } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << " failed: " << e.what();
+    LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
   }
 }
 
@@ -747,7 +745,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link,
       bridge->update_interface(port_id, old_link, new_link);
     }
   } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << " failed: " << e.what();
+    LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
   }
 }
 
@@ -759,7 +757,7 @@ void cnetlink::link_deleted(rtnl_link *link, uint32_t port_id) noexcept {
       bridge->delete_interface(port_id, link);
     }
   } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << " failed: " << e.what();
+    LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
   }
 }
 
