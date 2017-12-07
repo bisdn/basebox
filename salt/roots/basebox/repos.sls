@@ -25,6 +25,18 @@ bisdn-rofl:
     - require:
       - pkg: yum
 
+bisdn-rofl-testing:
+  pkgrepo.managed:
+    - humanname: Copr repo for rofl-testing owned by bisdn
+    - baseurl: https://copr-be.cloud.fedoraproject.org/results/bisdn/rofl-testing/fedora-$releasever-$basearch/
+    - skip_if_unavailable: True
+    - gpgcheck: 1
+    - gpgkey: https://copr-be.cloud.fedoraproject.org/results/bisdn/rofl-testing/pubkey.gpg
+    - enabled: 1
+    - enabled_metadata: 1
+    - require:
+      - pkg: yum
+
 bisdn-baseboxd-testing-copr:
   pkgrepo.managed:
     - name: bisdn-baseboxd-testing
