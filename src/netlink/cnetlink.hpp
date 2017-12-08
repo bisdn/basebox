@@ -2,8 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef CNETLINK_H_
-#define CNETLINK_H_ 1
+#pragma once
 
 #include <deque>
 #include <exception>
@@ -11,13 +10,10 @@
 #include <tuple>
 
 #include <netlink/cache.h>
-#include <netlink/object.h>
-#include <netlink/route/addr.h>
-#include <netlink/route/link.h>
-#include <netlink/route/neighbour.h>
 #include <rofl/common/cthread.hpp>
 
 #include "netlink/nl_bridge.hpp"
+#include "netlink/nl_l3.hpp"
 #include "netlink/nl_obj.hpp"
 #include "sai.hpp"
 
@@ -38,8 +34,11 @@ public:
 
 class cnetlink : public rofl::cthread_env {
   enum nl_cache_t {
+    NL_ADDR_CACHE,
     NL_LINK_CACHE,
     NL_NEIGH_CACHE,
+    NL_ROUTE_CACHE,
+    NL_MAX_CACHE,
   };
 
   enum timer {
@@ -52,7 +51,7 @@ class cnetlink : public rofl::cthread_env {
   rofl::cthread thread;
   struct nl_sock *sock;
   struct nl_cache_mngr *mngr;
-  std::map<enum nl_cache_t, struct nl_cache *> caches;
+  std::vector<struct nl_cache *> caches;
   std::map<std::string, uint32_t> registered_ports;
   mutable std::mutex rp_mutex;
   std::map<int, uint32_t> ifindex_to_registered_port;
@@ -67,8 +66,15 @@ class cnetlink : public rofl::cthread_env {
   bool rfd_scheduled;
   std::deque<nl_obj> nl_objs;
 
+  nl_l3 l3;
+
+  struct nl_dump_params params;
+  char dump_buf[1024];
+
+  void route_addr_apply(const nl_obj &obj);
   void route_link_apply(const nl_obj &obj);
   void route_neigh_apply(const nl_obj &obj);
+  void route_route_apply(const nl_obj &obj);
 
   enum cnetlink_event_t {
     EVENT_NONE,
@@ -102,6 +108,9 @@ class cnetlink : public rofl::cthread_env {
   void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
   void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
 
+public:
+  struct rtnl_link *get_link_by_ifindex(int ifindex) const;
+
   uint32_t get_port_id(int ifindex) const {
     auto it = ifindex_to_registered_port.find(ifindex);
     if (it == ifindex_to_registered_port.end()) {
@@ -111,11 +120,10 @@ class cnetlink : public rofl::cthread_env {
     }
   }
 
-  int get_ifindex(uint32_t port_id) {
+  int get_ifindex(uint32_t port_id) const {
     return registered_port_to_ifindex.at(port_id);
   }
 
-public:
   void resend_state() noexcept;
 
   void register_switch(switch_interface *) noexcept;
@@ -123,8 +131,6 @@ public:
 
   void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
 
-  static void nl_cb(struct nl_cache *cache, struct nl_object *obj, int action,
-                    void *data);
   static void nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
                        struct nl_object *new_obj, uint64_t diff, int action,
                        void *data);
@@ -154,5 +160,3 @@ public:
 };
 
 } // end of namespace basebox
-
-#endif /* CLINKCACHE_H_ */

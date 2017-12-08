@@ -46,6 +46,8 @@ SOURCES_NETLINK = \
 	netlink/nbi_impl.hpp \
 	netlink/nl_bridge.cpp \
 	netlink/nl_bridge.hpp \
+	netlink/nl_l3.hpp \
+	netlink/nl_l3.cpp \
 	netlink/nl_obj.cpp \
 	netlink/nl_obj.hpp \
 	netlink/tap_manager.cpp \

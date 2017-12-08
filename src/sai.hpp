@@ -37,6 +37,22 @@ public:
   virtual int l2_addr_remove(uint32_t port, uint16_t vid,
                              const rofl::cmacaddr &mac) noexcept = 0;
 
+  virtual int l3_termination_add(uint32_t sport, uint16_t vid,
+                                 const rofl::cmacaddr &dmac) noexcept = 0;
+  virtual int l3_termination_remove(uint32_t sport, uint16_t vid,
+                                    const rofl::cmacaddr &dmac) noexcept = 0;
+
+  virtual int l3_egress_create(uint32_t port, uint16_t vid,
+                               const rofl::caddress_ll &src_mac,
+                               const rofl::caddress_ll &dst_mac,
+                               uint32_t *l3_interface) noexcept = 0;
+  virtual int l3_egress_remove(uint32_t l3_interface) noexcept = 0;
+
+  virtual int l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
+                                  uint32_t l3_interface) noexcept = 0;
+  virtual int
+  l3_unicast_host_remove(const rofl::caddress_in4 &ipv4_dst) noexcept = 0;
+
   virtual int ingress_port_vlan_accept_all(uint32_t port) noexcept = 0;
   virtual int ingress_port_vlan_drop_accept_all(uint32_t port) noexcept = 0;
   virtual int ingress_port_vlan_add(uint32_t port, uint16_t vid,
@@ -46,10 +62,14 @@ public:
 
   virtual int egress_port_vlan_accept_all(uint32_t port) noexcept = 0;
   virtual int egress_port_vlan_drop_accept_all(uint32_t port) noexcept = 0;
+
   virtual int egress_port_vlan_add(uint32_t port, uint16_t vid,
                                    bool untagged) noexcept = 0;
-  virtual int egress_port_vlan_remove(uint32_t port, uint16_t vid,
-                                      bool untagged) noexcept = 0;
+  virtual int egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept = 0;
+  virtual int egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
+                                          bool untagged) noexcept = 0;
+  virtual int egress_bridge_port_vlan_remove(uint32_t port,
+                                             uint16_t vid) noexcept = 0;
 
   virtual int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept = 0;
   virtual int subscribe_to(enum swi_flags flags) noexcept = 0;

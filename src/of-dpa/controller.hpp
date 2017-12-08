@@ -42,17 +42,17 @@ class controller : public rofl::crofbase,
                        ///(OUI)
   };
 
-  basebox::nbi *nbi;
+  nbi *nb;
 
   controller(const controller &) = delete;
   controller &operator=(const controller &) = delete;
 
 public:
-  controller(basebox::nbi *nbi,
+  controller(nbi *nb,
              const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
                  rofl::openflow::cofhello_elem_versionbitmap())
-      : nbi(nbi), bb_thread(this) {
-    nbi->register_switch(this);
+      : nb(nb), bb_thread(this), egress_interface_id(1) {
+    nb->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
     bb_thread.start();
   }
@@ -132,6 +132,22 @@ public:
   int l2_addr_remove(uint32_t port, uint16_t vid,
                      const rofl::cmacaddr &mac) noexcept override;
 
+  int l3_termination_add(uint32_t sport, uint16_t vid,
+                         const rofl::cmacaddr &dmac) noexcept override;
+  int l3_termination_remove(uint32_t sport, uint16_t vid,
+                            const rofl::cmacaddr &dmac) noexcept override;
+
+  int l3_egress_create(uint32_t port, uint16_t vid,
+                       const rofl::caddress_ll &src_mac,
+                       const rofl::caddress_ll &dst_mac,
+                       uint32_t *l3_interface) noexcept override;
+  int l3_egress_remove(uint32_t l3_interface) noexcept override;
+
+  int l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
+                          uint32_t l3_interface) noexcept override;
+  int l3_unicast_host_remove(
+      const rofl::caddress_in4 &ipv4_dst) noexcept override;
+
   int ingress_port_vlan_accept_all(uint32_t port) noexcept override;
   int ingress_port_vlan_drop_accept_all(uint32_t port) noexcept override;
   int ingress_port_vlan_add(uint32_t port, uint16_t vid,
@@ -141,10 +157,15 @@ public:
 
   int egress_port_vlan_accept_all(uint32_t port) noexcept override;
   int egress_port_vlan_drop_accept_all(uint32_t port) noexcept override;
+
   int egress_port_vlan_add(uint32_t port, uint16_t vid,
                            bool untagged) noexcept override;
-  int egress_port_vlan_remove(uint32_t port, uint16_t vid,
-                              bool untagged) noexcept override;
+  int egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept override;
+
+  int egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
+                                  bool untagged) noexcept override;
+  int egress_bridge_port_vlan_remove(uint32_t port,
+                                     uint16_t vid) noexcept override;
 
   int get_statistics(uint64_t port_no, uint32_t number_of_counters,
                      const sai_port_stat_t *counter_ids,
@@ -169,6 +190,8 @@ private:
   rofl::cthread bb_thread;
   std::mutex stats_mutex;
   rofl::openflow::cofportstatsarray stats_array;
+  uint32_t egress_interface_id;
+  std::set<uint32_t> freed_egress_interfaces_ids;
 
   enum timer_t {
     /* handle_timeout will be called as well from crofbase, hence we need some
@@ -181,8 +204,8 @@ private:
   void handle_srcmac_table(rofl::crofdpt &dpt,
                            rofl::openflow::cofmsg_packet_in &msg);
 
-  void handle_acl_policy_table(rofl::crofdpt &dpt,
-                               rofl::openflow::cofmsg_packet_in &msg);
+  void send_packet_in_to_cpu(rofl::crofdpt &dpt,
+                             rofl::openflow::cofmsg_packet_in &msg);
 
   void handle_bridging_table_rm(rofl::crofdpt &dpt,
                                 rofl::openflow::cofmsg_flow_removed &msg);

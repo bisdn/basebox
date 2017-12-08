@@ -126,7 +126,7 @@ void ofdpa_bridge::add_interface(uint32_t port, rtnl_link *link) {
         }
 
         if (egress_vlan_filtered) {
-          sw->egress_port_vlan_add(port, vid, egress_untagged);
+          sw->egress_bridge_port_vlan_add(port, vid, egress_untagged);
         }
 
         if (ingress_vlan_filtered) {
@@ -178,7 +178,7 @@ void ofdpa_bridge::update_vlans(uint32_t port, const std::string &devname,
           // vlan added
 
           if (egress_vlan_filtered) {
-            sw->egress_port_vlan_add(port, vid, egress_untagged);
+            sw->egress_bridge_port_vlan_add(port, vid, egress_untagged);
           }
 
           if (ingress_vlan_filtered) {
@@ -195,7 +195,7 @@ void ofdpa_bridge::update_vlans(uint32_t port, const std::string &devname,
           if (egress_vlan_filtered) {
             // delete all FM pointing to this group first
             sw->l2_addr_remove_all_in_vlan(port, vid);
-            sw->egress_port_vlan_remove(port, vid, egress_untagged);
+            sw->egress_bridge_port_vlan_remove(port, vid);
           }
         }
 
