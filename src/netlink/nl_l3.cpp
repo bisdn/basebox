@@ -206,6 +206,12 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
   LOG(INFO) << __FUNCTION__ << ": n=" << n;
 
+  int state = rtnl_neigh_get_state(n);
+  if (state == NUD_FAILED) {
+    LOG(INFO) << __FUNCTION__ << ": neighbour not reachable state=failed";
+    return -EINVAL;
+  }
+
   int vid = 1; // XXX TODO currently only on vid 1
   assert(vid);
   struct nl_addr *addr = rtnl_neigh_get_lladdr(n);
