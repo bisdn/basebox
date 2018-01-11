@@ -26,12 +26,10 @@ CLEANFILES = \
 	$(PROTO_SOURCES) \
 	$(GRPC_SOURCES)
 
-PROTOC=/usr/bin/protoc
-GRPC_CPP_PLUGIN_PATH=/usr/bin/grpc_cpp_plugin
 PROTOS_PATH=$(srcdir)/grpc/proto
 
 $(GRPC_SOURCES): $(GRPC_PROTO_FILES)
-	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $^
+	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN) $^
 
 # can be optimized though since protoc is called #PROTO_SOURCES times:
 $(PROTO_SOURCES): $(PROTO_FILES) $(GRPC_PROTO_FILES)
