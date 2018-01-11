@@ -77,10 +77,18 @@ PKG_CHECK_MODULES([PROTOBUF], protobuf >= 3.4.0,
 	LIBS="$LIBS $PROTOBUF_LIBS"],
   [ AC_MSG_ERROR([minimum version of libprotobuf is 3.4.0]) ])
 
+AC_ARG_VAR([PROTOC], [protoc command])
+AC_PATH_PROG([PROTOC], [protoc], [unset])
+AS_IF([test "$PROTOC" = unset], [AC_MSG_ERROR([protoc not found, set either PROTOC variable or install protoc in PATH.])])
+
 PKG_CHECK_MODULES([GRPC], grpc >= 4.0.0 grpc++ >= 1.6.6,
   [ CPPFLAGS="$CPPFLAGS $GRPC_CFLAGS"
 	LIBS="$LIBS $GRPC_LIBS"],
   [ AC_MSG_ERROR([minimum version of libgrpc is 4.0.0]) ])
+
+AC_ARG_VAR([GRPC_CPP_PLUGIN], [grpc_cpp_plugin for use with protoc])
+AC_PATH_PROG([GRPC_CPP_PLUGIN], [grpc_cpp_plugin], [unset])
+AS_IF([test "$GRPC_CPP_PLUGIN" = unset], [AC_MSG_ERROR([grpc_cpp_plugin not found, set either GRPC_CPP_PLUGIN variable or install grpc_cpp_plugin in PATH.])])
 
 PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.29 libnl-route-3.0 >= 3.2.29,
   [ CPPFLAGS="$CPPFLAGS $LIBNL3_CFLAGS"
