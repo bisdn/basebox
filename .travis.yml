@@ -13,7 +13,3 @@ addons:
 script:
 - find . -regex '.*\.\(hh?\|cc?\|hpp\|cpp\)$' | xargs clang-format-4.0 -i -style=file -fallback-style=llvm
 - git diff --exit-code
-
-branches:
-  only:
-  - master
