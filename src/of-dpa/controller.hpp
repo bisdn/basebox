@@ -184,7 +184,7 @@ public:
 
 private:
   rofl::cdptid dptid;
-  rofl::rofl_ofdpa_fm_driver fm_driver;
+  rofl::openflow::rofl_ofdpa_fm_driver fm_driver;
   std::map<uint16_t, std::set<uint32_t>> l2_domain;
   std::mutex conn_mutex;
   rofl::cthread bb_thread;

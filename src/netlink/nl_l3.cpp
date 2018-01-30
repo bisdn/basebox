@@ -48,7 +48,7 @@ template <class Tuple> struct HashValueImpl<Tuple, 0> {
     hash_combine(seed, get<0>(tuple));
   }
 };
-}
+} // namespace
 
 template <typename... TT> struct hash<std::tuple<TT...>> {
   size_t operator()(std::tuple<TT...> const &tt) const {
@@ -57,7 +57,7 @@ template <typename... TT> struct hash<std::tuple<TT...>> {
     return seed;
   }
 };
-}
+} // namespace std
 
 namespace basebox {
 
