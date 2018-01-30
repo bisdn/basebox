@@ -5,11 +5,11 @@ sudo: required
 addons:
   apt:
     packages:
-    - clang-format-4.0
+    - clang-format-5.0
     sources:
-    - llvm-toolchain-trusty-4.0
+    - llvm-toolchain-trusty-5.0
     - ubuntu-toolchain-r-test
 
 script:
-- find . -regex '.*\.\(hh?\|cc?\|hpp\|cpp\)$' | xargs clang-format-4.0 -i -style=file -fallback-style=llvm
+- find . -regex '.*\.\(hh?\|cc?\|hpp\|cpp\)$' | xargs clang-format-5.0 -i -style=file -fallback-style=llvm
 - git diff --exit-code
