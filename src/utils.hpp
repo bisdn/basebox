@@ -10,4 +10,4 @@ struct packet {
   char data[packet_data_len]; ///< total allocated buffer
   std::size_t len;            ///< actual lenght written into data
 };
-}
+} // namespace basebox

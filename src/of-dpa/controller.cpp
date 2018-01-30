@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 #include "controller.hpp"
-#include "datatypes.hpp"
+#include "ofdpa_datatypes.h"
 #include "utils.hpp"
 
 namespace basebox {
@@ -728,9 +728,8 @@ int controller::l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
       l3_interface_id = fm_driver.group_id_l3_unicast(l3_interface_id);
 
     dpt.send_flow_mod_message(
-        rofl::cauxid(0),
-        fm_driver.enable_ipv4_unicast_host(dpt.get_version(), ipv4_dst,
-                                           l3_interface_id));
+        rofl::cauxid(0), fm_driver.enable_ipv4_unicast_host(
+                             dpt.get_version(), ipv4_dst, l3_interface_id));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -977,10 +976,9 @@ int controller::egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
 
     // create/update new L2 flooding group
     dpt.send_group_mod_message(
-        rofl::cauxid(0),
-        fm_driver.enable_group_l2_flood(dpt.get_version(), vid, vid,
-                                        l2_dom_it->second,
-                                        (l2_dom_it->second.size() != 1)));
+        rofl::cauxid(0), fm_driver.enable_group_l2_flood(
+                             dpt.get_version(), vid, vid, l2_dom_it->second,
+                             (l2_dom_it->second.size() != 1)));
 
     if (l2_dom_it->second.size() == 1) { // send barrier on creation
       dpt.send_barrier_request(rofl::cauxid(0));
