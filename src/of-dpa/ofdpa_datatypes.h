@@ -77,7 +77,7 @@ enum ofdpa_match_exp_type {
   OFDPA_OXM_PROTECTION_INDEX = 21,
   OFDPA_OXM_MPLS_TYPE = 23,
   OFDPA_OXM_ALLOW_VLAN_TRANSLATION = 24,
-  OFDPA_OXM_ACTSET_OUTPUT = 41,
+  OFDPA_OXM_ACTSET_OUTPUT = 43,
 };
 
 /* Flow Table Id enumerator */
