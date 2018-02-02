@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <list>
 #include <string>
+#include <memory>
 
 struct rtnl_link_bridge_vlan;
 struct rtnl_link;
@@ -17,10 +18,11 @@ struct nl_addr;
 namespace basebox {
 
 class switch_interface;
+class tap_manager;
 
 class ofdpa_bridge {
 public:
-  ofdpa_bridge(switch_interface *sw);
+  ofdpa_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man);
 
   virtual ~ofdpa_bridge();
 
@@ -28,17 +30,16 @@ public:
 
   bool has_bridge_interface() const { return bridge != nullptr; }
 
-  void add_interface(uint32_t port, rtnl_link *);
+  void add_interface(rtnl_link *);
 
-  void update_interface(uint32_t port, rtnl_link *old_link,
-                        rtnl_link *new_link);
+  void update_interface(rtnl_link *old_link, rtnl_link *new_link);
 
-  void delete_interface(uint32_t port, rtnl_link *);
+  void delete_interface(rtnl_link *);
 
-  void add_mac_to_fdb(const uint32_t port, uint16_t vlan, nl_addr *mac);
-  void add_mac_to_fdb(const uint32_t port, rtnl_neigh *, rtnl_link *);
+  void add_neigh_to_fdb(rtnl_neigh *);
+  void add_mac_to_fdb(rtnl_neigh *, rtnl_link *);
 
-  void remove_mac_from_fdb(const uint32_t port, rtnl_neigh *);
+  void remove_mac_from_fdb(rtnl_neigh *);
 
 private:
   void update_vlans(uint32_t port, const std::string &devname,
@@ -49,6 +50,8 @@ private:
   switch_interface *sw;
   bool ingress_vlan_filtered;
   bool egress_vlan_filtered;
+
+  std::shared_ptr<tap_manager> tap_man;
 };
 
 } /* namespace basebox */

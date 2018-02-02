@@ -1,6 +1,7 @@
 #include "nl_l3.hpp"
 #include "cnetlink.hpp"
 #include "sai.hpp"
+#include "tap_manager.hpp"
 
 #include <glog/logging.h>
 #include <tuple>
@@ -76,7 +77,9 @@ std::unordered_map<
     l3_interface>
     l3_interface_mapping;
 
-nl_l3::nl_l3(switch_interface *sw) : sw(sw) {}
+nl_l3::nl_l3(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
+             cnetlink *nl)
+    : sw(sw), tap_man(tap_man), nl(nl) {}
 
 rofl::caddress_ll libnl_lladdr_2_rofl(const struct nl_addr *lladdr) {
   // XXX check for family
@@ -106,7 +109,7 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
   }
 
   int ifindex = rtnl_addr_get_ifindex(a);
-  int port_id = cnetlink::get_instance().get_port_id(ifindex);
+  int port_id = tap_man->get_port_id(ifindex);
 
   if (port_id == 0) {
     LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0";
@@ -169,10 +172,10 @@ int nl_l3::del_l3_termination(struct rtnl_addr *a) {
   }
 
   int ifindex = rtnl_addr_get_ifindex(a);
-  int port_id = cnetlink::get_instance().get_port_id(ifindex);
+  int port_id = tap_man->get_port_id(ifindex);
 
   if (port_id == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0";
+    VLOG(1) << __FUNCTION__ << ": invalid port_id 0";
     return -EINVAL;
   }
 
@@ -217,15 +220,15 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   struct nl_addr *addr = rtnl_neigh_get_lladdr(n);
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(addr);
   int ifindex = rtnl_neigh_get_ifindex(n);
-  uint32_t port_id = cnetlink::get_instance().get_port_id(ifindex);
+  uint32_t port_id = tap_man->get_port_id(ifindex);
 
   if (port_id == 0) {
     LOG(ERROR) << __FUNCTION__ << ": invalid port_id=" << port_id;
     return -EINVAL;
   }
 
-  struct rtnl_link *link =
-      cnetlink::get_instance().get_link_by_ifindex(ifindex);
+  assert(nl);
+  struct rtnl_link *link = nl->get_link_by_ifindex(ifindex);
 
   if (link == nullptr)
     return -EINVAL;
@@ -317,7 +320,7 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
   struct nl_addr *n_ll_new;
 
   int ifindex = rtnl_neigh_get_ifindex(n_old);
-  uint32_t port_id = cnetlink::get_instance().get_port_id(ifindex);
+  uint32_t port_id = tap_man->get_port_id(ifindex);
 
   if (port_id == 0) {
     VLOG(1) << __FUNCTION__ << ": invalid port id=" << port_id;
@@ -343,8 +346,7 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
     VLOG(2) << __FUNCTION__ << ": neighbour ll unreachable";
 
     int ifindex = rtnl_neigh_get_ifindex(n_old);
-    struct rtnl_link *link =
-        cnetlink::get_instance().get_link_by_ifindex(ifindex);
+    struct rtnl_link *link = nl->get_link_by_ifindex(ifindex);
     struct nl_addr *addr;
 
     if (link == nullptr)
@@ -404,8 +406,7 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
 
   // delete l3 unicast group (mac rewrite)
   int ifindex = rtnl_neigh_get_ifindex(n);
-  struct rtnl_link *link =
-      cnetlink::get_instance().get_link_by_ifindex(ifindex);
+  struct rtnl_link *link = nl->get_link_by_ifindex(ifindex);
 
   if (link == nullptr)
     return -EINVAL;
@@ -427,10 +428,10 @@ int nl_l3::del_l3_egress(int ifindex, const struct nl_addr *s_mac,
   assert(s_mac);
   assert(d_mac);
 
-  uint32_t port_id = cnetlink::get_instance().get_port_id(ifindex);
+  uint32_t port_id = tap_man->get_port_id(ifindex);
 
   if (port_id == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid port_id=0 of ifindex" << ifindex;
+    VLOG(1) << __FUNCTION__ << ": invalid port_id=0 of ifindex" << ifindex;
     return -EINVAL;
   }
 

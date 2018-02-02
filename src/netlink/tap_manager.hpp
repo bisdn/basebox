@@ -80,11 +80,41 @@ public:
 
   int enqueue(uint32_t port_id, basebox::packet *pkt);
 
+  std::map<std::string, uint32_t> get_registered_ports() const {
+    std::lock_guard<std::mutex> lock(rp_mutex);
+    return tap_names;
+  }
+
+  uint32_t get_port_id(int ifindex) const noexcept {
+    auto it = ifindex_to_id.find(ifindex);
+    if (it == ifindex_to_id.end()) {
+      return 0;
+    } else {
+      return it->second;
+    }
+  }
+
+  int get_ifindex(uint32_t port_id) const noexcept {
+    auto it = id_to_ifindex.find(port_id);
+    if (it == id_to_ifindex.end()) {
+      return 0;
+    } else {
+      return it->second;
+    }
+  }
+
+  void tap_dev_ready(int ifindex, const std::string &name);
+
 private:
   tap_manager(const tap_manager &other) = delete; // non construction-copyable
   tap_manager &operator=(const tap_manager &) = delete; // non copyable
 
-  std::map<uint32_t, ctapdev *> devs;
+  std::map<uint32_t, ctapdev *> tap_devs; // southbound id:tap_device
+  mutable std::mutex rp_mutex;
+  std::map<std::string, uint32_t> tap_names;
+
+  std::map<int, uint32_t> ifindex_to_id;
+  std::map<uint32_t, int> id_to_ifindex;
 
   basebox::tap_io io;
 };

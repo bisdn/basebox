@@ -8,6 +8,7 @@
 #include "basebox_api.h"
 #include "netlink/nbi_impl.hpp"
 #include "netlink/tap_manager.hpp"
+#include "netlink/tap_manager.hpp"
 #include "of-dpa/controller.hpp"
 
 static bool validate_port(const char *flagname, gflags::int32 value) {
@@ -19,6 +20,10 @@ static bool validate_port(const char *flagname, gflags::int32 value) {
 DEFINE_int32(port, 6653, "Listening port");
 
 int main(int argc, char **argv) {
+  using basebox::controller;
+  using basebox::nbi_impl;
+  using basebox::tap_manager;
+
   if (!gflags::RegisterFlagValidator(&FLAGS_port, &validate_port)) {
     std::cerr << "Failed to register port validator" << std::endl;
     exit(1);
@@ -34,14 +39,14 @@ int main(int argc, char **argv) {
   versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
   LOG(INFO) << "using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
-  basebox::nbi_impl *nbi = new basebox::nbi_impl();
-  std::shared_ptr<basebox::controller> box(
-      new basebox::controller(nbi, versionbitmap));
+  std::shared_ptr<tap_manager> tap_man(new tap_manager());
+  nbi_impl *nbi = new nbi_impl(tap_man);
+  std::shared_ptr<controller> box(new controller(nbi, versionbitmap));
 
   rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"), FLAGS_port);
   box->dpt_sock_listen(baddr);
 
-  basebox::ApiServer grpcConnector(box);
+  basebox::ApiServer grpcConnector(box, tap_man);
   grpcConnector.runGRPCServer();
 
   delete nbi;

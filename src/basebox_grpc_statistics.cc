@@ -1,7 +1,9 @@
-#include "basebox_grpc_statistics.h"
-#include "netlink/cnetlink.hpp"
 #include <glog/logging.h>
 #include <vector>
+
+#include "basebox_grpc_statistics.h"
+#include "sai.hpp"
+#include "netlink/tap_manager.hpp"
 
 namespace basebox {
 
@@ -10,7 +12,9 @@ using openconfig_interfaces::Interface_State_Counters;
 using openconfig_interfaces::Interfaces;
 using openconfig_interfaces::Interfaces_Interface;
 
-NetworkStats::NetworkStats(std::shared_ptr<switch_interface> swi) : swi(swi) {}
+NetworkStats::NetworkStats(std::shared_ptr<switch_interface> swi,
+                           std::shared_ptr<tap_manager> tap_man)
+    : swi(swi), tap_man(tap_man) {}
 
 ::grpc::Status NetworkStats::GetStatistics(::grpc::ServerContext *context,
                                            const Empty *request,
@@ -30,8 +34,7 @@ NetworkStats::NetworkStats(std::shared_ptr<switch_interface> swi) : swi(swi) {}
       switch_interface::SAI_PORT_STAT_RX_OVER_ERR,
       switch_interface::SAI_PORT_STAT_RX_CRC_ERR,
       switch_interface::SAI_PORT_STAT_COLLISIONS};
-  std::map<std::string, uint32_t> ports =
-      cnetlink::get_instance().get_registered_ports();
+  std::map<std::string, uint32_t> ports = tap_man->get_registered_ports();
 
   for (const auto &port : ports) {
     std::vector<uint64_t> stats(counter_ids.size());
