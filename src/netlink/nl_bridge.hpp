@@ -2,8 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef SRC_ROFLIBS_OF_DPA_OFDPA_BRIDGE_HPP_
-#define SRC_ROFLIBS_OF_DPA_OFDPA_BRIDGE_HPP_
+#pragma once
 
 #include <cstdint>
 #include <list>
@@ -20,11 +19,11 @@ namespace basebox {
 class switch_interface;
 class tap_manager;
 
-class ofdpa_bridge {
+class nl_bridge {
 public:
-  ofdpa_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man);
+  nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man);
 
-  virtual ~ofdpa_bridge();
+  virtual ~nl_bridge();
 
   void set_bridge_interface(rtnl_link *);
 
@@ -55,5 +54,3 @@ private:
 };
 
 } /* namespace basebox */
-
-#endif /* SRC_ROFLIBS_OF_DPA_OFDPA_BRIDGE_HPP_ */
