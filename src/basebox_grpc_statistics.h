@@ -2,16 +2,21 @@
 
 #include <grpc++/grpc++.h>
 
-#include "sai.hpp"
 #include "services-definition.grpc.pb.h"
 
 namespace basebox {
+
+// forward declarations
+class switch_interface;
+class tap_manager;
 
 class NetworkStats final : public ::api::NetworkStatistics::Service {
 public:
   typedef ::api::Empty Empty;
 
-  NetworkStats(std::shared_ptr<switch_interface> swi);
+  NetworkStats(std::shared_ptr<switch_interface> swi,
+               std::shared_ptr<tap_manager> tap_man);
+
   virtual ~NetworkStats(){};
 
   ::grpc::Status
@@ -20,6 +25,7 @@ public:
 
 private:
   std::shared_ptr<switch_interface> swi;
+  std::shared_ptr<tap_manager> tap_man;
 };
 
 } // namespace basebox

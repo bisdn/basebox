@@ -153,19 +153,27 @@ tap_manager::~tap_manager() { destroy_tapdevs(); }
 int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
                                switch_callback &cb) {
   int r = 0;
-  auto it = devs.find(port_id);
-  if (it == devs.end()) {
+  std::lock_guard<std::mutex> lock{rp_mutex};
+  auto dev_it = tap_devs.find(port_id);
+  auto dev_name_it = tap_names.find(port_name);
+
+  if (dev_it == tap_devs.end() && dev_name_it == tap_names.end()) {
+    // create a new tap device
+
     ctapdev *dev;
     try {
-      // XXX create mapping of port_ids?
       dev = new ctapdev(port_name);
-      devs.insert(std::make_pair(port_id, dev));
+      tap_devs.insert(std::make_pair(port_id, dev));
+      tap_names.insert(std::make_pair(port_name, port_id));
+
+      // create the port
       dev->tap_open();
       int fd = dev->get_fd();
 
       LOG(INFO) << __FUNCTION__ << ": port_id=" << port_id
                 << " portname=" << port_name << " fd=" << fd << " ptr=" << dev;
 
+      // start reading from port
       io.register_tap(fd, port_id, cb);
 
     } catch (std::exception &e) {
@@ -181,16 +189,24 @@ int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
 
 int tap_manager::destroy_tapdev(uint32_t port_id,
                                 const std::string &port_name) {
-  auto it = devs.find(port_id);
-  if (it == devs.end()) {
+  auto it = tap_devs.find(port_id);
+  if (it == tap_devs.end()) {
     LOG(WARNING) << __FUNCTION__ << ": called for invalid port_id=" << port_id
                  << " port_name=" << port_name;
     return 0;
   }
 
+  // drop port from name mapping
+  std::lock_guard<std::mutex> lock{rp_mutex};
+  auto tap_names_it = tap_names.find(port_name);
+  if (tap_names_it != tap_names.end()) {
+    tap_names.erase(tap_names_it);
+  }
+
+  // drop port from port mapping
   auto dev = it->second;
   int fd = dev->get_fd();
-  devs.erase(it);
+  tap_devs.erase(it);
   delete dev;
 
   // XXX check if previous to delete
@@ -201,15 +217,16 @@ int tap_manager::destroy_tapdev(uint32_t port_id,
 
 void tap_manager::destroy_tapdevs() {
   std::map<uint32_t, ctapdev *> ddevs;
-  ddevs.swap(devs);
+  ddevs.swap(tap_devs);
   for (auto &dev : ddevs) {
     delete dev.second;
   }
+  tap_names.clear();
 }
 
 int tap_manager::enqueue(uint32_t port_id, basebox::packet *pkt) {
   try {
-    int fd = devs.at(port_id)->get_fd();
+    int fd = tap_devs.at(port_id)->get_fd();
     io.enqueue(fd, pkt);
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << ": failed to enqueue packet " << pkt
@@ -217,6 +234,31 @@ int tap_manager::enqueue(uint32_t port_id, basebox::packet *pkt) {
     std::free(pkt);
   }
   return 0;
+}
+
+void tap_manager::tap_dev_ready(int ifindex, const std::string &name) {
+  auto it = ifindex_to_id.find(ifindex);
+  if (it != ifindex_to_id.end())
+    return;
+
+  std::lock_guard<std::mutex> lock{rp_mutex};
+
+  auto tn_it = tap_names.find(name);
+  if (tn_it == tap_names.end()) {
+    LOG(WARNING) << __FUNCTION__ << "invalid port name " << name;
+    return;
+  }
+
+  // update maps
+  auto rv1 = ifindex_to_id.insert(std::make_pair(ifindex, tn_it->second));
+  if (!rv1.second) {
+    LOG(FATAL) << __FUNCTION__;
+  }
+
+  auto rv2 = id_to_ifindex.insert(std::make_pair(tn_it->second, ifindex));
+  if (!rv2.second) {
+    LOG(FATAL) << __FUNCTION__;
+  }
 }
 
 } // namespace basebox

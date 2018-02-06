@@ -7,14 +7,16 @@
 
 namespace basebox {
 
+class cnetlink;
 class tap_manager;
 
 class nbi_impl : public nbi, public switch_callback {
-  std::unique_ptr<tap_manager> tap_man;
+  std::shared_ptr<tap_manager> tap_man;
   switch_interface *swi;
+  std::unique_ptr<cnetlink> nl;
 
 public:
-  nbi_impl();
+  nbi_impl(std::shared_ptr<tap_manager> tap_man);
   virtual ~nbi_impl();
 
   // nbi

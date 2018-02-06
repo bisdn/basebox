@@ -14,12 +14,14 @@
 
 #include "sai.hpp"
 #include "nl_bridge.hpp"
+#include "tap_manager.hpp"
 
 namespace basebox {
 
-ofdpa_bridge::ofdpa_bridge(switch_interface *sw)
+ofdpa_bridge::ofdpa_bridge(switch_interface *sw,
+                           std::shared_ptr<tap_manager> tap_man)
     : bridge(nullptr), sw(sw), ingress_vlan_filtered(true),
-      egress_vlan_filtered(true) {}
+      egress_vlan_filtered(true), tap_man(tap_man) {}
 
 ofdpa_bridge::~ofdpa_bridge() {
   if (bridge)
@@ -70,12 +72,12 @@ static int find_next_bit(int i, uint32_t x) {
   return j ? j + i : 0;
 }
 
-void ofdpa_bridge::add_interface(uint32_t port, rtnl_link *link) {
+void ofdpa_bridge::add_interface(rtnl_link *link) {
   assert(sw);
   assert(rtnl_link_get_family(link) == AF_BRIDGE);
 
   // sanity checks
-  if (bridge == nullptr) {
+  if (bridge == nullptr) { // XXX TODO solve this differently
     LOG(WARNING) << __FUNCTION__ << " cannot update interface without bridge";
     return;
   }
@@ -88,6 +90,8 @@ void ofdpa_bridge::add_interface(uint32_t port, rtnl_link *link) {
 
   const struct rtnl_link_bridge_vlan *br_vlan =
       rtnl_link_bridge_get_port_vlan(link);
+
+  const uint32_t port = tap_man->get_port_id(rtnl_link_get_ifindex(link));
 
   if (not ingress_vlan_filtered) {
     sw->ingress_port_vlan_accept_all(port);
@@ -234,8 +238,7 @@ void ofdpa_bridge::update_vlans(uint32_t port, const std::string &devname,
   }
 }
 
-void ofdpa_bridge::update_interface(uint32_t port, rtnl_link *old_link,
-                                    rtnl_link *new_link) {
+void ofdpa_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
   assert(rtnl_link_get_family(new_link) == AF_BRIDGE);
   assert(rtnl_link_get_family(old_link) == AF_BRIDGE);
 
@@ -265,6 +268,8 @@ void ofdpa_bridge::update_interface(uint32_t port, rtnl_link *old_link,
   struct rtnl_link_bridge_vlan *new_br_vlan =
       rtnl_link_bridge_get_port_vlan(new_link);
   assert(new_br_vlan);
+
+  uint32_t port = tap_man->get_port_id(rtnl_link_get_ifindex(new_link));
 
   if (not ingress_vlan_filtered) {
     if (old_br_vlan->pvid != new_br_vlan->pvid) {
@@ -297,7 +302,7 @@ void ofdpa_bridge::update_interface(uint32_t port, rtnl_link *old_link,
   }
 }
 
-void ofdpa_bridge::delete_interface(uint32_t port, rtnl_link *link) {
+void ofdpa_bridge::delete_interface(rtnl_link *link) {
   assert(sw);
   assert(rtnl_link_get_family(link) == AF_BRIDGE);
 
@@ -311,6 +316,8 @@ void ofdpa_bridge::delete_interface(uint32_t port, rtnl_link *link) {
               << " is no slave of " << rtnl_link_get_name(bridge);
     return;
   }
+
+  uint32_t port = tap_man->get_port_id(rtnl_link_get_ifindex(link));
 
   if (not ingress_vlan_filtered) {
     // ingress
@@ -339,10 +346,18 @@ void ofdpa_bridge::delete_interface(uint32_t port, rtnl_link *link) {
   }
 }
 
-void ofdpa_bridge::add_mac_to_fdb(const uint32_t port, uint16_t vlan,
-                                  nl_addr *mac) {
+void ofdpa_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
   assert(sw);
-  assert(mac);
+  assert(neigh);
+
+  uint32_t port = tap_man->get_port_id(rtnl_neigh_get_ifindex(neigh));
+  if (port == 0) {
+    VLOG(1) << "ignoring neigh" << neigh << ": not a tap port";
+    return;
+  }
+
+  nl_addr *mac = rtnl_neigh_get_lladdr(neigh);
+  int vlan = rtnl_neigh_get_vlan(neigh);
 
   rofl::caddress_ll _mac((uint8_t *)nl_addr_get_binary_addr(mac),
                          nl_addr_get_len(mac));
@@ -353,13 +368,15 @@ void ofdpa_bridge::add_mac_to_fdb(const uint32_t port, uint16_t vlan,
   sw->l2_addr_add(port, vlan, _mac, egress_vlan_filtered);
 }
 
-void ofdpa_bridge::remove_mac_from_fdb(const uint32_t port, rtnl_neigh *neigh) {
+void ofdpa_bridge::remove_mac_from_fdb(rtnl_neigh *neigh) {
   assert(sw);
   nl_addr *addr = rtnl_neigh_get_lladdr(neigh);
   if (nl_addr_cmp(rtnl_link_get_addr(bridge), addr) == 0) {
     // ignore ll addr of bridge on slave
     return;
   }
+  const uint32_t port = tap_man->get_port_id(rtnl_neigh_get_ifindex(neigh));
+
   rofl::caddress_ll mac((uint8_t *)nl_addr_get_binary_addr(addr),
                         nl_addr_get_len(addr));
   sw->l2_addr_remove(port, rtnl_neigh_get_vlan(neigh), mac);

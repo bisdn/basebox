@@ -1,10 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+#include <cassert>
+#include <cstring>
 #include <fstream>
 #include <glog/logging.h>
 #include <iterator>
-#include <cassert>
 
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -15,6 +16,7 @@
 #include <netlink/route/route.h>
 
 #include "cnetlink.hpp"
+#include "tap_manager.hpp"
 
 #define LINK_CAST(obj) reinterpret_cast<struct rtnl_link *>(obj)
 #define NEIGH_CAST(obj) reinterpret_cast<struct rtnl_neigh *>(obj)
@@ -23,9 +25,10 @@
 
 namespace basebox {
 
-cnetlink::cnetlink(switch_interface *swi)
-    : swi(swi), thread(this), caches(NL_MAX_CACHE, nullptr), bridge(nullptr),
-      nl_proc_max(10), running(false), rfd_scheduled(false), l3(swi) {
+cnetlink::cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man)
+    : swi(swi), thread(this), caches(NL_MAX_CACHE, nullptr), tap_man(tap_man),
+      bridge(nullptr), nl_proc_max(10), running(false), rfd_scheduled(false),
+      l3(swi, tap_man, this) {
 
   memset(&params, 0, sizeof(struct nl_dump_params));
   params.dp_type = NL_DUMP_LINE;
@@ -95,7 +98,7 @@ void cnetlink::init_caches() {
                << ": rtnl_link_alloc_cache_flags failed rc=" << rc;
   }
   rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_LINK_CACHE],
-                                  (change_func_v2_t)&nl_cb_v2, NULL);
+                                  (change_func_v2_t)&nl_cb_v2, this);
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__ << ": add route/link to cache mngr";
   }
@@ -106,7 +109,7 @@ void cnetlink::init_caches() {
     LOG(FATAL) << __FUNCTION__ << ": add route/route to cache mngr";
   }
   rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_ROUTE_CACHE],
-                                  (change_func_v2_t)&nl_cb_v2, NULL);
+                                  (change_func_v2_t)&nl_cb_v2, this);
   if (rc < 0) {
     LOG(FATAL) << __FUNCTION__ << ": add route/route to cache mngr";
   }
@@ -117,7 +120,7 @@ void cnetlink::init_caches() {
     LOG(FATAL) << __FUNCTION__ << ": add route/addr to cache mngr";
   }
   rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_ADDR_CACHE],
-                                  (change_func_v2_t)&nl_cb_v2, NULL);
+                                  (change_func_v2_t)&nl_cb_v2, this);
   if (rc < 0) {
     LOG(FATAL) << __FUNCTION__ << ": add route/addr to cache mngr";
   }
@@ -130,7 +133,7 @@ void cnetlink::init_caches() {
                << ": rtnl_link_alloc_cache_flags failed rc=" << rc;
   }
   rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_NEIGH_CACHE],
-                                  (change_func_v2_t)&nl_cb_v2, NULL);
+                                  (change_func_v2_t)&nl_cb_v2, this);
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__ << ": add route/neigh to cache mngr";
   }
@@ -139,26 +142,6 @@ void cnetlink::init_caches() {
 }
 
 void cnetlink::destroy_caches() { nl_cache_mngr_free(mngr); }
-
-cnetlink &cnetlink::get_instance() {
-  static cnetlink instance(nullptr);
-  return instance;
-}
-
-void cnetlink::register_link(uint32_t id, std::string port_name) {
-  {
-    std::lock_guard<std::mutex> lock(rp_mutex);
-    registered_ports.insert(std::make_pair(port_name, id));
-  }
-  start();
-}
-
-void cnetlink::unregister_link(uint32_t id, std::string port_name) {
-  {
-    std::lock_guard<std::mutex> lock(rp_mutex);
-    registered_ports.erase(port_name);
-  }
-}
 
 struct rtnl_link *cnetlink::get_link_by_ifindex(int ifindex) const {
   return rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
@@ -219,9 +202,8 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     rtnl_link *lchange, *link;
 
     // get ifindex
-    try {
-      ifindex = get_ifindex(std::get<0>(change));
-    } catch (std::out_of_range &e) {
+    ifindex = tap_man->get_ifindex(std::get<0>(change));
+    if (0 == ifindex) {
       // XXX not yet registered push back, this should be done async
       int n_retries = std::get<2>(change);
       if (n_retries < 10) {
@@ -339,7 +321,8 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
   VLOG(1) << "diff=" << diff << " action=" << action << " old_obj=" << old_obj
           << " new_obj=" << new_obj;
 
-  cnetlink::get_instance().nl_objs.emplace_back(action, old_obj, new_obj);
+  assert(data);
+  static_cast<cnetlink *>(data)->nl_objs.emplace_back(action, old_obj, new_obj);
 }
 
 void cnetlink::route_addr_apply(const nl_obj &obj) {
@@ -421,53 +404,17 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
   }
 }
 
+bool is_tun_interface(rtnl_link *link) {
+  assert(link);
+
+  char *type = rtnl_link_get_type(link);
+  if (type && std::strcmp(type, "tun") == 0) {
+    return true;
+  }
+  return false;
+}
+
 void cnetlink::route_link_apply(const nl_obj &obj) {
-  int ifindex;
-  if (obj.get_action() == NL_ACT_NEW) {
-    ifindex = rtnl_link_get_ifindex(LINK_CAST(obj.get_new_obj()));
-  } else {
-    ifindex = rtnl_link_get_ifindex(LINK_CAST(obj.get_old_obj()));
-  }
-
-  auto s1 = ifindex_to_registered_port.find(ifindex);
-
-  if (obj.get_action() == NL_ACT_NEW &&
-      s1 == ifindex_to_registered_port.end()) {
-    // try search using name
-    char *portname = rtnl_link_get_name(LINK_CAST(obj.get_new_obj()));
-    std::lock_guard<std::mutex> lock(rp_mutex);
-    auto s2 = registered_ports.find(std::string(portname));
-    if (s2 == registered_ports.end()) {
-      // a non registered port appeared -> ignore
-      LOG(INFO) << __FUNCTION__ << ": port " << portname
-                << " ifindex=" << ifindex << " ignored";
-      return;
-    } else {
-      auto r1 = ifindex_to_registered_port.insert(
-          std::make_pair(ifindex, s2->second));
-      if (r1.second) {
-        s1 = r1.first;
-      } else {
-        LOG(FATAL) << __FUNCTION__
-                   << ": insertion to ifindex_to_registered_port failed";
-      }
-
-      auto r2 = registered_port_to_ifindex.insert(
-          std::make_pair(s2->second, ifindex));
-      if (!r2.second) {
-        LOG(FATAL) << __FUNCTION__
-                   << ": insertion to registered_port_to_ifindex failed";
-      }
-      VLOG(1) << __FUNCTION__ << ": port " << portname
-              << " registered, stored ifindex=" << ifindex;
-    }
-  }
-
-  if (s1 == ifindex_to_registered_port.end()) {
-    // ignore non registered link
-    return;
-  }
-
   try {
     switch (obj.get_action()) {
     case NL_ACT_NEW:
@@ -478,7 +425,7 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
         LOG(INFO) << __FUNCTION__ << ": new link " << std::string(dump_buf);
       }
 
-      link_created(LINK_CAST(obj.get_new_obj()), s1->second);
+      link_created(LINK_CAST(obj.get_new_obj()));
       break;
 
     case NL_ACT_CHANGE:
@@ -498,8 +445,8 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
         VLOG(1) << __FUNCTION__ << ": ignoring AF_UNSPEC change of "
                 << rtnl_link_get_name(LINK_CAST(obj.get_old_obj()));
       } else {
-        link_updated(LINK_CAST(obj.get_old_obj()), LINK_CAST(obj.get_new_obj()),
-                     s1->second);
+        link_updated(LINK_CAST(obj.get_old_obj()),
+                     LINK_CAST(obj.get_new_obj()));
       }
       break;
 
@@ -511,11 +458,7 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
         LOG(INFO) << __FUNCTION__ << ": del link " << std::string(dump_buf);
       }
 
-      link_deleted(LINK_CAST(obj.get_old_obj()), s1->second);
-      uint32_t port_id = get_port_id(ifindex);
-      ifindex_to_registered_port.erase(ifindex);
-      registered_port_to_ifindex.erase(port_id);
-
+      link_deleted(LINK_CAST(obj.get_old_obj()));
       break;
     }
     default:
@@ -706,8 +649,15 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
   }
 }
 
-void cnetlink::link_created(rtnl_link *link, uint32_t port_id) noexcept {
+void cnetlink::link_created(rtnl_link *link) noexcept {
   assert(link);
+  assert(tap_man);
+
+  if (is_tun_interface(link)) {
+    int ifindex = rtnl_link_get_ifindex(link);
+    std::string name(rtnl_link_get_name(link));
+    tap_man->tap_dev_ready(ifindex, name);
+  }
 
   try {
     if (AF_BRIDGE == rtnl_link_get_family(link)) {
@@ -720,14 +670,14 @@ void cnetlink::link_created(rtnl_link *link, uint32_t port_id) noexcept {
 
         // use only the first bridge were an interface is attached to
         if (nullptr == bridge) {
-          bridge = new ofdpa_bridge(this->swi);
+          bridge = new ofdpa_bridge(this->swi, tap_man);
           rtnl_link *br_link =
               rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_master(link));
           bridge->set_bridge_interface(br_link);
           rtnl_link_put(br_link);
         }
 
-        bridge->add_interface(port_id, link);
+        bridge->add_interface(link);
       } else {
         // bridge (master)
         LOG(INFO) << __FUNCTION__ << ": is new bridge";
@@ -738,23 +688,22 @@ void cnetlink::link_created(rtnl_link *link, uint32_t port_id) noexcept {
   }
 }
 
-void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link,
-                            uint32_t port_id) noexcept {
+void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   try {
     if (nullptr != bridge) {
-      bridge->update_interface(port_id, old_link, new_link);
+      bridge->update_interface(old_link, new_link);
     }
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
   }
 }
 
-void cnetlink::link_deleted(rtnl_link *link, uint32_t port_id) noexcept {
+void cnetlink::link_deleted(rtnl_link *link) noexcept {
   assert(link);
 
   try {
     if (bridge != nullptr && rtnl_link_get_family(link) == AF_BRIDGE) {
-      bridge->delete_interface(port_id, link);
+      bridge->delete_interface(link);
     }
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
@@ -765,9 +714,6 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
   try {
     if (nullptr != bridge) {
       try {
-        auto port =
-            ifindex_to_registered_port.at(rtnl_neigh_get_ifindex(neigh));
-
         rtnl_link *l =
             rtnl_link_get(caches[NL_LINK_CACHE], rtnl_neigh_get_ifindex(neigh));
         assert(l);
@@ -775,8 +721,7 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
         if (nl_addr_cmp(rtnl_link_get_addr(l), rtnl_neigh_get_lladdr(neigh))) {
           // mac of interface itself is ignored, others added
           try {
-            bridge->add_mac_to_fdb(port, rtnl_neigh_get_vlan(neigh),
-                                   rtnl_neigh_get_lladdr(neigh));
+            bridge->add_neigh_to_fdb(neigh);
           } catch (std::exception &e) {
             LOG(ERROR)
                 << __FUNCTION__
@@ -801,15 +746,8 @@ void cnetlink::neigh_ll_updated(rtnl_neigh *old_neigh,
 }
 
 void cnetlink::neigh_ll_deleted(rtnl_neigh *neigh) noexcept {
-  auto i2r = ifindex_to_registered_port.find(rtnl_neigh_get_ifindex(neigh));
-  if (i2r == ifindex_to_registered_port.end()) {
-    VLOG(2) << __FUNCTION__ << ": neighbor delete on unregistered port ifindex="
-            << rtnl_neigh_get_ifindex(neigh);
-    return;
-  }
-
   if (nullptr != bridge) {
-    bridge->remove_mac_from_fdb(i2r->second, neigh);
+    bridge->remove_mac_from_fdb(neigh);
   } else {
     LOG(INFO) << __FUNCTION__ << ": no bridge interface";
   }

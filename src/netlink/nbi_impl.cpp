@@ -9,19 +9,18 @@
 
 namespace basebox {
 
-nbi_impl::nbi_impl() : tap_man(new tap_manager()) {
-  cnetlink::get_instance().start();
+nbi_impl::nbi_impl(std::shared_ptr<tap_manager> tap_man)
+    : tap_man(tap_man), nl(new cnetlink(nullptr, tap_man)) {
+  nl->start();
 }
 
-nbi_impl::~nbi_impl() { cnetlink::get_instance().stop(); }
+nbi_impl::~nbi_impl() { nl->stop(); }
 
-void nbi_impl::resend_state() noexcept {
-  cnetlink::get_instance().resend_state();
-}
+void nbi_impl::resend_state() noexcept { nl->resend_state(); }
 
 void nbi_impl::register_switch(switch_interface *swi) noexcept {
   this->swi = swi;
-  cnetlink::get_instance().register_switch(swi);
+  nl->register_switch(swi);
 }
 
 void nbi_impl::port_notification(
@@ -30,11 +29,9 @@ void nbi_impl::port_notification(
   for (auto &&ntfy : notifications) {
     switch (ntfy.ev) {
     case PORT_EVENT_ADD:
-      cnetlink::get_instance().register_link(ntfy.port_id, ntfy.name);
       tap_man->create_tapdev(ntfy.port_id, ntfy.name, *this);
       break;
     case PORT_EVENT_DEL:
-      cnetlink::get_instance().unregister_link(ntfy.port_id, ntfy.name);
       tap_man->destroy_tapdev(ntfy.port_id, ntfy.name);
       break;
     default:
@@ -45,7 +42,7 @@ void nbi_impl::port_notification(
 
 void nbi_impl::port_status_changed(uint32_t port_no,
                                    enum nbi::port_status ps) noexcept {
-  cnetlink::get_instance().port_status_changed(port_no, ps);
+  nl->port_status_changed(port_no, ps);
 }
 
 int nbi_impl::enqueue_to_switch(uint32_t port_id, basebox::packet *packet) {

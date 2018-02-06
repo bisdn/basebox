@@ -1,5 +1,6 @@
 #include "basebox_api.h"
 #include "basebox_grpc_statistics.h"
+#include "sai.hpp"
 
 #include <glog/logging.h>
 #include <google/protobuf/repeated_field.h>
@@ -11,8 +12,9 @@
 
 namespace basebox {
 
-ApiServer::ApiServer(std::shared_ptr<switch_interface> swi)
-    : stats(new NetworkStats(swi)) {}
+ApiServer::ApiServer(std::shared_ptr<switch_interface> swi,
+                     std::shared_ptr<tap_manager> tap_man)
+    : stats(new NetworkStats(swi, tap_man)) {}
 
 ApiServer::~ApiServer() { delete stats; }
 
