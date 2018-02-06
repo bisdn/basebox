@@ -670,7 +670,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
 
         // use only the first bridge were an interface is attached to
         if (nullptr == bridge) {
-          bridge = new ofdpa_bridge(this->swi, tap_man);
+          bridge = new nl_bridge(this->swi, tap_man);
           rtnl_link *br_link =
               rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_master(link));
           bridge->set_bridge_interface(br_link);

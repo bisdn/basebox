@@ -18,17 +18,16 @@
 
 namespace basebox {
 
-ofdpa_bridge::ofdpa_bridge(switch_interface *sw,
-                           std::shared_ptr<tap_manager> tap_man)
+nl_bridge::nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man)
     : bridge(nullptr), sw(sw), ingress_vlan_filtered(true),
       egress_vlan_filtered(true), tap_man(tap_man) {}
 
-ofdpa_bridge::~ofdpa_bridge() {
+nl_bridge::~nl_bridge() {
   if (bridge)
     rtnl_link_put(bridge);
 }
 
-void ofdpa_bridge::set_bridge_interface(rtnl_link *bridge) {
+void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
   assert(bridge);
 
   this->bridge = bridge;
@@ -72,7 +71,7 @@ static int find_next_bit(int i, uint32_t x) {
   return j ? j + i : 0;
 }
 
-void ofdpa_bridge::add_interface(rtnl_link *link) {
+void nl_bridge::add_interface(rtnl_link *link) {
   assert(sw);
   assert(rtnl_link_get_family(link) == AF_BRIDGE);
 
@@ -145,9 +144,9 @@ void ofdpa_bridge::add_interface(rtnl_link *link) {
   }
 }
 
-void ofdpa_bridge::update_vlans(uint32_t port, const std::string &devname,
-                                const rtnl_link_bridge_vlan *old_br_vlan,
-                                const rtnl_link_bridge_vlan *new_br_vlan) {
+void nl_bridge::update_vlans(uint32_t port, const std::string &devname,
+                             const rtnl_link_bridge_vlan *old_br_vlan,
+                             const rtnl_link_bridge_vlan *new_br_vlan) {
   assert(sw);
   for (int k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
     int base_bit;
@@ -238,7 +237,7 @@ void ofdpa_bridge::update_vlans(uint32_t port, const std::string &devname,
   }
 }
 
-void ofdpa_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
+void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
   assert(rtnl_link_get_family(new_link) == AF_BRIDGE);
   assert(rtnl_link_get_family(old_link) == AF_BRIDGE);
 
@@ -302,7 +301,7 @@ void ofdpa_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
   }
 }
 
-void ofdpa_bridge::delete_interface(rtnl_link *link) {
+void nl_bridge::delete_interface(rtnl_link *link) {
   assert(sw);
   assert(rtnl_link_get_family(link) == AF_BRIDGE);
 
@@ -346,7 +345,7 @@ void ofdpa_bridge::delete_interface(rtnl_link *link) {
   }
 }
 
-void ofdpa_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
+void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
   assert(sw);
   assert(neigh);
 
@@ -368,7 +367,7 @@ void ofdpa_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
   sw->l2_addr_add(port, vlan, _mac, egress_vlan_filtered);
 }
 
-void ofdpa_bridge::remove_mac_from_fdb(rtnl_neigh *neigh) {
+void nl_bridge::remove_mac_from_fdb(rtnl_neigh *neigh) {
   assert(sw);
   nl_addr *addr = rtnl_neigh_get_lladdr(neigh);
   if (nl_addr_cmp(rtnl_link_get_addr(bridge), addr) == 0) {

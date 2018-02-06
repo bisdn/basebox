@@ -67,7 +67,7 @@ class cnetlink final : public rofl::cthread_env {
 
   std::shared_ptr<tap_manager> tap_man;
 
-  ofdpa_bridge *bridge;
+  nl_bridge *bridge;
   int nl_proc_max;
   bool running;
   bool rfd_scheduled;
