@@ -714,8 +714,14 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
   try {
     if (nullptr != bridge) {
       try {
-        rtnl_link *l =
-            rtnl_link_get(caches[NL_LINK_CACHE], rtnl_neigh_get_ifindex(neigh));
+        int ifindex = rtnl_neigh_get_ifindex(neigh);
+
+        if (ifindex == 0) {
+          VLOG(1) << __FUNCTION__ << ": no ifindex for neighbour " << neigh;
+          return;
+        }
+
+        rtnl_link *l = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
         assert(l);
 
         if (nl_addr_cmp(rtnl_link_get_addr(l), rtnl_neigh_get_lladdr(neigh))) {
