@@ -23,12 +23,23 @@
 #define ROUTE_CAST(obj) reinterpret_cast<struct rtnl_route *>(obj)
 #define ADDR_CAST(obj) reinterpret_cast<struct rtnl_addr *>(obj)
 
+#define lt_names "unknown", "bridge", "tun"
+
 namespace basebox {
 
 cnetlink::cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man)
     : swi(swi), thread(this), caches(NL_MAX_CACHE, nullptr), tap_man(tap_man),
       bridge(nullptr), nl_proc_max(10), running(false), rfd_scheduled(false),
-      l3(swi, tap_man, this) {
+      l3(swi, tap_man, this), lt2names{lt_names} {
+
+  assert(lt2names.size() == LT_MAX);
+
+  enum link_type lt = LT_UNKNOWN;
+  for (const auto &n : lt2names) {
+    assert(lt != LT_MAX);
+    kind2lt.emplace(n, lt);
+    lt = static_cast<enum link_type>(lt + 1);
+  }
 
   memset(&params, 0, sizeof(struct nl_dump_params));
   params.dp_type = NL_DUMP_LINE;
@@ -404,14 +415,19 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
   }
 }
 
-bool is_tun_interface(rtnl_link *link) {
-  assert(link);
+enum cnetlink::link_type cnetlink::kind_to_link_type(const char *type) const
+    noexcept {
+  if (type == nullptr)
+    return LT_UNKNOWN;
 
-  char *type = rtnl_link_get_type(link);
-  if (type && std::strcmp(type, "tun") == 0) {
-    return true;
-  }
-  return false;
+  VLOG(2) << __FUNCTION__ << ": type=" << std::string(type); // XXX string_view
+
+  auto it = kind2lt.find(std::string(type)); // XXX string_view
+
+  if (it != kind2lt.end())
+    return it->second;
+
+  return LT_UNKNOWN;
 }
 
 void cnetlink::route_link_apply(const nl_obj &obj) {
@@ -441,13 +457,7 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
                   << std::string(dump_buf);
       }
 
-      if (rtnl_link_get_family(LINK_CAST(obj.get_new_obj())) == AF_UNSPEC) {
-        VLOG(1) << __FUNCTION__ << ": ignoring AF_UNSPEC change of "
-                << rtnl_link_get_name(LINK_CAST(obj.get_old_obj()));
-      } else {
-        link_updated(LINK_CAST(obj.get_old_obj()),
-                     LINK_CAST(obj.get_new_obj()));
-      }
+      link_updated(LINK_CAST(obj.get_old_obj()), LINK_CAST(obj.get_new_obj()));
       break;
 
     case NL_ACT_DEL: {
@@ -653,42 +663,67 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   assert(link);
   assert(tap_man);
 
-  if (is_tun_interface(link)) {
+  enum link_type lt = kind_to_link_type(rtnl_link_get_type(link));
+  int af = rtnl_link_get_family(link);
+
+  switch (lt) {
+  case LT_UNKNOWN:
+    switch (af) {
+    case AF_BRIDGE: {
+
+      try {
+        if (AF_BRIDGE == rtnl_link_get_family(link)) {
+
+          // check for new bridge slaves
+          if (rtnl_link_get_master(link)) {
+            // slave interface
+            LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
+                      << " is new slave interface";
+
+            // use only the first bridge were an interface is attached to
+            if (nullptr == bridge) {
+              LOG(INFO) << __FUNCTION__ << ": NEW bridge "
+                        << rtnl_link_get_master(link);
+              bridge = new nl_bridge(this->swi, tap_man);
+              rtnl_link *br_link = rtnl_link_get(caches[NL_LINK_CACHE],
+                                                 rtnl_link_get_master(link));
+              bridge->set_bridge_interface(br_link);
+              rtnl_link_put(br_link);
+            }
+
+            bridge->add_interface(link);
+          } else {
+            // bridge (master)
+            LOG(INFO) << __FUNCTION__ << ": is new bridge";
+          }
+        }
+      } catch (std::exception &e) {
+        LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
+      }
+    } break;
+    default:
+      LOG(WARNING) << __FUNCTION__ << ": ignoring link with af=" << af
+                   << " link:" << link;
+      break;
+    } // switch familiy
+    break;
+  case LT_TUN: {
     int ifindex = rtnl_link_get_ifindex(link);
     std::string name(rtnl_link_get_name(link));
     tap_man->tap_dev_ready(ifindex, name);
-  }
-
-  try {
-    if (AF_BRIDGE == rtnl_link_get_family(link)) {
-
-      // check for new bridge slaves
-      if (rtnl_link_get_master(link)) {
-        // slave interface
-        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                  << " is new slave interface";
-
-        // use only the first bridge were an interface is attached to
-        if (nullptr == bridge) {
-          bridge = new nl_bridge(this->swi, tap_man);
-          rtnl_link *br_link =
-              rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_master(link));
-          bridge->set_bridge_interface(br_link);
-          rtnl_link_put(br_link);
-        }
-
-        bridge->add_interface(link);
-      } else {
-        // bridge (master)
-        LOG(INFO) << __FUNCTION__ << ": is new bridge";
-      }
-    }
-  } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
-  }
+  } break;
+  default:
+    LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
+                 << " link:" << link;
+    break;
+  } // switch link type
 }
 
 void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
+
+  if (rtnl_link_get_family(new_link) == AF_UNSPEC)
+    return;
+
   try {
     if (nullptr != bridge) {
       bridge->update_interface(old_link, new_link);
