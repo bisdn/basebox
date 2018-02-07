@@ -153,18 +153,32 @@ tap_manager::~tap_manager() { destroy_tapdevs(); }
 int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
                                switch_callback &cb) {
   int r = 0;
-  std::lock_guard<std::mutex> lock{rp_mutex};
+  bool dev_exists = false;
+  bool dev_name_exists = false;
   auto dev_it = tap_devs.find(port_id);
-  auto dev_name_it = tap_names.find(port_name);
 
-  if (dev_it == tap_devs.end() && dev_name_it == tap_names.end()) {
+  if (dev_it != tap_devs.end())
+    dev_exists = true;
+
+  {
+    std::lock_guard<std::mutex> lock{rp_mutex};
+    auto dev_name_it = tap_names.find(port_name);
+
+    if (dev_name_it != tap_names.end())
+      dev_name_exists = true;
+  }
+
+  if (!dev_exists && !dev_name_exists) {
     // create a new tap device
 
     ctapdev *dev;
     try {
       dev = new ctapdev(port_name);
       tap_devs.insert(std::make_pair(port_id, dev));
-      tap_names.insert(std::make_pair(port_name, port_id));
+      {
+        std::lock_guard<std::mutex> lock{rp_mutex};
+        tap_names.insert(std::make_pair(port_name, port_id));
+      }
 
       // create the port
       dev->tap_open();
