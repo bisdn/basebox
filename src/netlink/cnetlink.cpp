@@ -42,9 +42,15 @@ cnetlink::cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man)
   }
 
   memset(&params, 0, sizeof(struct nl_dump_params));
-  params.dp_type = NL_DUMP_LINE;
-  params.dp_buf = &dump_buf[0];
-  params.dp_buflen = sizeof(dump_buf);
+  if (VLOG_IS_ON(3)) {
+    params.dp_type = NL_DUMP_DETAILS;
+  } else {
+    params.dp_type = NL_DUMP_LINE;
+  }
+
+  dump_buf.reserve(2048);
+  params.dp_buf = dump_buf.data();
+  params.dp_buflen = dump_buf.capacity();
 
   sock = nl_socket_alloc();
   if (NULL == sock) {
@@ -56,7 +62,7 @@ cnetlink::cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man)
     thread.start("netlink");
     init_caches();
   } catch (...) {
-    LOG(FATAL) << "cnetlink: caught unkown exception during " << __FUNCTION__;
+    LOG(FATAL) << "cnetlink: caught unknown exception during " << __FUNCTION__;
   }
 }
 
@@ -254,12 +260,15 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
       if (std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN) {
         rtnl_link_unset_flags(lchange, IFF_UP);
         LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                  << " was enabled";
+                  << " disabling";
       } else {
         rtnl_link_set_flags(lchange, IFF_UP);
         LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                  << " was disabled";
+                  << " enabling";
       }
+    } else {
+      LOG(INFO) << __FUNCTION__ << ": notification of port "
+                << rtnl_link_get_name(link) << " received. State unchanged.";
     }
 
     // apply changes
@@ -345,7 +354,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
 
     if (VLOG_IS_ON(2)) {
       nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": new addr " << std::string(dump_buf);
+      LOG(INFO) << __FUNCTION__ << ": new addr " << dump_buf.data();
     }
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_new_obj()))) {
@@ -367,11 +376,9 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
 
     if (VLOG_IS_ON(2)) {
       nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": change new addr "
-                << std::string(dump_buf);
+      LOG(INFO) << __FUNCTION__ << ": change new addr " << dump_buf.data();
       nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": change old addr "
-                << std::string(dump_buf);
+      LOG(INFO) << __FUNCTION__ << ": change old addr " << dump_buf.data();
     }
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_new_obj()))) {
@@ -392,7 +399,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
 
     if (VLOG_IS_ON(2)) {
       nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": del addr " << std::string(dump_buf);
+      LOG(INFO) << __FUNCTION__ << ": del addr " << dump_buf.data();
     }
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_old_obj()))) {
@@ -438,7 +445,7 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
 
       if (VLOG_IS_ON(2)) {
         nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": new link " << std::string(dump_buf);
+        LOG(INFO) << __FUNCTION__ << ": new link " << dump_buf.data();
       }
 
       link_created(LINK_CAST(obj.get_new_obj()));
@@ -450,11 +457,9 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
 
       if (VLOG_IS_ON(2)) {
         nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": change new link "
-                  << std::string(dump_buf);
+        LOG(INFO) << __FUNCTION__ << ": change new link " << dump_buf.data();
         nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": change old link "
-                  << std::string(dump_buf);
+        LOG(INFO) << __FUNCTION__ << ": change old link " << dump_buf.data();
       }
 
       link_updated(LINK_CAST(obj.get_old_obj()), LINK_CAST(obj.get_new_obj()));
@@ -465,7 +470,7 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
 
       if (VLOG_IS_ON(2)) {
         nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": del link " << std::string(dump_buf);
+        LOG(INFO) << __FUNCTION__ << ": del link " << dump_buf.data();
       }
 
       link_deleted(LINK_CAST(obj.get_old_obj()));
@@ -492,7 +497,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
 
       if (VLOG_IS_ON(2)) {
         nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": new neigh " << std::string(dump_buf);
+        LOG(INFO) << __FUNCTION__ << ": new neigh " << dump_buf.data();
       }
 
       family = rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj()));
@@ -522,11 +527,9 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
 
       if (VLOG_IS_ON(2)) {
         nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": change new neigh "
-                  << std::string(dump_buf);
+        LOG(INFO) << __FUNCTION__ << ": change new neigh " << dump_buf.data();
         nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": change old neigh "
-                  << std::string(dump_buf);
+        LOG(INFO) << __FUNCTION__ << ": change old neigh " << dump_buf.data();
       }
 
       family = rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj()));
@@ -554,7 +557,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
 
       if (VLOG_IS_ON(2)) {
         nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": del neigh " << std::string(dump_buf);
+        LOG(INFO) << __FUNCTION__ << ": del neigh " << dump_buf.data();
       }
 
       family = rtnl_neigh_get_family(NEIGH_CAST(obj.get_old_obj()));
@@ -592,7 +595,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     if (VLOG_IS_ON(2)) {
       nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": new route " << std::string(dump_buf);
+      LOG(INFO) << __FUNCTION__ << ": new route " << dump_buf.data();
     }
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
@@ -614,9 +617,9 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     if (VLOG_IS_ON(2)) {
       nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-      VLOG(2) << __FUNCTION__ << ": change new route " << std::string(dump_buf);
+      VLOG(2) << __FUNCTION__ << ": change new route " << dump_buf.data();
       nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-      VLOG(2) << __FUNCTION__ << ": change old route " << std::string(dump_buf);
+      VLOG(2) << __FUNCTION__ << ": change old route " << dump_buf.data();
     }
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
@@ -637,7 +640,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     if (VLOG_IS_ON(2)) {
       nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": del route " << std::string(dump_buf);
+      LOG(INFO) << __FUNCTION__ << ": del route " << dump_buf.data();
     }
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_old_obj()))) {
