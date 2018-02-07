@@ -24,7 +24,7 @@
 #define ROUTE_CAST(obj) reinterpret_cast<struct rtnl_route *>(obj)
 #define ADDR_CAST(obj) reinterpret_cast<struct rtnl_addr *>(obj)
 
-#define lt_names "unknown", "unsupported", "bridge", "tun"
+#define lt_names "unknown", "unsupported", "bridge", "tun", "vxlan"
 
 namespace basebox {
 

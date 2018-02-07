@@ -60,6 +60,7 @@ class cnetlink final : public rofl::cthread_env {
     LT_UNSUPPORTED,
     LT_BRIDGE,
     LT_TUN,
+    LT_VXLAN,
     LT_MAX /* must be last */
   };
 
