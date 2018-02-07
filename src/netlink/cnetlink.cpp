@@ -23,7 +23,7 @@
 #define ROUTE_CAST(obj) reinterpret_cast<struct rtnl_route *>(obj)
 #define ADDR_CAST(obj) reinterpret_cast<struct rtnl_addr *>(obj)
 
-#define lt_names "unknown", "bridge", "tun"
+#define lt_names "unknown", "unsupported", "bridge", "tun"
 
 namespace basebox {
 
@@ -420,14 +420,13 @@ enum cnetlink::link_type cnetlink::kind_to_link_type(const char *type) const
   if (type == nullptr)
     return LT_UNKNOWN;
 
-  VLOG(2) << __FUNCTION__ << ": type=" << std::string(type); // XXX string_view
-
   auto it = kind2lt.find(std::string(type)); // XXX string_view
 
   if (it != kind2lt.end())
     return it->second;
 
-  return LT_UNKNOWN;
+  VLOG(1) << __FUNCTION__ << ": type=" << type << " not supported";
+  return LT_UNSUPPORTED;
 }
 
 void cnetlink::route_link_apply(const nl_obj &obj) {
