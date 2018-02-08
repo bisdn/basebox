@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package ofdpa;
+
+message OfdpaStatus {
+  enum OfdpaStatusCode {
+    OFDPA_E_NONE = 0;
+    /** Error in RPC. */
+    OFDPA_E_RPC                  = -20;
+    /** Internal error. */
+    OFDPA_E_INTERNAL             = -21;
+    /** Invalid parameter. */
+    OFDPA_E_PARAM                = -22;
+    /** Parameter constraint violated. */
+    OFDPA_E_ERROR                = -23;
+    /** Maximum count is already reached or table full. */
+    OFDPA_E_FULL                 = -24;
+    /** Already exists. */
+    OFDPA_E_EXISTS               = -25;
+    /** Operation Timeout. */
+    OFDPA_E_TIMEOUT              = -26;
+    /** Operation Fail. */
+    OFDPA_E_FAIL                 = -27;
+    /** Disabled. */
+    OFDPA_E_DISABLED             = -28;
+    /** Parameter/feature is not supported. */
+    OFDPA_E_UNAVAIL              = -29;
+    /** Parameter not found. */
+    OFDPA_E_NOT_FOUND            = -30;
+    /** Nothing to report or table is empty. */
+    OFDPA_E_EMPTY                = -31;
+    /** Request denied. */
+    OFDPA_E_REQUEST_DENIED       = -32;
+    /** Not implemented. */
+    OFDPA_NOT_IMPLEMENTED_YET    = -33;
+  }
+
+  OfdpaStatusCode status = 1;
+}
+
+service OfdpaRpc {
+  rpc ofdpaTunnelTenantCreate(TunnelTenantCreate) returns (OfdpaStatus) {}
+
+  rpc ofdpaTunnelPortCreate(TunnelPortCreate) returns (OfdpaStatus) {}
+
+  rpc ofdpaTunnelNextHopCreate(TunnelNextHopCreate) returns (OfdpaStatus) {}
+
+  rpc ofdpaTunnelPortTenantAdd(TunnelPortTenantAdd) returns (OfdpaStatus) {}
+}
+
+message TunnelTenantCreate {
+  uint32 tunnel_id = 1;
+  OfdpaTunnelTenantConfig config = 2;
+}
+
+enum OfdpaTunnelProto {
+  OFDPA_TUNNEL_PROTO_UNKNOWN = 0;
+  OFDPA_TUNNEL_PROTO_VXLAN = 1;
+}
+
+enum OfdpaTunnelPortType {
+  OFDPA_TUNNEL_PORT_TYPE_UNKNOWN = 0;
+  OFDPA_TUNNEL_PORT_TYPE_ENDPOINT = 1;
+  OFDPA_TUNNEL_PORT_TYPE_ACCESS = 2;
+}
+
+message OfdpaTunnelTenantConfig {
+  OfdpaTunnelProto proto = 1;
+  uint32 virtual_network_id = 2;
+  uint32 mcast_ipv4 = 3;
+  uint32 mcast_next_hop_id = 4;
+}
+
+message TunnelPortCreate {
+  uint32 port_num = 1;
+  string name = 2;
+  OfdpaTunnelPortConfig config = 3;
+}
+
+message OfdpaTunnelPortConfig {
+  OfdpaTunnelPortType type = 1;
+  OfdpaTunnelProto tunnel_proto = 2;
+  OfdpaTunnelPortConfigData config = 3;
+}
+
+message OfdpaTunnelPortConfigData {
+  oneof config {
+    OfdpaAccessPortConfig access_port_config = 1;
+    OfdpaEndpointConfig endpoint_config = 2;
+  }
+}
+
+message OfdpaAccessPortConfig {
+  uint32 pysical_port_num = 1;
+  uint32 vlan_id = 2; // actulally uint16
+  uint32 etag = 3; // actually uint16
+  bool untagged = 4; // actually uint16
+  bool use_etag = 5; // actually uint16
+}
+
+message OfdpaEndpointConfig {
+  uint32 remote_endpoint = 1;
+  uint32 local_endpoint = 2;
+  uint32 ttl = 3;
+  uint32 ecmp = 4;
+  uint32 next_hop_id = 5;
+  OfdpaProtoInfo info = 6;
+}
+
+message OfdpaProtoInfo {
+  oneof info {
+    OfdpaVxlanProtoInfo vxlan_info = 1;
+  }
+}
+
+message OfdpaVxlanProtoInfo {
+  uint32 terminator_udp_dst_port = 1; // actually uint16
+  uint32 initiator_udp_dst_port = 2; // actually uint16
+  uint32 udp_src_port_if_no_entropy = 3; // actually uint16
+  bool use_entropy = 4; // actually uint16
+}
+
+message TunnelNextHopCreate {
+  uint32 next_hop_id = 1;
+  OfdpaTunnelNextHopConfig config = 2;
+}
+
+message OfdpaTunnelNextHopConfig {
+  OfdpaTunnelProto protocol = 1;
+  uint64 src_mac_addr = 2;
+  uint64 dst_mac_addr = 3;
+  uint32 physical_port_num = 4;
+  uint32 vlan_id = 5;
+}
+
+message TunnelPortTenantAdd {
+  uint32 port_num = 1;
+  uint32 tunnel_id = 2;
+}
