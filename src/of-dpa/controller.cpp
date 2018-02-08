@@ -1185,4 +1185,9 @@ int controller::get_statistics(uint64_t port_no, uint32_t number_of_counters,
   return rv;
 }
 
+int controller::tunnel_tenant_create(uint32_t tunnel_id,
+                                     uint32_t vni) noexcept {
+  return ofdpa->ofdpaTunnelTenantCreate(tunnel_id, vni);
+}
+
 } // namespace basebox

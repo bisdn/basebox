@@ -77,6 +77,9 @@ public:
   virtual int get_statistics(uint64_t port_no, uint32_t number_of_counters,
                              const sai_port_stat_t *counter_ids,
                              uint64_t *counters) noexcept = 0;
+
+  virtual int tunnel_tenant_create(uint32_t tunnel_id,
+                                   uint32_t vni) noexcept = 0;
 };
 
 class nbi {

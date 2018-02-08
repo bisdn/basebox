@@ -179,6 +179,8 @@ public:
 
   int subscribe_to(enum swi_flags flags) noexcept override;
 
+  int tunnel_tenant_create(uint32_t tunnel_id, uint32_t vni) noexcept override;
+
   /* print this */
   friend std::ostream &operator<<(std::ostream &os, const controller &box) {
     os << "<controller>" << std::endl;
