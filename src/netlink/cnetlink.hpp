@@ -57,6 +57,7 @@ class cnetlink final : public rofl::cthread_env {
 
   enum link_type {
     LT_UNKNOWN = 0,
+    LT_UNSUPPORTED,
     LT_BRIDGE,
     LT_TUN,
     LT_MAX /* must be last */
