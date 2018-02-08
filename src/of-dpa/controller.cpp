@@ -444,7 +444,7 @@ void controller::handle_bridging_table_rm(
     return;
   }
 
-  // TODO this has to be improved 
+  // TODO this has to be improved
   uint32_t portno = msg.get_cookie();
   const cofport &port = dpt.get_ports().get_port(portno);
   const ctapdev &tapdev = get_tap_dev(dpt, port.get_name());
@@ -470,7 +470,7 @@ int controller::enqueue(uint32_t port_id, basebox::packet *pkt) noexcept {
   struct ethhdr *eth = (struct ethhdr *)pkt->data;
 
   if (eth->h_dest[0] == 0x33 && eth->h_dest[1] == 0x33) {
-    VLOG(2) << __FUNCTION__ << ": drop multicast packet";
+    VLOG(3) << __FUNCTION__ << ": drop multicast packet";
     rv = -ENOTSUP;
     goto errout;
   }

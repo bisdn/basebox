@@ -59,7 +59,7 @@ void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
   pkt->len = read(fd, pkt->data, basebox::packet_data_len);
 
   if (pkt->len > 0) {
-    VLOG(1) << __FUNCTION__ << ": read " << pkt->len << " bytes from fd=" << fd
+    VLOG(3) << __FUNCTION__ << ": read " << pkt->len << " bytes from fd=" << fd
             << " into pkt=" << pkt << " tid=" << pthread_self();
     std::pair<uint32_t, switch_callback *> &cb = sw_cbs.at(fd);
     cb.second->enqueue_to_switch(cb.first, pkt);
