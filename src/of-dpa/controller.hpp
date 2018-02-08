@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef CROFBASE_HPP_
-#define CROFBASE_HPP_
+#pragma once
 
 #include <sys/types.h>
 #include <sys/wait.h>
 
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <string>
@@ -22,6 +22,9 @@
 #include "sai.hpp"
 
 namespace basebox {
+
+// forward declarations
+class ofdpa_client;
 
 class eBaseBoxBase : public std::runtime_error {
 public:
@@ -51,7 +54,7 @@ public:
   controller(nbi *nb,
              const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
                  rofl::openflow::cofhello_elem_versionbitmap())
-      : nb(nb), bb_thread(this), egress_interface_id(1) {
+      : nb(nb), bb_thread(this), egress_interface_id(1), ofdpa(nullptr) {
     nb->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
     bb_thread.start();
@@ -193,6 +196,7 @@ private:
   rofl::openflow::cofportstatsarray stats_array;
   uint32_t egress_interface_id;
   std::set<uint32_t> freed_egress_interfaces_ids;
+  std::shared_ptr<ofdpa_client> ofdpa;
 
   enum timer_t {
     /* handle_timeout will be called as well from crofbase, hence we need some
@@ -213,5 +217,3 @@ private:
 }; // class controller
 
 } // end of namespace basebox
-
-#endif /* CROFBASE_HPP_ */

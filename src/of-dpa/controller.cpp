@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #include "controller.hpp"
+#include "ofdpa_client.hpp"
 #include "ofdpa_datatypes.h"
 #include "utils.hpp"
 
@@ -36,6 +37,36 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 
   // set max queue size in rofl
   dpt.set_conn(rofl::cauxid(0)).set_txqueue_max_size(128 * 1024);
+
+  rofl::csockaddr raddr = dpt.set_conn(rofl::cauxid(0)).get_raddr();
+  std::string buf;
+
+  switch (raddr.get_family()) {
+  case AF_INET: {
+    rofl::caddress_in4 addr;
+    addr.set_addr_nbo(raddr.ca_s4addr->sin_addr.s_addr);
+    buf = addr.str();
+  } break;
+  case AF_INET6: {
+    rofl::caddress_in6 addr;
+    addr.unpack(raddr.ca_s6addr->sin6_addr.s6_addr, 16);
+    buf = addr.str();
+  } break;
+  default:
+    LOG(FATAL) << __FUNCTION__ << ": invalid socket address " << raddr;
+  }
+
+  std::string remote = buf + ":50060";
+
+  VLOG(1) << __FUNCTION__ << ": remote=" << remote;
+
+  std::shared_ptr<grpc::Channel> chan =
+      grpc::CreateChannel(remote, grpc::InsecureChannelCredentials());
+
+  ofdpa = std::make_shared<ofdpa_client>(chan);
+
+  // open connection already
+  chan->GetState(true);
 
   dpt.send_features_request(rofl::cauxid(0));
   dpt.send_desc_stats_request(rofl::cauxid(0), 0);
