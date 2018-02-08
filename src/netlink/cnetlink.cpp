@@ -599,10 +599,10 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      VLOG(2) << __FUNCTION__ << ": new IPv4 route (not suppported)";
+      VLOG(2) << __FUNCTION__ << ": new IPv4 route (not supported)";
       break;
     case AF_INET6:
-      VLOG(2) << __FUNCTION__ << ": new IPv6 route (not suppported)";
+      VLOG(2) << __FUNCTION__ << ": new IPv6 route (not supported)";
       break;
     default:
       LOG(WARNING) << __FUNCTION__ << ": family not supported: " << family;
@@ -623,10 +623,10 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      VLOG(2) << __FUNCTION__ << ": changed IPv4 route (not suppported)";
+      VLOG(2) << __FUNCTION__ << ": changed IPv4 route (not supported)";
       break;
     case AF_INET6:
-      VLOG(2) << __FUNCTION__ << ": changed IPv6 route (not suppported)";
+      VLOG(2) << __FUNCTION__ << ": changed IPv6 route (not supported)";
       break;
     default:
       LOG(WARNING) << __FUNCTION__ << ": family not supported: " << family;
@@ -644,10 +644,10 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_old_obj()))) {
     case AF_INET:
-      VLOG(2) << __FUNCTION__ << ": changed IPv4 route (not suppported)";
+      VLOG(2) << __FUNCTION__ << ": changed IPv4 route (not supported)";
       break;
     case AF_INET6:
-      VLOG(2) << __FUNCTION__ << ": changed IPv6 route (not suppported)";
+      VLOG(2) << __FUNCTION__ << ": changed IPv6 route (not supported)";
       break;
     default:
       LOG(WARNING) << __FUNCTION__ << ": family not supported: " << family;
