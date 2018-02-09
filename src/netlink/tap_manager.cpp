@@ -212,7 +212,9 @@ int tap_manager::destroy_tapdev(uint32_t port_id,
 
   // drop port from name mapping
   std::lock_guard<std::mutex> lock{rp_mutex};
+  port_deleted.push_back(port_id);
   auto tap_names_it = tap_names.find(port_name);
+
   if (tap_names_it != tap_names.end()) {
     tap_names.erase(tap_names_it);
   }
@@ -256,23 +258,73 @@ void tap_manager::tap_dev_ready(int ifindex, const std::string &name) {
     return;
 
   std::lock_guard<std::mutex> lock{rp_mutex};
-
   auto tn_it = tap_names.find(name);
+
   if (tn_it == tap_names.end()) {
     LOG(WARNING) << __FUNCTION__ << "invalid port name " << name;
     return;
   }
 
   // update maps
-  auto rv1 = ifindex_to_id.insert(std::make_pair(ifindex, tn_it->second));
-  if (!rv1.second) {
-    LOG(FATAL) << __FUNCTION__;
+  auto id2ifi_it = id_to_ifindex.insert(std::make_pair(tn_it->second, ifindex));
+  if (!id2ifi_it.second && id2ifi_it.first->second != ifindex) {
+    // update only if the ifindex has changed
+    LOG(WARNING) << __FUNCTION__
+                 << ": enforced update of id:ifindex mapping id="
+                 << id2ifi_it.first->first
+                 << " ifindex(old) = " << id2ifi_it.first->second
+                 << " ifindex(new)=" << ifindex;
+
+    // remove overwritten index in ifindex_to_id map
+    auto it = ifindex_to_id.find(id2ifi_it.first->second);
+    if (it != ifindex_to_id.end()) {
+      ifindex_to_id.erase(it);
+    }
+
+    // update the old one
+    id2ifi_it.first->second = ifindex;
   }
 
-  auto rv2 = id_to_ifindex.insert(std::make_pair(tn_it->second, ifindex));
-  if (!rv2.second) {
-    LOG(FATAL) << __FUNCTION__;
+  auto rv1 = ifindex_to_id.insert(std::make_pair(ifindex, tn_it->second));
+  if (!rv1.second && rv1.first->second != tn_it->second) {
+    // update only if the id has changed
+    LOG(WARNING) << __FUNCTION__
+                 << ": enforced update of ifindex:id mapping ifindex="
+                 << ifindex << " id(old)=" << rv1.first->second
+                 << " id(new)=" << tn_it->second;
+    rv1.first->second = tn_it->second;
   }
+}
+
+void tap_manager::tap_dev_removed(int ifindex) {
+  std::lock_guard<std::mutex> lock{rp_mutex};
+
+  auto ifi2id_it = ifindex_to_id.find(ifindex);
+  if (ifi2id_it == ifindex_to_id.end()) {
+    LOG(FATAL) << __FUNCTION__
+               << ": invalid removal of unknown ifindex=" << ifindex;
+    return;
+  }
+
+  // check if this port was scheduled for deletion
+  auto pd_it =
+      std::find(port_deleted.begin(), port_deleted.end(), ifi2id_it->second);
+  if (pd_it == port_deleted.end()) {
+    auto pn_it = tap_devs.find(ifi2id_it->second);
+    LOG(FATAL) << __FUNCTION__ << ": illegal removal of port "
+               << pn_it->second->get_devname() << " with ifindex=" << ifindex;
+  }
+
+  auto id2ifi_it = id_to_ifindex.find(ifi2id_it->second);
+  if (id2ifi_it == id_to_ifindex.end()) {
+    auto pn_it = tap_devs.find(ifi2id_it->second);
+    LOG(FATAL) << __FUNCTION__ << ": illegal removal of port "
+               << pn_it->second->get_devname() << " with ifindex=" << ifindex;
+  }
+
+  ifindex_to_id.erase(ifi2id_it);
+  port_deleted.erase(pd_it);
+  id_to_ifindex.erase(id2ifi_it);
 }
 
 } // namespace basebox

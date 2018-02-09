@@ -738,6 +738,12 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
 void cnetlink::link_deleted(rtnl_link *link) noexcept {
   assert(link);
 
+  enum link_type lt = kind_to_link_type(rtnl_link_get_type(link));
+
+  if (lt == LT_TUN) {
+    tap_man->tap_dev_removed(rtnl_link_get_ifindex(link));
+  }
+
   try {
     if (bridge != nullptr && rtnl_link_get_family(link) == AF_BRIDGE) {
       bridge->delete_interface(link);
