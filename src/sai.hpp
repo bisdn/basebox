@@ -80,6 +80,24 @@ public:
 
   virtual int tunnel_tenant_create(uint32_t tunnel_id,
                                    uint32_t vni) noexcept = 0;
+
+  virtual int tunnel_next_hop_create(uint32_t next_hop_id, uint64_t src_mac,
+                                     uint32_t dst_mac, uint32_t physical_port,
+                                     uint16_t vlan_id) noexcept = 0;
+
+  virtual int tunnel_access_port_create(uint32_t port_id,
+                                        const std::string &port_name,
+                                        uint32_t physical_port,
+                                        uint16_t vlan_id) noexcept = 0;
+
+  virtual int tunnel_enpoint_create(
+      uint32_t port_id, const std::string &port_name, uint32_t remote_ipv4,
+      uint32_t local_ipv4, uint32_t ttl, uint32_t next_hop_id,
+      uint32_t terminator_udp_dst_port, uint32_t initiator_udp_dst_port,
+      uint32_t udp_src_port_if_no_entropy, bool use_entropy) noexcept = 0;
+
+  virtual int tunnel_port_tenant_add(uint32_t port_id,
+                                     uint32_t tunnel_id) noexcept = 0;
 };
 
 class nbi {

@@ -8,6 +8,8 @@
 #include <linux/if_ether.h>
 #include <stdio.h>
 
+#include <grpc++/grpc++.h>
+
 #include "controller.hpp"
 #include "ofdpa_client.hpp"
 #include "ofdpa_datatypes.h"
@@ -1188,6 +1190,37 @@ int controller::get_statistics(uint64_t port_no, uint32_t number_of_counters,
 int controller::tunnel_tenant_create(uint32_t tunnel_id,
                                      uint32_t vni) noexcept {
   return ofdpa->ofdpaTunnelTenantCreate(tunnel_id, vni);
+}
+
+int controller::tunnel_next_hop_create(uint32_t next_hop_id, uint64_t src_mac,
+                                       uint32_t dst_mac, uint32_t physical_port,
+                                       uint16_t vlan_id) noexcept {
+  return ofdpa->ofdpaTunnelNextHopCreate(next_hop_id, src_mac, dst_mac,
+                                         physical_port, vlan_id);
+}
+
+int controller::tunnel_access_port_create(uint32_t port_id,
+                                          const std::string &port_name,
+                                          uint32_t physical_port,
+                                          uint16_t vlan_id) noexcept {
+  return ofdpa->ofdpaTunnelAccessPortCreate(port_id, port_name, physical_port,
+                                            vlan_id);
+}
+
+int controller::tunnel_enpoint_create(uint32_t port_id,
+                                      const std::string &port_name,
+                                      uint32_t remote_ipv4, uint32_t local_ipv4,
+                                      uint32_t ttl, uint32_t next_hop_id,
+                                      uint32_t terminator_udp_dst_port,
+                                      uint32_t initiator_udp_dst_port,
+                                      bool use_entropy) noexcept {
+  return ofdpa->ofdpaTunnelEndpointPortCreate(
+      port_id, port_name, remote_ipv4, local_ipv4, ttl, next_hop_id,
+      terminator_udp_dst_port, initiator_udp_dst_port, use_entropy);
+}
+int controller::tunnel_port_tenant_add(uint32_t port_id,
+                                       uint32_t tunnel_id) noexcept {
+  return ofdpa->ofdpaTunnelPortTenantAdd(port_id, tunnel_id);
 }
 
 } // namespace basebox
