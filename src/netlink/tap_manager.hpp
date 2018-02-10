@@ -104,6 +104,7 @@ public:
   }
 
   void tap_dev_ready(int ifindex, const std::string &name);
+  void tap_dev_removed(int ifindex);
 
 private:
   tap_manager(const tap_manager &other) = delete; // non construction-copyable
@@ -115,6 +116,7 @@ private:
 
   std::map<int, uint32_t> ifindex_to_id;
   std::map<uint32_t, int> id_to_ifindex;
+  std::deque<uint32_t> port_deleted;
 
   basebox::tap_io io;
 };
