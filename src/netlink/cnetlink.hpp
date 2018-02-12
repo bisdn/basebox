@@ -125,6 +125,7 @@ public:
   ~cnetlink() override;
 
   struct rtnl_link *get_link_by_ifindex(int ifindex) const;
+  struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
   void resend_state() noexcept;
 

@@ -154,6 +154,13 @@ struct rtnl_link *cnetlink::get_link_by_ifindex(int ifindex) const {
   return rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
 }
 
+struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
+                                           struct nl_addr *a) const {
+  assert(ifindex);
+  assert(a);
+  return rtnl_neigh_get(caches[NL_NEIGH_CACHE], ifindex, a);
+}
+
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
   bool do_wakeup = false;
 
