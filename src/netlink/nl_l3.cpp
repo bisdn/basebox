@@ -5,6 +5,7 @@
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
 #include <netlink/route/neighbour.h>
+#include <netlink/route/route.h>
 
 #include "cnetlink.hpp"
 #include "nl_output.hpp"
@@ -469,6 +470,55 @@ int nl_l3::del_l3_egress(int ifindex, const struct nl_addr *s_mac,
   }
 
   return rv;
+}
+
+struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
+                                             void *arg) {
+  struct nl_addr *nh_addr;
+  int ifindex;
+  struct rtnl_neigh *neigh = nullptr;
+
+  LOG(INFO) << __FUNCTION__ << ": nh: " << nh;
+
+  ifindex = rtnl_route_nh_get_ifindex(nh);
+  nh_addr = rtnl_route_nh_get_via(nh);
+
+  if (nh_addr) {
+    switch (nl_addr_get_family(nh_addr)) {
+    case AF_INET:
+    case AF_INET6:
+      LOG(INFO) << "via " << nh_addr;
+      break;
+    default:
+      LOG(INFO) << "via " << nh_addr
+                << " unsupported family=" << nl_addr_get_family(nh_addr);
+      break;
+    }
+    struct rtnl_neigh *n =
+        nl->get_neighbour(ifindex, nh_addr);
+    LOG(INFO) << __FUNCTION__ << "; found neighbour: " << n;
+    rtnl_neigh_put(n);
+  } else {
+    LOG(INFO) << "no via";
+  }
+
+  nh_addr = rtnl_route_nh_get_gateway(nh);
+
+  if (nh_addr) {
+    switch (nl_addr_get_family(nh_addr)) {
+    case AF_INET:
+    case AF_INET6:
+      LOG(INFO) << "gw " << nh_addr;
+      break;
+    default:
+      LOG(INFO) << "gw " << nh_addr
+                << " unsupported family=" << nl_addr_get_family(nh_addr);
+      break;
+    }
+
+    neigh = nl->get_neighbour(ifindex, nh_addr);
+  }
+  return neigh;
 }
 
 } // namespace basebox
