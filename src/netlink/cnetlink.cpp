@@ -16,6 +16,7 @@
 #include <netlink/route/route.h>
 
 #include "cnetlink.hpp"
+#include "nl_output.hpp"
 #include "tap_manager.hpp"
 
 #define LINK_CAST(obj) reinterpret_cast<struct rtnl_link *>(obj)
@@ -40,17 +41,6 @@ cnetlink::cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man)
     kind2lt.emplace(n, lt);
     lt = static_cast<enum link_type>(lt + 1);
   }
-
-  memset(&params, 0, sizeof(struct nl_dump_params));
-  if (VLOG_IS_ON(3)) {
-    params.dp_type = NL_DUMP_DETAILS;
-  } else {
-    params.dp_type = NL_DUMP_LINE;
-  }
-
-  dump_buf.reserve(2048);
-  params.dp_buf = dump_buf.data();
-  params.dp_buflen = dump_buf.capacity();
 
   sock = nl_socket_alloc();
   if (NULL == sock) {
@@ -338,8 +328,9 @@ void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
 void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
                         struct nl_object *new_obj, uint64_t diff, int action,
                         void *data) {
-  VLOG(1) << "diff=" << diff << " action=" << action << " old_obj=" << old_obj
-          << " new_obj=" << new_obj;
+  VLOG(1) << "diff=" << diff << " action=" << action
+          << " old_obj=" << static_cast<void *>(old_obj)
+          << " new_obj=" << static_cast<void *>(new_obj);
 
   assert(data);
   static_cast<cnetlink *>(data)->nl_objs.emplace_back(action, old_obj, new_obj);
@@ -352,10 +343,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
   case NL_ACT_NEW:
     assert(obj.get_new_obj());
 
-    if (VLOG_IS_ON(2)) {
-      nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": new addr " << dump_buf.data();
-    }
+    VLOG(2) << __FUNCTION__ << ": new addr " << obj.get_new_obj();
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_new_obj()))) {
     case AF_INET:
@@ -374,12 +362,8 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
     assert(obj.get_new_obj());
     assert(obj.get_old_obj());
 
-    if (VLOG_IS_ON(2)) {
-      nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": change new addr " << dump_buf.data();
-      nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": change old addr " << dump_buf.data();
-    }
+    VLOG(2) << __FUNCTION__ << ": change new addr " << obj.get_new_obj();
+    VLOG(2) << __FUNCTION__ << ": change old addr " << obj.get_new_obj();
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_new_obj()))) {
     case AF_INET:
@@ -397,10 +381,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
   case NL_ACT_DEL:
     assert(obj.get_old_obj());
 
-    if (VLOG_IS_ON(2)) {
-      nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": del addr " << dump_buf.data();
-    }
+    VLOG(2) << __FUNCTION__ << ": del addr " << obj.get_old_obj();
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_old_obj()))) {
     case AF_INET:
@@ -442,10 +423,7 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
     case NL_ACT_NEW:
       assert(obj.get_new_obj());
 
-      if (VLOG_IS_ON(2)) {
-        nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": new link " << dump_buf.data();
-      }
+      VLOG(2) << __FUNCTION__ << ": new link " << obj.get_new_obj();
 
       link_created(LINK_CAST(obj.get_new_obj()));
       break;
@@ -454,12 +432,8 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
       assert(obj.get_new_obj());
       assert(obj.get_old_obj());
 
-      if (VLOG_IS_ON(2)) {
-        nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": change new link " << dump_buf.data();
-        nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": change old link " << dump_buf.data();
-      }
+      VLOG(2) << __FUNCTION__ << ": change new link " << obj.get_new_obj();
+      VLOG(2) << __FUNCTION__ << ": change old link " << obj.get_old_obj();
 
       link_updated(LINK_CAST(obj.get_old_obj()), LINK_CAST(obj.get_new_obj()));
       break;
@@ -467,10 +441,7 @@ void cnetlink::route_link_apply(const nl_obj &obj) {
     case NL_ACT_DEL: {
       assert(obj.get_old_obj());
 
-      if (VLOG_IS_ON(2)) {
-        nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": del link " << dump_buf.data();
-      }
+      VLOG(2) << __FUNCTION__ << ": del link " << obj.get_old_obj();
 
       link_deleted(LINK_CAST(obj.get_old_obj()));
       break;
@@ -494,10 +465,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
     case NL_ACT_NEW:
       assert(obj.get_new_obj());
 
-      if (VLOG_IS_ON(2)) {
-        nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": new neigh " << dump_buf.data();
-      }
+      VLOG(2) << __FUNCTION__ << ": new neigh " << obj.get_new_obj();
 
       family = rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj()));
 
@@ -524,12 +492,8 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
       assert(rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj())) ==
              rtnl_neigh_get_family(NEIGH_CAST(obj.get_old_obj())));
 
-      if (VLOG_IS_ON(2)) {
-        nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": change new neigh " << dump_buf.data();
-        nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": change old neigh " << dump_buf.data();
-      }
+      VLOG(2) << __FUNCTION__ << ": change new neigh " << obj.get_new_obj();
+      VLOG(2) << __FUNCTION__ << ": change old neigh " << obj.get_old_obj();
 
       family = rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj()));
 
@@ -554,10 +518,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
     case NL_ACT_DEL:
       assert(obj.get_old_obj());
 
-      if (VLOG_IS_ON(2)) {
-        nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-        LOG(INFO) << __FUNCTION__ << ": del neigh " << dump_buf.data();
-      }
+      VLOG(2) << __FUNCTION__ << ": del neigh " << obj.get_old_obj();
 
       family = rtnl_neigh_get_family(NEIGH_CAST(obj.get_old_obj()));
 
@@ -592,10 +553,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
   case NL_ACT_NEW:
     assert(obj.get_new_obj());
 
-    if (VLOG_IS_ON(2)) {
-      nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": new route " << dump_buf.data();
-    }
+    VLOG(2) << __FUNCTION__ << ": new route " << obj.get_new_obj();
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
     case AF_INET:
@@ -614,12 +572,8 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
     assert(obj.get_new_obj());
     assert(obj.get_old_obj());
 
-    if (VLOG_IS_ON(2)) {
-      nl_object_dump(OBJ_CAST(obj.get_new_obj()), &params);
-      VLOG(2) << __FUNCTION__ << ": change new route " << dump_buf.data();
-      nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-      VLOG(2) << __FUNCTION__ << ": change old route " << dump_buf.data();
-    }
+    VLOG(2) << __FUNCTION__ << ": change new route " << obj.get_new_obj();
+    VLOG(2) << __FUNCTION__ << ": change old route " << obj.get_old_obj();
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
     case AF_INET:
@@ -637,10 +591,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
   case NL_ACT_DEL:
     assert(obj.get_old_obj());
 
-    if (VLOG_IS_ON(2)) {
-      nl_object_dump(OBJ_CAST(obj.get_old_obj()), &params);
-      LOG(INFO) << __FUNCTION__ << ": del route " << dump_buf.data();
-    }
+    VLOG(2) << __FUNCTION__ << ": del route " << obj.get_old_obj();
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_old_obj()))) {
     case AF_INET:

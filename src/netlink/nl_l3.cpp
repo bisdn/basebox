@@ -1,15 +1,16 @@
-#include "nl_l3.hpp"
-#include "cnetlink.hpp"
-#include "sai.hpp"
-#include "tap_manager.hpp"
-
-#include <glog/logging.h>
 #include <tuple>
 #include <unordered_map>
 
+#include <glog/logging.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
 #include <netlink/route/neighbour.h>
+
+#include "cnetlink.hpp"
+#include "nl_output.hpp"
+#include "nl_l3.hpp"
+#include "sai.hpp"
+#include "tap_manager.hpp"
 
 namespace std {
 
