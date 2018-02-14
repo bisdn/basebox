@@ -622,33 +622,47 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   switch (lt) {
   case LT_UNKNOWN:
     switch (af) {
-    case AF_BRIDGE: {
+    case AF_BRIDGE: { // a new bridge slave was created
+      // get the original interface
+      rtnl_link *_link =
+          rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_ifindex(link));
+
+      if (!_link || _link == link) {
+        VLOG(1) << __FUNCTION__ << ": unexpected link " << link;
+        return;
+      }
+
+      link_type _lt = kind_to_link_type(rtnl_link_get_type(_link));
+      rtnl_link_put(_link);
+
+      // currently we support only the self created tap interfaces
+      if (_lt != LT_TUN) {
+        VLOG(1) << __FUNCTION__
+                << ": unsupported interface attached to bridge lt=" << _lt;
+        return;
+      }
 
       try {
-        if (AF_BRIDGE == rtnl_link_get_family(link)) {
+        // check for new bridge slaves
+        if (rtnl_link_get_master(link)) {
+          // slave interface
+          LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
+                    << " is new slave interface";
 
-          // check for new bridge slaves
-          if (rtnl_link_get_master(link)) {
-            // slave interface
-            LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                      << " is new slave interface";
-
-            // use only the first bridge were an interface is attached to
-            if (nullptr == bridge) {
-              LOG(INFO) << __FUNCTION__ << ": NEW bridge "
-                        << rtnl_link_get_master(link);
-              bridge = new nl_bridge(this->swi, tap_man);
-              rtnl_link *br_link = rtnl_link_get(caches[NL_LINK_CACHE],
-                                                 rtnl_link_get_master(link));
-              bridge->set_bridge_interface(br_link);
-              rtnl_link_put(br_link);
-            }
-
-            bridge->add_interface(link);
-          } else {
-            // bridge (master)
-            LOG(INFO) << __FUNCTION__ << ": is new bridge";
+          // use only the first bridge were an interface is attached to
+          if (nullptr == bridge) {
+            LOG(INFO) << __FUNCTION__ << ": using bridge "
+                      << rtnl_link_get_master(link);
+            bridge = new nl_bridge(this->swi, tap_man);
+            rtnl_link *br_link = rtnl_link_get(caches[NL_LINK_CACHE],
+                                               rtnl_link_get_master(link));
+            bridge->set_bridge_interface(br_link);
+            rtnl_link_put(br_link);
           }
+
+          bridge->add_interface(link);
+        } else {
+          LOG(INFO) << __FUNCTION__ << ": unknown link " << link;
         }
       } catch (std::exception &e) {
         LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
