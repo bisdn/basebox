@@ -37,9 +37,9 @@ public:
 
   void register_switch_interface(switch_interface *sw);
 
-private:
   struct rtnl_neigh *nexthop_resolution(struct rtnl_nexthop *nh, void *arg);
 
+private:
   switch_interface *sw;
   std::shared_ptr<tap_manager> tap_man;
   cnetlink *nl;
