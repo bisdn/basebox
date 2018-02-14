@@ -478,10 +478,13 @@ struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
   int ifindex;
   struct rtnl_neigh *neigh = nullptr;
 
-  LOG(INFO) << __FUNCTION__ << ": nh: " << nh;
+  assert(nl);
+  LOG(INFO) << __FUNCTION__ << ": nh: " << nh << " nl=" << nl;
 
   ifindex = rtnl_route_nh_get_ifindex(nh);
   nh_addr = rtnl_route_nh_get_via(nh);
+
+  LOG(INFO) << __FUNCTION__ << ": ifindex=" << ifindex;
 
   if (nh_addr) {
     switch (nl_addr_get_family(nh_addr)) {
@@ -494,8 +497,7 @@ struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
                 << " unsupported family=" << nl_addr_get_family(nh_addr);
       break;
     }
-    struct rtnl_neigh *n =
-        nl->get_neighbour(ifindex, nh_addr);
+    struct rtnl_neigh *n = nl->get_neighbour(ifindex, nh_addr);
     LOG(INFO) << __FUNCTION__ << "; found neighbour: " << n;
     rtnl_neigh_put(n);
   } else {
@@ -517,7 +519,10 @@ struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
     }
 
     neigh = nl->get_neighbour(ifindex, nh_addr);
+  } else {
+    LOG(INFO) << __FUNCTION__ << ": no gw";
   }
+
   return neigh;
 }
 
