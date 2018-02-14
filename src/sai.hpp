@@ -82,7 +82,7 @@ public:
                                    uint32_t vni) noexcept = 0;
 
   virtual int tunnel_next_hop_create(uint32_t next_hop_id, uint64_t src_mac,
-                                     uint32_t dst_mac, uint32_t physical_port,
+                                     uint64_t dst_mac, uint32_t physical_port,
                                      uint16_t vlan_id) noexcept = 0;
 
   virtual int tunnel_access_port_create(uint32_t port_id,

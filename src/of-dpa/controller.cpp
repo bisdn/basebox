@@ -1193,7 +1193,7 @@ int controller::tunnel_tenant_create(uint32_t tunnel_id,
 }
 
 int controller::tunnel_next_hop_create(uint32_t next_hop_id, uint64_t src_mac,
-                                       uint32_t dst_mac, uint32_t physical_port,
+                                       uint64_t dst_mac, uint32_t physical_port,
                                        uint16_t vlan_id) noexcept {
   return ofdpa->ofdpaTunnelNextHopCreate(next_hop_id, src_mac, dst_mac,
                                          physical_port, vlan_id);
@@ -1207,16 +1207,15 @@ int controller::tunnel_access_port_create(uint32_t port_id,
                                             vlan_id);
 }
 
-int controller::tunnel_enpoint_create(uint32_t port_id,
-                                      const std::string &port_name,
-                                      uint32_t remote_ipv4, uint32_t local_ipv4,
-                                      uint32_t ttl, uint32_t next_hop_id,
-                                      uint32_t terminator_udp_dst_port,
-                                      uint32_t initiator_udp_dst_port,
-                                      bool use_entropy) noexcept {
+int controller::tunnel_enpoint_create(
+    uint32_t port_id, const std::string &port_name, uint32_t remote_ipv4,
+    uint32_t local_ipv4, uint32_t ttl, uint32_t next_hop_id,
+    uint32_t terminator_udp_dst_port, uint32_t initiator_udp_dst_port,
+    uint32_t udp_src_port_if_no_entropy, bool use_entropy) noexcept {
   return ofdpa->ofdpaTunnelEndpointPortCreate(
       port_id, port_name, remote_ipv4, local_ipv4, ttl, next_hop_id,
-      terminator_udp_dst_port, initiator_udp_dst_port, use_entropy);
+      terminator_udp_dst_port, initiator_udp_dst_port,
+      udp_src_port_if_no_entropy, use_entropy);
 }
 int controller::tunnel_port_tenant_add(uint32_t port_id,
                                        uint32_t tunnel_id) noexcept {
