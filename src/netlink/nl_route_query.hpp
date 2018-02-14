@@ -1,0 +1,86 @@
+#pragma once
+
+#include <cassert>
+#include <chrono>
+#include <future>
+#include <iostream>
+#include <thread>
+
+#include <glog/logging.h>
+
+#include <netlink/attr.h>
+#include <netlink/route/link.h>
+#include <netlink/route/route.h>
+
+#include <linux/rtnetlink.h>
+
+namespace basebox {
+
+class nl_route_query final {
+  struct nl_sock *sock;
+
+  static void parse_cb(struct nl_object *obj, void *arg) {
+    assert(arg);
+    nl_object_get(obj);
+    *static_cast<nl_object **>(arg) = obj;
+  }
+
+  static int cb(struct nl_msg *msg, void *arg) {
+    int err;
+
+    assert(arg);
+
+    if ((err = nl_msg_parse(msg, &parse_cb, arg)) < 0)
+      LOG(FATAL) << __FUNCTION__
+                 << ": Unable to parse object: " << nl_geterror(err);
+
+    return 0;
+  }
+
+public:
+  nl_route_query() {
+    sock = nl_socket_alloc();
+    int err;
+    if ((err = nl_connect(sock, NETLINK_ROUTE)) < 0)
+      LOG(FATAL) << __FUNCTION__ << ": Unable to connect netlink socket: %s"
+                 << nl_geterror(err);
+  }
+
+  ~nl_route_query() { nl_socket_free(sock); }
+
+  /**
+   * return object has to be freed using nl_object_put
+   */
+  struct rtnl_route *query_route(struct nl_addr *dst) {
+    int err = 1;
+    struct nl_msg *m;
+    struct rtmsg rmsg;
+    memset(&rmsg, 0, sizeof(rmsg));
+    rmsg.rtm_family = nl_addr_get_family(dst);
+    rmsg.rtm_dst_len = nl_addr_get_prefixlen(dst);
+
+    struct nl_object *route = nullptr;
+    nl_socket_modify_cb(sock, NL_CB_VALID, NL_CB_CUSTOM, cb, &route);
+
+    m = nlmsg_alloc_simple(RTM_GETROUTE, 0);
+    if (!m)
+      LOG(FATAL) << __FUNCTION__ << ": out of memory";
+    if (nlmsg_append(m, &rmsg, sizeof(rmsg), NLMSG_ALIGNTO) < 0)
+      LOG(FATAL) << __FUNCTION__ << ": out of memory";
+    if (nla_put_addr(m, RTA_DST, dst) < 0)
+      LOG(FATAL) << __FUNCTION__ << ": out of memory";
+    // XXX this can be improve by adding the RTA_OIF information of the nh
+
+    err = nl_send_auto_complete(sock, m);
+    nlmsg_free(m);
+    if (err < 0)
+      LOG(FATAL) << __FUNCTION__ << ":%s" << nl_geterror(err);
+
+    if (nl_recvmsgs_default(sock) < 0)
+      LOG(FATAL) << __FUNCTION__ << ":%s" << nl_geterror(err);
+
+    return reinterpret_cast<struct rtnl_route *>(route);
+  }
+};
+
+} // namespace basebox

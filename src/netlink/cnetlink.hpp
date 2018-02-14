@@ -16,6 +16,7 @@
 #include "netlink/nl_bridge.hpp"
 #include "netlink/nl_l3.hpp"
 #include "netlink/nl_obj.hpp"
+#include "nl_route_query.hpp"
 #include "sai.hpp"
 
 namespace basebox {
@@ -82,6 +83,7 @@ class cnetlink final : public rofl::cthread_env {
   bool rfd_scheduled;
   std::deque<nl_obj> nl_objs;
 
+  nl_route_query rq;
   nl_l3 l3;
 
   std::map<std::string, enum link_type> kind2lt;
@@ -125,6 +127,9 @@ public:
   cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man);
   ~cnetlink() override;
 
+  /**
+   * rtnl_link_put has to be called
+   */
   struct rtnl_link *get_link_by_ifindex(int ifindex) const;
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
