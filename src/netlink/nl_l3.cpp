@@ -245,7 +245,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
   // setup ingress interface
   // XXX TODO this has to be handled by a different entity
-  rv = sw->ingress_port_vlan_add(port_id, 1, true);
+  rv = sw->ingress_port_vlan_add(port_id, 1, false);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to setup ingress vlan 1 (untagged) on port_id="
@@ -255,7 +255,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
   // setup egress interface
   // XXX TODO this has to be handled by a different entity
-  rv = sw->egress_port_vlan_add(port_id, 1, true);
+  rv = sw->egress_port_vlan_add(port_id, 1, false);
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
