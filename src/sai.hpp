@@ -85,10 +85,21 @@ public:
     PORT_EVENT_ADD,
     PORT_EVENT_DEL,
   };
+
   enum port_status {
     PORT_STATUS_LOWER_DOWN = 0x01,
     PORT_STATUS_ADMIN_DOWN = 0x02,
   };
+
+  enum port_type {
+    port_type_physical = 0,
+    port_type_vxlan = 1,
+  };
+
+  enum port_type get_port_type(uint32_t port_id) const {
+    return static_cast<enum port_type>(port_id >> 16);
+  }
+
   struct port_notification_data {
     enum port_event ev;
     uint32_t port_id;
