@@ -42,6 +42,7 @@ SOURCES_NETLINK = \
 	netlink/ctapdev.hpp \
 	netlink/nbi_impl.cpp \
 	netlink/nbi_impl.hpp \
+	netlink/netlink-utils.cpp \
 	netlink/netlink-utils.hpp \
 	netlink/nl_bridge.cpp \
 	netlink/nl_bridge.hpp \
@@ -52,6 +53,8 @@ SOURCES_NETLINK = \
 	netlink/nl_output.cpp \
 	netlink/nl_output.hpp \
 	netlink/tap_manager.cpp \
+	netlink/nl_vxlan.cpp \
+	netlink/nl_vxlan.hpp \
 	netlink/tap_manager.hpp
 
 nodist_baseboxd_SOURCES = \

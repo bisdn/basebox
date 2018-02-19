@@ -22,19 +22,15 @@
 #include "nl_route_query.hpp"
 #include "tap_manager.hpp"
 
-#define LINK_CAST(obj) reinterpret_cast<struct rtnl_link *>(obj)
-#define NEIGH_CAST(obj) reinterpret_cast<struct rtnl_neigh *>(obj)
-#define ROUTE_CAST(obj) reinterpret_cast<struct rtnl_route *>(obj)
-#define ADDR_CAST(obj) reinterpret_cast<struct rtnl_addr *>(obj)
-
 #define lt_names "unknown", "unsupported", "bridge", "tun", "vxlan"
 
 namespace basebox {
 
-cnetlink::cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man)
-    : swi(swi), thread(this), caches(NL_MAX_CACHE, nullptr), tap_man(tap_man),
-      bridge(nullptr), nl_proc_max(10), running(false), rfd_scheduled(false),
-      l3(swi, tap_man, this), lt2names{lt_names} {
+cnetlink::cnetlink(std::shared_ptr<tap_manager> tap_man)
+    : swi(nullptr), thread(this), caches(NL_MAX_CACHE, nullptr),
+      tap_man(tap_man), bridge(nullptr), nl_proc_max(10), running(false),
+      rfd_scheduled(false), l3(tap_man, this),
+      vxlan(tap_man, this), lt2names{lt_names} {
 
   assert(lt2names.size() == LT_MAX);
 
@@ -646,48 +642,12 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       rtnl_link_put(_link);
 
       if (_lt == LT_VXLAN) {
-        std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> filter(
-            rtnl_link_alloc(), &rtnl_link_put);
-        assert(filter && "out of memory");
-        rtnl_link_set_family(filter.get(), AF_BRIDGE);
 
-        std::deque<rtnl_link *> bridge_ports;
-        std::tuple<cnetlink *, std::deque<rtnl_link *> *> params = {
-            this, &bridge_ports};
-        nl_cache_foreach_filter(
-            caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
-            [](struct nl_object *obj, void *arg) {
-              std::tuple<cnetlink *, std::deque<rtnl_link *> *> *params =
-                  static_cast<
-                      std::tuple<cnetlink *, std::deque<rtnl_link *> *> *>(arg);
-
-              LOG(INFO) << __FUNCTION__ << ": got bridge link name="
-                        << rtnl_link_get_name(LINK_CAST(obj));
-
-              if (!rtnl_link_get_master(LINK_CAST(obj))) {
-                return;
-              }
-
-              if (!std::get<0>(*params)->tap_man->get_port_id(
-                      rtnl_link_get_ifindex(LINK_CAST(obj))))
-                return;
-
-              LOG(INFO) << __FUNCTION__ << ": XXX found" << obj;
-              // nl_object_get(obj);
-              std::get<1>(*params)->push_back(
-                  LINK_CAST(obj)); // XXX unique_ptr?
-            },
-            &params);
-
-        if (bridge_ports.size() == 0) {
-          // l2 domain so far
-          return;
-        }
+        vxlan.add_bridge_port(link);
 
         // check for each bridge port the vlan overlap
 
         // create access ports for each overlapping vlan
-
       }
 
       // currently we support only the self created tap interfaces
@@ -1045,6 +1005,7 @@ void cnetlink::register_switch(switch_interface *swi) noexcept {
   assert(swi);
   this->swi = swi;
   l3.register_switch_interface(swi);
+  vxlan.register_switch_interface(swi);
 }
 
 void cnetlink::unregister_switch(switch_interface *swi) noexcept {

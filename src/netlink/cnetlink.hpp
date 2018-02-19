@@ -15,6 +15,7 @@
 
 #include "netlink/nl_bridge.hpp"
 #include "netlink/nl_l3.hpp"
+#include "netlink/nl_vxlan.hpp"
 #include "netlink/nl_obj.hpp"
 #include "nl_route_query.hpp"
 #include "sai.hpp"
@@ -42,14 +43,6 @@ class cnetlink final : public rofl::cthread_env {
   // non copyable
   cnetlink(const cnetlink &other) = delete;
   cnetlink &operator=(const cnetlink &) = delete;
-
-  enum nl_cache_t {
-    NL_ADDR_CACHE,
-    NL_LINK_CACHE,
-    NL_NEIGH_CACHE,
-    NL_ROUTE_CACHE,
-    NL_MAX_CACHE,
-  };
 
   enum timer {
     NL_TIMER_RESEND_STATE,
@@ -85,6 +78,7 @@ class cnetlink final : public rofl::cthread_env {
 
   nl_route_query rq;
   nl_l3 l3;
+  nl_vxlan vxlan;
 
   std::map<std::string, enum link_type> kind2lt;
   std::vector<std::string> lt2names;
@@ -124,7 +118,15 @@ class cnetlink final : public rofl::cthread_env {
   enum link_type kind_to_link_type(const char *type) const noexcept;
 
 public:
-  cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man);
+  enum nl_cache_t {
+    NL_ADDR_CACHE,
+    NL_LINK_CACHE,
+    NL_NEIGH_CACHE,
+    NL_ROUTE_CACHE,
+    NL_MAX_CACHE,
+  };
+
+  cnetlink(std::shared_ptr<tap_manager> tap_man);
   ~cnetlink() override;
 
   /**
@@ -132,6 +134,8 @@ public:
    */
   struct rtnl_link *get_link_by_ifindex(int ifindex) const;
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
+
+  nl_cache *get_cache(enum nl_cache_t id) { return caches[id]; }
 
   void resend_state() noexcept;
 

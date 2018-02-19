@@ -104,10 +104,10 @@ void nl_bridge::add_interface(rtnl_link *link) {
     // egress
     // TODO: as soon as pop_vlan on egress works update this
     sw->egress_port_vlan_accept_all(port);
-  }
 
-  if (not ingress_vlan_filtered && not egress_vlan_filtered) {
-    return;
+    if (not ingress_vlan_filtered) {
+      return;
+    }
   }
 
   for (int k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
