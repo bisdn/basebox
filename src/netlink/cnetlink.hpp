@@ -83,9 +83,6 @@ class cnetlink final : public rofl::cthread_env {
 
   nl_l3 l3;
 
-  struct nl_dump_params params;
-  std::vector<char> dump_buf;
-
   std::map<std::string, enum link_type> kind2lt;
   std::vector<std::string> lt2names;
 
