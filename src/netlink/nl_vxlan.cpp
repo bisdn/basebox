@@ -19,8 +19,7 @@ namespace basebox {
 
 nl_vxlan::nl_vxlan(std::shared_ptr<tap_manager> tap_man, nl_l3 *l3,
                    cnetlink *nl)
-    : port_id(1 << 16 | 1), next_hop_id(1), sw(nullptr), tap_man(tap_man),
-      nl(nl), l3(l3) {}
+    : sw(nullptr), tap_man(tap_man), nl(nl), l3(l3) {}
 
 void nl_vxlan::register_switch_interface(switch_interface *sw) {
   this->sw = sw;
@@ -58,7 +57,8 @@ static int find_next_bit(int i, uint32_t x) {
   return j ? j + i : 0;
 }
 
-void nl_vxlan::create_access_port(struct rtnl_link *access_port, uint16_t vid,
+void nl_vxlan::create_access_port(uint32_t tunnel_id,
+                                  struct rtnl_link *access_port, uint16_t vid,
                                   bool untagged) {
   assert(access_port);
   assert(sw);
@@ -68,15 +68,16 @@ void nl_vxlan::create_access_port(struct rtnl_link *access_port, uint16_t vid,
       tap_man->get_port_id(rtnl_link_get_ifindex(access_port));
   std::string port_name(rtnl_link_get_name(access_port));
   port_name += "." + std::to_string(vid);
-  sw->tunnel_access_port_create(port_id, port_name, port, vid);
-  // XXX FIXME next
-  // sw->tunnel_port_tenant_add(port_id, XXX);
+  sw->tunnel_access_port_create(port_id, port_name, port,
+                                vid);             // XXX FIXME check rv
+  sw->tunnel_port_tenant_add(port_id, tunnel_id); // XXX FIXME check rv
   port_id++;
 }
 
 // XXX loop through vlans (again code duplication
 // TODO shouldn't be void
-void nl_vxlan::create_access_ports(struct rtnl_link *access_port,
+void nl_vxlan::create_access_ports(uint32_t tunnel_id,
+                                   struct rtnl_link *access_port,
                                    struct rtnl_link_bridge_vlan *br_vlan) {
   assert(access_port);
   assert(br_vlan);
@@ -112,7 +113,7 @@ void nl_vxlan::create_access_ports(struct rtnl_link *access_port,
 
         // create access ports for each overlapping vlan
         bool untagged = false;
-        create_access_port(access_port, vid, untagged);
+        create_access_port(tunnel_id, access_port, vid, untagged);
 
         i = j;
       } else {
@@ -122,14 +123,29 @@ void nl_vxlan::create_access_ports(struct rtnl_link *access_port,
   }
 }
 
-int nl_vxlan::add_bridge_port(rtnl_link *link) {
-  assert(link);
+int nl_vxlan::add_bridge_port(rtnl_link *vxlan_link, rtnl_link *br_port) {
+  assert(vxlan_link);
+  assert(br_port);
 
+  uint32_t vni = 0;
+
+  if (rtnl_link_vxlan_get_id(vxlan_link, &vni) != 0) {
+    LOG(ERROR) << __FUNCTION__ << ": no valid vxlan interface " << vxlan_link;
+    return -EINVAL;
+  }
+
+  auto tunnel_id_it = vni2tunnel.find(vni);
+  if (tunnel_id_it == vni2tunnel.end()) {
+    LOG(ERROR) << __FUNCTION__ << ": got no tunnel_id for vni=" << vni;
+    return -EINVAL;
+  }
+
+  uint32_t tunnel_id = tunnel_id_it->second;
   std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> filter(rtnl_link_alloc(),
                                                            &rtnl_link_put);
   assert(filter && "out of memory");
   rtnl_link_set_family(filter.get(), AF_BRIDGE);
-  rtnl_link_set_master(filter.get(), rtnl_link_get_master(link));
+  rtnl_link_set_master(filter.get(), rtnl_link_get_master(br_port));
 
   std::deque<rtnl_link *> bridge_ports;
   std::tuple<nl_vxlan *, std::deque<rtnl_link *> *> params = {this,
@@ -167,21 +183,21 @@ int nl_vxlan::add_bridge_port(rtnl_link *link) {
   }
 
   // check for each bridge port the vlan overlap
-  auto vxlan_vlans = rtnl_link_bridge_get_port_vlan(link);
+  auto vxlan_vlans = rtnl_link_bridge_get_port_vlan(br_port);
 
   // XXX pvid is currently not taken into account
-  for (auto br_port : bridge_ports) {
-    auto br_port_vlans = rtnl_link_bridge_get_port_vlan(br_port);
+  for (auto _br_port : bridge_ports) {
+    auto br_port_vlans = rtnl_link_bridge_get_port_vlan(_br_port);
     auto matching_vlans = get_matching_vlans(br_port_vlans, vxlan_vlans);
     // XXX FIXME skip other endpoint ports
-    create_access_ports(br_port, &matching_vlans);
+    create_access_ports(tunnel_id, _br_port, &matching_vlans);
   }
 
   return 0;
 }
 
 int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
-  uint16_t vlan_id = 1; // XXX TODO currently hardcoded to vid 1
+  uint16_t vlan_id = 1; // XXX FIXME currently hardcoded to vid 1
   std::thread rqt;
 
   assert(link);
@@ -238,10 +254,11 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   }
 
   // create tenant on switch
-  uint32_t tunnel_id = 1; // actually type|id type=0 and id=1
-  sw->tunnel_tenant_create(
-      tunnel_id,
-      vni); // XXX FIXME check rv // XXX FIXME mapping needs to be stored
+  sw->tunnel_tenant_create(tunnel_id,
+                           vni); // XXX FIXME check rv
+
+  vni2tunnel.emplace(vni, tunnel_id); // XXX TODO this should likely correlate
+                                      // with the remote address
 
   result.wait();
   std::unique_ptr<rtnl_route, void (*)(rtnl_route *)> route(result.get(),
@@ -385,6 +402,7 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
 
   next_hop_id++;
   port_id++;
+  tunnel_id++;
 
   return 0;
 }

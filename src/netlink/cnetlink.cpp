@@ -630,7 +630,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     switch (af) {
     case AF_BRIDGE: { // a new bridge slave was created
       // get the original interface
-      rtnl_link *_link =
+      rtnl_link *_link = // XXX FIXME unique ptr
           rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_ifindex(link));
 
       if (!_link || _link == link) {
@@ -639,11 +639,11 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       }
 
       link_type _lt = kind_to_link_type(rtnl_link_get_type(_link));
-      rtnl_link_put(_link);
+      // XXX FIXME unique ptr rtnl_link_put(_link);
 
       if (_lt == LT_VXLAN) {
 
-        vxlan.add_bridge_port(link);
+        vxlan.add_bridge_port(_link, link);
 
         // check for each bridge port the vlan overlap
 

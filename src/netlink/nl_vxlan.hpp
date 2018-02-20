@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <map>
 #include <memory>
 
 #include "nl_route_query.hpp"
@@ -22,17 +24,23 @@ public:
 
   void register_switch_interface(switch_interface *sw);
 
-  int add_bridge_port(rtnl_link *);
+  int add_bridge_port(rtnl_link *vxlan_link, rtnl_link *br_port);
 
   int create_endpoint_port(struct rtnl_link *link);
 
 private:
-  void create_access_port(struct rtnl_link *link, uint16_t vid, bool untagged);
-  void create_access_ports(struct rtnl_link *access_port,
+  void create_access_port(uint32_t tunnel_id, struct rtnl_link *link,
+                          uint16_t vid, bool untagged);
+  void create_access_ports(uint32_t tunnel_id, struct rtnl_link *access_port,
                            struct rtnl_link_bridge_vlan *br_vlan);
 
-  uint32_t port_id;     // XXX TODO see below
-  uint32_t next_hop_id; // XXX TODO handle these better and prevent id overflow
+  // XXX TODO handle these better and prevent id overflow
+  uint32_t next_hop_id = 1;
+  uint32_t port_id = 1 << 16 | 1;
+  uint32_t tunnel_id = 1;
+
+  std::map<uint32_t, uint32_t> vni2tunnel;
+
   switch_interface *sw;
   std::shared_ptr<tap_manager> tap_man;
   cnetlink *nl;
