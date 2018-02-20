@@ -4,18 +4,23 @@
 #include <tuple>
 
 #include <netlink/route/link.h>
+#include <netlink/route/neighbour.h>
 #include <netlink/route/link/bridge.h>
+#include <netlink/route/link/vxlan.h>
 
 #include "cnetlink.hpp"
 #include "netlink-utils.hpp"
+#include "nl_l3.hpp"
 #include "nl_output.hpp"
 #include "nl_vxlan.hpp"
 #include "tap_manager.hpp"
 
 namespace basebox {
 
-nl_vxlan::nl_vxlan(std::shared_ptr<tap_manager> tap_man, cnetlink *nl)
-    : sw(nullptr), tap_man(tap_man), nl(nl) {}
+nl_vxlan::nl_vxlan(std::shared_ptr<tap_manager> tap_man, nl_l3 *l3,
+                   cnetlink *nl)
+    : port_id(1 << 16 | 1), next_hop_id(1), sw(nullptr), tap_man(tap_man),
+      nl(nl), l3(l3) {}
 
 void nl_vxlan::register_switch_interface(switch_interface *sw) {
   this->sw = sw;
@@ -58,7 +63,6 @@ void nl_vxlan::create_access_port(struct rtnl_link *access_port, uint16_t vid,
   assert(access_port);
   assert(sw);
 
-  static uint32_t port_id = 1 << 16 | 1 << 8;
   // XXX FIXME mark access ports or find another way to del with fdb changes
   const uint32_t port =
       tap_man->get_port_id(rtnl_link_get_ifindex(access_port));
@@ -172,6 +176,215 @@ int nl_vxlan::add_bridge_port(rtnl_link *link) {
     // XXX FIXME skip other endpoint ports
     create_access_ports(br_port, &matching_vlans);
   }
+
+  return 0;
+}
+
+int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
+  uint16_t vlan_id = 1; // XXX TODO currently hardcoded to vid 1
+  std::thread rqt;
+
+  assert(link);
+
+  // get group/remote addr
+  nl_addr *addr = nullptr;
+  int rv = rtnl_link_vxlan_get_group(link, &addr);
+
+  if (rv != 0 || addr == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": no group/remote for vxlan interface set";
+    return -EINVAL;
+  }
+
+  // store group/remote
+  std::unique_ptr<nl_addr, void (*)(nl_addr *)> group_(addr, &nl_addr_put);
+
+  // XXX TODO check for multicast here
+  // XXX check if group is a neighbour
+
+  int family = nl_addr_get_family(group_.get());
+
+  if (family != AF_INET) {
+    LOG(ERROR) << __FUNCTION__ << ": currently only AF_INET is supported";
+    return -EINVAL;
+  }
+
+  rv = rtnl_link_vxlan_get_local(link, &addr);
+
+  if (rv != 0 || addr == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": no local address for vxlan interface set";
+    return -EINVAL;
+  }
+
+  std::unique_ptr<nl_addr, void (*)(nl_addr *)> local_(addr, &nl_addr_put);
+
+  family = nl_addr_get_family(local_.get());
+
+  if (family != AF_INET) {
+    LOG(ERROR) << __FUNCTION__ << ": currently only AF_INET is supported";
+    return -EINVAL;
+  }
+
+  // spin off a thread to query the next hop
+  std::packaged_task<struct rtnl_route *(struct nl_addr *)> task(
+      [this](struct nl_addr *addr) { return rq.query_route(addr); });
+  std::future<struct rtnl_route *> result = task.get_future();
+  std::thread(std::move(task), group_.get()).detach();
+
+  uint32_t vni = 0;
+  rv = rtnl_link_vxlan_get_id(link, &vni);
+  if (rv != 0) {
+    LOG(ERROR) << __FUNCTION__ << ": no vni for vxlan interface set";
+    return -EINVAL;
+  }
+
+  // create tenant on switch
+  uint32_t tunnel_id = 1; // actually type|id type=0 and id=1
+  sw->tunnel_tenant_create(
+      tunnel_id,
+      vni); // XXX FIXME check rv // XXX FIXME mapping needs to be stored
+
+  result.wait();
+  std::unique_ptr<rtnl_route, void (*)(rtnl_route *)> route(result.get(),
+                                                            &rtnl_route_put);
+
+  VLOG(2) << __FUNCTION__ << ": route " << OBJ_CAST(route.get());
+
+  int nnh = rtnl_route_get_nnexthops(route.get());
+
+  if (nnh != 1) {
+    // ecmp
+    LOG(ERROR) << __FUNCTION__ << ": ecmp not supported";
+    // XXX TODO remove tunnel
+    return -ENOTSUP;
+  }
+
+  std::deque<struct rtnl_neigh *> neighs;
+  std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> data =
+      std::make_pair(l3, &neighs);
+
+  LOG(INFO) << __FUNCTION__ << ": XXX this=" << this;
+  rtnl_route_foreach_nexthop(
+      route.get(),
+      [](struct rtnl_nexthop *nh, void *arg) {
+        std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> *data =
+            static_cast<
+                std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> *>(arg);
+        std::deque<struct rtnl_neigh *> *neighs = data->second;
+
+        // XXX annotate that next hop is likely directly reachable
+
+        struct rtnl_neigh *neigh =
+            static_cast<nl_l3 *>(data->first)->nexthop_resolution(nh, nullptr);
+        if (neigh) {
+          LOG(INFO) << __FUNCTION__ << "; found neighbour: "
+                    << reinterpret_cast<struct nl_object *>(neigh);
+          neighs->push_back(neigh);
+        }
+      },
+      &data);
+
+  if (neighs.size() > 1) {
+    LOG(ERROR) << __FUNCTION__
+               << ": currently only 1 neighbour is supported, got "
+               << neighs.size();
+    return -ENOTSUP;
+  }
+
+  if (neighs.size() == 0) {
+    // XXX check if remote is a neighbour
+    LOG(ERROR) << __FUNCTION__ << ": neighs.size()=" << neighs.size();
+    return -ENOTSUP;
+  }
+
+  std::unique_ptr<rtnl_neigh, void (*)(rtnl_neigh *)> neigh_(neighs.front(),
+                                                             &rtnl_neigh_put);
+  neighs.pop_front();
+
+  // get outgoing interface
+  uint32_t ifindex = rtnl_neigh_get_ifindex(neigh_.get());
+  uint32_t physical_port = tap_man->get_port_id(ifindex);
+
+  if (physical_port == 0) {
+    LOG(ERROR) << __FUNCTION__ << ": no port_id for ifindex=" << ifindex;
+    return -EINVAL;
+  }
+
+  rtnl_link *local_link = nl->get_link_by_ifindex(ifindex);
+  if (local_link == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": XXX ";
+    return -EINVAL;
+  }
+
+  addr = rtnl_link_get_addr(local_link);
+  if (addr == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": XXX ";
+    return -EINVAL;
+  }
+
+  uint64_t src_mac = nlall2uint64(addr);
+
+  // get neigh and set dst_mac
+  addr = rtnl_neigh_get_lladdr(neigh_.get());
+  if (addr == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": XXX ";
+    return -EINVAL;
+  }
+
+  uint64_t dst_mac = nlall2uint64(addr);
+
+  // create next hop
+  LOG(INFO) << __FUNCTION__ << std::hex << std::showbase
+            << ": calling tunnel_next_hop_create next_hop_id=" << next_hop_id
+            << ", src_mac=" << src_mac << ", dst_mac=" << dst_mac
+            << ", physical_port=" << physical_port << ", vlan_id=" << vlan_id;
+  sw->tunnel_next_hop_create(next_hop_id, src_mac, dst_mac, physical_port,
+                             vlan_id); // XXX FIXME check rv
+
+  int ttl = rtnl_link_vxlan_get_ttl(link);
+
+  if (ttl == 0)
+    ttl = 45; // XXX TODO is this a sane default?
+
+  uint32_t remote_ipv4 = 0;
+  memcpy(&remote_ipv4, nl_addr_get_binary_addr(group_.get()),
+         sizeof(remote_ipv4));
+  remote_ipv4 = ntohl(remote_ipv4);
+
+  uint32_t local_ipv4 = 0;
+  memcpy(&local_ipv4, nl_addr_get_binary_addr(local_.get()),
+         sizeof(local_ipv4));
+  local_ipv4 = ntohl(local_ipv4);
+
+  uint32_t initiator_udp_dst_port = 4789;
+  rv = rtnl_link_vxlan_get_port(link, &initiator_udp_dst_port);
+  if (rv != 0) {
+    LOG(WARNING) << __FUNCTION__
+                 << ": vxlan dstport not specified. Falling back to "
+                 << initiator_udp_dst_port;
+  }
+
+  uint32_t terminator_udp_dst_port = 4789;
+  bool use_entropy = true;
+  uint32_t udp_src_port_if_no_entropy = 0;
+
+  // create endpoint port
+  LOG(INFO) << __FUNCTION__ << std::hex << std::showbase
+            << ": calling tunnel_enpoint_create port_id=" << port_id
+            << ", name=" << rtnl_link_get_name(link)
+            << ", remote=" << remote_ipv4 << ", local=" << local_ipv4
+            << ", ttl=" << ttl << ", next_hop_id=" << next_hop_id
+            << ", terminator_udp_dst_port=" << terminator_udp_dst_port
+            << ", initiator_udp_dst_port=" << initiator_udp_dst_port
+            << ", use_entropy=" << use_entropy;
+  sw->tunnel_enpoint_create(
+      port_id, std::string(rtnl_link_get_name(link)), // XXX string_view
+      remote_ipv4, local_ipv4, ttl, next_hop_id, terminator_udp_dst_port,
+      initiator_udp_dst_port, udp_src_port_if_no_entropy, use_entropy);
+
+  sw->tunnel_port_tenant_add(port_id, tunnel_id);
+
+  next_hop_id++;
+  port_id++;
 
   return 0;
 }

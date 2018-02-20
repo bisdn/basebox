@@ -17,7 +17,6 @@
 #include "netlink/nl_l3.hpp"
 #include "netlink/nl_vxlan.hpp"
 #include "netlink/nl_obj.hpp"
-#include "nl_route_query.hpp"
 #include "sai.hpp"
 
 namespace basebox {
@@ -76,7 +75,6 @@ class cnetlink final : public rofl::cthread_env {
   bool rfd_scheduled;
   std::deque<nl_obj> nl_objs;
 
-  nl_route_query rq;
   nl_l3 l3;
   nl_vxlan vxlan;
 
