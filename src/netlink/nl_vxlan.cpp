@@ -68,9 +68,31 @@ void nl_vxlan::create_access_port(uint32_t tunnel_id,
       tap_man->get_port_id(rtnl_link_get_ifindex(access_port));
   std::string port_name(rtnl_link_get_name(access_port));
   port_name += "." + std::to_string(vid);
-  sw->tunnel_access_port_create(port_id, port_name, port,
-                                vid);             // XXX FIXME check rv
+
+  sw->ingress_port_vlan_remove(port, vid, untagged);
+  int rv;
+  int cnt = 0;
+  do {
+    // XXX FIXME this is totally crap even if it works for now
+    rv = sw->tunnel_access_port_create(port_id, port_name, port,
+                                       vid); // XXX FIXME check rv
+    VLOG(2) << __FUNCTION__ << ": rv=" << rv << ", cnt=" << cnt;
+    cnt++;
+  } while (rv < 0 && cnt < 30);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__
+               << ": failed to create access port tunnel_id=" << tunnel_id
+               << ", vid=" << vid << ", port:" << OBJ_CAST(access_port);
+  }
+
+  VLOG(2) << __FUNCTION__ << ": call tunnel_port_tenant_add port_id=" << port_id
+          << ", tunnel_id=" << tunnel_id;
   sw->tunnel_port_tenant_add(port_id, tunnel_id); // XXX FIXME check rv
+
+  // XXX TODO could be done just once per tunnel
+  sw->overlay_tunnel_add(tunnel_id);
+
   port_id++;
 }
 
@@ -264,6 +286,12 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   std::unique_ptr<rtnl_route, void (*)(rtnl_route *)> route(result.get(),
                                                             &rtnl_route_put);
 
+  if (route.get() == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": could not retrieve route to "
+               << group_.get();
+    return -EINVAL;
+  }
+
   VLOG(2) << __FUNCTION__ << ": route " << OBJ_CAST(route.get());
 
   int nnh = rtnl_route_get_nnexthops(route.get());
@@ -348,6 +376,9 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   }
 
   uint64_t dst_mac = nlall2uint64(addr);
+
+  // FIXME XXX check if we can alter the untagged entry to a tagged one and
+  // switch it back afterwards
 
   // create next hop
   LOG(INFO) << __FUNCTION__ << std::hex << std::showbase
