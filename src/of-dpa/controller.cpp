@@ -572,6 +572,26 @@ errout:
   return rv;
 }
 
+int controller::overlay_tunnel_add(uint32_t tunnel_id) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_overlay_tunnel(dpt.get_version(), tunnel_id));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
 int controller::l2_addr_remove_all_in_vlan(uint32_t port,
                                            uint16_t vid) noexcept {
   int rv = 0;
@@ -895,6 +915,7 @@ int controller::ingress_port_vlan_remove(uint32_t port, uint16_t vid,
           rofl::cauxid(0),
           fm_driver.disable_port_vid_ingress(dpt.get_version(), port, vid));
     }
+    dpt.send_barrier_request(rofl::cauxid(0));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;

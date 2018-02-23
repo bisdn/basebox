@@ -29,6 +29,8 @@ public:
     SAI_PORT_STAT_COLLISIONS,
   } sai_port_stat_t;
 
+  virtual int overlay_tunnel_add(uint32_t tunnel_id) noexcept = 0;
+
   virtual int l2_addr_remove_all_in_vlan(uint32_t port,
                                          uint16_t vid) noexcept = 0;
   virtual int l2_addr_add(uint32_t port, uint16_t vid,
