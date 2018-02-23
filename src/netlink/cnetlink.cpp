@@ -629,59 +629,68 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   case LT_UNKNOWN:
     switch (af) {
     case AF_BRIDGE: { // a new bridge slave was created
-      // get the original interface
-      rtnl_link *_link = // XXX FIXME unique ptr
-          rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_ifindex(link));
+      rtnl_link *_link = nullptr;
+      std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> filter(
+          rtnl_link_alloc(), &rtnl_link_put);
 
-      if (!_link || _link == link) {
+      rtnl_link_set_ifindex(filter.get(), rtnl_link_get_ifindex(link));
+      rtnl_link_set_family(filter.get(), AF_UNSPEC);
+
+      // retrieve base interface
+      nl_cache_foreach_filter(caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
+                              [](struct nl_object *obj, void *arg) {
+                                *static_cast<nl_object **>(arg) = obj;
+                              },
+                              &_link);
+
+      if (!_link) {
         VLOG(1) << __FUNCTION__ << ": unexpected link " << link;
         return;
       }
 
+      VLOG(2) << __FUNCTION__ << ": original if " << OBJ_CAST(_link);
+
       link_type _lt = kind_to_link_type(rtnl_link_get_type(_link));
-      // XXX FIXME unique ptr rtnl_link_put(_link);
 
-      if (_lt == LT_VXLAN) {
-
+      switch (_lt) {
+      case LT_VXLAN:
         vxlan.add_bridge_port(_link, link);
+        break;
+      case LT_TUN:
 
-        // check for each bridge port the vlan overlap
+        try {
+          // check for new bridge slaves
+          if (rtnl_link_get_master(link)) {
+            // slave interface
+            LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
+                      << " is new slave interface";
 
-        // create access ports for each overlapping vlan
-      }
+            // use only the first bridge an interface is attached to
+            if (nullptr == bridge) {
+              LOG(INFO) << __FUNCTION__ << ": using bridge "
+                        << rtnl_link_get_master(link);
+              bridge = new nl_bridge(this->swi, tap_man);
+              rtnl_link *br_link = rtnl_link_get(caches[NL_LINK_CACHE],
+                                                 rtnl_link_get_master(link));
+              bridge->set_bridge_interface(br_link);
+              rtnl_link_put(br_link);
+            }
 
-      // currently we support only the self created tap interfaces
-      if (_lt != LT_TUN) {
+            bridge->add_interface(link);
+          } else {
+            LOG(INFO) << __FUNCTION__ << ": unknown link " << link;
+          }
+        } catch (std::exception &e) {
+          LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
+        }
+        break;
+      default:
+        // currently we support our tap interfaces and vxlan
         VLOG(1) << __FUNCTION__
                 << ": unsupported interface attached to bridge lt=" << _lt;
-        return;
+        break;
       }
 
-      try {
-        // check for new bridge slaves
-        if (rtnl_link_get_master(link)) {
-          // slave interface
-          LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                    << " is new slave interface";
-
-          // use only the first bridge were an interface is attached to
-          if (nullptr == bridge) {
-            LOG(INFO) << __FUNCTION__ << ": using bridge "
-                      << rtnl_link_get_master(link);
-            bridge = new nl_bridge(this->swi, tap_man);
-            rtnl_link *br_link = rtnl_link_get(caches[NL_LINK_CACHE],
-                                               rtnl_link_get_master(link));
-            bridge->set_bridge_interface(br_link);
-            rtnl_link_put(br_link);
-          }
-
-          bridge->add_interface(link);
-        } else {
-          LOG(INFO) << __FUNCTION__ << ": unknown link " << link;
-        }
-      } catch (std::exception &e) {
-        LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
-      }
     } break;
     default:
       LOG(WARNING) << __FUNCTION__ << ": ignoring link with af=" << af
