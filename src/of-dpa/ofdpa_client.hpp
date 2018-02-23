@@ -24,7 +24,8 @@ public:
 
   ofdpa::OfdpaStatus::OfdpaStatusCode
   ofdpaTunnelAccessPortCreate(uint32_t port_id, const std::string &port_name,
-                              uint32_t physical_port, uint16_t vlan_id);
+                              uint32_t physical_port, uint16_t vlan_id,
+                              bool untagged);
 
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaTunnelEndpointPortCreate(
       uint32_t port_id, const std::string &port_name, uint32_t remote_ipv4,

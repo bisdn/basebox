@@ -1244,9 +1244,10 @@ int controller::tunnel_next_hop_create(uint32_t next_hop_id, uint64_t src_mac,
 int controller::tunnel_access_port_create(uint32_t port_id,
                                           const std::string &port_name,
                                           uint32_t physical_port,
-                                          uint16_t vlan_id) noexcept {
+                                          uint16_t vlan_id,
+                                          bool untagged) noexcept {
   return ofdpa->ofdpaTunnelAccessPortCreate(port_id, port_name, physical_port,
-                                            vlan_id);
+                                            vlan_id, untagged);
 }
 
 int controller::tunnel_enpoint_create(

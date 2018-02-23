@@ -74,10 +74,11 @@ TunnelPortCreate make_tunnel_port(uint32_t port_id,
 }
 
 OfdpaAccessPortConfig make_access_port_config(uint32_t physical_port,
-                                              uint32_t vlan_id) {
+                                              uint32_t vlan_id, bool untagged) {
   ::OfdpaAccessPortConfig config;
   config.set_pysical_port_num(physical_port);
   config.set_vlan_id(vlan_id);
+  config.set_untagged(untagged);
   return config;
 }
 
@@ -108,7 +109,7 @@ OfdpaEndpointConfig make_endpoint_config(uint32_t remote, uint32_t local,
 
 OfdpaStatus::OfdpaStatusCode ofdpa_client::ofdpaTunnelAccessPortCreate(
     uint32_t port_id, const std::string &port_name, uint32_t physical_port,
-    uint16_t vlan_id) {
+    uint16_t vlan_id, bool untagged) {
   // XXX TODO check parameters
   TunnelPortCreate request =
       make_tunnel_port(port_id, port_name, OFDPA_TUNNEL_PORT_TYPE_ACCESS);
@@ -116,7 +117,7 @@ OfdpaStatus::OfdpaStatusCode ofdpa_client::ofdpaTunnelAccessPortCreate(
   request.mutable_config()
       ->mutable_config()
       ->mutable_access_port_config()
-      ->CopyFrom(make_access_port_config(physical_port, vlan_id));
+      ->CopyFrom(make_access_port_config(physical_port, vlan_id, untagged));
 
   return ofdpaTunnelPortCreate(request);
 }

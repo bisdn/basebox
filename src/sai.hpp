@@ -93,7 +93,8 @@ public:
   virtual int tunnel_access_port_create(uint32_t port_id,
                                         const std::string &port_name,
                                         uint32_t physical_port,
-                                        uint16_t vlan_id) noexcept = 0;
+                                        uint16_t vlan_id,
+                                        bool untagged) noexcept = 0;
 
   virtual int tunnel_enpoint_create(
       uint32_t port_id, const std::string &port_name, uint32_t remote_ipv4,

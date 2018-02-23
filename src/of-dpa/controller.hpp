@@ -190,8 +190,8 @@ public:
                              uint64_t dst_mac, uint32_t physical_port,
                              uint16_t vlan_id) noexcept override;
   int tunnel_access_port_create(uint32_t port_id, const std::string &port_name,
-                                uint32_t physical_port,
-                                uint16_t vlan_id) noexcept override;
+                                uint32_t physical_port, uint16_t vlan_id,
+                                bool untagged) noexcept override;
   int tunnel_enpoint_create(uint32_t port_id, const std::string &port_name,
                             uint32_t remote_ipv4, uint32_t local_ipv4,
                             uint32_t ttl, uint32_t next_hop_id,
