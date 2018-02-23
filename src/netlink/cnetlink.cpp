@@ -756,36 +756,39 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
 }
 
 void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
+  if (nullptr == bridge) {
+    LOG(ERROR) << __FUNCTION__ << ": bridge not set";
+    return;
+  }
+
   try {
-    if (nullptr != bridge) {
-      try {
-        int ifindex = rtnl_neigh_get_ifindex(neigh);
+    int ifindex = rtnl_neigh_get_ifindex(neigh);
 
-        if (ifindex == 0) {
-          VLOG(1) << __FUNCTION__ << ": no ifindex for neighbour " << neigh;
-          return;
-        }
-
-        rtnl_link *l = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
-        assert(l);
-
-        if (nl_addr_cmp(rtnl_link_get_addr(l), rtnl_neigh_get_lladdr(neigh))) {
-          // mac of interface itself is ignored, others added
-          try {
-            bridge->add_neigh_to_fdb(neigh);
-          } catch (std::exception &e) {
-            LOG(ERROR)
-                << __FUNCTION__
-                << ": failed to add mac to fdb"; // TODO log mac, port,...?
-          }
-        }
-        rtnl_link_put(l);
-      } catch (std::out_of_range &e) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": unknown link ifindex=" << rtnl_neigh_get_ifindex(neigh)
-                   << " of new L2 neighbour: " << e.what();
-      }
+    if (ifindex == 0) {
+      VLOG(1) << __FUNCTION__ << ": no ifindex for neighbour " << neigh;
+      return;
     }
+
+    rtnl_link *l = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
+    assert(l);
+
+    if (nl_addr_cmp(rtnl_link_get_addr(l), rtnl_neigh_get_lladdr(neigh))) {
+      // mac of interface itself is ignored, others added
+      try {
+        bridge->add_neigh_to_fdb(neigh);
+      } catch (std::exception &e) {
+        LOG(ERROR) << __FUNCTION__
+                   << ": failed to add mac to fdb"; // TODO log mac, port,...?
+      }
+    } else {
+      VLOG(2) << __FUNCTION__ << ": bridge port mac address is ignored";
+    }
+
+    rtnl_link_put(l);
+  } catch (std::out_of_range &e) {
+    LOG(ERROR) << __FUNCTION__
+               << ": unknown link ifindex=" << rtnl_neigh_get_ifindex(neigh)
+               << " of new L2 neighbour: " << e.what();
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << "() failed: " << e.what();
   }
