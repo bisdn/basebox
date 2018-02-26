@@ -62,19 +62,32 @@ static struct nl_vxlan::tunnel_port get_tunnel_port(int ifindex,
   assert(ifindex);
   assert(vlan);
 
+  VLOG(2) << __FUNCTION__
+          << ": trying to find tunnel_port for ifindex=" << ifindex
+          << ", vlan=" << vlan;
+
   ifi_vlan search(ifindex, vlan);
   auto port_range = access_port_ids.equal_range(search);
 
   nl_vxlan::tunnel_port invalid(0, 0);
-  if (port_range.first == access_port_ids.end())
+  if (port_range.first == access_port_ids.end()) {
+    LOG(WARNING) << __FUNCTION__ << ": no match found for ifindex=" << ifindex
+                 << ", vlan=" << vlan;
+
     return invalid;
+  }
 
   for (auto it = port_range.first; it != port_range.second; ++it) {
     if (it->first == search) {
+      VLOG(2) << __FUNCTION__
+              << ": found tunnel_port port_id=" << it->second.port_id
+              << ", tunnel_id=" << it->second.tunnel_id;
       return it->second;
     }
   }
 
+  LOG(WARNING) << __FUNCTION__ << ": no ifi_vlan matched on ifindex=" << ifindex
+               << ", vlan=" << vlan;
   return invalid;
 }
 
@@ -567,6 +580,8 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
   rofl::caddress_ll mac((uint8_t *)nl_addr_get_binary_addr(nl_mac),
                         nl_addr_get_len(nl_mac));
 
+  VLOG(2) << __FUNCTION__ << ": adding l2 overlay addr for lport=" << lport
+          << ", tunnel_id=" << tunnel_id << ", mac=" << mac;
   sw->l2_overlay_addr_add(lport, tunnel_id, mac);
   return 0;
 }
