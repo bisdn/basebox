@@ -39,6 +39,9 @@ public:
   virtual int l2_addr_remove(uint32_t port, uint16_t vid,
                              const rofl::cmacaddr &mac) noexcept = 0;
 
+  virtual int l2_overlay_addr_add(uint32_t lport, uint32_t tunnel_id,
+                                  const rofl::cmacaddr &mac) noexcept = 0;
+
   virtual int l3_termination_add(uint32_t sport, uint16_t vid,
                                  const rofl::cmacaddr &dmac) noexcept = 0;
   virtual int l3_termination_remove(uint32_t sport, uint16_t vid,

@@ -657,6 +657,27 @@ int controller::l2_addr_remove(uint32_t port, uint16_t vid,
   return rv;
 }
 
+int controller::l2_overlay_addr_add(uint32_t lport, uint32_t tunnel_id,
+                                    const rofl::cmacaddr &mac) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.add_bridging_unicast_overlay(
+                                  dpt.get_version(), lport, tunnel_id, mac));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
 int controller::l3_termination_add(uint32_t sport, uint16_t vid,
                                    const rofl::cmacaddr &dmac) noexcept {
   int rv = 0;
