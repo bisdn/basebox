@@ -46,6 +46,7 @@ SOURCES_NETLINK = \
 	netlink/netlink-utils.hpp \
 	netlink/nl_bridge.cpp \
 	netlink/nl_bridge.hpp \
+	netlink/nl_hashing.hpp \
 	netlink/nl_l3.cpp \
 	netlink/nl_l3.hpp \
 	netlink/nl_obj.cpp \

@@ -38,14 +38,13 @@ public:
 class tap_manager;
 
 class cnetlink final : public rofl::cthread_env {
-
-  // non copyable
-  cnetlink(const cnetlink &other) = delete;
-  cnetlink &operator=(const cnetlink &) = delete;
-
-  enum timer {
-    NL_TIMER_RESEND_STATE,
-    NL_TIMER_RESYNC,
+public:
+  enum nl_cache_t {
+    NL_ADDR_CACHE,
+    NL_LINK_CACHE,
+    NL_NEIGH_CACHE,
+    NL_ROUTE_CACHE,
+    NL_MAX_CACHE,
   };
 
   enum link_type {
@@ -55,6 +54,53 @@ class cnetlink final : public rofl::cthread_env {
     LT_TUN,
     LT_VXLAN,
     LT_MAX /* must be last */
+  };
+
+  cnetlink(std::shared_ptr<tap_manager> tap_man);
+  ~cnetlink() override;
+
+  /**
+   * rtnl_link_put has to be called
+   */
+  struct rtnl_link *get_link_by_ifindex(int ifindex) const;
+  struct rtnl_link *get_link(int ifindex, int family) const;
+  struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
+
+  enum link_type kind_to_link_type(const char *type) const noexcept;
+
+  nl_cache *get_cache(enum nl_cache_t id) { return caches[id]; }
+
+  void resend_state() noexcept;
+
+  void register_switch(switch_interface *) noexcept;
+  void unregister_switch(switch_interface *) noexcept;
+
+  void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
+
+  static void nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
+                       struct nl_object *new_obj, uint64_t diff, int action,
+                       void *data);
+
+  void start() {
+    if (running)
+      return;
+    running = true;
+    thread.wakeup();
+  }
+
+  void stop() {
+    running = false;
+    thread.wakeup();
+  }
+
+private:
+  // non copyable
+  cnetlink(const cnetlink &other) = delete;
+  cnetlink &operator=(const cnetlink &) = delete;
+
+  enum timer {
+    NL_TIMER_RESEND_STATE,
+    NL_TIMER_RESYNC,
   };
 
   switch_interface *swi;
@@ -112,51 +158,6 @@ class cnetlink final : public rofl::cthread_env {
   void neigh_ll_created(rtnl_neigh *neigh) noexcept;
   void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
   void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
-
-  enum link_type kind_to_link_type(const char *type) const noexcept;
-
-public:
-  enum nl_cache_t {
-    NL_ADDR_CACHE,
-    NL_LINK_CACHE,
-    NL_NEIGH_CACHE,
-    NL_ROUTE_CACHE,
-    NL_MAX_CACHE,
-  };
-
-  cnetlink(std::shared_ptr<tap_manager> tap_man);
-  ~cnetlink() override;
-
-  /**
-   * rtnl_link_put has to be called
-   */
-  struct rtnl_link *get_link_by_ifindex(int ifindex) const;
-  struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
-
-  nl_cache *get_cache(enum nl_cache_t id) { return caches[id]; }
-
-  void resend_state() noexcept;
-
-  void register_switch(switch_interface *) noexcept;
-  void unregister_switch(switch_interface *) noexcept;
-
-  void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
-
-  static void nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
-                       struct nl_object *new_obj, uint64_t diff, int action,
-                       void *data);
-
-  void start() {
-    if (running)
-      return;
-    running = true;
-    thread.wakeup();
-  }
-
-  void stop() {
-    running = false;
-    thread.wakeup();
-  }
 };
 
 } // end of namespace basebox

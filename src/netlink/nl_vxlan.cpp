@@ -2,6 +2,7 @@
 #include <deque>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 
 #include <netlink/route/link.h>
 #include <netlink/route/neighbour.h>
@@ -10,12 +11,72 @@
 
 #include "cnetlink.hpp"
 #include "netlink-utils.hpp"
+#include "nl_hashing.hpp"
 #include "nl_l3.hpp"
 #include "nl_output.hpp"
 #include "nl_vxlan.hpp"
 #include "tap_manager.hpp"
 
 namespace basebox {
+
+struct ifi_vlan {
+  int bridge_ifindex;
+  uint16_t vid;
+
+  ifi_vlan(int ifindex, uint16_t vid) : bridge_ifindex(ifindex), vid(vid) {}
+
+  bool operator<(const ifi_vlan &rhs) const {
+    return std::tie(bridge_ifindex, vid) <
+           std::tie(rhs.bridge_ifindex, rhs.vid);
+  }
+
+  bool operator==(const ifi_vlan &rhs) const {
+    return std::tie(bridge_ifindex, vid) ==
+           std::tie(rhs.bridge_ifindex, rhs.vid);
+  }
+};
+
+} // namespace basebox
+
+namespace std {
+
+template <> struct hash<basebox::ifi_vlan> {
+  typedef basebox::ifi_vlan argument_type;
+  typedef std::size_t result_type;
+  result_type operator()(argument_type const &v) const noexcept {
+    size_t seed = 0;
+    hash_combine(seed, v.bridge_ifindex);
+    hash_combine(seed, v.vid);
+    return seed;
+  }
+};
+
+} // namespace std
+
+namespace basebox {
+
+static std::unordered_multimap<ifi_vlan, nl_vxlan::tunnel_port> access_port_ids;
+
+static struct nl_vxlan::tunnel_port get_tunnel_port(int ifindex,
+                                                    uint16_t vlan) {
+  assert(ifindex);
+  assert(vlan);
+
+  ifi_vlan search(ifindex, vlan);
+  auto port_range = access_port_ids.equal_range(search);
+
+  nl_vxlan::tunnel_port invalid(0, 0);
+  if (port_range.first == access_port_ids.end())
+    return invalid;
+
+  for (auto it = port_range.first; it != port_range.second; ++it) {
+    if (it->first == search) {
+      return it->second;
+    }
+  }
+
+  return invalid;
+}
 
 nl_vxlan::nl_vxlan(std::shared_ptr<tap_manager> tap_man, nl_l3 *l3,
                    cnetlink *nl)
@@ -58,23 +119,22 @@ static int find_next_bit(int i, uint32_t x) {
 }
 
 void nl_vxlan::create_access_port(uint32_t tunnel_id,
-                                  struct rtnl_link *access_port, uint16_t vid,
+                                  struct rtnl_link *access_port_, uint16_t vid,
                                   bool untagged) {
-  assert(access_port);
+  assert(access_port_);
   assert(sw);
 
-  // XXX FIXME mark access ports or find another way to del with fdb changes
-  const uint32_t port =
-      tap_man->get_port_id(rtnl_link_get_ifindex(access_port));
-  std::string port_name(rtnl_link_get_name(access_port));
+  int ifindex = rtnl_link_get_ifindex(access_port_);
+  const uint32_t pport_no = tap_man->get_port_id(ifindex);
+  std::string port_name(rtnl_link_get_name(access_port_));
   port_name += "." + std::to_string(vid);
 
-  sw->ingress_port_vlan_remove(port, vid, untagged);
+  sw->ingress_port_vlan_remove(pport_no, vid, untagged);
   int rv;
   int cnt = 0;
   do {
-    // XXX FIXME this is totally crap even if it works for now
-    rv = sw->tunnel_access_port_create(port_id, port_name, port,
+    // XXX TODO this is totally crap even if it works for now
+    rv = sw->tunnel_access_port_create(port_id, port_name, pport_no,
                                        vid); // XXX FIXME check rv
     VLOG(2) << __FUNCTION__ << ": rv=" << rv << ", cnt=" << cnt;
     cnt++;
@@ -83,7 +143,7 @@ void nl_vxlan::create_access_port(uint32_t tunnel_id,
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to create access port tunnel_id=" << tunnel_id
-               << ", vid=" << vid << ", port:" << OBJ_CAST(access_port);
+               << ", vid=" << vid << ", port:" << OBJ_CAST(access_port_);
   }
 
   VLOG(2) << __FUNCTION__ << ": call tunnel_port_tenant_add port_id=" << port_id
@@ -92,6 +152,10 @@ void nl_vxlan::create_access_port(uint32_t tunnel_id,
 
   // XXX TODO could be done just once per tunnel
   sw->overlay_tunnel_add(tunnel_id);
+
+  // XXX TODO check if access port is already existing?
+  access_port_ids.emplace(
+      std::make_pair(ifi_vlan(ifindex, vid), tunnel_port(port_id, tunnel_id)));
 
   port_id++;
 }
@@ -162,7 +226,7 @@ int nl_vxlan::add_bridge_port(rtnl_link *vxlan_link, rtnl_link *br_port) {
     return -EINVAL;
   }
 
-  uint32_t tunnel_id = tunnel_id_it->second;
+  uint32_t tunnel_id = tunnel_id_it->second.tunnel_id;
   std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> filter(rtnl_link_alloc(),
                                                            &rtnl_link_put);
   assert(filter && "out of memory");
@@ -211,7 +275,7 @@ int nl_vxlan::add_bridge_port(rtnl_link *vxlan_link, rtnl_link *br_port) {
   for (auto _br_port : bridge_ports) {
     auto br_port_vlans = rtnl_link_bridge_get_port_vlan(_br_port);
     auto matching_vlans = get_matching_vlans(br_port_vlans, vxlan_vlans);
-    // XXX FIXME skip other endpoint ports
+    // XXX TODO what about other endpoint ports?
     create_access_ports(tunnel_id, _br_port, &matching_vlans);
   }
 
@@ -279,8 +343,10 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   sw->tunnel_tenant_create(tunnel_id,
                            vni); // XXX FIXME check rv
 
-  vni2tunnel.emplace(vni, tunnel_id); // XXX TODO this should likely correlate
-                                      // with the remote address
+  vni2tunnel.emplace(
+      vni,
+      tunnel_port(port_id, tunnel_id)); // XXX TODO this should likely correlate
+                                        // with the remote address
 
   result.wait();
   std::unique_ptr<rtnl_route, void (*)(rtnl_route *)> route(result.get(),
@@ -332,11 +398,13 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
     LOG(ERROR) << __FUNCTION__
                << ": currently only 1 neighbour is supported, got "
                << neighs.size();
+    // XXX TODO remove tunnel
     return -ENOTSUP;
   }
 
   if (neighs.size() == 0) {
     // XXX check if remote is a neighbour
+    // XXX TODO remove tunnel
     LOG(ERROR) << __FUNCTION__ << ": neighs.size()=" << neighs.size();
     return -ENOTSUP;
   }
@@ -351,17 +419,20 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
 
   if (physical_port == 0) {
     LOG(ERROR) << __FUNCTION__ << ": no port_id for ifindex=" << ifindex;
+    // XXX TODO remove tunnel
     return -EINVAL;
   }
 
   rtnl_link *local_link = nl->get_link_by_ifindex(ifindex);
   if (local_link == nullptr) {
+    // XXX TODO remove tunnel
     LOG(ERROR) << __FUNCTION__ << ": XXX ";
     return -EINVAL;
   }
 
   addr = rtnl_link_get_addr(local_link);
   if (addr == nullptr) {
+    // XXX TODO remove tunnel
     LOG(ERROR) << __FUNCTION__ << ": XXX ";
     return -EINVAL;
   }
@@ -371,6 +442,7 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   // get neigh and set dst_mac
   addr = rtnl_neigh_get_lladdr(neigh_.get());
   if (addr == nullptr) {
+    // XXX TODO remove tunnel
     LOG(ERROR) << __FUNCTION__ << ": XXX ";
     return -EINVAL;
   }
@@ -406,6 +478,7 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   uint32_t initiator_udp_dst_port = 4789;
   rv = rtnl_link_vxlan_get_port(link, &initiator_udp_dst_port);
   if (rv != 0) {
+    // XXX TODO remove tunnel
     LOG(WARNING) << __FUNCTION__
                  << ": vxlan dstport not specified. Falling back to "
                  << initiator_udp_dst_port;
@@ -427,14 +500,74 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   sw->tunnel_enpoint_create(
       port_id, std::string(rtnl_link_get_name(link)), // XXX string_view
       remote_ipv4, local_ipv4, ttl, next_hop_id, terminator_udp_dst_port,
-      initiator_udp_dst_port, udp_src_port_if_no_entropy, use_entropy);
+      initiator_udp_dst_port, udp_src_port_if_no_entropy,
+      use_entropy); // XXX check rv
 
-  sw->tunnel_port_tenant_add(port_id, tunnel_id);
+  sw->tunnel_port_tenant_add(port_id, tunnel_id); // XXX check rv
 
   next_hop_id++;
   port_id++;
   tunnel_id++;
 
+  return 0;
+}
+
+int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
+  // XXX check if link is a vxlan interface or a tap
+  assert(rtnl_link_get_family(l) == AF_UNSPEC);
+
+  uint32_t lport = 0;
+  uint32_t tunnel_id = 0;
+  enum cnetlink::link_type lt = nl->kind_to_link_type(rtnl_link_get_type(l));
+
+  switch (lt) {
+    /* find according endpoint port */
+  case cnetlink::LT_VXLAN: {
+    uint32_t vni;
+    int rv = rtnl_link_vxlan_get_id(l, &vni);
+
+    if (rv != 0) {
+      LOG(FATAL) << __FUNCTION__ << "something went south";
+      return -EINVAL;
+    }
+
+    auto v2t_it = vni2tunnel.find(vni);
+
+    if (v2t_it == vni2tunnel.end()) {
+      LOG(ERROR) << __FUNCTION__ << ": tunnel_id not found for vni=" << vni;
+      return -EINVAL;
+    }
+
+    lport = v2t_it->second.port_id;
+    tunnel_id = v2t_it->second.tunnel_id;
+  } break;
+    /* find according access port */
+  case cnetlink::LT_TUN: {
+    int ifindex = rtnl_link_get_ifindex(l);
+    uint16_t vlan = rtnl_neigh_get_vlan(neigh);
+    auto port = get_tunnel_port(ifindex, vlan);
+    lport = port.port_id;
+    tunnel_id = port.tunnel_id;
+  } break;
+  default:
+    LOG(ERROR) << __FUNCTION__ << ": not supported";
+    return -EINVAL;
+    break;
+  }
+
+  if (lport == 0 || tunnel_id == 0) {
+    LOG(ERROR) << __FUNCTION__
+               << ": could not find vxlan port details to add neigh "
+               << OBJ_CAST(neigh) << ", lport=" << lport
+               << ", tunnel_id=" << tunnel_id;
+    return -EINVAL;
+  }
+
+  nl_addr *nl_mac = rtnl_neigh_get_lladdr(neigh);
+  rofl::caddress_ll mac((uint8_t *)nl_addr_get_binary_addr(nl_mac),
+                        nl_addr_get_len(nl_mac));
+
+  sw->l2_overlay_addr_add(lport, tunnel_id, mac);
   return 0;
 }
 

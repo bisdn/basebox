@@ -153,6 +153,24 @@ struct rtnl_link *cnetlink::get_link_by_ifindex(int ifindex) const {
   return rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
 }
 
+struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
+  struct rtnl_link *_link;
+  std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> filter(rtnl_link_alloc(),
+                                                           &rtnl_link_put);
+
+  rtnl_link_set_ifindex(filter.get(), ifindex);
+  rtnl_link_set_family(filter.get(), family);
+
+  // search link by filter
+  nl_cache_foreach_filter(caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
+                          [](struct nl_object *obj, void *arg) {
+                            *static_cast<nl_object **>(arg) = obj;
+                          },
+                          &_link);
+
+  return _link;
+}
+
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
                                            struct nl_addr *a) const {
   assert(ifindex);
@@ -629,19 +647,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   case LT_UNKNOWN:
     switch (af) {
     case AF_BRIDGE: { // a new bridge slave was created
-      rtnl_link *_link = nullptr;
-      std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> filter(
-          rtnl_link_alloc(), &rtnl_link_put);
-
-      rtnl_link_set_ifindex(filter.get(), rtnl_link_get_ifindex(link));
-      rtnl_link_set_family(filter.get(), AF_UNSPEC);
-
-      // retrieve base interface
-      nl_cache_foreach_filter(caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
-                              [](struct nl_object *obj, void *arg) {
-                                *static_cast<nl_object **>(arg) = obj;
-                              },
-                              &_link);
+      rtnl_link *_link = get_link(rtnl_link_get_ifindex(link), AF_UNSPEC);
 
       if (!_link) {
         VLOG(1) << __FUNCTION__ << ": unexpected link " << link;
@@ -657,6 +663,9 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
         vxlan.add_bridge_port(_link, link);
         break;
       case LT_TUN:
+
+        // XXX FIXME check for vxlan port at bridge in case this would be an
+        // access port
 
         try {
           // check for new bridge slaves
@@ -768,7 +777,7 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
     return;
   }
 
-  rtnl_link *l = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
+  rtnl_link *l = get_link(ifindex, AF_UNSPEC);
   if (l == nullptr) {
     LOG(ERROR) << __FUNCTION__
                << ": unknown link ifindex=" << rtnl_neigh_get_ifindex(neigh)
@@ -776,19 +785,23 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
     return;
   }
 
-  if (nl_addr_cmp(rtnl_link_get_addr(l), rtnl_neigh_get_lladdr(neigh))) {
-    // mac of interface itself is ignored, others added
-    try {
-      bridge->add_neigh_to_fdb(neigh);
-    } catch (std::exception &e) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": failed to add mac to fdb"; // TODO log mac, port,...?
-    }
+  if (vxlan.add_l2_neigh(neigh, l) == 0) {
+    // vxlan domain
   } else {
-    VLOG(2) << __FUNCTION__ << ": bridge port mac address is ignored";
+    // XXX TODO maybe we have to do this as well wrt. local bridging
+    // normal bridging
+    if (nl_addr_cmp(rtnl_link_get_addr(l), rtnl_neigh_get_lladdr(neigh))) {
+      // mac of interface itself is ignored, others added
+      try {
+        bridge->add_neigh_to_fdb(neigh);
+      } catch (std::exception &e) {
+        LOG(ERROR) << __FUNCTION__
+                   << ": failed to add mac to fdb"; // TODO log mac, port,...?
+      }
+    } else {
+      VLOG(2) << __FUNCTION__ << ": bridge port mac address is ignored";
+    }
   }
-
-  rtnl_link_put(l);
 }
 
 void cnetlink::neigh_ll_updated(rtnl_neigh *old_neigh,

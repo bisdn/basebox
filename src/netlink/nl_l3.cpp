@@ -8,8 +8,9 @@
 #include <netlink/route/route.h>
 
 #include "cnetlink.hpp"
-#include "nl_output.hpp"
+#include "nl_hashing.hpp"
 #include "nl_l3.hpp"
+#include "nl_output.hpp"
 #include "sai.hpp"
 #include "tap_manager.hpp"
 
@@ -23,43 +24,6 @@ template <> struct hash<rofl::caddress_ll> {
   }
 };
 
-namespace {
-
-// based on https://stackoverflow.com/questions/3611951 of Leo Goodstadt
-// who
-// Code from boost
-// Reciprocal of the golden ratio helps spread entropy
-//     and handles duplicates.
-// See Mike Seymour in magic-numbers-in-boosthash-combine:
-//     https://stackoverflow.com/questions/4948780
-
-template <class T> inline void hash_combine(std::size_t &seed, T const &v) {
-  seed ^= hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-}
-
-// Recursive template code derived from Matthieu M.
-template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
-struct HashValueImpl {
-  static void apply(size_t &seed, Tuple const &tuple) {
-    HashValueImpl<Tuple, Index - 1>::apply(seed, tuple);
-    hash_combine(seed, get<Index>(tuple));
-  }
-};
-
-template <class Tuple> struct HashValueImpl<Tuple, 0> {
-  static void apply(size_t &seed, Tuple const &tuple) {
-    hash_combine(seed, get<0>(tuple));
-  }
-};
-} // namespace
-
-template <typename... TT> struct hash<std::tuple<TT...>> {
-  size_t operator()(std::tuple<TT...> const &tt) const {
-    size_t seed = 0;
-    HashValueImpl<std::tuple<TT...>>::apply(seed, tt);
-    return seed;
-  }
-};
 } // namespace std
 
 namespace basebox {
@@ -77,7 +41,7 @@ public:
 std::unordered_map<
     std::tuple<int, uint16_t, rofl::caddress_ll, rofl::caddress_ll>,
     l3_interface>
-    l3_interface_mapping;
+    l3_interface_mapping; // XXX FIXME use unordered_multimap
 
 nl_l3::nl_l3(std::shared_ptr<tap_manager> tap_man, cnetlink *nl)
     : sw(nullptr), tap_man(tap_man), nl(nl) {}
