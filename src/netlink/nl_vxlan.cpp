@@ -143,12 +143,13 @@ void nl_vxlan::create_access_port(uint32_t tunnel_id,
   port_name += "." + std::to_string(vid);
 
   sw->ingress_port_vlan_remove(pport_no, vid, untagged);
+
   int rv;
   int cnt = 0;
   do {
     // XXX TODO this is totally crap even if it works for now
-    rv = sw->tunnel_access_port_create(port_id, port_name, pport_no,
-                                       vid); // XXX FIXME check rv
+    rv = sw->tunnel_access_port_create(port_id, port_name, pport_no, vid,
+                                       untagged); // XXX FIXME check rv
     VLOG(2) << __FUNCTION__ << ": rv=" << rv << ", cnt=" << cnt;
     cnt++;
   } while (rv < 0 && cnt < 30);
@@ -211,8 +212,7 @@ void nl_vxlan::create_access_ports(uint32_t tunnel_id,
 #endif // 0
 
         // create access ports for each overlapping vlan
-        bool untagged = false;
-        create_access_port(tunnel_id, access_port, vid, untagged);
+        create_access_port(tunnel_id, access_port, vid, egress_untagged);
 
         i = j;
       } else {
