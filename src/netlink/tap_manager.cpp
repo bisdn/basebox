@@ -301,8 +301,8 @@ void tap_manager::tap_dev_removed(int ifindex) {
 
   auto ifi2id_it = ifindex_to_id.find(ifindex);
   if (ifi2id_it == ifindex_to_id.end()) {
-    LOG(FATAL) << __FUNCTION__
-               << ": invalid removal of unknown ifindex=" << ifindex;
+    VLOG(2) << __FUNCTION__
+            << ": ignore removal of tap device with ifindex=" << ifindex;
     return;
   }
 
