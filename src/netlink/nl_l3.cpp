@@ -172,7 +172,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   if (n == nullptr)
     return -EINVAL;
 
-  LOG(INFO) << __FUNCTION__ << ": n=" << n;
+  LOG(INFO) << __FUNCTION__ << ": n=" << OBJ_CAST(n);
 
   int state = rtnl_neigh_get_state(n);
   if (state == NUD_FAILED) {
@@ -208,7 +208,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
   // setup ingress interface
   // XXX TODO this has to be handled by a different entity
-  rv = sw->ingress_port_vlan_add(port_id, 1, false);
+  rv = sw->ingress_port_vlan_add(port_id, 1, true);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to setup ingress vlan 1 (untagged) on port_id="
@@ -218,7 +218,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
   // setup egress interface
   // XXX TODO this has to be handled by a different entity
-  rv = sw->egress_port_vlan_add(port_id, 1, false);
+  rv = sw->egress_port_vlan_add(port_id, 1, true);
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__

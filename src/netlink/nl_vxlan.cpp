@@ -226,6 +226,8 @@ int nl_vxlan::add_bridge_port(rtnl_link *vxlan_link, rtnl_link *br_port) {
   assert(vxlan_link);
   assert(br_port);
 
+  /* this is currently only used for vxlan interface attachment */
+
   uint32_t vni = 0;
 
   if (rtnl_link_vxlan_get_id(vxlan_link, &vni) != 0) {
@@ -314,7 +316,7 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   std::unique_ptr<nl_addr, void (*)(nl_addr *)> group_(addr, &nl_addr_put);
 
   // XXX TODO check for multicast here
-  // XXX check if group is a neighbour
+  // XXX check if group is direct neighbour
 
   int family = nl_addr_get_family(group_.get());
 
