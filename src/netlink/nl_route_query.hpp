@@ -69,7 +69,6 @@ public:
       LOG(FATAL) << __FUNCTION__ << ": out of memory";
     if (nla_put_addr(m, RTA_DST, dst) < 0)
       LOG(FATAL) << __FUNCTION__ << ": out of memory";
-    // XXX this can be improve by adding the RTA_OIF information of the nh
 
     err = nl_send_auto_complete(sock, m);
     nlmsg_free(m);

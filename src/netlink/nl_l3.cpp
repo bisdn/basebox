@@ -442,23 +442,24 @@ struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
   struct rtnl_neigh *neigh = nullptr;
 
   assert(nl);
-  LOG(INFO) << __FUNCTION__ << ": nh: " << nh << " nl=" << nl;
+  LOG(INFO) << __FUNCTION__ << ": nh: " << nh;
 
   ifindex = rtnl_route_nh_get_ifindex(nh);
-  nh_addr = rtnl_route_nh_get_via(nh);
 
+#if 0
+  nh_addr = rtnl_route_nh_get_via(nh);
   LOG(INFO) << __FUNCTION__ << ": ifindex=" << ifindex;
 
   if (nh_addr) {
     switch (nl_addr_get_family(nh_addr)) {
-    case AF_INET:
-    case AF_INET6:
-      LOG(INFO) << "via " << nh_addr;
-      break;
-    default:
-      LOG(INFO) << "via " << nh_addr
-                << " unsupported family=" << nl_addr_get_family(nh_addr);
-      break;
+      case AF_INET:
+      case AF_INET6:
+        LOG(INFO) << "via " << nh_addr;
+        break;
+      default:
+        LOG(INFO) << "via " << nh_addr
+          << " unsupported family=" << nl_addr_get_family(nh_addr);
+        break;
     }
     struct rtnl_neigh *n = nl->get_neighbour(ifindex, nh_addr);
     LOG(INFO) << __FUNCTION__ << "; found neighbour: " << n;
@@ -466,6 +467,7 @@ struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
   } else {
     LOG(INFO) << "no via";
   }
+#endif // 0
 
   nh_addr = rtnl_route_nh_get_gateway(nh);
 
@@ -484,6 +486,7 @@ struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
     neigh = nl->get_neighbour(ifindex, nh_addr);
   } else {
     LOG(INFO) << __FUNCTION__ << ": no gw";
+    // lookup neigh in neigh cache, direct?
   }
 
   return neigh;

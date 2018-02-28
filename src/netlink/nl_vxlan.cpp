@@ -91,9 +91,8 @@ static struct nl_vxlan::tunnel_port get_tunnel_port(int ifindex,
   return invalid;
 }
 
-nl_vxlan::nl_vxlan(std::shared_ptr<tap_manager> tap_man, nl_l3 *l3,
-                   cnetlink *nl)
-    : sw(nullptr), tap_man(tap_man), nl(nl), l3(l3) {}
+nl_vxlan::nl_vxlan(std::shared_ptr<tap_manager> tap_man, cnetlink *nl)
+    : sw(nullptr), tap_man(tap_man), nl(nl) {}
 
 void nl_vxlan::register_switch_interface(switch_interface *sw) {
   this->sw = sw;
@@ -273,8 +272,7 @@ int nl_vxlan::add_bridge_port(rtnl_link *vxlan_link, rtnl_link *br_port) {
           return;
 
         LOG(INFO) << __FUNCTION__ << ": XXX found" << obj;
-        // nl_object_get(obj);
-        std::get<1>(*params)->push_back(LINK_CAST(obj)); // XXX unique_ptr?
+        std::get<1>(*params)->push_back(LINK_CAST(obj));
       },
       &params);
 
@@ -314,11 +312,8 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
 
   // store group/remote
   std::unique_ptr<nl_addr, void (*)(nl_addr *)> group_(addr, &nl_addr_put);
-
-  // XXX TODO check for multicast here
-  // XXX check if group is direct neighbour
-
   int family = nl_addr_get_family(group_.get());
+  // XXX TODO check for multicast here, not yet supported
 
   if (family != AF_INET) {
     LOG(ERROR) << __FUNCTION__ << ": currently only AF_INET is supported";
@@ -357,11 +352,11 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   // create tenant on switch
   sw->tunnel_tenant_create(tunnel_id,
                            vni); // XXX FIXME check rv
-
   vni2tunnel.emplace(
       vni,
       tunnel_port(port_id, tunnel_id)); // XXX TODO this should likely correlate
                                         // with the remote address
+  // FIXME TODO remove vni2tunnel as soon as vxlan interface is gone
 
   result.wait();
   std::unique_ptr<rtnl_route, void (*)(rtnl_route *)> route(result.get(),
@@ -380,31 +375,57 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   if (nnh != 1) {
     // ecmp
     LOG(ERROR) << __FUNCTION__ << ": ecmp not supported";
-    // XXX TODO remove tunnel
     return -ENOTSUP;
   }
 
   std::deque<struct rtnl_neigh *> neighs;
-  std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> data =
-      std::make_pair(l3, &neighs);
 
-  LOG(INFO) << __FUNCTION__ << ": XXX this=" << this;
+  struct nh_lookup_params {
+    std::deque<struct rtnl_neigh *> *neighs;
+    rtnl_route *rt;
+    cnetlink *nl;
+  } data = {&neighs, route.get(), nl};
+
   rtnl_route_foreach_nexthop(
       route.get(),
       [](struct rtnl_nexthop *nh, void *arg) {
-        std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> *data =
-            static_cast<
-                std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> *>(arg);
-        std::deque<struct rtnl_neigh *> *neighs = data->second;
+        struct nh_lookup_params *data = static_cast<nh_lookup_params *>(arg);
 
-        // XXX annotate that next hop is likely directly reachable
+        int ifindex = rtnl_route_nh_get_ifindex(nh);
+        if (!ifindex) {
+          // invalid
+          return;
+        }
+        nl_addr *nh_addr = rtnl_route_nh_get_gateway(nh);
+        rtnl_neigh *neigh;
 
-        struct rtnl_neigh *neigh =
-            static_cast<nl_l3 *>(data->first)->nexthop_resolution(nh, nullptr);
+        if (nh_addr) {
+          switch (nl_addr_get_family(nh_addr)) {
+          case AF_INET:
+          case AF_INET6:
+            LOG(INFO) << "gw " << nh_addr;
+            break;
+          default:
+            LOG(INFO) << "gw " << nh_addr
+                      << " unsupported family=" << nl_addr_get_family(nh_addr);
+            break;
+          }
+          neigh = data->nl->get_neighbour(ifindex, nh_addr);
+        } else {
+          LOG(INFO) << __FUNCTION__ << ": no gw";
+          // lookup neigh in neigh cache, direct?
+          nl_addr *dst = rtnl_route_get_dst(data->rt);
+          if (dst != nullptr) {
+            neigh = data->nl->get_neighbour(ifindex, dst);
+          } else {
+            neigh = nullptr;
+          }
+        }
+
         if (neigh) {
           LOG(INFO) << __FUNCTION__ << "; found neighbour: "
                     << reinterpret_cast<struct nl_object *>(neigh);
-          neighs->push_back(neigh);
+          data->neighs->push_back(neigh);
         }
       },
       &data);
@@ -413,6 +434,7 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
     LOG(ERROR) << __FUNCTION__
                << ": currently only 1 neighbour is supported, got "
                << neighs.size();
+    // XXX FIXME memory leak
     // XXX TODO remove tunnel
     return -ENOTSUP;
   }
