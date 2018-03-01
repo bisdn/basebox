@@ -53,9 +53,10 @@ SOURCES_NETLINK = \
 	netlink/nl_obj.hpp \
 	netlink/nl_output.cpp \
 	netlink/nl_output.hpp \
-	netlink/tap_manager.cpp \
+	netlink/nl_route_query.hpp \
 	netlink/nl_vxlan.cpp \
 	netlink/nl_vxlan.hpp \
+	netlink/tap_manager.cpp \
 	netlink/tap_manager.hpp
 
 nodist_baseboxd_SOURCES = \
