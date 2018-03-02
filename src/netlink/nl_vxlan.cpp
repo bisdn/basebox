@@ -151,7 +151,7 @@ void nl_vxlan::create_access_port(uint32_t tunnel_id,
                                        untagged); // XXX FIXME check rv
     VLOG(2) << __FUNCTION__ << ": rv=" << rv << ", cnt=" << cnt;
     cnt++;
-  } while (rv < 0 && cnt < 30);
+  } while (rv < 0 && cnt < 100);
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
