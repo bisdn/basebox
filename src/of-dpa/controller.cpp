@@ -58,7 +58,7 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
     LOG(FATAL) << __FUNCTION__ << ": invalid socket address " << raddr;
   }
 
-  std::string remote = buf + ":50060";
+  std::string remote = buf + ":50051";
 
   VLOG(1) << __FUNCTION__ << ": remote=" << remote;
 
