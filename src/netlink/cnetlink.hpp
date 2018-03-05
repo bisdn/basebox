@@ -47,15 +47,6 @@ public:
     NL_MAX_CACHE,
   };
 
-  enum link_type {
-    LT_UNKNOWN = 0,
-    LT_UNSUPPORTED,
-    LT_BRIDGE,
-    LT_TUN,
-    LT_VXLAN,
-    LT_MAX /* must be last */
-  };
-
   cnetlink(std::shared_ptr<tap_manager> tap_man);
   ~cnetlink() override;
 
@@ -65,8 +56,6 @@ public:
   struct rtnl_link *get_link_by_ifindex(int ifindex) const;
   struct rtnl_link *get_link(int ifindex, int family) const;
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
-
-  enum link_type kind_to_link_type(const char *type) const noexcept;
 
   nl_cache *get_cache(enum nl_cache_t id) { return caches[id]; }
 
@@ -122,10 +111,7 @@ private:
   std::deque<nl_obj> nl_objs;
 
   nl_l3 l3;
-  nl_vxlan vxlan;
-
-  std::map<std::string, enum link_type> kind2lt;
-  std::vector<std::string> lt2names;
+  std::shared_ptr<nl_vxlan> vxlan;
 
   void route_addr_apply(const nl_obj &obj);
   void route_link_apply(const nl_obj &obj);

@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cinttypes>
+#include <deque>
 
 #include <netlink/addr.h>
 
@@ -10,4 +11,22 @@
 #define ROUTE_CAST(obj) reinterpret_cast<struct rtnl_route *>(obj)
 #define ADDR_CAST(obj) reinterpret_cast<struct rtnl_addr *>(obj)
 
-uint64_t nlall2uint64(const nl_addr *a);
+namespace basebox {
+
+enum link_type {
+  LT_UNKNOWN = 0,
+  LT_UNSUPPORTED,
+  LT_BRIDGE,
+  LT_TUN,
+  LT_VXLAN,
+  LT_MAX /* must be last */
+};
+
+enum link_type kind_to_link_type(const char *type) noexcept;
+
+uint64_t nlall2uint64(const nl_addr *a) noexcept;
+
+void get_bridge_ports(int br_ifindex, struct nl_cache *link_cache,
+                      std::deque<rtnl_link *> *list) noexcept;
+
+} // namespace basebox

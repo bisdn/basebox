@@ -22,24 +22,13 @@
 #include "nl_route_query.hpp"
 #include "tap_manager.hpp"
 
-#define lt_names "unknown", "unsupported", "bridge", "tun", "vxlan"
-
 namespace basebox {
 
 cnetlink::cnetlink(std::shared_ptr<tap_manager> tap_man)
     : swi(nullptr), thread(this), caches(NL_MAX_CACHE, nullptr),
       tap_man(tap_man), bridge(nullptr), nl_proc_max(10), running(false),
       rfd_scheduled(false), l3(tap_man, this),
-      vxlan(tap_man, this), lt2names{lt_names} {
-
-  assert(lt2names.size() == LT_MAX);
-
-  enum link_type lt = LT_UNKNOWN;
-  for (const auto &n : lt2names) {
-    assert(lt != LT_MAX);
-    kind2lt.emplace(n, lt);
-    lt = static_cast<enum link_type>(lt + 1);
-  }
+      vxlan(new nl_vxlan(tap_man, this)) {
 
   sock = nl_socket_alloc();
   if (NULL == sock) {
@@ -427,20 +416,6 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
   }
 }
 
-enum cnetlink::link_type cnetlink::kind_to_link_type(const char *type) const
-    noexcept {
-  if (type == nullptr)
-    return LT_UNKNOWN;
-
-  auto it = kind2lt.find(std::string(type)); // XXX string_view
-
-  if (it != kind2lt.end())
-    return it->second;
-
-  VLOG(1) << __FUNCTION__ << ": type=" << type << " not supported";
-  return LT_UNSUPPORTED;
-}
-
 void cnetlink::route_link_apply(const nl_obj &obj) {
   try {
     switch (obj.get_action()) {
@@ -647,68 +622,43 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   case LT_UNKNOWN:
     switch (af) {
     case AF_BRIDGE: { // a new bridge slave was created
-      rtnl_link *_link = get_link(rtnl_link_get_ifindex(link), AF_UNSPEC);
 
-      if (!_link) {
-        VLOG(1) << __FUNCTION__ << ": unexpected link " << link;
-        return;
-      }
-
-      VLOG(2) << __FUNCTION__ << ": original if " << OBJ_CAST(_link);
-
-      link_type _lt = kind_to_link_type(rtnl_link_get_type(_link));
-
-      switch (_lt) {
-      case LT_VXLAN:
-        vxlan.add_bridge_port(_link, link);
-        break;
-      case LT_TUN:
-
-        // XXX FIXME check for vxlan port at bridge in case this would be an
-        // access port
-
-        try {
-          // check for new bridge slaves
-          if (rtnl_link_get_master(link)) {
-            // slave interface
-            LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                      << " is new slave interface";
-
-            // use only the first bridge an interface is attached to
-            if (nullptr == bridge) {
-              LOG(INFO) << __FUNCTION__ << ": using bridge "
-                        << rtnl_link_get_master(link);
-              bridge = new nl_bridge(this->swi, tap_man);
-              rtnl_link *br_link = rtnl_link_get(caches[NL_LINK_CACHE],
-                                                 rtnl_link_get_master(link));
-              bridge->set_bridge_interface(br_link);
-              rtnl_link_put(br_link);
-            }
-
-            bridge->add_interface(link);
-          } else {
-            LOG(INFO) << __FUNCTION__ << ": unknown link " << link;
-          }
-        } catch (std::exception &e) {
-          LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
+      try {
+        // check for new bridge slaves
+        if (rtnl_link_get_master(link) == 0) {
+          LOG(ERROR) << __FUNCTION__ << ": unknown link " << OBJ_CAST(link);
+          return;
         }
-        break;
-      default:
-        // currently we support our tap interfaces and vxlan
-        VLOG(1) << __FUNCTION__
-                << ": unsupported interface attached to bridge lt=" << _lt;
-        break;
-      }
 
+        // slave interface
+        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
+                  << " is new slave interface";
+
+        // use only the first bridge an interface is attached to
+        // XXX TODO more bridges!
+        if (nullptr == bridge) {
+          LOG(INFO) << __FUNCTION__ << ": using bridge "
+                    << rtnl_link_get_master(link);
+          bridge = new nl_bridge(this->swi, tap_man, this, vxlan);
+          rtnl_link *br_link =
+              rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_master(link));
+          bridge->set_bridge_interface(br_link);
+          rtnl_link_put(br_link);
+        }
+
+        bridge->add_interface(link);
+      } catch (std::exception &e) {
+        LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
+      }
     } break;
     default:
       LOG(WARNING) << __FUNCTION__ << ": ignoring link with af=" << af
                    << " link:" << link;
       break;
-    } // switch family
+    } // LT_UNKNOWN, switch family
     break;
   case LT_VXLAN: {
-    vxlan.create_endpoint_port(link);
+    vxlan->create_endpoint_port(link);
   } break;
   case LT_TUN: {
     int ifindex = rtnl_link_get_ifindex(link);
@@ -724,22 +674,57 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
 
 void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
 
-  LOG(INFO) << __FUNCTION__ << ": new family=" << rtnl_link_get_family(new_link)
-            << ", lt=" << kind_to_link_type(rtnl_link_get_type(new_link))
+  link_type lt_old = kind_to_link_type(rtnl_link_get_type(old_link));
+  link_type lt_new = kind_to_link_type(rtnl_link_get_type(new_link));
+
+  int af_old = rtnl_link_get_family(old_link);
+  int af_new = rtnl_link_get_family(new_link);
+
+  LOG(INFO) << __FUNCTION__ << ": new family=" << af_new << ", lt=" << lt_new
             << ", name=" << rtnl_link_get_name(new_link);
-  LOG(INFO) << __FUNCTION__ << ": old family=" << rtnl_link_get_family(old_link)
-            << ", lt=" << kind_to_link_type(rtnl_link_get_type(old_link))
+  LOG(INFO) << __FUNCTION__ << ": old family=" << af_old << ", lt=" << lt_old
             << ", name=" << rtnl_link_get_name(old_link);
 
-  if (rtnl_link_get_family(new_link) == AF_UNSPEC)
+  if (lt_old != lt_new) {
+    VLOG(1) << __FUNCTION__ << ": link type changed from " << lt_old << " to "
+            << lt_new;
+    // this is currently handled elsewhere
     return;
+  }
 
-  try {
-    if (nullptr != bridge) {
-      bridge->update_interface(old_link, new_link);
+  if (af_old != af_new) {
+    VLOG(1) << __FUNCTION__ << ": af changed from " << af_old << " to "
+            << af_new;
+    // this is currently handled elsewhere
+    return;
+  }
+
+  // AF_UNSPEC changes are not yet supported for links
+  if (rtnl_link_get_family(new_link) == AF_UNSPEC) {
+    // XXX TODO handle ifup/ifdown...
+    return;
+  }
+
+  switch (lt_old) {
+  case LT_UNKNOWN:
+    switch (af_old) {
+
+    case AF_BRIDGE: { // a bridge slave was changed
+      try {
+        bridge->update_interface(old_link, new_link);
+      } catch (std::exception &e) {
+        LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
+      }
+
+    } break;
+    default:
+      LOG(ERROR) << __FUNCTION__ << ": AF not handled " << af_old;
+      break;
     }
-  } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
+    break;
+  default:
+    LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt_old;
+    break;
   }
 }
 
@@ -751,16 +736,26 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   LOG(INFO) << __FUNCTION__ << ": family=" << af << ", lt=" << lt
             << ", kind=" << rtnl_link_get_type(link);
 
-  if (lt == LT_TUN) {
-    tap_man->tap_dev_removed(rtnl_link_get_ifindex(link));
-  }
-
-  try {
-    if (bridge != nullptr && rtnl_link_get_family(link) == AF_BRIDGE) {
-      bridge->delete_interface(link);
+  switch (lt) {
+  case LT_UNKNOWN:
+    switch (af) {
+    case AF_BRIDGE:
+      try {
+        if (bridge != nullptr) {
+          bridge->delete_interface(link);
+        }
+      } catch (std::exception &e) {
+        LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
+      }
+      break;
+    default:
+      break;
     }
-  } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
+    break;
+  case LT_TUN:
+    tap_man->tap_dev_removed(rtnl_link_get_ifindex(link));
+    break;
+  default:;
   }
 }
 
@@ -785,7 +780,7 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
     return;
   }
 
-  if (vxlan.add_l2_neigh(neigh, l) == 0) {
+  if (vxlan->add_l2_neigh(neigh, l) == 0) {
     // vxlan domain
   } else {
     // XXX TODO maybe we have to do this as well wrt. local bridging
@@ -826,7 +821,7 @@ void cnetlink::register_switch(switch_interface *swi) noexcept {
   assert(swi);
   this->swi = swi;
   l3.register_switch_interface(swi);
-  vxlan.register_switch_interface(swi);
+  vxlan->register_switch_interface(swi);
 }
 
 void cnetlink::unregister_switch(switch_interface *swi) noexcept {

@@ -12,6 +12,7 @@ public:
   nl_obj(nl_obj &&other) = default;
   nl_obj &operator=(nl_obj &other) noexcept;
   nl_obj &operator=(nl_obj &&other) noexcept;
+  ~nl_obj();
 
   int get_action() const { return action; }
   int get_msg_type() const { return nl_object_get_msgtype(get_obj()); }
@@ -21,7 +22,6 @@ public:
   struct nl_object *get_new_obj() const {
     return new_obj;
   }
-  ~nl_obj();
 
 private:
   struct nl_object *get_obj() const {

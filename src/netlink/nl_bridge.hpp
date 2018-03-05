@@ -5,23 +5,34 @@
 #pragma once
 
 #include <cstdint>
+#include <deque>
 #include <list>
-#include <string>
+#include <map>
 #include <memory>
+#include <string>
 
+#include <netlink/route/link/bridge.h>
+
+#include "netlink-utils.hpp"
+
+extern "C" {
 struct rtnl_link_bridge_vlan;
 struct rtnl_link;
 struct rtnl_neigh;
 struct nl_addr;
+}
 
 namespace basebox {
 
+class cnetlink;
 class switch_interface;
 class tap_manager;
+class nl_vxlan;
 
 class nl_bridge {
 public:
-  nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man);
+  nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
+            cnetlink *nl, std::shared_ptr<nl_vxlan> vxlan);
 
   virtual ~nl_bridge();
 
@@ -40,17 +51,28 @@ public:
 
   void remove_mac_from_fdb(rtnl_neigh *);
 
-private:
-  void update_vlans(uint32_t port, const std::string &devname,
-                    const rtnl_link_bridge_vlan *old_br_vlan,
-                    const rtnl_link_bridge_vlan *new_br_vlan);
+  void get_bridge_ports(
+      std::tuple<std::shared_ptr<tap_manager>, std::deque<rtnl_link *> *>
+          &params, // XXX TODO make a struct here
+      rtnl_link *br_port) noexcept;
 
+private:
+  void update_vlans(rtnl_link *, rtnl_link *);
+
+  void update_access_ports(const uint16_t vid, bool egress_untagged,
+                           const uint32_t tunnel_id,
+                           const std::deque<rtnl_link *> &bridge_ports,
+                           bool add);
   rtnl_link *bridge;
   switch_interface *sw;
-  bool ingress_vlan_filtered;
-  bool egress_vlan_filtered;
 
   std::shared_ptr<tap_manager> tap_man;
+  cnetlink *nl;
+  std::shared_ptr<nl_vxlan> vxlan;
+
+  rtnl_link_bridge_vlan empty_br_vlan;
+  uint32_t vxlan_dom_bitmap[RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN];
+  std::map<uint16_t, uint32_t> vxlan_domain;
 };
 
 } /* namespace basebox */

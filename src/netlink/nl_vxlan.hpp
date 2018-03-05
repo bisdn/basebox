@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <deque>
 #include <map>
 #include <memory>
+#include <tuple>
 
 #include "nl_route_query.hpp"
 
@@ -24,8 +26,6 @@ public:
 
   void register_switch_interface(switch_interface *sw);
 
-  int add_bridge_port(rtnl_link *vxlan_link, rtnl_link *br_port);
-
   int create_endpoint_port(struct rtnl_link *link);
 
   int add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l);
@@ -38,12 +38,14 @@ public:
         : port_id(port_id), tunnel_id(tunnel_id) {}
   };
 
-private:
-  void create_access_port(uint32_t tunnel_id, struct rtnl_link *link,
-                          uint16_t vid, bool untagged);
-  void create_access_ports(uint32_t tunnel_id, struct rtnl_link *access_port,
-                           struct rtnl_link_bridge_vlan *br_vlan);
+  int get_tunnel_id(rtnl_link *vxlan_link, uint32_t *tunnel_id) noexcept;
+  int get_tunnel_id(uint32_t vni, uint32_t *tunnel_id) noexcept;
 
+  void create_access_port(uint32_t tunnel_id,
+                          const std::string &access_port_name,
+                          uint32_t pport_no, uint16_t vid, bool untagged);
+
+private:
   // XXX TODO handle these better and prevent id overflow
   uint32_t next_hop_id = 1;
   uint32_t port_id = 1 << 16 | 1;
