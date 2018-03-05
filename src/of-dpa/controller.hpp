@@ -53,8 +53,10 @@ class controller : public rofl::crofbase,
 public:
   controller(nbi *nb,
              const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
-                 rofl::openflow::cofhello_elem_versionbitmap())
-      : nb(nb), bb_thread(this), egress_interface_id(1), ofdpa(nullptr) {
+                 rofl::openflow::cofhello_elem_versionbitmap(),
+             uint16_t ofdpa_grpc_port = 50051)
+      : nb(nb), bb_thread(this), egress_interface_id(1), ofdpa(nullptr),
+        ofdpa_grpc_port(ofdpa_grpc_port) {
     nb->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
     bb_thread.start();
@@ -221,6 +223,7 @@ private:
   uint32_t egress_interface_id;
   std::set<uint32_t> freed_egress_interfaces_ids;
   std::shared_ptr<ofdpa_client> ofdpa;
+  uint16_t ofdpa_grpc_port;
 
   enum timer_t {
     /* handle_timeout will be called as well from crofbase, hence we need some

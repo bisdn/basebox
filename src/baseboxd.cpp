@@ -18,6 +18,7 @@ static bool validate_port(const char *flagname, gflags::int32 value) {
 }
 
 DEFINE_int32(port, 6653, "Listening port");
+DEFINE_int32(ofdpa_grpc_port, 50051, "Listening port of ofdpa gRPC server");
 
 int main(int argc, char **argv) {
   using basebox::controller;
@@ -26,6 +27,11 @@ int main(int argc, char **argv) {
 
   if (!gflags::RegisterFlagValidator(&FLAGS_port, &validate_port)) {
     std::cerr << "Failed to register port validator" << std::endl;
+    exit(1);
+  }
+
+  if (!gflags::RegisterFlagValidator(&FLAGS_ofdpa_grpc_port, &validate_port)) {
+    std::cerr << "Failed to register port validator 2" << std::endl;
     exit(1);
   }
 
@@ -41,7 +47,8 @@ int main(int argc, char **argv) {
 
   std::shared_ptr<tap_manager> tap_man(new tap_manager());
   nbi_impl *nbi = new nbi_impl(tap_man);
-  std::shared_ptr<controller> box(new controller(nbi, versionbitmap));
+  std::shared_ptr<controller> box(
+      new controller(nbi, versionbitmap, FLAGS_ofdpa_grpc_port));
 
   rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"), FLAGS_port);
   box->dpt_sock_listen(baddr);
