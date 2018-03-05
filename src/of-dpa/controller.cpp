@@ -50,6 +50,12 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
 
   std::deque<nbi::port_notification_data> ntfys;
   try {
+    {
+      std::lock_guard<std::mutex> lock(l2_domain_mutex);
+      // clear local state, all ports are gone
+      l2_domain.clear();
+    }
+
     // TODO check dptid and dptid?
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
@@ -964,24 +970,27 @@ int controller::egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
       return rv;
     dpt.send_barrier_request(rofl::cauxid(0));
 
-    // get set of group_ids for this vid
-    auto l2_dom_it = l2_domain.find(vid);
-    if (l2_dom_it == l2_domain.end()) {
-      std::set<uint32_t> empty_set;
-      l2_dom_it = l2_domain.emplace(vid, empty_set).first;
-    }
+    {
+      std::lock_guard<std::mutex> lock(l2_domain_mutex);
+      // get set of group_ids for this vid
+      auto l2_dom_it = l2_domain.find(vid);
+      if (l2_dom_it == l2_domain.end()) {
+        std::set<uint32_t> empty_set;
+        l2_dom_it = l2_domain.emplace(vid, empty_set).first;
+      }
 
-    // insert group_id to set
-    l2_dom_it->second.insert(fm_driver.group_id_l2_interface(port, vid));
+      // insert group_id to set
+      l2_dom_it->second.insert(fm_driver.group_id_l2_interface(port, vid));
 
-    // create/update new L2 flooding group
-    dpt.send_group_mod_message(
-        rofl::cauxid(0), fm_driver.enable_group_l2_flood(
-                             dpt.get_version(), vid, vid, l2_dom_it->second,
-                             (l2_dom_it->second.size() != 1)));
+      // create/update new L2 flooding group
+      dpt.send_group_mod_message(
+          rofl::cauxid(0), fm_driver.enable_group_l2_flood(
+                               dpt.get_version(), vid, vid, l2_dom_it->second,
+                               (l2_dom_it->second.size() != 1)));
 
-    if (l2_dom_it->second.size() == 1) { // send barrier on creation
-      dpt.send_barrier_request(rofl::cauxid(0));
+      if (l2_dom_it->second.size() == 1) { // send barrier on creation
+        dpt.send_barrier_request(rofl::cauxid(0));
+      }
     }
 
     dpt.send_flow_mod_message(
@@ -1007,37 +1016,39 @@ int controller::egress_bridge_port_vlan_remove(uint32_t port,
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
-    // get set of group_ids for this vid
-    auto l2_dom_it = l2_domain.find(vid);
-    if (l2_dom_it == l2_domain.end()) {
-      // vid not present
-      return 0;
+    {
+      std::lock_guard<std::mutex> lock(l2_domain_mutex);
+      // get set of group_ids for this vid
+      auto l2_dom_it = l2_domain.find(vid);
+      if (l2_dom_it == l2_domain.end()) {
+        // vid not present
+        return 0;
+      }
+
+      // remove group_id from set
+      l2_dom_it->second.erase(fm_driver.group_id_l2_interface(port, vid));
+
+      if (l2_domain[vid].size()) {
+        // update L2 flooding group
+        dpt.send_group_mod_message(
+            rofl::cauxid(0),
+            fm_driver.enable_group_l2_flood(dpt.get_version(), vid, vid,
+                                            l2_dom_it->second, true));
+        dpt.send_flow_mod_message(
+            rofl::cauxid(0),
+            fm_driver.add_bridging_dlf_vlan(
+                dpt.get_version(), vid, fm_driver.group_id_l2_flood(vid, vid)));
+      } else {
+        // remove L2 flooding group
+        dpt.send_flow_mod_message(
+            rofl::cauxid(0),
+            fm_driver.remove_bridging_dlf_vlan(dpt.get_version(), vid));
+        dpt.send_barrier_request(rofl::cauxid(0));
+        dpt.send_group_mod_message(
+            rofl::cauxid(0),
+            fm_driver.disable_group_l2_flood(dpt.get_version(), vid, vid));
+      }
     }
-
-    // remove group_id from set
-    l2_dom_it->second.erase(fm_driver.group_id_l2_interface(port, vid));
-
-    if (l2_domain[vid].size()) {
-      // update L2 flooding group
-      dpt.send_group_mod_message(
-          rofl::cauxid(0),
-          fm_driver.enable_group_l2_flood(dpt.get_version(), vid, vid,
-                                          l2_dom_it->second, true));
-      dpt.send_flow_mod_message(
-          rofl::cauxid(0),
-          fm_driver.add_bridging_dlf_vlan(
-              dpt.get_version(), vid, fm_driver.group_id_l2_flood(vid, vid)));
-    } else {
-      // remove L2 flooding group
-      dpt.send_flow_mod_message(
-          rofl::cauxid(0),
-          fm_driver.remove_bridging_dlf_vlan(dpt.get_version(), vid));
-      dpt.send_barrier_request(rofl::cauxid(0));
-      dpt.send_group_mod_message(
-          rofl::cauxid(0),
-          fm_driver.disable_group_l2_flood(dpt.get_version(), vid, vid));
-    }
-
     dpt.send_barrier_request(rofl::cauxid(0));
 
     // remove filtered egress interface
