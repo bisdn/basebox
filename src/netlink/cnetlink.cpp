@@ -710,10 +710,12 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     switch (af_old) {
 
     case AF_BRIDGE: { // a bridge slave was changed
-      try {
-        bridge->update_interface(old_link, new_link);
-      } catch (std::exception &e) {
-        LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
+      if (bridge != nullptr) {
+        try {
+          bridge->update_interface(old_link, new_link);
+        } catch (std::exception &e) {
+          LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
+        }
       }
 
     } break;

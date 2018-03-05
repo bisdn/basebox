@@ -14,6 +14,7 @@
 
 #include "cnetlink.hpp"
 #include "nl_bridge.hpp"
+#include "nl_output.hpp"
 #include "sai.hpp"
 #include "tap_manager.hpp"
 
@@ -41,7 +42,7 @@ static bool br_vlan_equal(const rtnl_link_bridge_vlan *lhs,
                           const rtnl_link_bridge_vlan *rhs) {
   assert(lhs);
   assert(rhs);
-  return !memcmp(lhs, rhs, sizeof(struct rtnl_link_bridge_vlan));
+  return (memcmp(lhs, rhs, sizeof(struct rtnl_link_bridge_vlan)) == 0);
 }
 
 static bool is_vid_set(unsigned vid, uint32_t *addr) {
@@ -97,6 +98,8 @@ void nl_bridge::add_interface(rtnl_link *link) {
 }
 
 void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
+  LOG(INFO) << __FUNCTION__ << ": fam_old=" << rtnl_link_get_family(old_link)
+            << ", fam_new=" << rtnl_link_get_family(new_link);
   assert(rtnl_link_get_family(new_link) == AF_BRIDGE);
   assert(rtnl_link_get_family(old_link) == AF_BRIDGE);
 
@@ -145,16 +148,39 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     new_br_vlan = rtnl_link_bridge_get_port_vlan(new_link);
     _link = nl->get_link(rtnl_link_get_ifindex(new_link), AF_UNSPEC);
   } else if (new_link == nullptr) {
+    // link deleted
     old_br_vlan = rtnl_link_bridge_get_port_vlan(old_link);
     new_br_vlan = &empty_br_vlan;
     _link = nl->get_link(rtnl_link_get_ifindex(old_link), AF_UNSPEC);
   } else {
+    // link updated
     old_br_vlan = rtnl_link_bridge_get_port_vlan(old_link);
+    if (old_br_vlan == nullptr) {
+      old_br_vlan = &empty_br_vlan;
+    }
     new_br_vlan = rtnl_link_bridge_get_port_vlan(new_link);
+    //  TODO check if it can happen that new_br_vlan == null
     _link = nl->get_link(rtnl_link_get_ifindex(new_link), AF_UNSPEC);
   }
 
-  if (!br_vlan_equal(old_br_vlan, new_br_vlan)) {
+  if (_link == nullptr) {
+    // XXX TODO check if we have to do anything
+    // XXX FIXME in case a vxlan has been deleted the vxlan_domain and
+    // vxlan_dom_bitmap need an update, maybe this can be handled already from
+    // the link_delete of the vxlan itself?
+    LOG(WARNING) << __FUNCTION__
+                 << ": could not get parent link of bridge interface. This "
+                    "case needs further checks if everything got already "
+                    "deleted.";
+    return;
+  }
+
+  if (old_br_vlan == nullptr || new_br_vlan == nullptr) {
+    VLOG(2) << __FUNCTION__ << ": interface attached without VLAN";
+    return;
+  }
+
+  if (br_vlan_equal(old_br_vlan, new_br_vlan)) {
     // no vlan changed
     VLOG(2) << __FUNCTION__ << ": vlans did not change";
     return;
@@ -184,7 +210,8 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
   } else {
     pport_no = tap_man->get_port_id(rtnl_link_get_ifindex(_link));
     if (pport_no == 0) {
-      LOG(ERROR) << __FUNCTION__ << ": invalid port " << OBJ_CAST(_link);
+      LOG(ERROR) << __FUNCTION__ << ": invalid port "
+                 << static_cast<void *>(_link);
       return;
     }
   }
@@ -226,6 +253,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
           if (lt == LT_VXLAN) {
             // update vxlan domain
             if (!is_vid_set(vid, vxlan_dom_bitmap)) {
+
               vxlan_domain.emplace(vid, tunnel_id);
               set_vid(vid, vxlan_dom_bitmap);
             } else {
@@ -321,6 +349,14 @@ void nl_bridge::update_access_ports(const uint16_t vid, bool egress_untagged,
   for (auto _br_port : bridge_ports) {
     auto br_port_vlans = rtnl_link_bridge_get_port_vlan(_br_port);
 
+    if (br_port_vlans == nullptr)
+      continue;
+
+    VLOG(2) << __FUNCTION__ << ": vid=" << vid
+            << ", egress_untagged=" << egress_untagged
+            << ", tunnel_id=" << tunnel_id << ", add=" << add
+            << ", port: " << OBJ_CAST(_br_port);
+
     if (!is_vid_set(vid, br_port_vlans->vlan_bitmap))
       continue;
 
@@ -335,8 +371,7 @@ void nl_bridge::update_access_ports(const uint16_t vid, bool egress_untagged,
 
     if (add) {
 
-      std::string port_name =
-          std::string(rtnl_link_get_name(_br_port)) + "." + std::to_string(vid);
+      std::string port_name = std::string(rtnl_link_get_name(_br_port));
 
       vxlan->create_access_port(tunnel_id, port_name, pport_no, vid,
                                 egress_untagged);

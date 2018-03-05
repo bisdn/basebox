@@ -96,7 +96,7 @@ void nl_vxlan::register_switch_interface(switch_interface *sw) {
   this->sw = sw;
 }
 
-// XXX TODO alter this function to pass the vini instead of tunnel_id
+// XXX TODO alter this function to pass the vni instead of tunnel_id
 void nl_vxlan::create_access_port(uint32_t tunnel_id,
                                   const std::string &access_port_name,
                                   uint32_t pport_no, uint16_t vid,
@@ -106,15 +106,22 @@ void nl_vxlan::create_access_port(uint32_t tunnel_id,
   std::string port_name = access_port_name;
   port_name += "." + std::to_string(vid);
 
+  // drop all vlans on port
+  sw->egress_bridge_port_vlan_remove(pport_no, vid);
   sw->ingress_port_vlan_remove(pport_no, vid, untagged);
 
   int rv;
   int cnt = 0;
   do {
+    VLOG(2) << __FUNCTION__ << ": rv=" << rv << "<< cnt=" << cnt
+            << std::showbase << std::hex << ", port_id=" << port_id
+            << ", port_name=" << port_name << std::dec
+            << ", pport_no=" << pport_no << ", vid=" << vid
+            << ", untagged=" << untagged;
     // XXX TODO this is totally crap even if it works for now
     rv = sw->tunnel_access_port_create(port_id, port_name, pport_no, vid,
                                        untagged); // XXX FIXME check rv
-    VLOG(2) << __FUNCTION__ << ": rv=" << rv << ", cnt=" << cnt;
+
     cnt++;
   } while (rv < 0 && cnt < 100);
 
@@ -122,6 +129,7 @@ void nl_vxlan::create_access_port(uint32_t tunnel_id,
     LOG(ERROR) << __FUNCTION__
                << ": failed to create access port tunnel_id=" << tunnel_id
                << ", vid=" << vid << ", port:" << access_port_name;
+    return;
   }
 
   VLOG(2) << __FUNCTION__ << ": call tunnel_port_tenant_add port_id=" << port_id
