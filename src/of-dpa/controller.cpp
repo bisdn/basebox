@@ -991,14 +991,13 @@ int controller::egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
         fm_driver.enable_group_l2_flood(dpt.get_version(), vid, vid, l2_dom_set,
                                         (l2_dom_set.size() != 1)));
 
-    if (l2_dom_set.size() == 1) { // send barrier on creation
+    if (l2_dom_set.size() == 1) { // send barrier + DLF on creation
       dpt.send_barrier_request(rofl::cauxid(0));
+      dpt.send_flow_mod_message(
+          rofl::cauxid(0),
+          fm_driver.add_bridging_dlf_vlan(
+              dpt.get_version(), vid, fm_driver.group_id_l2_flood(vid, vid)));
     }
-
-    dpt.send_flow_mod_message(
-        rofl::cauxid(0),
-        fm_driver.add_bridging_dlf_vlan(dpt.get_version(), vid,
-                                        fm_driver.group_id_l2_flood(vid, vid)));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1038,12 +1037,8 @@ int controller::egress_bridge_port_vlan_remove(uint32_t port,
       dpt.send_group_mod_message(
           rofl::cauxid(0), fm_driver.enable_group_l2_flood(
                                dpt.get_version(), vid, vid, l2_dom_set, true));
-      dpt.send_flow_mod_message(
-          rofl::cauxid(0),
-          fm_driver.add_bridging_dlf_vlan(
-              dpt.get_version(), vid, fm_driver.group_id_l2_flood(vid, vid)));
     } else {
-      // remove L2 flooding group
+      // remove DLF + L2 flooding group
       dpt.send_flow_mod_message(
           rofl::cauxid(0),
           fm_driver.remove_bridging_dlf_vlan(dpt.get_version(), vid));
