@@ -14,6 +14,8 @@
 
 #include <linux/rtnetlink.h>
 
+#include "nl_output.hpp"
+
 namespace basebox {
 
 class nl_route_query final {
@@ -21,6 +23,7 @@ class nl_route_query final {
 
   static void parse_cb(struct nl_object *obj, void *arg) {
     assert(arg);
+    VLOG(2) << __FUNCTION__ << ": got obj " << obj;
     nl_object_get(obj);
     *static_cast<nl_object **>(arg) = obj;
   }
@@ -70,6 +73,7 @@ public:
     if (nla_put_addr(m, RTA_DST, dst) < 0)
       LOG(FATAL) << __FUNCTION__ << ": out of memory";
 
+    VLOG(2) << __FUNCTION__ << ": query route for dst=" << dst;
     err = nl_send_auto_complete(sock, m);
     nlmsg_free(m);
     if (err < 0)
@@ -77,6 +81,8 @@ public:
 
     if (nl_recvmsgs_default(sock) < 0)
       LOG(FATAL) << __FUNCTION__ << ":%s" << nl_geterror(err);
+
+    VLOG(3) << __FUNCTION__ << ": got route " << route;
 
     return reinterpret_cast<struct rtnl_route *>(route);
   }

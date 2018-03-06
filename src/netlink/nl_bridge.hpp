@@ -59,7 +59,7 @@ public:
 private:
   void update_vlans(rtnl_link *, rtnl_link *);
 
-  void update_access_ports(const uint16_t vid, bool egress_untagged,
+  void update_access_ports(const int ifindex_vxlan, const uint16_t vid,
                            const uint32_t tunnel_id,
                            const std::deque<rtnl_link *> &bridge_ports,
                            bool add);

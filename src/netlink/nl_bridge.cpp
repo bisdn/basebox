@@ -261,18 +261,18 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
             }
 
             // update all bridge ports to be access ports
-            update_access_ports(vid, egress_untagged, tunnel_id, bridge_ports,
-                                true);
+            update_access_ports(rtnl_link_get_ifindex(_link), vid, tunnel_id,
+                                bridge_ports, true);
 
             // XXX FIXME update bridge fdb entries
           } else {
             assert(pport_no);
             if (is_vid_set(vid, vxlan_dom_bitmap)) {
-              std::string port_name = std::string(rtnl_link_get_name(_link)) +
-                                      "." + std::to_string(vid);
+              std::string port_name = std::string(rtnl_link_get_name(_link));
               auto vxd_it = vxlan_domain.find(vid);
               if (vxd_it == vxlan_domain.end()) {
-                LOG(FATAL) << __FUNCTION__ << ": something is broken";
+                LOG(FATAL) << __FUNCTION__
+                           << ": should not happen, something is broken";
               } else {
                 vxlan->create_access_port(vxd_it->second, port_name, pport_no,
                                           vid, egress_untagged);
@@ -291,8 +291,8 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
             vxlan_domain.erase(vid);
 
             // update all bridge ports to be normal bridge ports
-            update_access_ports(vid, egress_untagged, tunnel_id, bridge_ports,
-                                false);
+            update_access_ports(rtnl_link_get_ifindex(_link), vid, tunnel_id,
+                                bridge_ports, false);
 
             // XXX FIXME check if we have to add the VLANs again
             // XXX FIXME update bridge fdb entries
@@ -341,7 +341,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
   }
 }
 
-void nl_bridge::update_access_ports(const uint16_t vid, bool egress_untagged,
+void nl_bridge::update_access_ports(const int ifindex_vxlan, const uint16_t vid,
                                     const uint32_t tunnel_id,
                                     const std::deque<rtnl_link *> &bridge_ports,
                                     bool add) {
@@ -349,16 +349,20 @@ void nl_bridge::update_access_ports(const uint16_t vid, bool egress_untagged,
   for (auto _br_port : bridge_ports) {
     auto br_port_vlans = rtnl_link_bridge_get_port_vlan(_br_port);
 
+    if (ifindex_vxlan == rtnl_link_get_ifindex(_br_port))
+      continue;
+
     if (br_port_vlans == nullptr)
       continue;
 
-    VLOG(2) << __FUNCTION__ << ": vid=" << vid
-            << ", egress_untagged=" << egress_untagged
-            << ", tunnel_id=" << tunnel_id << ", add=" << add
-            << ", port: " << OBJ_CAST(_br_port);
-
     if (!is_vid_set(vid, br_port_vlans->vlan_bitmap))
       continue;
+
+    bool untagged = is_vid_set(vid, br_port_vlans->untagged_bitmap);
+
+    VLOG(2) << __FUNCTION__ << ": vid=" << vid << ", untagged=" << untagged
+            << ", tunnel_id=" << tunnel_id << ", add=" << add
+            << ", port: " << OBJ_CAST(_br_port);
 
     int ifindex = rtnl_link_get_ifindex(_br_port);
     uint32_t pport_no = tap_man->get_port_id(ifindex);
@@ -373,8 +377,7 @@ void nl_bridge::update_access_ports(const uint16_t vid, bool egress_untagged,
 
       std::string port_name = std::string(rtnl_link_get_name(_br_port));
 
-      vxlan->create_access_port(tunnel_id, port_name, pport_no, vid,
-                                egress_untagged);
+      vxlan->create_access_port(tunnel_id, port_name, pport_no, vid, untagged);
     } else {
       // XXX FIXME implement removal
       LOG(ERROR) << __FUNCTION__

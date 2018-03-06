@@ -14,6 +14,7 @@
 #include "nl_hashing.hpp"
 #include "nl_l3.hpp"
 #include "nl_output.hpp"
+#include "nl_route_query.hpp"
 #include "nl_vxlan.hpp"
 #include "tap_manager.hpp"
 
@@ -103,6 +104,18 @@ void nl_vxlan::create_access_port(uint32_t tunnel_id,
                                   bool untagged) {
   assert(sw);
 
+  // lookup access port if it is already configured
+  auto tp = get_tunnel_port(pport_no, vid);
+  if (tp.port_id || tp.tunnel_id) {
+    VLOG(1) << __FUNCTION__
+            << ": tunnel port already exists (lport_id=" << tp.port_id
+            << ", tunnel_id=" << tp.tunnel_id << "), tunnel_id=" << tunnel_id
+            << ", access_port_name=" << access_port_name
+            << ", pport_no=" << pport_no << ", vid=" << vid
+            << ", untagged=" << untagged;
+    return;
+  }
+
   std::string port_name = access_port_name;
   port_name += "." + std::to_string(vid);
 
@@ -110,7 +123,7 @@ void nl_vxlan::create_access_port(uint32_t tunnel_id,
   sw->egress_bridge_port_vlan_remove(pport_no, vid);
   sw->ingress_port_vlan_remove(pport_no, vid, untagged);
 
-  int rv;
+  int rv = 0;
   int cnt = 0;
   do {
     VLOG(2) << __FUNCTION__ << ": rv=" << rv << "<< cnt=" << cnt
@@ -365,7 +378,10 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
 
   // spin off a thread to query the next hop
   std::packaged_task<struct rtnl_route *(struct nl_addr *)> task(
-      [this](struct nl_addr *addr) { return rq.query_route(addr); });
+      [](struct nl_addr *addr) {
+        nl_route_query rq;
+        return rq.query_route(addr);
+      });
   std::future<struct rtnl_route *> result = task.get_future();
   std::thread(std::move(task), group_.get()).detach();
 
@@ -385,7 +401,9 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
                                         // with the remote address
   // FIXME TODO remove vni2tunnel as soon as vxlan interface is gone
 
+  VLOG(4) << __FUNCTION__ << ": wait for rq_task to finish";
   result.wait();
+  VLOG(4) << __FUNCTION__ << ": rq_task finished";
   std::unique_ptr<rtnl_route, void (*)(rtnl_route *)> route(result.get(),
                                                             &rtnl_route_put);
 
@@ -521,8 +539,10 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
             << ": calling tunnel_next_hop_create next_hop_id=" << next_hop_id
             << ", src_mac=" << src_mac << ", dst_mac=" << dst_mac
             << ", physical_port=" << physical_port << ", vlan_id=" << vlan_id;
-  sw->tunnel_next_hop_create(next_hop_id, src_mac, dst_mac, physical_port,
-                             vlan_id); // XXX FIXME check rv
+  rv = sw->tunnel_next_hop_create(next_hop_id, src_mac, dst_mac, physical_port,
+                                  vlan_id);
+  LOG(INFO) << __FUNCTION__
+            << ": XXX tunnel_next_hop_create returned rv=" << rv;
 
   int ttl = rtnl_link_vxlan_get_ttl(link);
 
@@ -561,13 +581,16 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
             << ", terminator_udp_dst_port=" << terminator_udp_dst_port
             << ", initiator_udp_dst_port=" << initiator_udp_dst_port
             << ", use_entropy=" << use_entropy;
-  sw->tunnel_enpoint_create(
+  rv = sw->tunnel_enpoint_create(
       port_id, std::string(rtnl_link_get_name(link)), // XXX string_view
       remote_ipv4, local_ipv4, ttl, next_hop_id, terminator_udp_dst_port,
       initiator_udp_dst_port, udp_src_port_if_no_entropy,
       use_entropy); // XXX check rv
+  LOG(INFO) << __FUNCTION__ << ": XXX tunnel_enpoint_create returned rv=" << rv;
 
-  sw->tunnel_port_tenant_add(port_id, tunnel_id); // XXX check rv
+  rv = sw->tunnel_port_tenant_add(port_id, tunnel_id); // XXX check rv
+  LOG(INFO) << __FUNCTION__
+            << ": XXX tunnel_port_tenant_add returned rv=" << rv;
 
   next_hop_id++;
   port_id++;

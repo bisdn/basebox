@@ -6,8 +6,6 @@
 #include <memory>
 #include <tuple>
 
-#include "nl_route_query.hpp"
-
 extern "C" {
 struct rtnl_link;
 struct rtnl_neigh;
@@ -56,7 +54,6 @@ private:
   switch_interface *sw;
   std::shared_ptr<tap_manager> tap_man;
   cnetlink *nl;
-  nl_route_query rq;
 };
 
 } // namespace basebox
