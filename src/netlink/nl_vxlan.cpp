@@ -409,6 +409,7 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   assert(link);
 
   // get group/remote addr
+  uint32_t port_id = 0;
   nl_addr *addr = nullptr;
   int rv = rtnl_link_vxlan_get_group(link, &addr);
 
@@ -565,21 +566,20 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
     return -EINVAL;
   }
 
-  uint32_t _port_id = 0;
   rv = create_endpoint(link, std::move(local_), std::move(group_), _next_hop_id,
-                       &_port_id);
+                       &port_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": XXX";
     return -EINVAL;
   }
 
   vni2tunnel.emplace(
-      vni, tunnel_port(_port_id,
+      vni, tunnel_port(port_id,
                        tunnel_id)); // XXX TODO this should likely correlate
                                     // with the remote address
   // FIXME TODO remove vni2tunnel as soon as vxlan interface is gone
 
-  rv = sw->tunnel_port_tenant_add(_port_id, tunnel_id); // XXX check rv
+  rv = sw->tunnel_port_tenant_add(port_id, tunnel_id); // XXX check rv
   LOG(INFO) << __FUNCTION__
             << ": XXX tunnel_port_tenant_add returned rv=" << rv;
 
@@ -591,7 +591,7 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
 int nl_vxlan::create_endpoint(
     rtnl_link *link, std::unique_ptr<nl_addr, void (*)(nl_addr *)> local_,
     std::unique_ptr<nl_addr, void (*)(nl_addr *)> group_, uint32_t _next_hop_id,
-    uint32_t *_port_id) {
+    uint32_t *port_id) {
 
   int ttl = rtnl_link_vxlan_get_ttl(link);
 
@@ -628,7 +628,7 @@ int nl_vxlan::create_endpoint(
     if (it->first == ep) {
       VLOG(1) << __FUNCTION__
               << ": found an endpoint_port port_id=" << it->second;
-      *_port_id = it->second;
+      *port_id = it->second;
       return 0;
     }
   }
@@ -643,7 +643,7 @@ int nl_vxlan::create_endpoint(
             << ", initiator_udp_dst_port=" << initiator_udp_dst_port
             << ", use_entropy=" << use_entropy;
   rv = sw->tunnel_enpoint_create(
-      port_id, std::string(rtnl_link_get_name(link)), // XXX string_view
+      this->port_id, std::string(rtnl_link_get_name(link)), // XXX string_view
       remote_ipv4, local_ipv4, ttl, _next_hop_id, terminator_udp_dst_port,
       initiator_udp_dst_port, udp_src_port_if_no_entropy,
       use_entropy); // XXX check rv
@@ -654,8 +654,8 @@ int nl_vxlan::create_endpoint(
     return -EINVAL;
   }
 
-  endpoint_id.emplace(ep, port_id);
-  *_port_id = port_id++;
+  endpoint_id.emplace(ep, this->port_id);
+  *port_id = this->port_id++;
   return 0;
 }
 
