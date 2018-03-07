@@ -1,6 +1,3 @@
-yum:
-  pkg.installed
-
 bisdn-baseboxd:
   pkgrepo.managed:
     - humanname: Copr repo for baseboxd owned by bisdn
@@ -10,8 +7,6 @@ bisdn-baseboxd:
     - gpgkey: https://copr-be.cloud.fedoraproject.org/results/bisdn/baseboxd/pubkey.gpg
     - enabled: 1
     - enabled_metadata: 1
-    - require:
-      - pkg: yum
 
 bisdn-rofl:
   pkgrepo.managed:
@@ -22,8 +17,6 @@ bisdn-rofl:
     - gpgkey: https://copr-be.cloud.fedoraproject.org/results/bisdn/rofl/pubkey.gpg
     - enabled: 1
     - enabled_metadata: 1
-    - require:
-      - pkg: yum
 
 bisdn-rofl-testing:
   pkgrepo.managed:
@@ -34,8 +27,6 @@ bisdn-rofl-testing:
     - gpgkey: https://copr-be.cloud.fedoraproject.org/results/bisdn/rofl-testing/pubkey.gpg
     - enabled: 1
     - enabled_metadata: 1
-    - require:
-      - pkg: yum
 
 bisdn-baseboxd-testing-copr:
   pkgrepo.managed:
