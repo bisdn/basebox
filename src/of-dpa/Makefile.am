@@ -7,7 +7,8 @@ noinst_LTLIBRARIES = libbb_ofdpa.la
 libbb_ofdpa_la_SOURCES = \
 	controller.cpp \
 	controller.hpp \
-	ofdpa_datatypes.h
+	ofdpa_datatypes.h \
+	$(GRPC_PROTO_FILES)
 
 nodist_libbb_ofdpa_la_SOURCES = \
 	$(PROTO_SOURCES) \
