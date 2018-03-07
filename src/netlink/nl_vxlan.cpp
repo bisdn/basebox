@@ -463,11 +463,6 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   // create tenant on switch
   sw->tunnel_tenant_create(tunnel_id,
                            vni); // XXX FIXME check rv
-  vni2tunnel.emplace(
-      vni,
-      tunnel_port(port_id, tunnel_id)); // XXX TODO this should likely correlate
-                                        // with the remote address
-  // FIXME TODO remove vni2tunnel as soon as vxlan interface is gone
 
   VLOG(4) << __FUNCTION__ << ": wait for rq_task to finish";
   result.wait();
@@ -577,6 +572,12 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
     LOG(ERROR) << __FUNCTION__ << ": XXX";
     return -EINVAL;
   }
+
+  vni2tunnel.emplace(
+      vni, tunnel_port(_port_id,
+                       tunnel_id)); // XXX TODO this should likely correlate
+                                    // with the remote address
+  // FIXME TODO remove vni2tunnel as soon as vxlan interface is gone
 
   rv = sw->tunnel_port_tenant_add(_port_id, tunnel_id); // XXX check rv
   LOG(INFO) << __FUNCTION__
@@ -733,7 +734,8 @@ int nl_vxlan::create_next_hop(rtnl_neigh *neigh, uint32_t *_next_hop_id) {
 }
 
 int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
-  // XXX check if link is a vxlan interface or a tap
+  assert(l);
+  assert(neigh);
   assert(rtnl_link_get_family(l) == AF_UNSPEC);
 
   uint32_t lport = 0;
@@ -745,6 +747,9 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
   case LT_VXLAN: {
     uint32_t vni;
     int rv = rtnl_link_vxlan_get_id(l, &vni);
+
+    LOG(INFO) << __FUNCTION__ << ": add neigh " << OBJ_CAST(neigh)
+              << " on vxlan interface " << OBJ_CAST(l);
 
     if (rv != 0) {
       LOG(FATAL) << __FUNCTION__ << "something went south";
@@ -790,9 +795,17 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
     return -EINVAL;
   }
 
-  nl_addr *nl_mac = rtnl_neigh_get_lladdr(neigh);
-  rofl::caddress_ll mac((uint8_t *)nl_addr_get_binary_addr(nl_mac),
-                        nl_addr_get_len(nl_mac));
+  auto neigh_mac = rtnl_neigh_get_lladdr(neigh);
+  auto link_mac = rtnl_link_get_addr(l);
+
+  if (nl_addr_cmp(neigh_mac, link_mac) == 0) {
+    VLOG(2) << __FUNCTION__ << ": ignoring interface address of link "
+            << OBJ_CAST(l);
+    return -ENOTSUP;
+  }
+
+  rofl::caddress_ll mac((uint8_t *)nl_addr_get_binary_addr(neigh_mac),
+                        nl_addr_get_len(neigh_mac));
 
   VLOG(2) << __FUNCTION__ << ": adding l2 overlay addr for lport=" << lport
           << ", tunnel_id=" << tunnel_id << ", mac=" << mac;
