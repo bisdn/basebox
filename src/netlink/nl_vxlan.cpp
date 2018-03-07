@@ -763,12 +763,23 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
   uint32_t lport = 0;
   uint32_t tunnel_id = 0;
   enum link_type lt = kind_to_link_type(rtnl_link_get_type(l));
+  auto neigh_mac = rtnl_neigh_get_lladdr(neigh);
 
   switch (lt) {
     /* find according endpoint port */
   case LT_VXLAN: {
     uint32_t vni;
     int rv = rtnl_link_vxlan_get_id(l, &vni);
+
+    if (nl_addr_iszero(neigh_mac)) {
+      // XXX FIXME first or additional endpoint
+      // auto dst = rtnl_neigh_get_dst(neigh);
+      // XXX FIXME setup BUM FRAMES here
+
+      VLOG(1) << __FUNCTION__ << ": ignored " << OBJ_CAST(neigh) << " at "
+              << OBJ_CAST(l);
+      return 0;
+    }
 
     LOG(INFO) << __FUNCTION__ << ": add neigh " << OBJ_CAST(neigh)
               << " on vxlan interface " << OBJ_CAST(l);
@@ -817,7 +828,6 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
     return -EINVAL;
   }
 
-  auto neigh_mac = rtnl_neigh_get_lladdr(neigh);
   auto link_mac = rtnl_link_get_addr(l);
 
   if (nl_addr_cmp(neigh_mac, link_mac) == 0) {
