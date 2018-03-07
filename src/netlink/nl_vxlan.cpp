@@ -201,7 +201,7 @@ void nl_vxlan::create_access_port(uint32_t tunnel_id,
             << ", untagged=" << untagged;
     // XXX TODO this is totally crap even if it works for now
     rv = sw->tunnel_access_port_create(port_id, port_name, pport_no, vid,
-                                       untagged); // XXX FIXME check rv
+                                       untagged);
 
     cnt++;
   } while (rv < 0 && cnt < 100);
@@ -215,7 +215,13 @@ void nl_vxlan::create_access_port(uint32_t tunnel_id,
 
   VLOG(2) << __FUNCTION__ << ": call tunnel_port_tenant_add port_id=" << port_id
           << ", tunnel_id=" << tunnel_id;
-  sw->tunnel_port_tenant_add(port_id, tunnel_id); // XXX FIXME check rv
+  rv = sw->tunnel_port_tenant_add(port_id, tunnel_id);
+
+  if (rv != 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to add tunnel port " << port_id
+               << " to tenant " << tunnel_id;
+    return;
+  }
 
   // XXX TODO could be done just once per tunnel
   sw->overlay_tunnel_add(tunnel_id);
@@ -462,8 +468,13 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   }
 
   // create tenant on switch
-  sw->tunnel_tenant_create(tunnel_id,
-                           vni); // XXX FIXME check rv
+  rv = sw->tunnel_tenant_create(tunnel_id, vni);
+
+  if (rv != 0) {
+    LOG(ERROR) << __FUNCTION__
+               << ": failed to create tunnel tenant tunnel_id=" << tunnel_id
+               << ", vni=" << vni << ", rv=" << rv;
+  }
 
   VLOG(4) << __FUNCTION__ << ": wait for rq_task to finish";
   result.wait();
@@ -472,6 +483,7 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
                                                             &rtnl_route_put);
 
   if (route.get() == nullptr) {
+    // XXX TODO delete tunnel tenanet
     LOG(ERROR) << __FUNCTION__ << ": could not retrieve route to "
                << group_.get();
     return -EINVAL;
@@ -483,6 +495,7 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
 
   if (nnh != 1) {
     // ecmp
+    // XXX TODO delete tunnel tenanet
     LOG(ERROR) << __FUNCTION__ << ": ecmp not supported";
     return -ENOTSUP;
   }
@@ -543,13 +556,15 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
     LOG(ERROR) << __FUNCTION__
                << ": currently only 1 neighbour is supported, got "
                << neighs.size();
-    // XXX FIXME memory leak
+    // clean up neighs
+    for (auto n : neighs)
+      rtnl_neigh_put(n);
+
     // XXX TODO remove tunnel
     return -ENOTSUP;
   }
 
   if (neighs.size() == 0) {
-    // XXX check if remote is a neighbour
     // XXX TODO remove tunnel
     LOG(ERROR) << __FUNCTION__ << ": neighs.size()=" << neighs.size();
     return -ENOTSUP;
@@ -562,14 +577,18 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
   uint32_t _next_hop_id = 0;
   rv = create_next_hop(neigh_.get(), &_next_hop_id);
   if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": XXX";
+    // XXX TODO remove tunnel
+    LOG(ERROR) << __FUNCTION__ << ": failed to create next hop "
+               << OBJ_CAST(neigh_.get());
     return -EINVAL;
   }
 
   rv = create_endpoint(link, std::move(local_), std::move(group_), _next_hop_id,
                        &port_id);
   if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": XXX";
+    // XXX TODO remove next hop?
+    // XXX TODO remove tunnel
+    LOG(ERROR) << __FUNCTION__ << ": failed to create endpoint";
     return -EINVAL;
   }
 
@@ -611,7 +630,6 @@ int nl_vxlan::create_endpoint(
   uint32_t initiator_udp_dst_port = 4789;
   int rv = rtnl_link_vxlan_get_port(link, &initiator_udp_dst_port);
   if (rv != 0) {
-    // XXX TODO remove tunnel
     LOG(WARNING) << __FUNCTION__
                  << ": vxlan dstport not specified. Falling back to "
                  << initiator_udp_dst_port;
@@ -634,23 +652,29 @@ int nl_vxlan::create_endpoint(
   }
 
   // create endpoint port
-  LOG(INFO) << __FUNCTION__ << std::hex << std::showbase
-            << ": calling tunnel_enpoint_create port_id=" << port_id
-            << ", name=" << rtnl_link_get_name(link)
-            << ", remote=" << remote_ipv4 << ", local=" << local_ipv4
-            << ", ttl=" << ttl << ", next_hop_id=" << _next_hop_id
-            << ", terminator_udp_dst_port=" << terminator_udp_dst_port
-            << ", initiator_udp_dst_port=" << initiator_udp_dst_port
-            << ", use_entropy=" << use_entropy;
+  VLOG(2) << __FUNCTION__ << std::hex << std::showbase
+          << ": calling tunnel_enpoint_create port_id=" << port_id
+          << ", name=" << rtnl_link_get_name(link) << ", remote=" << remote_ipv4
+          << ", local=" << local_ipv4 << ", ttl=" << ttl
+          << ", next_hop_id=" << _next_hop_id
+          << ", terminator_udp_dst_port=" << terminator_udp_dst_port
+          << ", initiator_udp_dst_port=" << initiator_udp_dst_port
+          << ", use_entropy=" << use_entropy;
   rv = sw->tunnel_enpoint_create(
-      this->port_id, std::string(rtnl_link_get_name(link)), // XXX string_view
-      remote_ipv4, local_ipv4, ttl, _next_hop_id, terminator_udp_dst_port,
-      initiator_udp_dst_port, udp_src_port_if_no_entropy,
-      use_entropy); // XXX check rv
+      this->port_id, std::string(rtnl_link_get_name(link)), remote_ipv4,
+      local_ipv4, ttl, _next_hop_id, terminator_udp_dst_port,
+      initiator_udp_dst_port, udp_src_port_if_no_entropy, use_entropy);
 
   if (rv != 0) {
     LOG(ERROR) << __FUNCTION__
-               << ": XXX tunnel_enpoint_create returned rv=" << rv;
+               << ": failed to create tunnel enpoint port_id=" << std::hex
+               << std::showbase << port_id
+               << ", name=" << rtnl_link_get_name(link)
+               << ", remote=" << remote_ipv4 << ", local=" << local_ipv4
+               << ", ttl=" << ttl << ", next_hop_id=" << _next_hop_id
+               << ", terminator_udp_dst_port=" << terminator_udp_dst_port
+               << ", initiator_udp_dst_port=" << initiator_udp_dst_port
+               << ", use_entropy=" << use_entropy << ", rv=" << rv;
     return -EINVAL;
   }
 
@@ -671,21 +695,19 @@ int nl_vxlan::create_next_hop(rtnl_neigh *neigh, uint32_t *_next_hop_id) {
 
   if (physical_port == 0) {
     LOG(ERROR) << __FUNCTION__ << ": no port_id for ifindex=" << ifindex;
-    // XXX TODO remove tunnel
     return -EINVAL;
   }
 
   rtnl_link *local_link = nl->get_link_by_ifindex(ifindex);
   if (local_link == nullptr) {
-    // XXX TODO remove tunnel
-    LOG(ERROR) << __FUNCTION__ << ": XXX ";
+    LOG(ERROR) << __FUNCTION__ << ": invalid link ifindex=" << ifindex;
     return -EINVAL;
   }
 
   nl_addr *addr = rtnl_link_get_addr(local_link);
   if (addr == nullptr) {
-    // XXX TODO remove tunnel
-    LOG(ERROR) << __FUNCTION__ << ": XXX ";
+    LOG(ERROR) << __FUNCTION__ << ": invalid link (no ll addr) "
+               << OBJ_CAST(local_link);
     return -EINVAL;
   }
 
@@ -694,8 +716,8 @@ int nl_vxlan::create_next_hop(rtnl_neigh *neigh, uint32_t *_next_hop_id) {
   // get neigh and set dst_mac
   addr = rtnl_neigh_get_lladdr(neigh);
   if (addr == nullptr) {
-    // XXX TODO remove tunnel
-    LOG(ERROR) << __FUNCTION__ << ": XXX ";
+    LOG(ERROR) << __FUNCTION__ << ": invalid neigh (no ll addr) "
+               << OBJ_CAST(neigh);
     return -EINVAL;
   }
 
