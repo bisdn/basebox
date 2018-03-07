@@ -7,6 +7,7 @@
 #include <tuple>
 
 extern "C" {
+struct nl_addr;
 struct rtnl_link;
 struct rtnl_neigh;
 }
@@ -44,6 +45,13 @@ public:
                           uint32_t pport_no, uint16_t vid, bool untagged);
 
 private:
+  int create_endpoint(rtnl_link *link,
+                      std::unique_ptr<nl_addr, void (*)(nl_addr *)> local_,
+                      std::unique_ptr<nl_addr, void (*)(nl_addr *)> group_,
+                      uint32_t _next_hop_id, uint32_t *_port_id);
+
+  int create_next_hop(rtnl_neigh *neigh, uint32_t *_next_hop_id);
+
   // XXX TODO handle these better and prevent id overflow
   uint32_t next_hop_id = 1;
   uint32_t port_id = 1 << 16 | 1;
