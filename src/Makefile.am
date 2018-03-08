@@ -54,6 +54,8 @@ SOURCES_NETLINK = \
 	netlink/nl_output.cpp \
 	netlink/nl_output.hpp \
 	netlink/nl_route_query.hpp \
+	netlink/nl_vlan.cpp \
+	netlink/nl_vlan.hpp  \
 	netlink/nl_vxlan.cpp \
 	netlink/nl_vxlan.hpp \
 	netlink/tap_manager.cpp \

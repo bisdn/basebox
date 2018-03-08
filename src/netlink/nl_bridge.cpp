@@ -15,6 +15,7 @@
 #include "cnetlink.hpp"
 #include "nl_bridge.hpp"
 #include "nl_output.hpp"
+#include "nl_vxlan.hpp"
 #include "sai.hpp"
 #include "tap_manager.hpp"
 

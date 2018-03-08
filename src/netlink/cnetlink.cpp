@@ -22,12 +22,16 @@
 #include "nl_route_query.hpp"
 #include "tap_manager.hpp"
 
+#include "nl_l3.hpp"
+#include "nl_vlan.hpp"
+#include "nl_vxlan.hpp"
+
 namespace basebox {
 
 cnetlink::cnetlink(std::shared_ptr<tap_manager> tap_man)
     : swi(nullptr), thread(this), caches(NL_MAX_CACHE, nullptr),
       tap_man(tap_man), bridge(nullptr), nl_proc_max(10), running(false),
-      rfd_scheduled(false), l3(tap_man, this),
+      rfd_scheduled(false), l3(new nl_l3(tap_man, this)),
       vxlan(new nl_vxlan(tap_man, this)) {
 
   sock = nl_socket_alloc();
@@ -360,7 +364,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      l3.add_l3_termination(ADDR_CAST(obj.get_new_obj()));
+      l3->add_l3_termination(ADDR_CAST(obj.get_new_obj()));
       break;
     case AF_INET6:
       VLOG(2) << __FUNCTION__ << ": new IPv6 addr (not supported)";
@@ -398,7 +402,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_old_obj()))) {
     case AF_INET:
-      l3.del_l3_termination(ADDR_CAST(obj.get_old_obj()));
+      l3->del_l3_termination(ADDR_CAST(obj.get_old_obj()));
       break;
     case AF_INET6:
       VLOG(2) << __FUNCTION__ << ": deleted IPv6 (not supported)";
@@ -473,7 +477,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
         neigh_ll_created(NEIGH_CAST(obj.get_new_obj()));
         break;
       case AF_INET:
-        l3.add_l3_neigh(NEIGH_CAST(obj.get_new_obj()));
+        l3->add_l3_neigh(NEIGH_CAST(obj.get_new_obj()));
         break;
       case AF_INET6:
         VLOG(2) << __FUNCTION__ << ": new IPv6 neighbour (not supported) "
@@ -505,7 +509,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
         LOG(INFO) << __FUNCTION__ << ": change IPv6 neighbour (not supported)";
         break;
       case AF_INET:
-        l3.update_l3_neigh(NEIGH_CAST(obj.get_old_obj()),
+        l3->update_l3_neigh(NEIGH_CAST(obj.get_old_obj()),
                            NEIGH_CAST(obj.get_new_obj()));
         break;
       default:
@@ -529,7 +533,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
         VLOG(2) << __FUNCTION__ << ": delete IPv6 neighbour (not supported)";
         break;
       case AF_INET:
-        l3.del_l3_neigh(NEIGH_CAST(obj.get_old_obj()));
+        l3->del_l3_neigh(NEIGH_CAST(obj.get_old_obj()));
         break;
       default:
         LOG(ERROR) << __FUNCTION__ << ": invalid family " << family;
@@ -822,7 +826,8 @@ void cnetlink::resend_state() noexcept {
 void cnetlink::register_switch(switch_interface *swi) noexcept {
   assert(swi);
   this->swi = swi;
-  l3.register_switch_interface(swi);
+  l3->register_switch_interface(swi);
+  vlan->register_switch_interface(swi);
   vxlan->register_switch_interface(swi);
 }
 
