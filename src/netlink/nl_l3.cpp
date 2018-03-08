@@ -176,24 +176,40 @@ int nl_l3::del_l3_termination(struct rtnl_addr *a) {
   return rv;
 }
 
-int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
+int nl_l3::add_l3_unicast_host(const rofl::caddress_in4 &ipv4_dst,
+                               uint32_t l3_interface_id) const {
+  int rv = 0;
+  rv = sw->l3_unicast_host_add(ipv4_dst, l3_interface_id);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed ipv4_dst=" << ipv4_dst
+               << "l3_interface_id=" << l3_interface_id << "; rv=" << rv;
+  }
+
+  return rv;
+}
+
+int nl_l3::add_l3_unicast_route(const rofl::caddress_in4 &ipv4_dst,
+                                const rofl::caddress_in4 &mask,
+                                uint32_t l3_interface_id) const {
+  int rv = 0;
+  rv = sw->l3_unicast_route_add(ipv4_dst, mask, l3_interface_id);
+  return rv;
+}
+
+int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n,
+                               uint32_t *l3_interface_id) {
   int rv;
-
   assert(n);
-
-  if (n == nullptr)
-    return -EINVAL;
-
-  LOG(INFO) << __FUNCTION__ << ": n=" << OBJ_CAST(n);
-
   int state = rtnl_neigh_get_state(n);
+
   if (state == NUD_FAILED) {
     LOG(INFO) << __FUNCTION__ << ": neighbour not reachable state=failed";
     return -EINVAL;
   }
 
   int vid = 1; // XXX TODO currently only on vid 1
-  assert(vid);
+  bool tagged = false;
   struct nl_addr *addr = rtnl_neigh_get_lladdr(n);
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(addr);
   int ifindex = rtnl_neigh_get_ifindex(n);
@@ -204,70 +220,58 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
     return -EINVAL;
   }
 
-  assert(nl);
-  std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> link(
-      nl->get_link_by_ifindex(ifindex), &rtnl_link_put);
+  struct rtnl_link *link = nl->get_link_by_ifindex(ifindex);
 
   if (link == nullptr)
     return -EINVAL;
 
-  addr = rtnl_link_get_addr(link.get());
+  addr = rtnl_link_get_addr(link);
   rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(addr);
+  rtnl_link_put(link);
   link = nullptr;
+
+  // XXX these still have to move to another entity
+  rv = vlan->add_vlan(ifindex, vid, tagged);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to setup vid ingress vid=" << vid
+               << "on link " << OBJ_CAST(link);
+    return rv;
+  }
+
+  rv = add_l3_egress(port_id, vid, dst_mac, src_mac, l3_interface_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to add l3 egress";
+  }
+
+  return rv;
+}
+
+int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
+  int rv;
+  uint32_t l3_interface_id = 0;
+  struct nl_addr *addr;
+
+  assert(n);
+  if (n == nullptr)
+    return -EINVAL;
+
+  rv = add_l3_neigh_egress(n, &l3_interface_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
+               << OBJ_CAST(n);
+    return rv;
+  }
 
   addr = rtnl_neigh_get_dst(n);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
 
-  rv = vlan->add_vlan(ifindex, 1, false);
+  rv = add_l3_unicast_host(ipv4_dst, l3_interface_id);
   if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to add vlan to interface "
-               << OBJ_CAST(link.get());
+    LOG(ERROR) << __FUNCTION__ << ": add l3 unicast host failed for "
+               << OBJ_CAST(n);
   }
 
-  // setup egress L3 Unicast group
-  uint32_t l3_interface_id = 0;
-  auto it = l3_interface_mapping.find(
-      std::make_tuple(port_id, vid, src_mac, dst_mac));
-
-  if (it == l3_interface_mapping.end()) {
-    rv = sw->l3_egress_create(port_id, vid, src_mac, dst_mac, &l3_interface_id);
-
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": failed to setup l3 egress port_id=" << port_id
-                 << ", vid=" << vid << ", src_mac=" << src_mac
-                 << ", dst_mac=" << dst_mac << "; rv=" << rv;
-      return rv;
-    }
-
-    auto rv = l3_interface_mapping.emplace(
-        std::make_pair(std::make_tuple(port_id, vid, src_mac, dst_mac),
-                       l3_interface(l3_interface_id)));
-
-    if (!rv.second) {
-      LOG(FATAL) << __FUNCTION__
-                 << ": failed to store l3_interface_id port_id=" << port_id
-                 << ", vid=" << vid << ", src_mac=" << src_mac
-                 << ", dst_mac=" << dst_mac;
-    }
-  } else {
-    assert(it->second.l3_interface_id);
-    l3_interface_id = it->second.l3_interface_id;
-    it->second.refcnt++;
-  }
-
-  // setup next hop
-  rv = sw->l3_unicast_host_add(ipv4_dst, l3_interface_id);
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup l3 neigh port_id=" << port_id
-               << ", vid=" << vid << ", l3_interface_id=" << l3_interface_id
-               << "; rv=" << rv;
-    return rv;
-  }
-
-  return 0;
+  return rv;
 }
 
 int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
@@ -382,6 +386,52 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
   return rv;
 }
 
+int nl_l3::add_l3_egress(const uint32_t port_id, const uint16_t vid,
+                         const rofl::caddress_ll &dst_mac,
+                         const rofl::caddress_ll &src_mac,
+                         uint32_t *l3_interface_id) {
+  assert(l3_interface_id);
+
+  int rv = 0;
+
+  // setup egress L3 Unicast group
+  uint32_t _l3_interface_id = 0;
+  auto it = l3_interface_mapping.find(
+      std::make_tuple(port_id, vid, src_mac, dst_mac));
+
+  if (it == l3_interface_mapping.end()) {
+    rv =
+        sw->l3_egress_create(port_id, vid, src_mac, dst_mac, &_l3_interface_id);
+
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to setup l3 egress port_id=" << port_id
+                 << ", vid=" << vid << ", src_mac=" << src_mac
+                 << ", dst_mac=" << dst_mac << "; rv=" << rv;
+      return rv;
+    }
+
+    auto rv = l3_interface_mapping.emplace(
+        std::make_pair(std::make_tuple(port_id, vid, src_mac, dst_mac),
+                       l3_interface(_l3_interface_id)));
+
+    if (!rv.second) {
+      LOG(FATAL) << __FUNCTION__
+                 << ": failed to store l3_interface_id port_id=" << port_id
+                 << ", vid=" << vid << ", src_mac=" << src_mac
+                 << ", dst_mac=" << dst_mac;
+    }
+  } else {
+    assert(it->second.l3_interface_id);
+    _l3_interface_id = it->second.l3_interface_id;
+    it->second.refcnt++;
+  }
+
+  *l3_interface_id = _l3_interface_id;
+
+  return rv;
+}
+
 void nl_l3::register_switch_interface(switch_interface *sw) { this->sw = sw; }
 
 int nl_l3::del_l3_egress(int ifindex, const struct nl_addr *s_mac,
@@ -486,6 +536,86 @@ struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
   }
 
   return neigh;
+}
+
+int nl_l3::add_l3_route(struct rtnl_route *r) {
+  int rv = 0;
+  int nnhs = rtnl_route_get_nnexthops(r);
+  struct nl_list_head *nh_list = rtnl_route_get_nexthops(r);
+  std::deque<struct rtnl_neigh *> neighs;
+
+  LOG(INFO) << __FUNCTION__ << ": nnhs=" << nnhs;
+
+  if (nh_list) {
+    std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> data =
+        std::make_pair(this, &neighs);
+    rtnl_route_foreach_nexthop(
+        r,
+        [](struct rtnl_nexthop *nh, void *arg) {
+          std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> *data =
+              static_cast<
+                  std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> *>(arg);
+          std::deque<struct rtnl_neigh *> *neighs = data->second;
+
+          struct rtnl_neigh *neigh =
+              static_cast<nl_l3 *>(arg)->nexthop_resolution(nh, nullptr);
+          if (neigh) {
+            LOG(INFO) << __FUNCTION__ << "; found neighbour: "
+                      << reinterpret_cast<struct nl_object *>(neigh);
+            neighs->push_back(neigh);
+          }
+        },
+        &data);
+
+    if (neighs.size()) {
+      uint32_t l3_interface_id = 0;
+      if (nnhs == 1) {
+        // add neigh
+        struct rtnl_neigh *n = neighs.front();
+        rv = add_l3_neigh_egress(n, &l3_interface_id);
+        if (rv < 0) {
+          LOG(ERROR) << __FUNCTION__
+                     << ": add l3 neigh egress failed for neigh "
+                     << OBJ_CAST(n);
+          return rv;
+        }
+
+        // add route
+        rofl::caddress_in4 ipv4_dst;
+        rofl::caddress_in4 mask;
+        rv = add_l3_unicast_route(ipv4_dst, mask, l3_interface_id);
+
+      } else {
+        // ecmp
+        LOG(WARNING) << __FUNCTION__ << ": ecmp is not supported";
+      }
+    }
+
+    // clean up neighbours in neighs deqeue
+    for (auto neigh : neighs) {
+      rtnl_neigh_put(neigh);
+    }
+    neighs.clear();
+
+  } else {
+    LOG(INFO) << __FUNCTION__ << ": no nexthop for this route";
+  }
+
+  struct nl_addr *addr = rtnl_route_get_dst(r);
+
+  if (addr) {
+    LOG(INFO) << __FUNCTION__ << ": dst=" << addr;
+  } else {
+    LOG(INFO) << __FUNCTION__ << ": dst not set";
+  }
+
+  return rv;
+}
+
+int nl_l3::del_l3_route(struct rtnl_route *r) {
+  int rv = 0;
+  LOG(FATAL) << __FUNCTION__ << ": not implemented";
+  return rv;
 }
 
 } // namespace basebox

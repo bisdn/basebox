@@ -560,6 +560,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
     case AF_INET:
+      // XXX TODO l3.add_l3_route(ROUTE_CAST(obj.get_new_obj()));
       VLOG(2) << __FUNCTION__ << ": new IPv4 route (not supported)";
       break;
     case AF_INET6:
@@ -598,6 +599,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_old_obj()))) {
     case AF_INET:
+      // XXX TODO l3.del_l3_route(ROUTE_CAST(obj.get_old_obj()));
       VLOG(2) << __FUNCTION__ << ": changed IPv4 route (not supported)";
       break;
     case AF_INET6:
