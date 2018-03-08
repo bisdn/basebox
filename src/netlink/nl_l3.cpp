@@ -492,30 +492,32 @@ int nl_l3::del_l3_egress(int ifindex, const struct nl_addr *s_mac,
 }
 
 struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
-                                             void *arg) {
+                                             cnetlink *nl, void *arg) {
   struct nl_addr *nh_addr;
   int ifindex;
   struct rtnl_neigh *neigh = nullptr;
 
-  assert(nl);
+  if (nl == nullptr) {
+    LOG(FATAL) << __FUNCTION__ << ": nl not set";
+  }
+
   LOG(INFO) << __FUNCTION__ << ": nh: " << nh;
 
   ifindex = rtnl_route_nh_get_ifindex(nh);
 
-#if 0
   nh_addr = rtnl_route_nh_get_via(nh);
   LOG(INFO) << __FUNCTION__ << ": ifindex=" << ifindex;
 
   if (nh_addr) {
     switch (nl_addr_get_family(nh_addr)) {
-      case AF_INET:
-      case AF_INET6:
-        LOG(INFO) << "via " << nh_addr;
-        break;
-      default:
-        LOG(INFO) << "via " << nh_addr
-          << " unsupported family=" << nl_addr_get_family(nh_addr);
-        break;
+    case AF_INET:
+    case AF_INET6:
+      LOG(INFO) << "via " << nh_addr;
+      break;
+    default:
+      LOG(INFO) << "via " << nh_addr
+                << " unsupported family=" << nl_addr_get_family(nh_addr);
+      break;
     }
     struct rtnl_neigh *n = nl->get_neighbour(ifindex, nh_addr);
     LOG(INFO) << __FUNCTION__ << "; found neighbour: " << n;
@@ -523,7 +525,6 @@ struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
   } else {
     LOG(INFO) << "no via";
   }
-#endif // 0
 
   nh_addr = rtnl_route_nh_get_gateway(nh);
 
@@ -549,26 +550,57 @@ struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
 }
 
 int nl_l3::add_l3_route(struct rtnl_route *r) {
+  assert(r);
+
   int rv = 0;
+  // XXX FIXME split up route add by type here:
+  switch (rtnl_route_get_type(r)) {
+  case RTN_UNICAST:
+    break;
+  case RTN_UNSPEC:
+  case RTN_LOCAL:
+  case RTN_BROADCAST:
+  case RTN_ANYCAST:
+  case RTN_MULTICAST:
+  case RTN_BLACKHOLE:
+  case RTN_UNREACHABLE:
+  case RTN_PROHIBIT:
+  case RTN_THROW:
+  case RTN_NAT:
+  case RTN_XRESOLVE:
+    VLOG(2) << __FUNCTION__ << ": skip route";
+    return -ENOTSUP;
+    break;
+  default:
+    return -EINVAL;
+    break;
+  }
+
+  auto dst = rtnl_route_get_dst(r);
+  if (nl_addr_get_prefixlen(dst) == 32) {
+    LOG(INFO) << __FUNCTION__ << ": host route";
+  }
+
   int nnhs = rtnl_route_get_nnexthops(r);
+
   struct nl_list_head *nh_list = rtnl_route_get_nexthops(r);
   std::deque<struct rtnl_neigh *> neighs;
 
   LOG(INFO) << __FUNCTION__ << ": nnhs=" << nnhs;
 
   if (nh_list) {
-    std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> data =
-        std::make_pair(this, &neighs);
+    std::tuple<nl_l3 *, cnetlink *, std::deque<struct rtnl_neigh *> *> data =
+        std::make_tuple(this, nl, &neighs);
     rtnl_route_foreach_nexthop(
         r,
         [](struct rtnl_nexthop *nh, void *arg) {
-          std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> *data =
-              static_cast<
-                  std::pair<nl_l3 *, std::deque<struct rtnl_neigh *> *> *>(arg);
-          std::deque<struct rtnl_neigh *> *neighs = data->second;
+          auto data =
+              static_cast<std::tuple<nl_l3 *, cnetlink *,
+                                     std::deque<struct rtnl_neigh *> *> *>(arg);
+          auto neighs = std::get<2>(*data);
 
-          struct rtnl_neigh *neigh =
-              static_cast<nl_l3 *>(arg)->nexthop_resolution(nh, nullptr);
+          struct rtnl_neigh *neigh = std::get<0>(*data)->nexthop_resolution(
+              nh, std::get<1>(*data), nullptr);
           if (neigh) {
             LOG(INFO) << __FUNCTION__ << "; found neighbour: "
                       << reinterpret_cast<struct nl_object *>(neigh);

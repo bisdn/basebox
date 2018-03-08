@@ -48,7 +48,8 @@ public:
 
   void register_switch_interface(switch_interface *sw);
 
-  struct rtnl_neigh *nexthop_resolution(struct rtnl_nexthop *nh, void *arg);
+  struct rtnl_neigh *nexthop_resolution(struct rtnl_nexthop *nh, cnetlink *nl,
+                                        void *arg);
 
 private:
   int add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id);
