@@ -11,6 +11,7 @@
 #include "nl_hashing.hpp"
 #include "nl_l3.hpp"
 #include "nl_output.hpp"
+#include "nl_vlan.hpp"
 #include "sai.hpp"
 #include "tap_manager.hpp"
 
@@ -43,8 +44,9 @@ std::unordered_map<
     l3_interface>
     l3_interface_mapping; // XXX FIXME use unordered_multimap
 
-nl_l3::nl_l3(std::shared_ptr<tap_manager> tap_man, cnetlink *nl)
-    : sw(nullptr), tap_man(tap_man), nl(nl) {}
+nl_l3::nl_l3(std::shared_ptr<tap_manager> tap_man,
+             std::shared_ptr<nl_vlan> vlan, cnetlink *nl)
+    : sw(nullptr), tap_man(tap_man), vlan(vlan), nl(nl) {}
 
 rofl::caddress_ll libnl_lladdr_2_rofl(const struct nl_addr *lladdr) {
   // XXX check for family
@@ -67,6 +69,7 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
 
   int rv = 0;
   uint16_t vid = 1;
+  bool tagged = false;
 
   if (a == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": addr can't be null";
@@ -110,6 +113,13 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
                << ", vid=" << vid << "; rv=" << rv;
   }
 
+  // add vlan
+  rv = vlan->add_vlan(ifindex, vid, tagged);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
+               << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+  }
+
   return rv;
 }
 
@@ -127,6 +137,8 @@ int nl_l3::del_l3_termination(struct rtnl_addr *a) {
 
   struct nl_addr *addr = rtnl_addr_get_local(a);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
+
+  // XXX TODO remove vlan adderss
 
   rv = sw->l3_unicast_host_remove(ipv4_dst);
   if (rv < 0) {
@@ -193,39 +205,23 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   }
 
   assert(nl);
-  struct rtnl_link *link = nl->get_link_by_ifindex(ifindex);
+  std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> link(
+      nl->get_link_by_ifindex(ifindex), &rtnl_link_put);
 
   if (link == nullptr)
     return -EINVAL;
 
-  addr = rtnl_link_get_addr(link);
+  addr = rtnl_link_get_addr(link.get());
   rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(addr);
-  rtnl_link_put(link);
   link = nullptr;
 
   addr = rtnl_neigh_get_dst(n);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
 
-  // setup ingress interface
-  // XXX TODO this has to be handled by a different entity
-  rv = sw->ingress_port_vlan_add(port_id, 1, true);
+  rv = vlan->add_vlan(ifindex, 1, false);
   if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup ingress vlan 1 (untagged) on port_id="
-               << port_id << "; rv=" << rv;
-    return rv;
-  }
-
-  // setup egress interface
-  // XXX TODO this has to be handled by a different entity
-  rv = sw->egress_port_vlan_add(port_id, 1, true);
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup egress vlan 1 (untagged) on port_id="
-               << port_id << "; rv=" << rv;
-    (void)sw->ingress_port_vlan_remove(port_id, 1, true);
-    return rv;
+    LOG(ERROR) << __FUNCTION__ << ": failed to add vlan to interface "
+               << OBJ_CAST(link.get());
   }
 
   // setup egress L3 Unicast group

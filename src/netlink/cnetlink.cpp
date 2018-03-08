@@ -31,8 +31,8 @@ namespace basebox {
 cnetlink::cnetlink(std::shared_ptr<tap_manager> tap_man)
     : swi(nullptr), thread(this), caches(NL_MAX_CACHE, nullptr),
       tap_man(tap_man), bridge(nullptr), nl_proc_max(10), running(false),
-      rfd_scheduled(false), l3(new nl_l3(tap_man, this)),
-      vxlan(new nl_vxlan(tap_man, this)) {
+      rfd_scheduled(false), vlan(new nl_vlan(tap_man, this)),
+      l3(new nl_l3(tap_man, vlan, this)), vxlan(new nl_vxlan(tap_man, this)) {
 
   sock = nl_socket_alloc();
   if (NULL == sock) {
@@ -510,7 +510,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
         break;
       case AF_INET:
         l3->update_l3_neigh(NEIGH_CAST(obj.get_old_obj()),
-                           NEIGH_CAST(obj.get_new_obj()));
+                            NEIGH_CAST(obj.get_new_obj()));
         break;
       default:
         LOG(ERROR) << __FUNCTION__ << ": invalid family " << family;
