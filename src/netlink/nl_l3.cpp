@@ -1,5 +1,6 @@
 #include <tuple>
 #include <unordered_map>
+#include <linux/if.h>
 
 #include <glog/logging.h>
 #include <netlink/route/addr.h>
@@ -65,22 +66,15 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
   assert(sw);
   assert(a);
 
+  // XXX FIXME move this
   sw->subscribe_to(switch_interface::SWIF_ARP);
 
-  int rv = 0;
+  int rv;
   uint16_t vid = 1;
   bool tagged = false;
 
   if (a == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": addr can't be null";
-    return -EINVAL;
-  }
-
-  int ifindex = rtnl_addr_get_ifindex(a);
-  int port_id = tap_man->get_port_id(ifindex);
-
-  if (port_id == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0";
     return -EINVAL;
   }
 
@@ -90,34 +84,49 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  struct nl_addr *addr = rtnl_link_get_addr(link);
-  rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
+  bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
+  int ifindex;
 
-  rv = sw->l3_termination_add(port_id, vid, mac);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup termination mac port_id=" << port_id
-               << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
-    return rv;
+  if (!is_loopback) {
+    ifindex = rtnl_addr_get_ifindex(a);
+    int port_id = tap_man->get_port_id(ifindex);
+
+    if (port_id == 0) {
+      LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0 for link "
+                 << OBJ_CAST(link);
+      return -EINVAL;
+    }
+
+    auto addr = rtnl_link_get_addr(link);
+    rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
+
+    rv = sw->l3_termination_add(port_id, vid, mac);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to setup termination mac port_id=" << port_id
+                 << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
+      return rv;
+    }
   }
 
   // get v4 dst (local v4 addr)
-  addr = rtnl_addr_get_local(a);
+  auto addr = rtnl_addr_get_local(a);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
   rv = sw->l3_unicast_host_add(ipv4_dst,
                                0); // TODO likely move this to separate entity
   if (rv < 0) {
     // TODO shall we remove the l3_termination mac?
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup l3 neigh port_id=" << port_id
-               << ", vid=" << vid << "; rv=" << rv;
+    LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr "
+               << OBJ_CAST(addr);
   }
 
-  // add vlan
-  rv = vlan->add_vlan(ifindex, vid, tagged);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
-               << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+  if (!is_loopback) {
+    // add vlan
+    rv = vlan->add_vlan(ifindex, vid, tagged);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
+                 << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+    }
   }
 
   return rv;
