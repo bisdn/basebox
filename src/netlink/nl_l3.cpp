@@ -85,7 +85,7 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
   }
 
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
-  int ifindex;
+  int ifindex = 0;
 
   if (!is_loopback) {
     ifindex = rtnl_addr_get_ifindex(a);
@@ -121,6 +121,7 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
   }
 
   if (!is_loopback) {
+    assert(ifindex);
     // add vlan
     rv = vlan->add_vlan(ifindex, vid, tagged);
     if (rv < 0) {
