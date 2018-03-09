@@ -15,12 +15,14 @@ struct rtnl_neigh;
 namespace basebox {
 
 class cnetlink;
+class nl_l3;
 class switch_interface;
 class tap_manager;
 
 class nl_vxlan {
 public:
-  nl_vxlan(std::shared_ptr<tap_manager> tap_man, cnetlink *nl);
+  nl_vxlan(std::shared_ptr<tap_manager> tap_man, std::shared_ptr<nl_l3> l3,
+           cnetlink *nl);
   ~nl_vxlan() {}
 
   void register_switch_interface(switch_interface *sw);
@@ -61,6 +63,7 @@ private:
 
   switch_interface *sw;
   std::shared_ptr<tap_manager> tap_man;
+  std::shared_ptr<nl_l3> l3;
   cnetlink *nl;
 };
 

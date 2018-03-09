@@ -491,64 +491,6 @@ int nl_l3::del_l3_egress(int ifindex, const struct nl_addr *s_mac,
   return rv;
 }
 
-struct rtnl_neigh *nl_l3::nexthop_resolution(struct rtnl_nexthop *nh,
-                                             cnetlink *nl, void *arg) {
-  struct nl_addr *nh_addr;
-  int ifindex;
-  struct rtnl_neigh *neigh = nullptr;
-
-  if (nl == nullptr) {
-    LOG(FATAL) << __FUNCTION__ << ": nl not set";
-  }
-
-  LOG(INFO) << __FUNCTION__ << ": nh: " << nh;
-
-  ifindex = rtnl_route_nh_get_ifindex(nh);
-
-  nh_addr = rtnl_route_nh_get_via(nh);
-  LOG(INFO) << __FUNCTION__ << ": ifindex=" << ifindex;
-
-  if (nh_addr) {
-    switch (nl_addr_get_family(nh_addr)) {
-    case AF_INET:
-    case AF_INET6:
-      LOG(INFO) << "via " << nh_addr;
-      break;
-    default:
-      LOG(INFO) << "via " << nh_addr
-                << " unsupported family=" << nl_addr_get_family(nh_addr);
-      break;
-    }
-    struct rtnl_neigh *n = nl->get_neighbour(ifindex, nh_addr);
-    LOG(INFO) << __FUNCTION__ << "; found neighbour: " << n;
-    rtnl_neigh_put(n);
-  } else {
-    LOG(INFO) << "no via";
-  }
-
-  nh_addr = rtnl_route_nh_get_gateway(nh);
-
-  if (nh_addr) {
-    switch (nl_addr_get_family(nh_addr)) {
-    case AF_INET:
-    case AF_INET6:
-      LOG(INFO) << "gw " << nh_addr;
-      break;
-    default:
-      LOG(INFO) << "gw " << nh_addr
-                << " unsupported family=" << nl_addr_get_family(nh_addr);
-      break;
-    }
-
-    neigh = nl->get_neighbour(ifindex, nh_addr);
-  } else {
-    LOG(INFO) << __FUNCTION__ << ": no gw";
-    // lookup neigh in neigh cache, direct?
-  }
-
-  return neigh;
-}
-
 int nl_l3::add_l3_route(struct rtnl_route *r) {
   assert(r);
 
@@ -581,57 +523,36 @@ int nl_l3::add_l3_route(struct rtnl_route *r) {
     LOG(INFO) << __FUNCTION__ << ": host route";
   }
 
-  int nnhs = rtnl_route_get_nnexthops(r);
-
-  struct nl_list_head *nh_list = rtnl_route_get_nexthops(r);
   std::deque<struct rtnl_neigh *> neighs;
 
+  int nnhs = rtnl_route_get_nnexthops(r);
   LOG(INFO) << __FUNCTION__ << ": nnhs=" << nnhs;
 
-  if (nh_list) {
-    std::tuple<nl_l3 *, cnetlink *, std::deque<struct rtnl_neigh *> *> data =
-        std::make_tuple(this, nl, &neighs);
-    rtnl_route_foreach_nexthop(
-        r,
-        [](struct rtnl_nexthop *nh, void *arg) {
-          auto data =
-              static_cast<std::tuple<nl_l3 *, cnetlink *,
-                                     std::deque<struct rtnl_neigh *> *> *>(arg);
-          auto neighs = std::get<2>(*data);
+  nh_lookup_params p = {&neighs, r, nl};
+  get_neighbours_of_route(r, &p);
 
-          struct rtnl_neigh *neigh = std::get<0>(*data)->nexthop_resolution(
-              nh, std::get<1>(*data), nullptr);
-          if (neigh) {
-            LOG(INFO) << __FUNCTION__ << "; found neighbour: "
-                      << reinterpret_cast<struct nl_object *>(neigh);
-            neighs->push_back(neigh);
-          }
-        },
-        &data);
+  if (neighs.size()) {
+    uint32_t l3_interface_id = 0;
+    // add neigh
+    struct rtnl_neigh *n = neighs.front();
+    rv = add_l3_neigh_egress(n, &l3_interface_id);
 
-    if (neighs.size()) {
-      uint32_t l3_interface_id = 0;
-      if (nnhs == 1) {
-        // add neigh
-        struct rtnl_neigh *n = neighs.front();
-        rv = add_l3_neigh_egress(n, &l3_interface_id);
-        if (rv < 0) {
-          LOG(ERROR) << __FUNCTION__
-                     << ": add l3 neigh egress failed for neigh "
-                     << OBJ_CAST(n);
-          return rv;
-        }
-
-        // add route
-        rofl::caddress_in4 ipv4_dst;
-        rofl::caddress_in4 mask;
-        rv = add_l3_unicast_route(ipv4_dst, mask, l3_interface_id);
-
-      } else {
-        // ecmp
-        LOG(WARNING) << __FUNCTION__ << ": ecmp is not supported";
+    if (rv < 0) {
+      // clean up
+      for (auto neigh : neighs) {
+        rtnl_neigh_put(neigh);
       }
+
+      neighs.clear();
+      LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
+                 << OBJ_CAST(n);
+      return rv;
     }
+
+    // add route
+    rofl::caddress_in4 ipv4_dst;
+    rofl::caddress_in4 mask;
+    rv = add_l3_unicast_route(ipv4_dst, mask, l3_interface_id);
 
     // clean up neighbours in neighs deqeue
     for (auto neigh : neighs) {
@@ -640,9 +561,10 @@ int nl_l3::add_l3_route(struct rtnl_route *r) {
     neighs.clear();
 
   } else {
-    LOG(INFO) << __FUNCTION__ << ": no nexthop for this route";
+    LOG(ERROR) << __FUNCTION__ << ": no nexthop for this route";
   }
 
+  /// TODO eval dst
   struct nl_addr *addr = rtnl_route_get_dst(r);
 
   if (addr) {
@@ -658,6 +580,52 @@ int nl_l3::del_l3_route(struct rtnl_route *r) {
   int rv = 0;
   LOG(FATAL) << __FUNCTION__ << ": not implemented";
   return rv;
+}
+
+void nl_l3::get_neighbours_of_route(rtnl_route *route, nh_lookup_params *p) {
+  rtnl_route_foreach_nexthop(
+      route,
+      [](struct rtnl_nexthop *nh, void *arg) {
+        struct nh_lookup_params *data = static_cast<nh_lookup_params *>(arg);
+
+        int ifindex = rtnl_route_nh_get_ifindex(nh);
+        if (!ifindex) {
+          // invalid
+          return;
+        }
+        nl_addr *nh_addr = rtnl_route_nh_get_gateway(nh);
+        rtnl_neigh *neigh;
+
+        if (nh_addr) {
+          switch (nl_addr_get_family(nh_addr)) {
+          case AF_INET:
+          case AF_INET6:
+            LOG(INFO) << "gw " << nh_addr;
+            break;
+          default:
+            LOG(INFO) << "gw " << nh_addr
+                      << " unsupported family=" << nl_addr_get_family(nh_addr);
+            break;
+          }
+          neigh = data->nl->get_neighbour(ifindex, nh_addr);
+        } else {
+          LOG(INFO) << __FUNCTION__ << ": no gw";
+          // lookup neigh in neigh cache, direct?
+          nl_addr *dst = rtnl_route_get_dst(data->rt);
+          if (dst != nullptr) {
+            neigh = data->nl->get_neighbour(ifindex, dst);
+          } else {
+            neigh = nullptr;
+          }
+        }
+
+        if (neigh) {
+          LOG(INFO) << __FUNCTION__ << "; found neighbour: "
+                    << reinterpret_cast<struct nl_object *>(neigh);
+          data->neighs->push_back(neigh);
+        }
+      },
+      p);
 }
 
 } // namespace basebox

@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <deque>
 
 extern "C" {
 struct nl_addr;
@@ -48,8 +49,13 @@ public:
 
   void register_switch_interface(switch_interface *sw);
 
-  struct rtnl_neigh *nexthop_resolution(struct rtnl_nexthop *nh, cnetlink *nl,
-                                        void *arg);
+  struct nh_lookup_params {
+    std::deque<struct rtnl_neigh *> *neighs;
+    rtnl_route *rt;
+    cnetlink *nl;
+  };
+
+  void get_neighbours_of_route(rtnl_route *r, nh_lookup_params *p);
 
 private:
   int add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id);

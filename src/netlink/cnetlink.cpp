@@ -32,7 +32,8 @@ cnetlink::cnetlink(std::shared_ptr<tap_manager> tap_man)
     : swi(nullptr), thread(this), caches(NL_MAX_CACHE, nullptr),
       tap_man(tap_man), bridge(nullptr), nl_proc_max(10), running(false),
       rfd_scheduled(false), vlan(new nl_vlan(tap_man, this)),
-      l3(new nl_l3(tap_man, vlan, this)), vxlan(new nl_vxlan(tap_man, this)) {
+      l3(new nl_l3(tap_man, vlan, this)),
+      vxlan(new nl_vxlan(tap_man, l3, this)) {
 
   sock = nl_socket_alloc();
   if (NULL == sock) {
