@@ -46,10 +46,46 @@ int nl_vlan::add_vlan(int ifindex, uint16_t vid, bool tagged) {
   return rv;
 }
 
-int nl_vlan::remove_vlan(int ifindex) {
+int nl_vlan::remove_vlan(int ifindex, uint16_t vid, bool tagged) {
   assert(swi);
 
   int rv = 0;
+
+  uint32_t port_id = tap_man->get_port_id(ifindex);
+
+  if (port_id == 0) {
+    LOG(ERROR) << __FUNCTION__ << ": unknown port with ifindex=" << ifindex;
+    return -EINVAL;
+  }
+
+  // remove vid at ingress
+  rv = swi->ingress_port_vlan_remove(port_id, vid, !tagged);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to remove vid=" << vid
+               << "(tagged=" << tagged << ") at ifindex= " << ifindex
+               << " rv=" << rv;
+    return rv;
+  }
+
+  // delete all FM pointing to this group first
+  rv = swi->l2_addr_remove_all_in_vlan(port_id, vid);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__
+               << ": failed to remove all bridge entries in vid=" << vid
+               << " at ifindex= " << ifindex << " rv=" << rv;
+    return rv;
+  }
+
+  // remove vid from egress
+  rv = swi->egress_bridge_port_vlan_remove(port_id, vid);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to remove vid=" << vid
+               << " at ifindex= " << ifindex << " rv=" << rv;
+    return rv;
+  }
 
   return rv;
 }

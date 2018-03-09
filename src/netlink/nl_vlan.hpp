@@ -14,7 +14,7 @@ public:
   void register_switch_interface(switch_interface *swi) { this->swi = swi; }
 
   int add_vlan(int ifindex, uint16_t vid, bool tagged);
-  int remove_vlan(int ifindex);
+  int remove_vlan(int ifindex, uint16_t vid, bool tagged);
 
 private:
   switch_interface *swi;
