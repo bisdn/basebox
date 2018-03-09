@@ -13,10 +13,12 @@ nl_vlan::nl_vlan(std::shared_ptr<tap_manager> tap_man, cnetlink *nl)
 int nl_vlan::add_vlan(int ifindex, uint16_t vid, bool tagged) {
   assert(swi);
 
+  // XXX FIXME add vlan range check
+
   uint32_t port_id = tap_man->get_port_id(ifindex);
 
   if (port_id == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": unknown port with ifindex=" << ifindex;
+    VLOG(1) << __FUNCTION__ << ": unknown port with ifindex=" << ifindex;
     return -EINVAL;
   }
 
@@ -54,7 +56,7 @@ int nl_vlan::remove_vlan(int ifindex, uint16_t vid, bool tagged) {
   uint32_t port_id = tap_man->get_port_id(ifindex);
 
   if (port_id == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": unknown port with ifindex=" << ifindex;
+    VLOG(1) << __FUNCTION__ << ": unknown port with ifindex=" << ifindex;
     return -EINVAL;
   }
 

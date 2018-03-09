@@ -12,6 +12,7 @@
 #include <netlink/object.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
+#include <netlink/route/link/vlan.h>
 #include <netlink/route/link/vxlan.h>
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
@@ -671,6 +672,12 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     std::string name(rtnl_link_get_name(link));
     tap_man->tap_dev_ready(ifindex, name);
   } break;
+  case LT_VLAN: {
+    VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
+    int ifindex = rtnl_link_get_link(link);
+    uint16_t vid = rtnl_link_vlan_get_id(link);
+    vlan->add_vlan(ifindex, vid, true);
+  } break;
   default:
     LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
                  << " link:" << link;
@@ -730,6 +737,9 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       break;
     }
     break;
+  case LT_VLAN: {
+    VLOG(1) << __FUNCTION__ << ": ignoring vlan interface update";
+  } break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt_old;
     break;
@@ -763,7 +773,14 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   case LT_TUN:
     tap_man->tap_dev_removed(rtnl_link_get_ifindex(link));
     break;
-  default:;
+  case LT_VLAN: {
+    VLOG(1) << __FUNCTION__ << ": removed vlan interface " << OBJ_CAST(link);
+    int ifindex = rtnl_link_get_link(link);
+    uint16_t vid = rtnl_link_vlan_get_id(link);
+    vlan->remove_vlan(ifindex, vid, true);
+  } break;
+  default:
+    break;
   }
 }
 
