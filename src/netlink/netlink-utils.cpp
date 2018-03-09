@@ -6,7 +6,7 @@
 
 #include "netlink-utils.hpp"
 
-#define lt_names "unknown", "unsupported", "bridge", "tun", "vxlan"
+#define lt_names "unknown", "unsupported", "bridge", "tun", "vlan", "vxlan"
 
 namespace basebox {
 

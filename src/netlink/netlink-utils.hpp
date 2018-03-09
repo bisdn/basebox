@@ -4,7 +4,13 @@
 #include <cinttypes>
 #include <deque>
 
-#include <netlink/addr.h>
+extern "C" {
+struct nl_addr;
+struct rtnl_addr;
+struct rtnl_link;
+struct rtnl_neigh;
+struct rtnl_route;
+}
 
 #define LINK_CAST(obj) reinterpret_cast<struct rtnl_link *>(obj)
 #define NEIGH_CAST(obj) reinterpret_cast<struct rtnl_neigh *>(obj)
@@ -18,6 +24,7 @@ enum link_type {
   LT_UNSUPPORTED,
   LT_BRIDGE,
   LT_TUN,
+  LT_VLAN,
   LT_VXLAN,
   LT_MAX /* must be last */
 };
