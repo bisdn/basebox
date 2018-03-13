@@ -5,6 +5,7 @@
 #include <glog/logging.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
+#include <netlink/route/link/vlan.h>
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
 
@@ -47,7 +48,7 @@ std::unordered_map<
 
 nl_l3::nl_l3(std::shared_ptr<tap_manager> tap_man,
              std::shared_ptr<nl_vlan> vlan, cnetlink *nl)
-    : sw(nullptr), tap_man(tap_man), vlan(vlan), nl(nl) {}
+    : sw(nullptr), tap_man(tap_man), vlan(vlan), nl(nl), default_vid(1) {}
 
 rofl::caddress_ll libnl_lladdr_2_rofl(const struct nl_addr *lladdr) {
   // XXX check for family
@@ -62,6 +63,7 @@ rofl::caddress_in4 libnl_in4addr_2_rofl(struct nl_addr *addr) {
   return rofl::caddress_in4(&sin, salen);
 }
 
+// XXX separate function to make it possible to add lo addresses more directly
 int nl_l3::add_l3_termination(struct rtnl_addr *a) {
   assert(sw);
   assert(a);
@@ -70,7 +72,6 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
   sw->subscribe_to(switch_interface::SWIF_ARP);
 
   int rv;
-  uint16_t vid = 1;
   bool tagged = false;
 
   if (a == nullptr) {
@@ -86,19 +87,34 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
 
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
   int ifindex = 0;
+  uint16_t vid = default_vid;
 
   if (!is_loopback) {
     ifindex = rtnl_addr_get_ifindex(a);
-    int port_id = tap_man->get_port_id(ifindex);
+    int port_id = nl->get_port_id(link);
+
+    // XXX FIXME allow this for a vlan interface at a bridge as well
+
+    // in case this is a bridge interface we have to set the port_id to OFPP_ANY
 
     if (port_id == 0) {
-      LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0 for link "
-                 << OBJ_CAST(link);
-      return -EINVAL;
+      if (nl->is_bridge_interface(link)) {
+        LOG(INFO) << __FUNCTION__ << ": host on top of bridge";
+        port_id = 0; // rofl::openflow::OFPP_ALL;
+      } else {
+        LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0 for link "
+                   << OBJ_CAST(link);
+        return -EINVAL;
+      }
     }
 
     auto addr = rtnl_link_get_addr(link);
     rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
+
+    if (rtnl_link_is_vlan(link)) {
+      vid = rtnl_link_vlan_get_id(link);
+      tagged = true;
+    }
 
     rv = sw->l3_termination_add(port_id, vid, mac);
     if (rv < 0) {
@@ -138,7 +154,6 @@ int nl_l3::del_l3_termination(struct rtnl_addr *a) {
   assert(a);
 
   int rv = 0;
-  uint16_t vid = 1;
 
   if (a == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": addr can't be null";
@@ -153,8 +168,7 @@ int nl_l3::del_l3_termination(struct rtnl_addr *a) {
   rv = sw->l3_unicast_host_remove(ipv4_dst);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
-               << ": failed to remove l3 unicast host(local) vid=" << vid
-               << "; rv=" << rv;
+               << ": failed to remove l3 unicast host(local) rv=" << rv;
     return rv;
   }
 
@@ -174,6 +188,11 @@ int nl_l3::del_l3_termination(struct rtnl_addr *a) {
 
   addr = rtnl_link_get_addr(link);
   rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
+  uint16_t vid = default_vid;
+
+  if (rtnl_link_is_vlan(link)) {
+    vid = rtnl_link_vlan_get_id(link);
+  }
 
   // XXX TODO don't do this in case more l3 addresses are on this link
   rv = sw->l3_termination_remove(port_id, vid, mac);
@@ -218,14 +237,20 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n,
     return -EINVAL;
   }
 
-  int vid = 1; // XXX TODO currently only on vid 1
-  bool tagged = false;
+  uint16_t vid = rtnl_neigh_get_vlan(n);
+  bool tagged = true;
+
+  if (vid == (uint16_t)-1) {
+    vid = default_vid;
+    tagged = false;
+  }
+
   struct nl_addr *addr = rtnl_neigh_get_lladdr(n);
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(addr);
   int ifindex = rtnl_neigh_get_ifindex(n);
   uint32_t port_id = tap_man->get_port_id(ifindex);
 
-  if (port_id == 0) {
+  if (port_id == 0) { // XXX FIXME check for bridged interface
     LOG(ERROR) << __FUNCTION__ << ": invalid port_id=" << port_id;
     return -EINVAL;
   }
@@ -240,7 +265,7 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n,
   rtnl_link_put(link);
   link = nullptr;
 
-  // XXX these still have to move to another entity
+  // FIXME XXX is this still needed?
   rv = vlan->add_vlan(ifindex, vid, tagged);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to setup vid ingress vid=" << vid
@@ -340,7 +365,8 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
     }
 
     // delete from mapping
-    rv = del_l3_egress(ifindex, rtnl_link_get_addr(link),
+    uint16_t vid = default_vid; // XXX FIXME get vid
+    rv = del_l3_egress(ifindex, vid, rtnl_link_get_addr(link),
                        rtnl_neigh_get_lladdr(n_old));
 
     rtnl_link_put(link);
@@ -388,9 +414,14 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
 
   struct nl_addr *s_mac = rtnl_link_get_addr(link);
   struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
+  uint16_t vid = rtnl_neigh_get_vlan(n);
+
+  if (vid == (uint16_t)-1) {
+    vid = default_vid;
+  }
 
   if (s_mac && d_mac)
-    rv = del_l3_egress(ifindex, s_mac, d_mac);
+    rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
 
   rtnl_link_put(link);
   return rv;
@@ -444,7 +475,7 @@ int nl_l3::add_l3_egress(const uint32_t port_id, const uint16_t vid,
 
 void nl_l3::register_switch_interface(switch_interface *sw) { this->sw = sw; }
 
-int nl_l3::del_l3_egress(int ifindex, const struct nl_addr *s_mac,
+int nl_l3::del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
                          const struct nl_addr *d_mac) {
   assert(s_mac);
   assert(d_mac);
@@ -457,7 +488,6 @@ int nl_l3::del_l3_egress(int ifindex, const struct nl_addr *s_mac,
   }
 
   int rv = 0;
-  int vid = 1; // XXX TODO currently only on vid 1
   rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(s_mac);
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(d_mac);
   auto it = l3_interface_mapping.find(
@@ -587,14 +617,15 @@ void nl_l3::get_neighbours_of_route(rtnl_route *route, nh_lookup_params *p) {
       route,
       [](struct rtnl_nexthop *nh, void *arg) {
         struct nh_lookup_params *data = static_cast<nh_lookup_params *>(arg);
-
         int ifindex = rtnl_route_nh_get_ifindex(nh);
+
         if (!ifindex) {
-          // invalid
+          LOG(WARNING) << __FUNCTION__ << ": next hop without ifindex " << nh;
           return;
         }
+
         nl_addr *nh_addr = rtnl_route_nh_get_gateway(nh);
-        rtnl_neigh *neigh;
+        rtnl_neigh *neigh = nullptr;
 
         if (nh_addr) {
           switch (nl_addr_get_family(nh_addr)) {

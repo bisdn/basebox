@@ -192,8 +192,12 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     LOG(WARNING) << __FUNCTION__ << " cannot update interface without bridge";
     return;
   }
+  char *type = rtnl_link_get_type(_link);
+  if (type == nullptr) {
+    VLOG(1) << __FUNCTION__ << ": no link type";
+  }
 
-  link_type lt = kind_to_link_type(rtnl_link_get_type(_link));
+  link_type lt = kind_to_link_type(type);
   uint32_t pport_no = 0;
   uint32_t tunnel_id = -1;
   std::deque<rtnl_link *> bridge_ports;

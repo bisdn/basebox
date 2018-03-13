@@ -173,6 +173,55 @@ struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
   return rtnl_neigh_get(caches[NL_NEIGH_CACHE], ifindex, a);
 }
 
+bool cnetlink::is_bridge_interface(rtnl_link *l) const {
+
+  // is a vlan on top of the bridge?
+  if (rtnl_link_is_vlan(l)) {
+    LOG(INFO) << __FUNCTION__ << ": vlan ok";
+
+    // get the master and check if it's a bridge
+    auto _l = get_link_by_ifindex(rtnl_link_get_link(l));
+
+    if (_l == nullptr)
+      return false;
+
+    auto lt = kind_to_link_type(rtnl_link_get_type(_l));
+
+    LOG(INFO) << __FUNCTION__ << ": lt=" << lt << " " << OBJ_CAST(_l);
+    if (lt == LT_BRIDGE) {
+      LOG(INFO) << __FUNCTION__ << ": vlan ok";
+
+      std::deque<rtnl_link *> bridge_interfaces;
+      get_bridge_ports(rtnl_link_get_ifindex(_l), caches[NL_LINK_CACHE],
+                       &bridge_interfaces);
+
+      for (auto br_intf : bridge_interfaces) {
+        if (tap_man->get_port_id(rtnl_link_get_ifindex(br_intf)) != 0)
+          return true;
+      }
+    }
+
+    // XXX TODO check rather nl_bridge ?
+  }
+
+  // TODO could the interface be a bridge slave as well?
+
+  return false;
+}
+
+int cnetlink::get_port_id(rtnl_link *l) const {
+  int port_id;
+
+  if (rtnl_link_is_vlan(l)) {
+    int ifindex = rtnl_link_get_link(l);
+    port_id = tap_man->get_port_id(ifindex);
+  } else {
+    port_id = tap_man->get_port_id(rtnl_link_get_ifindex(l));
+  }
+
+  return port_id;
+}
+
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
   bool do_wakeup = false;
 

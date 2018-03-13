@@ -41,7 +41,7 @@ public:
   int update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new);
   int del_l3_neigh(struct rtnl_neigh *n);
 
-  int del_l3_egress(int ifindex, const struct nl_addr *s_mac,
+  int del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
                     const struct nl_addr *d_mac);
 
   int add_l3_route(struct rtnl_route *r);
@@ -73,6 +73,8 @@ private:
   std::shared_ptr<tap_manager> tap_man;
   std::shared_ptr<nl_vlan> vlan;
   cnetlink *nl;
+
+  uint16_t default_vid;
 };
 
 } // namespace basebox

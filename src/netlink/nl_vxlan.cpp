@@ -637,16 +637,17 @@ int nl_vxlan::create_next_hop(rtnl_neigh *neigh, uint32_t *_next_hop_id) {
 
   // get outgoing interface
   uint32_t ifindex = rtnl_neigh_get_ifindex(neigh);
-  uint32_t physical_port = tap_man->get_port_id(ifindex);
+  rtnl_link *local_link = nl->get_link_by_ifindex(ifindex);
 
-  if (physical_port == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": no port_id for ifindex=" << ifindex;
+  if (local_link == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": invalid link ifindex=" << ifindex;
     return -EINVAL;
   }
 
-  rtnl_link *local_link = nl->get_link_by_ifindex(ifindex);
-  if (local_link == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid link ifindex=" << ifindex;
+  uint32_t physical_port = nl->get_port_id(local_link);
+
+  if (physical_port == 0) {
+    LOG(ERROR) << __FUNCTION__ << ": no port_id for ifindex=" << ifindex;
     return -EINVAL;
   }
 

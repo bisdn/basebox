@@ -58,6 +58,9 @@ public:
   struct rtnl_link *get_link(int ifindex, int family) const;
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
+  bool is_bridge_interface(rtnl_link *l) const;
+  int get_port_id(rtnl_link *l) const;
+
   nl_cache *get_cache(enum nl_cache_t id) { return caches[id]; }
 
   void resend_state() noexcept;
