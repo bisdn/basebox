@@ -149,7 +149,7 @@ struct rtnl_link *cnetlink::get_link_by_ifindex(int ifindex) const {
 }
 
 struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
-  struct rtnl_link *_link;
+  struct rtnl_link *_link = nullptr;
   std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> filter(rtnl_link_alloc(),
                                                            &rtnl_link_put);
 
