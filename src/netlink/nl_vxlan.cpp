@@ -20,6 +20,14 @@
 
 namespace basebox {
 
+struct tunnel_port {
+  uint32_t port_id;
+  int tunnel_id;
+
+  tunnel_port(int port_id, int tunnel_id)
+      : port_id(port_id), tunnel_id(tunnel_id) {}
+};
+
 struct pport_vlan {
   uint32_t pport;
   uint16_t vid;
@@ -118,15 +126,13 @@ template <> struct hash<basebox::endpoint_port> {
 
 namespace basebox {
 
-static std::unordered_multimap<pport_vlan, nl_vxlan::tunnel_port>
-    access_port_ids;
+static std::unordered_multimap<pport_vlan, tunnel_port> access_port_ids;
 
 static std::unordered_multimap<tunnel_nh, uint32_t> tunnel_next_hop_id;
 
 static std::unordered_multimap<endpoint_port, uint32_t> endpoint_id;
 
-static struct nl_vxlan::tunnel_port get_tunnel_port(uint32_t pport,
-                                                    uint16_t vlan) {
+static struct tunnel_port get_tunnel_port(uint32_t pport, uint16_t vlan) {
   assert(pport);
   assert(vlan);
 
@@ -136,7 +142,7 @@ static struct nl_vxlan::tunnel_port get_tunnel_port(uint32_t pport,
   pport_vlan search(pport, vlan);
   auto port_range = access_port_ids.equal_range(search);
 
-  nl_vxlan::tunnel_port invalid(0, 0);
+  tunnel_port invalid(0, 0);
   if (port_range.first == access_port_ids.end()) {
     LOG(WARNING) << __FUNCTION__ << ": no match found for pport=" << pport
                  << ", vlan=" << vlan;
@@ -255,28 +261,85 @@ int nl_vxlan::get_tunnel_id(uint32_t vni, uint32_t *_tunnel_id) noexcept {
     return -EINVAL;
   }
 
-  *_tunnel_id = tunnel_id_it->second.tunnel_id;
+  *_tunnel_id = tunnel_id_it->second;
 
   return 0;
 }
 
+int nl_vxlan::create_vni(rtnl_link *link, uint32_t *tunnel_id) {
+  uint32_t vni = 0;
+  int rv = rtnl_link_vxlan_get_id(link, &vni);
+
+  if (rv != 0) {
+    LOG(ERROR) << __FUNCTION__ << ": no vni for vxlan interface set";
+    return -EINVAL;
+  }
+
+  // create tenant on switch
+  rv = sw->tunnel_tenant_create(this->tunnel_id, vni);
+
+  if (rv != 0) {
+    LOG(ERROR) << __FUNCTION__
+               << ": failed to create tunnel tenant tunnel_id=" << tunnel_id
+               << ", vni=" << vni << ", rv=" << rv;
+    return -EINVAL;
+  }
+
+  // FIXME TODO remove vni2tunnel as soon as vxlan interface is gone
+  vni2tunnel.emplace(vni, this->tunnel_id);
+  /// XXX FIXME check rv
+
+  *tunnel_id = this->tunnel_id++;
+
+  // FIXME TODO remove vni2tunnel as soon as vxlan interface is gone
+  return rv;
+}
+
 int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
-  std::thread rqt;
 
   assert(link);
 
-  // get group/remote addr
-  uint32_t port_id = 0;
-  nl_addr *addr = nullptr;
-  int rv = rtnl_link_vxlan_get_group(link, &addr);
+  uint32_t tunnel_id = 0;
 
-  if (rv != 0 || addr == nullptr) {
+  // create vni
+  int rv = create_vni(link, &tunnel_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": could not create vni";
+    return -EINVAL;
+  }
+
+  std::thread rqt;
+  // get group/remote addr
+  nl_addr *addr = nullptr;
+  rv = rtnl_link_vxlan_get_group(link, &addr);
+
+  if (rv != 0) {
+    VLOG(1) << __FUNCTION__ << ": addded vni without peer";
+    return 0;
+  }
+
+  if (addr == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": no group/remote for vxlan interface set";
     return -EINVAL;
   }
 
-  // store group/remote
+  if (nl_addr_get_family(addr) == AF_INET6) {
+    LOG(ERROR) << __FUNCTION__
+               << ": detected unsupported IPv6 remote for vxlan "
+               << OBJ_CAST(link);
+    return -ENOTSUP;
+  }
+
   std::unique_ptr<nl_addr, void (*)(nl_addr *)> group_(addr, &nl_addr_put);
+  create_remote(link, std::move(group_), tunnel_id);
+
+  return 0;
+}
+
+int nl_vxlan::create_remote(
+    rtnl_link *link, std::unique_ptr<nl_addr, void (*)(nl_addr *)> group_,
+    uint32_t tunnel_id) {
+  uint32_t port_id = 0;
   int family = nl_addr_get_family(group_.get());
 
   // XXX TODO check for multicast here, not yet supported
@@ -286,14 +349,15 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
     return -EINVAL;
   }
 
-  rv = rtnl_link_vxlan_get_local(link, &addr);
+  nl_addr *tmp_addr = nullptr;
+  int rv = rtnl_link_vxlan_get_local(link, &tmp_addr);
 
-  if (rv != 0 || addr == nullptr) {
+  if (rv != 0 || tmp_addr == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": no local address for vxlan interface set";
     return -EINVAL;
   }
 
-  std::unique_ptr<nl_addr, void (*)(nl_addr *)> local_(addr, &nl_addr_put);
+  std::unique_ptr<nl_addr, void (*)(nl_addr *)> local_(tmp_addr, &nl_addr_put);
 
   family = nl_addr_get_family(local_.get());
 
@@ -310,22 +374,6 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
       });
   std::future<struct rtnl_route *> result = task.get_future();
   std::thread(std::move(task), group_.get()).detach();
-
-  uint32_t vni = 0;
-  rv = rtnl_link_vxlan_get_id(link, &vni);
-  if (rv != 0) {
-    LOG(ERROR) << __FUNCTION__ << ": no vni for vxlan interface set";
-    return -EINVAL;
-  }
-
-  // create tenant on switch
-  rv = sw->tunnel_tenant_create(tunnel_id, vni);
-
-  if (rv != 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to create tunnel tenant tunnel_id=" << tunnel_id
-               << ", vni=" << vni << ", rv=" << rv;
-  }
 
   VLOG(4) << __FUNCTION__ << ": wait for rq_task to finish";
   result.wait();
@@ -388,17 +436,9 @@ int nl_vxlan::create_endpoint_port(struct rtnl_link *link) {
     return -EINVAL;
   }
 
-  vni2tunnel.emplace(
-      vni, tunnel_port(port_id,
-                       tunnel_id)); // XXX TODO this should likely correlate
-                                    // with the remote address
-  // FIXME TODO remove vni2tunnel as soon as vxlan interface is gone
-
   rv = sw->tunnel_port_tenant_add(port_id, tunnel_id); // XXX check rv
   LOG(INFO) << __FUNCTION__
             << ": XXX tunnel_port_tenant_add returned rv=" << rv;
-
-  tunnel_id++;
 
   return 0;
 }
@@ -435,7 +475,7 @@ int nl_vxlan::create_endpoint(
   bool use_entropy = true;
   uint32_t udp_src_port_if_no_entropy = 0;
 
-  auto ep = endpoint_port(remote_ipv4, local_ipv4, initiator_udp_dst_port);
+  auto ep = endpoint_port(local_ipv4, remote_ipv4, initiator_udp_dst_port);
   auto ep_it = endpoint_id.equal_range(ep);
 
   for (auto it = ep_it.first; it != ep_it.second; ++it) {
@@ -565,8 +605,10 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
   switch (lt) {
     /* find according endpoint port */
   case LT_VXLAN: {
-    uint32_t vni;
-    int rv = rtnl_link_vxlan_get_id(l, &vni);
+
+    if (nl_addr_cmp(neigh_mac, rtnl_link_get_addr(l)) == 0) {
+      return 0;
+    }
 
     if (nl_addr_iszero(neigh_mac)) {
       // XXX FIXME first or additional endpoint
@@ -581,10 +623,45 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
     LOG(INFO) << __FUNCTION__ << ": add neigh " << OBJ_CAST(neigh)
               << " on vxlan interface " << OBJ_CAST(l);
 
+    uint32_t vni;
+    int rv = rtnl_link_vxlan_get_id(l, &vni);
+
     if (rv != 0) {
-      LOG(FATAL) << __FUNCTION__ << "something went south";
+      LOG(FATAL) << __FUNCTION__ << ": something went south";
       return -EINVAL;
     }
+
+    uint32_t dst_port;
+
+    rv = rtnl_link_vxlan_get_port(l, &dst_port);
+
+    if (rv != 0) {
+      LOG(FATAL) << __FUNCTION__ << ": something went south";
+      return -EINVAL;
+    }
+
+    nl_addr *local;
+
+    rv = rtnl_link_vxlan_get_local(l, &local);
+
+    if (rv != 0) {
+      LOG(ERROR) << __FUNCTION__ << "local addr not set";
+      return -EINVAL;
+    }
+
+    std::unique_ptr<nl_addr, void (*)(nl_addr *)> local_(local, &nl_addr_put);
+    int family = nl_addr_get_family(local_.get());
+
+    if (family != AF_INET) {
+      LOG(ERROR) << __FUNCTION__ << ": currently only AF_INET is supported";
+      return -EINVAL;
+    }
+
+    uint32_t local_ipv4 = 0;
+
+    memcpy(&local_ipv4, nl_addr_get_binary_addr(local_.get()),
+           sizeof(local_ipv4));
+    local_ipv4 = ntohl(local_ipv4);
 
     auto v2t_it = vni2tunnel.find(vni);
 
@@ -593,8 +670,46 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
       return -EINVAL;
     }
 
-    lport = v2t_it->second.port_id;
-    tunnel_id = v2t_it->second.tunnel_id;
+    nl_addr *dst = rtnl_neigh_get_dst(neigh);
+
+    // TODO  could check on type unicast
+    if (dst == nullptr) {
+      LOG(ERROR) << __FUNCTION__ << ": invalid dst";
+      return -EINVAL;
+    }
+
+#if 0
+    family = nl_addr_get_family(dst);
+
+    if (family != AF_INET) {
+      LOG(ERROR) << __FUNCTION__
+        << ": currently only AF_INET is supported fam=" << family
+        << " dst=" << dst;
+      return -EINVAL;
+    }
+#endif // 0
+
+    uint32_t remote_ipv4 = 0;
+
+    memcpy(&remote_ipv4, nl_addr_get_binary_addr(dst), sizeof(remote_ipv4));
+    remote_ipv4 = ntohl(remote_ipv4);
+
+    LOG(INFO) << __FUNCTION__ << ": XXXX remote_ipv4=" << std::hex
+              << std::showbase << remote_ipv4;
+
+    // use endpoint_id to get lport
+    auto ep = endpoint_port(local_ipv4, remote_ipv4, dst_port);
+    auto ep_it = endpoint_id.equal_range(ep);
+
+    for (auto it = ep_it.first; it != ep_it.second; ++it) {
+      if (it->first == ep) {
+        VLOG(1) << __FUNCTION__
+                << ": found an endpoint_port port_id=" << it->second;
+        lport = it->second;
+      }
+    }
+
+    tunnel_id = v2t_it->second;
   } break;
     /* find according access port */
   case LT_TUN: {

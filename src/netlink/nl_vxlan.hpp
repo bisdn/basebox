@@ -31,14 +31,6 @@ public:
 
   int add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l);
 
-  struct tunnel_port {
-    uint32_t port_id;
-    int tunnel_id;
-
-    tunnel_port(int port_id, int tunnel_id)
-        : port_id(port_id), tunnel_id(tunnel_id) {}
-  };
-
   int get_tunnel_id(rtnl_link *vxlan_link, uint32_t *tunnel_id) noexcept;
   int get_tunnel_id(uint32_t vni, uint32_t *tunnel_id) noexcept;
 
@@ -46,7 +38,12 @@ public:
                           const std::string &access_port_name,
                           uint32_t pport_no, uint16_t vid, bool untagged);
 
+  int create_remote(rtnl_link *link,
+                    std::unique_ptr<nl_addr, void (*)(nl_addr *)> group_,
+                    uint32_t tunnel_id);
+
 private:
+  int create_vni(rtnl_link *link, uint32_t *tunnel_id);
   int create_endpoint(rtnl_link *link,
                       std::unique_ptr<nl_addr, void (*)(nl_addr *)> local_,
                       std::unique_ptr<nl_addr, void (*)(nl_addr *)> group_,
@@ -59,7 +56,7 @@ private:
   uint32_t port_id = 1 << 16 | 1;
   uint32_t tunnel_id = 10;
 
-  std::map<uint32_t, tunnel_port> vni2tunnel;
+  std::map<uint32_t, int> vni2tunnel;
 
   switch_interface *sw;
   std::shared_ptr<tap_manager> tap_man;
