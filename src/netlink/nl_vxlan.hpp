@@ -57,7 +57,7 @@ private:
   // XXX TODO handle these better and prevent id overflow
   uint32_t next_hop_id = 1;
   uint32_t port_id = 1 << 16 | 1;
-  uint32_t tunnel_id = 1;
+  uint32_t tunnel_id = 10;
 
   std::map<uint32_t, tunnel_port> vni2tunnel;
 
