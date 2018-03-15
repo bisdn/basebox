@@ -139,7 +139,8 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
   if (!is_loopback) {
     assert(ifindex);
     // add vlan
-    rv = vlan->add_vlan(ifindex, vid, tagged);
+    int port_id = nl->get_port_id(link);
+    rv = vlan->add_vlan(port_id, vid, tagged);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
                  << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
@@ -248,17 +249,17 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n,
   struct nl_addr *addr = rtnl_neigh_get_lladdr(n);
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(addr);
   int ifindex = rtnl_neigh_get_ifindex(n);
-  uint32_t port_id = tap_man->get_port_id(ifindex);
+  struct rtnl_link *link = nl->get_link_by_ifindex(ifindex);
+
+  if (link == nullptr)
+    return -EINVAL;
+
+  uint32_t port_id = nl->get_port_id(link);
 
   if (port_id == 0) { // XXX FIXME check for bridged interface
     LOG(ERROR) << __FUNCTION__ << ": invalid port_id=" << port_id;
     return -EINVAL;
   }
-
-  struct rtnl_link *link = nl->get_link_by_ifindex(ifindex);
-
-  if (link == nullptr)
-    return -EINVAL;
 
   addr = rtnl_link_get_addr(link);
   rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(addr);
@@ -266,7 +267,7 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n,
   link = nullptr;
 
   // FIXME XXX is this still needed?
-  rv = vlan->add_vlan(ifindex, vid, tagged);
+  rv = vlan->add_vlan(port_id, vid, tagged);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to setup vid ingress vid=" << vid
                << "on link " << OBJ_CAST(link);

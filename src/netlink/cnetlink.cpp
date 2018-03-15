@@ -723,7 +723,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   } break;
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
-    int ifindex = rtnl_link_get_link(link);
+    int ifindex = get_port_id(link);
     uint16_t vid = rtnl_link_vlan_get_id(link);
     vlan->add_vlan(ifindex, vid, true);
   } break;
@@ -846,7 +846,12 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
     return;
   }
 
+  rtnl_link *l2 = get_link_by_ifindex(ifindex);
   rtnl_link *l = get_link(ifindex, AF_UNSPEC);
+
+  LOG(INFO) << __FUNCTION__ << ": l: " << OBJ_CAST(l);
+  LOG(INFO) << __FUNCTION__ << ": l2: " << OBJ_CAST(l2);
+
   if (l == nullptr) {
     LOG(ERROR) << __FUNCTION__
                << ": unknown link ifindex=" << rtnl_neigh_get_ifindex(neigh)

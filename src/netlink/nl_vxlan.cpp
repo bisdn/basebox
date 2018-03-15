@@ -610,16 +610,6 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
       return 0;
     }
 
-    if (nl_addr_iszero(neigh_mac)) {
-      // XXX FIXME first or additional endpoint
-      // auto dst = rtnl_neigh_get_dst(neigh);
-      // XXX FIXME setup BUM FRAMES here
-
-      VLOG(1) << __FUNCTION__ << ": ignored " << OBJ_CAST(neigh) << " at "
-              << OBJ_CAST(l);
-      return 0;
-    }
-
     LOG(INFO) << __FUNCTION__ << ": add neigh " << OBJ_CAST(neigh)
               << " on vxlan interface " << OBJ_CAST(l);
 
@@ -697,19 +687,44 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *l) {
     LOG(INFO) << __FUNCTION__ << ": XXXX remote_ipv4=" << std::hex
               << std::showbase << remote_ipv4;
 
+    tunnel_id = v2t_it->second;
     // use endpoint_id to get lport
     auto ep = endpoint_port(local_ipv4, remote_ipv4, dst_port);
     auto ep_it = endpoint_id.equal_range(ep);
 
     for (auto it = ep_it.first; it != ep_it.second; ++it) {
       if (it->first == ep) {
-        VLOG(1) << __FUNCTION__
-                << ": found an endpoint_port port_id=" << it->second;
+        VLOG(1) << __FUNCTION__ << ": found an port_id=" << it->second
+                << " for endpoint TODO print ep";
         lport = it->second;
       }
     }
 
-    tunnel_id = v2t_it->second;
+    if (nl_addr_iszero(neigh_mac)) {
+      // first or additional endpoint
+      // XXX FIXME setup BUM FRAMES here as well?
+
+      if (lport == 0) {
+        // setup tmp remote to pass to create remote
+        uint32_t tmp_remote = htonl(remote_ipv4);
+        std::unique_ptr<nl_addr, void (*)(nl_addr *)> addr(
+            nl_addr_build(AF_INET, &tmp_remote, sizeof(tmp_remote)),
+            &nl_addr_put);
+
+        LOG(INFO) << __FUNCTION__
+                  << ": create new enpoint with remote_ipv4=" << addr.get();
+
+        rv = create_remote(l, std::move(addr), tunnel_id);
+      } else {
+        // attach vni to existing remote
+        rv = sw->tunnel_port_tenant_add(lport, tunnel_id);
+      }
+
+      VLOG(1) << __FUNCTION__ << ": ignored " << OBJ_CAST(neigh) << " at "
+              << OBJ_CAST(l);
+      return rv;
+    }
+
   } break;
     /* find according access port */
   case LT_TUN: {

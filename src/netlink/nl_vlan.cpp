@@ -13,9 +13,10 @@ nl_vlan::nl_vlan(std::shared_ptr<tap_manager> tap_man, cnetlink *nl)
 int nl_vlan::add_vlan(int ifindex, uint16_t vid, bool tagged) {
   assert(swi);
 
+  VLOG(2) << __FUNCTION__ << ": add vid=" << vid << " tagged=" << tagged;
   // XXX FIXME add vlan range check
 
-  uint32_t port_id = tap_man->get_port_id(ifindex);
+  uint32_t port_id = ifindex; // tap_man->get_port_id(ifindex);
 
   if (port_id == 0) {
     VLOG(1) << __FUNCTION__ << ": unknown port with ifindex=" << ifindex;
