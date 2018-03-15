@@ -13,20 +13,27 @@ dnf -y copr enable bisdn/baseboxd
 dnf -y install baseboxd
 ```
 
-### RHEL
-
 Copr repos are provided at https://copr.fedorainfracloud.org/coprs/bisdn/
+The "-testing" repos contain the latest builds for testing purposes and might not be as stable as the release versions.
+
+### Vagrant
+
+A Vagrant file is included that let's you create a VM with all dependencies installed. This is an easy way to build baseboxd without having to worry about libraries.
+More information how to use the Vagrant VM can be found [here] (https://www.vagrantup.com/).
 
 ### Other distros
 
 Currently only intallation from source is supported. To build baseboxd you need
 the following dependencies installed:
 
-* [libnl3](https://github.com/thom311/libnl) (>= 3.2.28)
-* [rofl-common](https://github.com/bisdn/rofl-common) (>= 0.11)
-* [rofl-ofdpa](https://github.com/bisdn/rofl-ofdpa) (>= 0.8)
+* [libnl3](https://github.com/thom311/libnl) (>= 3.2.29)
+* [rofl-common](https://github.com/bisdn/rofl-common) (>= 0.12.1)
+* [rofl-ofdpa](https://github.com/bisdn/rofl-ofdpa) (>= 0.9)
 * [gflags](https://github.com/gflags/gflags)
 * [glog](https://github.com/google/glog) (>= 0.3.3)
+* [protobuf](https://github.com/google/protobuf) (>= 3.4.0)
+* [libgrpc](https://github.com/grpc/grpc) (>=4.0.0)
+* [grpc cpp plugin] (https://github.com/grpc/grpc/blob/master/examples/cpp/cpptutorial.md)
 
 Then you can install baseboxd:
 
