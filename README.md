@@ -33,7 +33,7 @@ the following dependencies installed:
 * [glog](https://github.com/google/glog) (>= 0.3.3)
 * [protobuf](https://github.com/google/protobuf) (>= 3.4.0)
 * [libgrpc](https://github.com/grpc/grpc) (>=4.0.0)
-* [grpc cpp plugin] (https://github.com/grpc/grpc/blob/master/examples/cpp/cpptutorial.md)
+* [grpc cpp plugin](https://github.com/grpc/grpc/blob/master/examples/cpp/cpptutorial.md)
 
 Then you can install baseboxd:
 
