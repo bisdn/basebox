@@ -70,9 +70,11 @@ void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
       LOG(ERROR) << __FUNCTION__
                  << ": EAGAIN XXX not implemented packet is dropped";
       std::free(pkt);
+      break;
     default:
       LOG(ERROR) << __FUNCTION__ << ": unknown error occured";
       std::free(pkt);
+      break;
     }
   }
 }
