@@ -16,7 +16,10 @@ static struct nl_dump_params p = {
     buf.capacity(), 0, 0, 0};
 
 std::ostream &operator<<(std::ostream &stream, const struct nl_addr *addr) {
-  assert(addr);
+  if (addr == nullptr) {
+    stream << "<nullptr>";
+    return stream;
+  }
 
   if (VLOG_IS_ON(3)) {
     stream << "(obj=" << static_cast<const void *>(addr) << ") ";
@@ -29,7 +32,10 @@ std::ostream &operator<<(std::ostream &stream, const struct nl_addr *addr) {
 }
 
 std::ostream &operator<<(std::ostream &stream, struct nl_object *n) {
-  assert(n);
+  if (n == nullptr) {
+    stream << "<nullptr>";
+    return stream;
+  }
 
   if (VLOG_IS_ON(3)) {
     stream << "(obj=" << static_cast<const void *>(n) << ") ";
@@ -42,7 +48,10 @@ std::ostream &operator<<(std::ostream &stream, struct nl_object *n) {
 }
 
 std::ostream &operator<<(std::ostream &stream, struct rtnl_nexthop *nh) {
-  assert(nh);
+  if (nh == nullptr) {
+    stream << "<nullptr>";
+    return stream;
+  }
 
   if (VLOG_IS_ON(3)) {
     stream << "(obj=" << static_cast<const void *>(nh) << ") ";
