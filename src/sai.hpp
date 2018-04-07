@@ -53,6 +53,13 @@ public:
   virtual int
   l3_unicast_host_remove(const rofl::caddress_in4 &ipv4_dst) noexcept = 0;
 
+  virtual int l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
+                                   const rofl::caddress_in4 &mask,
+                                   uint32_t l3_interface) noexcept = 0;
+  virtual int
+  l3_unicast_route_remove(const rofl::caddress_in4 &ipv4_dst,
+                          const rofl::caddress_in4 &mask) noexcept = 0;
+
   virtual int ingress_port_vlan_accept_all(uint32_t port) noexcept = 0;
   virtual int ingress_port_vlan_drop_accept_all(uint32_t port) noexcept = 0;
   virtual int ingress_port_vlan_add(uint32_t port, uint16_t vid,
