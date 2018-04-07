@@ -41,6 +41,8 @@ sources = files('''
   src/netlink/tap_manager.hpp
   src/of-dpa/controller.cpp
   src/of-dpa/controller.hpp
+  src/of-dpa/ofdpa_client.cpp
+  src/of-dpa/ofdpa_client.hpp
   src/of-dpa/ofdpa_datatypes.h
   src/sai.hpp
   src/utils/rofl-utils.hpp
@@ -128,12 +130,16 @@ grpc_gen = generator(protoc,
     '@INPUT@'])
 
 # generate sources and files
-src_pb = protoc_gen.process('src/grpc/proto/common/empty.proto',
+src_pb = protoc_gen.process(
+  'src/grpc/proto/api/ofdpa.proto',
+  'src/grpc/proto/common/empty.proto',
   'src/grpc/proto/common/openconfig-interfaces.proto',
   'src/grpc/proto/statistics/statistics-service.proto',
   preserve_path_from : meson.current_source_dir()+'/src/grpc/proto')
 
-src_grpc = grpc_gen.process('src/grpc/proto/statistics/statistics-service.proto',
+src_grpc = grpc_gen.process(
+  'src/grpc/proto/api/ofdpa.proto',
+  'src/grpc/proto/statistics/statistics-service.proto',
   preserve_path_from : meson.current_source_dir()+'/src/grpc/proto')
 
 version_h = vcs_tag(input: 'src/version.h.in',

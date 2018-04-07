@@ -39,6 +39,9 @@ public:
   virtual int lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept = 0;
   virtual int lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept = 0;
 
+  virtual int overlay_tunnel_add(uint32_t tunnel_id) noexcept = 0;
+  virtual int overlay_tunnel_remove(uint32_t tunnel_id) noexcept = 0;
+
   virtual int l2_addr_remove_all_in_vlan(uint32_t port,
                                          uint16_t vid) noexcept = 0;
   virtual int l2_addr_add(uint32_t port, uint16_t vid,
@@ -46,6 +49,12 @@ public:
                           bool permanent) noexcept = 0;
   virtual int l2_addr_remove(uint32_t port, uint16_t vid,
                              const rofl::caddress_ll &mac) noexcept = 0;
+
+  virtual int l2_overlay_addr_add(uint32_t lport, uint32_t tunnel_id,
+                                  const rofl::cmacaddr &mac,
+                                  bool permanent) noexcept = 0;
+  virtual int l2_overlay_addr_remove(uint32_t tunnel_id, uint32_t lport_id,
+                                     const rofl::cmacaddr &mac) noexcept = 0;
 
   virtual int l3_termination_add(uint32_t sport, uint16_t vid,
                                  const rofl::caddress_ll &dmac) noexcept = 0;
@@ -105,6 +114,12 @@ public:
   virtual int egress_port_vlan_add(uint32_t port, uint16_t vid,
                                    bool untagged) noexcept = 0;
   virtual int egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept = 0;
+
+  virtual int add_l2_overlay_flood(uint32_t tunnel_id,
+                                   uint32_t lport_id) noexcept = 0;
+  virtual int del_l2_overlay_flood(uint32_t tunnel_id,
+                                   uint32_t lport_id) noexcept = 0;
+
   virtual int egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
                                           bool untagged) noexcept = 0;
   virtual int egress_bridge_port_vlan_remove(uint32_t port,
@@ -118,6 +133,35 @@ public:
   virtual int get_statistics(uint64_t port_no, uint32_t number_of_counters,
                              const sai_port_stat_t *counter_ids,
                              uint64_t *counters) noexcept = 0;
+
+  virtual int tunnel_tenant_create(uint32_t tunnel_id,
+                                   uint32_t vni) noexcept = 0;
+  virtual int tunnel_tenant_delete(uint32_t tunnel_id) noexcept = 0;
+
+  virtual int tunnel_next_hop_create(uint32_t next_hop_id, uint64_t src_mac,
+                                     uint64_t dst_mac, uint32_t physical_port,
+                                     uint16_t vlan_id) noexcept = 0;
+  virtual int tunnel_next_hop_modify(uint32_t next_hop_id, uint64_t src_mac,
+                                     uint64_t dst_mac, uint32_t physical_port,
+                                     uint16_t vlan_id) noexcept = 0;
+  virtual int tunnel_next_hop_delete(uint32_t next_hop_id) noexcept = 0;
+
+  virtual int tunnel_access_port_create(uint32_t port_id,
+                                        const std::string &port_name,
+                                        uint32_t physical_port,
+                                        uint16_t vlan_id,
+                                        bool untagged) noexcept = 0;
+  virtual int tunnel_enpoint_create(
+      uint32_t port_id, const std::string &port_name, uint32_t remote_ipv4,
+      uint32_t local_ipv4, uint32_t ttl, uint32_t next_hop_id,
+      uint32_t terminator_udp_dst_port, uint32_t initiator_udp_dst_port,
+      uint32_t udp_src_port_if_no_entropy, bool use_entropy) noexcept = 0;
+  virtual int tunnel_port_delete(uint32_t port_id) noexcept = 0;
+
+  virtual int tunnel_port_tenant_add(uint32_t port_id,
+                                     uint32_t tunnel_id) noexcept = 0;
+  virtual int tunnel_port_tenant_remove(uint32_t port_id,
+                                        uint32_t tunnel_id) noexcept = 0;
 };
 
 class nbi {
@@ -127,10 +171,12 @@ public:
     PORT_EVENT_ADD,
     PORT_EVENT_DEL,
   };
+
   enum port_status {
     PORT_STATUS_LOWER_DOWN = 0x01,
     PORT_STATUS_ADMIN_DOWN = 0x02,
   };
+
   struct port_notification_data {
     enum port_event ev;
     uint32_t port_id;

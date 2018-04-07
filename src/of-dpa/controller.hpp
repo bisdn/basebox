@@ -9,6 +9,7 @@
 
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <string>
@@ -22,6 +23,9 @@
 #include "sai.hpp"
 
 namespace basebox {
+
+// forward declarations
+class ofdpa_client;
 
 class eBaseBoxBase : public std::runtime_error {
 public:
@@ -51,9 +55,11 @@ class controller : public rofl::crofbase,
 public:
   controller(std::unique_ptr<nbi> nb,
              const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
-                 rofl::openflow::cofhello_elem_versionbitmap())
+                 rofl::openflow::cofhello_elem_versionbitmap(),
+             uint16_t ofdpa_grpc_port = 50051)
       : nb(std::move(nb)), bb_thread(1), egress_interface_id(1),
-        default_idle_timeout(0), connected(false) {
+        default_idle_timeout(0), connected(false), ofdpa(nullptr),
+        ofdpa_grpc_port(ofdpa_grpc_port) {
     this->nb->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
     bb_thread.start();
@@ -133,11 +139,20 @@ public:
   int lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept override;
   int lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept override;
 
+  int overlay_tunnel_add(uint32_t tunnel_id) noexcept override;
+  int overlay_tunnel_remove(uint32_t tunnel_id) noexcept override;
+
   int l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept override;
   int l2_addr_add(uint32_t port, uint16_t vid, const rofl::caddress_ll &mac,
                   bool filtered, bool permanent) noexcept override;
   int l2_addr_remove(uint32_t port, uint16_t vid,
                      const rofl::caddress_ll &mac) noexcept override;
+
+  int l2_overlay_addr_add(uint32_t lport, uint32_t tunnel_id,
+                          const rofl::cmacaddr &mac,
+                          bool permanent) noexcept override;
+  int l2_overlay_addr_remove(uint32_t tunnel_id, uint32_t lport_id,
+                             const rofl::cmacaddr &mac) noexcept override;
 
   int l3_termination_add(uint32_t sport, uint16_t vid,
                          const rofl::caddress_ll &dmac) noexcept override;
@@ -194,6 +209,11 @@ public:
                            bool untagged) noexcept override;
   int egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept override;
 
+  int add_l2_overlay_flood(uint32_t tunnel_id,
+                           uint32_t lport_id) noexcept override;
+  int del_l2_overlay_flood(uint32_t tunnel_id,
+                           uint32_t lport_id) noexcept override;
+
   int egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
                                   bool untagged) noexcept override;
   int egress_bridge_port_vlan_remove(uint32_t port,
@@ -210,12 +230,48 @@ public:
 
   int subscribe_to(enum swi_flags flags) noexcept override;
 
+  /* tunnel */
+  int tunnel_tenant_create(uint32_t tunnel_id, uint32_t vni) noexcept override;
+  int tunnel_tenant_delete(uint32_t tunnel_id) noexcept override;
+
+  int tunnel_next_hop_create(uint32_t next_hop_id, uint64_t src_mac,
+                             uint64_t dst_mac, uint32_t physical_port,
+                             uint16_t vlan_id) noexcept override;
+  int tunnel_next_hop_modify(uint32_t next_hop_id, uint64_t src_mac,
+                             uint64_t dst_mac, uint32_t physical_port,
+                             uint16_t vlan_id) noexcept override;
+  int tunnel_next_hop_delete(uint32_t next_hop_id) noexcept override;
+
+  int tunnel_access_port_create(uint32_t port_id, const std::string &port_name,
+                                uint32_t physical_port, uint16_t vlan_id,
+                                bool untagged) noexcept override;
+  int tunnel_enpoint_create(uint32_t port_id, const std::string &port_name,
+                            uint32_t remote_ipv4, uint32_t local_ipv4,
+                            uint32_t ttl, uint32_t next_hop_id,
+                            uint32_t terminator_udp_dst_port,
+                            uint32_t initiator_udp_dst_port,
+                            uint32_t udp_src_port_if_no_entropy,
+                            bool use_entropy) noexcept override;
+  int tunnel_port_delete(uint32_t port_id) noexcept override;
+
+  int tunnel_port_tenant_add(uint32_t lport_id,
+                             uint32_t tunnel_id) noexcept override;
+  int tunnel_port_tenant_remove(uint32_t lport_id,
+                                uint32_t tunnel_id) noexcept override;
+
+  /* print this */
+  friend std::ostream &operator<<(std::ostream &os, const controller &box) {
+    os << "<controller>" << std::endl;
+    return os;
+  }
+
 private:
   rofl::cdptid dptid;
   rofl::openflow::rofl_ofdpa_fm_driver fm_driver;
   std::mutex l2_domain_mutex;
   std::map<uint16_t, std::set<uint32_t>> l2_domain;
   std::map<uint16_t, std::set<uint32_t>> lag;
+  std::map<uint16_t, std::set<uint32_t>> tunnel_dlf_flood;
   std::mutex conn_mutex;
   rofl::cthread bb_thread;
   std::mutex stats_mutex;
@@ -224,6 +280,8 @@ private:
   std::set<uint32_t> freed_egress_interfaces_ids;
   uint16_t default_idle_timeout;
   bool connected;
+  std::shared_ptr<ofdpa_client> ofdpa;
+  uint16_t ofdpa_grpc_port;
 
   enum timer_t {
     /* handle_timeout will be called as well from crofbase, hence we need some
