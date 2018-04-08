@@ -13,9 +13,8 @@
 #include <netlink/cache.h>
 #include <rofl/common/cthread.hpp>
 
-#include "netlink/nl_bridge.hpp"
-#include "netlink/nl_l3.hpp"
-#include "netlink/nl_obj.hpp"
+#include "nl_bridge.hpp"
+#include "nl_obj.hpp"
 #include "sai.hpp"
 
 namespace basebox {
@@ -34,6 +33,7 @@ public:
 };
 
 // forward declaration
+class nl_l3;
 class tap_manager;
 
 class cnetlink final : public rofl::cthread_env {
@@ -73,7 +73,7 @@ class cnetlink final : public rofl::cthread_env {
   bool rfd_scheduled;
   std::deque<nl_obj> nl_objs;
 
-  nl_l3 l3;
+  std::shared_ptr<nl_l3> l3;
 
   void route_addr_apply(const nl_obj &obj);
   void route_link_apply(const nl_obj &obj);
