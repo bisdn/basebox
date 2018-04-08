@@ -38,10 +38,6 @@ class tap_manager;
 
 class cnetlink final : public rofl::cthread_env {
 
-  // non copyable
-  cnetlink(const cnetlink &other) = delete;
-  cnetlink &operator=(const cnetlink &) = delete;
-
   enum nl_cache_t {
     NL_ADDR_CACHE,
     NL_LINK_CACHE,
@@ -49,6 +45,43 @@ class cnetlink final : public rofl::cthread_env {
     NL_ROUTE_CACHE,
     NL_MAX_CACHE,
   };
+
+public:
+  cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man);
+  ~cnetlink() override;
+
+  /**
+   * rtnl_link_put has to be called
+   */
+  struct rtnl_link *get_link_by_ifindex(int ifindex) const;
+
+  void resend_state() noexcept;
+
+  void register_switch(switch_interface *) noexcept;
+  void unregister_switch(switch_interface *) noexcept;
+
+  void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
+
+  static void nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
+                       struct nl_object *new_obj, uint64_t diff, int action,
+                       void *data);
+
+  void start() {
+    if (running)
+      return;
+    running = true;
+    thread.wakeup();
+  }
+
+  void stop() {
+    running = false;
+    thread.wakeup();
+  }
+
+private:
+  // non copyable
+  cnetlink(const cnetlink &other) = delete;
+  cnetlink &operator=(const cnetlink &) = delete;
 
   enum timer {
     NL_TIMER_RESEND_STATE,
@@ -106,35 +139,6 @@ class cnetlink final : public rofl::cthread_env {
   void neigh_ll_created(rtnl_neigh *neigh) noexcept;
   void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
   void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
-
-public:
-  cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man);
-  ~cnetlink() override;
-
-  struct rtnl_link *get_link_by_ifindex(int ifindex) const;
-
-  void resend_state() noexcept;
-
-  void register_switch(switch_interface *) noexcept;
-  void unregister_switch(switch_interface *) noexcept;
-
-  void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
-
-  static void nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
-                       struct nl_object *new_obj, uint64_t diff, int action,
-                       void *data);
-
-  void start() {
-    if (running)
-      return;
-    running = true;
-    thread.wakeup();
-  }
-
-  void stop() {
-    running = false;
-    thread.wakeup();
-  }
 };
 
 } // end of namespace basebox
