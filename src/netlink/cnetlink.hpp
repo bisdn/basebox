@@ -54,6 +54,7 @@ public:
    * rtnl_link_put has to be called
    */
   struct rtnl_link *get_link_by_ifindex(int ifindex) const;
+  struct rtnl_link *get_link(int ifindex, int family) const;
 
   void resend_state() noexcept;
 
