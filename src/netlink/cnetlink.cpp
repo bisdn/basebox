@@ -16,31 +16,17 @@
 #include <netlink/route/route.h>
 
 #include "cnetlink.hpp"
+#include "netlink-utils.hpp"
 #include "nl_output.hpp"
 #include "tap_manager.hpp"
 
-#define LINK_CAST(obj) reinterpret_cast<struct rtnl_link *>(obj)
-#define NEIGH_CAST(obj) reinterpret_cast<struct rtnl_neigh *>(obj)
-#define ROUTE_CAST(obj) reinterpret_cast<struct rtnl_route *>(obj)
-#define ADDR_CAST(obj) reinterpret_cast<struct rtnl_addr *>(obj)
-
-#define lt_names "unknown", "unsupported", "bridge", "tun"
 
 namespace basebox {
 
 cnetlink::cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man)
     : swi(swi), thread(this), caches(NL_MAX_CACHE, nullptr), tap_man(tap_man),
       bridge(nullptr), nl_proc_max(10), running(false), rfd_scheduled(false),
-      l3(swi, tap_man, this), lt2names{lt_names} {
-
-  assert(lt2names.size() == LT_MAX);
-
-  enum link_type lt = LT_UNKNOWN;
-  for (const auto &n : lt2names) {
-    assert(lt != LT_MAX);
-    kind2lt.emplace(n, lt);
-    lt = static_cast<enum link_type>(lt + 1);
-  }
+      l3(swi, tap_man, this) {
 
   sock = nl_socket_alloc();
   if (NULL == sock) {
@@ -401,20 +387,6 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
                << obj.get_action();
     break;
   }
-}
-
-enum cnetlink::link_type cnetlink::kind_to_link_type(const char *type) const
-    noexcept {
-  if (type == nullptr)
-    return LT_UNKNOWN;
-
-  auto it = kind2lt.find(std::string(type)); // XXX string_view
-
-  if (it != kind2lt.end())
-    return it->second;
-
-  VLOG(1) << __FUNCTION__ << ": type=" << type << " not supported";
-  return LT_UNSUPPORTED;
 }
 
 void cnetlink::route_link_apply(const nl_obj &obj) {

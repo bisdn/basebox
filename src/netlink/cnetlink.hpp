@@ -55,14 +55,6 @@ class cnetlink final : public rofl::cthread_env {
     NL_TIMER_RESYNC,
   };
 
-  enum link_type {
-    LT_UNKNOWN = 0,
-    LT_UNSUPPORTED,
-    LT_BRIDGE,
-    LT_TUN,
-    LT_MAX /* must be last */
-  };
-
   switch_interface *swi;
 
   rofl::cthread thread;
@@ -82,9 +74,6 @@ class cnetlink final : public rofl::cthread_env {
   std::deque<nl_obj> nl_objs;
 
   nl_l3 l3;
-
-  std::map<std::string, enum link_type> kind2lt;
-  std::vector<std::string> lt2names;
 
   void route_addr_apply(const nl_obj &obj);
   void route_link_apply(const nl_obj &obj);
@@ -117,8 +106,6 @@ class cnetlink final : public rofl::cthread_env {
   void neigh_ll_created(rtnl_neigh *neigh) noexcept;
   void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
   void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
-
-  enum link_type kind_to_link_type(const char *type) const noexcept;
 
 public:
   cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man);

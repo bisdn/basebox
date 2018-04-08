@@ -42,6 +42,8 @@ SOURCES_NETLINK = \
 	netlink/ctapdev.hpp \
 	netlink/nbi_impl.cpp \
 	netlink/nbi_impl.hpp \
+	netlink/netlink-utils.cpp \
+	netlink/netlink-utils.hpp \
 	netlink/nl_bridge.cpp \
 	netlink/nl_bridge.hpp \
 	netlink/nl_l3.cpp \
