@@ -78,9 +78,8 @@ std::unordered_map<
     l3_interface>
     l3_interface_mapping;
 
-nl_l3::nl_l3(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
-             cnetlink *nl)
-    : sw(sw), tap_man(tap_man), nl(nl) {}
+nl_l3::nl_l3(std::shared_ptr<tap_manager> tap_man, cnetlink *nl)
+    : sw(nullptr), tap_man(tap_man), nl(nl) {}
 
 rofl::caddress_ll libnl_lladdr_2_rofl(const struct nl_addr *lladdr) {
   // XXX check for family

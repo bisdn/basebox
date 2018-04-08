@@ -47,7 +47,7 @@ class cnetlink final : public rofl::cthread_env {
   };
 
 public:
-  cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man);
+  cnetlink(std::shared_ptr<tap_manager> tap_man);
   ~cnetlink() override;
 
   /**

@@ -24,10 +24,10 @@
 
 namespace basebox {
 
-cnetlink::cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man)
-    : swi(swi), thread(this), caches(NL_MAX_CACHE, nullptr), tap_man(tap_man),
-      bridge(nullptr), nl_proc_max(10), running(false), rfd_scheduled(false),
-      l3(new nl_l3(swi, tap_man, this)) {
+cnetlink::cnetlink(std::shared_ptr<tap_manager> tap_man)
+    : swi(nullptr), thread(this), caches(NL_MAX_CACHE, nullptr),
+      tap_man(tap_man), bridge(nullptr), nl_proc_max(10), running(false),
+      rfd_scheduled(false), l3(new nl_l3(tap_man, this)) {
 
   sock = nl_socket_alloc();
   if (NULL == sock) {
