@@ -4,12 +4,15 @@
 #include <glog/logging.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
+#include <netlink/route/link/vlan.h>
 #include <netlink/route/neighbour.h>
 
 #include "cnetlink.hpp"
 #include "nl_output.hpp"
 #include "nl_hashing.hpp"
 #include "nl_l3.hpp"
+#include "nl_output.hpp"
+#include "nl_vlan.hpp"
 #include "sai.hpp"
 #include "tap_manager.hpp"
 
@@ -42,7 +45,8 @@ std::unordered_map<
     l3_interface>
     l3_interface_mapping;
 
-nl_l3::nl_l3(cnetlink *nl) : sw(nullptr), nl(nl) {}
+nl_l3::nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl)
+    : sw(nullptr), vlan(vlan), nl(nl) {}
 
 rofl::caddress_ll libnl_lladdr_2_rofl(const struct nl_addr *lladdr) {
   // XXX check for family

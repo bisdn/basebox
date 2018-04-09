@@ -22,6 +22,7 @@ enum link_type {
   LT_UNSUPPORTED,
   LT_BRIDGE,
   LT_TUN,
+  LT_VLAN,
   LT_MAX /* must be last */
 };
 

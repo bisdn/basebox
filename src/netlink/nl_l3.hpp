@@ -14,12 +14,13 @@ struct nl_addr;
 namespace basebox {
 
 class cnetlink;
+class nl_vlan;
 class switch_interface;
 class tap_manager;
 
 class nl_l3 {
 public:
-  nl_l3(cnetlink *nl);
+  nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl);
   ~nl_l3() {}
 
   int add_l3_termination(struct rtnl_addr *a);
@@ -38,6 +39,7 @@ public:
 private:
   switch_interface *sw;
   std::shared_ptr<tap_manager> tap_man;
+  std::shared_ptr<nl_vlan> vlan;
   cnetlink *nl;
 };
 

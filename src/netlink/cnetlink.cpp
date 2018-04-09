@@ -13,6 +13,7 @@
 #include <netlink/object.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
+#include <netlink/route/link/vlan.h>
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
 
@@ -22,13 +23,14 @@
 #include "tap_manager.hpp"
 
 #include "nl_l3.hpp"
+#include "nl_vlan.hpp"
 
 namespace basebox {
 
 cnetlink::cnetlink()
     : swi(nullptr), thread(this), caches(NL_MAX_CACHE, nullptr),
       bridge(nullptr), nl_proc_max(10), running(false), rfd_scheduled(false),
-      l3(new nl_l3(this)) {
+      vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)) {
 
   sock_tx = nl_socket_alloc();
   if (sock_tx == nullptr) {
@@ -184,6 +186,19 @@ struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
                           &_link);
 
   return _link;
+}
+
+int cnetlink::get_port_id(rtnl_link *l) const {
+  int port_id;
+
+  if (rtnl_link_is_vlan(l)) {
+    int ifindex = rtnl_link_get_link(l);
+    port_id = tap_man->get_port_id(ifindex);
+  } else {
+    port_id = tap_man->get_port_id(rtnl_link_get_ifindex(l));
+  }
+
+  return port_id;
 }
 
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
@@ -719,6 +734,11 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     std::string name(rtnl_link_get_name(link));
     tap_man->tap_dev_ready(ifindex, name);
   } break;
+  case LT_VLAN: {
+    VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
+    uint16_t vid = rtnl_link_vlan_get_id(link);
+    vlan->add_vlan(link, vid, true);
+  } break;
   default:
     LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
                  << " link:" << link;
@@ -773,6 +793,9 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       break;
     }
     break;
+  case LT_VLAN: {
+    VLOG(1) << __FUNCTION__ << ": ignoring vlan interface update";
+  } break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt_old;
     break;
@@ -810,6 +833,10 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
       delete bridge;
       bridge = nullptr;
     }
+    break;
+  case LT_VLAN:
+    VLOG(1) << __FUNCTION__ << ": removed vlan interface " << OBJ_CAST(link);
+    vlan->remove_vlan(link, rtnl_link_vlan_get_id(link), true);
     break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt;
@@ -897,6 +924,7 @@ void cnetlink::register_switch(switch_interface *swi) noexcept {
   assert(swi);
   this->swi = swi;
   l3->register_switch_interface(swi);
+  vlan->register_switch_interface(swi);
 }
 
 void cnetlink::unregister_switch(switch_interface *swi) noexcept {
