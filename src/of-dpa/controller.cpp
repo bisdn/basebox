@@ -10,7 +10,7 @@
 
 #include "controller.hpp"
 #include "ofdpa_datatypes.h"
-#include "utils.hpp"
+#include "utils/utils.hpp"
 
 namespace basebox {
 
@@ -19,8 +19,8 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
   std::lock_guard<std::mutex> lock(conn_mutex);
   dptid = dpt.get_dptid();
 
-  LOG(INFO) << __FUNCTION__ << ": opening connection to dptid=0x" << std::hex
-            << dptid << std::dec;
+  LOG(INFO) << __FUNCTION__ << ": opening connection to dptid=" << std::showbase
+            << std::hex << dptid << ", n_tables=" << dpt.get_n_tables();
 
   if (rofl::openflow13::OFP_VERSION != dpt.get_version()) {
     LOG(ERROR) << __FUNCTION__
@@ -699,8 +699,9 @@ int controller::l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
       l3_interface_id = fm_driver.group_id_l3_unicast(l3_interface_id);
 
     dpt.send_flow_mod_message(
-        rofl::cauxid(0), fm_driver.enable_ipv4_unicast_host(
-                             dpt.get_version(), ipv4_dst, l3_interface_id));
+        rofl::cauxid(0),
+        fm_driver.enable_ipv4_unicast_lpm(dpt.get_version(), ipv4_dst, mask,
+                                          l3_interface_id));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;

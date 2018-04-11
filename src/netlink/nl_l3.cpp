@@ -1,3 +1,5 @@
+#include <linux/if.h>
+#include <memory>
 #include <tuple>
 #include <unordered_map>
 
@@ -9,13 +11,13 @@
 #include <netlink/route/route.h>
 
 #include "cnetlink.hpp"
-#include "nl_output.hpp"
 #include "nl_hashing.hpp"
 #include "nl_l3.hpp"
 #include "nl_output.hpp"
 #include "nl_vlan.hpp"
 #include "sai.hpp"
 #include "tap_manager.hpp"
+#include "utils/rofl-utils.hpp"
 
 namespace std {
 
@@ -41,7 +43,7 @@ public:
 };
 
 // <port_id, vid, src_mac, dst_mac>
-std::unordered_map<
+std::unordered_multimap<
     std::tuple<int, uint16_t, rofl::caddress_ll, rofl::caddress_ll>,
     l3_interface>
     l3_interface_mapping;
@@ -62,25 +64,15 @@ rofl::caddress_in4 libnl_in4addr_2_rofl(struct nl_addr *addr) {
   return rofl::caddress_in4(&sin, salen);
 }
 
-int nl_l3::add_l3_termination(struct rtnl_addr *a) {
+// XXX separate function to make it possible to add lo addresses more directly
+int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   assert(sw);
   assert(a);
 
-  sw->subscribe_to(switch_interface::SWIF_ARP);
-
-  int rv = 0;
-  uint16_t vid = 1;
+  int rv;
 
   if (a == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": addr can't be null";
-    return -EINVAL;
-  }
-
-  int ifindex = rtnl_addr_get_ifindex(a);
-  int port_id = tap_man->get_port_id(ifindex);
-
-  if (port_id == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0";
     return -EINVAL;
   }
 
@@ -90,38 +82,69 @@ int nl_l3::add_l3_termination(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  struct nl_addr *addr = rtnl_link_get_addr(link);
-  rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
+  bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
+  int ifindex = 0;
+  uint16_t vid = vlan->get_vid(link);
 
-  rv = sw->l3_termination_add(port_id, vid, mac);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup termination mac port_id=" << port_id
-               << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
-    return rv;
+  // XXX TODO split this into several functions
+  if (!is_loopback) {
+    ifindex = rtnl_addr_get_ifindex(a);
+    int port_id = nl->get_port_id(link);
+
+    if (port_id == 0) {
+      if (nl->is_bridge_interface(link)) {
+        LOG(INFO) << __FUNCTION__ << ": host on top of bridge";
+        port_id = 0;
+      } else {
+        LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0 for link "
+                   << OBJ_CAST(link);
+        return -EINVAL;
+      }
+    }
+
+    auto addr = rtnl_link_get_addr(link);
+    rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
+
+    rv = sw->l3_termination_add(port_id, vid, mac);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to setup termination mac port_id=" << port_id
+                 << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
+      return rv;
+    }
   }
 
   // get v4 dst (local v4 addr)
-  addr = rtnl_addr_get_local(a);
+  auto addr = rtnl_addr_get_local(a);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
+
   rv = sw->l3_unicast_host_add(ipv4_dst,
                                0); // TODO likely move this to separate entity
   if (rv < 0) {
     // TODO shall we remove the l3_termination mac?
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup l3 neigh port_id=" << port_id
-               << ", vid=" << vid << "; rv=" << rv;
+    LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr "
+               << OBJ_CAST(addr);
+  }
+
+  if (!is_loopback) {
+    assert(ifindex);
+    // add vlan
+    bool tagged = !!rtnl_link_is_vlan(link);
+    rv = vlan->add_vlan(link, vid, tagged);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
+                 << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+    }
   }
 
   return rv;
 }
 
-int nl_l3::del_l3_termination(struct rtnl_addr *a) {
+int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   assert(sw);
   assert(a);
 
   int rv = 0;
-  uint16_t vid = 1;
 
   if (a == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": addr can't be null";
@@ -131,11 +154,12 @@ int nl_l3::del_l3_termination(struct rtnl_addr *a) {
   struct nl_addr *addr = rtnl_addr_get_local(a);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
 
+  // XXX TODO remove vlan address
+
   rv = sw->l3_unicast_host_remove(ipv4_dst);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
-               << ": failed to remove l3 unicast host(local) vid=" << vid
-               << "; rv=" << rv;
+               << ": failed to remove l3 unicast host(local) rv=" << rv;
     return rv;
   }
 
@@ -155,6 +179,7 @@ int nl_l3::del_l3_termination(struct rtnl_addr *a) {
 
   addr = rtnl_link_get_addr(link);
   rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
+  uint16_t vid = vlan->get_vid(link);
 
   // XXX TODO don't do this in case more l3 addresses are on this link
   rv = sw->l3_termination_remove(port_id, vid, mac);
@@ -167,114 +192,104 @@ int nl_l3::del_l3_termination(struct rtnl_addr *a) {
   return rv;
 }
 
-int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
+int nl_l3::add_l3_unicast_host(const rofl::caddress_in4 &ipv4_dst,
+                               uint32_t l3_interface_id) const {
+  int rv = 0;
+  rv = sw->l3_unicast_host_add(ipv4_dst, l3_interface_id);
+
+  return rv;
+}
+
+int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n,
+                               uint32_t *l3_interface_id) {
   int rv;
-
   assert(n);
-
-  if (n == nullptr)
-    return -EINVAL;
-
-  LOG(INFO) << __FUNCTION__ << ": n=" << n;
-
   int state = rtnl_neigh_get_state(n);
+
   if (state == NUD_FAILED) {
     LOG(INFO) << __FUNCTION__ << ": neighbour not reachable state=failed";
     return -EINVAL;
   }
 
-  int vid = 1; // XXX TODO currently only on vid 1
-  assert(vid);
-  struct nl_addr *addr = rtnl_neigh_get_lladdr(n);
-  rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(addr);
+  struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
   int ifindex = rtnl_neigh_get_ifindex(n);
-  uint32_t port_id = tap_man->get_port_id(ifindex);
-
-  if (port_id == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid port_id=" << port_id;
-    return -EINVAL;
-  }
-
-  assert(nl);
-  struct rtnl_link *link = nl->get_link_by_ifindex(ifindex);
+  std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> link(
+      nl->get_link_by_ifindex(ifindex), &rtnl_link_put);
 
   if (link == nullptr)
     return -EINVAL;
 
-  addr = rtnl_link_get_addr(link);
-  rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(addr);
-  rtnl_link_put(link);
-  link = nullptr;
+  uint16_t vid = vlan->get_vid(link.get());
+  bool tagged = !!rtnl_link_is_vlan(link.get());
+  auto s_mac = rtnl_link_get_addr(link.get());
+
+  // XXX TODO is this still needed?
+  rv = vlan->add_vlan(link.get(), vid, tagged);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to setup vid ingress vid=" << vid
+               << " on link " << OBJ_CAST(link.get());
+    return rv;
+  }
+
+  rv = add_l3_egress(ifindex, vid, s_mac, d_mac, l3_interface_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to add l3 egress";
+  }
+
+  return rv;
+}
+
+int nl_l3::del_l3_neigh_egress(struct rtnl_neigh *n) {
+  assert(n);
+
+  auto d_mac = rtnl_neigh_get_lladdr(n);
+  int ifindex = rtnl_neigh_get_ifindex(n);
+  std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> link(
+      nl->get_link_by_ifindex(ifindex), &rtnl_link_put);
+
+  if (link == nullptr)
+    return -EINVAL;
+
+  uint16_t vid = vlan->get_vid(link.get());
+  // bool tagged = !!rtnl_link_is_vlan(link.get());
+  auto s_mac = rtnl_link_get_addr(link.get());
+
+  // XXX TODO del vlan
+
+  int rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to add l3 egress";
+  }
+
+  return rv;
+}
+
+int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
+  int rv;
+  uint32_t l3_interface_id = 0;
+  struct nl_addr *addr;
+
+  assert(n);
+  if (n == nullptr)
+    return -EINVAL;
+
+  rv = add_l3_neigh_egress(n, &l3_interface_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
+               << OBJ_CAST(n);
+    return rv;
+  }
 
   addr = rtnl_neigh_get_dst(n);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
 
-  // setup ingress interface
-  // XXX TODO this has to be handled by a different entity
-  rv = sw->ingress_port_vlan_add(port_id, 1, true);
+  rv = add_l3_unicast_host(ipv4_dst, l3_interface_id);
   if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup ingress vlan 1 (untagged) on port_id="
-               << port_id << "; rv=" << rv;
-    return rv;
+    LOG(ERROR) << __FUNCTION__ << ": add l3 unicast host failed for "
+               << OBJ_CAST(n);
   }
 
-  // setup egress interface
-  // XXX TODO this has to be handled by a different entity
-  rv = sw->egress_port_vlan_add(port_id, 1, true);
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup egress vlan 1 (untagged) on port_id="
-               << port_id << "; rv=" << rv;
-    (void)sw->ingress_port_vlan_remove(port_id, 1, true);
-    return rv;
-  }
-
-  // setup egress L3 Unicast group
-  uint32_t l3_interface_id = 0;
-  auto it = l3_interface_mapping.find(
-      std::make_tuple(port_id, vid, src_mac, dst_mac));
-
-  if (it == l3_interface_mapping.end()) {
-    rv = sw->l3_egress_create(port_id, vid, src_mac, dst_mac, &l3_interface_id);
-
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": failed to setup l3 egress port_id=" << port_id
-                 << ", vid=" << vid << ", src_mac=" << src_mac
-                 << ", dst_mac=" << dst_mac << "; rv=" << rv;
-      return rv;
-    }
-
-    auto rv = l3_interface_mapping.emplace(
-        std::make_pair(std::make_tuple(port_id, vid, src_mac, dst_mac),
-                       l3_interface(l3_interface_id)));
-
-    if (!rv.second) {
-      LOG(FATAL) << __FUNCTION__
-                 << ": failed to store l3_interface_id port_id=" << port_id
-                 << ", vid=" << vid << ", src_mac=" << src_mac
-                 << ", dst_mac=" << dst_mac;
-    }
-  } else {
-    assert(it->second.l3_interface_id);
-    l3_interface_id = it->second.l3_interface_id;
-    it->second.refcnt++;
-  }
-
-  // setup next hop
-  rv = sw->l3_unicast_host_add(ipv4_dst, l3_interface_id);
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup l3 neigh port_id=" << port_id
-               << ", vid=" << vid << ", l3_interface_id=" << l3_interface_id
-               << "; rv=" << rv;
-    return rv;
-  }
-
-  return 0;
+  return rv;
 }
 
 int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
@@ -296,6 +311,7 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
   }
 
   if (!state_changed) {
+    // TODO l2 changes are not covered here
     VLOG(2) << __FUNCTION__ << ": neighbour state not changed states are n_old="
             << rtnl_neigh_get_state(n_old)
             << " n_new=" << rtnl_neigh_get_state(n_new);
@@ -314,13 +330,15 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
     VLOG(2) << __FUNCTION__ << ": neighbour ll unreachable";
 
     int ifindex = rtnl_neigh_get_ifindex(n_old);
-    struct rtnl_link *link = nl->get_link_by_ifindex(ifindex);
-    struct nl_addr *addr;
+    std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)> link(
+        nl->get_link_by_ifindex(ifindex), rtnl_link_put);
 
-    if (link == nullptr)
+    if (link.get() == nullptr) {
+      LOG(ERROR) << __FUNCTION__ << ": link not found ifindex=" << ifindex;
       return -EINVAL;
+    }
 
-    addr = rtnl_neigh_get_dst(n_old);
+    struct nl_addr *addr = rtnl_neigh_get_dst(n_old);
     rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
 
     // delete next hop
@@ -333,11 +351,9 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
     }
 
     // delete from mapping
-    rv = del_l3_egress(ifindex, rtnl_link_get_addr(link),
+    uint16_t vid = vlan->get_vid(link.get());
+    rv = del_l3_egress(ifindex, vid, rtnl_link_get_addr(link.get()),
                        rtnl_neigh_get_lladdr(n_old));
-
-    rtnl_link_put(link);
-
   } else if (nl_addr_cmp(n_ll_old, n_ll_new)) {
     // XXX TODO ll addr changed
     LOG(WARNING) << __FUNCTION__ << ": neighbour ll changed (not implemented)";
@@ -374,24 +390,76 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
 
   // delete l3 unicast group (mac rewrite)
   int ifindex = rtnl_neigh_get_ifindex(n);
-  struct rtnl_link *link = nl->get_link_by_ifindex(ifindex);
+  std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)> link(
+      nl->get_link_by_ifindex(ifindex), rtnl_link_put);
 
-  if (link == nullptr)
+  if (!link)
     return -EINVAL;
 
-  struct nl_addr *s_mac = rtnl_link_get_addr(link);
+  struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
   struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
+  uint16_t vid = vlan->get_vid(link.get());
 
   if (s_mac && d_mac)
-    rv = del_l3_egress(ifindex, s_mac, d_mac);
+    rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
 
-  rtnl_link_put(link);
+  return rv;
+}
+
+int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
+                         const struct nl_addr *s_mac,
+                         const struct nl_addr *d_mac,
+                         uint32_t *l3_interface_id) {
+  assert(s_mac);
+  assert(d_mac);
+
+  int rv = -EINVAL;
+
+  // XXX TODO handle this on bridge interface
+  uint32_t port_id = tap_man->get_port_id(ifindex);
+
+  if (port_id == 0) {
+    VLOG(1) << __FUNCTION__ << ": invalid port_id=0 of ifindex" << ifindex;
+    return -EINVAL;
+  }
+
+  // setup egress L3 Unicast group
+  rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(s_mac);
+  rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(d_mac);
+  auto l3_if_tuple = std::make_tuple(port_id, vid, src_mac, dst_mac);
+  auto it = l3_interface_mapping.equal_range(l3_if_tuple);
+
+  if (it.first == l3_interface_mapping.end()) {
+    rv = sw->l3_egress_create(port_id, vid, src_mac, dst_mac, l3_interface_id);
+
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to setup l3 egress port_id=" << port_id
+                 << ", vid=" << vid << ", src_mac=" << src_mac
+                 << ", dst_mac=" << dst_mac << "; rv=" << rv;
+      return rv;
+    }
+
+    l3_interface_mapping.emplace(
+        std::make_pair(l3_if_tuple, l3_interface(*l3_interface_id)));
+  } else {
+    for (auto i = it.first; i != it.second; ++i) {
+      if (i->first == l3_if_tuple) {
+        if (l3_interface_id)
+          *l3_interface_id = i->second.l3_interface_id;
+        i->second.refcnt++;
+        rv = 0;
+        break;
+      }
+    }
+  }
+
   return rv;
 }
 
 void nl_l3::register_switch_interface(switch_interface *sw) { this->sw = sw; }
 
-int nl_l3::del_l3_egress(int ifindex, const struct nl_addr *s_mac,
+int nl_l3::del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
                          const struct nl_addr *d_mac) {
   assert(s_mac);
   assert(d_mac);
@@ -403,42 +471,248 @@ int nl_l3::del_l3_egress(int ifindex, const struct nl_addr *s_mac,
     return -EINVAL;
   }
 
-  int rv = 0;
-  int vid = 1; // XXX TODO currently only on vid 1
   rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(s_mac);
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(d_mac);
-  auto it = l3_interface_mapping.find(
-      std::make_tuple(port_id, vid, src_mac, dst_mac));
+  auto l3_if_tuple = std::make_tuple(port_id, vid, src_mac, dst_mac);
+  auto it = l3_interface_mapping.equal_range(l3_if_tuple);
 
-  if (it == l3_interface_mapping.end()) {
-    LOG(ERROR) << __FUNCTION__
-               << ": l3 interface mapping not found port_id=" << port_id
-               << ", vid=" << vid << ", src_mac=" << src_mac
-               << ", dst_mac=" << dst_mac;
-    return -EINVAL;
+  for (auto i = it.first; i != it.second; ++i) {
+    if (i->first == l3_if_tuple) {
+      i->second.refcnt--;
+      VLOG(2) << __FUNCTION__ << ": port_id=" << port_id << ", vid=" << vid
+              << ", s_mac=" << s_mac << ", d_mac=" << d_mac
+              << ", refcnt=" << i->second.refcnt;
+
+      if (i->second.refcnt == 0) {
+        // remove egress L3 Unicast group
+        int rv = sw->l3_egress_remove(i->second.l3_interface_id);
+
+        l3_interface_mapping.erase(i);
+
+        if (rv < 0) {
+          LOG(ERROR) << __FUNCTION__
+                     << ": failed to setup l3 egress port_id=" << port_id
+                     << ", vid=" << vid << ", src_mac=" << src_mac
+                     << ", dst_mac=" << dst_mac << "; rv=" << rv;
+          return rv;
+        }
+      }
+      return 0;
+    }
   }
 
-  it->second.refcnt--;
+  LOG(ERROR) << __FUNCTION__
+             << ": l3 interface mapping not found port_id=" << port_id
+             << ", vid=" << vid << ", src_mac=" << src_mac
+             << ", dst_mac=" << dst_mac;
 
-  if (it->second.refcnt == 0) {
-    // remove egress L3 Unicast group
-    rv = sw->l3_egress_remove(it->second.l3_interface_id);
+  return -ENODATA;
+}
+
+int nl_l3::add_l3_route(struct rtnl_route *r) {
+  assert(r);
+
+  if (rtnl_route_get_family(r) != AF_INET) {
+    LOG(ERROR) << __FUNCTION__ << ": unsupported address family "
+               << rtnl_route_get_family(r);
+    return -ENOTSUP;
+  }
+
+  // XXX TODO split up route add by type here:
+  switch (rtnl_route_get_type(r)) {
+  case RTN_UNICAST:
+    return add_l3_unicast_route(r);
+  case RTN_UNSPEC:
+  case RTN_LOCAL:
+  case RTN_BROADCAST:
+  case RTN_ANYCAST:
+  case RTN_MULTICAST:
+  case RTN_BLACKHOLE:
+  case RTN_UNREACHABLE:
+  case RTN_PROHIBIT:
+  case RTN_THROW:
+  case RTN_NAT:
+  case RTN_XRESOLVE:
+    VLOG(2) << __FUNCTION__ << ": skip route";
+    return -ENOTSUP;
+  default:
+    return -EINVAL;
+  }
+}
+
+int nl_l3::del_l3_route(struct rtnl_route *r) {
+  assert(r);
+
+  if (rtnl_route_get_family(r) != AF_INET) {
+    LOG(ERROR) << __FUNCTION__ << ": unsupported address family "
+               << rtnl_route_get_family(r);
+    return -ENOTSUP;
+  }
+
+  // XXX TODO split up route add by type here:
+  switch (rtnl_route_get_type(r)) {
+  case RTN_UNICAST:
+    return del_l3_unicast_route(r);
+  case RTN_UNSPEC:
+  case RTN_LOCAL:
+  case RTN_BROADCAST:
+  case RTN_ANYCAST:
+  case RTN_MULTICAST:
+  case RTN_BLACKHOLE:
+  case RTN_UNREACHABLE:
+  case RTN_PROHIBIT:
+  case RTN_THROW:
+  case RTN_NAT:
+  case RTN_XRESOLVE:
+    VLOG(2) << __FUNCTION__ << ": skip route";
+    return -ENOTSUP;
+  default:
+    return -EINVAL;
+  }
+}
+
+int nl_l3::add_l3_unicast_route(rtnl_route *r) {
+
+  auto dst = rtnl_route_get_dst(r);
+  std::deque<struct rtnl_neigh *> neighs;
+
+  int nnhs = rtnl_route_get_nnexthops(r);
+  VLOG(2) << __FUNCTION__ << ": number of next hops is " << nnhs;
+
+  nh_lookup_params p = {&neighs, r, nl};
+  get_neighbours_of_route(r, &p);
+
+  int rv = 0;
+  if (neighs.size()) {
+    uint32_t l3_interface_id = 0;
+    // add neigh
+    struct rtnl_neigh *n = neighs.front();
+    rv = add_l3_neigh_egress(n, &l3_interface_id);
 
     if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": failed to setup l3 egress port_id=" << port_id
-                 << ", vid=" << vid << ", src_mac=" << src_mac
-                 << ", dst_mac=" << dst_mac << "; rv=" << rv;
+      // clean up
+      for (auto neigh : neighs) {
+        rtnl_neigh_put(neigh);
+      }
+
+      neighs.clear();
+      LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
+                 << OBJ_CAST(n);
       return rv;
     }
 
-    l3_interface_mapping.erase(it);
+    sockaddr_in in_addr;
+    socklen_t len = sizeof(in_addr);
+
+    rv = nl_addr_fill_sockaddr(
+        dst, reinterpret_cast<struct sockaddr *>(&in_addr), &len);
+
+    if (rv < 0) {
+      // clean up
+      for (auto neigh : neighs) {
+        rtnl_neigh_put(neigh);
+      }
+
+      neighs.clear();
+      LOG(ERROR) << __FUNCTION__ << ": nl_addr_fill_sockaddr failed with "
+                 << nl_geterror(rv);
+      return rv;
+    }
+
+    rofl::caddress_in4 ipv4_dst(&in_addr, len);
+    rofl::caddress_in4 mask = rofl::build_mask_in4(nl_addr_get_prefixlen(dst));
+
+    // XXX TODO handle host routes
+    rv = sw->l3_unicast_route_add(ipv4_dst, mask, l3_interface_id);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to add dst=" << ipv4_dst
+                 << ", mask=" << mask << ", l3_interface_id=" << l3_interface_id
+                 << "; rv=" << rv;
+    }
+
+    // clean up neighbours in neighs dequeue
+    for (auto neigh : neighs) {
+      rtnl_neigh_put(neigh);
+    }
+    neighs.clear();
+  } else {
+    LOG(ERROR) << __FUNCTION__ << ": no nexthop for this route";
+  }
+
+  return rv;
+}
+
+int nl_l3::del_l3_unicast_route(rtnl_route *r) {
+  auto dst = rtnl_route_get_dst(r);
+  std::deque<struct rtnl_neigh *> neighs;
+
+  int nnhs = rtnl_route_get_nnexthops(r);
+  VLOG(2) << __FUNCTION__ << ": number of next hops is " << nnhs;
+
+  nh_lookup_params p = {&neighs, r, nl};
+  get_neighbours_of_route(r, &p);
+
+  int rv = 0;
+  if (neighs.size()) {
+
+    sockaddr_in in_addr;
+    socklen_t len = sizeof(in_addr);
+
+    rv = nl_addr_fill_sockaddr(
+        dst, reinterpret_cast<struct sockaddr *>(&in_addr), &len);
+
+    if (rv < 0) {
+      // clean up
+      for (auto neigh : neighs) {
+        rtnl_neigh_put(neigh);
+      }
+
+      neighs.clear();
+      LOG(ERROR) << __FUNCTION__ << ": nl_addr_fill_sockaddr failed with "
+                 << nl_geterror(rv);
+      return rv;
+    }
+
+    rofl::caddress_in4 ipv4_dst(&in_addr, len);
+    rofl::caddress_in4 mask = rofl::build_mask_in4(nl_addr_get_prefixlen(dst));
+
+    // XXX TODO handle host routes
+    rv = sw->l3_unicast_route_remove(ipv4_dst, mask);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to remove dst=" << ipv4_dst
+                 << ", mask=" << mask << "; rv=" << rv;
+    }
+
+    // del neigh
+    struct rtnl_neigh *n = neighs.front();
+    rv = del_l3_neigh_egress(n);
+
+    if (rv < 0) {
+      // clean up
+      for (auto neigh : neighs) {
+        rtnl_neigh_put(neigh);
+      }
+
+      neighs.clear();
+      LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
+                 << OBJ_CAST(n);
+      return rv;
+    }
+
+    // clean up neighbours in neighs dequeue
+    for (auto neigh : neighs) {
+      rtnl_neigh_put(neigh);
+    }
+    neighs.clear();
+  } else {
+    LOG(ERROR) << __FUNCTION__ << ": no nexthop for this route";
   }
 
   return rv;
 }
 
 void nl_l3::get_neighbours_of_route(rtnl_route *route, nh_lookup_params *p) {
+  // add local lookup here
   rtnl_route_foreach_nexthop(
       route,
       [](struct rtnl_nexthop *nh, void *arg) {
@@ -477,8 +751,7 @@ void nl_l3::get_neighbours_of_route(rtnl_route *route, nh_lookup_params *p) {
         }
 
         if (neigh) {
-          LOG(INFO) << __FUNCTION__ << "; found neighbour: "
-                    << reinterpret_cast<struct nl_object *>(neigh);
+          LOG(INFO) << __FUNCTION__ << "; found neighbour: " << OBJ_CAST(neigh);
           data->neighs->push_back(neigh);
         }
       },

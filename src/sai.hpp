@@ -5,7 +5,7 @@
 
 #include <rofl/common/caddress.h>
 
-#include "utils.hpp"
+#include "utils/utils.hpp"
 
 namespace basebox {
 class switch_interface {

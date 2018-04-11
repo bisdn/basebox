@@ -46,6 +46,7 @@ public:
 
   bool is_bridge_interface(rtnl_link *l) const;
   int get_port_id(rtnl_link *l) const;
+  int get_port_id(int ifindex) const;
 
   void resend_state() noexcept;
 

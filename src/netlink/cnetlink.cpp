@@ -166,6 +166,8 @@ int cnetlink::set_nl_socket_buffer_sizes(nl_sock *sk) {
 
 void cnetlink::destroy_caches() { nl_cache_mngr_free(mngr); }
 
+// XXX TODO should return std::unique_ptr<struct rtnl_link,
+// decltype(&rtnl_link_put)>
 struct rtnl_link *cnetlink::get_link_by_ifindex(int ifindex) const {
   return rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
 }
@@ -232,16 +234,19 @@ bool cnetlink::is_bridge_interface(rtnl_link *l) const {
 }
 
 int cnetlink::get_port_id(rtnl_link *l) const {
-  int port_id;
+  int ifindex;
 
   if (rtnl_link_is_vlan(l)) {
-    int ifindex = rtnl_link_get_link(l);
-    port_id = tap_man->get_port_id(ifindex);
+    ifindex = rtnl_link_get_link(l);
   } else {
-    port_id = tap_man->get_port_id(rtnl_link_get_ifindex(l));
+    ifindex = rtnl_link_get_ifindex(l);
   }
 
-  return port_id;
+  return tap_man->get_port_id(ifindex);
+}
+
+int cnetlink::get_port_id(int ifindex) const {
+  return tap_man->get_port_id(ifindex);
 }
 
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
@@ -475,7 +480,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      l3->add_l3_termination(ADDR_CAST(obj.get_new_obj()));
+      l3->add_l3_addr(ADDR_CAST(obj.get_new_obj()));
       break;
     case AF_INET6:
       VLOG(2) << __FUNCTION__ << ": new IPv6 addr (not supported)";
@@ -513,7 +518,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_old_obj()))) {
     case AF_INET:
-      l3->del_l3_termination(ADDR_CAST(obj.get_old_obj()));
+      l3->del_l3_addr(ADDR_CAST(obj.get_old_obj()));
       break;
     case AF_INET6:
       VLOG(2) << __FUNCTION__ << ": deleted IPv6 (not supported)";
@@ -671,7 +676,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      VLOG(2) << __FUNCTION__ << ": new IPv4 route (not supported)";
+      l3->add_l3_route(ROUTE_CAST(obj.get_new_obj()));
       break;
     case AF_INET6:
       VLOG(2) << __FUNCTION__ << ": new IPv6 route (not supported)";
@@ -709,7 +714,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_old_obj()))) {
     case AF_INET:
-      VLOG(2) << __FUNCTION__ << ": changed IPv4 route (not supported)";
+      l3->del_l3_route(ROUTE_CAST(obj.get_old_obj()));
       break;
     case AF_INET6:
       VLOG(2) << __FUNCTION__ << ": changed IPv6 route (not supported)";
