@@ -36,6 +36,14 @@ public:
   void register_switch_interface(switch_interface *sw);
   void set_tapmanager(std::shared_ptr<tap_manager> tm) { tap_man = tm; }
 
+  struct nh_lookup_params {
+    std::deque<struct rtnl_neigh *> *neighs;
+    rtnl_route *rt;
+    cnetlink *nl;
+  };
+
+  void get_neighbours_of_route(rtnl_route *r, nh_lookup_params *p);
+
 private:
   switch_interface *sw;
   std::shared_ptr<tap_manager> tap_man;

@@ -6,6 +6,7 @@
 #include <netlink/route/link.h>
 #include <netlink/route/link/vlan.h>
 #include <netlink/route/neighbour.h>
+#include <netlink/route/route.h>
 
 #include "cnetlink.hpp"
 #include "nl_output.hpp"
@@ -435,6 +436,53 @@ int nl_l3::del_l3_egress(int ifindex, const struct nl_addr *s_mac,
   }
 
   return rv;
+}
+
+void nl_l3::get_neighbours_of_route(rtnl_route *route, nh_lookup_params *p) {
+  rtnl_route_foreach_nexthop(
+      route,
+      [](struct rtnl_nexthop *nh, void *arg) {
+        struct nh_lookup_params *data = static_cast<nh_lookup_params *>(arg);
+        int ifindex = rtnl_route_nh_get_ifindex(nh);
+
+        if (!ifindex) {
+          LOG(WARNING) << __FUNCTION__ << ": next hop without ifindex " << nh;
+          return;
+        }
+
+        nl_addr *nh_addr = rtnl_route_nh_get_gateway(nh);
+        rtnl_neigh *neigh = nullptr;
+
+        if (nh_addr) {
+          switch (nl_addr_get_family(nh_addr)) {
+          case AF_INET:
+          case AF_INET6:
+            LOG(INFO) << "gw " << nh_addr;
+            break;
+          default:
+            LOG(INFO) << "gw " << nh_addr
+                      << " unsupported family=" << nl_addr_get_family(nh_addr);
+            break;
+          }
+          neigh = data->nl->get_neighbour(ifindex, nh_addr);
+        } else {
+          LOG(INFO) << __FUNCTION__ << ": no gw";
+          // lookup neigh in neigh cache, direct?
+          nl_addr *dst = rtnl_route_get_dst(data->rt);
+          if (dst != nullptr) {
+            neigh = data->nl->get_neighbour(ifindex, dst);
+          } else {
+            neigh = nullptr;
+          }
+        }
+
+        if (neigh) {
+          LOG(INFO) << __FUNCTION__ << "; found neighbour: "
+                    << reinterpret_cast<struct nl_object *>(neigh);
+          data->neighs->push_back(neigh);
+        }
+      },
+      p);
 }
 
 } // namespace basebox
