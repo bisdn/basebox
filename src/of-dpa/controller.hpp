@@ -2,8 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef CROFBASE_HPP_
-#define CROFBASE_HPP_
+#pragma once
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -213,5 +212,3 @@ private:
 }; // class controller
 
 } // end of namespace basebox
-
-#endif /* CROFBASE_HPP_ */

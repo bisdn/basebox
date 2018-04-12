@@ -13,9 +13,8 @@
 #include <netlink/cache.h>
 #include <rofl/common/cthread.hpp>
 
-#include "netlink/nl_bridge.hpp"
-#include "netlink/nl_l3.hpp"
-#include "netlink/nl_obj.hpp"
+#include "nl_bridge.hpp"
+#include "nl_obj.hpp"
 #include "sai.hpp"
 
 namespace basebox {
@@ -34,13 +33,10 @@ public:
 };
 
 // forward declaration
+class nl_l3;
 class tap_manager;
 
 class cnetlink final : public rofl::cthread_env {
-
-  // non copyable
-  cnetlink(const cnetlink &other) = delete;
-  cnetlink &operator=(const cnetlink &) = delete;
 
   enum nl_cache_t {
     NL_ADDR_CACHE,
@@ -50,17 +46,46 @@ class cnetlink final : public rofl::cthread_env {
     NL_MAX_CACHE,
   };
 
+public:
+  cnetlink(std::shared_ptr<tap_manager> tap_man);
+  ~cnetlink() override;
+
+  /**
+   * rtnl_link_put has to be called
+   */
+  struct rtnl_link *get_link_by_ifindex(int ifindex) const;
+
+  void resend_state() noexcept;
+
+  void register_switch(switch_interface *) noexcept;
+  void unregister_switch(switch_interface *) noexcept;
+
+  void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
+
+  static void nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
+                       struct nl_object *new_obj, uint64_t diff, int action,
+                       void *data);
+
+  void start() {
+    if (running)
+      return;
+    running = true;
+    thread.wakeup();
+  }
+
+  void stop() {
+    running = false;
+    thread.wakeup();
+  }
+
+private:
+  // non copyable
+  cnetlink(const cnetlink &other) = delete;
+  cnetlink &operator=(const cnetlink &) = delete;
+
   enum timer {
     NL_TIMER_RESEND_STATE,
     NL_TIMER_RESYNC,
-  };
-
-  enum link_type {
-    LT_UNKNOWN = 0,
-    LT_UNSUPPORTED,
-    LT_BRIDGE,
-    LT_TUN,
-    LT_MAX /* must be last */
   };
 
   switch_interface *swi;
@@ -81,10 +106,7 @@ class cnetlink final : public rofl::cthread_env {
   bool rfd_scheduled;
   std::deque<nl_obj> nl_objs;
 
-  nl_l3 l3;
-
-  std::map<std::string, enum link_type> kind2lt;
-  std::vector<std::string> lt2names;
+  std::shared_ptr<nl_l3> l3;
 
   void route_addr_apply(const nl_obj &obj);
   void route_link_apply(const nl_obj &obj);
@@ -117,37 +139,6 @@ class cnetlink final : public rofl::cthread_env {
   void neigh_ll_created(rtnl_neigh *neigh) noexcept;
   void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
   void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
-
-  enum link_type kind_to_link_type(const char *type) const noexcept;
-
-public:
-  cnetlink(switch_interface *swi, std::shared_ptr<tap_manager> tap_man);
-  ~cnetlink() override;
-
-  struct rtnl_link *get_link_by_ifindex(int ifindex) const;
-
-  void resend_state() noexcept;
-
-  void register_switch(switch_interface *) noexcept;
-  void unregister_switch(switch_interface *) noexcept;
-
-  void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
-
-  static void nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
-                       struct nl_object *new_obj, uint64_t diff, int action,
-                       void *data);
-
-  void start() {
-    if (running)
-      return;
-    running = true;
-    thread.wakeup();
-  }
-
-  void stop() {
-    running = false;
-    thread.wakeup();
-  }
 };
 
 } // end of namespace basebox

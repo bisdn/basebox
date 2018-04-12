@@ -42,10 +42,13 @@ SOURCES_NETLINK = \
 	netlink/ctapdev.hpp \
 	netlink/nbi_impl.cpp \
 	netlink/nbi_impl.hpp \
+	netlink/netlink-utils.cpp \
+	netlink/netlink-utils.hpp \
 	netlink/nl_bridge.cpp \
 	netlink/nl_bridge.hpp \
-	netlink/nl_l3.hpp \
+	netlink/nl_hashing.hpp \
 	netlink/nl_l3.cpp \
+	netlink/nl_l3.hpp \
 	netlink/nl_obj.cpp \
 	netlink/nl_obj.hpp \
 	netlink/nl_output.cpp \
@@ -56,7 +59,7 @@ SOURCES_NETLINK = \
 nodist_baseboxd_SOURCES = \
 	$(PROTO_SOURCES) \
 	$(GRPC_SOURCES)
-		
+
 basebox_grpc_SOURCES = \
 	basebox_grpc_statistics.cc \
 	basebox_grpc_statistics.h \
@@ -71,7 +74,7 @@ baseboxd_SOURCES = \
 	utils.hpp \
 	$(basebox_grpc_SOURCES) \
 	$(SOURCES_NETLINK)
-	
+
 baseboxd_LDADD = \
 	of-dpa/libbb_ofdpa.la \
 	${LIBNL3_LIBS} \
@@ -79,6 +82,6 @@ baseboxd_LDADD = \
 	-lrt
 
 AM_CPPFLAGS = -I$(top_srcdir)/src
-AM_LDFLAGS = 
+AM_LDFLAGS =
 
 MAINTAINERCLEANFILES = Makefile.in
