@@ -566,10 +566,9 @@ int controller::l2_addr_add(uint32_t port, uint16_t vid,
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     // XXX have the knowlege here about filtered/unfiltered?
-    dpt.send_flow_mod_message(
-        rofl::cauxid(0),
-        fm_driver.add_bridging_unicast_vlan(dpt.get_version(), port, vid, mac,
-                                            true, filtered));
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.add_bridging_unicast_vlan(
+                                  dpt.get_version(), port, vid, mac, filtered));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
