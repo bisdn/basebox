@@ -5,7 +5,6 @@
 #pragma once
 
 #include <deque>
-#include <exception>
 #include <memory>
 #include <mutex>
 #include <tuple>
@@ -92,7 +91,7 @@ private:
   switch_interface *swi;
 
   rofl::cthread thread;
-  struct nl_sock *sock;
+  struct nl_sock *sock_mon;
   struct nl_cache_mngr *mngr;
   std::vector<struct nl_cache *> caches;
   std::deque<std::tuple<uint32_t, enum nbi::port_status, int>>
@@ -109,6 +108,8 @@ private:
 
   std::shared_ptr<nl_l3> l3;
 
+  int handle_port_status_events();
+
   void route_addr_apply(const nl_obj &obj);
   void route_link_apply(const nl_obj &obj);
   void route_neigh_apply(const nl_obj &obj);
@@ -122,6 +123,8 @@ private:
   int load_from_file(const std::string &path);
 
   void init_caches();
+
+  int set_nl_socket_buffer_sizes(nl_sock *sk);
 
   void destroy_caches();
 

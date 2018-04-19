@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include <cassert>
 #include <cstring>
+#include <exception>
 #include <fstream>
 #include <glog/logging.h>
 #include <iterator>
@@ -29,12 +30,6 @@ cnetlink::cnetlink(std::shared_ptr<tap_manager> tap_man)
       tap_man(tap_man), bridge(nullptr), nl_proc_max(10), running(false),
       rfd_scheduled(false), l3(new nl_l3(tap_man, this)) {
 
-  sock = nl_socket_alloc();
-  if (NULL == sock) {
-    LOG(FATAL) << "cnetlink: failed to create netlink socket" << __FUNCTION__;
-    throw eNetLinkCritical(__FUNCTION__);
-  }
-
   try {
     thread.start("netlink");
     init_caches();
@@ -47,7 +42,7 @@ cnetlink::~cnetlink() {
   thread.stop();
   delete bridge;
   destroy_caches();
-  nl_socket_free(sock);
+  nl_socket_free(sock_mon);
 }
 
 int cnetlink::load_from_file(const std::string &path) {
@@ -68,37 +63,37 @@ int cnetlink::load_from_file(const std::string &path) {
 
 void cnetlink::init_caches() {
 
-  int rc = nl_cache_mngr_alloc(sock, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
+  sock_mon = nl_socket_alloc();
+  if (sock_mon == nullptr) {
+    LOG(FATAL) << "cnetlink: failed to create netlink socket" << __FUNCTION__;
+    throw eNetLinkCritical(__FUNCTION__);
+  }
+
+  int rc = nl_cache_mngr_alloc(sock_mon, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
 
   if (rc < 0) {
     LOG(FATAL) << __FUNCTION__ << ": failed to allocate netlink cache manager";
   }
 
-  int rx_size = load_from_file("/proc/sys/net/core/rmem_max");
-  int tx_size = load_from_file("/proc/sys/net/core/wmem_max");
+  set_nl_socket_buffer_sizes(sock_mon);
 
-  if (0 != nl_socket_set_buffer_size(sock, rx_size, tx_size)) {
-    LOG(FATAL) << ": failed to resize socket buffers";
-  }
-  nl_socket_set_msg_buf_size(sock, rx_size);
-
-  caches[NL_LINK_CACHE] = NULL;
-  caches[NL_NEIGH_CACHE] = NULL;
-
-  rc = rtnl_link_alloc_cache_flags(sock, AF_UNSPEC, &caches[NL_LINK_CACHE],
+  rc = rtnl_link_alloc_cache_flags(sock_mon, AF_UNSPEC, &caches[NL_LINK_CACHE],
                                    NL_CACHE_AF_ITER);
+
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__
                << ": rtnl_link_alloc_cache_flags failed rc=" << rc;
   }
+
   rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_LINK_CACHE],
                                   (change_func_v2_t)&nl_cb_v2, this);
+
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__ << ": add route/link to cache mngr";
   }
 
   /* init route cache */
-  rc = rtnl_route_alloc_cache(sock, AF_UNSPEC, 0, &caches[NL_ROUTE_CACHE]);
+  rc = rtnl_route_alloc_cache(sock_mon, AF_UNSPEC, 0, &caches[NL_ROUTE_CACHE]);
   if (rc < 0) {
     LOG(FATAL) << __FUNCTION__ << ": add route/route to cache mngr";
   }
@@ -109,7 +104,7 @@ void cnetlink::init_caches() {
   }
 
   /* init addr cache*/
-  rc = rtnl_addr_alloc_cache(sock, &caches[NL_ADDR_CACHE]);
+  rc = rtnl_addr_alloc_cache(sock_mon, &caches[NL_ADDR_CACHE]);
   if (rc < 0) {
     LOG(FATAL) << __FUNCTION__ << ": add route/addr to cache mngr";
   }
@@ -120,7 +115,7 @@ void cnetlink::init_caches() {
   }
 
   /* init neigh cache */
-  rc = rtnl_neigh_alloc_cache_flags(sock, &caches[NL_NEIGH_CACHE],
+  rc = rtnl_neigh_alloc_cache_flags(sock_mon, &caches[NL_NEIGH_CACHE],
                                     NL_CACHE_AF_ITER);
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__
@@ -133,6 +128,29 @@ void cnetlink::init_caches() {
   }
 
   thread.wakeup();
+}
+
+int cnetlink::set_nl_socket_buffer_sizes(nl_sock *sk) {
+  int rx_size = load_from_file("/proc/sys/net/core/rmem_max");
+  int tx_size = load_from_file("/proc/sys/net/core/wmem_max");
+
+  LOG(INFO) << __FUNCTION__
+            << ": netlink buffers are set to rx_size=" << rx_size
+            << ", tx_size=" << tx_size;
+
+  int err = nl_socket_set_buffer_size(sk, rx_size, tx_size);
+  if (err != 0) {
+    LOG(FATAL) << ": failed to call nl_socket_set_buffer_size: "
+               << nl_geterror(err);
+  }
+
+  err = nl_socket_set_msg_buf_size(sk, rx_size);
+  if (err != 0) {
+    LOG(FATAL) << ": failed to call nl_socket_set_msg_buf_size: "
+               << nl_geterror(err);
+  }
+
+  return err;
 }
 
 void cnetlink::destroy_caches() { nl_cache_mngr_free(mngr); }
@@ -201,87 +219,10 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     nl_objs.pop_front();
   }
 
-  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_changes;
-  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_back;
-
-  {
-    std::lock_guard<std::mutex> scoped_lock(pc_mutex);
-    _pc_changes.swap(port_status_changes);
-  }
-
-  for (auto change : _pc_changes) {
-    int ifindex, rv;
-    rtnl_link *lchange, *link;
-
-    // get ifindex
-    ifindex = tap_man->get_ifindex(std::get<0>(change));
-    if (0 == ifindex) {
-      // XXX not yet registered push back, this should be done async
-      int n_retries = std::get<2>(change);
-      if (n_retries < 10) {
-        std::get<2>(change) = ++n_retries;
-        _pc_back.push_back(change);
-      } else {
-        LOG(ERROR) << __FUNCTION__
-                   << ": no ifindex of port_id=" << std::get<0>(change)
-                   << " found";
-      }
-      continue;
-    }
-
-    VLOG(1) << __FUNCTION__ << ": update link with ifindex=" << ifindex
-            << " port_id=" << std::get<0>(change) << " status=" << std::hex
-            << std::get<1>(change) << std::dec << ") ";
-
-    // lookup link
-    link = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
-    if (!link) {
-      LOG(ERROR) << __FUNCTION__ << ": link not found with ifindex=" << ifindex;
-      continue;
-    }
-
-    // change request
-    lchange = rtnl_link_alloc();
-    if (!lchange) {
-      LOG(ERROR) << __FUNCTION__ << ": out of memory";
-      rtnl_link_put(link);
-      continue;
-    }
-
-    int flags = rtnl_link_get_flags(link);
-    // check admin state change
-    if (!((flags & IFF_UP) &&
-          !(std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN))) {
-      if (std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN) {
-        rtnl_link_unset_flags(lchange, IFF_UP);
-        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                  << " disabling";
-      } else {
-        rtnl_link_set_flags(lchange, IFF_UP);
-        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                  << " enabling";
-      }
-    } else {
-      LOG(INFO) << __FUNCTION__ << ": notification of port "
-                << rtnl_link_get_name(link) << " received. State unchanged.";
-    }
-
-    // apply changes
-    if ((rv = rtnl_link_change(sock, link, lchange, 0)) < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": Unable to change link, "
-                 << nl_geterror(rv);
-    }
-    rtnl_link_put(link);
-    rtnl_link_put(lchange);
-  }
-
-  if (_pc_back.size()) {
-    std::lock_guard<std::mutex> scoped_lock(pc_mutex);
-    std::copy(make_move_iterator(_pc_back.begin()),
-              make_move_iterator(_pc_back.end()),
-              std::back_inserter(port_status_changes));
+  if (handle_port_status_events()) {
     do_wakeup = true;
   }
+
 
   if (do_wakeup || nl_objs.size()) {
     this->thread.wakeup();
@@ -839,6 +780,93 @@ void cnetlink::port_status_changed(uint32_t port_no,
     return;
   }
   thread.wakeup();
+}
+
+int cnetlink::handle_port_status_events() {
+
+  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_changes;
+  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_retry;
+
+  {
+    std::lock_guard<std::mutex> scoped_lock(pc_mutex);
+    _pc_changes.swap(port_status_changes);
+  }
+
+  for (auto change : _pc_changes) {
+    int ifindex, rv;
+    rtnl_link *lchange, *link;
+
+    // get ifindex
+    ifindex = tap_man->get_ifindex(std::get<0>(change));
+    if (0 == ifindex) {
+      // XXX not yet registered push back, this should be done async
+      int n_retries = std::get<2>(change);
+      if (n_retries < 10) {
+        std::get<2>(change) = ++n_retries;
+        _pc_retry.push_back(change);
+      } else {
+        LOG(ERROR) << __FUNCTION__
+                   << ": no ifindex of port_id=" << std::get<0>(change)
+                   << " found";
+      }
+      continue;
+    }
+
+    VLOG(1) << __FUNCTION__ << ": update link with ifindex=" << ifindex
+            << " port_id=" << std::get<0>(change) << " status=" << std::hex
+            << std::get<1>(change) << std::dec << ") ";
+
+    // lookup link
+    link = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
+    if (!link) {
+      LOG(ERROR) << __FUNCTION__ << ": link not found with ifindex=" << ifindex;
+      continue;
+    }
+
+    // change request
+    lchange = rtnl_link_alloc();
+    if (!lchange) {
+      LOG(ERROR) << __FUNCTION__ << ": out of memory";
+      rtnl_link_put(link);
+      continue;
+    }
+
+    int flags = rtnl_link_get_flags(link);
+    // check admin state change
+    if (!((flags & IFF_UP) &&
+          !(std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN))) {
+      if (std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN) {
+        rtnl_link_unset_flags(lchange, IFF_UP);
+        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
+                  << " disabling";
+      } else {
+        rtnl_link_set_flags(lchange, IFF_UP);
+        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
+                  << " enabling";
+      }
+    } else {
+      LOG(INFO) << __FUNCTION__ << ": notification of port "
+                << rtnl_link_get_name(link) << " received. State unchanged.";
+    }
+
+    // apply changes
+    if ((rv = rtnl_link_change(sock_mon, link, lchange, 0)) < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": Unable to change link, "
+                 << nl_geterror(rv);
+    }
+    rtnl_link_put(link);
+    rtnl_link_put(lchange);
+  }
+
+  int size = _pc_retry.size();
+  if (size) {
+    std::lock_guard<std::mutex> scoped_lock(pc_mutex);
+    std::copy(make_move_iterator(_pc_retry.begin()),
+              make_move_iterator(_pc_retry.end()),
+              std::back_inserter(port_status_changes));
+  }
+
+  return size;
 }
 
 } // namespace basebox
