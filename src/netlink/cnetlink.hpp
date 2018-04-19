@@ -18,19 +18,6 @@
 
 namespace basebox {
 
-class eNetLinkBase : public std::runtime_error {
-public:
-  eNetLinkBase(const std::string &__arg) : std::runtime_error(__arg){};
-};
-class eNetLinkCritical : public eNetLinkBase {
-public:
-  eNetLinkCritical(const std::string &__arg) : eNetLinkBase(__arg){};
-};
-class eNetLinkFailed : public eNetLinkBase {
-public:
-  eNetLinkFailed(const std::string &__arg) : eNetLinkBase(__arg){};
-};
-
 // forward declaration
 class nl_l3;
 class tap_manager;
@@ -46,7 +33,7 @@ class cnetlink final : public rofl::cthread_env {
   };
 
 public:
-  cnetlink(std::shared_ptr<tap_manager> tap_man);
+  cnetlink();
   ~cnetlink() override;
 
   /**
@@ -65,6 +52,14 @@ public:
   static void nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
                        struct nl_object *new_obj, uint64_t diff, int action,
                        void *data);
+
+  void set_tapmanager(std::shared_ptr<tap_manager> tm);
+
+  int send_nl_msg(nl_msg *msg);
+  void learn_l2(uint32_t port_id, int fd, packet *pkt);
+
+  void fdb_timeout(uint32_t port_id, uint16_t vid,
+                   const rofl::caddress_ll &mac);
 
   void start() {
     if (running)
@@ -92,6 +87,7 @@ private:
 
   rofl::cthread thread;
   struct nl_sock *sock_mon;
+  struct nl_sock *sock_tx;
   struct nl_cache_mngr *mngr;
   std::vector<struct nl_cache *> caches;
   std::deque<std::tuple<uint32_t, enum nbi::port_status, int>>
@@ -108,7 +104,31 @@ private:
 
   std::shared_ptr<nl_l3> l3;
 
+  struct nl_pkt_in {
+    nl_pkt_in(uint32_t port_id, int fd, packet *pkt)
+        : port_id(port_id), fd(fd), pkt(pkt) {}
+    uint32_t port_id;
+    int fd;
+    packet *pkt;
+  };
+
+  std::mutex pi_mutex;
+  std::deque<nl_pkt_in> packet_in;
+
+  struct fdb_ev {
+    fdb_ev(uint32_t port_id, uint16_t vid, const rofl::caddress_ll &mac)
+        : port_id(port_id), vid(vid), mac(mac) {}
+    uint32_t port_id;
+    uint16_t vid;
+    rofl::caddress_ll mac;
+  };
+
+  std::mutex fdb_ev_mutex;
+  std::deque<fdb_ev> fdb_evts;
+
   int handle_port_status_events();
+  int handle_source_mac_learn();
+  int handle_fdb_timeout();
 
   void route_addr_apply(const nl_obj &obj);
   void route_link_apply(const nl_obj &obj);

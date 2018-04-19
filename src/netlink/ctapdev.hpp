@@ -4,11 +4,7 @@
 
 #pragma once
 
-#include <deque>
-#include <exception>
-
-#include <rofl/common/cthread.hpp>
-#include <rofl/common/cpacket.h>
+#include <string>
 
 namespace basebox {
 

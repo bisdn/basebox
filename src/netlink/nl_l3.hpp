@@ -19,7 +19,7 @@ class tap_manager;
 
 class nl_l3 {
 public:
-  nl_l3(std::shared_ptr<tap_manager> tap_man, cnetlink *nl);
+  nl_l3(cnetlink *nl);
   ~nl_l3() {}
 
   int add_l3_termination(struct rtnl_addr *a);
@@ -33,6 +33,7 @@ public:
                     const struct nl_addr *d_mac);
 
   void register_switch_interface(switch_interface *sw);
+  void set_tapmanager(std::shared_ptr<tap_manager> tm) { tap_man = tm; }
 
 private:
   switch_interface *sw;

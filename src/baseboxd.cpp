@@ -39,14 +39,13 @@ int main(int argc, char **argv) {
   versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
   LOG(INFO) << "using OpenFlow version-bitmap:" << std::endl << versionbitmap;
 
-  std::shared_ptr<tap_manager> tap_man(new tap_manager());
-  nbi_impl *nbi = new nbi_impl(tap_man);
+  nbi_impl *nbi = new nbi_impl();
   std::shared_ptr<controller> box(new controller(nbi, versionbitmap));
 
   rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"), FLAGS_port);
   box->dpt_sock_listen(baddr);
 
-  basebox::ApiServer grpcConnector(box, tap_man);
+  basebox::ApiServer grpcConnector(box, nbi->get_tapmanager());
   grpcConnector.runGRPCServer();
 
   delete nbi;

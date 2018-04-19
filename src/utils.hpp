@@ -1,13 +1,20 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <linux/if_ether.h>
 
 namespace basebox {
 
-static const int packet_data_len = 1528;
-
 struct packet {
-  char data[packet_data_len]; ///< total allocated buffer
-  std::size_t len;            ///< actual lenght written into data
+  std::size_t len; ///< actual lenght written into data
+  char data[0];    ///< total allocated buffer
 };
+
+struct vlan_hdr {
+  struct ethhdr eth; // ethertype/tpid
+  uint16_t vlan;     // vid + cfi + pcp
+  uint16_t h_proto;  // ethertype or data
+} __attribute__((packed));
+
 } // namespace basebox

@@ -9,8 +9,8 @@
 
 namespace basebox {
 
-nbi_impl::nbi_impl(std::shared_ptr<tap_manager> tap_man)
-    : tap_man(tap_man), nl(new cnetlink(tap_man)) {
+nbi_impl::nbi_impl() : nl(new cnetlink()), tap_man(new tap_manager(nl.get())) {
+  nl->set_tapmanager(tap_man);
   nl->start();
 }
 
@@ -54,7 +54,9 @@ int nbi_impl::enqueue(uint32_t port_id, basebox::packet *pkt) noexcept {
   int rv = 0;
   assert(pkt);
   try {
-    tap_man->enqueue(port_id, pkt);
+    // detour via netlink to learn the source mac
+    int fd = tap_man->get_fd(port_id);
+    nl->learn_l2(port_id, fd, pkt);
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to enqueue packet for port_id=" << port_id << ": "
@@ -63,6 +65,12 @@ int nbi_impl::enqueue(uint32_t port_id, basebox::packet *pkt) noexcept {
     rv = -1;
   }
   return rv;
+}
+
+int nbi_impl::fdb_timeout(uint32_t port_id, uint16_t vid,
+                          const rofl::caddress_ll &mac) noexcept {
+  nl->fdb_timeout(port_id, vid, mac);
+  return 0;
 }
 
 } // namespace basebox
