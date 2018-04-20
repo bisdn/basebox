@@ -9,19 +9,27 @@
 #include <string>
 #include <memory>
 
+#include <netlink/route/link/bridge.h>
+
+#include "netlink-utils.hpp"
+
+extern "C" {
 struct rtnl_link_bridge_vlan;
 struct rtnl_link;
 struct rtnl_neigh;
 struct nl_addr;
+}
 
 namespace basebox {
 
+class cnetlink;
 class switch_interface;
 class tap_manager;
 
 class nl_bridge {
 public:
-  nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man);
+  nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
+            cnetlink *nl);
 
   virtual ~nl_bridge();
 
@@ -41,16 +49,15 @@ public:
   void remove_mac_from_fdb(rtnl_neigh *);
 
 private:
-  void update_vlans(uint32_t port, const std::string &devname,
-                    const rtnl_link_bridge_vlan *old_br_vlan,
-                    const rtnl_link_bridge_vlan *new_br_vlan);
+  void update_vlans(rtnl_link *, rtnl_link *);
 
   rtnl_link *bridge;
   switch_interface *sw;
-  bool ingress_vlan_filtered;
-  bool egress_vlan_filtered;
 
   std::shared_ptr<tap_manager> tap_man;
+  cnetlink *nl;
+
+  rtnl_link_bridge_vlan empty_br_vlan;
 };
 
 } /* namespace basebox */
