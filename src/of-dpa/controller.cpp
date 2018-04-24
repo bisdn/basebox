@@ -1051,9 +1051,6 @@ int controller::egress_bridge_port_vlan_remove(uint32_t port,
 
     // remove filtered egress interface
     rv = egress_port_vlan_remove(port, vid);
-    dpt.send_group_mod_message(
-        rofl::cauxid(0),
-        fm_driver.disable_group_l2_interface(dpt.get_version(), port, vid));
 
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed to remove vid=" << vid
