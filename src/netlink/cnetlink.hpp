@@ -42,6 +42,9 @@ public:
    */
   struct rtnl_link *get_link_by_ifindex(int ifindex) const;
   struct rtnl_link *get_link(int ifindex, int family) const;
+  struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
+
+  bool is_bridge_interface(rtnl_link *l) const;
   int get_port_id(rtnl_link *l) const;
 
   void resend_state() noexcept;
