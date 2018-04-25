@@ -14,11 +14,6 @@
 
 namespace basebox {
 
-struct vlan_hdr {
-  struct ethhdr eth; // vid + cfi + pcp
-  uint16_t vlan;     // ethernet type
-} __attribute__((packed));
-
 void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 
   std::lock_guard<std::mutex> lock(conn_mutex);
@@ -127,28 +122,8 @@ void controller::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
           << " pkt received: " << std::endl
           << msg;
 
-#if 0 // XXX FIXME check if needed
-  if (dptid != dpt) {
-    LOG(ERROR) << __FUNCTION__
-                   << "] wrong dptid received";
-    return;
-  }
-#endif
-
-  switch (msg.get_table_id()) {
-  case OFDPA_FLOW_TABLE_ID_SA_LOOKUP:
-    handle_srcmac_table(dpt, msg);
-    break;
-
-  case OFDPA_FLOW_TABLE_ID_UNICAST_ROUTING:
-  case OFDPA_FLOW_TABLE_ID_ACL_POLICY:
-    send_packet_in_to_cpu(dpt, msg);
-    break;
-  default:
-    LOG(WARNING) << __FUNCTION__ << ": unexpected packet-in from table "
-                 << msg.get_table_id() << ". Dropping packet.";
-    break;
-  }
+  // all packets go up
+  send_packet_in_to_cpu(dpt, msg);
 }
 
 void controller::handle_flow_removed(rofl::crofdpt &dpt,
@@ -158,19 +133,13 @@ void controller::handle_flow_removed(rofl::crofdpt &dpt,
           << " pkt received: " << std::endl
           << msg;
 
-#if 0 // XXX FIXME check if needed
-  if (dptid != dpt) {
-    LOG(ERROR) << __FUNCTION__
-                   << "] wrong dptid received";
-    return;
-  }
-#endif
-
   switch (msg.get_table_id()) {
   case OFDPA_FLOW_TABLE_ID_BRIDGING:
     handle_bridging_table_rm(dpt, msg);
     break;
   default:
+    LOG(WARNING) << __FUNCTION__ << ": unhandled flow removal in table_id="
+                 << unsigned(msg.get_table_id());
     break;
   }
 }
@@ -178,7 +147,6 @@ void controller::handle_flow_removed(rofl::crofdpt &dpt,
 void controller::handle_port_status(rofl::crofdpt &dpt,
                                     const rofl::cauxid &auxid,
                                     rofl::openflow::cofmsg_port_status &msg) {
-  using basebox::nbi;
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
@@ -239,7 +207,6 @@ void controller::handle_port_desc_stats_reply(
           << " pkt received: " << std::endl
           << msg;
 
-  using basebox::nbi;
   using rofl::openflow::cofport;
 
   std::deque<struct nbi::port_notification_data> notifications;
@@ -350,124 +317,58 @@ void controller::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
   }
 }
 
-void controller::handle_srcmac_table(rofl::crofdpt &dpt,
-                                     rofl::openflow::cofmsg_packet_in &msg) {
-#if 0 // XXX FIXME currently disabled
-  using rofl::openflow::cofport;
-  using basebox::cnetlink;
-  using basebox::crtlink;
-  using rofl::caddress_ll;
-
-  LOG(INFO) << __FUNCTION__ << ": in_port=" << msg.get_match().get_in_port()
-               ;
-
-  struct ethhdr *eth = (struct ethhdr *)msg.get_packet().soframe();
-
-  uint16_t vlan = 0;
-  if (ETH_P_8021Q == be16toh(eth->h_proto)) {
-    vlan = be16toh(((struct vlan_hdr *)eth)->vlan) & 0xfff;
-    VLOG(1) << __FUNCTION__ << ": vlan=0x" << std::hex << vlan
-                   << std::dec;
-  }
-
-  // TODO this has to be improved
-  const cofport &port = dpt.get_ports().get_port(msg.get_match().get_in_port());
-  const crtlink &rtl =
-      cnetlink::get_instance().get_links().get_link(port.get_name());
-
-  if (0 == vlan) {
-    vlan = rtl.get_pvid();
-  }
-
-  // update bridge fdb
-  try {
-    const caddress_ll srcmac(eth->h_source, ETH_ALEN);
-    cnetlink::get_instance().add_neigh_ll(rtl.get_ifindex(), vlan, srcmac);
-    bridge.add_mac_to_fdb(dpt, msg.get_match().get_in_port(), vlan, srcmac,
-                          false);
-  } catch (basebox::eNetLinkNotFound &e) {
-    LOG(INFO) << __FUNCTION__ << ": cannot add neighbor to interface"
-                   ;
-  } catch (basebox::eNetLinkFailed &e) {
-    LOG(ERROR) << __FUNCTION__ << ": netlink failed";
-  }
-#endif
-  LOG(WARNING) << ": not implemented";
-}
-
 void controller::send_packet_in_to_cpu(rofl::crofdpt &dpt,
                                        rofl::openflow::cofmsg_packet_in &msg) {
-  using rofl::openflow::cofport;
+  packet *pkt = nullptr;
+  uint32_t port_id;
 
-  basebox::packet *pkt = nullptr;
   try {
-    const cofport &port =
-        dpt.get_ports().get_port(msg.get_match().get_in_port());
-    const rofl::cpacket &pkt_in = msg.get_packet();
-
-    if (pkt_in.length() >= basebox::packet_data_len) {
-      return;
-    }
-
-    pkt = (basebox::packet *)std::malloc(sizeof(basebox::packet));
-
-    if (pkt == nullptr)
-      return;
-
-    std::memcpy(pkt->data, pkt_in.soframe(), pkt_in.length());
-    pkt->len = pkt_in.length();
-
-    nb->enqueue(port.get_port_no(), pkt);
-
+    port_id =
+        dpt.get_ports().get_port(msg.get_match().get_in_port()).get_port_no();
   } catch (std::out_of_range &e) {
     LOG(ERROR) << __FUNCTION__ << ": invalid range";
-    std::free(pkt);
+    return;
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << " exception: " << e.what();
-    std::free(pkt);
+    return;
   }
+
+  const rofl::cpacket &pkt_in = msg.get_packet();
+  pkt = (packet *)std::malloc(sizeof(std::size_t) + pkt_in.length());
+
+  if (pkt == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": no mem left";
+    return;
+  }
+
+  pkt->len = pkt_in.length();
+  std::memcpy(pkt->data, pkt_in.soframe(), pkt_in.length());
+
+  nb->enqueue(port_id, pkt);
 }
 
 void controller::handle_bridging_table_rm(
     rofl::crofdpt &dpt, rofl::openflow::cofmsg_flow_removed &msg) {
-#if 0 // XXX FIXME disabled for tapdev refactoring:
-// this is used only for srcmac learning, which is disabled
-  using rofl::cmacaddr;
-  using rofl::openflow::cofport;
-  using basebox::cnetlink;
-  using basebox::ctapdev;
+  VLOG(1) << __FUNCTION__ << ": handle message" << std::endl << msg;
 
-  LOG(INFO) << __FUNCTION__ << ": handle message" << std::endl << msg;
+  rofl::caddress_ll eth_dst;
+  uint16_t vid = 0;
 
-  cmacaddr eth_dst;
-  uint16_t vlan = 0;
   try {
     eth_dst = msg.get_match().get_eth_dst();
-    vlan = msg.get_match().get_vlan_vid() & 0xfff;
+    vid = msg.get_match().get_vlan_vid() & 0xfff;
   } catch (rofl::openflow::eOxmNotFound &e) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to get eth_dst or vlan"
-                  ;
+    LOG(ERROR) << __FUNCTION__ << ": failed to get eth_dst or vid";
     return;
   }
 
-  // TODO this has to be improved
-  uint32_t portno = msg.get_cookie();
-  const cofport &port = dpt.get_ports().get_port(portno);
-  const ctapdev &tapdev = get_tap_dev(dpt, port.get_name());
+  // TODO this has to be improved -> function in rofl-ofdpa
+  uint32_t port_no = msg.get_cookie() & 0xffffffff;
 
-  try {
-    // update bridge fdb
-    cnetlink::get_instance().drop_neigh_ll(tapdev.get_ifindex(), vlan,
-    eth_dst);
-  } catch (basebox::eNetLinkFailed &e) {
-    LOG(ERROR) << __FUNCTION__ << ": netlink failed: " << e.what()
-                 ;
-  }
-#endif
-  LOG(WARNING) << ": not implemented";
+  nb->fdb_timeout(port_no, vid, eth_dst);
 }
 
-int controller::enqueue(uint32_t port_id, basebox::packet *pkt) noexcept {
+int controller::enqueue(uint32_t port_id, packet *pkt) noexcept {
   using rofl::openflow::cofport;
   using std::map;
   int rv = 0;
@@ -561,14 +462,23 @@ int controller::l2_addr_remove_all_in_vlan(uint32_t port,
 }
 
 int controller::l2_addr_add(uint32_t port, uint16_t vid,
-                            const rofl::cmacaddr &mac, bool filtered) noexcept {
+                            const rofl::caddress_ll &mac, bool filtered,
+                            bool permanent) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    if (!permanent)
+      fm_driver.set_idle_timeout(300);
+
     // XXX have the knowlege here about filtered/unfiltered?
     dpt.send_flow_mod_message(rofl::cauxid(0),
                               fm_driver.add_bridging_unicast_vlan(
                                   dpt.get_version(), port, vid, mac, filtered));
+
+    if (!permanent)
+      fm_driver.set_idle_timeout(default_idle_timeout);
+
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -583,7 +493,7 @@ int controller::l2_addr_add(uint32_t port, uint16_t vid,
 }
 
 int controller::l2_addr_remove(uint32_t port, uint16_t vid,
-                               const rofl::cmacaddr &mac) noexcept {
+                               const rofl::caddress_ll &mac) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -604,7 +514,7 @@ int controller::l2_addr_remove(uint32_t port, uint16_t vid,
 }
 
 int controller::l3_termination_add(uint32_t sport, uint16_t vid,
-                                   const rofl::cmacaddr &dmac) noexcept {
+                                   const rofl::caddress_ll &dmac) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -626,7 +536,7 @@ int controller::l3_termination_add(uint32_t sport, uint16_t vid,
 }
 
 int controller::l3_termination_remove(uint32_t sport, uint16_t vid,
-                                      const rofl::cmacaddr &dmac) noexcept {
+                                      const rofl::caddress_ll &dmac) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);

@@ -53,6 +53,8 @@ SOURCES_NETLINK = \
 	netlink/nl_obj.hpp \
 	netlink/nl_output.cpp \
 	netlink/nl_output.hpp \
+	netlink/tap_io.cpp \
+	netlink/tap_io.hpp \
 	netlink/tap_manager.cpp \
 	netlink/tap_manager.hpp
 

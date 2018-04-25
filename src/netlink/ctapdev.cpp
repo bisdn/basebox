@@ -2,17 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <sys/ioctl.h>
-#include <sys/socket.h>
+#include <fcntl.h>
 #include <linux/if.h>
 #include <linux/if_tun.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <cerrno>
 
 #include <glog/logging.h>
 
 #include "ctapdev.hpp"
-#include "netlink/tap_manager.hpp"
+#include "tap_manager.hpp"
 
 namespace basebox {
 

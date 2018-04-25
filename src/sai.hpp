@@ -32,15 +32,15 @@ public:
   virtual int l2_addr_remove_all_in_vlan(uint32_t port,
                                          uint16_t vid) noexcept = 0;
   virtual int l2_addr_add(uint32_t port, uint16_t vid,
-                          const rofl::cmacaddr &mac,
-                          bool filtered) noexcept = 0;
+                          const rofl::caddress_ll &mac, bool filtered,
+                          bool permanent) noexcept = 0;
   virtual int l2_addr_remove(uint32_t port, uint16_t vid,
-                             const rofl::cmacaddr &mac) noexcept = 0;
+                             const rofl::caddress_ll &mac) noexcept = 0;
 
   virtual int l3_termination_add(uint32_t sport, uint16_t vid,
-                                 const rofl::cmacaddr &dmac) noexcept = 0;
+                                 const rofl::caddress_ll &dmac) noexcept = 0;
   virtual int l3_termination_remove(uint32_t sport, uint16_t vid,
-                                    const rofl::cmacaddr &dmac) noexcept = 0;
+                                    const rofl::caddress_ll &dmac) noexcept = 0;
 
   virtual int l3_egress_create(uint32_t port, uint16_t vid,
                                const rofl::caddress_ll &src_mac,
@@ -101,5 +101,7 @@ public:
   virtual void port_status_changed(uint32_t port,
                                    enum port_status) noexcept = 0;
   virtual int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept = 0;
+  virtual int fdb_timeout(uint32_t port_id, uint16_t vid,
+                          const rofl::caddress_ll &mac) noexcept = 0;
 };
 } // namespace basebox
