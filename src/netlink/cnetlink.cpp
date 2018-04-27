@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <cassert>
 #include <cstring>
 #include <exception>
@@ -973,6 +974,8 @@ void cnetlink::register_switch(switch_interface *swi) noexcept {
   this->swi = swi;
   l3->register_switch_interface(swi);
   vlan->register_switch_interface(swi);
+
+  swi->subscribe_to(switch_interface::SWIF_ARP);
 }
 
 void cnetlink::unregister_switch(switch_interface *swi) noexcept {

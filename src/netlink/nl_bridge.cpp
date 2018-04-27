@@ -36,8 +36,6 @@ void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
 
   this->bridge = bridge;
   nl_object_get(OBJ_CAST(bridge));
-
-  sw->subscribe_to(switch_interface::SWIF_ARP);
 }
 
 bool nl_bridge::is_bridge_interface(rtnl_link *link) {

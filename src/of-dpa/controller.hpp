@@ -42,6 +42,7 @@ class controller : public rofl::crofbase,
   };
 
   nbi *nb;
+  std::atomic<enum swi_flags> flags;
 
   controller(const controller &) = delete;
   controller &operator=(const controller &) = delete;

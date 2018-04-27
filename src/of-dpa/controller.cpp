@@ -35,6 +35,9 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
   dpt.send_features_request(rofl::cauxid(0));
   dpt.send_desc_stats_request(rofl::cauxid(0), 0);
   dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
+
+  if (flags)
+    subscribe_to(flags);
 }
 
 void controller::handle_dpt_close(const rofl::cdptid &dptid) {
@@ -1040,6 +1043,7 @@ int controller::egress_bridge_port_vlan_remove(uint32_t port,
 
 int controller::subscribe_to(enum swi_flags flags) noexcept {
   int rv = 0;
+  this->flags = this->flags | flags;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     if (flags & switch_interface::SWIF_ARP) {

@@ -111,4 +111,11 @@ public:
   virtual int fdb_timeout(uint32_t port_id, uint16_t vid,
                           const rofl::caddress_ll &mac) noexcept = 0;
 };
+
+inline switch_interface::swi_flags operator|(switch_interface::swi_flags a,
+                                             switch_interface::swi_flags b) {
+  return static_cast<switch_interface::swi_flags>(static_cast<int>(a) |
+                                                  static_cast<int>(b));
+}
+
 } // namespace basebox
