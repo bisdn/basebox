@@ -3,20 +3,23 @@ SUBDIRS = of-dpa
 sbin_PROGRAMS = baseboxd
 
 PROTO_FILES = \
-	grpc/proto/openconfig-interfaces.proto
+	grpc/proto/common/empty.proto \
+	grpc/proto/common/openconfig-interfaces.proto
 
 GRPC_PROTO_FILES = \
-	grpc/proto/services-definition.proto
+	grpc/proto/statistics/statistics-service.proto
 
 PROTO_SOURCES = \
-	openconfig-interfaces.pb.cc \
-	openconfig-interfaces.pb.h  \
-	services-definition.pb.cc \
-	services-definition.pb.h
+	common/empty.pb.cc \
+	common/empty.pb.h  \
+	common/openconfig-interfaces.pb.cc \
+	common/openconfig-interfaces.pb.h  \
+	statistics/statistics-service.pb.cc \
+	statistics/statistics-service.pb.h
 
 GRPC_SOURCES = \
-	services-definition.grpc.pb.cc \
-	services-definition.grpc.pb.h
+	statistics/statistics-service.grpc.pb.cc \
+	statistics/statistics-service.grpc.pb.h
 
 BUILT_SOURCES = \
 	$(PROTO_SOURCES) \

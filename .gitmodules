@@ -1,0 +1,3 @@
+[submodule "src/grpc/proto"]
+	path = src/grpc/proto
+	url = https://github.com/bisdn/basebox-protobuf.git

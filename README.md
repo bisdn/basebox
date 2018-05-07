@@ -19,6 +19,12 @@ The "-testing" repos contain the latest builds for testing purposes and might no
 ### Vagrant
 
 A Vagrant file is included that let's you create a VM with all dependencies installed. This is an easy way to build baseboxd without having to worry about libraries.
+```
+git clone https://github.com/bisdn/basebox.git
+cd basebox
+git submodule update --init
+vagrant up
+```
 More information how to use the Vagrant VM can be found [here] (https://www.vagrantup.com/).
 
 ### Other distros
@@ -40,6 +46,7 @@ Then you can install baseboxd:
 ```
 git clone https://github.com/bisdn/basebox.git
 cd basebox
+git submodule update --init
 ./autogen.sh
 ./configure
 make install
@@ -117,7 +124,7 @@ Version 2.0](https://www.mozilla.org/en-US/MPL/2.0/). A local copy can be found
 
 ## Notes
 
-If you are looking for older versions of basebox(d) for controlling 
+If you are looking for older versions of basebox(d) for controlling
 ovs and xdpd, you find those in the swx branch on github [1].
 
 [1] https://github.com/bisdn/basebox/tree/swx
