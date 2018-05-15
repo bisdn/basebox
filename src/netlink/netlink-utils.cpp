@@ -48,9 +48,9 @@ enum link_type kind_to_link_type(const char *type) noexcept {
 }
 
 void get_bridge_ports(int br_ifindex, struct nl_cache *link_cache,
-                      std::deque<rtnl_link *> *list) noexcept {
+                      std::deque<rtnl_link *> *link_list) noexcept {
   assert(link_cache);
-  assert(list);
+  assert(link_list);
 
   std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> filter(rtnl_link_alloc(),
                                                            &rtnl_link_put);
@@ -69,7 +69,7 @@ void get_bridge_ports(int br_ifindex, struct nl_cache *link_cache,
                                     << obj;
                             list->push_back(LINK_CAST(obj));
                           },
-                          list);
+                          link_list);
 }
 
 } // namespace basebox

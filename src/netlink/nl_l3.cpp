@@ -126,8 +126,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
                                0); // TODO likely move this to separate entity
   if (rv < 0) {
     // TODO shall we remove the l3_termination mac?
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr "
-               << OBJ_CAST(addr);
+    LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
   }
 
   if (!is_loopback) {

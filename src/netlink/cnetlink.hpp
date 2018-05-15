@@ -106,6 +106,7 @@ private:
   int nl_proc_max;
   bool running;
   bool rfd_scheduled;
+  bool lo_processed;
   std::deque<nl_obj> nl_objs;
 
   std::shared_ptr<nl_vlan> vlan;
@@ -170,6 +171,8 @@ private:
   void neigh_ll_created(rtnl_neigh *neigh) noexcept;
   void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
   void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
+
+  int config_lo_addr() noexcept;
 };
 
 } // end of namespace basebox

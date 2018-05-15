@@ -649,7 +649,7 @@ int controller::l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
         rofl::cauxid(0), fm_driver.enable_ipv4_unicast_host(
                              dpt.get_version(), ipv4_dst, l3_interface_id));
   } catch (rofl::eRofBaseNotFound &e) {
-    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound : dptid : " << dptid;
     rv = -EINVAL;
   } catch (rofl::eRofConnNotConnected &e) {
     LOG(ERROR) << ": not connected msg=" << e.what();
