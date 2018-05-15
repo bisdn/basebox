@@ -53,6 +53,8 @@ SOURCES_NETLINK = \
 	netlink/nl_obj.hpp \
 	netlink/nl_output.cpp \
 	netlink/nl_output.hpp \
+	netlink/nl_vlan.cpp \
+	netlink/nl_vlan.hpp  \
 	netlink/tap_io.cpp \
 	netlink/tap_io.hpp \
 	netlink/tap_manager.cpp \
@@ -73,7 +75,8 @@ basebox_grpc_SOURCES = \
 baseboxd_SOURCES = \
 	baseboxd.cpp \
 	sai.hpp \
-	utils.hpp \
+	utils/utils.hpp \
+	utils/rofl-utils.hpp \
 	$(basebox_grpc_SOURCES) \
 	$(SOURCES_NETLINK)
 

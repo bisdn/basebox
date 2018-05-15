@@ -42,6 +42,7 @@ class controller : public rofl::crofbase,
   };
 
   nbi *nb;
+  std::atomic<enum swi_flags> flags;
 
   controller(const controller &) = delete;
   controller &operator=(const controller &) = delete;
@@ -147,6 +148,12 @@ public:
                           uint32_t l3_interface) noexcept override;
   int l3_unicast_host_remove(
       const rofl::caddress_in4 &ipv4_dst) noexcept override;
+
+  int l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
+                           const rofl::caddress_in4 &mask,
+                           uint32_t l3_interface) noexcept override;
+  int l3_unicast_route_remove(const rofl::caddress_in4 &ipv4_dst,
+                              const rofl::caddress_in4 &mask) noexcept override;
 
   int ingress_port_vlan_accept_all(uint32_t port) noexcept override;
   int ingress_port_vlan_drop_accept_all(uint32_t port) noexcept override;

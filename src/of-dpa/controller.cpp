@@ -10,7 +10,7 @@
 
 #include "controller.hpp"
 #include "ofdpa_datatypes.h"
-#include "utils.hpp"
+#include "utils/utils.hpp"
 
 namespace basebox {
 
@@ -19,8 +19,8 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
   std::lock_guard<std::mutex> lock(conn_mutex);
   dptid = dpt.get_dptid();
 
-  LOG(INFO) << __FUNCTION__ << ": opening connection to dptid=0x" << std::hex
-            << dptid << std::dec;
+  LOG(INFO) << __FUNCTION__ << ": opening connection to dptid=" << std::showbase
+            << std::hex << dptid << ", n_tables=" << dpt.get_n_tables();
 
   if (rofl::openflow13::OFP_VERSION != dpt.get_version()) {
     LOG(ERROR) << __FUNCTION__
@@ -35,6 +35,9 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
   dpt.send_features_request(rofl::cauxid(0));
   dpt.send_desc_stats_request(rofl::cauxid(0), 0);
   dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
+
+  if (flags)
+    subscribe_to(flags);
 }
 
 void controller::handle_dpt_close(const rofl::cdptid &dptid) {
@@ -684,6 +687,64 @@ int controller::l3_unicast_host_remove(
   return rv;
 }
 
+int controller::l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
+                                     const rofl::caddress_in4 &mask,
+                                     uint32_t l3_interface_id) noexcept {
+  int rv = 0;
+
+  if (l3_interface_id > 0x0fffffff)
+    return -EINVAL;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    if (l3_interface_id)
+      l3_interface_id = fm_driver.group_id_l3_unicast(l3_interface_id);
+
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_ipv4_unicast_lpm(dpt.get_version(), ipv4_dst, mask,
+                                          l3_interface_id));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  return rv;
+}
+
+int controller::l3_unicast_route_remove(
+    const rofl::caddress_in4 &ipv4_dst,
+    const rofl::caddress_in4 &mask) noexcept {
+  int rv = 0;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_ipv4_unicast_lpm(dpt.get_version(), ipv4_dst, mask));
+    dpt.send_barrier_request(rofl::cauxid(0));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  return rv;
+}
+
 int controller::ingress_port_vlan_accept_all(uint32_t port) noexcept {
   int rv = 0;
   try {
@@ -982,6 +1043,7 @@ int controller::egress_bridge_port_vlan_remove(uint32_t port,
 
 int controller::subscribe_to(enum swi_flags flags) noexcept {
   int rv = 0;
+  this->flags = this->flags | flags;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     if (flags & switch_interface::SWIF_ARP) {

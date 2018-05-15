@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #pragma once
 
 #include <cinttypes>
@@ -5,7 +9,7 @@
 
 #include <rofl/common/caddress.h>
 
-#include "utils.hpp"
+#include "utils/utils.hpp"
 
 namespace basebox {
 class switch_interface {
@@ -52,6 +56,13 @@ public:
                                   uint32_t l3_interface) noexcept = 0;
   virtual int
   l3_unicast_host_remove(const rofl::caddress_in4 &ipv4_dst) noexcept = 0;
+
+  virtual int l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
+                                   const rofl::caddress_in4 &mask,
+                                   uint32_t l3_interface) noexcept = 0;
+  virtual int
+  l3_unicast_route_remove(const rofl::caddress_in4 &ipv4_dst,
+                          const rofl::caddress_in4 &mask) noexcept = 0;
 
   virtual int ingress_port_vlan_accept_all(uint32_t port) noexcept = 0;
   virtual int ingress_port_vlan_drop_accept_all(uint32_t port) noexcept = 0;
@@ -104,4 +115,11 @@ public:
   virtual int fdb_timeout(uint32_t port_id, uint16_t vid,
                           const rofl::caddress_ll &mac) noexcept = 0;
 };
+
+inline switch_interface::swi_flags operator|(switch_interface::swi_flags a,
+                                             switch_interface::swi_flags b) {
+  return static_cast<switch_interface::swi_flags>(static_cast<int>(a) |
+                                                  static_cast<int>(b));
+}
+
 } // namespace basebox

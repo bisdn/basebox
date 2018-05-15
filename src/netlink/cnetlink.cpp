@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #include <cassert>
 #include <cstring>
 #include <exception>
@@ -13,6 +14,7 @@
 #include <netlink/object.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
+#include <netlink/route/link/vlan.h>
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
 
@@ -22,13 +24,14 @@
 #include "tap_manager.hpp"
 
 #include "nl_l3.hpp"
+#include "nl_vlan.hpp"
 
 namespace basebox {
 
 cnetlink::cnetlink()
     : swi(nullptr), thread(this), caches(NL_MAX_CACHE, nullptr),
       bridge(nullptr), nl_proc_max(10), running(false), rfd_scheduled(false),
-      l3(new nl_l3(this)) {
+      vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)) {
 
   sock_tx = nl_socket_alloc();
   if (sock_tx == nullptr) {
@@ -164,6 +167,8 @@ int cnetlink::set_nl_socket_buffer_sizes(nl_sock *sk) {
 
 void cnetlink::destroy_caches() { nl_cache_mngr_free(mngr); }
 
+// XXX TODO should return std::unique_ptr<struct rtnl_link,
+// decltype(&rtnl_link_put)>
 struct rtnl_link *cnetlink::get_link_by_ifindex(int ifindex) const {
   return rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
 }
@@ -184,6 +189,65 @@ struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
                           &_link);
 
   return _link;
+}
+
+struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
+                                           struct nl_addr *a) const {
+  assert(ifindex);
+  assert(a);
+  return rtnl_neigh_get(caches[NL_NEIGH_CACHE], ifindex, a);
+}
+
+bool cnetlink::is_bridge_interface(rtnl_link *l) const {
+
+  // is a vlan on top of the bridge?
+  if (rtnl_link_is_vlan(l)) {
+    LOG(INFO) << __FUNCTION__ << ": vlan ok";
+
+    // get the master and check if it's a bridge
+    auto _l = get_link_by_ifindex(rtnl_link_get_link(l));
+
+    if (_l == nullptr)
+      return false;
+
+    auto lt = kind_to_link_type(rtnl_link_get_type(_l));
+
+    LOG(INFO) << __FUNCTION__ << ": lt=" << lt << " " << OBJ_CAST(_l);
+    if (lt == LT_BRIDGE) {
+      LOG(INFO) << __FUNCTION__ << ": vlan ok";
+
+      std::deque<rtnl_link *> bridge_interfaces;
+      get_bridge_ports(rtnl_link_get_ifindex(_l), caches[NL_LINK_CACHE],
+                       &bridge_interfaces);
+
+      for (auto br_intf : bridge_interfaces) {
+        if (tap_man->get_port_id(rtnl_link_get_ifindex(br_intf)) != 0)
+          return true;
+      }
+    }
+
+    // XXX TODO check rather nl_bridge ?
+  }
+
+  // TODO could the interface be a bridge slave as well?
+
+  return false;
+}
+
+int cnetlink::get_port_id(rtnl_link *l) const {
+  int ifindex;
+
+  if (rtnl_link_is_vlan(l)) {
+    ifindex = rtnl_link_get_link(l);
+  } else {
+    ifindex = rtnl_link_get_ifindex(l);
+  }
+
+  return tap_man->get_port_id(ifindex);
+}
+
+int cnetlink::get_port_id(int ifindex) const {
+  return tap_man->get_port_id(ifindex);
 }
 
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
@@ -417,7 +481,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      l3->add_l3_termination(ADDR_CAST(obj.get_new_obj()));
+      l3->add_l3_addr(ADDR_CAST(obj.get_new_obj()));
       break;
     case AF_INET6:
       VLOG(2) << __FUNCTION__ << ": new IPv6 addr (not supported)";
@@ -455,7 +519,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
 
     switch (family = rtnl_addr_get_family(ADDR_CAST(obj.get_old_obj()))) {
     case AF_INET:
-      l3->del_l3_termination(ADDR_CAST(obj.get_old_obj()));
+      l3->del_l3_addr(ADDR_CAST(obj.get_old_obj()));
       break;
     case AF_INET6:
       VLOG(2) << __FUNCTION__ << ": deleted IPv6 (not supported)";
@@ -613,7 +677,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      VLOG(2) << __FUNCTION__ << ": new IPv4 route (not supported)";
+      l3->add_l3_route(ROUTE_CAST(obj.get_new_obj()));
       break;
     case AF_INET6:
       VLOG(2) << __FUNCTION__ << ": new IPv6 route (not supported)";
@@ -651,7 +715,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_old_obj()))) {
     case AF_INET:
-      VLOG(2) << __FUNCTION__ << ": changed IPv4 route (not supported)";
+      l3->del_l3_route(ROUTE_CAST(obj.get_old_obj()));
       break;
     case AF_INET6:
       VLOG(2) << __FUNCTION__ << ": changed IPv6 route (not supported)";
@@ -719,6 +783,11 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     std::string name(rtnl_link_get_name(link));
     tap_man->tap_dev_ready(ifindex, name);
   } break;
+  case LT_VLAN: {
+    VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
+    uint16_t vid = rtnl_link_vlan_get_id(link);
+    vlan->add_vlan(link, vid, true);
+  } break;
   default:
     LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
                  << " link:" << link;
@@ -773,6 +842,9 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       break;
     }
     break;
+  case LT_VLAN: {
+    VLOG(1) << __FUNCTION__ << ": ignoring vlan interface update";
+  } break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt_old;
     break;
@@ -810,6 +882,10 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
       delete bridge;
       bridge = nullptr;
     }
+    break;
+  case LT_VLAN:
+    VLOG(1) << __FUNCTION__ << ": removed vlan interface " << OBJ_CAST(link);
+    vlan->remove_vlan(link, rtnl_link_vlan_get_id(link), true);
     break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt;
@@ -897,6 +973,9 @@ void cnetlink::register_switch(switch_interface *swi) noexcept {
   assert(swi);
   this->swi = swi;
   l3->register_switch_interface(swi);
+  vlan->register_switch_interface(swi);
+
+  swi->subscribe_to(switch_interface::SWIF_ARP);
 }
 
 void cnetlink::unregister_switch(switch_interface *swi) noexcept {

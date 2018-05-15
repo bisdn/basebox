@@ -1,6 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 #pragma once
 
 #include <cinttypes>
+#include <deque>
 
 extern "C" {
 struct nl_addr;
@@ -22,9 +27,13 @@ enum link_type {
   LT_UNSUPPORTED,
   LT_BRIDGE,
   LT_TUN,
+  LT_VLAN,
   LT_MAX /* must be last */
 };
 
 enum link_type kind_to_link_type(const char *type) noexcept;
+
+void get_bridge_ports(int br_ifindex, struct nl_cache *link_cache,
+                      std::deque<rtnl_link *> *list) noexcept;
 
 } // namespace basebox
