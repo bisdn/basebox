@@ -6,7 +6,7 @@
 
 #include <grpc++/grpc++.h>
 
-#include "services-definition.grpc.pb.h"
+#include "statistics/statistics-service.grpc.pb.h"
 
 namespace basebox {
 
@@ -16,7 +16,7 @@ class tap_manager;
 
 class NetworkStats final : public ::api::NetworkStatistics::Service {
 public:
-  typedef ::api::Empty Empty;
+  typedef ::empty::Empty Empty;
 
   NetworkStats(std::shared_ptr<switch_interface> swi,
                std::shared_ptr<tap_manager> tap_man);
