@@ -122,7 +122,8 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
     vid = rtnl_link_vlan_get_id(link);
     break;
   default:
-    LOG(ERROR) << __FUNCTION__ << ": unsupported link " << OBJ_CAST(link);
+    if (rtnl_link_get_ifindex(link) != 1)
+      LOG(ERROR) << __FUNCTION__ << ": unsupported link " << OBJ_CAST(link);
     break;
   }
 
