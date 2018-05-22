@@ -31,7 +31,7 @@ namespace basebox {
 cnetlink::cnetlink()
     : swi(nullptr), thread(this), caches(NL_MAX_CACHE, nullptr),
       bridge(nullptr), nl_proc_max(10), running(false), rfd_scheduled(false),
-      vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)) {
+      lo_processed(false), vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)) {
 
   sock_tx = nl_socket_alloc();
   if (sock_tx == nullptr) {
@@ -304,12 +304,18 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     do_wakeup = true;
   }
 
+  if (swi && !lo_processed) {
+    config_lo_addr();
+    lo_processed = false;
+  }
+
   if (do_wakeup || nl_objs.size()) {
     this->thread.wakeup();
   }
 }
 
 void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
+
   if (fd == nl_cache_mngr_get_fd(mngr)) {
     int rv = nl_cache_mngr_data_ready(mngr);
     VLOG(1) << __FUNCTION__ << ": #processed=" << rv;
@@ -1083,4 +1089,31 @@ int cnetlink::handle_port_status_events() {
   return size;
 }
 
+int cnetlink::config_lo_addr() noexcept {
+  std::list<struct rtnl_addr *> lo_addr;
+  std::unique_ptr<struct rtnl_addr, void (*)(rtnl_addr *)> addr_filter(
+      rtnl_addr_alloc(), &rtnl_addr_put);
+
+  rtnl_addr_set_ifindex(addr_filter.get(), 1);
+  rtnl_addr_set_family(addr_filter.get(), AF_INET);
+
+  nl_cache_foreach_filter(
+      caches[NL_ADDR_CACHE], OBJ_CAST(addr_filter.get()),
+      [](struct nl_object *obj, void *arg) {
+        VLOG(3) << __FUNCTION__ << " : found configured loopback " << obj;
+
+        std::list<struct rtnl_addr *> *add_list =
+            static_cast<std::list<struct rtnl_addr *> *>(arg);
+
+        add_list->emplace_back(ADDR_CAST(obj));
+      },
+      &lo_addr);
+
+  for (auto addr : lo_addr) {
+    if (l3->add_l3_addr(addr) < 0)
+      return -EINVAL;
+  }
+
+  return 0;
+}
 } // namespace basebox

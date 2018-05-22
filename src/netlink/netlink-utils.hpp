@@ -34,6 +34,6 @@ enum link_type {
 enum link_type kind_to_link_type(const char *type) noexcept;
 
 void get_bridge_ports(int br_ifindex, struct nl_cache *link_cache,
-                      std::deque<rtnl_link *> *list) noexcept;
+                      std::deque<rtnl_link *> *link_list) noexcept;
 
 } // namespace basebox
