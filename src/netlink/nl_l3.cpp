@@ -89,8 +89,11 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
   auto i = rtnl_addr_get_prefixlen(a);
 
-  if (is_loopback && i != 32)
-    return -EINVAL;
+  if (is_loopback && i != 32) {
+    VLOG(1) << __FUNCTION__
+            << " : configuring a non /32 address on a lo interface";
+    return 0;
+  }
 
   int ifindex = 0;
   uint16_t vid = vlan->get_vid(link);

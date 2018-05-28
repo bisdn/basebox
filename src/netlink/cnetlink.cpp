@@ -1101,8 +1101,7 @@ int cnetlink::config_lo_addr() noexcept {
   nl_cache_foreach_filter(
       caches[NL_ADDR_CACHE], OBJ_CAST(addr_filter.get()),
       [](struct nl_object *obj, void *arg) {
-        VLOG(3) << __FUNCTION__ << " : found configured loopback "
-                << OBJ_CAST(obj);
+        VLOG(3) << __FUNCTION__ << " : found configured loopback " << obj;
 
         std::list<struct rtnl_addr *> *add_list =
             static_cast<std::list<struct rtnl_addr *> *>(arg);
@@ -1113,7 +1112,7 @@ int cnetlink::config_lo_addr() noexcept {
 
   for (auto addr : lo_addr) {
     if (l3->add_l3_addr(addr) < 0)
-      VLOG(2) << __FUNCTION__ << " : failed to configure addr";
+      return -EINVAL;
   }
 
   return 0;
