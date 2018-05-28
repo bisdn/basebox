@@ -1096,11 +1096,13 @@ int cnetlink::config_lo_addr() noexcept {
 
   rtnl_addr_set_ifindex(addr_filter.get(), 1);
   rtnl_addr_set_family(addr_filter.get(), AF_INET);
+  rtnl_addr_set_prefixlen(addr_filter.get(), 32);
 
   nl_cache_foreach_filter(
       caches[NL_ADDR_CACHE], OBJ_CAST(addr_filter.get()),
       [](struct nl_object *obj, void *arg) {
-        VLOG(3) << __FUNCTION__ << " : found configured loopback " << obj;
+        VLOG(3) << __FUNCTION__ << " : found configured loopback "
+                << OBJ_CAST(obj);
 
         std::list<struct rtnl_addr *> *add_list =
             static_cast<std::list<struct rtnl_addr *> *>(arg);
@@ -1111,7 +1113,7 @@ int cnetlink::config_lo_addr() noexcept {
 
   for (auto addr : lo_addr) {
     if (l3->add_l3_addr(addr) < 0)
-      return -EINVAL;
+      VLOG(2) << __FUNCTION__ << " : failed to configure addr";
   }
 
   return 0;

@@ -82,11 +82,16 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
 
   struct rtnl_link *link = rtnl_addr_get_link(a);
   if (link == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << ": no link for addr a=" << a;
+    LOG(ERROR) << __FUNCTION__ << ": no link for addr a=" << OBJ_CAST(a);
     return -EINVAL;
   }
 
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
+  auto i = rtnl_addr_get_prefixlen(a);
+
+  if (is_loopback && i != 32)
+    return -EINVAL;
+
   int ifindex = 0;
   uint16_t vid = vlan->get_vid(link);
 
