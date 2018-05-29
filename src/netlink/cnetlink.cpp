@@ -1099,7 +1099,6 @@ int cnetlink::config_lo_addr() noexcept {
 
   rtnl_addr_set_ifindex(addr_filter.get(), 1);
   rtnl_addr_set_family(addr_filter.get(), AF_INET);
-  rtnl_addr_set_prefixlen(addr_filter.get(), 32);
 
   nl_cache_foreach_filter(
       caches[NL_ADDR_CACHE], OBJ_CAST(addr_filter.get()),

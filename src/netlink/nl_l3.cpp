@@ -96,9 +96,8 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     ifindex = rtnl_addr_get_ifindex(a);
     int port_id = nl->get_port_id(link);
 
-#if 0
     if (port_id == 0) {
-      if (is_bridge) {
+      if (is_bridge or nl->is_bridge_interface(link)) {
         LOG(INFO) << __FUNCTION__ << ": host on top of bridge";
         port_id = 0;
       } else {
@@ -107,7 +106,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
         return -EINVAL;
       }
     }
-#endif
 
     auto addr = rtnl_link_get_addr(link);
     rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
