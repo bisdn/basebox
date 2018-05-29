@@ -87,16 +87,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   }
 
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
-  auto i = rtnl_addr_get_prefixlen(a);
-
-  if (is_loopback && i != 32) {
-    auto addr = rtnl_addr_get_local(a);
-    rofl::caddress_in4 dst = libnl_in4addr_2_rofl(addr);
-    rofl::caddress_in4 mask = rofl::build_mask_in4(i);
-    rv = sw->l3_unicast_route_add(dst, mask, 0);
-    return 0;
-  }
-
   int ifindex = 0;
   uint16_t vid = vlan->get_vid(link);
 
@@ -129,14 +119,21 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   }
 
   // get v4 dst (local v4 addr)
+  auto i = rtnl_addr_get_prefixlen(a);
   auto addr = rtnl_addr_get_local(a);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
 
-  rv = sw->l3_unicast_host_add(ipv4_dst,
-                               0); // TODO likely move this to separate entity
-  if (rv < 0) {
-    // TODO shall we remove the l3_termination mac?
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
+  if (is_loopback && i != 32) {
+    rofl::caddress_in4 mask = rofl::build_mask_in4(i);
+    rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0);
+    return rv;
+  } else {
+    rv = sw->l3_unicast_host_add(ipv4_dst,
+                                 0); // TODO likely move this to separate entity
+    if (rv < 0) {
+      // TODO shall we remove the l3_termination mac?
+      LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
+    }
   }
 
   if (!is_loopback) {
