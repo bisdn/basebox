@@ -6,7 +6,7 @@ Vagrant.configure("2") do |config|
   config.vm.hostname = NAME
   config.vm.box = "fedora/26-cloud-base"
   config.vm.network "forwarded_port", guest: 6653, host: 6653
-  config.vm.synced_folder "salt/roots/", "/srv/salt/", type: "nfs", nfs_version: 3, nfs_udp: false
+  config.vm.synced_folder "salt/roots/", "/srv/salt/", type: "nfs", nfs_version: 4, nfs_udp: false
 
   config.vm.provision :salt do |salt|
     salt.masterless = true
@@ -22,7 +22,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.provider :libvirt do |libvirt, override|
-    override.vm.synced_folder "./", "/vagrant", type: "nfs", nfs_version: 3, nfs_udp: false
+    override.vm.synced_folder "./", "/vagrant", type: "nfs", nfs_version: 4, nfs_udp: false
     libvirt.memory = 1024
     libvirt.cpus = 2
   end

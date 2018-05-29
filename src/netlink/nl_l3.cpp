@@ -87,13 +87,13 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   }
 
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
-  /*auto i = rtnl_addr_get_prefixlen(a);
+  auto i = rtnl_addr_get_prefixlen(a);
 
   if (is_loopback && i != 32) {
     VLOG(1) << __FUNCTION__
             << " : configuring a non /32 address on a lo interface";
     return 0;
-  } */
+  }
 
   int ifindex = 0;
   uint16_t vid = vlan->get_vid(link);
@@ -536,7 +536,6 @@ int nl_l3::add_l3_route(struct rtnl_route *r) {
   case RTN_UNSPEC:
   case RTN_LOCAL:
   case RTN_BROADCAST:
-    return add_l3_unicast_route(r);
   case RTN_ANYCAST:
   case RTN_MULTICAST:
   case RTN_BLACKHOLE:
