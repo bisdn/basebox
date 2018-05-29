@@ -82,21 +82,12 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
 
   struct rtnl_link *link = rtnl_addr_get_link(a);
   if (link == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << ": no link for addr a=" << OBJ_CAST(a);
+    LOG(ERROR) << __FUNCTION__ << ": no link for addr a=" << a;
     return -EINVAL;
   }
 
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
-  auto i = rtnl_addr_get_prefixlen(a);
-
-  if (is_loopback && i != 32) {
-    auto addr = rtnl_addr_get_local(a);
-    rofl::caddress_in4 dst = libnl_in4addr_2_rofl(addr);
-    rofl::caddress_in4 mask = rofl::build_mask_in4(i);
-    rv = sw->l3_unicast_route_add(dst, mask, 0);
-    return 0;
-  }
-
+  bool is_bridge = rtnl_link_is_bridge(link);
   int ifindex = 0;
   uint16_t vid = vlan->get_vid(link);
 
@@ -105,8 +96,9 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     ifindex = rtnl_addr_get_ifindex(a);
     int port_id = nl->get_port_id(link);
 
+#if 0
     if (port_id == 0) {
-      if (nl->is_bridge_interface(link)) {
+      if (is_bridge) {
         LOG(INFO) << __FUNCTION__ << ": host on top of bridge";
         port_id = 0;
       } else {
@@ -115,6 +107,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
         return -EINVAL;
       }
     }
+#endif
 
     auto addr = rtnl_link_get_addr(link);
     rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
@@ -139,7 +132,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
   }
 
-  if (!is_loopback) {
+  if (!is_loopback && !is_bridge) {
     assert(ifindex);
     // add vlan
     bool tagged = !!rtnl_link_is_vlan(link);
@@ -753,6 +746,7 @@ void nl_l3::get_neighbours_of_route(rtnl_route *route, nh_lookup_params *p) {
           }
           neigh = data->nl->get_neighbour(ifindex, nh_addr);
         } else {
+          // function name not captured inside lambda
           LOG(INFO) << __FUNCTION__ << ": no gw";
           // lookup neigh in neigh cache, direct?
           nl_addr *dst = rtnl_route_get_dst(data->rt);

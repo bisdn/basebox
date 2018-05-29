@@ -113,7 +113,8 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
   auto lt = kind_to_link_type(rtnl_link_get_type(link));
   switch (lt) {
   case LT_BRIDGE:
-    LOG(WARNING) << __FUNCTION__ << ": bridge port/svi not supported";
+    LOG(INFO) << __FUNCTION__ << ": bridge default vid " << default_vid;
+    vid = default_vid;
     break;
   case LT_TUN:
     vid = default_vid;

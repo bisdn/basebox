@@ -851,6 +851,9 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": ignoring vlan interface update";
   } break;
+  case LT_BRIDGE: {
+    VLOG(1) << __FUNCTION__ << ": ignoring bridge update";
+  } break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt_old;
     break;
