@@ -658,6 +658,11 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r) {
   int nnhs = rtnl_route_get_nnexthops(r);
   VLOG(2) << __FUNCTION__ << ": number of next hops is " << nnhs;
 
+  if (rtnl_route_get_src(r) == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": no src";
+    return -EINVAL;
+  }
+
   nh_lookup_params p = {&neighs, r, nl};
   get_neighbours_of_route(r, &p);
 
