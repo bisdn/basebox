@@ -90,8 +90,10 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   auto i = rtnl_addr_get_prefixlen(a);
 
   if (is_loopback && i != 32) {
-    VLOG(1) << __FUNCTION__
-            << " : configuring a non /32 address on a lo interface";
+    auto addr = rtnl_addr_get_local(a);
+    rofl::caddress_in4 dst = libnl_in4addr_2_rofl(addr);
+    rofl::caddress_in4 mask = rofl::build_mask_in4(i);
+    rv = sw->l3_unicast_route_add(dst, mask, 0);
     return 0;
   }
 
