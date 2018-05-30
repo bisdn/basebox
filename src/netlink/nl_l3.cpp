@@ -583,11 +583,6 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r) {
   int nnhs = rtnl_route_get_nnexthops(r);
   VLOG(2) << __FUNCTION__ << ": number of next hops is " << nnhs;
 
-  if (rtnl_route_get_src(r) == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << ": no src";
-    return -EINVAL;
-  }
-
   nh_lookup_params p = {&neighs, r, nl};
   get_neighbours_of_route(r, &p);
 
@@ -657,11 +652,6 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r) {
 
   int nnhs = rtnl_route_get_nnexthops(r);
   VLOG(2) << __FUNCTION__ << ": number of next hops is " << nnhs;
-
-  if (rtnl_route_get_src(r) == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << ": no src";
-    return -EINVAL;
-  }
 
   nh_lookup_params p = {&neighs, r, nl};
   get_neighbours_of_route(r, &p);
@@ -754,8 +744,6 @@ void nl_l3::get_neighbours_of_route(rtnl_route *route, nh_lookup_params *p) {
           }
           neigh = data->nl->get_neighbour(ifindex, nh_addr);
         } else {
-          // function name not captured inside lambda
-          LOG(INFO) << __FUNCTION__ << ": no gw";
           // lookup neigh in neigh cache, direct?
           nl_addr *dst = rtnl_route_get_dst(data->rt);
           if (dst != nullptr) {
