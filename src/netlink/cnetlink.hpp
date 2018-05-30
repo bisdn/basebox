@@ -45,6 +45,7 @@ public:
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
   bool is_bridge_interface(rtnl_link *l) const;
+  bool is_interface_configured(rtnl_link *l) const;
   int get_port_id(rtnl_link *l) const;
   int get_port_id(int ifindex) const;
 
