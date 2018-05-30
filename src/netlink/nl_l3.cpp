@@ -119,12 +119,12 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   }
 
   // get v4 dst (local v4 addr)
-  auto i = rtnl_addr_get_prefixlen(a);
+  auto prefixlen = rtnl_addr_get_prefixlen(a);
   auto addr = rtnl_addr_get_local(a);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
 
-  if (is_loopback && i != 32) {
-    rofl::caddress_in4 mask = rofl::build_mask_in4(i);
+  if (is_loopback && prefixlen != 32) {
+    rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
     rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0);
     return rv;
   } else {
