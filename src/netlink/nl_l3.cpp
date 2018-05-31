@@ -91,8 +91,8 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   int ifindex = 0;
   uint16_t vid = vlan->get_vid(link);
 
-  if (is_bridge and !nl->is_interface_configured(link)) {
-    VLOG(1) << __FUNCTION__ << ": wrong bridge configured";
+  if (is_bridge and !nl->is_bridge_configured(link)) {
+    VLOG(1) << __FUNCTION__ << ": ignoring " << OBJ_CAST(link);
     return -EINVAL;
   }
 

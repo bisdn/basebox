@@ -1120,14 +1120,15 @@ int cnetlink::config_lo_addr() noexcept {
   return 0;
 }
 
-bool cnetlink::is_interface_configured(rtnl_link *l) const {
-  if (rtnl_link_is_bridge(l) and
-      rtnl_link_get_ifindex(l) == bridge->get_ifindex()) {
-    VLOG(2) << __FUNCTION__ << ": bridge configured";
-    return true;
+bool cnetlink::is_bridge_configured(rtnl_link *l) {
+  assert(l);
+
+  if (bridge == nullptr) {
+    VLOG(1) << __FUNCTION__ << ": no bridge configured";
+    return false;
   }
 
-  return false;
+  return bridge->is_bridge_interface(l);
 }
 
 } // namespace basebox
