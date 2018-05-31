@@ -91,8 +91,16 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   int ifindex = 0;
   uint16_t vid = vlan->get_vid(link);
 
+  // checks if the bridge is the configured one
   if (is_bridge and !nl->is_bridge_configured(link)) {
     VLOG(1) << __FUNCTION__ << ": ignoring " << OBJ_CAST(link);
+    return -EINVAL;
+  }
+
+  // checks if the bridge is already configured with an address
+  int master_id = rtnl_link_get_master(link);
+  if (master_id and rtnl_link_get_addr(nl->get_link(master_id, AF_BRIDGE))) {
+    VLOG(1) << __FUNCTION__ << ": ignoring address on " << OBJ_CAST(link);
     return -EINVAL;
   }
 
