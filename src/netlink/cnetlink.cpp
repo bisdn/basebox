@@ -1128,6 +1128,9 @@ bool cnetlink::is_bridge_configured(rtnl_link *l) {
     return false;
   }
 
+  if (rtnl_link_is_vlan(l))
+    return is_bridge_interface(l);
+
   return bridge->is_bridge_interface(l);
 }
 
