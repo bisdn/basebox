@@ -25,7 +25,7 @@ cd basebox
 git submodule update --init
 vagrant up
 ```
-More information how to use the Vagrant VM can be found [here] (https://www.vagrantup.com/).
+More information how to use the Vagrant VM can be found [here](https://www.vagrantup.com/).
 
 ### Other distros
 
