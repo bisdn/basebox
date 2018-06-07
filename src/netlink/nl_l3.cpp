@@ -82,7 +82,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
 
   struct rtnl_link *link = rtnl_addr_get_link(a);
   if (link == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << ": no link for addr a=" << a;
+    LOG(ERROR) << __FUNCTION__ << ": no link for addr a=" << OBJ_CAST(a);
     return -EINVAL;
   }
 
@@ -92,14 +92,14 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   uint16_t vid = vlan->get_vid(link);
 
   // checks if the bridge is the configured one
-  if (is_bridge and !nl->is_bridge_configured(link)) {
+  if (is_bridge && !nl->is_bridge_configured(link)) {
     VLOG(1) << __FUNCTION__ << ": ignoring " << OBJ_CAST(link);
     return -EINVAL;
   }
 
   // checks if the bridge is already configured with an address
   int master_id = rtnl_link_get_master(link);
-  if (master_id and rtnl_link_get_addr(nl->get_link(master_id, AF_BRIDGE))) {
+  if (master_id && rtnl_link_get_addr(nl->get_link(master_id, AF_BRIDGE))) {
     VLOG(1) << __FUNCTION__ << ": ignoring address on " << OBJ_CAST(link);
     return -EINVAL;
   }
@@ -136,6 +136,9 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   auto prefixlen = rtnl_addr_get_prefixlen(a);
   auto addr = rtnl_addr_get_local(a);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
+
+  if (rofl::caddress_in4("127.0.0.1") == ipv4_dst)
+    return 0;
 
   if (is_loopback && prefixlen != 32) {
     rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
