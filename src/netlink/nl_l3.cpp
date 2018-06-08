@@ -137,8 +137,16 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   auto addr = rtnl_addr_get_local(a);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
 
-  if (rofl::caddress_in4("127.0.0.1") == ipv4_dst)
-    return 0;
+  if (is_loopback) {
+    auto p = nl_addr_alloc(255);
+    nl_addr_parse("127.0.0.0/8", AF_INET, &p);
+    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
+
+    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
+      VLOG(3) << __FUNCTION__ << ": skipping 127.0.0.0/8";
+      return 0;
+    }
+  }
 
   if (is_loopback && prefixlen != 32) {
     rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
