@@ -87,8 +87,22 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   }
 
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
+  bool is_bridge = rtnl_link_is_bridge(link);
   int ifindex = 0;
   uint16_t vid = vlan->get_vid(link);
+
+  // checks if the bridge is the configured one
+  if (is_bridge && !nl->is_bridge_configured(link)) {
+    VLOG(1) << __FUNCTION__ << ": ignoring " << OBJ_CAST(link);
+    return -EINVAL;
+  }
+
+  // checks if the bridge is already configured with an address
+  int master_id = rtnl_link_get_master(link);
+  if (master_id && rtnl_link_get_addr(nl->get_link(master_id, AF_BRIDGE))) {
+    VLOG(1) << __FUNCTION__ << ": ignoring address on " << OBJ_CAST(link);
+    return -EINVAL;
+  }
 
   // XXX TODO split this into several functions
   if (!is_loopback) {
@@ -96,7 +110,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     int port_id = nl->get_port_id(link);
 
     if (port_id == 0) {
-      if (nl->is_bridge_interface(link)) {
+      if (is_bridge or nl->is_bridge_interface(link)) {
         LOG(INFO) << __FUNCTION__ << ": host on top of bridge";
         port_id = 0;
       } else {
@@ -123,6 +137,18 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   auto addr = rtnl_addr_get_local(a);
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
 
+  if (is_loopback) {
+    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(nl_addr_alloc(255),
+                                                             nl_addr_put);
+    auto p = lo_addr.get();
+    nl_addr_parse("127.0.0.0/8", AF_INET, &p);
+
+    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
+      VLOG(3) << __FUNCTION__ << ": skipping 127.0.0.0/8";
+      return 0;
+    }
+  }
+
   if (is_loopback && prefixlen != 32) {
     rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
     rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0);
@@ -136,7 +162,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     }
   }
 
-  if (!is_loopback) {
+  if (!is_loopback && !is_bridge) {
     assert(ifindex);
     // add vlan
     bool tagged = !!rtnl_link_is_vlan(link);
@@ -750,7 +776,6 @@ void nl_l3::get_neighbours_of_route(rtnl_route *route, nh_lookup_params *p) {
           }
           neigh = data->nl->get_neighbour(ifindex, nh_addr);
         } else {
-          LOG(INFO) << __FUNCTION__ << ": no gw";
           // lookup neigh in neigh cache, direct?
           nl_addr *dst = rtnl_route_get_dst(data->rt);
           if (dst != nullptr) {

@@ -851,6 +851,9 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": ignoring vlan interface update";
   } break;
+  case LT_BRIDGE: {
+    VLOG(1) << __FUNCTION__ << ": ignoring bridge update";
+  } break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt_old;
     break;
@@ -1116,4 +1119,19 @@ int cnetlink::config_lo_addr() noexcept {
 
   return 0;
 }
+
+bool cnetlink::is_bridge_configured(rtnl_link *l) {
+  assert(l);
+
+  if (bridge == nullptr) {
+    VLOG(1) << __FUNCTION__ << ": no bridge configured";
+    return false;
+  }
+
+  if (rtnl_link_is_vlan(l))
+    return is_bridge_interface(l);
+
+  return bridge->is_bridge_interface(l);
+}
+
 } // namespace basebox
