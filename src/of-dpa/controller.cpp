@@ -1050,6 +1050,8 @@ int controller::subscribe_to(enum swi_flags flags) noexcept {
       dpt.send_flow_mod_message(rofl::cauxid(0),
                                 fm_driver.enable_policy_arp(dpt.get_version()));
     }
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.enable_policy_8021d(dpt.get_version()));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
