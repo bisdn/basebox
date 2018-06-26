@@ -51,8 +51,7 @@ public:
   controller(nbi *nb,
              const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
                  rofl::openflow::cofhello_elem_versionbitmap())
-      : nb(nb), bb_thread(this), egress_interface_id(1),
-        default_idle_timeout(0) {
+      : nb(nb), bb_thread(1), egress_interface_id(1), default_idle_timeout(0) {
     nb->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
     bb_thread.start();

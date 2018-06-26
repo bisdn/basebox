@@ -16,7 +16,7 @@ static inline void release_packets(std::deque<std::pair<int, packet *>> &q) {
   }
 }
 
-tap_io::tap_io() : thread(this) {
+tap_io::tap_io() : thread(1) {
   struct rlimit limit;
   int rv = getrlimit(RLIMIT_NOFILE, &limit);
 
@@ -41,7 +41,7 @@ void tap_io::register_tap(tap_io_details td) {
     events.emplace_back(std::make_pair(TAP_IO_ADD, td));
   }
 
-  thread.wakeup();
+  thread.wakeup(this);
 }
 
 void tap_io::unregister_tap(int fd, uint32_t port_id) {
@@ -52,7 +52,7 @@ void tap_io::unregister_tap(int fd, uint32_t port_id) {
     events.emplace_back(std::make_pair(TAP_IO_REM, td));
   }
 
-  thread.wakeup();
+  thread.wakeup(this);
 }
 
 void tap_io::enqueue(int fd, packet *pkt) {
@@ -70,7 +70,7 @@ void tap_io::enqueue(int fd, packet *pkt) {
     return;
   }
 
-  thread.wakeup();
+  thread.wakeup(this);
 }
 
 void tap_io::update_mtu(int fd, unsigned mtu) {
@@ -156,7 +156,7 @@ void tap_io::tx() {
           std::move(out_queue.rbegin(), out_queue.rend(),
                     std::front_inserter(pout_queue));
         }
-        thread.add_write_fd(pkt.first, true, false);
+        thread.add_write_fd(this, pkt.first, true, false);
         return;
       case EIO:
         // tap not enabled drop packet
@@ -188,7 +188,7 @@ void tap_io::handle_events() {
       sw_cbs[fd] = ev.second;
       VLOG(3) << __FUNCTION__ << ": register fd=" << fd
               << ", mtu=" << ev.second.mtu << ", port_id=" << ev.second.port_id;
-      thread.add_read_fd(fd, true, false);
+      thread.add_read_fd(this, fd, true, false);
       break;
     case TAP_IO_REM:
       thread.drop_fd(fd, false);

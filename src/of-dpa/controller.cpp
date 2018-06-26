@@ -240,7 +240,7 @@ void controller::handle_port_desc_stats_reply(
     LOG(INFO) << "ports initialized";
 
     bb_thread.add_timer(
-        TIMER_port_stats_request,
+        this, TIMER_port_stats_request,
         rofl::ctimespec().expire_in(port_stats_request_interval));
 
   } catch (std::exception &e) {
@@ -306,7 +306,7 @@ void controller::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
     switch (timer_id) {
     case TIMER_port_stats_request:
       thread.add_timer(
-          TIMER_port_stats_request,
+          this, TIMER_port_stats_request,
           rofl::ctimespec().expire_in(port_stats_request_interval));
       request_port_stats();
       break;

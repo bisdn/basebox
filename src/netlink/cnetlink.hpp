@@ -72,12 +72,12 @@ public:
     if (running)
       return;
     running = true;
-    thread.wakeup();
+    thread.wakeup(this);
   }
 
   void stop() {
     running = false;
-    thread.wakeup();
+    thread.wakeup(this);
   }
 
 private:
