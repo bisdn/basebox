@@ -29,8 +29,8 @@
 namespace basebox {
 
 cnetlink::cnetlink()
-    : swi(nullptr), thread(this), caches(NL_MAX_CACHE, nullptr),
-      bridge(nullptr), nl_proc_max(10), running(false), rfd_scheduled(false),
+    : swi(nullptr), thread(1), caches(NL_MAX_CACHE, nullptr), bridge(nullptr),
+      nl_proc_max(10), running(false), rfd_scheduled(false),
       lo_processed(false), vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)) {
 
   sock_tx = nl_socket_alloc();
@@ -139,7 +139,7 @@ void cnetlink::init_caches() {
     LOG(FATAL) << __FUNCTION__ << ": add route/neigh to cache mngr";
   }
 
-  thread.wakeup();
+  thread.wakeup(this);
 }
 
 int cnetlink::set_nl_socket_buffer_sizes(nl_sock *sk) {
@@ -255,7 +255,7 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
 
   if (not rfd_scheduled) {
     try {
-      thread.add_read_fd(nl_cache_mngr_get_fd(mngr), true, false);
+      thread.add_read_fd(this, nl_cache_mngr_get_fd(mngr), true, false);
       rfd_scheduled = true;
     } catch (std::exception &e) {
       LOG(FATAL) << "caught " << e.what();
@@ -310,7 +310,7 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
   }
 
   if (do_wakeup || nl_objs.size()) {
-    this->thread.wakeup();
+    this->thread.wakeup(this);
   }
 }
 
@@ -321,7 +321,7 @@ void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
     VLOG(1) << __FUNCTION__ << ": #processed=" << rv;
     // notify update
     if (running) {
-      this->thread.wakeup();
+      this->thread.wakeup(this);
     }
   }
 }
@@ -382,7 +382,7 @@ void cnetlink::learn_l2(uint32_t port_id, int fd, basebox::packet *pkt) {
   }
 
   VLOG(2) << __FUNCTION__ << ": got pkt " << pkt << " for fd=" << fd;
-  thread.wakeup();
+  thread.wakeup(this);
 }
 
 int cnetlink::handle_source_mac_learn() {
@@ -440,7 +440,7 @@ void cnetlink::fdb_timeout(uint32_t port_id, uint16_t vid,
   VLOG(2) << __FUNCTION__ << ": got port_id=" << port_id << ", vid=" << vid
           << ", mac=" << mac;
 
-  thread.wakeup();
+  thread.wakeup(this);
 }
 
 int cnetlink::handle_fdb_timeout() {
@@ -975,7 +975,7 @@ void cnetlink::neigh_ll_deleted(rtnl_neigh *neigh) noexcept {
 
 void cnetlink::resend_state() noexcept {
   stop();
-  thread.add_timer(NL_TIMER_RESEND_STATE, rofl::ctimespec().expire_in(0));
+  thread.add_timer(this, NL_TIMER_RESEND_STATE, rofl::ctimespec().expire_in(0));
 }
 
 void cnetlink::register_switch(switch_interface *swi) noexcept {
@@ -1002,7 +1002,7 @@ void cnetlink::port_status_changed(uint32_t port_no,
     LOG(ERROR) << __FUNCTION__ << ": unknown exception " << e.what();
     return;
   }
-  thread.wakeup();
+  thread.wakeup(this);
 }
 
 int cnetlink::handle_port_status_events() {

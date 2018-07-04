@@ -140,8 +140,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   if (is_loopback) {
     auto p = nl_addr_alloc(255);
     nl_addr_parse("127.0.0.0/8", AF_INET, &p);
-    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p,
-                                                             nl_addr_put);
+    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
 
     if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
       VLOG(3) << __FUNCTION__ << ": skipping 127.0.0.0/8";
