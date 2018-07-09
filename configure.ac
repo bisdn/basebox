@@ -72,16 +72,16 @@ else
 fi
 
 # check for libraries
-PKG_CHECK_MODULES([PROTOBUF], protobuf >= 3.4.0,
+PKG_CHECK_MODULES([PROTOBUF], protobuf >= 3.5.0,
   [ CPPFLAGS="$CPPFLAGS $PROTOBUF_CFLAGS"
 	LIBS="$LIBS $PROTOBUF_LIBS"],
-  [ AC_MSG_ERROR([minimum version of libprotobuf is 3.4.0]) ])
+  [ AC_MSG_ERROR([minimum version of libprotobuf is 3.5.0]) ])
 
 AC_ARG_VAR([PROTOC], [protoc command])
 AC_PATH_PROG([PROTOC], [protoc], [unset])
 AS_IF([test "$PROTOC" = unset], [AC_MSG_ERROR([protoc not found, set either PROTOC variable or install protoc in PATH.])])
 
-PKG_CHECK_MODULES([GRPC], grpc >= 4.0.0 grpc++ >= 1.6.6,
+PKG_CHECK_MODULES([GRPC], grpc >= 4.0.0 grpc++ >= 1.13.0,
   [ CPPFLAGS="$CPPFLAGS $GRPC_CFLAGS"
 	LIBS="$LIBS $GRPC_LIBS"],
   [ AC_MSG_ERROR([minimum version of libgrpc is 4.0.0]) ])
@@ -95,15 +95,15 @@ PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.29 libnl-route-3.0 >= 3.2.29,
 	LIBS="$LIBS $LIBNL3_LIBS"],
   [ AC_MSG_ERROR([minimum version of libnl-3 is 3.2.29]) ])
 
-PKG_CHECK_MODULES([ROFL], rofl_common >= 0.12.1,
+PKG_CHECK_MODULES([ROFL], rofl_common >= 0.13.1,
   [ CPPFLAGS="$CPPFLAGS $ROFL_CFLAGS"
 	LIBS="$LIBS $ROFL_LIBS" ],
-  [ AC_MSG_ERROR([minimum version of rofl_common is 0.12.1]) ])
+  [ AC_MSG_ERROR([minimum version of rofl_common is 0.13.1]) ])
 
-PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.9,
+PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.12,
   [ CPPFLAGS="$CPPFLAGS $ROFL_OFDPA_CFLAGS"
 	LIBS="$LIBS $ROFL_OFDPA_LIBS" ],
-  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.9]) ])
+  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.12]) ])
 
 AC_CHECK_LIB([gflags], [getenv], [GFLAGS_LIBS="-lgflags"],
   AC_MSG_ERROR([libgflags not found]) )
