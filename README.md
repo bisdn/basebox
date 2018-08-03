@@ -33,8 +33,8 @@ Currently only intallation from source is supported. To build baseboxd you need
 the following dependencies installed:
 
 * [libnl3](https://github.com/thom311/libnl) (>= 3.2.29)
-* [rofl-common](https://github.com/bisdn/rofl-common) (>= 0.12.1)
-* [rofl-ofdpa](https://github.com/bisdn/rofl-ofdpa) (>= 0.9)
+* [rofl-common](https://github.com/bisdn/rofl-common) (>= 0.13.1)
+* [rofl-ofdpa](https://github.com/bisdn/rofl-ofdpa) (>= 0.12)
 * [gflags](https://github.com/gflags/gflags)
 * [glog](https://github.com/google/glog) (>= 0.3.3)
 * [protobuf](https://github.com/google/protobuf) (>= 3.4.0)
