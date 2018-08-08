@@ -188,11 +188,19 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   }
 
   struct nl_addr *addr = rtnl_addr_get_local(a);
+
   rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
+  int prefixlen = nl_addr_get_prefixlen(addr);
 
   // XXX TODO remove vlan address
 
-  rv = sw->l3_unicast_host_remove(ipv4_dst);
+  if (prefixlen == 32) {
+    rv = sw->l3_unicast_host_remove(ipv4_dst);
+  } else {
+    rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
+    rv = sw->l3_unicast_route_remove(ipv4_dst, mask);
+  }
+
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to remove l3 unicast host(local) rv=" << rv;
