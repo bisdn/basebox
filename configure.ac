@@ -121,6 +121,6 @@ AC_CONFIG_FILES([
 	Makefile
 	src/Makefile
 	src/of-dpa/Makefile
-	pkg/rhel/baseboxd.spec
+	pkg/release/rpm/baseboxd.spec
 	])
 AC_OUTPUT
