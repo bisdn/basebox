@@ -1,0 +1,5 @@
+/baseboxd-*
+/git-bundle*
+
+/baseboxd.spec
+!Makefile
