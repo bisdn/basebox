@@ -2,14 +2,24 @@ dist: trusty
 language: cpp
 sudo: required
 
-addons:
-  apt:
-    packages:
-    - clang-format-5.0
-    sources:
-    - llvm-toolchain-trusty-5.0
-    - ubuntu-toolchain-r-test
+services:
+  - docker
+
+env:
+  - BUILDER="docker.io/toanju/builder:28"
+before_install:
+  - docker pull $BUILDER
 
 script:
-- find . -regex '.*\.\(hh?\|cc?\|hpp\|cpp\)$' | xargs clang-format-5.0 -i -style=file -fallback-style=llvm
-- git diff --exit-code
+  - docker run -v "$PWD":/workdir:Z --rm --name builder -dti $BUILDER /bin/bash
+  - docker exec builder find . -regex '.*\.\(hh?\|cc?\|hpp\|cpp\)$' | xargs docker exec builder clang-format -i -style=file -fallback-style=llvm
+  - docker exec builder git diff --exit-code
+  - docker exec builder dnf -y copr enable bisdn/rofl
+  - docker exec builder dnf -y copr enable bisdn/rofl-testing
+  - docker exec builder dnf -y copr enable bisdn/baseboxd
+  - docker exec builder dnf -y copr enable bisdn/baseboxd-testing
+  - docker exec builder make -C ./pkg/testing/rpm/ spec
+  - docker exec builder dnf -y builddep ./pkg/testing/rpm/baseboxd.spec
+  - docker exec builder ./autogen.sh
+  - docker exec builder ./configure
+  - docker exec builder make -j
