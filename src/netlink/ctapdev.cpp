@@ -20,7 +20,7 @@
 namespace basebox {
 
 ctapdev::ctapdev(std::string const &devname) : fd(-1), devname(devname) {
-  if (devname.size() > IFNAMSIZ || devname.size() == 0) {
+  if (devname.size() >= IFNAMSIZ || devname.size() == 0) {
     throw std::length_error("invalid devname size");
   }
 }
@@ -43,7 +43,7 @@ void ctapdev::tap_open() {
 
   memset(&ifr, 0, sizeof(ifr));
   ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
-  strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ);
+  strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ - 1);
 
   if ((rc = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0) {
     LOG(FATAL) << __FUNCTION__ << ": ioctl TUNSETIFF failed on fd=" << fd
