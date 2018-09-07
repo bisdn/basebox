@@ -1,0 +1,86 @@
+# vim:ft=spec
+%global fullversion ${FULLVERSION}%{nil}
+%global version     ${VERSION}%{nil}
+%global ncommits    ${NCOMMITS}%{nil}
+%global commit      ${COMMIT}%{nil}
+%global shortcommit ${SHORTCOMMIT}%{nil}
+
+Name:          baseboxd
+Version:       ${VERSION}
+Release:       %{!?ncommits:1}%{?ncommits}%{?shortcommit:.git%{shortcommit}}%{?dist}
+Summary:       TODO
+
+License:       BISDN
+URL:           http://www.bisdn.de/
+Source0:       https://github.com/bisdn/basebox/archive/%{?commit}.tar.gz#/%{name}-%{shortcommit}.tar.gz
+
+BuildRequires: autoconf
+BuildRequires: automake
+BuildRequires: gflags-devel
+BuildRequires: git
+BuildRequires: glog-devel
+BuildRequires: grpc-devel
+BuildRequires: grpc-plugins
+BuildRequires: libnl3-devel
+BuildRequires: libtool
+BuildRequires: protobuf-compiler
+BuildRequires: protobuf-devel
+BuildRequires: rofl-common-devel
+BuildRequires: rofl-ofdpa-devel
+BuildRequires: systemd
+
+Requires:      gflags
+Requires:      glog
+Requires:      grpc
+Requires:      libnl3
+Requires:      protobuf
+Requires:      rofl-common
+Requires:      rofl-ofdpa
+
+Requires(post): systemd
+Requires(preun): systemd
+Requires(postun): systemd
+
+%description
+TODO
+
+
+%prep
+%setup -q -n %{name}-%{commit}
+# %%autosetup %%{?commit:-n %%{name}-%%{commit}} -p1 -Sgit
+
+
+%build
+./autogen.sh
+%configure
+make %{?_smp_mflags}
+
+
+%install
+rm -rf $RPM_BUILD_ROOT
+%make_install
+
+install -p -D -m 0644 pkg/systemd/baseboxd.service \
+    %{buildroot}%{_unitdir}/baseboxd.service
+install -p -D -m 0644 pkg/systemd/sysconfig.template \
+    %{buildroot}%{_sysconfdir}/sysconfig/baseboxd
+
+
+%post
+%systemd_post basebox.service
+
+%preun
+%systemd_preun basebox.service
+
+%postun
+%systemd_postun
+
+%files
+%{_sbindir}/baseboxd
+%{_unitdir}/baseboxd.service
+%config(noreplace) %{_sysconfdir}/sysconfig/baseboxd
+%doc README.md
+
+%changelog
+* Tue Feb  9 2016 Tobias Jungel
+-
