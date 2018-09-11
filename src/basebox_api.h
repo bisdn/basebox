@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <grpc++/server.h>
+#include <memory>
 
 namespace basebox {
 
@@ -22,7 +22,6 @@ public:
 
 private:
   NetworkStats *stats;
-  std::unique_ptr<::grpc::Server> server;
 };
 
 } // namespace basebox
