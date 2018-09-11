@@ -365,18 +365,16 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   // XXX TODO maybe move this to the utils to have a std lib for parsing the
   // ether frame
   switch (ntohs(hdr->eth.h_proto)) {
-  case ETH_P_IP:
-    // no vid, set vid to pvid
-    vid = br_vlan->pvid;
-    break;
   case ETH_P_8021Q:
     // vid
     vid = ntohs(hdr->vlan);
     break;
   default:
-    LOG(WARNING) << __FUNCTION__ << ": not yet supported ethertype "
+    // no vid, set vid to pvid
+    vid = br_vlan->pvid;
+    LOG(WARNING) << __FUNCTION__ << ": assueming untagged for ethertype "
                  << std::showbase << std::hex << ntohs(hdr->eth.h_proto);
-    return -EINVAL;
+    break;
   }
 
   // verify that the vid is in use here
