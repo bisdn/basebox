@@ -39,7 +39,6 @@ cnetlink::cnetlink()
   }
 
   nl_connect(sock_tx, NETLINK_ROUTE);
-
   set_nl_socket_buffer_sizes(sock_tx);
 
   try {
@@ -373,7 +372,7 @@ void cnetlink::set_tapmanager(std::shared_ptr<tap_manager> tm) {
   l3->set_tapmanager(tm);
 }
 
-int cnetlink::send_nl_msg(nl_msg *msg) { return nl_send_auto(sock_tx, msg); }
+int cnetlink::send_nl_msg(nl_msg *msg) { return nl_send_sync(sock_tx, msg); }
 
 void cnetlink::learn_l2(uint32_t port_id, int fd, basebox::packet *pkt) {
   {
@@ -398,8 +397,6 @@ int cnetlink::handle_source_mac_learn() {
     auto p = _packet_in.front();
     int ifindex = tap_man->get_ifindex(p.port_id);
 
-    VLOG(2) << __FUNCTION__ << ": ifindex=" << ifindex;
-
     if (ifindex && bridge) {
       rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
       VLOG(2) << __FUNCTION__ << ": ifindex=" << ifindex
@@ -409,13 +406,16 @@ int cnetlink::handle_source_mac_learn() {
         // learn the source mac
         bridge->learn_source_mac(br_link, p.pkt);
       }
+    } else {
+      LOG(WARNING) << __FUNCTION__
+                   << ": source mac not learned of packet=" << p.pkt
+                   << ", ifindex=" << ifindex << ", bridge=" << bridge;
     }
 
     VLOG(2) << __FUNCTION__ << ": send pkt " << p.pkt
             << " to tap on fd=" << p.fd;
     // pass process packets to tap_man
     tap_man->enqueue(p.fd, p.pkt);
-
     _packet_in.pop_front();
   }
 
