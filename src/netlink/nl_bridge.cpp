@@ -201,8 +201,8 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
 
   pport_no = tap_man->get_port_id(rtnl_link_get_ifindex(_link));
   if (pport_no == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid port "
-               << static_cast<void *>(_link);
+    LOG(ERROR) << __FUNCTION__
+               << ": invalid pport_no=0 of link: " << OBJ_CAST(_link);
     return;
   }
 
@@ -240,7 +240,10 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
 
         if (new_br_vlan->vlan_bitmap[k] & 1 << (j - 1)) {
           // vlan added
-          assert(pport_no);
+          VLOG(3) << __FUNCTION__ << ": add vid=" << vid
+                  << " on pport_no=" << pport_no
+                  << " link: " << OBJ_CAST(_link);
+
           // normal vlan port
           sw->egress_bridge_port_vlan_add(pport_no, vid, egress_untagged);
           sw->ingress_port_vlan_add(pport_no, vid, new_br_vlan->pvid == vid);
@@ -248,10 +251,31 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
         } else {
           // vlan removed
 
+          VLOG(3) << __FUNCTION__ << ": remove vid=" << vid
+                  << " on pport_no=" << pport_no
+                  << " link: " << OBJ_CAST(_link);
           sw->ingress_port_vlan_remove(pport_no, vid, old_br_vlan->pvid == vid);
 
           // delete all FM pointing to this group first
           sw->l2_addr_remove_all_in_vlan(pport_no, vid);
+
+          std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> filter(
+              rtnl_neigh_alloc(), rtnl_neigh_put);
+
+          rtnl_neigh_set_ifindex(filter.get(), rtnl_link_get_ifindex(bridge));
+          rtnl_neigh_set_master(filter.get(), rtnl_link_get_master(bridge));
+          rtnl_neigh_set_family(filter.get(), AF_BRIDGE);
+          rtnl_neigh_set_vlan(filter.get(), vid);
+          rtnl_neigh_set_flags(filter.get(), NTF_MASTER | NTF_EXT_LEARNED);
+          rtnl_neigh_set_state(filter.get(), NUD_REACHABLE);
+
+          nl_cache_foreach_filter(l2_cache.get(), OBJ_CAST(filter.get()),
+                                  [](struct nl_object *o, void *arg) {
+                                    VLOG(3) << ": l2_cache remove object " << o;
+                                    nl_cache_remove(o);
+                                  },
+                                  nullptr);
+
           sw->egress_bridge_port_vlan_remove(pport_no, vid);
         }
 
@@ -333,14 +357,25 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
 void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {
   assert(sw);
   nl_addr *addr = rtnl_neigh_get_lladdr(neigh);
+
   if (nl_addr_cmp(rtnl_link_get_addr(bridge), addr) == 0) {
     // ignore ll addr of bridge on slave
     return;
   }
-  const uint32_t port = tap_man->get_port_id(rtnl_neigh_get_ifindex(neigh));
 
+  // lookup l2_cache as well
+  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n_lookup(
+      NEIGH_CAST(nl_cache_search(l2_cache.get(), OBJ_CAST(neigh))),
+      rtnl_neigh_put);
+
+  if (n_lookup) {
+    nl_cache_remove(OBJ_CAST(n_lookup.get()));
+  }
+
+  const uint32_t port = tap_man->get_port_id(rtnl_neigh_get_ifindex(neigh));
   rofl::caddress_ll mac((uint8_t *)nl_addr_get_binary_addr(addr),
                         nl_addr_get_len(addr));
+
   sw->l2_addr_remove(port, rtnl_neigh_get_vlan(neigh), mac);
 }
 
