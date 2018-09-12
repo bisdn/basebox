@@ -28,7 +28,7 @@ void ApiServer::runGRPCServer() {
 
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(stats);
-  server = builder.BuildAndStart();
+  std::unique_ptr<::grpc::Server> server = builder.BuildAndStart();
   LOG(INFO) << "gRPC server listening on " << server_address;
   server->Wait();
 }
