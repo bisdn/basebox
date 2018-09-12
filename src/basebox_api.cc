@@ -8,10 +8,10 @@
 
 #include <glog/logging.h>
 #include <google/protobuf/repeated_field.h>
-#include <grpc++/channel.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 #include <grpc/grpc.h>
 
 namespace basebox {
