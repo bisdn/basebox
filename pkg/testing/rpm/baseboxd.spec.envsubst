@@ -16,6 +16,7 @@ Source0:       https://github.com/bisdn/basebox/archive/%{?commit}.tar.gz#/%{nam
 
 BuildRequires: autoconf
 BuildRequires: automake
+BuildRequires: gcc-c++
 BuildRequires: gflags-devel
 BuildRequires: git
 BuildRequires: glog-devel

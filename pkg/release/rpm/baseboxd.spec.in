@@ -12,6 +12,7 @@ Source0:       http://www.bisdn.de/releases/basebox/%{name}-%{version}%{?snapsho
 
 BuildRequires: autoconf
 BuildRequires: automake
+BuildRequires: gcc-c++
 BuildRequires: gflags-devel
 BuildRequires: glog-devel
 BuildRequires: grpc-devel
@@ -76,4 +77,4 @@ install -p -D -m 0644 pkg/systemd/sysconfig.template \
 
 %changelog
 * Tue Feb  9 2016 Tobias Jungel
-- 
+-
