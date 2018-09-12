@@ -29,9 +29,9 @@
 namespace basebox {
 
 cnetlink::cnetlink()
-    : swi(nullptr), thread(1), caches(NL_MAX_CACHE, nullptr), bridge(nullptr),
-      nl_proc_max(10), running(false), rfd_scheduled(false),
-      lo_processed(false), vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)) {
+    : swi(nullptr), thread(1), caches(NL_MAX_CACHE, nullptr), nl_proc_max(10),
+      running(false), rfd_scheduled(false), lo_processed(false),
+      bridge(nullptr), vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)) {
 
   sock_tx = nl_socket_alloc();
   if (sock_tx == nullptr) {
@@ -169,13 +169,32 @@ void cnetlink::destroy_caches() { nl_cache_mngr_free(mngr); }
 // XXX TODO should return std::unique_ptr<struct rtnl_link,
 // decltype(&rtnl_link_put)>
 struct rtnl_link *cnetlink::get_link_by_ifindex(int ifindex) const {
-  return rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
+  rtnl_link *link = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
+
+  // check the garbage
+  if (link == nullptr) {
+    for (auto &obj : nl_objs) {
+      if (obj.get_action() != NL_ACT_DEL)
+        continue;
+
+      if (std::string("route/link")
+              .compare(nl_object_get_type(obj.get_old_obj())) != 0)
+        continue;
+
+      if (rtnl_link_get_ifindex(LINK_CAST(obj.get_old_obj())) == ifindex) {
+        link = LINK_CAST(obj.get_old_obj());
+        nl_object_get(OBJ_CAST(link));
+        break;
+      }
+    }
+  }
+  return link;
 }
 
 struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
   struct rtnl_link *_link = nullptr;
-  std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> filter(rtnl_link_alloc(),
-                                                           &rtnl_link_put);
+  std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> filter(rtnl_link_alloc(),
+                                                              &rtnl_link_put);
 
   rtnl_link_set_ifindex(filter.get(), ifindex);
   rtnl_link_set_family(filter.get(), family);
@@ -187,7 +206,56 @@ struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
                           },
                           &_link);
 
+  if (_link == nullptr) {
+    // check the garbage
+    for (auto &obj : nl_objs) {
+      if (obj.get_action() != NL_ACT_DEL)
+        continue;
+
+      if (nl_object_match_filter(obj.get_old_obj(), OBJ_CAST(filter.get()))) {
+        _link = LINK_CAST(obj.get_old_obj());
+        VLOG(1) << __FUNCTION__ << ": found deleted link " << OBJ_CAST(_link);
+        break;
+      }
+    }
+  }
+
   return _link;
+}
+
+void cnetlink::get_bridge_ports(int br_ifindex,
+                                std::deque<rtnl_link *> *link_list) const
+    noexcept {
+  assert(link_list);
+
+  std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> filter(rtnl_link_alloc(),
+                                                              &rtnl_link_put);
+  assert(filter && "out of memory");
+
+  rtnl_link_set_family(filter.get(), AF_BRIDGE);
+  rtnl_link_set_master(filter.get(), br_ifindex);
+
+  nl_cache_foreach_filter(caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
+                          [](struct nl_object *obj, void *arg) {
+                            assert(arg);
+                            std::deque<rtnl_link *> *list =
+                                static_cast<std::deque<rtnl_link *> *>(arg);
+
+                            VLOG(3) << __FUNCTION__ << ": found bridge port "
+                                    << obj;
+                            list->push_back(LINK_CAST(obj));
+                          },
+                          link_list);
+
+  // check the garbage
+  for (auto &obj : nl_objs) {
+    if (obj.get_action() != NL_ACT_DEL)
+      continue;
+
+    if (nl_object_match_filter(obj.get_old_obj(), OBJ_CAST(filter.get()))) {
+      link_list->push_back(LINK_CAST(obj.get_old_obj()));
+    }
+  }
 }
 
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
@@ -216,8 +284,7 @@ bool cnetlink::is_bridge_interface(rtnl_link *l) const {
       LOG(INFO) << __FUNCTION__ << ": vlan ok";
 
       std::deque<rtnl_link *> bridge_interfaces;
-      get_bridge_ports(rtnl_link_get_ifindex(_l), caches[NL_LINK_CACHE],
-                       &bridge_interfaces);
+      get_bridge_ports(rtnl_link_get_ifindex(_l), &bridge_interfaces);
 
       for (auto br_intf : bridge_interfaces) {
         if (tap_man->get_port_id(rtnl_link_get_ifindex(br_intf)) != 0)
@@ -236,6 +303,10 @@ bool cnetlink::is_bridge_interface(rtnl_link *l) const {
 int cnetlink::get_port_id(rtnl_link *l) const {
   int ifindex;
 
+  if (l == nullptr) {
+    return 0;
+  }
+
   if (rtnl_link_is_vlan(l)) {
     ifindex = rtnl_link_get_link(l);
   } else {
@@ -246,7 +317,11 @@ int cnetlink::get_port_id(rtnl_link *l) const {
 }
 
 int cnetlink::get_port_id(int ifindex) const {
-  return tap_man->get_port_id(ifindex);
+
+  std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> link(
+      get_link_by_ifindex(ifindex), rtnl_link_put);
+
+  return get_port_id(link.get());
 }
 
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
@@ -263,7 +338,8 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
 
   // loop through nl_objs
   for (int cnt = 0; cnt < nl_proc_max && nl_objs.size() && running; cnt++) {
-    auto &obj = nl_objs.front();
+    auto obj = nl_objs.front();
+    nl_objs.pop_front();
 
     switch (obj.get_msg_type()) {
     case RTM_NEWLINK:
@@ -287,8 +363,6 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
                  << obj.get_msg_type();
       break;
     }
-
-    nl_objs.pop_front();
   }
 
   if (handle_port_status_events()) {
@@ -959,8 +1033,7 @@ void cnetlink::neigh_ll_deleted(rtnl_neigh *neigh) noexcept {
 
   if (l == nullptr) {
     LOG(ERROR) << __FUNCTION__
-               << ": unknown link ifindex=" << rtnl_neigh_get_ifindex(neigh)
-               << " of new L2 neighbour";
+               << ": unknown link ifindex=" << rtnl_neigh_get_ifindex(neigh);
     return;
   }
 

@@ -42,6 +42,8 @@ public:
    */
   struct rtnl_link *get_link_by_ifindex(int ifindex) const;
   struct rtnl_link *get_link(int ifindex, int family) const;
+  void get_bridge_ports(int br_ifindex,
+                        std::deque<rtnl_link *> *link_list) const noexcept;
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
   bool is_bridge_interface(rtnl_link *l) const;
@@ -101,15 +103,14 @@ private:
       port_status_changes;
   std::mutex pc_mutex;
 
-  std::shared_ptr<tap_manager> tap_man;
-
-  nl_bridge *bridge;
   int nl_proc_max;
   bool running;
   bool rfd_scheduled;
   bool lo_processed;
   std::deque<nl_obj> nl_objs;
 
+  std::shared_ptr<tap_manager> tap_man;
+  nl_bridge *bridge;
   std::shared_ptr<nl_vlan> vlan;
   std::shared_ptr<nl_l3> l3;
 
