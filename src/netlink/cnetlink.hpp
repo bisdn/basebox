@@ -25,7 +25,7 @@ class nl_vlan;
 class tap_manager;
 
 class cnetlink final : public rofl::cthread_env {
-
+public:
   enum nl_cache_t {
     NL_ADDR_CACHE,
     NL_LINK_CACHE,
@@ -34,7 +34,6 @@ class cnetlink final : public rofl::cthread_env {
     NL_MAX_CACHE,
   };
 
-public:
   cnetlink();
   ~cnetlink() override;
 
@@ -51,6 +50,8 @@ public:
   bool is_bridge_configured(rtnl_link *l);
   int get_port_id(rtnl_link *l) const;
   int get_port_id(int ifindex) const;
+
+  nl_cache *get_cache(enum nl_cache_t id) { return caches[id]; }
 
   void resend_state() noexcept;
 
