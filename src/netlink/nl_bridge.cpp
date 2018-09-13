@@ -140,6 +140,12 @@ void nl_bridge::delete_interface(rtnl_link *link) {
 void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
   assert(sw);
 
+  // sanity checks
+  if (bridge == nullptr) { // XXX TODO solve this differently
+    LOG(WARNING) << __FUNCTION__ << " cannot update interface without bridge";
+    return;
+  }
+
   rtnl_link_bridge_vlan *old_br_vlan, *new_br_vlan;
   rtnl_link *_link;
 
@@ -179,31 +185,13 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     return;
   }
 
-  if (old_br_vlan == nullptr || new_br_vlan == nullptr) {
-    VLOG(2) << __FUNCTION__ << ": interface attached without VLAN";
-    return;
-  }
-
+  // check for vid changes
   if (br_vlan_equal(old_br_vlan, new_br_vlan)) {
-    // no vlan changed
     VLOG(2) << __FUNCTION__ << ": vlans did not change";
     return;
   }
 
-  // sanity checks
-  if (bridge == nullptr) { // XXX TODO solve this differently
-    LOG(WARNING) << __FUNCTION__ << " cannot update interface without bridge";
-    return;
-  }
-  char *type = rtnl_link_get_type(_link);
-  if (type == nullptr) {
-    VLOG(1) << __FUNCTION__ << ": no link type";
-  }
-
-  uint32_t pport_no = 0;
-  std::deque<rtnl_link *> bridge_ports;
-
-  pport_no = tap_man->get_port_id(rtnl_link_get_ifindex(_link));
+  uint32_t pport_no = tap_man->get_port_id(rtnl_link_get_ifindex(_link));
   if (pport_no == 0) {
     LOG(ERROR) << __FUNCTION__
                << ": invalid pport_no=0 of link: " << OBJ_CAST(_link);
