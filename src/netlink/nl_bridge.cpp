@@ -156,12 +156,16 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
   } else {
     // link updated
     old_br_vlan = rtnl_link_bridge_get_port_vlan(old_link);
-    if (old_br_vlan == nullptr) {
-      old_br_vlan = &empty_br_vlan;
-    }
     new_br_vlan = rtnl_link_bridge_get_port_vlan(new_link);
-    //  TODO check if it can happen that new_br_vlan == null
     _link = nl->get_link(rtnl_link_get_ifindex(new_link), AF_UNSPEC);
+  }
+
+  if (old_br_vlan == nullptr) {
+    old_br_vlan = &empty_br_vlan;
+  }
+
+  if (new_br_vlan == nullptr) {
+    new_br_vlan = &empty_br_vlan;
   }
 
   if (_link == nullptr) {
