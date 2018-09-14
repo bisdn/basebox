@@ -8,4 +8,4 @@ srpm:
 		git checkout -b copr; \
 	fi
 
-	make -C $(dir $(spec))/ outdir=$(outdir) spec=$(spec)
+	make -C $(dir $(spec)) outdir="$(outdir)" spec="$(spec)"
