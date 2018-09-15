@@ -12,6 +12,7 @@
 #include "of-dpa/controller.hpp"
 
 static bool validate_port(const char *flagname, gflags::int32 value) {
+  VLOG(3) << __FUNCTION__ << ": flagname=" << flagname << ", value=" << value;
   if (value > 0 && value <= UINT16_MAX) // value is ok
     return true;
   return false;

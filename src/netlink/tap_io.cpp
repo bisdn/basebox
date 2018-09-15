@@ -44,7 +44,7 @@ void tap_io::register_tap(tap_io_details td) {
   thread.wakeup(this);
 }
 
-void tap_io::unregister_tap(int fd, uint32_t port_id) {
+void tap_io::unregister_tap(int fd) {
   {
     std::lock_guard<std::mutex> guard(events_mutex);
     tap_io_details td;
@@ -85,6 +85,7 @@ void tap_io::update_mtu(int fd, unsigned mtu) {
 }
 
 void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
+  VLOG(1) << __FUNCTION__ << ": thread=" << thread << ", fd=" << fd;
 
   tap_io_details *td;
 
