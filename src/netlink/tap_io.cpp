@@ -85,7 +85,7 @@ void tap_io::update_mtu(int fd, unsigned mtu) {
 }
 
 void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
-  VLOG(1) << __FUNCTION__ << ": thread=" << thread << ", fd=" << fd;
+  VLOG(3) << __FUNCTION__ << ": thread=" << thread << ", fd=" << fd;
 
   tap_io_details *td;
 

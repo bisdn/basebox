@@ -34,7 +34,10 @@ public:
   ~nl_l3() {}
 
   int add_l3_addr(struct rtnl_addr *a);
+  int add_l3_addr_v6(struct rtnl_addr *a);
   int del_l3_addr(struct rtnl_addr *a);
+
+  int add_lo_addr_v6(struct rtnl_addr *a);
 
   int add_l3_neigh(struct rtnl_neigh *n);
   int update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new);
@@ -58,6 +61,9 @@ private:
   int add_l3_unicast_route(rtnl_route *r);
   int del_l3_unicast_route(rtnl_route *r);
 
+  int add_l3_unicast_route_v6(rtnl_route *r);
+  int del_l3_unicast_route_v6(rtnl_route *r);
+
   int add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id);
   int del_l3_neigh_egress(struct rtnl_neigh *n);
 
@@ -69,6 +75,8 @@ private:
 
   int add_l3_unicast_host(const rofl::caddress_in4 &ipv4_dst,
                           uint32_t l3_interface_id) const;
+
+  bool is_link_local_address(const struct nl_addr *addr);
 
   switch_interface *sw;
   std::shared_ptr<tap_manager> tap_man;
