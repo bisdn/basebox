@@ -110,7 +110,7 @@ int tap_manager::destroy_tapdev(uint32_t port_id,
   tap_devs.erase(it);
   delete dev;
 
-  io->unregister_tap(fd, port_id);
+  io->unregister_tap(fd);
 
   return 0;
 }

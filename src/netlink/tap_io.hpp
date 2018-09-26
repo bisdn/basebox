@@ -25,7 +25,7 @@ public:
 
   // port_id should be removed at some point and be rather data
   void register_tap(tap_io_details td);
-  void unregister_tap(int fd, uint32_t port_id);
+  void unregister_tap(int fd);
   void enqueue(int fd, packet *pkt);
   void update_mtu(int fd, unsigned mtu);
 
@@ -51,11 +51,12 @@ private:
 protected:
   void handle_read_event(rofl::cthread &thread, int fd);
   void handle_write_event(rofl::cthread &thread, int fd);
-  void handle_wakeup(rofl::cthread &thread) {
+  void handle_wakeup(__attribute__((unused)) rofl::cthread &thread) {
     handle_events();
     tx();
   }
-  void handle_timeout(rofl::cthread &thread, uint32_t timer_id) {}
+  void handle_timeout(__attribute__((unused)) rofl::cthread &thread,
+                      __attribute__((unused)) uint32_t timer_id) {}
 };
 
 } // namespace basebox

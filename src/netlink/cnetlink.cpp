@@ -388,6 +388,7 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
 }
 
 void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
+  VLOG(1) << __FUNCTION__ << ": thread=" << thread << ", fd=" << fd;
 
   if (fd == nl_cache_mngr_get_fd(mngr)) {
     int rv = nl_cache_mngr_data_ready(mngr);
@@ -400,11 +401,13 @@ void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
 }
 
 void cnetlink::handle_write_event(rofl::cthread &thread, int fd) {
-  VLOG(1) << __FUNCTION__ << ": write ready on fd=" << fd;
+  VLOG(1) << __FUNCTION__ << ": thread=" << thread << ", fd=" << fd;
   // currently not in use
 }
 
 void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
+  VLOG(1) << __FUNCTION__ << ": thread=" << thread << ", timer_id=" << timer_id;
+
   switch (timer_id) {
   case NL_TIMER_RESEND_STATE:
 // XXX loop through link cache
@@ -433,7 +436,7 @@ void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
 void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
                         struct nl_object *new_obj, uint64_t diff, int action,
                         void *data) {
-  VLOG(1) << "diff=" << diff << " action=" << action
+  VLOG(1) << ": cache=" << cache << ", diff=" << diff << " action=" << action
           << " old_obj=" << static_cast<void *>(old_obj)
           << " new_obj=" << static_cast<void *>(new_obj);
 
@@ -1016,7 +1019,8 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
   }
 }
 
-void cnetlink::neigh_ll_updated(rtnl_neigh *old_neigh,
+void cnetlink::neigh_ll_updated(__attribute__((unused)) rtnl_neigh *old_neigh,
+                                __attribute__((unused))
                                 rtnl_neigh *new_neigh) noexcept {
   LOG(WARNING) << __FUNCTION__ << ": neighbor update not supported";
 }
@@ -1060,7 +1064,8 @@ void cnetlink::register_switch(switch_interface *swi) noexcept {
   swi->subscribe_to(switch_interface::SWIF_ARP);
 }
 
-void cnetlink::unregister_switch(switch_interface *swi) noexcept {
+void cnetlink::unregister_switch(__attribute__((unused))
+                                 switch_interface *swi) noexcept {
   // TODO we should remove the swi here
   stop();
 }

@@ -20,9 +20,9 @@ NetworkStats::NetworkStats(std::shared_ptr<switch_interface> swi,
                            std::shared_ptr<tap_manager> tap_man)
     : swi(swi), tap_man(tap_man) {}
 
-::grpc::Status NetworkStats::GetStatistics(::grpc::ServerContext *context,
-                                           const Empty *request,
-                                           Interfaces *response) {
+::grpc::Status NetworkStats::GetStatistics(
+    __attribute__((unused))::grpc::ServerContext *context,
+    __attribute__((unused)) const Empty *request, Interfaces *response) {
   VLOG(2) << __FUNCTION__ << ": received grpc call";
 
   static const std::vector<switch_interface::sai_port_stat_t> counter_ids = {

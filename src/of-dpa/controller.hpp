@@ -14,6 +14,7 @@
 #include <string>
 
 #include <glog/logging.h>
+
 #include <rofl/common/crofbase.h>
 #include <rofl/common/crofdpt.h>
 #include <rofl/ofdpa/rofl_ofdpa_fm_driver.hpp>
@@ -61,7 +62,7 @@ public:
 
 protected:
   void handle_conn_established(rofl::crofdpt &dpt,
-                               const rofl::cauxid &auxid) override {}
+                               const rofl::cauxid &auxid) override;
 
   void handle_dpt_open(rofl::crofdpt &dpt) override;
 
@@ -182,12 +183,6 @@ public:
 
   int subscribe_to(enum swi_flags flags) noexcept override;
 
-  /* print this */
-  friend std::ostream &operator<<(std::ostream &os, const controller &box) {
-    os << "<controller>" << std::endl;
-    return os;
-  }
-
 private:
   rofl::cdptid dptid;
   rofl::openflow::rofl_ofdpa_fm_driver fm_driver;
@@ -215,8 +210,7 @@ private:
   void send_packet_in_to_cpu(rofl::crofdpt &dpt,
                              rofl::openflow::cofmsg_packet_in &msg);
 
-  void handle_bridging_table_rm(rofl::crofdpt &dpt,
-                                rofl::openflow::cofmsg_flow_removed &msg);
+  void handle_bridging_table_rm(rofl::openflow::cofmsg_flow_removed &msg);
 }; // class controller
 
 } // end of namespace basebox

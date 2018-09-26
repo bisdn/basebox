@@ -14,6 +14,11 @@
 
 namespace basebox {
 
+void controller::handle_conn_established(rofl::crofdpt &dpt,
+                                         const rofl::cauxid &auxid) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
+}
+
 void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 
   std::lock_guard<std::mutex> lock(conn_mutex);
@@ -79,50 +84,59 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
 
 void controller::handle_conn_terminated(rofl::crofdpt &dpt,
                                         const rofl::cauxid &auxid) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
   LOG(WARNING) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void controller::handle_conn_refused(rofl::crofdpt &dpt,
                                      const rofl::cauxid &auxid) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void controller::handle_conn_failed(rofl::crofdpt &dpt,
                                     const rofl::cauxid &auxid) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void controller::handle_conn_negotiation_failed(rofl::crofdpt &dpt,
                                                 const rofl::cauxid &auxid) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void controller::handle_conn_congestion_occurred(rofl::crofdpt &dpt,
                                                  const rofl::cauxid &auxid) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void controller::handle_conn_congestion_solved(rofl::crofdpt &dpt,
                                                const rofl::cauxid &auxid) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
   LOG(ERROR) << __FUNCTION__ << ": XXX not implemented";
 }
 
 void controller::handle_features_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_features_reply &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid() << std::endl << msg;
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
+  VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid() << std::endl << msg;
 }
 
 void controller::handle_desc_stats_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_desc_stats_reply &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpt=" << std::endl << dpt << std::endl << msg;
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
+  VLOG(3) << __FUNCTION__ << ": dpt=" << std::endl << dpt << std::endl << msg;
 }
 
 void controller::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                                   rofl::openflow::cofmsg_packet_in &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
-          << " pkt received: " << std::endl
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
+  VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
+          << " received: " << std::endl
           << msg;
 
   // all packets go up
@@ -132,13 +146,14 @@ void controller::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
 void controller::handle_flow_removed(rofl::crofdpt &dpt,
                                      const rofl::cauxid &auxid,
                                      rofl::openflow::cofmsg_flow_removed &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
+  VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
 
   switch (msg.get_table_id()) {
   case OFDPA_FLOW_TABLE_ID_BRIDGING:
-    handle_bridging_table_rm(dpt, msg);
+    handle_bridging_table_rm(msg);
     break;
   default:
     LOG(WARNING) << __FUNCTION__ << ": unhandled flow removal in table_id="
@@ -150,7 +165,8 @@ void controller::handle_flow_removed(rofl::crofdpt &dpt,
 void controller::handle_port_status(rofl::crofdpt &dpt,
                                     const rofl::cauxid &auxid,
                                     rofl::openflow::cofmsg_port_status &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
+  VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
 
@@ -196,9 +212,10 @@ void controller::handle_port_status(rofl::crofdpt &dpt,
 void controller::handle_error_message(rofl::crofdpt &dpt,
                                       const rofl::cauxid &auxid,
                                       rofl::openflow::cofmsg_error &msg) {
-  LOG(INFO) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
-            << " pkt received: " << std::endl
-            << msg;
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
+  VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
+          << " pkt received: " << std::endl
+          << msg;
 
   LOG(WARNING) << __FUNCTION__ << ": not implemented";
 }
@@ -206,6 +223,7 @@ void controller::handle_error_message(rofl::crofdpt &dpt,
 void controller::handle_port_desc_stats_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_port_desc_stats_reply &msg) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
@@ -250,7 +268,7 @@ void controller::handle_port_desc_stats_reply(
 
 void controller::handle_port_desc_stats_reply_timeout(rofl::crofdpt &dpt,
                                                       uint32_t xid) {
-  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid();
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " xid=" << xid;
 
   LOG(WARNING) << ": not implemented";
 }
@@ -293,6 +311,7 @@ void controller::request_port_stats() {
 void controller::handle_port_stats_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_port_stats_reply &msg) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
   VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
@@ -351,9 +370,7 @@ void controller::send_packet_in_to_cpu(rofl::crofdpt &dpt,
 }
 
 void controller::handle_bridging_table_rm(
-    rofl::crofdpt &dpt, rofl::openflow::cofmsg_flow_removed &msg) {
-  VLOG(1) << __FUNCTION__ << ": handle message" << std::endl << msg;
-
+    rofl::openflow::cofmsg_flow_removed &msg) {
   rofl::caddress_ll eth_dst;
   uint16_t vid = 0;
 
