@@ -483,10 +483,6 @@ int cnetlink::handle_source_mac_learn() {
         // learn the source mac
         bridge->learn_source_mac(br_link, p.pkt);
       }
-    } else {
-      LOG(WARNING) << __FUNCTION__
-                   << ": source mac not learned of packet=" << p.pkt
-                   << ", ifindex=" << ifindex << ", bridge=" << bridge;
     }
 
     VLOG(2) << __FUNCTION__ << ": send pkt " << p.pkt
