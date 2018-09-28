@@ -1,24 +1,20 @@
-%global snapshotrel @SPEC_SNAPSHOTREL@%{nil}
-%global snapshot @SPEC_SNAPSHOT@%{nil}
-
 Name:          baseboxd
-Version:       @SPEC_VERSION@
-Release:       %{?snapshotrel}%{?dist}
+Version:       @PACKAGE_VERSION@
+Release:       %{?dist}
 Summary:       TODO
 
 License:       BISDN
 URL:           http://www.bisdn.de/
-Source0:       http://www.bisdn.de/releases/basebox/%{name}-%{version}%{?snapshot}.tar.gz
+Source0:       http://www.bisdn.de/releases/basebox/%{name}-%{version}%.tar.gz
 
-BuildRequires: autoconf
-BuildRequires: automake
 BuildRequires: gcc-c++
 BuildRequires: gflags-devel
+BuildRequires: git
 BuildRequires: glog-devel
 BuildRequires: grpc-devel
 BuildRequires: grpc-plugins
 BuildRequires: libnl3-devel
-BuildRequires: libtool
+BuildRequires: meson
 BuildRequires: protobuf-compiler
 BuildRequires: protobuf-devel
 BuildRequires: rofl-common-devel
@@ -42,17 +38,16 @@ TODO
 
 
 %prep
-%setup -q -n %{name}-%{version}%{?snapshot}
+%setup -q -n %{name}-%{version}
 
 
 %build
-%configure
-make %{?_smp_mflags}
+%meson
+%meson_build
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
-%make_install
+%meson_install
 
 install -p -D -m 0644 pkg/systemd/baseboxd.service \
     %{buildroot}%{_unitdir}/baseboxd.service

@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/sbin/baseboxd $OPTIONS
-EnvironmentFile=-/etc/sysconfig/baseboxd
+ExecStart=@bindir@/baseboxd $OPTIONS
+EnvironmentFile=-@sysconfdir@/sysconfig/baseboxd
 Restart=always
 
 [Install]

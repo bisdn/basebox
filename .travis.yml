@@ -20,6 +20,5 @@ script:
   - docker exec builder dnf -y copr enable bisdn/baseboxd-testing
   - docker exec builder make -C ./pkg/testing/rpm/ spec
   - docker exec builder dnf -y builddep ./pkg/testing/rpm/baseboxd.spec
-  - docker exec builder ./autogen.sh
-  - docker exec builder ./configure
-  - docker exec builder make -j
+  - docker exec builder meson build
+  - docker exec builder ninja -C build

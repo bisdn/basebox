@@ -10,6 +10,7 @@
 #include "netlink/tap_manager.hpp"
 #include "netlink/tap_manager.hpp"
 #include "of-dpa/controller.hpp"
+#include "version.h"
 
 static bool validate_port(const char *flagname, gflags::int32 value) {
   VLOG(3) << __FUNCTION__ << ": flagname=" << flagname << ", value=" << value;
@@ -31,7 +32,7 @@ int main(int argc, char **argv) {
   }
 
   gflags::SetUsageMessage("");
-  gflags::SetVersionString(PACKAGE_VERSION);
+  gflags::SetVersionString(PROJECT_VERSION);
 
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
