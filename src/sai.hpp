@@ -14,6 +14,7 @@
 namespace basebox {
 class switch_interface {
 public:
+  virtual ~switch_interface() = default;
   enum swi_flags {
     SWIF_ARP = 1 << 0,
   };
@@ -92,6 +93,7 @@ public:
 
 class nbi {
 public:
+  virtual ~nbi() = default;
   enum port_event {
     PORT_EVENT_ADD,
     PORT_EVENT_DEL,
