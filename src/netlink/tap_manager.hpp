@@ -20,6 +20,7 @@ class tap_manager;
 
 class switch_callback {
 public:
+  virtual ~switch_callback() = default;
   virtual int enqueue_to_switch(uint32_t port_id, basebox::packet *) = 0;
 };
 
