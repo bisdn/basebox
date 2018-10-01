@@ -80,7 +80,9 @@ AS_IF([test "$PROTOC" = unset], [AC_MSG_ERROR([protoc not found, set either PROT
 PKG_CHECK_MODULES([GRPC], grpc >= 4.0.0 grpc++ >= 1.13.0,
   [ CPPFLAGS="$CPPFLAGS $GRPC_CFLAGS"
 	LIBS="$LIBS $GRPC_LIBS"],
-  [ AC_MSG_ERROR([minimum version of libgrpc is 4.0.0]) ])
+  [ AC_CHECK_LIB([grpc], [grpc_init], [LIBS="$LIBS -lgrpc -lgrpc++"],
+  AC_MSG_ERROR([libgrpc not found]))])
+
 
 AC_ARG_VAR([GRPC_CPP_PLUGIN], [grpc_cpp_plugin for use with protoc])
 AC_PATH_PROG([GRPC_CPP_PLUGIN], [grpc_cpp_plugin], [unset])
