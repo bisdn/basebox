@@ -88,20 +88,20 @@ AC_ARG_VAR([GRPC_CPP_PLUGIN], [grpc_cpp_plugin for use with protoc])
 AC_PATH_PROG([GRPC_CPP_PLUGIN], [grpc_cpp_plugin], [unset])
 AS_IF([test "$GRPC_CPP_PLUGIN" = unset], [AC_MSG_ERROR([grpc_cpp_plugin not found, set either GRPC_CPP_PLUGIN variable or install grpc_cpp_plugin in PATH.])])
 
-PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.2.29 libnl-route-3.0 >= 3.2.29,
+PKG_CHECK_MODULES([LIBNL3], libnl-3.0 >= 3.4 libnl-route-3.0 >= 3.4,
   [ CPPFLAGS="$CPPFLAGS $LIBNL3_CFLAGS"
 	LIBS="$LIBS $LIBNL3_LIBS"],
-  [ AC_MSG_ERROR([minimum version of libnl-3 is 3.2.29]) ])
+  [ AC_MSG_ERROR([minimum version of libnl-3 is 3.4]) ])
 
 PKG_CHECK_MODULES([ROFL], rofl_common >= 0.13.1,
   [ CPPFLAGS="$CPPFLAGS $ROFL_CFLAGS"
 	LIBS="$LIBS $ROFL_LIBS" ],
   [ AC_MSG_ERROR([minimum version of rofl_common is 0.13.1]) ])
 
-PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.12,
+PKG_CHECK_MODULES([ROFL_OFDPA], rofl_ofdpa >= 0.13,
   [ CPPFLAGS="$CPPFLAGS $ROFL_OFDPA_CFLAGS"
 	LIBS="$LIBS $ROFL_OFDPA_LIBS" ],
-  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.12]) ])
+  [ AC_MSG_ERROR([minimum version of rofl_ofdpa is 0.13]) ])
 
 AC_CHECK_LIB([gflags], [getenv], [GFLAGS_LIBS="-lgflags"],
   AC_MSG_ERROR([libgflags not found]) )

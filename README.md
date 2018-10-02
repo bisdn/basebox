@@ -32,13 +32,13 @@ More information how to use the Vagrant VM can be found [here](https://www.vagra
 Currently only intallation from source is supported. To build baseboxd you need
 the following dependencies installed:
 
-* [libnl3](https://github.com/thom311/libnl) (>= 3.2.29)
+* [libnl3](https://github.com/thom311/libnl) (> 3.4)
 * [rofl-common](https://github.com/bisdn/rofl-common) (>= 0.13.1)
-* [rofl-ofdpa](https://github.com/bisdn/rofl-ofdpa) (>= 0.12)
+* [rofl-ofdpa](https://github.com/bisdn/rofl-ofdpa) (>= 0.13)
 * [gflags](https://github.com/gflags/gflags)
 * [glog](https://github.com/google/glog) (>= 0.3.3)
-* [protobuf](https://github.com/google/protobuf) (>= 3.4.0)
-* [libgrpc](https://github.com/grpc/grpc) (>=4.0.0)
+* [protobuf](https://github.com/google/protobuf) (>= 3.5.0)
+* [grpc](https://github.com/grpc/grpc)
 * [grpc cpp plugin](https://github.com/grpc/grpc/blob/master/examples/cpp/cpptutorial.md)
 
 Then you can install baseboxd:
