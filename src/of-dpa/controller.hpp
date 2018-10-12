@@ -135,8 +135,12 @@ public:
 
   int l3_termination_add(uint32_t sport, uint16_t vid,
                          const rofl::caddress_ll &dmac) noexcept override;
+  int l3_termination_add_v6(uint32_t sport, uint16_t vid,
+                            const rofl::caddress_ll &dmac) noexcept override;
   int l3_termination_remove(uint32_t sport, uint16_t vid,
                             const rofl::caddress_ll &dmac) noexcept override;
+  int l3_termination_remove_v6(uint32_t sport, uint16_t vid,
+                               const rofl::caddress_ll &dmac) noexcept override;
 
   int l3_egress_create(uint32_t port, uint16_t vid,
                        const rofl::caddress_ll &src_mac,
@@ -146,14 +150,25 @@ public:
 
   int l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
                           uint32_t l3_interface) noexcept override;
+  int l3_unicast_host_add(const rofl::caddress_in6 &ipv6_dst,
+                          uint32_t l3_interface) noexcept override;
+
   int l3_unicast_host_remove(
       const rofl::caddress_in4 &ipv4_dst) noexcept override;
+  int l3_unicast_host_remove(
+      const rofl::caddress_in6 &ipv6_dst) noexcept override;
 
   int l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
                            const rofl::caddress_in4 &mask,
                            uint32_t l3_interface) noexcept override;
+  int l3_unicast_route_add(const rofl::caddress_in6 &ipv6_dst,
+                           const rofl::caddress_in6 &mask,
+                           uint32_t l3_interface) noexcept override;
+
   int l3_unicast_route_remove(const rofl::caddress_in4 &ipv4_dst,
                               const rofl::caddress_in4 &mask) noexcept override;
+  int l3_unicast_route_remove(const rofl::caddress_in6 &ipv6_dst,
+                              const rofl::caddress_in6 &mask) noexcept override;
 
   int ingress_port_vlan_accept_all(uint32_t port) noexcept override;
   int ingress_port_vlan_drop_accept_all(uint32_t port) noexcept override;
