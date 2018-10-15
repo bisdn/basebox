@@ -1,0 +1,10 @@
+[Match]
+Name=port*
+
+[Network]
+Bridge=switchbr
+
+[BridgeVLAN]
+PVID=1
+EgressUntagged=1
+VLAN=1-10

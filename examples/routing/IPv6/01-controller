@@ -1,0 +1,50 @@
+#!/bin/bash
+# Routing configuration example.
+# Physical topology:
+
+# +--------------+
+# |   baseboxd   |
+# |port1    port2|
+# +--+--------+--+
+#    |        |
+#    v        v
+#  eth1      eth2
+#  ns1       ns2
+
+# On the L3 switch, both ports are configured as gateways 
+# for the networks on the switch ports. Since IPv6 requires
+# radvd, an external daemon that sends the Router Advertisement
+# messages down, in this folder you can also find an example 
+# configuration for this daemon. According to the defaults,
+# this file should be placed in the /etc/radvd.conf. 
+# Due to autoconfiguration, the addresses on the servers are
+# automatically configured to a combination of the announced
+# prefix from the router with the physical (MAC) address of the 
+# interface.
+
+PORTA=${PORTA:-port1}
+PORTB=${PORTB:-port2}
+IFACES=($PORTA $PORTB)
+
+PORTA_ADDR="2003:db8:1::1/64"
+PORTB_ADDR="2003:db8:2::1/64"
+ADDR=($PORTA_ADDR $PORTB_ADDR)
+
+# setup
+function setup {
+
+  # generic setup
+  for id in {0..1}; do
+
+    # setting up variables for each namespace
+    iface=${IFACES[${id}]}
+    ipaddr=${ADDR[${id}]}
+
+    # add IPv6 address
+    ip address add $ipaddr dev $ipaddr
+  done
+
+  systemctl restart radvd
+}
+
+setup

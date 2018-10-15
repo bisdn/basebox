@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Bridge interface example.
+# With the following physical topology:
+
+# +--------+       +------------+
+# | SERVER |       | CONTROLLER |
+# +--------+       +------------+
+#   eth1 (ns1) ------> port1
+#   eth2 (ns2) ------> port2
+
+# This script will create the following logical connections:
+
+#  port1 \
+#         > bridge0
+#  port2 /
+
+# Further, the VLAN ids in BR_VLAN_RANGE will be added to the ports
+
+PORTA=${PORTA:-port1}
+PORTB=${PORTB:-port2}
+BRIDGE=${BRIDGE:-bridge0}
+
+BR_VLAN_RANGE_DEF="{4..6}"
+BR_VLAN_RANGE=${BR_VLAN_RANGE:-$BR_VLAN_RANGE_DEF}
+
+ip link add name ${BRIDGE} type bridge vlan_filtering 1 vlan_default_pvid 0
+ip link set ${BRIDGE} up
+
+# port 1
+ip link set ${PORTA} master ${BRIDGE}
+ip link set ${PORTA} up
+
+# port 2
+ip link set ${PORTB} master ${BRIDGE}
+ip link set ${PORTB} up
+
+# vids
+for vid in $(eval echo $BR_VLAN_RANGE) ; do
+  bridge vlan add vid $vid dev ${PORTA}
+  bridge vlan add vid $vid dev ${PORTB}
+done

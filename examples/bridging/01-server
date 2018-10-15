@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Bridge interface example.
+# With the following physical topology:
+
+# +--------+       +------------+
+# | SERVER |       | CONTROLLER |
+# +--------+       +------------+
+#   eth1 (ns1) ------> port1
+#   eth2 (ns2) ------> port2
+
+BR_VLAN_RANGE_DEF="{4..6}"
+BR_VLAN_RANGE=${BR_VLAN_RANGE:-$BR_VLAN_RANGE_DEF}
+TENANT_PREFIX=${TENANT_PREFIX:-"10.0"} # followed by VID.HOSTID
+
+PORT=${PORT:-eth}
+INTF=($PORT1 $PORT2)
+
+CFG=${CFG:-"a"}
+NS=${NS:-0}
+
+function nsexec {
+  ip netns exec ns${NS} $@
+}
+
+function nswipe {
+  # remove ns
+  ip netns delete ns${NS}
+}
+
+# setup
+function setup {
+  # configure namespace
+  ip netns add ns0
+
+  for id in {1..2}; do
+    # specific setup
+    ip link set $PORT$id netns ns0
+
+    # bring interfaces in namespace up
+    nsexec ip link set lo up
+    nsexec ip link set $PORT$id up
+
+    #configure VLANs and add IP address
+    for vid in $(eval echo $BR_VLAN_RANGE) ; do
+      nsexec ip l a link port$id name port$id.$vid type vlan id $vid
+      nsexec ip a a ${TENANT_PREFIX}.${vid}.2${vid}/24 dev port$id.$vid
+      nsexec ip l s port$id.$vid up
+    done
+ done
+}
+
+setup
