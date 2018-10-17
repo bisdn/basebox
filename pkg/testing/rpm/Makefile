@@ -8,14 +8,18 @@ BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
 BASEDIR := "$(CURDIR)/../../../"
 
+PROJECT := "baseboxd"
+outdir ?= $(CURDIR)
+
 build: clean dist spec
 	# srpm
-	rpmbuild -bs ./baseboxd.spec --define "_sourcedir $(CURDIR)" --define "_srcrpmdir $(outdir)"
+	rpmbuild -bs ./$(PROJECT).spec --define "_sourcedir $(CURDIR)" --define "_srcrpmdir $(outdir)"
 
 dist:
 	# clean copy to not affect the current workdir
-	(cd $(CURDIR) && git clone --recursive $(BASEDIR) baseboxd-$(COMMIT) -b $(BRANCH))
-	tar czf baseboxd-$(SHORTCOMMIT).tar.gz baseboxd-$(COMMIT)
+	(cd $(CURDIR) && git clone --recursive $(BASEDIR) $(PROJECT)-$(COMMIT) -b $(BRANCH))
+	tar czf $(PROJECT)-$(SHORTCOMMIT).tar.gz $(PROJECT)-$(COMMIT)
+	rm -rf $(PROJECT)-$(COMMIT)
 
 spec:
 	# create spec
@@ -24,9 +28,9 @@ spec:
 	  NCOMMITS=$(NCOMMITS) \
 	  COMMIT=$(COMMIT) \
 	  SHORTCOMMIT=$(SHORTCOMMIT) \
-	  envsubst < ./baseboxd.spec.envsubst > ./baseboxd.spec
+	  envsubst < ./$(PROJECT).spec.envsubst > ./$(PROJECT).spec
 
 clean:
-	rm -rf baseboxd-* baseboxd.spec
+	rm -rf $(PROJECT)-* $(PROJECT).spec
 
 .PHONY: build clean spec dist
