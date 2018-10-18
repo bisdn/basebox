@@ -26,7 +26,8 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
   dptid = dpt.get_dptid();
 
   LOG(INFO) << __FUNCTION__ << ": opening connection to dptid=" << std::showbase
-            << std::hex << dptid << ", n_tables=" << dpt.get_n_tables();
+            << std::hex << dptid << std::dec
+            << ", n_tables=" << static_cast<unsigned>(dpt.get_n_tables());
 
   if (rofl::openflow13::OFP_VERSION != dpt.get_version()) {
     LOG(ERROR) << __FUNCTION__
@@ -49,8 +50,8 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 void controller::handle_dpt_close(const rofl::cdptid &dptid) {
   std::lock_guard<std::mutex> lock(conn_mutex);
 
-  LOG(INFO) << __FUNCTION__ << ": closing connection to dptid=0x" << std::hex
-            << dptid << std::dec;
+  LOG(INFO) << __FUNCTION__ << ": closing connection to dptid=" << std::showbase
+            << std::hex << dptid;
 
   std::deque<nbi::port_notification_data> ntfys;
   try {
