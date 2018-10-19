@@ -44,6 +44,8 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 
   if (flags)
     subscribe_to(flags);
+
+  connected = true;
 }
 
 void controller::handle_dpt_close(const rofl::cdptid &dptid) {
@@ -69,6 +71,7 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
           nbi::PORT_EVENT_DEL, port.get_port_no(), port.get_name()});
     }
 
+    connected = false;
     nb->port_notification(ntfys);
 
   } catch (rofl::eRofDptNotFound &e) {

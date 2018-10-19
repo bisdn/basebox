@@ -30,8 +30,8 @@ namespace basebox {
 
 cnetlink::cnetlink()
     : swi(nullptr), thread(1), caches(NL_MAX_CACHE, nullptr), nl_proc_max(10),
-      running(false), rfd_scheduled(false), lo_processed(false),
-      bridge(nullptr), vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)) {
+      running(false), rfd_scheduled(false), bridge(nullptr),
+      vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)) {
 
   sock_tx = nl_socket_alloc();
   if (sock_tx == nullptr) {
@@ -359,7 +359,7 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
       route_addr_apply(obj);
       break;
     default:
-      LOG(ERROR) << __FUNCTION__ << ": unexprected netlink type "
+      LOG(ERROR) << __FUNCTION__ << ": unexpected netlink type "
                  << obj.get_msg_type();
       break;
     }
@@ -377,9 +377,8 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     do_wakeup = true;
   }
 
-  if (swi && !lo_processed) {
+  if (swi && swi->is_connected()) {
     config_lo_addr();
-    lo_processed = false;
   }
 
   if (do_wakeup || nl_objs.size()) {

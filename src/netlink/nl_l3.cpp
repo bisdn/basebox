@@ -204,12 +204,13 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   auto addr = rtnl_addr_get_local(a);
   if (is_link_local_address(addr)) {
 
-    auto prefixlen = rtnl_addr_get_prefixlen(a);
     rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr);
-    rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
 
+    // All link local addresses have a prefix length of /10
+    rofl::caddress_in6 mask = rofl::build_mask_in6(10);
+
+    VLOG(2) << __FUNCTION__ << ": added link local addr " << OBJ_CAST(a);
     rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0);
-
     return rv;
   }
 
@@ -1023,12 +1024,9 @@ void nl_l3::get_neighbours_of_route(rtnl_route *route, nh_lookup_params *p) {
 bool nl_l3::is_link_local_address(const struct nl_addr *addr) {
   auto p = nl_addr_alloc(16);
   nl_addr_parse("fe80::/10", AF_INET6, &p);
-  std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
+  std::unique_ptr<nl_addr, decltype(&nl_addr_put)> ll_addr(p, nl_addr_put);
 
-  if (nl_addr_cmp_prefix(addr, lo_addr.get()))
-    return true;
-
-  return false;
+  return !nl_addr_cmp_prefix(ll_addr.get(), addr);
 }
 
 } // namespace basebox
