@@ -409,6 +409,8 @@ int controller::enqueue(uint32_t port_id, packet *pkt) noexcept {
       goto errout;
     }
 
+    // XXX TODO resolve lag port for now?
+
     /* only send packet-out if the port with port_id is actually existing */
     if (dpt.get_ports().has_port(port_id)) {
 
@@ -439,7 +441,7 @@ int controller::enqueue(uint32_t port_id, packet *pkt) noexcept {
           actions, (uint8_t *)pkt->data, pkt->len);
     } else {
       LOG(ERROR) << __FUNCTION__ << ": packet sent to invalid port_id "
-                 << port_id;
+                 << std::showbase << std::hex << port_id;
     }
   } catch (rofl::eRofDptNotFound &e) {
     LOG(ERROR) << __FUNCTION__
@@ -457,6 +459,91 @@ errout:
 
   std::free(pkt);
   return rv;
+}
+
+int controller::lag_create(uint32_t *lag_id) noexcept {
+  // XXX TODO this needs to be improved, we could use the maximum number of
+  // ports as lag_id and have an efficient lookup which id is free. for now
+  // 2^16-1 lag ids should be sufficient.
+  static uint16_t _lag_id = 1;
+  std::set<uint32_t> empty;
+  auto _rv = lag.emplace(std::make_pair(_lag_id, empty));
+
+  if (!_rv.second) {
+    LOG(ERROR) << __FUNCTION__ << ": maximum number of lags were created.";
+    return -EEXIST;
+  }
+
+  assert(lag_id);
+  *lag_id = _lag_id;
+
+  _lag_id++;
+  return 0;
+}
+
+int controller::lag_remove(uint32_t lag_id) noexcept {
+  // currently we don't have a real lag implementation
+  // otherwise we should release the resoucres on the switch
+
+  auto rv = lag.erase(lag_id);
+  if (rv != 1) {
+    LOG(WARNING) << __FUNCTION__ << ": rv=" << rv
+                 << " entries in lag map were removed";
+  }
+
+  return 0;
+}
+
+int controller::lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept {
+  if (nbi::get_port_type(lag_id) != nbi::port_type_lag) {
+    LOG(ERROR) << __FUNCTION__ << ": invalid lag_id " << std::showbase
+               << std::hex << lag_id;
+    return -EINVAL;
+  }
+
+  auto it = lag.find(nbi::get_port_num(lag_id));
+  if (it == lag.end()) {
+    LOG(ERROR) << __FUNCTION__ << ": lag_id does not exist " << std::showbase
+               << std::hex << lag_id;
+    return -ENODATA;
+  }
+
+  // currently we can deal only with a single slave
+  if (it->second.size()) {
+    LOG(ERROR) << __FUNCTION__
+               << ": lag already has a member lag_id=" << std::showbase
+               << std::hex << lag_id << ", member=" << *it->second.begin();
+    return -EINVAL;
+  }
+
+  it->second.emplace(port_id);
+
+  return 0;
+}
+
+int controller::lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept {
+  if (nbi::get_port_type(lag_id) != nbi::port_type_lag) {
+    LOG(ERROR) << __FUNCTION__ << ": invalid lag_id " << std::showbase
+               << std::hex << lag_id;
+    return -EINVAL;
+  }
+
+  auto it = lag.find(nbi::get_port_num(lag_id));
+  if (it == lag.end()) {
+    LOG(ERROR) << __FUNCTION__ << ": lag_id does not exist " << std::showbase
+               << std::hex << lag_id;
+    return -ENODATA;
+  }
+
+  size_t num_erased = it->second.erase(port_id);
+
+  if (!num_erased) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to remove port_id=" << std::showbase
+               << std::hex << port_id << " from lag_id=" << lag_id;
+    return -EINVAL;
+  }
+
+  return 0;
 }
 
 int controller::l2_addr_remove_all_in_vlan(uint32_t port,

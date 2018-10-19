@@ -19,6 +19,7 @@
 namespace basebox {
 
 // forward declaration
+class nl_bond;
 class nl_l3;
 class nl_vlan;
 class tap_manager;
@@ -110,6 +111,7 @@ private:
 
   std::shared_ptr<tap_manager> tap_man;
   nl_bridge *bridge;
+  std::shared_ptr<nl_bond> bond;
   std::shared_ptr<nl_vlan> vlan;
   std::shared_ptr<nl_l3> l3;
 
