@@ -846,7 +846,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   case LT_TUN: {
     int ifindex = rtnl_link_get_ifindex(link);
     std::string name(rtnl_link_get_name(link));
-    tap_man->tap_dev_ready(ifindex, name);
+    tap_man->tapdev_ready(ifindex, name);
   } break;
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
@@ -924,6 +924,9 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   enum link_type lt = kind_to_link_type(rtnl_link_get_type(link));
   int af = rtnl_link_get_family(link);
 
+  int ifindex(rtnl_link_get_ifindex(link));
+  std::string portname(rtnl_link_get_name(link));
+
   switch (lt) {
   case LT_UNKNOWN:
     switch (af) {
@@ -942,7 +945,7 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
     }
     break;
   case LT_TUN:
-    tap_man->tap_dev_removed(rtnl_link_get_ifindex(link));
+    tap_man->tapdev_removed(ifindex, portname);
     break;
   case LT_BRIDGE:
     if (bridge && bridge->is_bridge_interface(link)) {
