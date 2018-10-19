@@ -52,7 +52,8 @@ public:
   controller(nbi *nb,
              const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
                  rofl::openflow::cofhello_elem_versionbitmap())
-      : nb(nb), bb_thread(1), egress_interface_id(1), default_idle_timeout(0) {
+      : nb(nb), bb_thread(1), egress_interface_id(1), default_idle_timeout(0),
+        connected(false) {
     nb->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
     bb_thread.start();
@@ -196,6 +197,8 @@ public:
   /* IO */
   int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept override;
 
+  bool is_connected() noexcept override { return connected; }
+
   int subscribe_to(enum swi_flags flags) noexcept override;
 
 private:
@@ -210,6 +213,7 @@ private:
   uint32_t egress_interface_id;
   std::set<uint32_t> freed_egress_interfaces_ids;
   uint16_t default_idle_timeout;
+  bool connected;
 
   enum timer_t {
     /* handle_timeout will be called as well from crofbase, hence we need some

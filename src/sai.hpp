@@ -104,6 +104,8 @@ public:
   virtual int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept = 0;
   virtual int subscribe_to(enum swi_flags flags) noexcept = 0;
 
+  virtual bool is_connected() noexcept = 0;
+
   virtual int get_statistics(uint64_t port_no, uint32_t number_of_counters,
                              const sai_port_stat_t *counter_ids,
                              uint64_t *counters) noexcept = 0;
