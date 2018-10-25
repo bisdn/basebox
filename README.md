@@ -29,8 +29,14 @@ More information how to use the Vagrant VM can be found [here](https://www.vagra
 
 ### Other distros
 
-Currently only intallation from source is supported. To build baseboxd you need
-the following dependencies installed:
+Currently only installation from source is supported. To build baseboxd you
+need the following dependencies installed:
+
+#### Build system
+
+* [meson](https://gitub.com/mesonbuild/meson/)
+
+#### Libraries
 
 * [libnl3](https://github.com/thom311/libnl) (> 3.4)
 * [rofl-common](https://github.com/bisdn/rofl-common) (>= 0.13.1)
@@ -44,12 +50,10 @@ the following dependencies installed:
 Then you can install baseboxd:
 
 ```
-git clone https://github.com/bisdn/basebox.git
+git clone --recursive https://github.com/bisdn/basebox.git
 cd basebox
-git submodule update --init
-./autogen.sh
-./configure
-make install
+meson build
+ninja -C build
 ```
 
 ## Usage

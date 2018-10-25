@@ -14,8 +14,6 @@ License:       BISDN
 URL:           http://www.bisdn.de/
 Source0:       https://github.com/bisdn/basebox/archive/%{?commit}.tar.gz#/%{name}-%{shortcommit}.tar.gz
 
-BuildRequires: autoconf
-BuildRequires: automake
 BuildRequires: gcc-c++
 BuildRequires: gflags-devel
 BuildRequires: git
@@ -23,7 +21,7 @@ BuildRequires: glog-devel
 BuildRequires: grpc-devel
 BuildRequires: grpc-plugins
 BuildRequires: libnl3-devel
-BuildRequires: libtool
+BuildRequires: meson
 BuildRequires: protobuf-compiler
 BuildRequires: protobuf-devel
 BuildRequires: rofl-common-devel
@@ -52,17 +50,13 @@ TODO
 
 
 %build
-./autogen.sh
-%configure
-make %{?_smp_mflags}
+%meson
+%meson_build
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
-%make_install
+%meson_install
 
-install -p -D -m 0644 pkg/systemd/baseboxd.service \
-    %{buildroot}%{_unitdir}/baseboxd.service
 install -p -D -m 0644 pkg/systemd/sysconfig.template \
     %{buildroot}%{_sysconfdir}/sysconfig/baseboxd
 
