@@ -45,25 +45,27 @@ int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
     ctapdev *dev;
 
     try {
+      int fd = -1;
+
       dev = new ctapdev(port_name);
       tap_devs.insert(std::make_pair(port_id, dev));
       {
         std::lock_guard<std::mutex> lock{tn_mutex};
-        tap_names2id.emplace(std::make_pair(port_name, port_id));
-      }
+        auto rv = tap_names2id.emplace(std::make_pair(port_name, port_id));
 
-      // create the port
-      dev->tap_open();
+        if (!rv.second) {
+          LOG(FATAL) << __FUNCTION__ << ": failed to insert";
+        }
 
-      int fd = dev->get_fd();
-
-      LOG(INFO) << __FUNCTION__ << ": port_id=" << port_id
-                << " portname=" << port_name << " fd=" << fd << " ptr=" << dev;
-
-      {
-        std::lock_guard<std::mutex> lock{tn_mutex};
+        dev->tap_open();
+        fd = dev->get_fd();
         tap_names2fds.emplace(std::make_pair(port_name, fd));
       }
+
+      LOG(INFO) << __FUNCTION__
+                << ": created device having the following details: port_id="
+                << port_id << " portname=" << port_name << " fd=" << fd
+                << " ptr=" << dev;
 
       // start reading from port
       tap_io::tap_io_details td(fd, port_id, &cb, 1500);
@@ -139,12 +141,15 @@ int tap_manager::get_fd(uint32_t port_id) const noexcept {
 
 void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
   auto it = ifindex_to_id.find(ifindex);
-  if (it != ifindex_to_id.end())
+
+  // already registered?
+  if (it != ifindex_to_id.end()) {
+    LOG(ERROR) << __FUNCTION__ << ": not yet registered";
     return;
+  }
 
   std::lock_guard<std::mutex> lock{tn_mutex};
   auto tn_it = tap_names2id.find(name);
-
   if (tn_it == tap_names2id.end()) {
     LOG(WARNING) << __FUNCTION__ << "invalid port name " << name;
     return;
@@ -157,7 +162,7 @@ void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
     LOG(WARNING) << __FUNCTION__
                  << ": enforced update of id:ifindex mapping id="
                  << id2ifi_it.first->first
-                 << " ifindex(old) = " << id2ifi_it.first->second
+                 << " ifindex(old)=" << id2ifi_it.first->second
                  << " ifindex(new)=" << ifindex;
 
     // remove overwritten index in ifindex_to_id map
@@ -182,21 +187,22 @@ void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
 
   std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> l(
       nl->get_link_by_ifindex(ifindex), &rtnl_link_put);
-
   if (!l) {
     LOG(ERROR) << __FUNCTION__ << ": invalid link ifindex=" << ifindex;
     return;
   }
 
-  int mtu = rtnl_link_get_mtu(l.get());
   auto fd_it = tap_names2fds.find(name);
-
   if (fd_it == tap_names2fds.end()) {
     LOG(ERROR) << __FUNCTION__ << ": tap_dev not found";
     return;
   }
 
-  io->update_mtu(fd_it->second, mtu);
+  if (fd_it->second == -1) {
+    LOG(FATAL) << __FUNCTION__ << ": need to update fd";
+  }
+
+  io->update_mtu(fd_it->second, rtnl_link_get_mtu(l.get()));
 }
 
 int tap_manager::tapdev_removed(int ifindex, const std::string &portname) {
