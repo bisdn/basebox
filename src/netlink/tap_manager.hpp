@@ -65,8 +65,9 @@ public:
 
   int get_fd(uint32_t port_id) const noexcept;
 
-  void tap_dev_ready(int ifindex, const std::string &name);
-  void tap_dev_removed(int ifindex);
+  // access from northbound (cnetlink)
+  int tapdev_removed(int ifindex, const std::string &portname);
+  void tapdev_ready(int ifindex, const std::string &name);
 
 private:
   tap_manager(const tap_manager &other) = delete; // non construction-copyable
@@ -78,7 +79,7 @@ private:
   std::map<std::string, int> tap_names2fds;
 
   // only accessible from southbound
-  std::map<uint32_t, ctapdev *> tap_devs; // southbound id:tap_device
+  std::map<uint32_t, ctapdev *> tap_devs; // port id:tap_device
   std::deque<uint32_t> port_deleted;
 
   // only accessible from cnetlink
@@ -87,6 +88,8 @@ private:
 
   std::unique_ptr<tap_io> io;
   cnetlink *nl;
+
+  int recreate_tapdev(int ifindex, const std::string &portname);
 };
 
 } // namespace basebox

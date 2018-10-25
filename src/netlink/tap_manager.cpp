@@ -137,7 +137,7 @@ int tap_manager::get_fd(uint32_t port_id) const noexcept {
   return it->second->get_fd();
 }
 
-void tap_manager::tap_dev_ready(int ifindex, const std::string &name) {
+void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
   auto it = ifindex_to_id.find(ifindex);
   if (it != ifindex_to_id.end())
     return;
@@ -199,14 +199,16 @@ void tap_manager::tap_dev_ready(int ifindex, const std::string &name) {
   io->update_mtu(fd_it->second, mtu);
 }
 
-void tap_manager::tap_dev_removed(int ifindex) {
+int tap_manager::tapdev_removed(int ifindex, const std::string &portname) {
+  int rv = 0;
+  bool port_removed(false);
   std::lock_guard<std::mutex> lock{tn_mutex};
 
   auto ifi2id_it = ifindex_to_id.find(ifindex);
   if (ifi2id_it == ifindex_to_id.end()) {
     VLOG(2) << __FUNCTION__
             << ": ignore removal of tap device with ifindex=" << ifindex;
-    return;
+    return rv;
   }
 
   // check if this port was scheduled for deletion
@@ -214,20 +216,61 @@ void tap_manager::tap_dev_removed(int ifindex) {
       std::find(port_deleted.begin(), port_deleted.end(), ifi2id_it->second);
   if (pd_it == port_deleted.end()) {
     auto pn_it = tap_devs.find(ifi2id_it->second);
-    LOG(FATAL) << __FUNCTION__ << ": illegal removal of port "
+    LOG(ERROR) << __FUNCTION__ << ": illegal removal of port "
                << pn_it->second->get_devname() << " with ifindex=" << ifindex;
+
+    port_removed = true;
   }
 
   auto id2ifi_it = id_to_ifindex.find(ifi2id_it->second);
   if (id2ifi_it == id_to_ifindex.end()) {
     auto pn_it = tap_devs.find(ifi2id_it->second);
-    LOG(FATAL) << __FUNCTION__ << ": illegal removal of port "
+    LOG(ERROR) << __FUNCTION__ << ": illegal removal of port "
                << pn_it->second->get_devname() << " with ifindex=" << ifindex;
+    port_removed = true;
   }
+
+  if (port_removed)
+    recreate_tapdev(ifindex, portname);
 
   ifindex_to_id.erase(ifi2id_it);
   port_deleted.erase(pd_it);
   id_to_ifindex.erase(id2ifi_it);
+
+  return rv;
+}
+
+int tap_manager::recreate_tapdev(int ifindex, const std::string &portname) {
+  int rv = 0;
+
+  VLOG(1) << __FUNCTION__ << ": recreating port " << portname
+          << " with ifindex " << ifindex;
+  ctapdev *dev;
+
+  try {
+    dev = new ctapdev(portname);
+    auto id = ifindex_to_id.find(ifindex);
+
+    tap_devs.erase(id->second);
+
+    // create the port
+    dev->tap_open();
+    tap_devs.emplace(std::make_pair(id->second, dev));
+
+    int fd = dev->get_fd();
+
+    LOG(INFO) << __FUNCTION__ << ": port_id=" << ifindex
+              << " portname=" << portname << " fd=" << fd << " ptr=" << dev;
+
+    tap_names2fds.emplace(std::make_pair(portname, fd));
+    tap_names2id.emplace(std::make_pair(portname, id->second));
+
+  } catch (std::exception &e) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to create tapdev " << portname;
+    rv = -EINVAL;
+  }
+
+  return rv;
 }
 
 } // namespace basebox
