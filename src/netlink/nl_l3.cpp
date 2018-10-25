@@ -61,17 +61,21 @@ rofl::caddress_ll libnl_lladdr_2_rofl(const struct nl_addr *lladdr) {
                            nl_addr_get_len(lladdr));
 }
 
-rofl::caddress_in4 libnl_in4addr_2_rofl(struct nl_addr *addr) {
+rofl::caddress_in4 libnl_in4addr_2_rofl(struct nl_addr *addr, int *rv) {
   struct sockaddr_in sin;
   socklen_t salen = sizeof(sin);
-  nl_addr_fill_sockaddr(addr, (struct sockaddr *)&sin, &salen);
+
+  assert(rv);
+  *rv = nl_addr_fill_sockaddr(addr, (struct sockaddr *)&sin, &salen);
   return rofl::caddress_in4(&sin, salen);
 }
 
-rofl::caddress_in6 libnl_in6addr_2_rofl(struct nl_addr *addr) {
+rofl::caddress_in6 libnl_in6addr_2_rofl(struct nl_addr *addr, int *rv) {
   struct sockaddr_in6 sin;
   socklen_t salen = sizeof(sin);
-  nl_addr_fill_sockaddr(addr, (struct sockaddr *)&sin, &salen);
+
+  assert(rv);
+  *rv = nl_addr_fill_sockaddr(addr, (struct sockaddr *)&sin, &salen);
   return rofl::caddress_in6(&sin, salen);
 }
 
@@ -142,8 +146,14 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   // get v4 dst (local v4 addr)
   auto prefixlen = rtnl_addr_get_prefixlen(a);
   auto addr = rtnl_addr_get_local(a);
-  rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
+  rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
   rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
+
+  if (rv < 0) {
+    // TODO shall we remove the l3_termination mac?
+    LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+    return rv;
+  }
 
   if (is_loopback) {
     auto p = nl_addr_alloc(255);
@@ -204,7 +214,11 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   auto addr = rtnl_addr_get_local(a);
   if (is_link_local_address(addr)) {
 
-    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr);
+    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      return rv;
+    }
 
     // All link local addresses have a prefix length of /10
     rofl::caddress_in6 mask = rofl::build_mask_in6(10);
@@ -233,8 +247,13 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   }
 
   auto prefixlen = rtnl_addr_get_prefixlen(a);
-  rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr);
+  rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
   rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+    return rv;
+  }
 
   rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0);
   if (rv < 0) {
@@ -262,8 +281,13 @@ int nl_l3::add_lo_addr_v6(struct rtnl_addr *a) {
   }
 
   auto prefixlen = rtnl_addr_get_prefixlen(a);
-  rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr);
+  rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
   auto mask = rofl::build_mask_in6(prefixlen);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+    return rv;
+  }
 
   if (prefixlen == 128)
     rv = sw->l3_unicast_host_add(ipv6_dst, 0);
@@ -292,7 +316,12 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   // XXX TODO remove vlan address
 
   if (family == AF_INET) {
-    rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
+    rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      return rv;
+    }
+
     if (prefixlen == 32) {
       rv = sw->l3_unicast_host_remove(ipv4_dst);
     } else {
@@ -300,7 +329,12 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
       rv = sw->l3_unicast_route_remove(ipv4_dst, mask);
     }
   } else {
-    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr);
+    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      return rv;
+    }
+
     if (prefixlen == 32) {
       rv = sw->l3_unicast_host_remove(ipv6_dst);
     } else {
@@ -435,7 +469,11 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
   addr = rtnl_neigh_get_dst(n);
   if (family == AF_INET) {
-    rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
+    rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      return rv;
+    }
     rv = sw->l3_unicast_host_add(ipv4_dst, l3_interface_id);
   } else {
 
@@ -447,7 +485,11 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
       VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
       return 0;
     }
-    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr);
+    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      return rv;
+    }
     rv = sw->l3_unicast_host_add(ipv6_dst, l3_interface_id);
   }
 
@@ -472,7 +514,11 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
   int family = rtnl_neigh_get_family(n_new);
   if (family == AF_INET6) {
     struct nl_addr *addr = rtnl_neigh_get_dst(n_old);
-    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr);
+    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      return rv;
+    }
     VLOG(1) << " new neigh " << ipv6_dst;
     return 0;
   }
@@ -514,7 +560,12 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
     }
 
     struct nl_addr *addr = rtnl_neigh_get_dst(n_old);
-    rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
+    rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
+
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      return rv;
+    }
 
     // delete next hop
     rv = sw->l3_unicast_host_remove(ipv4_dst);
@@ -555,13 +606,21 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
 
   if (family == AF_INET) {
     addr = rtnl_neigh_get_dst(n);
-    rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
+    rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      return rv;
+    }
 
     // delete next hop
     rv = sw->l3_unicast_host_remove(ipv4_dst);
   } else {
     addr = rtnl_neigh_get_dst(n);
-    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr);
+    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      return rv;
+    }
 
     // delete next hop
     rv = sw->l3_unicast_host_remove(ipv6_dst);
@@ -787,48 +846,22 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r) {
       return rv;
     }
 
-    sockaddr_in in_addr4;
-    sockaddr_in6 in_addr6;
-    socklen_t len;
-
     if (dst_af == AF_INET) {
-      len = sizeof(in_addr4);
-      rv = nl_addr_fill_sockaddr(
-          dst, reinterpret_cast<struct sockaddr *>(&in_addr4), &len);
-    } else if (dst_af == AF_INET6) {
-      len = sizeof(in_addr6);
-      rv = nl_addr_fill_sockaddr(
-          dst, reinterpret_cast<struct sockaddr *>(&in_addr6), &len);
-    } else {
-      LOG(FATAL) << __FUNCTION__ << ": invalid address family " << dst_af;
-    }
-
-    if (rv < 0) {
-      // clean up
-      for (auto neigh : neighs) {
-        rtnl_neigh_put(neigh);
-      }
-
-      neighs.clear();
-      LOG(ERROR) << __FUNCTION__ << ": nl_addr_fill_sockaddr failed with "
-                 << nl_geterror(rv);
-      return rv;
-    }
-
-    if (dst_af == AF_INET) {
-      rofl::caddress_in4 ipv4_dst(&in_addr4, len);
+      rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(dst, &rv);
       rofl::caddress_in4 mask =
           rofl::build_mask_in4(nl_addr_get_prefixlen(dst));
 
       // XXX TODO handle host routes
-      rv = sw->l3_unicast_route_add(ipv4_dst, mask, l3_interface_id);
+      if (rv == 0)
+        rv = sw->l3_unicast_route_add(ipv4_dst, mask, l3_interface_id);
     } else if (dst_af == AF_INET6) {
-      rofl::caddress_in6 ipv6_dst(&in_addr6, len);
+      rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(dst, &rv);
       rofl::caddress_in6 mask =
           rofl::build_mask_in6(nl_addr_get_prefixlen(dst));
 
       // XXX TODO handle host routes
-      rv = sw->l3_unicast_route_add(ipv6_dst, mask, l3_interface_id);
+      if (rv == 0)
+        rv = sw->l3_unicast_route_add(ipv6_dst, mask, l3_interface_id);
     } else {
       LOG(FATAL) << __FUNCTION__ << ": not reached";
     }
@@ -884,10 +917,18 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r) {
 
     auto addr = rtnl_route_get_dst(r);
     if (family == AF_INET) {
-      rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
+      rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+        return rv;
+      }
       rv = sw->l3_unicast_host_remove(ipv4_dst);
     } else {
-      rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr);
+      rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+        return rv;
+      }
       rv = sw->l3_unicast_host_remove(ipv6_dst);
     }
     if (rv < 0) {
