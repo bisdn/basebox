@@ -696,19 +696,10 @@ int nl_l3::del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
 int nl_l3::add_l3_route(struct rtnl_route *r) {
   assert(r);
 
-  int family = rtnl_route_get_family(r);
-
   // XXX TODO split up route add by type here:
   switch (rtnl_route_get_type(r)) {
   case RTN_UNICAST:
-
-    switch (family) {
-    case AF_INET:
-      return add_l3_unicast_route(r);
-    case AF_INET6:
-      return add_l3_unicast_route_v6(r);
-    }
-
+    return add_l3_unicast_route(r);
   case RTN_UNSPEC:
   case RTN_LOCAL:
   case RTN_BROADCAST:
@@ -760,84 +751,20 @@ int nl_l3::del_l3_route(struct rtnl_route *r) {
 }
 
 int nl_l3::add_l3_unicast_route(rtnl_route *r) {
-
   auto dst = rtnl_route_get_dst(r);
+  auto dst_af = rtnl_route_get_family(r);
   std::deque<struct rtnl_neigh *> neighs;
-
   int nnhs = rtnl_route_get_nnexthops(r);
-  VLOG(2) << __FUNCTION__ << ": number of next hops is " << nnhs;
 
-  nh_lookup_params p = {&neighs, r, nl};
-  get_neighbours_of_route(r, &p);
-
-  int rv = 0;
-  if (neighs.size()) {
-    uint32_t l3_interface_id = 0;
-    // add neigh
-    struct rtnl_neigh *n = neighs.front();
-    rv = add_l3_neigh_egress(n, &l3_interface_id);
-
-    if (rv < 0) {
-      // clean up
-      for (auto neigh : neighs) {
-        rtnl_neigh_put(neigh);
-      }
-
-      neighs.clear();
-      LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
-                 << OBJ_CAST(n);
-      return rv;
-    }
-
-    sockaddr_in in_addr;
-    socklen_t len = sizeof(in_addr);
-
-    rv = nl_addr_fill_sockaddr(
-        dst, reinterpret_cast<struct sockaddr *>(&in_addr), &len);
-
-    if (rv < 0) {
-      // clean up
-      for (auto neigh : neighs) {
-        rtnl_neigh_put(neigh);
-      }
-
-      neighs.clear();
-      LOG(ERROR) << __FUNCTION__ << ": nl_addr_fill_sockaddr failed with "
-                 << nl_geterror(rv);
-      return rv;
-    }
-
-    rofl::caddress_in4 ipv4_dst(&in_addr, len);
-    rofl::caddress_in4 mask = rofl::build_mask_in4(nl_addr_get_prefixlen(dst));
-
-    // XXX TODO handle host routes
-    rv = sw->l3_unicast_route_add(ipv4_dst, mask, l3_interface_id);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to add dst=" << ipv4_dst
-                 << ", mask=" << mask << ", l3_interface_id=" << l3_interface_id
-                 << "; rv=" << rv;
-    }
-
-    // clean up neighbours in neighs dequeue
-    for (auto neigh : neighs) {
-      rtnl_neigh_put(neigh);
-    }
-    neighs.clear();
-  } else {
-    LOG(ERROR) << __FUNCTION__ << ": no nexthop for this route";
+  if (nnhs == 0) {
+    LOG(WARNING) << __FUNCTION__ << ": no neighbours of route " << OBJ_CAST(r);
+    return -ENOTSUP;
+  } else if (nnhs > 1) {
+    // ecmp
+    LOG(WARNING) << __FUNCTION__
+                 << ": ecmp not supported, only first next hop will be used.";
   }
 
-  return rv;
-}
-
-int nl_l3::add_l3_unicast_route_v6(rtnl_route *r) {
-
-  auto dst = rtnl_route_get_dst(r);
-  std::deque<struct rtnl_neigh *> neighs;
-
-  int nnhs = rtnl_route_get_nnexthops(r);
-  VLOG(2) << __FUNCTION__ << ": number of next hops is " << nnhs;
-
   nh_lookup_params p = {&neighs, r, nl};
   get_neighbours_of_route(r, &p);
 
@@ -860,11 +787,21 @@ int nl_l3::add_l3_unicast_route_v6(rtnl_route *r) {
       return rv;
     }
 
-    sockaddr_in6 in_addr;
-    socklen_t len = sizeof(in_addr);
+    sockaddr_in in_addr4;
+    sockaddr_in6 in_addr6;
+    socklen_t len;
 
-    rv = nl_addr_fill_sockaddr(
-        dst, reinterpret_cast<struct sockaddr *>(&in_addr), &len);
+    if (dst_af == AF_INET) {
+      len = sizeof(in_addr4);
+      rv = nl_addr_fill_sockaddr(
+          dst, reinterpret_cast<struct sockaddr *>(&in_addr4), &len);
+    } else if (dst_af == AF_INET6) {
+      len = sizeof(in_addr6);
+      rv = nl_addr_fill_sockaddr(
+          dst, reinterpret_cast<struct sockaddr *>(&in_addr6), &len);
+    } else {
+      LOG(FATAL) << __FUNCTION__ << ": invalid address family " << dst_af;
+    }
 
     if (rv < 0) {
       // clean up
@@ -878,15 +815,27 @@ int nl_l3::add_l3_unicast_route_v6(rtnl_route *r) {
       return rv;
     }
 
-    rofl::caddress_in6 ipv6_dst(&in_addr, len);
-    rofl::caddress_in6 mask = rofl::build_mask_in6(nl_addr_get_prefixlen(dst));
+    if (dst_af == AF_INET) {
+      rofl::caddress_in4 ipv4_dst(&in_addr4, len);
+      rofl::caddress_in4 mask =
+          rofl::build_mask_in4(nl_addr_get_prefixlen(dst));
 
-    // XXX TODO handle host routes
-    rv = sw->l3_unicast_route_add(ipv6_dst, mask, l3_interface_id);
+      // XXX TODO handle host routes
+      rv = sw->l3_unicast_route_add(ipv4_dst, mask, l3_interface_id);
+    } else if (dst_af == AF_INET6) {
+      rofl::caddress_in6 ipv6_dst(&in_addr6, len);
+      rofl::caddress_in6 mask =
+          rofl::build_mask_in6(nl_addr_get_prefixlen(dst));
+
+      // XXX TODO handle host routes
+      rv = sw->l3_unicast_route_add(ipv6_dst, mask, l3_interface_id);
+    } else {
+      LOG(FATAL) << __FUNCTION__ << ": not reached";
+    }
+
     if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to add dst=" << ipv6_dst
-                 << ", mask=" << mask << ", l3_interface_id=" << l3_interface_id
-                 << "; rv=" << rv;
+      LOG(ERROR) << __FUNCTION__ << ": failed to add route to dst=" << dst
+                 << ", l3_interface_id=" << l3_interface_id << "; rv=" << rv;
     }
 
     // clean up neighbours in neighs dequeue
@@ -936,11 +885,9 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r) {
     auto addr = rtnl_route_get_dst(r);
     if (family == AF_INET) {
       rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr);
-
       rv = sw->l3_unicast_host_remove(ipv4_dst);
     } else {
       rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr);
-
       rv = sw->l3_unicast_host_remove(ipv6_dst);
     }
     if (rv < 0) {
