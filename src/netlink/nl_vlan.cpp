@@ -110,7 +110,7 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) const {
 uint16_t nl_vlan::get_vid(rtnl_link *link) {
   uint16_t vid = 0;
 
-  auto lt = kind_to_link_type(rtnl_link_get_type(link));
+  auto lt = get_link_type(link);
   switch (lt) {
   case LT_BRIDGE:
     VLOG(2) << __FUNCTION__ << ": bridge default vid " << default_vid;

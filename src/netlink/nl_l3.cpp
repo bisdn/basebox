@@ -316,7 +316,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   }
 
   int ifindex = rtnl_addr_get_ifindex(a);
-  int port_id = tap_man->get_port_id(ifindex);
+  int port_id = nl->get_port_id(ifindex);
 
   if (port_id == 0) {
     VLOG(1) << __FUNCTION__ << ": invalid port_id 0";
@@ -478,7 +478,7 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
   }
 
   int ifindex = rtnl_neigh_get_ifindex(n_old);
-  uint32_t port_id = tap_man->get_port_id(ifindex);
+  uint32_t port_id = nl->get_port_id(ifindex);
 
   if (port_id == 0) {
     VLOG(1) << __FUNCTION__ << ": invalid port id=" << port_id;
@@ -600,7 +600,7 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
   int rv = -EINVAL;
 
   // XXX TODO handle this on bridge interface
-  uint32_t port_id = tap_man->get_port_id(ifindex);
+  uint32_t port_id = nl->get_port_id(ifindex);
 
   if (port_id == 0) {
     VLOG(1) << __FUNCTION__ << ": invalid port_id=0 of ifindex" << ifindex;
@@ -648,7 +648,7 @@ int nl_l3::del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
   assert(s_mac);
   assert(d_mac);
 
-  uint32_t port_id = tap_man->get_port_id(ifindex);
+  uint32_t port_id = nl->get_port_id(ifindex);
 
   if (port_id == 0) {
     VLOG(1) << __FUNCTION__ << ": invalid port_id=0 of ifindex" << ifindex;

@@ -1,7 +1,7 @@
 project('baseboxd', 'cpp',
   version: run_command('cat', 'VERSION').stdout().strip(),
   default_options : [
-    'cpp_std=c++11',
+    'cpp_std=c++17',
     'b_asneeded=false',
     'prefix=/usr',
     'sysconfdir=/etc',
@@ -21,6 +21,8 @@ sources = files('''
   src/netlink/nbi_impl.hpp
   src/netlink/netlink-utils.cpp
   src/netlink/netlink-utils.hpp
+  src/netlink/nl_bond.cpp
+  src/netlink/nl_bond.hpp
   src/netlink/nl_bridge.cpp
   src/netlink/nl_bridge.hpp
   src/netlink/nl_hashing.hpp

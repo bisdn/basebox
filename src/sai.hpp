@@ -34,6 +34,11 @@ public:
     SAI_PORT_STAT_COLLISIONS,
   } sai_port_stat_t;
 
+  virtual int lag_create(uint32_t *lag_id) noexcept = 0;
+  virtual int lag_remove(uint32_t lag_id) noexcept = 0;
+  virtual int lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept = 0;
+  virtual int lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept = 0;
+
   virtual int l2_addr_remove_all_in_vlan(uint32_t port,
                                          uint16_t vid) noexcept = 0;
   virtual int l2_addr_add(uint32_t port, uint16_t vid,
@@ -127,6 +132,21 @@ public:
     uint32_t port_id;
     std::string name;
   };
+
+  enum port_type {
+    port_type_physical = 0,
+    port_type_vxlan = 1,
+    port_type_lag = 2,
+  };
+
+  static enum port_type get_port_type(uint32_t port_id) {
+    return static_cast<enum port_type>(port_id >> 16);
+  }
+
+  static uint16_t get_port_num(uint32_t port_id) {
+    return port_id & 0xffffffff;
+  }
+
   virtual void register_switch(switch_interface *) noexcept = 0;
   virtual void resend_state() noexcept = 0;
   virtual void

@@ -191,7 +191,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     return;
   }
 
-  uint32_t pport_no = tap_man->get_port_id(rtnl_link_get_ifindex(_link));
+  uint32_t pport_no = nl->get_port_id(rtnl_link_get_ifindex(_link));
   if (pport_no == 0) {
     LOG(ERROR) << __FUNCTION__
                << ": invalid pport_no=0 of link: " << OBJ_CAST(_link);
@@ -311,7 +311,7 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
   assert(sw);
   assert(neigh);
 
-  uint32_t port = tap_man->get_port_id(rtnl_neigh_get_ifindex(neigh));
+  uint32_t port = nl->get_port_id(rtnl_neigh_get_ifindex(neigh));
   if (port == 0) {
     VLOG(1) << "ignoring neigh" << neigh << ": not a tap port";
     return;
@@ -365,7 +365,7 @@ void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {
     nl_cache_remove(OBJ_CAST(n_lookup.get()));
   }
 
-  const uint32_t port = tap_man->get_port_id(rtnl_neigh_get_ifindex(neigh));
+  const uint32_t port = nl->get_port_id(rtnl_neigh_get_ifindex(neigh));
   rofl::caddress_ll mac((uint8_t *)nl_addr_get_binary_addr(addr),
                         nl_addr_get_len(addr));
 

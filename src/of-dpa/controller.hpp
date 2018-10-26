@@ -128,6 +128,11 @@ protected:
 
 public:
   // switch_interface
+  int lag_create(uint32_t *lag_id) noexcept override;
+  int lag_remove(uint32_t lag_id) noexcept override;
+  int lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept override;
+  int lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept override;
+
   int l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept override;
   int l2_addr_add(uint32_t port, uint16_t vid, const rofl::caddress_ll &mac,
                   bool filtered, bool permanent) noexcept override;
@@ -206,6 +211,7 @@ private:
   rofl::openflow::rofl_ofdpa_fm_driver fm_driver;
   std::mutex l2_domain_mutex;
   std::map<uint16_t, std::set<uint32_t>> l2_domain;
+  std::map<uint16_t, std::set<uint32_t>> lag;
   std::mutex conn_mutex;
   rofl::cthread bb_thread;
   std::mutex stats_mutex;

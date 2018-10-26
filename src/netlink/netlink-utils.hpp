@@ -23,14 +23,16 @@ struct rtnl_route;
 namespace basebox {
 
 enum link_type {
-  LT_UNKNOWN = 0,
   LT_UNSUPPORTED,
+  LT_BOND,
+  LT_BOND_SLAVE,
   LT_BRIDGE,
+  LT_BRIDGE_SLAVE,
   LT_TUN,
   LT_VLAN,
   LT_MAX /* must be last */
 };
 
-enum link_type kind_to_link_type(const char *type) noexcept;
+enum link_type get_link_type(rtnl_link *type) noexcept;
 
 } // namespace basebox
