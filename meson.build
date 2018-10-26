@@ -175,4 +175,4 @@ executable('baseboxd',
     protobuf,
   ],
   install: true,
-  install_dir: sbindir)
+  install_dir: bindir)

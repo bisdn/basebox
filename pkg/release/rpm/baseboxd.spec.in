@@ -65,7 +65,7 @@ install -p -D -m 0644 pkg/systemd/sysconfig.template \
 %systemd_postun
 
 %files
-%{_sbindir}/baseboxd
+%{_bindir}/baseboxd
 %{_unitdir}/baseboxd.service
 %config(noreplace) %{_sysconfdir}/sysconfig/baseboxd
 %doc README.md
