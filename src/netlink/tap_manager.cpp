@@ -240,8 +240,10 @@ int tap_manager::tapdev_removed(int ifindex, const std::string &portname) {
     recreate_tapdev(ifindex, portname);
 
   ifindex_to_id.erase(ifi2id_it);
-  port_deleted.erase(pd_it);
-  id_to_ifindex.erase(id2ifi_it);
+  if (id2ifi_it != id_to_ifindex.end())
+    id_to_ifindex.erase(id2ifi_it);
+  if (pd_it != port_deleted.end())
+    port_deleted.erase(pd_it);
 
   return rv;
 }
