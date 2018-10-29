@@ -24,6 +24,7 @@ namespace basebox {
 
 enum link_type {
   LT_UNSUPPORTED,
+  LT_TEAM,
   LT_BOND,
   LT_BOND_SLAVE,
   LT_BRIDGE,
