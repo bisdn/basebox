@@ -16,7 +16,8 @@
 #include "nl_output.hpp"
 
 #define lt_names                                                               \
-  "unsupported", "bond", "bond_slave", "bridge", "bridge_slave", "tun", "vlan"
+  "unsupported", "team", "bond", "bond_slave", "bridge", "bridge_slave",       \
+      "tun", "vlan"
 
 namespace basebox {
 
@@ -77,6 +78,10 @@ enum link_type get_link_type(rtnl_link *link) noexcept {
 
   if (it != kind2lt.end()) {
     enum link_type lt = it->second;
+
+    // treat team as bond
+    if (lt == LT_TEAM)
+      lt = LT_BOND;
 
     if (slave)
       lt = static_cast<enum link_type>(lt + 1);
