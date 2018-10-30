@@ -35,7 +35,7 @@ cnetlink::cnetlink()
     : swi(nullptr), thread(1), caches(NL_MAX_CACHE, nullptr), nl_proc_max(10),
       running(false), rfd_scheduled(false), bridge(nullptr),
       bond(new nl_bond(this)), vlan(new nl_vlan(this)),
-      l3(new nl_l3(vlan, this)) {
+      l3(new nl_l3(vlan, this)), config_lo(false) {
 
   sock_tx = nl_socket_alloc();
   if (sock_tx == nullptr) {
@@ -386,7 +386,12 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
   }
 
   if (swi && swi->is_connected()) {
-    config_lo_addr();
+    if (!config_lo) {
+      config_lo_addr();
+      config_lo = true;
+    }
+  } else if (swi && !swi->is_connected()) {
+    config_lo = false;
   }
 
   if (do_wakeup || nl_objs.size()) {

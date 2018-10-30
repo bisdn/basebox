@@ -136,6 +136,7 @@ private:
 
   std::mutex fdb_ev_mutex;
   std::deque<fdb_ev> fdb_evts;
+  bool config_lo;
 
   int handle_port_status_events();
   int handle_source_mac_learn();
