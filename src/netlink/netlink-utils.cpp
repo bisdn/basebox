@@ -53,12 +53,19 @@ enum link_type get_link_type(rtnl_link *link) noexcept {
       return LT_BRIDGE_SLAVE;
     }
 
+    // the bridge device (not the bridge_slave)
+    if (type && 0 == lt2names[LT_BRIDGE].compare(type) &&
+        rtnl_link_get_type(link)) {
+      type = rtnl_link_get_type(link);
+      slave = false;
+    }
+
   } else {
     type = rtnl_link_get_type(link);
   }
 
   VLOG(2) << __FUNCTION__ << ": type=" << std::string_view(type)
-          << ", af=" << rtnl_link_get_family(link) << ", slave=" << slave
+          << ", slave=" << slave << ", af=" << rtnl_link_get_family(link)
           << " of link " << OBJ_CAST(link);
 
   // lo has no type
