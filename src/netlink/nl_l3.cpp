@@ -225,7 +225,12 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
 
     VLOG(2) << __FUNCTION__ << ": added link local addr " << OBJ_CAST(a);
     rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0);
-    return rv;
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": could not add unicast route ipv6_dst=" << ipv6_dst
+                 << ", mask=" << mask;
+      return rv;
+    }
   }
 
   uint16_t vid = vlan->get_vid(link);
