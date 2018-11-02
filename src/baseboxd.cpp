@@ -12,14 +12,15 @@
 #include "of-dpa/controller.hpp"
 #include "version.h"
 
+DECLARE_string(tryfromenv); // from gflags
+DEFINE_int32(port, 6653, "Listening port");
+
 static bool validate_port(const char *flagname, gflags::int32 value) {
   VLOG(3) << __FUNCTION__ << ": flagname=" << flagname << ", value=" << value;
   if (value > 0 && value <= UINT16_MAX) // value is ok
     return true;
   return false;
 }
-
-DEFINE_int32(port, 6653, "Listening port");
 
 int main(int argc, char **argv) {
   using basebox::controller;
@@ -31,15 +32,19 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  // all variables can be set from env
+  FLAGS_tryfromenv = std::string("port");
   gflags::SetUsageMessage("");
   gflags::SetVersionString(PROJECT_VERSION);
 
+  // init
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   google::InitGoogleLogging(argv[0]);
 
   rofl::openflow::cofhello_elem_versionbitmap versionbitmap;
   versionbitmap.add_ofp_version(rofl::openflow13::OFP_VERSION);
-  LOG(INFO) << "using OpenFlow version-bitmap:" << std::endl << versionbitmap;
+  LOG(INFO) << __FUNCTION__
+            << ": using OpenFlow version-bitmap: " << versionbitmap;
 
   nbi_impl *nbi = new nbi_impl();
   std::shared_ptr<controller> box(new controller(nbi, versionbitmap));
