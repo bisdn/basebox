@@ -11,9 +11,9 @@
 #  eth1      eth2
 #  ns1       ns2
 
-# On the L3 switch, both ports are configured as gateways 
-# for the networks on the switch ports. On the servers, 
-# a manual (or simply a default route) should be inserted, 
+# On the L3 switch, both ports are configured as gateways
+# for the networks on the switch ports. On the servers,
+# a manual (or simply a default route) should be inserted,
 # to make sure that connectivity exists between the namespaces.
 
 PORTA=${PORTA:-port1}
@@ -21,11 +21,11 @@ PORTB=${PORTB:-port2}
 IFACES=($PORTA $PORTB)
 
 PORTAADDR=10.20.40.1/24
-PORTBADDR=10.20.30.1/24
+PORTBADDR=10.20.50.1/24
 
 function setup() {
   ip address add $PORTAADDR dev ${PORTA}
-  ip address add $PORTBADDRB dev ${PORTB}
+  ip address add $PORTBADDR dev ${PORTB}
 }
 
 setup
