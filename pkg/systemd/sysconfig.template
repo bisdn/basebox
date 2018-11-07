@@ -1,8 +1,12 @@
 ### Configuration options for baseboxd
 #
-# set the listening port
-# --port 6653
-OPTIONS=""
+# Listening port:
+# FLAGS_port=6653
 
+### glog
+#
+# log to stderr by default:
 GLOG_logtostderr=1
-#GLOG_v=0
+
+# verbose log level:
+# GLOG_v=0
