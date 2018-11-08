@@ -17,7 +17,6 @@ PORT=${PORT:-eth}
 INTF=($PORT1 $PORT2)
 
 CFG=${CFG:-"a"}
-NS=${NS:-0}
 
 function nsexec {
   ip netns exec ns${NS} $@
@@ -30,22 +29,25 @@ function nswipe {
 
 # setup
 function setup {
-  # configure namespace
-  ip netns add ns0
+  for id in {0..1}; do
 
-  for id in {1..2}; do
+    export NS=$id
+
+    # configure namespace
+    ip netns add ns$id
+
     # specific setup
-    ip link set $PORT$id netns ns0
+    ip link set ${PORT}$id netns ns$id
 
     # bring interfaces in namespace up
     nsexec ip link set lo up
-    nsexec ip link set $PORT$id up
+    nsexec ip link set ${PORT}$id up
 
     #configure VLANs and add IP address
     for vid in $(eval echo $BR_VLAN_RANGE) ; do
-      nsexec ip l a link port$id name port$id.$vid type vlan id $vid
-      nsexec ip a a ${TENANT_PREFIX}.${vid}.2${vid}/24 dev port$id.$vid
-      nsexec ip l s port$id.$vid up
+      nsexec ip l add link ${PORT}$id name ${PORT}$id.$vid type vlan id $vid
+      nsexec ip a add ${TENANT_PREFIX}.${vid}.2${id}/24 dev ${PORT}$id.$vid
+      nsexec ip l set ${PORT}$id.$vid up
     done
  done
 }

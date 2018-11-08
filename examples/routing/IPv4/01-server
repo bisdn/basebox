@@ -11,25 +11,23 @@
 #  eth1      eth2
 #  ns1       ns2
 
-# On the L3 switch, both ports are configured as gateways 
-# for the networks on the switch ports. On the servers, 
-# a manual (or simply a default route) should be inserted, 
+# On the L3 switch, both ports are configured as gateways
+# for the networks on the switch ports. On the servers,
+# a manual (or simply a default route) should be inserted,
 # to make sure that connectivity exists between the namespaces.
 
-ADDR=("10.20.30.10/24" "10.20.40.10/24")
+ADDR=("10.20.40.10/24" "10.20.50.10/24")
 LOADDR=("10.33.10.10/32" "10.44.10.10/32")
 
-aroutes="10.20.40.0/24"
-broutes="10.20.30.0/24"
-ROUTES=($aroutes $broutes)
+ROUTES=("10.20.50.0/24" "10.20.40.0/24")
 
-GW=("10.20.30.1" "10.20.40.1")
+GW=("10.20.40.1" "10.20.50.1")
 
 PORTA=${PORTA:-eth1}
 PORTB=${PORTB:-eth2}
 IFACES=($PORTA $PORTB)
 
-function exec {
+function nsexec {
   ip netns exec ${NS} $@
 }
 
@@ -37,9 +35,9 @@ function exec {
 function setup {
 
   # generic setup
-  for id in {0..1}; do 
+  for id in {0..1}; do
     export NS=ns$id
-    
+
     # setting up variables for each namespace
     iface=${IFACES[${id}]}
     ipaddr=${ADDR[${id}]}
@@ -48,16 +46,13 @@ function setup {
     gw=${GW[${id}]}
 
     ip netns add ns$id
-    ip link $iface set netns ns$id
+    ip link set $iface netns ns$id
 
     ## set links up
     nsexec ip link set $iface up
     nsexec ip address add $ipaddr dev $iface
 
-    ## loopback addresses
-    nsexec ip link set lo up
-    nsexec ip address add $ipaddr dev lo
-
+    ## add route
     nsexec ip route add $iproute via $gw dev $iface
   done
 }

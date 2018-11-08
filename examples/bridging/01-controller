@@ -12,14 +12,14 @@
 # This script will create the following logical connections:
 
 #  port1 \
-#         > bridge0
+#         > swbridge
 #  port2 /
 
 # Further, the VLAN ids in BR_VLAN_RANGE will be added to the ports
 
 PORTA=${PORTA:-port1}
 PORTB=${PORTB:-port2}
-BRIDGE=${BRIDGE:-bridge0}
+BRIDGE=${BRIDGE:-swbridge}
 
 BR_VLAN_RANGE_DEF="{4..6}"
 BR_VLAN_RANGE=${BR_VLAN_RANGE:-$BR_VLAN_RANGE_DEF}
@@ -37,6 +37,6 @@ ip link set ${PORTB} up
 
 # vids
 for vid in $(eval echo $BR_VLAN_RANGE) ; do
-  bridge vlan add vid $vid dev ${PORTA}
-  bridge vlan add vid $vid dev ${PORTB}
+  bridge vlan add vid ${vid} dev ${PORTA}
+  bridge vlan add vid ${vid} dev ${PORTB}
 done

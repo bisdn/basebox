@@ -11,15 +11,15 @@
 #  eth1      eth2
 #  ns1       ns2
 
-# On the L3 switch, both ports are configured as gateways 
+# On the L3 switch, both ports are configured as gateways
 # for the networks on the switch ports. Since IPv6 requires
 # radvd, an external daemon that sends the Router Advertisement
-# messages down, in this folder you can also find an example 
+# messages down, in this folder you can also find an example
 # configuration for this daemon. According to the defaults,
-# this file should be placed in the /etc/radvd.conf. 
+# this file should be placed in the /etc/radvd.conf.
 # Due to autoconfiguration, the addresses on the servers are
 # automatically configured to a combination of the announced
-# prefix from the router with the physical (MAC) address of the 
+# prefix from the router with the physical (MAC) address of the
 # interface.
 
 PORTA=${PORTA:-eth1}
@@ -35,17 +35,17 @@ function setup {
   for id in {0..1}; do
     # setup namespaces
     export NS=ns$id
-    port=${IFACES[${id}]} 
+    port=${IFACES[${id}]}
 
     ip netns add ns$id
 
-    ip link set $port netns $ns
+    ip link set $port netns ns$id
 
     # setup interfaces up
     nsexec ip link set lo up
     nsexec ip link set $port up
 
-
-
   done
 }
+
+setup
