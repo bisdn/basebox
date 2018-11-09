@@ -77,12 +77,27 @@ int cnetlink::load_from_file(const std::string &path) {
   return out;
 }
 
+static int nl_overrun_handler_verbose(struct nl_msg *msg, void *arg) {
+  LOG(ERROR) << __FUNCTION__ << ": got called with msg=" << msg;
+  return NL_STOP;
+}
+
+static int nl_invalid_handler_verbose(struct nl_msg *msg, void *arg) {
+  LOG(ERROR) << __FUNCTION__ << ": got called with msg=" << msg;
+  return NL_STOP;
+}
+
 void cnetlink::init_caches() {
 
   sock_mon = nl_socket_alloc();
   if (sock_mon == nullptr) {
     LOG(FATAL) << __FUNCTION__ << ": failed to create netlink socket";
   }
+
+  nl_socket_modify_cb(sock_mon, NL_CB_OVERRUN, NL_CB_CUSTOM,
+                      nl_overrun_handler_verbose, NULL);
+  nl_socket_modify_cb(sock_mon, NL_CB_INVALID, NL_CB_CUSTOM,
+                      nl_invalid_handler_verbose, NULL);
 
   int rc = nl_cache_mngr_alloc(sock_mon, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
 
@@ -444,7 +459,7 @@ void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
   }
 }
 
-/* static C-callback */
+/* static C-callbacks */
 void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
                         struct nl_object *new_obj, uint64_t diff, int action,
                         void *data) {
