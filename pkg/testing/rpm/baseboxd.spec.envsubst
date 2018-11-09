@@ -14,7 +14,6 @@ License:       BISDN
 URL:           http://www.bisdn.de/
 Source0:       https://github.com/bisdn/basebox/archive/%{?commit}.tar.gz#/%{name}-%{shortcommit}.tar.gz
 
-BuildRequires: gcc-c++
 BuildRequires: gflags-devel
 BuildRequires: git
 BuildRequires: glog-devel
@@ -27,6 +26,11 @@ BuildRequires: protobuf-devel
 BuildRequires: rofl-common-devel
 BuildRequires: rofl-ofdpa-devel
 BuildRequires: systemd
+%if 0%{?rhel} == 7
+BuildRequires: devtoolset-7-gcc-c++
+%endif
+BuildRequires: gcc-c++
+
 
 Requires:      gflags
 Requires:      glog
@@ -50,6 +54,10 @@ TODO
 
 
 %build
+%if 0%{?rhel} == 7
+  export LDFLAGS=-lcrypto
+  . /opt/rh/devtoolset-7/enable
+%endif
 %meson
 %meson_build
 
