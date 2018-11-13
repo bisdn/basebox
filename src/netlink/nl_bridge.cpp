@@ -400,7 +400,7 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   default:
     // no vid, set vid to pvid
     vid = br_vlan->pvid;
-    LOG(WARNING) << __FUNCTION__ << ": assueming untagged for ethertype "
+    LOG(WARNING) << __FUNCTION__ << ": assuming untagged for ethertype "
                  << std::showbase << std::hex << ntohs(hdr->eth.h_proto);
     break;
   }
