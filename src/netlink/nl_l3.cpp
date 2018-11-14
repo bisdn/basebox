@@ -397,9 +397,13 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n,
   assert(n);
   int state = rtnl_neigh_get_state(n);
 
-  if (state == NUD_FAILED) {
+  switch (state) {
+  case NUD_FAILED:
     LOG(INFO) << __FUNCTION__ << ": neighbour not reachable state=failed";
     return -EINVAL;
+  case NUD_INCOMPLETE:
+    LOG(INFO) << __FUNCTION__ << ": neighbour state=incomplete";
+    return 0;
   }
 
   struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
@@ -547,7 +551,9 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
   n_ll_old = rtnl_neigh_get_lladdr(n_old);
   n_ll_new = rtnl_neigh_get_lladdr(n_new);
 
-  if (n_ll_old == nullptr && n_ll_new) {
+  if (n_ll_old == nullptr && n_ll_new == nullptr) {
+    VLOG(1) << __FUNCTION__ << ": neighbour ll still not reachable";
+  } else if (n_ll_old == nullptr && n_ll_new) {
     // XXX neighbour reachable
     VLOG(2) << __FUNCTION__ << ": neighbour ll reachable";
 
