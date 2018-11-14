@@ -515,8 +515,6 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
   assert(n_new);
 
   int rv = 0;
-  bool state_changed =
-      !(rtnl_neigh_get_state(n_old) == rtnl_neigh_get_state(n_new));
   struct nl_addr *n_ll_old;
   struct nl_addr *n_ll_new;
 
@@ -528,6 +526,7 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
       LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
       return rv;
     }
+
     VLOG(1) << " new neigh " << ipv6_dst;
     return 0;
   }
@@ -540,14 +539,6 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
     return -EINVAL;
   }
 
-  if (!state_changed) {
-    // TODO l2 changes are not covered here
-    VLOG(2) << __FUNCTION__ << ": neighbour state not changed states are n_old="
-            << rtnl_neigh_get_state(n_old)
-            << " n_new=" << rtnl_neigh_get_state(n_new);
-    return 0;
-  }
-
   n_ll_old = rtnl_neigh_get_lladdr(n_old);
   n_ll_new = rtnl_neigh_get_lladdr(n_new);
 
@@ -556,6 +547,13 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
   } else if (n_ll_old == nullptr && n_ll_new) {
     // XXX neighbour reachable
     VLOG(2) << __FUNCTION__ << ": neighbour ll reachable";
+
+    rv = add_l3_neigh(n_new);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to add l3 neighbor " << n_new
+                 << "; rv=" << rv;
+      return rv;
+    }
 
   } else if (n_ll_old && n_ll_new == nullptr) {
     // neighbour unreachable
@@ -593,7 +591,72 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
                        rtnl_neigh_get_lladdr(n_old));
   } else if (nl_addr_cmp(n_ll_old, n_ll_new)) {
     // XXX TODO ll addr changed
-    LOG(WARNING) << __FUNCTION__ << ": neighbour ll changed (not implemented)";
+    VLOG(1) << __FUNCTION__ << ": neighbour ll changed: new neighbor "
+            << n_ll_new << " ifindex=" << ifindex;
+
+    std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)> link(
+        nl->get_link_by_ifindex(ifindex), rtnl_link_put);
+
+    if (link.get() == nullptr) {
+      LOG(ERROR) << __FUNCTION__ << ": link not found ifindex=" << ifindex;
+      return -EINVAL;
+    }
+
+    auto s_mac = rtnl_link_get_addr(link.get());
+    uint16_t vid = vlan->get_vid(link.get());
+
+    VLOG(2) << __FUNCTION__ << " : source old mac " << s_mac << " dst old mac  "
+            << n_ll_old << " dst new mac " << n_ll_new;
+
+    auto l3_if_old_tuple =
+        std::make_tuple(port_id, vid, libnl_lladdr_2_rofl(s_mac),
+                        libnl_lladdr_2_rofl(n_ll_old));
+    auto l3_if_new_tuple =
+        std::make_tuple(port_id, vid, libnl_lladdr_2_rofl(s_mac),
+                        libnl_lladdr_2_rofl(n_ll_new));
+
+    // Obtain l3_interface_id
+    auto it_range = l3_interface_mapping.equal_range(l3_if_old_tuple);
+    if (it_range.first == l3_interface_mapping.end()) {
+      LOG(ERROR) << __FUNCTION__ << ": could not retrieve neighbor";
+      return -EINVAL;
+    }
+
+    uint32_t l3_interface_id = 0;
+    auto it = it_range.first;
+    for (; it != it_range.second; ++it) {
+      if (l3_if_old_tuple == it->first) {
+        l3_interface_id = it->second.l3_interface_id;
+
+        rv = sw->l3_egress_update(port_id, vid, libnl_lladdr_2_rofl(s_mac),
+                                  libnl_lladdr_2_rofl(n_ll_new),
+                                  &l3_interface_id);
+        if (rv < 0) {
+          VLOG(2) << __FUNCTION__ << ": failed to add neighbor";
+          return -EINVAL;
+        }
+        break;
+
+      } else {
+        VLOG(2) << __FUNCTION__ << ": skipping interface";
+      }
+    }
+
+    if (it_range.first == it_range.second) {
+      LOG(ERROR) << __FUNCTION__ << ": could not update neighbor";
+      return -EINVAL;
+    }
+
+    it_range = l3_interface_mapping.equal_range(l3_if_new_tuple);
+    if (it_range.first != l3_interface_mapping.end()) {
+      LOG(ERROR) << __FUNCTION__ << ": neighbor already present";
+      return -EINVAL;
+    }
+
+    l3_interface_mapping.erase(it->first);
+    l3_interface_mapping.emplace(
+        std::make_pair(l3_if_new_tuple, l3_interface(l3_interface_id)));
+
   } else {
     // nothing changed besides the nud
     VLOG(2) << __FUNCTION__ << ": nud changed from "
