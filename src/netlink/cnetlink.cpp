@@ -718,7 +718,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
 
       family = rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj()));
 
-      switch (rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj()))) {
+      switch (family) {
       case PF_BRIDGE:
         neigh_ll_updated(NEIGH_CAST(obj.get_old_obj()),
                          NEIGH_CAST(obj.get_new_obj()));
@@ -1093,7 +1093,7 @@ int cnetlink::handle_port_status_events() {
   std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_changes;
   std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_retry;
 
-  VLOG(1) << __FUNCTION__;
+  VLOG(2) << __FUNCTION__;
 
   {
     std::lock_guard<std::mutex> scoped_lock(pc_mutex);

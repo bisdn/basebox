@@ -316,7 +316,7 @@ void controller::request_port_stats() {
 void controller::handle_port_stats_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_port_stats_reply &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
+  VLOG(2) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
   VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
@@ -725,11 +725,11 @@ int controller::l3_egress_create(uint32_t port, uint16_t vid,
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     // TODO unfiltered interface
-    dpt.send_group_mod_message(rofl::cauxid(0),
-                               fm_driver.enable_group_l3_unicast(
-                                   dpt.get_version(), _egress_interface_id,
-                                   src_mac, dst_mac,
-                                   fm_driver.group_id_l2_interface(port, vid)));
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_group_l3_unicast(
+            dpt.get_version(), _egress_interface_id, src_mac, dst_mac,
+            fm_driver.group_id_l2_interface(port, vid), false));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -748,6 +748,34 @@ int controller::l3_egress_create(uint32_t port, uint16_t vid,
   }
 
   *l3_interface_id = _egress_interface_id;
+  return rv;
+}
+
+int controller::l3_egress_update(uint32_t port, uint16_t vid,
+                                 const rofl::caddress_ll &src_mac,
+                                 const rofl::caddress_ll &dst_mac,
+                                 uint32_t *l3_interface_id) noexcept {
+  int rv = 0;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    // TODO unfiltered interface
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_group_l3_unicast(
+            dpt.get_version(), *l3_interface_id, src_mac, dst_mac,
+            fm_driver.group_id_l2_interface(port, vid), true));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
   return rv;
 }
 

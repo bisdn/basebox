@@ -61,6 +61,10 @@ public:
                                const rofl::caddress_ll &src_mac,
                                const rofl::caddress_ll &dst_mac,
                                uint32_t *l3_interface) noexcept = 0;
+  virtual int l3_egress_update(uint32_t port, uint16_t vid,
+                               const rofl::caddress_ll &src_mac,
+                               const rofl::caddress_ll &dst_mac,
+                               uint32_t *l3_interface_id) noexcept = 0;
   virtual int l3_egress_remove(uint32_t l3_interface) noexcept = 0;
 
   virtual int l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
