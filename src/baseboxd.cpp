@@ -21,19 +21,14 @@ static bool validate_port(const char *flagname, gflags::int32 value) {
     return true;
   return false;
 }
+DEFINE_validator(port, &validate_port);
 
 int main(int argc, char **argv) {
   using basebox::controller;
   using basebox::nbi_impl;
   using basebox::tap_manager;
 
-  if (!gflags::RegisterFlagValidator(&FLAGS_port, &validate_port)) {
-    std::cerr << "Failed to register port validator" << std::endl;
-    exit(1);
-  }
-
   // all variables can be set from env
-  FLAGS_tryfromenv = std::string("port");
   gflags::SetUsageMessage("");
   gflags::SetVersionString(PROJECT_VERSION);
 

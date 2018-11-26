@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=@bindir@/baseboxd
+ExecStart=@bindir@/baseboxd --tryfromenv=port
 EnvironmentFile=-@sysconfdir@/sysconfig/baseboxd
 Restart=always
 
