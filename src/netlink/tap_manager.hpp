@@ -9,8 +9,10 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
 
 #include "sai.hpp"
+#include <netlink/route/link.h>
 
 namespace basebox {
 
@@ -38,7 +40,7 @@ public:
 
   int enqueue(int fd, basebox::packet *pkt);
 
-  std::map<std::string, uint32_t> get_registered_ports() const {
+  std::unordered_map<std::string, uint32_t> get_registered_ports() const {
     std::lock_guard<std::mutex> lock(tn_mutex);
     return tap_names2id;
   }
@@ -67,7 +69,7 @@ public:
 
   // access from northbound (cnetlink)
   int tapdev_removed(int ifindex, const std::string &portname);
-  void tapdev_ready(int ifindex, const std::string &name);
+  void tapdev_ready(int ifindex, const std::string &name, rtnl_link *link);
 
 private:
   tap_manager(const tap_manager &other) = delete; // non construction-copyable
@@ -75,16 +77,16 @@ private:
 
   // locked access
   mutable std::mutex tn_mutex; // tap names mutex
-  std::map<std::string, uint32_t> tap_names2id;
-  std::map<std::string, int> tap_names2fds;
+  std::unordered_map<std::string, uint32_t> tap_names2id;
+  std::unordered_map<std::string, int> tap_names2fds;
 
   // only accessible from southbound
   std::map<uint32_t, ctapdev *> tap_devs; // port id:tap_device
   std::deque<uint32_t> port_deleted;
 
   // only accessible from cnetlink
-  std::map<int, uint32_t> ifindex_to_id;
-  std::map<uint32_t, int> id_to_ifindex;
+  std::unordered_map<int, uint32_t> ifindex_to_id;
+  std::unordered_map<uint32_t, int> id_to_ifindex;
 
   std::unique_ptr<tap_io> io;
   cnetlink *nl;

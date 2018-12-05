@@ -139,7 +139,8 @@ int tap_manager::get_fd(uint32_t port_id) const noexcept {
   return it->second->get_fd();
 }
 
-void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
+void tap_manager::tapdev_ready(int ifindex, const std::string &name,
+                               rtnl_link *link) {
   auto it = ifindex_to_id.find(ifindex);
 
   // already registered?
@@ -148,7 +149,6 @@ void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
     return;
   }
 
-  std::lock_guard<std::mutex> lock{tn_mutex};
   auto tn_it = tap_names2id.find(name);
   if (tn_it == tap_names2id.end()) {
     LOG(WARNING) << __FUNCTION__ << "invalid port name " << name;
@@ -156,7 +156,8 @@ void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
   }
 
   // update maps
-  auto id2ifi_it = id_to_ifindex.insert(std::make_pair(tn_it->second, ifindex));
+  auto id2ifi_it =
+      id_to_ifindex.emplace(std::make_pair(tn_it->second, ifindex));
   if (!id2ifi_it.second && id2ifi_it.first->second != ifindex) {
     // update only if the ifindex has changed
     LOG(WARNING) << __FUNCTION__
@@ -175,7 +176,7 @@ void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
     id2ifi_it.first->second = ifindex;
   }
 
-  auto rv1 = ifindex_to_id.insert(std::make_pair(ifindex, tn_it->second));
+  auto rv1 = ifindex_to_id.emplace(std::make_pair(ifindex, tn_it->second));
   if (!rv1.second && rv1.first->second != tn_it->second) {
     // update only if the id has changed
     LOG(WARNING) << __FUNCTION__
@@ -183,13 +184,6 @@ void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
                  << ifindex << " id(old)=" << rv1.first->second
                  << " id(new)=" << tn_it->second;
     rv1.first->second = tn_it->second;
-  }
-
-  std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> l(
-      nl->get_link_by_ifindex(ifindex), &rtnl_link_put);
-  if (!l) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid link ifindex=" << ifindex;
-    return;
   }
 
   auto fd_it = tap_names2fds.find(name);
@@ -202,7 +196,7 @@ void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
     LOG(FATAL) << __FUNCTION__ << ": need to update fd";
   }
 
-  io->update_mtu(fd_it->second, rtnl_link_get_mtu(l.get()));
+  io->update_mtu(fd_it->second, rtnl_link_get_mtu(link));
 }
 
 int tap_manager::tapdev_removed(int ifindex, const std::string &portname) {

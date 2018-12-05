@@ -865,7 +865,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   case LT_TUN: {
     int ifindex = rtnl_link_get_ifindex(link);
     std::string name(rtnl_link_get_name(link));
-    tap_man->tapdev_ready(ifindex, name);
+    tap_man->tapdev_ready(ifindex, name, link);
   } break;
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
@@ -1089,93 +1089,95 @@ void cnetlink::port_status_changed(uint32_t port_no,
 }
 
 int cnetlink::handle_port_status_events() {
+  if (!port_status_changes.size())
+    return 0;
 
+  std::tuple<uint32_t, enum nbi::port_status, int> change;
   std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_changes;
-  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_retry;
-
-  VLOG(2) << __FUNCTION__;
+  int size = 0;
 
   {
     std::lock_guard<std::mutex> scoped_lock(pc_mutex);
-    _pc_changes.swap(port_status_changes);
+    _pc_changes = port_status_changes;
   }
 
-  for (auto change : _pc_changes) {
-    int ifindex, rv;
-    rtnl_link *lchange, *link;
+  change = _pc_changes.front();
+  size = _pc_changes.size();
 
-    // get ifindex
-    ifindex = tap_man->get_ifindex(std::get<0>(change));
-    if (0 == ifindex) {
-      // XXX not yet registered push back, this should be done async
-      int n_retries = std::get<2>(change);
-      if (n_retries < 10) {
-        std::get<2>(change) = ++n_retries;
-        _pc_retry.push_back(change);
-      } else {
-        LOG(ERROR) << __FUNCTION__
-                   << ": no ifindex of port_id=" << std::get<0>(change)
-                   << " found";
-        // XXX TODO resync caches?
-      }
-      continue;
-    }
+  int ifindex, rv;
+  rtnl_link *lchange, *link;
 
-    VLOG(1) << __FUNCTION__ << ": update link with ifindex=" << ifindex
-            << " port_id=" << std::get<0>(change) << " status=" << std::hex
-            << std::get<1>(change) << std::dec << ") ";
-
-    // lookup link
-    link = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
-    if (!link) {
-      LOG(ERROR) << __FUNCTION__ << ": link not found with ifindex=" << ifindex;
-      continue;
-    }
-
-    // change request
-    lchange = rtnl_link_alloc();
-    if (!lchange) {
-      LOG(ERROR) << __FUNCTION__ << ": out of memory";
-      rtnl_link_put(link);
-      continue;
-    }
-
-    int flags = rtnl_link_get_flags(link);
-    // check admin state change
-    if (!((flags & IFF_UP) &&
-          !(std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN))) {
-      if (std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN) {
-        rtnl_link_unset_flags(lchange, IFF_UP);
-        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                  << " disabling";
-      } else {
-        rtnl_link_set_flags(lchange, IFF_UP);
-        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                  << " enabling";
-      }
+  ifindex = tap_man->get_ifindex(std::get<0>(change));
+  if (0 == ifindex) {
+    // XXX not yet registered push back, this should be done async
+    int n_retries = std::get<2>(change);
+    if (n_retries < 10) {
+      std::get<2>(change) = ++n_retries;
     } else {
-      LOG(INFO) << __FUNCTION__ << ": notification of port "
-                << rtnl_link_get_name(link) << " received. State unchanged.";
+      LOG(ERROR) << __FUNCTION__
+                 << ": no ifindex of port_id=" << std::get<0>(change)
+                 << " found";
+      // XXX TODO resync caches?
     }
 
-    // apply changes
-    if ((rv = rtnl_link_change(sock_mon, link, lchange, 0)) < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": Unable to change link, "
-                 << nl_geterror(rv);
+    {
+      std::lock_guard<std::mutex> scoped_lock(pc_mutex);
+      port_status_changes.emplace_back(change);
+      return size;
     }
+  }
+
+  VLOG(1) << __FUNCTION__ << ": update link with ifindex=" << ifindex
+          << " port_id=" << std::get<0>(change) << " status=" << std::hex
+          << std::get<1>(change) << std::dec;
+
+  // lookup link
+  link = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
+  if (!link) {
+    LOG(ERROR) << __FUNCTION__ << ": link not found with ifindex=" << ifindex;
+    return 0;
+  }
+
+  // change request
+  lchange = rtnl_link_alloc();
+  if (!lchange) {
+    LOG(ERROR) << __FUNCTION__ << ": out of memory";
     rtnl_link_put(link);
-    rtnl_link_put(lchange);
+    return 0;
   }
 
-  int size = _pc_retry.size();
-  if (size) {
+  int flags = rtnl_link_get_flags(link);
+  // check admin state change
+  if (!((flags & IFF_UP) &&
+        !(std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN))) {
+    if (std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN) {
+      rtnl_link_unset_flags(lchange, IFF_UP);
+      LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
+                << " disabling";
+    } else {
+      rtnl_link_set_flags(lchange, IFF_UP);
+      LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
+                << " enabling";
+    }
+  } else {
+    LOG(INFO) << __FUNCTION__ << ": notification of port "
+              << rtnl_link_get_name(link) << " received. State unchanged.";
+  }
+
+  // apply changes
+  if ((rv = rtnl_link_change(sock_mon, link, lchange, 0)) < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": Unable to change link, "
+               << nl_geterror(rv);
+  }
+  rtnl_link_put(link);
+  rtnl_link_put(lchange);
+
+  {
     std::lock_guard<std::mutex> scoped_lock(pc_mutex);
-    std::copy(make_move_iterator(_pc_retry.begin()),
-              make_move_iterator(_pc_retry.end()),
-              std::back_inserter(port_status_changes));
+    port_status_changes.pop_front();
   }
 
-  return size;
+  return --size;
 }
 
 int cnetlink::config_lo_addr() noexcept {

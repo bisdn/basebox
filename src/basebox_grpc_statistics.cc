@@ -38,7 +38,7 @@ NetworkStats::NetworkStats(std::shared_ptr<switch_interface> swi,
       switch_interface::SAI_PORT_STAT_RX_OVER_ERR,
       switch_interface::SAI_PORT_STAT_RX_CRC_ERR,
       switch_interface::SAI_PORT_STAT_COLLISIONS};
-  std::map<std::string, uint32_t> ports = tap_man->get_registered_ports();
+  auto ports = tap_man->get_registered_ports();
 
   for (const auto &port : ports) {
     std::vector<uint64_t> stats(counter_ids.size());
