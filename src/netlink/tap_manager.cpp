@@ -144,7 +144,7 @@ void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
 
   // already registered?
   if (it != ifindex_to_id.end()) {
-    LOG(ERROR) << __FUNCTION__ << ": not yet registered";
+    LOG(ERROR) << __FUNCTION__ << ": already registered port " << name;
     return;
   }
 
