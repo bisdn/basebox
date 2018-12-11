@@ -4,7 +4,7 @@ BUILDDIR ?= .build
 
 .DEFAULT_GOAL := build
 
-.PHONY: all build bumpversionminor bumpversionmajor clean format install scan-build srpm tag
+.PHONY: all build bumpversionminor bumpversionmajor clean format install scan-build srpm srpm-release tag
 
 $(BUILDDIR):
 	@echo $(BUILDDIR) not existing run \'meson $(BUILDDIR)\'
@@ -30,6 +30,9 @@ scan-build: $(BUILDDIR)
 
 srpm: $(BUILDDIR)
 	make -C pkg/testing/rpm outdir=$(CURDIR)
+
+srpm-release: $(BUILDDIR)
+	make -C pkg/release/rpm outdir=$(CURDIR)
 
 bumpversionminor bumpversionmajor:
 	$(eval BUMP = $(shell echo $@ | sed 's/bumpversion//'))

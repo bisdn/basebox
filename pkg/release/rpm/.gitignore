@@ -1,1 +1,6 @@
+/baseboxd-*
+/git-bundle*
+/*.tar.gz
+
 /baseboxd.spec
+!Makefile
