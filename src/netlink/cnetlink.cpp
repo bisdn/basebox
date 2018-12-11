@@ -1159,7 +1159,7 @@ int cnetlink::handle_port_status_events() {
     }
 
     // apply changes
-    if ((rv = rtnl_link_change(sock_mon, link, lchange, 0)) < 0) {
+    if ((rv = rtnl_link_change(sock_tx, link, lchange, 0)) < 0) {
       LOG(ERROR) << __FUNCTION__ << ": Unable to change link, "
                  << nl_geterror(rv);
     }
