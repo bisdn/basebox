@@ -16,11 +16,11 @@ class tap_manager;
 
 class nbi_impl : public nbi, public switch_callback {
   switch_interface *swi;
-  std::unique_ptr<cnetlink> nl;
+  std::shared_ptr<cnetlink> nl;
   std::shared_ptr<tap_manager> tap_man;
 
 public:
-  nbi_impl();
+  nbi_impl(std::shared_ptr<cnetlink> nl, std::shared_ptr<tap_manager> tap_man);
   virtual ~nbi_impl();
 
   // nbi

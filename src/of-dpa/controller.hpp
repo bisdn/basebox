@@ -42,19 +42,19 @@ class controller : public rofl::crofbase,
                        ///(OUI)
   };
 
-  nbi *nb;
+  std::unique_ptr<nbi> nb;
   std::atomic<enum swi_flags> flags;
 
   controller(const controller &) = delete;
   controller &operator=(const controller &) = delete;
 
 public:
-  controller(nbi *nb,
+  controller(std::unique_ptr<nbi> nb,
              const rofl::openflow::cofhello_elem_versionbitmap &versionbitmap =
                  rofl::openflow::cofhello_elem_versionbitmap())
-      : nb(nb), bb_thread(1), egress_interface_id(1), default_idle_timeout(0),
-        connected(false) {
-    nb->register_switch(this);
+      : nb(std::move(nb)), bb_thread(1), egress_interface_id(1),
+        default_idle_timeout(0), connected(false) {
+    this->nb->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
     bb_thread.start();
   }

@@ -6,8 +6,8 @@
 #include <glog/logging.h>
 
 #include "basebox_api.h"
+#include "netlink/cnetlink.hpp"
 #include "netlink/nbi_impl.hpp"
-#include "netlink/tap_manager.hpp"
 #include "netlink/tap_manager.hpp"
 #include "of-dpa/controller.hpp"
 #include "version.h"
@@ -23,6 +23,7 @@ static bool validate_port(const char *flagname, gflags::int32 value) {
 }
 
 int main(int argc, char **argv) {
+  using basebox::cnetlink;
   using basebox::controller;
   using basebox::nbi_impl;
   using basebox::tap_manager;
@@ -46,16 +47,17 @@ int main(int argc, char **argv) {
   LOG(INFO) << __FUNCTION__
             << ": using OpenFlow version-bitmap: " << versionbitmap;
 
-  nbi_impl *nbi = new nbi_impl();
-  std::shared_ptr<controller> box(new controller(nbi, versionbitmap));
+  std::shared_ptr<cnetlink> nl(new cnetlink());
+  std::shared_ptr<tap_manager> tap_man(new tap_manager(nl));
+  std::unique_ptr<nbi_impl> nbi(new nbi_impl(nl, tap_man));
+  std::shared_ptr<controller> box(
+      new controller(std::move(nbi), versionbitmap));
 
   rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"), FLAGS_port);
   box->dpt_sock_listen(baddr);
 
-  basebox::ApiServer grpcConnector(box, nbi->get_tapmanager());
+  basebox::ApiServer grpcConnector(box, tap_man);
   grpcConnector.runGRPCServer();
-
-  delete nbi;
 
   LOG(INFO) << "bye";
   return EXIT_SUCCESS;
