@@ -75,6 +75,8 @@ conf_data.set('PACKAGE_VERSION', meson.project_version())
 cppc = meson.get_compiler('cpp')
 
 clang_format = find_program('clang-format', required: false, native: true)
+clang_tidy_script = find_program('run-clang-tidy.py', required: false)
+clang_tidy = find_program('clang-tidy', required: false)
 
 protoc = find_program('protoc')
 protobuf = dependency('protobuf')
@@ -167,6 +169,24 @@ if clang_format.found()
 else
   run_target('clang-format',
     command: [ 'echo', 'install', 'clang-format', '&&', 'false' ])
+endif
+
+if clang_tidy.found()
+  if clang_tidy_script.found()
+    # prefer script with parallel execution
+    run_target(
+      'clang-tidy',
+      command: [ 'scripts/run-clang-tidy-script.sh' ] )
+  else
+    run_target(
+      'clang-tidy',
+      command: [
+          clang_tidy, '-fix', '-p', meson.build_root(),
+      ] + sources)
+  endif
+else
+  run_target('clang-tidy',
+    command: [ 'echo', 'install', 'clang-tidy', '&&', 'false' ])
 endif
 
 executable('baseboxd',
