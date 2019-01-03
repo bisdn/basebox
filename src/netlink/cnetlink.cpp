@@ -535,6 +535,7 @@ int cnetlink::handle_source_mac_learn() {
 
   int size = _packet_in.size();
   if (size) {
+    VLOG(3) << __FUNCTION__ << ": " << size << " packets not processed";
     std::lock_guard<std::mutex> scoped_lock(pi_mutex);
     std::copy(make_move_iterator(_packet_in.rbegin()),
               make_move_iterator(_packet_in.rend()),
@@ -582,6 +583,7 @@ int cnetlink::handle_fdb_timeout() {
 
   int size = _fdb_evts.size();
   if (size) {
+    VLOG(3) << __FUNCTION__ << ": " << size << " events not processed";
     std::lock_guard<std::mutex> scoped_lock(fdb_ev_mutex);
     std::copy(make_move_iterator(_fdb_evts.rbegin()),
               make_move_iterator(_fdb_evts.rend()),
@@ -1196,6 +1198,7 @@ int cnetlink::handle_port_status_events() {
 
   int size = _pc_retry.size();
   if (size) {
+    VLOG(3) << __FUNCTION__ << ": " << size << " changes not processed";
     std::lock_guard<std::mutex> scoped_lock(pc_mutex);
     std::copy(make_move_iterator(_pc_retry.begin()),
               make_move_iterator(_pc_retry.end()),
