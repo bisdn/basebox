@@ -33,9 +33,8 @@ namespace basebox {
 
 cnetlink::cnetlink()
     : swi(nullptr), thread(1), caches(NL_MAX_CACHE, nullptr), nl_proc_max(10),
-      running(false), rfd_scheduled(false), bridge(nullptr),
-      bond(new nl_bond(this)), vlan(new nl_vlan(this)),
-      l3(new nl_l3(vlan, this)), config_lo(false) {
+      state(NL_STATE_STOPPED), bridge(nullptr), bond(new nl_bond(this)),
+      vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)) {
 
   sock_tx = nl_socket_alloc();
   if (sock_tx == nullptr) {
@@ -157,7 +156,16 @@ void cnetlink::init_caches() {
     LOG(FATAL) << __FUNCTION__ << ": add route/neigh to cache mngr";
   }
 
-  thread.wakeup(this);
+  try {
+    thread.add_read_fd(this, nl_cache_mngr_get_fd(mngr), true, false);
+  } catch (std::exception &e) {
+    LOG(FATAL) << "caught " << e.what();
+  }
+}
+
+void cnetlink::init_subsystems() noexcept {
+  assert(swi);
+  l3->init();
 }
 
 int cnetlink::set_nl_socket_buffer_sizes(nl_sock *sk) {
@@ -350,17 +358,24 @@ int cnetlink::get_port_id(int ifindex) const {
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
   bool do_wakeup = false;
 
-  if (not rfd_scheduled) {
-    try {
-      thread.add_read_fd(this, nl_cache_mngr_get_fd(mngr), true, false);
-      rfd_scheduled = true;
-    } catch (std::exception &e) {
-      LOG(FATAL) << "caught " << e.what();
-    }
+  if (!swi)
+    return;
+
+  switch (state) {
+  case NL_STATE_INIT:
+    init_subsystems();
+    state = NL_STATE_RUNNING;
+    break;
+  case NL_STATE_RUNNING:
+    break;
+  case NL_STATE_STOPPED:
+    return;
   }
 
   // loop through nl_objs
-  for (int cnt = 0; cnt < nl_proc_max && nl_objs.size() && running; cnt++) {
+  for (int cnt = 0;
+       cnt < nl_proc_max && nl_objs.size() && state == NL_STATE_RUNNING;
+       cnt++) {
     auto obj = nl_objs.front();
     nl_objs.pop_front();
 
@@ -400,16 +415,9 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     do_wakeup = true;
   }
 
-  if (swi && swi->is_connected()) {
-    if (!config_lo) {
-      config_lo_addr();
-      config_lo = true;
-    }
-  } else if (swi && !swi->is_connected()) {
-    config_lo = false;
-  }
-
   if (do_wakeup || nl_objs.size()) {
+    VLOG(3) << __FUNCTION__
+            << ": calling wakeup nl_objs.size()=" << nl_objs.size();
     this->thread.wakeup(this);
   }
 }
@@ -421,7 +429,7 @@ void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
     int rv = nl_cache_mngr_data_ready(mngr);
     VLOG(1) << __FUNCTION__ << ": #processed=" << rv;
     // notify update
-    if (running) {
+    if (state != NL_STATE_STOPPED) {
       this->thread.wakeup(this);
     }
   }
@@ -468,7 +476,11 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
           << " new_obj=" << static_cast<void *>(new_obj);
 
   assert(data);
-  static_cast<cnetlink *>(data)->nl_objs.emplace_back(action, old_obj, new_obj);
+  auto nl = static_cast<cnetlink *>(data);
+
+  // only enqueue nl msgs if not in stopped state
+  if (nl->state != NL_STATE_STOPPED)
+    nl->nl_objs.emplace_back(action, old_obj, new_obj);
 }
 
 void cnetlink::set_tapmanager(std::shared_ptr<tap_manager> tm) {
@@ -497,7 +509,9 @@ int cnetlink::handle_source_mac_learn() {
     _packet_in.swap(packet_in);
   }
 
-  for (int cnt = 0; cnt < nl_proc_max && _packet_in.size() && running; cnt++) {
+  for (int cnt = 0;
+       cnt < nl_proc_max && _packet_in.size() && state == NL_STATE_RUNNING;
+       cnt++) {
     auto p = _packet_in.front();
     int ifindex = tap_man->get_ifindex(p.port_id);
 
@@ -551,7 +565,8 @@ int cnetlink::handle_fdb_timeout() {
     _fdb_evts.swap(fdb_evts);
   }
 
-  for (int cnt = 0; cnt < nl_proc_max && _fdb_evts.size() && bridge && running;
+  for (int cnt = 0; cnt < nl_proc_max && _fdb_evts.size() && bridge &&
+                    state == NL_STATE_RUNNING;
        cnt++) {
 
     auto fdbev = _fdb_evts.front();
@@ -1075,6 +1090,20 @@ void cnetlink::unregister_switch(__attribute__((unused))
   stop();
 }
 
+void cnetlink::start() noexcept {
+  if (state == NL_STATE_RUNNING)
+    return;
+  VLOG(1) << __FUNCTION__ << ": started netlink processing";
+  state = NL_STATE_INIT;
+  thread.wakeup(this);
+}
+
+void cnetlink::stop() noexcept {
+  VLOG(1) << __FUNCTION__ << ": stopped netlink processing";
+  state = NL_STATE_STOPPED;
+  thread.wakeup(this);
+}
+
 void cnetlink::port_status_changed(uint32_t port_no,
                                    enum nbi::port_status ps) noexcept {
   try {
@@ -1092,8 +1121,6 @@ int cnetlink::handle_port_status_events() {
 
   std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_changes;
   std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_retry;
-
-  VLOG(2) << __FUNCTION__;
 
   {
     std::lock_guard<std::mutex> scoped_lock(pc_mutex);
@@ -1176,34 +1203,6 @@ int cnetlink::handle_port_status_events() {
   }
 
   return size;
-}
-
-int cnetlink::config_lo_addr() noexcept {
-  std::list<struct rtnl_addr *> lo_addr;
-  std::unique_ptr<struct rtnl_addr, void (*)(rtnl_addr *)> addr_filter(
-      rtnl_addr_alloc(), &rtnl_addr_put);
-
-  rtnl_addr_set_ifindex(addr_filter.get(), 1);
-  rtnl_addr_set_family(addr_filter.get(), AF_INET);
-
-  nl_cache_foreach_filter(
-      caches[NL_ADDR_CACHE], OBJ_CAST(addr_filter.get()),
-      [](struct nl_object *obj, void *arg) {
-        VLOG(3) << __FUNCTION__ << " : found configured loopback " << obj;
-
-        std::list<struct rtnl_addr *> *add_list =
-            static_cast<std::list<struct rtnl_addr *> *>(arg);
-
-        add_list->emplace_back(ADDR_CAST(obj));
-      },
-      &lo_addr);
-
-  for (auto addr : lo_addr) {
-    if (l3->add_l3_addr(addr) < 0)
-      return -EINVAL;
-  }
-
-  return 0;
 }
 
 bool cnetlink::is_bridge_configured(rtnl_link *l) {

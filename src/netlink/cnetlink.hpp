@@ -57,6 +57,8 @@ public:
 
   void register_switch(switch_interface *) noexcept;
   void unregister_switch(switch_interface *) noexcept;
+  void start() noexcept;
+  void stop() noexcept;
 
   void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
 
@@ -72,18 +74,6 @@ public:
   void fdb_timeout(uint32_t port_id, uint16_t vid,
                    const rofl::caddress_ll &mac);
 
-  void start() {
-    if (running)
-      return;
-    running = true;
-    thread.wakeup(this);
-  }
-
-  void stop() {
-    running = false;
-    thread.wakeup(this);
-  }
-
 private:
   // non copyable
   cnetlink(const cnetlink &other) = delete;
@@ -92,6 +82,12 @@ private:
   enum timer {
     NL_TIMER_RESEND_STATE,
     NL_TIMER_RESYNC,
+  };
+
+  enum nl_state {
+    NL_STATE_RUNNING,
+    NL_STATE_INIT,
+    NL_STATE_STOPPED,
   };
 
   switch_interface *swi;
@@ -106,8 +102,7 @@ private:
   std::mutex pc_mutex;
 
   int nl_proc_max;
-  bool running;
-  bool rfd_scheduled;
+  enum nl_state state;
   std::deque<nl_obj> nl_objs;
 
   std::shared_ptr<tap_manager> tap_man;
@@ -137,7 +132,6 @@ private:
 
   std::mutex fdb_ev_mutex;
   std::deque<fdb_ev> fdb_evts;
-  bool config_lo;
 
   int handle_port_status_events();
   int handle_source_mac_learn();
@@ -156,6 +150,7 @@ private:
   int load_from_file(const std::string &path);
 
   void init_caches();
+  void init_subsystems() noexcept;
 
   int set_nl_socket_buffer_sizes(nl_sock *sk);
 
@@ -176,8 +171,6 @@ private:
   void neigh_ll_created(rtnl_neigh *neigh) noexcept;
   void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
   void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
-
-  int config_lo_addr() noexcept;
 };
 
 } // end of namespace basebox
