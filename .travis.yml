@@ -6,7 +6,7 @@ services:
   - docker
 
 env:
-  - BUILDER="docker.io/toanju/builder:28"
+  - BUILDER="docker.io/toanju/builder:28" RELVER=28
 before_install:
   - docker pull $BUILDER
 
@@ -14,11 +14,11 @@ script:
   - docker run -v "$PWD":/workdir:Z --rm --name builder -dti $BUILDER /bin/bash
   - docker exec builder find . -regex '.*\.\(hh?\|cc?\|hpp\|cpp\)$' | xargs docker exec builder clang-format -i -style=file -fallback-style=llvm
   - docker exec builder git diff --exit-code
-  - docker exec builder dnf -y copr enable bisdn/rofl
-  - docker exec builder dnf -y copr enable bisdn/rofl-testing
-  - docker exec builder dnf -y copr enable bisdn/baseboxd
-  - docker exec builder dnf -y copr enable bisdn/baseboxd-testing
+  - docker exec builder dnf -y copr --releasever $RELVER enable bisdn/rofl
+  - docker exec builder dnf -y copr --releasever $RELVER enable bisdn/rofl-testing
+  - docker exec builder dnf -y copr --releasever $RELVER enable bisdn/baseboxd
+  - docker exec builder dnf -y copr --releasever $RELVER enable bisdn/baseboxd-testing
   - docker exec builder make -C ./pkg/testing/rpm/ spec
-  - docker exec builder dnf -y builddep ./pkg/testing/rpm/baseboxd.spec
+  - docker exec builder dnf -y builddep --releasever $RELVER ./pkg/testing/rpm/baseboxd.spec
   - docker exec builder meson build
   - docker exec builder ninja -C build
