@@ -33,6 +33,8 @@ public:
   nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl);
   ~nl_l3() {}
 
+  int init() noexcept;
+
   int add_l3_addr(struct rtnl_addr *a);
   int add_l3_addr_v6(struct rtnl_addr *a);
   int del_l3_addr(struct rtnl_addr *a);

@@ -79,6 +79,34 @@ rofl::caddress_in6 libnl_in6addr_2_rofl(struct nl_addr *addr, int *rv) {
   return rofl::caddress_in6(&sin, salen);
 }
 
+int nl_l3::init() noexcept {
+  std::list<struct rtnl_addr *> lo_addr;
+  std::unique_ptr<struct rtnl_addr, void (*)(rtnl_addr *)> addr_filter(
+      rtnl_addr_alloc(), &rtnl_addr_put);
+
+  rtnl_addr_set_ifindex(addr_filter.get(), 1);
+  rtnl_addr_set_family(addr_filter.get(), AF_INET);
+
+  nl_cache_foreach_filter(
+      nl->get_cache(cnetlink::NL_ADDR_CACHE), OBJ_CAST(addr_filter.get()),
+      [](struct nl_object *obj, void *arg) {
+        VLOG(3) << __FUNCTION__ << " : found configured loopback " << obj;
+
+        std::list<struct rtnl_addr *> *add_list =
+            static_cast<std::list<struct rtnl_addr *> *>(arg);
+
+        add_list->emplace_back(ADDR_CAST(obj));
+      },
+      &lo_addr);
+
+  for (auto addr : lo_addr) {
+    if (add_l3_addr(addr) < 0)
+      return -EINVAL;
+  }
+
+  return 0;
+}
+
 // XXX separate function to make it possible to add lo addresses more directly
 int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   assert(sw);

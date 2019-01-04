@@ -39,9 +39,8 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
   // set max queue size in rofl
   dpt.set_conn(rofl::cauxid(0)).set_txqueue_max_size(128 * 1024);
 
-  dpt.send_features_request(rofl::cauxid(0));
-  dpt.send_desc_stats_request(rofl::cauxid(0), 0);
-  dpt.send_port_desc_stats_request(rofl::cauxid(0), 0);
+  dpt.send_features_request(rofl::cauxid(0), 1);
+  dpt.send_desc_stats_request(rofl::cauxid(0), 0, 1);
 
   if (flags)
     subscribe_to(flags);
@@ -55,6 +54,7 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
   LOG(INFO) << __FUNCTION__ << ": closing connection to dptid=" << std::showbase
             << std::hex << dptid;
 
+  connected = false;
   std::deque<nbi::port_notification_data> ntfys;
   try {
     {
@@ -72,7 +72,6 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
           nbi::PORT_EVENT_DEL, port.get_port_no(), port.get_name()});
     }
 
-    connected = false;
     nb->port_notification(ntfys);
 
   } catch (rofl::eRofDptNotFound &e) {
@@ -85,6 +84,8 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
   }
 
   this->dptid = rofl::cdptid(0);
+
+  nb->switch_state_notification(nbi::SWITCH_STATE_DOWN);
 }
 
 void controller::handle_conn_terminated(rofl::crofdpt &dpt,
@@ -126,15 +127,20 @@ void controller::handle_conn_congestion_solved(rofl::crofdpt &dpt,
 void controller::handle_features_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_features_reply &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
-  VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid() << std::endl << msg;
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid
+          << ", msg: " << msg;
 }
 
 void controller::handle_desc_stats_reply(
     rofl::crofdpt &dpt, const rofl::cauxid &auxid,
     rofl::openflow::cofmsg_desc_stats_reply &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
-  VLOG(3) << __FUNCTION__ << ": dpt=" << std::endl << dpt << std::endl << msg;
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid
+          << " msg: " << msg;
+
+  // TODO evaluate switch here?
+
+  nb->switch_state_notification(nbi::SWITCH_STATE_UP);
+  dpt.send_port_desc_stats_request(rofl::cauxid(0), 0, 2);
 }
 
 void controller::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
@@ -332,7 +338,8 @@ void controller::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
       thread.add_timer(
           this, TIMER_port_stats_request,
           rofl::ctimespec().expire_in(port_stats_request_interval));
-      request_port_stats();
+      if (connected)
+        request_port_stats();
       break;
     default:
       rofl::crofbase::handle_timeout(thread, timer_id);
