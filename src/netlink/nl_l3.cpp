@@ -294,6 +294,16 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     return rv;
   }
 
+  if (!is_loopback) {
+    // add vlan
+    bool tagged = !!rtnl_link_is_vlan(link);
+    rv = vlan->add_vlan(link, vid, tagged);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
+                 << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+    }
+  }
+
   VLOG(1) << __FUNCTION__ << ": added addr " << OBJ_CAST(a);
 
   return rv;
