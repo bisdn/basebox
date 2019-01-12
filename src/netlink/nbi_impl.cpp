@@ -50,10 +50,32 @@ void nbi_impl::port_notification(
   for (auto &&ntfy : notifications) {
     switch (ntfy.ev) {
     case PORT_EVENT_ADD:
-      tap_man->create_tapdev(ntfy.port_id, ntfy.name, *this);
+      switch (get_port_type(ntfy.port_id)) {
+      case nbi::port_type_physical:
+        tap_man->create_tapdev(ntfy.port_id, ntfy.name, *this);
+        break;
+      case nbi::port_type_vxlan:
+        // XXX TODO notify this?
+        LOG(INFO) << __FUNCTION__ << ": port_type_vxlan added";
+        break;
+      default:
+        LOG(ERROR) << __FUNCTION__ << ": unknown port";
+        break;
+      }
       break;
     case PORT_EVENT_DEL:
-      tap_man->destroy_tapdev(ntfy.port_id, ntfy.name);
+      switch (get_port_type(ntfy.port_id)) {
+      case nbi::port_type_physical:
+        tap_man->destroy_tapdev(ntfy.port_id, ntfy.name);
+        break;
+      case nbi::port_type_vxlan:
+        // XXX TODO notify this?
+        LOG(INFO) << __FUNCTION__ << ": port_type_vxlan removed";
+        break;
+      default:
+        LOG(ERROR) << __FUNCTION__ << ": unknown port";
+        break;
+      }
       break;
     default:
       break;

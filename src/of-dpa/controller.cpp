@@ -4,10 +4,12 @@
 
 #include <cassert>
 #include <cerrno>
+#include <chrono>
+#include <cstdio>
 #include <cstring>
-#include <linux/if_ether.h>
-#include <stdio.h>
+#include <thread>
 
+#include <linux/if_ether.h>
 #include <grpc++/grpc++.h>
 
 #include "controller.hpp"
@@ -162,6 +164,19 @@ void controller::handle_features_reply(
     rofl::openflow::cofmsg_features_reply &msg) {
   VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid
           << ", msg: " << msg;
+}
+
+void controller::handle_barrier_reply(
+    rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+    rofl::openflow::cofmsg_barrier_reply &msg) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << ", auxid=" << auxid
+          << ", xid=" << std::showbase << std::hex << (unsigned)msg.get_xid();
+}
+
+void controller::handle_barrier_reply_timeout(rofl::crofdpt &dpt,
+                                              uint32_t xid) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << ", xid=" << std::showbase
+          << std::hex << (unsigned)xid;
 }
 
 void controller::handle_desc_stats_reply(
@@ -634,6 +649,7 @@ int controller::l2_addr_remove_all_in_vlan(uint32_t port,
     dpt.send_flow_mod_message(rofl::cauxid(0),
                               fm_driver.remove_bridging_unicast_vlan_all(
                                   dpt.get_version(), port, vid));
+    VLOG(2) << __FUNCTION__ << ": port=" << port << ", vid=" << vid;
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1258,7 +1274,9 @@ int controller::ingress_port_vlan_remove(uint32_t port, uint16_t vid,
           rofl::cauxid(0),
           fm_driver.disable_port_vid_ingress(dpt.get_version(), port, vid));
     }
-    dpt.send_barrier_request(rofl::cauxid(0));
+    uint32_t xid = 0;
+    dpt.send_barrier_request(rofl::cauxid(0), 1, &xid);
+    VLOG(2) << __FUNCTION__ << ": sent barrier with xid=" << (unsigned)xid;
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1342,6 +1360,9 @@ int controller::egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept {
     dpt.send_group_mod_message(
         rofl::cauxid(0),
         fm_driver.disable_group_l2_interface(dpt.get_version(), port, vid));
+    uint32_t xid = 0;
+    dpt.send_barrier_request(rofl::cauxid(0), 1, &xid);
+    VLOG(2) << __FUNCTION__ << ": sent barrier with xid=" << (unsigned)xid;
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1369,8 +1390,8 @@ int controller::add_l2_overlay_flood(uint32_t tunnel_id,
     tunnel_dlf_it->second.insert(lport_id);
 
     rofl::crofdpt &dpt = set_dpt(dptid, true);
+
     // create/update new L2 flooding group
-    //
     LOG(INFO) << __FUNCTION__
               << ": create group enable_group_l2_overlay_flood tunnel_id="
               << tunnel_id << ", #dlf=" << tunnel_dlf_it->second.size();
@@ -1548,7 +1569,9 @@ int controller::egress_bridge_port_vlan_remove(uint32_t port,
           fm_driver.disable_group_l2_flood(dpt.get_version(), vid, vid));
     }
 
-    dpt.send_barrier_request(rofl::cauxid(0));
+    uint32_t xid = 0;
+    dpt.send_barrier_request(rofl::cauxid(0), 1, &xid);
+    VLOG(2) << __FUNCTION__ << ": sent barrier with xid=" << (unsigned)xid;
 
     // remove filtered egress interface
     rv = egress_port_vlan_remove(port, vid);
@@ -1732,6 +1755,7 @@ int controller::tunnel_port_tenant_remove(uint32_t lport_id,
   int cnt = 0;
   do {
     // XXX TODO this is totally crap even if it works for now
+    using namespace std::chrono_literals;
 
     rv = ofdpa->ofdpaTunnelPortTenantDelete(lport_id, tunnel_id);
 
@@ -1739,7 +1763,8 @@ int controller::tunnel_port_tenant_remove(uint32_t lport_id,
             << ", lport_id=" << lport_id << ", tunnel_id=" << tunnel_id;
 
     cnt++;
-  } while (rv < 0 && cnt < 100);
+    std::this_thread::sleep_for(10ms);
+  } while (rv < 0 && cnt < 50);
 
   assert(rv == 0);
 

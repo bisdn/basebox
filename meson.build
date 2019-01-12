@@ -33,8 +33,11 @@ sources = files('''
   src/netlink/nl_obj.hpp
   src/netlink/nl_output.cpp
   src/netlink/nl_output.hpp
+  src/netlink/nl_route_query.hpp
   src/netlink/nl_vlan.cpp
   src/netlink/nl_vlan.hpp
+  src/netlink/nl_vxlan.cpp
+  src/netlink/nl_vxlan.hpp
   src/netlink/tap_io.cpp
   src/netlink/tap_io.hpp
   src/netlink/tap_manager.cpp

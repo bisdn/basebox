@@ -17,6 +17,7 @@
 #include <netlink/route/link.h>
 #include <netlink/route/link/vlan.h>
 #include <netlink/route/link/bonding.h>
+#include <netlink/route/link/vxlan.h>
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
 
@@ -28,13 +29,15 @@
 #include "nl_bond.hpp"
 #include "nl_l3.hpp"
 #include "nl_vlan.hpp"
+#include "nl_vxlan.hpp"
 
 namespace basebox {
 
 cnetlink::cnetlink()
     : swi(nullptr), thread(1), caches(NL_MAX_CACHE, nullptr), nl_proc_max(10),
       state(NL_STATE_STOPPED), bridge(nullptr), bond(new nl_bond(this)),
-      vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)) {
+      vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)),
+      vxlan(new nl_vxlan(l3, this)) {
 
   sock_tx = nl_socket_alloc();
   if (sock_tx == nullptr) {
@@ -166,6 +169,7 @@ void cnetlink::init_caches() {
 void cnetlink::init_subsystems() noexcept {
   assert(swi);
   l3->init();
+  vxlan->init();
 }
 
 int cnetlink::set_nl_socket_buffer_sizes(nl_sock *sk) {
@@ -289,6 +293,7 @@ struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
                                            struct nl_addr *a) const {
   assert(ifindex);
   assert(a);
+  // XXX TODO return unique_ptr
   return rtnl_neigh_get(caches[NL_NEIGH_CACHE], ifindex, a);
 }
 
@@ -348,6 +353,8 @@ int cnetlink::get_port_id(rtnl_link *l) const {
 }
 
 int cnetlink::get_port_id(int ifindex) const {
+  if (ifindex == 0)
+    return 0;
 
   std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> link(
       get_link_by_ifindex(ifindex), rtnl_link_put);
@@ -708,7 +715,7 @@ void cnetlink::route_neigh_apply(const nl_obj &obj) {
       family = rtnl_neigh_get_family(NEIGH_CAST(obj.get_new_obj()));
 
       switch (family) {
-      case PF_BRIDGE:
+      case AF_BRIDGE:
         neigh_ll_created(NEIGH_CAST(obj.get_new_obj()));
         break;
       case AF_INET:
@@ -846,8 +853,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   enum link_type lt = get_link_type(link);
 
   switch (lt) {
-  case LT_BRIDGE_SLAVE: { // a new bridge slave was created
-
+  case LT_BRIDGE_SLAVE: // a new bridge slave was created
     try {
       // check for new bridge slaves
       if (rtnl_link_get_master(link) == 0) {
@@ -861,11 +867,12 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       if (bridge == nullptr) {
         LOG(INFO) << __FUNCTION__ << ": using bridge "
                   << rtnl_link_get_master(link);
-        bridge = new nl_bridge(this->swi, tap_man, this);
+        bridge = new nl_bridge(this->swi, tap_man, this, vxlan);
         std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> br_link(
             rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_master(link)),
             rtnl_link_put);
         bridge->set_bridge_interface(br_link.get());
+        vxlan->register_bridge(bridge);
       }
 
       LOG(INFO) << __FUNCTION__ << ": enslaving interface "
@@ -875,6 +882,14 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     } catch (std::exception &e) {
       LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
     }
+    break;
+  case LT_VXLAN: {
+    int rv = vxlan->create_vni(link);
+
+    if (rv < 0)
+      break;
+
+    vxlan->create_endpoint(link);
   } break;
   case LT_TUN: {
     int ifindex = rtnl_link_get_ifindex(link);
@@ -979,10 +994,23 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   case LT_BRIDGE:
     if (bridge && bridge->is_bridge_interface(link)) {
       LOG(INFO) << __FUNCTION__ << ": deleting bridge";
+      vxlan->register_bridge(nullptr);
       delete bridge;
       bridge = nullptr;
     }
     break;
+  case LT_VXLAN: {
+
+    int rv = vxlan->delete_endpoint(link);
+    // XXX TODO check
+    rv = vxlan->remove_vni(link);
+
+    if (rv < 0) {
+      LOG(WARNING) << __FUNCTION__ << ": could not remove vni represented by "
+                   << OBJ_CAST(link);
+    }
+
+  } break;
   case LT_VLAN:
     VLOG(1) << __FUNCTION__ << ": removed vlan interface " << OBJ_CAST(link);
     vlan->remove_vlan(link, rtnl_link_vlan_get_id(link), true);
@@ -997,6 +1025,7 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   }
 }
 
+// TODO this function could already be moved to nl_bridge
 void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
   if (nullptr == bridge) {
     LOG(ERROR) << __FUNCTION__ << ": bridge not set";
@@ -1011,6 +1040,7 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
   }
 
   rtnl_link *base_link = get_link(ifindex, AF_UNSPEC); // either tap, vxlan, ...
+  rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
 
   if (base_link == nullptr) {
     LOG(ERROR) << __FUNCTION__
@@ -1026,14 +1056,27 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
     return;
   }
 
-  // XXX TODO maybe we have to do this as well wrt. local bridging
-  // normal bridging
-  try {
-    if (bridge)
-      bridge->add_neigh_to_fdb(neigh);
-  } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to add mac to fdb"; // TODO log mac, port,...?
+  if (VLOG_IS_ON(2)) {
+    if (base_link) {
+      LOG(INFO) << __FUNCTION__ << ": base link: " << OBJ_CAST(base_link);
+    }
+    if (br_link) {
+      LOG(INFO) << __FUNCTION__ << ": br link: " << OBJ_CAST(br_link);
+    }
+  }
+
+  if (vxlan->add_l2_neigh(neigh, base_link, br_link) == 0) {
+    // vxlan domain
+  } else {
+    // XXX TODO maybe we have to do this as well wrt. local bridging
+    // normal bridging
+    try {
+      if (bridge)
+        bridge->add_neigh_to_fdb(neigh);
+    } catch (std::exception &e) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to add mac to fdb"; // TODO log mac, port,...?
+    }
   }
 }
 
@@ -1059,13 +1102,24 @@ void cnetlink::neigh_ll_deleted(rtnl_neigh *neigh) noexcept {
     return;
   }
 
+  // XXX move to bridge
   if (nl_addr_cmp(rtnl_link_get_addr(l), rtnl_neigh_get_lladdr(neigh)) == 0) {
     VLOG(2) << __FUNCTION__ << ": bridge port mac address is ignored";
     return;
   }
 
-  if (bridge)
-    bridge->remove_neigh_from_fdb(neigh);
+  auto lt = get_link_type(l);
+
+  switch (lt) {
+  case LT_VXLAN: {
+    rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
+    vxlan->delete_l2_neigh(neigh, l, br_link);
+  } break;
+
+  default:
+    if (bridge)
+      bridge->remove_neigh_from_fdb(neigh);
+  }
 }
 
 void cnetlink::resend_state() noexcept {
@@ -1079,6 +1133,7 @@ void cnetlink::register_switch(switch_interface *swi) noexcept {
   l3->register_switch_interface(swi);
   vlan->register_switch_interface(swi);
   bond->register_switch_interface(swi);
+  vxlan->register_switch_interface(swi);
 
   swi->subscribe_to(switch_interface::SWIF_ARP);
 }
@@ -1118,7 +1173,6 @@ void cnetlink::port_status_changed(uint32_t port_no,
 }
 
 int cnetlink::handle_port_status_events() {
-
   std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_changes;
   std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_retry;
 
@@ -1130,6 +1184,12 @@ int cnetlink::handle_port_status_events() {
   for (auto change : _pc_changes) {
     int ifindex, rv;
     rtnl_link *lchange, *link;
+
+    if (nbi::get_port_type(std::get<0>(change)) != nbi::port_type_physical) {
+      VLOG(3) << __FUNCTION__
+              << ": ignore non physical port with id=" << std::get<0>(change);
+      continue;
+    }
 
     // get ifindex
     ifindex = tap_man->get_ifindex(std::get<0>(change));
@@ -1144,6 +1204,7 @@ int cnetlink::handle_port_status_events() {
                    << ": no ifindex of port_id=" << std::get<0>(change)
                    << " found";
         // XXX TODO resync caches?
+        // XXX FIXME ignore logical ports
       }
       continue;
     }

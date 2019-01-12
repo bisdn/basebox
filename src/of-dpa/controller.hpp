@@ -97,6 +97,11 @@ protected:
   handle_features_reply(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                         rofl::openflow::cofmsg_features_reply &msg) override;
 
+  void handle_barrier_reply(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+                            rofl::openflow::cofmsg_barrier_reply &msg) override;
+
+  void handle_barrier_reply_timeout(rofl::crofdpt &dpt, uint32_t xid) override;
+
   void handle_desc_stats_reply(
       rofl::crofdpt &dpt, const rofl::cauxid &auxid,
       rofl::openflow::cofmsg_desc_stats_reply &msg) override;

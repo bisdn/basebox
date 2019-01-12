@@ -8,6 +8,7 @@
 #include <glog/logging.h>
 #include <netlink/addr.h>
 #include <netlink/route/route.h>
+#include <netlink/route/nexthop.h>
 
 #include "nl_output.hpp"
 
@@ -26,7 +27,7 @@ std::ostream &operator<<(std::ostream &stream, const struct nl_addr *addr) {
   }
 
   if (VLOG_IS_ON(3)) {
-    stream << "(obj=" << static_cast<const void *>(addr) << ") ";
+    stream << "(addr_obj=" << static_cast<const void *>(addr) << ") ";
     p.dp_type = NL_DUMP_DETAILS;
   }
 
@@ -42,7 +43,7 @@ std::ostream &operator<<(std::ostream &stream, struct nl_object *n) {
   }
 
   if (VLOG_IS_ON(3)) {
-    stream << "(obj=" << static_cast<const void *>(n) << ") ";
+    stream << "(nl_obj=" << static_cast<const void *>(n) << ") ";
     p.dp_type = NL_DUMP_DETAILS;
   }
 
@@ -58,8 +59,9 @@ std::ostream &operator<<(std::ostream &stream, struct rtnl_nexthop *nh) {
   }
 
   if (VLOG_IS_ON(3)) {
-    stream << "(obj=" << static_cast<const void *>(nh) << ") ";
+    stream << "(nh_obj=" << static_cast<const void *>(nh) << ") ";
     p.dp_type = NL_DUMP_DETAILS;
+    p.dp_ivar = NH_DUMP_FROM_DETAILS;
   }
 
   rtnl_route_nh_dump(nh, &p);

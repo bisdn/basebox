@@ -9,6 +9,7 @@
 #include <netlink/route/link/vlan.h>
 
 #include "cnetlink.hpp"
+#include "nl_output.hpp"
 #include "nl_vlan.hpp"
 #include "sai.hpp"
 
@@ -109,14 +110,19 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) const {
 
 uint16_t nl_vlan::get_vid(rtnl_link *link) {
   uint16_t vid = 0;
-
+  uint32_t pport_id = nl->get_port_id(link);
   auto lt = get_link_type(link);
+
+  if (pport_id == 0)
+    return 0;
+
   switch (lt) {
   case LT_BRIDGE:
     VLOG(2) << __FUNCTION__ << ": bridge default vid " << default_vid;
     vid = default_vid;
     break;
   case LT_TUN:
+  case LT_BOND:
     vid = default_vid;
     break;
   case LT_VLAN:
@@ -124,7 +130,8 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
     break;
   default:
     if (rtnl_link_get_ifindex(link) != 1)
-      LOG(ERROR) << __FUNCTION__ << ": unsupported link " << OBJ_CAST(link);
+      LOG(ERROR) << __FUNCTION__ << ": unsupported link type " << lt
+                 << " of link " << OBJ_CAST(link);
     break;
   }
 
