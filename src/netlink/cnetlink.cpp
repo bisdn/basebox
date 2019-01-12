@@ -483,10 +483,7 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
     nl->nl_objs.emplace_back(action, old_obj, new_obj);
 }
 
-void cnetlink::set_tapmanager(std::shared_ptr<tap_manager> tm) {
-  tap_man = tm;
-  l3->set_tapmanager(tm);
-}
+void cnetlink::set_tapmanager(std::shared_ptr<tap_manager> tm) { tap_man = tm; }
 
 int cnetlink::send_nl_msg(nl_msg *msg) { return nl_send_sync(sock_tx, msg); }
 

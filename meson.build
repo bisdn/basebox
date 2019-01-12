@@ -28,6 +28,7 @@ sources = files('''
   src/netlink/nl_hashing.hpp
   src/netlink/nl_l3.cpp
   src/netlink/nl_l3.hpp
+  src/netlink/nl_l3_interfaces.hpp
   src/netlink/nl_obj.cpp
   src/netlink/nl_obj.hpp
   src/netlink/nl_output.cpp
