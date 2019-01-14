@@ -1131,6 +1131,12 @@ int cnetlink::handle_port_status_events() {
     int ifindex, rv;
     rtnl_link *lchange, *link;
 
+    if (nbi::get_port_type(std::get<0>(change)) != nbi::port_type_physical) {
+      VLOG(3) << __FUNCTION__
+              << ": ignore non physical port with id=" << std::get<0>(change);
+      continue;
+    }
+
     // get ifindex
     ifindex = tap_man->get_ifindex(std::get<0>(change));
     if (0 == ifindex) {
