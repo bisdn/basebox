@@ -63,6 +63,12 @@ public:
     }
   }
 
+  void clear() noexcept {
+    std::lock_guard<std::mutex> lock(tn_mutex);
+    ifindex_to_id.clear();
+    id_to_ifindex.clear();
+  }
+
   int get_fd(uint32_t port_id) const noexcept;
 
   // access from northbound (cnetlink)
