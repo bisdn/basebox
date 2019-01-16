@@ -892,13 +892,6 @@ int nl_l3::add_l3_route(struct rtnl_route *r) {
 int nl_l3::del_l3_route(struct rtnl_route *r) {
   assert(r);
 
-  if (rtnl_route_get_family(r) != AF_INET or
-      rtnl_route_get_family(r) != AF_INET6) {
-    LOG(ERROR) << __FUNCTION__ << ": unsupported address family "
-               << rtnl_route_get_family(r);
-    return -ENOTSUP;
-  }
-
   // XXX TODO split up route add by type here:
   switch (rtnl_route_get_type(r)) {
   case RTN_UNICAST:
@@ -1028,20 +1021,17 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r) {
     }
 
     auto addr = rtnl_route_get_dst(r);
+    int prefixlen = nl_addr_get_prefixlen(addr);
     if (family == AF_INET) {
       rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-        return rv;
-      }
-      rv = sw->l3_unicast_host_remove(ipv4_dst);
+      rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
+
+      rv = sw->l3_unicast_route_remove(ipv4_dst, mask);
     } else {
       rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-        return rv;
-      }
-      rv = sw->l3_unicast_host_remove(ipv6_dst);
+      rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
+
+      rv = sw->l3_unicast_route_remove(ipv6_dst, mask);
     }
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed to remove dst=";
