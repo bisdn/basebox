@@ -1103,6 +1103,7 @@ void cnetlink::start() noexcept {
 void cnetlink::stop() noexcept {
   VLOG(1) << __FUNCTION__ << ": stopped netlink processing";
   state = NL_STATE_STOPPED;
+  tap_man->clear();
   thread.wakeup(this);
 }
 
