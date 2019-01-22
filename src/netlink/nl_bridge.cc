@@ -12,13 +12,13 @@
 #include <netlink/route/neighbour.h>
 #include <rofl/common/openflow/cofport.h>
 
-#include "cnetlink.hpp"
-#include "netlink-utils.hpp"
-#include "nl_bridge.hpp"
-#include "nl_output.hpp"
-#include "nl_vxlan.hpp"
-#include "sai.hpp"
-#include "tap_manager.hpp"
+#include "cnetlink.h"
+#include "netlink-utils.h"
+#include "nl_bridge.h"
+#include "nl_output.h"
+#include "nl_vxlan.h"
+#include "sai.h"
+#include "tap_manager.h"
 
 namespace basebox {
 

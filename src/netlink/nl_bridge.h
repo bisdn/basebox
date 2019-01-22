@@ -13,7 +13,7 @@
 
 #include <netlink/route/link/bridge.h>
 
-#include "netlink-utils.hpp"
+#include "netlink-utils.h"
 
 extern "C" {
 struct rtnl_link_bridge_vlan;

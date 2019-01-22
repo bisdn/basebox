@@ -4,12 +4,12 @@
 
 #include <glog/logging.h>
 
-#include "cnetlink.hpp"
-#include "nbi_impl.hpp"
-#include "tap_manager.hpp"
+#include "cnetlink.h"
+#include "nbi_impl.h"
+#include "tap_manager.h"
 
-#include "netlink/ctapdev.hpp"
-#include "utils/utils.hpp"
+#include "netlink/ctapdev.h"
+#include "utils/utils.h"
 
 namespace basebox {
 

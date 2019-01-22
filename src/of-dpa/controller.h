@@ -20,7 +20,7 @@
 #include <rofl/common/crofdpt.h>
 #include <rofl/ofdpa/rofl_ofdpa_fm_driver.hpp>
 
-#include "sai.hpp"
+#include "sai.h"
 
 namespace basebox {
 

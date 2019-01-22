@@ -12,8 +12,8 @@
 #include <glog/logging.h>
 #include <netlink/route/link.h>
 
-#include "netlink-utils.hpp"
-#include "nl_output.hpp"
+#include "netlink-utils.h"
+#include "nl_output.h"
 
 #define lt_names                                                               \
   "unsupported", "team", "bond", "bond_slave", "bridge", "bridge_slave",       \

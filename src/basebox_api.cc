@@ -4,7 +4,7 @@
 
 #include "basebox_api.h"
 #include "basebox_grpc_statistics.h"
-#include "sai.hpp"
+#include "sai.h"
 
 #include <glog/logging.h>
 #include <google/protobuf/repeated_field.h>

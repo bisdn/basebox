@@ -6,10 +6,10 @@
 #include <glog/logging.h>
 
 #include "basebox_api.h"
-#include "netlink/cnetlink.hpp"
-#include "netlink/nbi_impl.hpp"
-#include "netlink/tap_manager.hpp"
-#include "of-dpa/controller.hpp"
+#include "netlink/cnetlink.h"
+#include "netlink/nbi_impl.h"
+#include "netlink/tap_manager.h"
+#include "of-dpa/controller.h"
 #include "version.h"
 
 DECLARE_string(tryfromenv); // from gflags

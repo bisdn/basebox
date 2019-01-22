@@ -4,7 +4,7 @@
 
 #include <grpc++/grpc++.h>
 
-#include "ofdpa_client.hpp"
+#include "ofdpa_client.h"
 
 using namespace ofdpa;
 using namespace grpc;

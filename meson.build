@@ -12,44 +12,44 @@ sources = files('''
   src/basebox_api.h
   src/basebox_grpc_statistics.cc
   src/basebox_grpc_statistics.h
-  src/baseboxd.cpp
-  src/netlink/cnetlink.cpp
-  src/netlink/cnetlink.hpp
-  src/netlink/ctapdev.cpp
-  src/netlink/ctapdev.hpp
-  src/netlink/nbi_impl.cpp
-  src/netlink/nbi_impl.hpp
-  src/netlink/netlink-utils.cpp
-  src/netlink/netlink-utils.hpp
-  src/netlink/nl_bond.cpp
-  src/netlink/nl_bond.hpp
-  src/netlink/nl_bridge.cpp
-  src/netlink/nl_bridge.hpp
-  src/netlink/nl_hashing.hpp
-  src/netlink/nl_l3.cpp
-  src/netlink/nl_l3.hpp
-  src/netlink/nl_l3_interfaces.hpp
-  src/netlink/nl_obj.cpp
-  src/netlink/nl_obj.hpp
-  src/netlink/nl_output.cpp
-  src/netlink/nl_output.hpp
-  src/netlink/nl_route_query.hpp
-  src/netlink/nl_vlan.cpp
-  src/netlink/nl_vlan.hpp
-  src/netlink/nl_vxlan.cpp
-  src/netlink/nl_vxlan.hpp
-  src/netlink/tap_io.cpp
-  src/netlink/tap_io.hpp
-  src/netlink/tap_manager.cpp
-  src/netlink/tap_manager.hpp
-  src/of-dpa/controller.cpp
-  src/of-dpa/controller.hpp
-  src/of-dpa/ofdpa_client.cpp
-  src/of-dpa/ofdpa_client.hpp
+  src/baseboxd.cc
+  src/netlink/cnetlink.cc
+  src/netlink/cnetlink.h
+  src/netlink/ctapdev.cc
+  src/netlink/ctapdev.h
+  src/netlink/nbi_impl.cc
+  src/netlink/nbi_impl.h
+  src/netlink/netlink-utils.cc
+  src/netlink/netlink-utils.h
+  src/netlink/nl_bond.cc
+  src/netlink/nl_bond.h
+  src/netlink/nl_bridge.cc
+  src/netlink/nl_bridge.h
+  src/netlink/nl_hashing.h
+  src/netlink/nl_l3.cc
+  src/netlink/nl_l3.h
+  src/netlink/nl_l3_interfaces.h
+  src/netlink/nl_obj.cc
+  src/netlink/nl_obj.h
+  src/netlink/nl_output.cc
+  src/netlink/nl_output.h
+  src/netlink/nl_route_query.h
+  src/netlink/nl_vlan.cc
+  src/netlink/nl_vlan.h
+  src/netlink/nl_vxlan.cc
+  src/netlink/nl_vxlan.h
+  src/netlink/tap_io.cc
+  src/netlink/tap_io.h
+  src/netlink/tap_manager.cc
+  src/netlink/tap_manager.h
+  src/of-dpa/controller.cc
+  src/of-dpa/controller.h
+  src/of-dpa/ofdpa_client.cc
+  src/of-dpa/ofdpa_client.h
   src/of-dpa/ofdpa_datatypes.h
-  src/sai.hpp
-  src/utils/rofl-utils.hpp
-  src/utils/utils.hpp
+  src/sai.h
+  src/utils/rofl-utils.h
+  src/utils/utils.h
   '''.split())
 
 # setup paths

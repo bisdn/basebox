@@ -4,7 +4,7 @@
 
 #include <rofl/common/cthread.hpp>
 
-#include "tap_manager.hpp"
+#include "tap_manager.h"
 
 namespace basebox {
 

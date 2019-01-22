@@ -14,13 +14,13 @@
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
 
-#include "cnetlink.hpp"
-#include "nl_hashing.hpp"
-#include "nl_l3.hpp"
-#include "nl_output.hpp"
-#include "nl_vlan.hpp"
-#include "sai.hpp"
-#include "utils/rofl-utils.hpp"
+#include "cnetlink.h"
+#include "nl_hashing.h"
+#include "nl_l3.h"
+#include "nl_output.h"
+#include "nl_vlan.h"
+#include "sai.h"
+#include "utils/rofl-utils.h"
 
 namespace std {
 

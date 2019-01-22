@@ -5,10 +5,10 @@
 #include <glog/logging.h>
 #include <netlink/route/link.h>
 
-#include "cnetlink.hpp"
-#include "ctapdev.hpp"
-#include "tap_io.hpp"
-#include "tap_manager.hpp"
+#include "cnetlink.h"
+#include "ctapdev.h"
+#include "tap_io.h"
+#include "tap_manager.h"
 
 namespace basebox {
 
