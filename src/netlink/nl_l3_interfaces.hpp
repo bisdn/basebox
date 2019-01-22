@@ -10,16 +10,19 @@ struct net_params {
     VLOG(4) << __FUNCTION__ << ": this=" << this;
     nl_addr_get(addr);
   }
+
   net_params(const net_params &p) : addr(p.addr), ifindex(p.ifindex) {
     VLOG(4) << __FUNCTION__ << ": this=" << this
             << ", refcnt=" << nl_object_get_refcnt(OBJ_CAST(addr));
     nl_addr_get(addr);
   }
+
   ~net_params() {
     VLOG(4) << __FUNCTION__ << ": this=" << this
             << ", refcnt=" << nl_object_get_refcnt(OBJ_CAST(addr));
     nl_addr_put(addr);
   }
+
   nl_addr *addr;
   int ifindex;
 };
@@ -41,6 +44,7 @@ struct nh_stub {
             << ", refcnt=" << nl_object_get_refcnt(OBJ_CAST(nh));
     nl_addr_put(nh);
   }
+
   nl_addr *nh;
   int ifindex;
 };

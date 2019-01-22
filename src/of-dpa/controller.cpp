@@ -4,11 +4,16 @@
 
 #include <cassert>
 #include <cerrno>
+#include <chrono>
+#include <cstdio>
 #include <cstring>
+#include <thread>
+
 #include <linux/if_ether.h>
-#include <stdio.h>
+#include <grpc++/grpc++.h>
 
 #include "controller.hpp"
+#include "ofdpa_client.hpp"
 #include "ofdpa_datatypes.h"
 #include "utils/utils.hpp"
 #include "utils/rofl-utils.hpp"
@@ -38,6 +43,36 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 
   // set max queue size in rofl
   dpt.set_conn(rofl::cauxid(0)).set_txqueue_max_size(128 * 1024);
+
+  rofl::csockaddr raddr = dpt.set_conn(rofl::cauxid(0)).get_raddr();
+  std::string buf;
+
+  switch (raddr.get_family()) {
+  case AF_INET: {
+    rofl::caddress_in4 addr;
+    addr.set_addr_nbo(raddr.ca_s4addr->sin_addr.s_addr);
+    buf = addr.str();
+  } break;
+  case AF_INET6: {
+    rofl::caddress_in6 addr;
+    addr.unpack(raddr.ca_s6addr->sin6_addr.s6_addr, 16);
+    buf = addr.str();
+  } break;
+  default:
+    LOG(FATAL) << __FUNCTION__ << ": invalid socket address " << raddr;
+  }
+
+  std::string remote = buf + ":" + std::to_string(ofdpa_grpc_port);
+
+  VLOG(1) << __FUNCTION__ << ": remote=" << remote;
+
+  std::shared_ptr<grpc::Channel> chan =
+      grpc::CreateChannel(remote, grpc::InsecureChannelCredentials());
+
+  ofdpa = std::make_shared<ofdpa_client>(chan);
+
+  // open connection already
+  chan->GetState(true);
 
   dpt.send_features_request(rofl::cauxid(0), 1);
   dpt.send_desc_stats_request(rofl::cauxid(0), 0, 1);
@@ -129,6 +164,19 @@ void controller::handle_features_reply(
     rofl::openflow::cofmsg_features_reply &msg) {
   VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid
           << ", msg: " << msg;
+}
+
+void controller::handle_barrier_reply(
+    rofl::crofdpt &dpt, const rofl::cauxid &auxid,
+    rofl::openflow::cofmsg_barrier_reply &msg) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << ", auxid=" << auxid
+          << ", xid=" << std::showbase << std::hex << (unsigned)msg.get_xid();
+}
+
+void controller::handle_barrier_reply_timeout(rofl::crofdpt &dpt,
+                                              uint32_t xid) {
+  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << ", xid=" << std::showbase
+          << std::hex << (unsigned)xid;
 }
 
 void controller::handle_desc_stats_reply(
@@ -553,6 +601,46 @@ int controller::lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept {
   return 0;
 }
 
+int controller::overlay_tunnel_add(uint32_t tunnel_id) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_overlay_tunnel(dpt.get_version(), tunnel_id));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int controller::overlay_tunnel_remove(uint32_t tunnel_id) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_overlay_tunnel(dpt.get_version(), tunnel_id));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
 int controller::l2_addr_remove_all_in_vlan(uint32_t port,
                                            uint16_t vid) noexcept {
   int rv = 0;
@@ -561,6 +649,7 @@ int controller::l2_addr_remove_all_in_vlan(uint32_t port,
     dpt.send_flow_mod_message(rofl::cauxid(0),
                               fm_driver.remove_bridging_unicast_vlan_all(
                                   dpt.get_version(), port, vid));
+    VLOG(2) << __FUNCTION__ << ": port=" << port << ", vid=" << vid;
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -613,6 +702,64 @@ int controller::l2_addr_remove(uint32_t port, uint16_t vid,
     dpt.send_flow_mod_message(rofl::cauxid(0),
                               fm_driver.remove_bridging_unicast_vlan(
                                   dpt.get_version(), port, vid, mac));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int controller::l2_overlay_addr_add(uint32_t lport, uint32_t tunnel_id,
+                                    const rofl::cmacaddr &mac,
+                                    bool permanent) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    if (!permanent)
+      fm_driver.set_idle_timeout(300);
+
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.add_bridging_unicast_overlay(
+                                  dpt.get_version(), lport, tunnel_id, mac));
+
+    if (!permanent)
+      fm_driver.set_idle_timeout(default_idle_timeout);
+
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int controller::l2_overlay_addr_remove(uint32_t tunnel_id, uint32_t lport_id,
+                                       const rofl::cmacaddr &mac) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    if (lport_id) {
+      dpt.send_flow_mod_message(
+          rofl::cauxid(0), fm_driver.remove_bridging_unicast_overlay_all_lport(
+                               dpt.get_version(), lport_id));
+      dpt.send_barrier_request(rofl::cauxid(0));
+    } else {
+      dpt.send_flow_mod_message(rofl::cauxid(0),
+                                fm_driver.remove_bridging_unicast_overlay(
+                                    dpt.get_version(), tunnel_id, mac));
+    }
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1127,6 +1274,9 @@ int controller::ingress_port_vlan_remove(uint32_t port, uint16_t vid,
           rofl::cauxid(0),
           fm_driver.disable_port_vid_ingress(dpt.get_version(), port, vid));
     }
+    uint32_t xid = 0;
+    dpt.send_barrier_request(rofl::cauxid(0), 1, &xid);
+    VLOG(2) << __FUNCTION__ << ": sent barrier with xid=" << (unsigned)xid;
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1210,6 +1360,112 @@ int controller::egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept {
     dpt.send_group_mod_message(
         rofl::cauxid(0),
         fm_driver.disable_group_l2_interface(dpt.get_version(), port, vid));
+    uint32_t xid = 0;
+    dpt.send_barrier_request(rofl::cauxid(0), 1, &xid);
+    VLOG(2) << __FUNCTION__ << ": sent barrier with xid=" << (unsigned)xid;
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int controller::add_l2_overlay_flood(uint32_t tunnel_id,
+                                     uint32_t lport_id) noexcept {
+  int rv = 0;
+  try {
+    auto tunnel_dlf_it = tunnel_dlf_flood.find(tunnel_id);
+
+    if (tunnel_dlf_it == tunnel_dlf_flood.end()) {
+      std::set<uint32_t> empty_set;
+      tunnel_dlf_it = tunnel_dlf_flood.emplace(tunnel_id, empty_set).first;
+    }
+
+    tunnel_dlf_it->second.insert(lport_id);
+
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    // create/update new L2 flooding group
+    LOG(INFO) << __FUNCTION__
+              << ": create group enable_group_l2_overlay_flood tunnel_id="
+              << tunnel_id << ", #dlf=" << tunnel_dlf_it->second.size();
+
+    for (auto lport : tunnel_dlf_it->second)
+      LOG(INFO) << __FUNCTION__ << ": lport=" << lport;
+
+    dpt.send_group_mod_message(rofl::cauxid(0),
+                               fm_driver.enable_group_l2_overlay_flood(
+                                   dpt.get_version(), tunnel_id, tunnel_id,
+                                   tunnel_dlf_it->second,
+                                   (tunnel_dlf_it->second.size() > 1)));
+
+    dpt.send_barrier_request(rofl::cauxid(0));
+
+    //   if (tunnel_dlf_it->second.size() == 1) {
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.add_bridging_dlf_overlay(
+            dpt.get_version(), tunnel_id,
+            fm_driver.group_id_l2_overlay_flood(tunnel_id, tunnel_id)));
+    //   }
+
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int controller::del_l2_overlay_flood(uint32_t tunnel_id,
+                                     uint32_t lport_id) noexcept {
+  int rv = 0;
+  try {
+    auto tunnel_dlf_it = tunnel_dlf_flood.find(tunnel_id);
+
+    if (tunnel_dlf_it == tunnel_dlf_flood.end()) {
+      // nothing in this group
+      VLOG(1) << __FUNCTION__ << ": invalid tunnel_id=" << tunnel_id;
+      return 0;
+    }
+
+    auto elements_erased = tunnel_dlf_it->second.erase(lport_id);
+    if (elements_erased == 0) {
+      // nothing to do, lport already deleted
+      VLOG(1) << __FUNCTION__ << ": lport_id=" << lport_id
+              << " not existing in tunnel_id=" << tunnel_id;
+      return 0;
+    }
+
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    if (tunnel_dlf_it->second.size()) {
+      // create/update new L2 flooding group
+      dpt.send_group_mod_message(rofl::cauxid(0),
+                                 fm_driver.enable_group_l2_overlay_flood(
+                                     dpt.get_version(), tunnel_id, tunnel_id,
+                                     tunnel_dlf_it->second, true));
+    } else {
+      dpt.send_flow_mod_message(
+          rofl::cauxid(0),
+          fm_driver.remove_bridging_dlf_overlay(dpt.get_version(), tunnel_id));
+      dpt.send_barrier_request(rofl::cauxid(0));
+      dpt.send_group_mod_message(rofl::cauxid(0),
+                                 fm_driver.disable_group_l2_overlay_flood(
+                                     dpt.get_version(), tunnel_id, tunnel_id));
+    }
+
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1313,7 +1569,9 @@ int controller::egress_bridge_port_vlan_remove(uint32_t port,
           fm_driver.disable_group_l2_flood(dpt.get_version(), vid, vid));
     }
 
-    dpt.send_barrier_request(rofl::cauxid(0));
+    uint32_t xid = 0;
+    dpt.send_barrier_request(rofl::cauxid(0), 1, &xid);
+    VLOG(2) << __FUNCTION__ << ": sent barrier with xid=" << (unsigned)xid;
 
     // remove filtered egress interface
     rv = egress_port_vlan_remove(port, vid);
@@ -1424,6 +1682,97 @@ int controller::get_statistics(uint64_t port_no, uint32_t number_of_counters,
       break;
     }
   }
+  return rv;
+}
+
+int controller::tunnel_tenant_create(uint32_t tunnel_id,
+                                     uint32_t vni) noexcept {
+  return ofdpa->ofdpaTunnelTenantCreate(tunnel_id, vni);
+}
+
+int controller::tunnel_tenant_delete(uint32_t tunnel_id) noexcept {
+  return ofdpa->ofdpaTunnelTenantDelete(tunnel_id);
+}
+
+int controller::tunnel_next_hop_create(uint32_t next_hop_id, uint64_t src_mac,
+                                       uint64_t dst_mac, uint32_t physical_port,
+                                       uint16_t vlan_id) noexcept {
+  return ofdpa->ofdpaTunnelNextHopCreate(next_hop_id, src_mac, dst_mac,
+                                         physical_port, vlan_id);
+}
+
+int controller::tunnel_next_hop_modify(uint32_t next_hop_id, uint64_t src_mac,
+                                       uint64_t dst_mac, uint32_t physical_port,
+                                       uint16_t vlan_id) noexcept {
+  return ofdpa->ofdpaTunnelNextHopModify(next_hop_id, src_mac, dst_mac,
+                                         physical_port, vlan_id);
+}
+
+int controller::tunnel_next_hop_delete(uint32_t next_hop_id) noexcept {
+  return ofdpa->ofdpaTunnelNextHopDelete(next_hop_id);
+}
+
+int controller::tunnel_access_port_create(uint32_t port_id,
+                                          const std::string &port_name,
+                                          uint32_t physical_port,
+                                          uint16_t vlan_id,
+                                          bool untagged) noexcept {
+  return ofdpa->ofdpaTunnelAccessPortCreate(port_id, port_name, physical_port,
+                                            vlan_id, untagged);
+}
+
+int controller::tunnel_port_delete(uint32_t port_id) noexcept {
+  return ofdpa->ofdpaTunnelPortDelete(port_id);
+}
+
+int controller::tunnel_enpoint_create(
+    uint32_t port_id, const std::string &port_name, uint32_t remote_ipv4,
+    uint32_t local_ipv4, uint32_t ttl, uint32_t next_hop_id,
+    uint32_t terminator_udp_dst_port, uint32_t initiator_udp_dst_port,
+    uint32_t udp_src_port_if_no_entropy, bool use_entropy) noexcept {
+
+  return ofdpa->ofdpaTunnelEndpointPortCreate(
+      port_id, port_name, remote_ipv4, local_ipv4, ttl, next_hop_id,
+      terminator_udp_dst_port, initiator_udp_dst_port,
+      udp_src_port_if_no_entropy, use_entropy);
+}
+
+int controller::tunnel_port_tenant_add(uint32_t lport_id,
+                                       uint32_t tunnel_id) noexcept {
+  int rv = ofdpa->ofdpaTunnelPortTenantAdd(lport_id, tunnel_id);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to add port " << lport_id
+               << " to tenant " << tunnel_id;
+  }
+
+  return rv;
+}
+
+int controller::tunnel_port_tenant_remove(uint32_t lport_id,
+                                          uint32_t tunnel_id) noexcept {
+  int rv;
+  int cnt = 0;
+  do {
+    // XXX TODO this is totally crap even if it works for now
+    using namespace std::chrono_literals;
+
+    rv = ofdpa->ofdpaTunnelPortTenantDelete(lport_id, tunnel_id);
+
+    VLOG(2) << __FUNCTION__ << ": rv=" << rv << ", cnt=" << cnt
+            << ", lport_id=" << lport_id << ", tunnel_id=" << tunnel_id;
+
+    cnt++;
+    std::this_thread::sleep_for(10ms);
+  } while (rv < 0 && cnt < 50);
+
+  assert(rv == 0);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to remove port " << lport_id
+               << " from tenant " << tunnel_id;
+  }
+
   return rv;
 }
 

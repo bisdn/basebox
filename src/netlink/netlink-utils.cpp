@@ -17,7 +17,7 @@
 
 #define lt_names                                                               \
   "unsupported", "team", "bond", "bond_slave", "bridge", "bridge_slave",       \
-      "tun", "vlan"
+      "tun", "vlan", "vxlan"
 
 namespace basebox {
 
@@ -91,6 +91,23 @@ enum link_type get_link_type(rtnl_link *link) noexcept {
   VLOG(1) << __FUNCTION__ << ": type=" << std::string_view(type)
           << " not supported";
   return LT_UNSUPPORTED;
+}
+
+uint64_t nlall2uint64(const nl_addr *a) noexcept {
+  uint64_t b = 0;
+  char *b_, *a_;
+
+  assert(nl_addr_get_len(a) == 6);
+
+  a_ = static_cast<char *>(nl_addr_get_binary_addr(a));
+  b_ = reinterpret_cast<char *>(&b);
+  b_[5] = a_[0];
+  b_[4] = a_[1];
+  b_[3] = a_[2];
+  b_[2] = a_[3];
+  b_[1] = a_[4];
+  b_[0] = a_[5];
+  return b;
 }
 
 } // namespace basebox

@@ -8,24 +8,27 @@
 
 #include <glog/logging.h>
 #include <netlink/route/link.h>
-#include <netlink/route/link/bridge.h>
+#include <netlink/route/link/vxlan.h>
 #include <netlink/route/neighbour.h>
 #include <rofl/common/openflow/cofport.h>
 
 #include "cnetlink.hpp"
+#include "netlink-utils.hpp"
 #include "nl_bridge.hpp"
 #include "nl_output.hpp"
+#include "nl_vxlan.hpp"
 #include "sai.hpp"
 #include "tap_manager.hpp"
 
 namespace basebox {
 
 nl_bridge::nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
-                     cnetlink *nl)
-    : bridge(nullptr), sw(sw), tap_man(tap_man), nl(nl),
+                     cnetlink *nl, std::shared_ptr<nl_vxlan> vxlan)
+    : bridge(nullptr), sw(sw), tap_man(tap_man), nl(nl), vxlan(vxlan),
       l2_cache(nl_cache_alloc(nl_cache_ops_lookup("route/neigh")),
                nl_cache_free) {
   memset(&empty_br_vlan, 0, sizeof(rtnl_link_bridge_vlan));
+  memset(&vxlan_dom_bitmap, 0, sizeof(vxlan_dom_bitmap));
 }
 
 nl_bridge::~nl_bridge() { rtnl_link_put(bridge); }
@@ -65,6 +68,16 @@ static bool is_vid_set(unsigned vid, uint32_t *addr) {
   return !!(addr[vid / 32] & (((uint32_t)1) << (vid % 32)));
 }
 
+static void set_vid(unsigned vid, uint32_t *addr) {
+  if (vid < RTNL_LINK_BRIDGE_VLAN_BITMAP_MAX)
+    addr[vid / 32] |= (((uint32_t)1) << (vid % 32));
+}
+
+static void unset_vid(unsigned vid, uint32_t *addr) {
+  if (vid < RTNL_LINK_BRIDGE_VLAN_BITMAP_MAX)
+    addr[vid / 32] &= ~(((uint32_t)1) << (vid % 32));
+}
+
 static int find_next_bit(int i, uint32_t x) {
   int j;
 
@@ -99,8 +112,6 @@ void nl_bridge::add_interface(rtnl_link *link) {
 }
 
 void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
-  LOG(INFO) << __FUNCTION__ << ": fam_old=" << rtnl_link_get_family(old_link)
-            << ", fam_new=" << rtnl_link_get_family(new_link);
   assert(rtnl_link_get_family(old_link) == AF_BRIDGE);
   assert(rtnl_link_get_family(new_link) == AF_BRIDGE);
 
@@ -139,12 +150,7 @@ void nl_bridge::delete_interface(rtnl_link *link) {
 
 void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
   assert(sw);
-
-  // sanity checks
-  if (bridge == nullptr) { // XXX TODO solve this differently
-    LOG(WARNING) << __FUNCTION__ << " cannot update interface without bridge";
-    return;
-  }
+  assert(bridge); // already checked
 
   rtnl_link_bridge_vlan *old_br_vlan, *new_br_vlan;
   rtnl_link *_link;
@@ -177,7 +183,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
   if (_link == nullptr) {
     // XXX FIXME in case a vxlan has been deleted the vxlan_domain and
     // vxlan_dom_bitmap need an update, maybe this can be handled already from
-    // the link_delete of the vxlan itself?
+    // the link_deleted of the vxlan itself?
     LOG(WARNING) << __FUNCTION__
                  << ": could not get parent link of bridge interface. This "
                     "case needs further checks if everything got already "
@@ -191,11 +197,27 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     return;
   }
 
-  uint32_t pport_no = nl->get_port_id(rtnl_link_get_ifindex(_link));
-  if (pport_no == 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": invalid pport_no=0 of link: " << OBJ_CAST(_link);
-    return;
+  link_type lt = get_link_type(_link);
+  uint32_t pport_no = 0;
+  uint32_t tunnel_id = -1;
+  std::deque<rtnl_link *> bridge_ports;
+
+  if (lt == LT_VXLAN) {
+    assert(nl);
+    nl->get_bridge_ports(rtnl_link_get_master(_link), &bridge_ports);
+
+    if (vxlan->get_tunnel_id(_link, nullptr, &tunnel_id) != 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to get vni of link "
+                 << OBJ_CAST(_link);
+    }
+
+  } else {
+    pport_no = nl->get_port_id(rtnl_link_get_ifindex(_link));
+    if (pport_no == 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": invalid pport_no=0 of link: " << OBJ_CAST(_link);
+      return;
+    }
   }
 
   for (int k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
@@ -232,44 +254,84 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
 
         if (new_br_vlan->vlan_bitmap[k] & 1 << (j - 1)) {
           // vlan added
-          VLOG(3) << __FUNCTION__ << ": add vid=" << vid
-                  << " on pport_no=" << pport_no
-                  << " link: " << OBJ_CAST(_link);
+          if (lt == LT_VXLAN) {
+            // update vxlan domain
+            if (!is_vid_set(vid, vxlan_dom_bitmap)) {
+              VLOG(1) << __FUNCTION__ << ": new vxlan domain vid=" << vid
+                      << ", tunnel_id=" << tunnel_id;
 
-          // normal vlan port
-          sw->egress_bridge_port_vlan_add(pport_no, vid, egress_untagged);
-          sw->ingress_port_vlan_add(pport_no, vid, new_br_vlan->pvid == vid);
+              vxlan_domain.emplace(vid, tunnel_id);
+              set_vid(vid, vxlan_dom_bitmap);
+            } else {
+              // XXX TODO check the map
+            }
 
+            // update all bridge ports to be access ports
+            update_access_ports(_link, new_link ? new_link : old_link, vid,
+                                tunnel_id, bridge_ports, true);
+          } else {
+            assert(pport_no);
+            if (is_vid_set(vid, vxlan_dom_bitmap)) {
+              // configure as access port
+              std::string port_name = std::string(rtnl_link_get_name(_link));
+              auto vxd_it = vxlan_domain.find(vid);
+
+              if (vxd_it != vxlan_domain.end()) {
+                vxlan->create_access_port((new_link) ? new_link : old_link,
+                                          vxd_it->second, port_name, pport_no,
+                                          vid, egress_untagged, nullptr);
+              } else {
+                LOG(FATAL) << __FUNCTION__
+                           << ": should not happen, something is broken";
+              }
+            } else {
+              // normal vlan port
+              VLOG(3) << __FUNCTION__ << ": add vid=" << vid
+                      << " on pport_no=" << pport_no
+                      << " link: " << OBJ_CAST(_link);
+              sw->egress_bridge_port_vlan_add(pport_no, vid, egress_untagged);
+              sw->ingress_port_vlan_add(pport_no, vid,
+                                        new_br_vlan->pvid == vid);
+            }
+          }
         } else {
           // vlan removed
+          if (lt == LT_VXLAN) {
+            unset_vid(vid, vxlan_dom_bitmap);
+            vxlan_domain.erase(vid);
 
-          VLOG(3) << __FUNCTION__ << ": remove vid=" << vid
-                  << " on pport_no=" << pport_no
-                  << " link: " << OBJ_CAST(_link);
-          sw->ingress_port_vlan_remove(pport_no, vid, old_br_vlan->pvid == vid);
+            // update all bridge ports to be normal bridge ports
+            update_access_ports(_link, new_link ? new_link : old_link, vid,
+                                tunnel_id, bridge_ports, false);
+          } else {
+            VLOG(3) << __FUNCTION__ << ": remove vid=" << vid
+                    << " on pport_no=" << pport_no
+                    << " link: " << OBJ_CAST(_link);
+            sw->ingress_port_vlan_remove(pport_no, vid,
+                                         old_br_vlan->pvid == vid);
 
-          // delete all FM pointing to this group first
-          sw->l2_addr_remove_all_in_vlan(pport_no, vid);
+            // delete all FM pointing to this group first
+            sw->l2_addr_remove_all_in_vlan(pport_no, vid);
 
-          std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> filter(
-              rtnl_neigh_alloc(), rtnl_neigh_put);
+            std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> filter(
+                rtnl_neigh_alloc(), rtnl_neigh_put);
 
-          rtnl_neigh_set_ifindex(filter.get(), rtnl_link_get_ifindex(bridge));
-          rtnl_neigh_set_master(filter.get(), rtnl_link_get_master(bridge));
-          rtnl_neigh_set_family(filter.get(), AF_BRIDGE);
-          rtnl_neigh_set_vlan(filter.get(), vid);
-          rtnl_neigh_set_flags(filter.get(), NTF_MASTER | NTF_EXT_LEARNED);
-          rtnl_neigh_set_state(filter.get(), NUD_REACHABLE);
+            rtnl_neigh_set_ifindex(filter.get(), rtnl_link_get_ifindex(bridge));
+            rtnl_neigh_set_master(filter.get(), rtnl_link_get_master(bridge));
+            rtnl_neigh_set_family(filter.get(), AF_BRIDGE);
+            rtnl_neigh_set_vlan(filter.get(), vid);
+            rtnl_neigh_set_flags(filter.get(), NTF_MASTER | NTF_EXT_LEARNED);
+            rtnl_neigh_set_state(filter.get(), NUD_REACHABLE);
 
-          nl_cache_foreach_filter(
-              l2_cache.get(), OBJ_CAST(filter.get()),
-              [](struct nl_object *o, __attribute__((unused)) void *arg) {
-                VLOG(3) << ": l2_cache remove object " << o;
-                nl_cache_remove(o);
-              },
-              nullptr);
+            nl_cache_foreach_filter(l2_cache.get(), OBJ_CAST(filter.get()),
+                                    [](struct nl_object *o, void *arg) {
+                                      VLOG(3) << "l2_cache remove object " << o;
+                                      nl_cache_remove(o);
+                                    },
+                                    nullptr);
 
-          sw->egress_bridge_port_vlan_remove(pport_no, vid);
+            sw->egress_bridge_port_vlan_remove(pport_no, vid);
+          }
         }
 
         i = j;
@@ -307,13 +369,100 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
   }
 }
 
+std::deque<rtnl_neigh *> nl_bridge::get_fdb_entries_of_port(rtnl_link *br_port,
+                                                            uint16_t vid) {
+
+  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> filter(
+      rtnl_neigh_alloc(), rtnl_neigh_put);
+
+  rtnl_neigh_set_ifindex(filter.get(), rtnl_link_get_ifindex(br_port));
+  rtnl_neigh_set_master(filter.get(), rtnl_link_get_ifindex(bridge));
+  rtnl_neigh_set_vlan(filter.get(), vid);
+  rtnl_neigh_set_family(filter.get(), AF_BRIDGE);
+
+  std::deque<rtnl_neigh *> neighs;
+  nl_cache_foreach_filter(
+      nl->get_cache(cnetlink::NL_NEIGH_CACHE), OBJ_CAST(filter.get()),
+      [](struct nl_object *o, void *arg) {
+        std::deque<rtnl_neigh *> *neighs = (std::deque<rtnl_neigh *> *)arg;
+        neighs->push_back(NEIGH_CAST(o));
+        VLOG(3) << "needs to be updated " << o;
+      },
+      &neighs);
+
+  return neighs;
+}
+
+void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
+                                    const uint16_t vid,
+                                    const uint32_t tunnel_id,
+                                    const std::deque<rtnl_link *> &bridge_ports,
+                                    bool add) {
+  // XXX pvid is currently not taken into account
+  for (auto _br_port : bridge_ports) {
+    auto br_port_vlans = rtnl_link_bridge_get_port_vlan(_br_port);
+
+    if (rtnl_link_get_ifindex(vxlan_link) == rtnl_link_get_ifindex(_br_port))
+      continue;
+
+    if (br_port_vlans == nullptr)
+      continue;
+
+    if (!is_vid_set(vid, br_port_vlans->vlan_bitmap))
+      continue;
+
+    bool untagged = is_vid_set(vid, br_port_vlans->untagged_bitmap);
+    int ifindex = rtnl_link_get_ifindex(_br_port);
+    uint32_t pport_no = nl->get_port_id(ifindex);
+
+    if (pport_no == 0) {
+      LOG(WARNING) << __FUNCTION__ << ": ignoring unknown port "
+                   << OBJ_CAST(_br_port);
+      continue;
+    }
+
+    rtnl_link *link = nl->get_link(rtnl_link_get_ifindex(_br_port), AF_UNSPEC);
+
+    VLOG(2) << __FUNCTION__ << ": vid=" << vid << ", untagged=" << untagged
+            << ", tunnel_id=" << tunnel_id << ", add=" << add
+            << ", ifindex=" << ifindex << ", pport_no=" << pport_no
+            << ", port: " << OBJ_CAST(_br_port);
+
+    if (add) {
+      std::string port_name = std::string(rtnl_link_get_name(_br_port));
+
+      // this is no longer a normal bridge interface thus we delete all the
+      // bridging entries
+      sw->l2_addr_remove_all_in_vlan(pport_no, vid);
+      vxlan->create_access_port(_br_port, tunnel_id, port_name, pport_no, vid,
+                                untagged, nullptr);
+
+      auto neighs = get_fdb_entries_of_port(_br_port, vid);
+      for (auto n : neighs) {
+        // ignore ll addr of bridge on slave
+        if (nl_addr_cmp(rtnl_link_get_addr(bridge), rtnl_neigh_get_lladdr(n)) ==
+            0) {
+          continue;
+        }
+        VLOG(3) << ": needs to be updated " << OBJ_CAST(n);
+        vxlan->add_l2_neigh(n, link, br_link);
+      }
+
+    } else {
+      // delete access port and all bridging entries
+      vxlan->delete_access_port(_br_port, pport_no, vid, true);
+      // XXX FIXME check if we have to add the VLANs again (ingress/egress)
+    }
+  }
+}
+
 void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
   assert(sw);
   assert(neigh);
 
   uint32_t port = nl->get_port_id(rtnl_neigh_get_ifindex(neigh));
   if (port == 0) {
-    VLOG(1) << "ignoring neigh" << neigh << ": not a tap port";
+    VLOG(1) << __FUNCTION__ << ": unknown port for neigh " << OBJ_CAST(neigh);
     return;
   }
 
@@ -329,11 +478,7 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
   }
 
   // check if entry already exists in cache
-  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n_lookup(
-      NEIGH_CAST(nl_cache_search(l2_cache.get(), OBJ_CAST(neigh))),
-      rtnl_neigh_put);
-  if (n_lookup) {
-    LOG(INFO) << __FUNCTION__ << ": found entry in local cache";
+  if (is_mac_in_l2_cache(neigh)) {
     permanent = false;
   }
 
@@ -370,6 +515,21 @@ void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {
                         nl_addr_get_len(addr));
 
   sw->l2_addr_remove(port, rtnl_neigh_get_vlan(neigh), mac);
+}
+
+bool nl_bridge::is_mac_in_l2_cache(rtnl_neigh *n) {
+  assert(n);
+
+  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n_lookup(
+      NEIGH_CAST(nl_cache_search(l2_cache.get(), OBJ_CAST(n))), rtnl_neigh_put);
+
+  if (n_lookup) {
+    VLOG(2) << __FUNCTION__ << ": found existing l2_cache entry "
+            << OBJ_CAST(n_lookup.get());
+    return true;
+  }
+
+  return false;
 }
 
 int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
@@ -433,13 +593,7 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   rtnl_neigh_set_state(n.get(), NUD_REACHABLE);
 
   // check if entry already exists in cache
-  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n_lookup(
-      NEIGH_CAST(nl_cache_search(l2_cache.get(), OBJ_CAST(n.get()))),
-      rtnl_neigh_put);
-
-  if (n_lookup) {
-    VLOG(2) << __FUNCTION__ << ": found existing l2_cache entry "
-            << OBJ_CAST(n_lookup.get());
+  if (is_mac_in_l2_cache(n.get())) {
     return 0;
   }
 
@@ -506,6 +660,14 @@ int nl_bridge::fdb_timeout(rtnl_link *br_link, uint16_t vid,
   }
 
   return rv;
+}
+
+bool nl_bridge::is_port_flooding(rtnl_link *br_link) const {
+  assert(br_link);
+  assert(rtnl_link_is_bridge(br_link));
+
+  int flags = rtnl_link_bridge_get_flags(br_link);
+  return !!(flags & RTNL_BRIDGE_UNICAST_FLOOD);
 }
 
 } /* namespace basebox */

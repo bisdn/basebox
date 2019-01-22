@@ -31,9 +31,12 @@ enum link_type {
   LT_BRIDGE_SLAVE,
   LT_TUN,
   LT_VLAN,
+  LT_VXLAN,
   LT_MAX /* must be last */
 };
 
-enum link_type get_link_type(rtnl_link *type) noexcept;
+enum link_type get_link_type(rtnl_link *link) noexcept;
+
+uint64_t nlall2uint64(const nl_addr *a) noexcept;
 
 } // namespace basebox

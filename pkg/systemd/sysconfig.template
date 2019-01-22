@@ -2,6 +2,9 @@
 #
 # Listening port:
 # FLAGS_port=6653
+#
+# gRPC listening port:
+# FLAGS_ofdpa_grpc_port=50051
 
 ### glog
 #

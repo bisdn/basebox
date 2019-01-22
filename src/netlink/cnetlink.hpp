@@ -22,6 +22,7 @@ namespace basebox {
 class nl_bond;
 class nl_l3;
 class nl_vlan;
+class nl_vxlan;
 class tap_manager;
 
 class cnetlink final : public rofl::cthread_env {
@@ -44,6 +45,10 @@ public:
   struct rtnl_link *get_link(int ifindex, int family) const;
   void get_bridge_ports(int br_ifindex,
                         std::deque<rtnl_link *> *link_list) const noexcept;
+
+  /**
+   * @return rtnl_neigh* which needs to be freed using rtnl_neigh_put
+   */
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
   bool is_bridge_interface(rtnl_link *l) const;
@@ -110,6 +115,7 @@ private:
   std::shared_ptr<nl_bond> bond;
   std::shared_ptr<nl_vlan> vlan;
   std::shared_ptr<nl_l3> l3;
+  std::shared_ptr<nl_vxlan> vxlan;
 
   struct nl_pkt_in {
     nl_pkt_in(uint32_t port_id, int fd, packet *pkt)
