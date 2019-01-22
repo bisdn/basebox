@@ -8,7 +8,7 @@
 #include <map>
 #include <memory>
 
-#include "nl_l3_interfaces.hpp"
+#include "nl_l3_interfaces.h"
 
 extern "C" {
 struct nl_addr;

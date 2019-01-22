@@ -21,15 +21,15 @@
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
 
-#include "cnetlink.hpp"
-#include "netlink-utils.hpp"
-#include "nl_output.hpp"
-#include "tap_manager.hpp"
+#include "cnetlink.h"
+#include "netlink-utils.h"
+#include "nl_output.h"
+#include "tap_manager.h"
 
-#include "nl_bond.hpp"
-#include "nl_l3.hpp"
-#include "nl_vlan.hpp"
-#include "nl_vxlan.hpp"
+#include "nl_bond.h"
+#include "nl_l3.h"
+#include "nl_vlan.h"
+#include "nl_vxlan.h"
 
 namespace basebox {
 

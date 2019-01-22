@@ -10,7 +10,7 @@
 #include <memory>
 #include <mutex>
 
-#include "sai.hpp"
+#include "sai.h"
 
 namespace basebox {
 

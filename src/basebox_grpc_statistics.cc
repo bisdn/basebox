@@ -6,8 +6,8 @@
 #include <vector>
 
 #include "basebox_grpc_statistics.h"
-#include "sai.hpp"
-#include "netlink/tap_manager.hpp"
+#include "sai.h"
+#include "netlink/tap_manager.h"
 
 namespace basebox {
 

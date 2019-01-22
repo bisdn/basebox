@@ -18,7 +18,7 @@
 
 #include <linux/rtnetlink.h>
 
-#include "nl_output.hpp"
+#include "nl_output.h"
 
 namespace basebox {
 

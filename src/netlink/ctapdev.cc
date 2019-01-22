@@ -14,8 +14,8 @@
 
 #include <glog/logging.h>
 
-#include "ctapdev.hpp"
-#include "tap_manager.hpp"
+#include "ctapdev.h"
+#include "tap_manager.h"
 
 namespace basebox {
 

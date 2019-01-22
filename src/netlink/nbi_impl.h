@@ -6,8 +6,8 @@
 
 #include <memory>
 
-#include "sai.hpp"
-#include "tap_manager.hpp"
+#include "sai.h"
+#include "tap_manager.h"
 
 namespace basebox {
 

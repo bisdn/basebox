@@ -16,14 +16,14 @@
 #include <netlink/route/link/bridge.h>
 #include <netlink/route/link/vxlan.h>
 
-#include "cnetlink.hpp"
-#include "netlink-utils.hpp"
-#include "nl_bridge.hpp"
-#include "nl_hashing.hpp"
-#include "nl_l3.hpp"
-#include "nl_output.hpp"
-#include "nl_route_query.hpp"
-#include "nl_vxlan.hpp"
+#include "cnetlink.h"
+#include "netlink-utils.h"
+#include "nl_bridge.h"
+#include "nl_hashing.h"
+#include "nl_l3.h"
+#include "nl_output.h"
+#include "nl_route_query.h"
+#include "nl_vxlan.h"
 
 namespace basebox {
 

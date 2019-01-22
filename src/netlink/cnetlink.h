@@ -12,9 +12,9 @@
 #include <netlink/cache.h>
 #include <rofl/common/cthread.hpp>
 
-#include "nl_bridge.hpp"
-#include "nl_obj.hpp"
-#include "sai.hpp"
+#include "nl_bridge.h"
+#include "nl_obj.h"
+#include "sai.h"
 
 namespace basebox {
 

@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nl_bond.hpp"
+#include "nl_bond.h"
 
 #include <cassert>
 #include <glog/logging.h>
 #include <netlink/route/link.h>
 
-#include "cnetlink.hpp"
-#include "nl_output.hpp"
-#include "sai.hpp"
+#include "cnetlink.h"
+#include "nl_output.h"
+#include "sai.h"
 
 namespace basebox {
 

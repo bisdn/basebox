@@ -10,7 +10,7 @@
 #include <netlink/route/route.h>
 #include <netlink/route/nexthop.h>
 
-#include "nl_output.hpp"
+#include "nl_output.h"
 
 namespace basebox {
 

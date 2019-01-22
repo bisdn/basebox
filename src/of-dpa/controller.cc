@@ -12,11 +12,11 @@
 #include <linux/if_ether.h>
 #include <grpc++/grpc++.h>
 
-#include "controller.hpp"
-#include "ofdpa_client.hpp"
+#include "controller.h"
+#include "ofdpa_client.h"
 #include "ofdpa_datatypes.h"
-#include "utils/utils.hpp"
-#include "utils/rofl-utils.hpp"
+#include "utils/utils.h"
+#include "utils/rofl-utils.h"
 
 namespace basebox {
 

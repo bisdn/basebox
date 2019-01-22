@@ -8,10 +8,10 @@
 #include <netlink/route/link.h>
 #include <netlink/route/link/vlan.h>
 
-#include "cnetlink.hpp"
-#include "nl_output.hpp"
-#include "nl_vlan.hpp"
-#include "sai.hpp"
+#include "cnetlink.h"
+#include "nl_output.h"
+#include "nl_vlan.h"
+#include "sai.h"
 
 namespace basebox {
 
