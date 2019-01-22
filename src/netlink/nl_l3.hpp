@@ -8,6 +8,8 @@
 #include <memory>
 #include <deque>
 
+#include "nl_l3_interfaces.hpp"
+
 extern "C" {
 struct nl_addr;
 struct rtnl_addr;
@@ -26,7 +28,6 @@ namespace basebox {
 class cnetlink;
 class nl_vlan;
 class switch_interface;
-class tap_manager;
 
 class nl_l3 {
 public:
@@ -48,16 +49,17 @@ public:
   int add_l3_route(struct rtnl_route *r);
   int del_l3_route(struct rtnl_route *r);
 
-  struct nh_lookup_params {
-    std::deque<struct rtnl_neigh *> *neighs;
-    rtnl_route *rt;
-    cnetlink *nl;
-  };
+  void get_nexthops_of_route(rtnl_route *route,
+                             std::deque<struct rtnl_nexthop *> *nhs) noexcept;
 
-  void get_neighbours_of_route(rtnl_route *r, nh_lookup_params *p);
+  int get_neighbours_of_route(rtnl_route *r,
+                              std::deque<struct rtnl_neigh *> *neighs,
+                              std::deque<nh_stub> *unresolved_nh) noexcept;
 
   void register_switch_interface(switch_interface *sw);
-  void set_tapmanager(std::shared_ptr<tap_manager> tm) { tap_man = tm; }
+
+  void notify_on_net_reachable(net_reachable *f, struct net_params p) noexcept;
+  void notify_on_nh_reachable(nh_reachable *f, struct nh_params p) noexcept;
 
 private:
   int add_l3_unicast_route(rtnl_route *r);
@@ -81,9 +83,10 @@ private:
   bool is_link_local_address(const struct nl_addr *addr);
 
   switch_interface *sw;
-  std::shared_ptr<tap_manager> tap_man;
   std::shared_ptr<nl_vlan> vlan;
   cnetlink *nl;
+  std::deque<std::pair<net_reachable *, net_params>> net_callbacks;
+  std::deque<std::pair<nh_reachable *, nh_params>> nh_callbacks;
 };
 
 } // namespace basebox

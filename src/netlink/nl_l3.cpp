@@ -20,7 +20,6 @@
 #include "nl_output.hpp"
 #include "nl_vlan.hpp"
 #include "sai.hpp"
-#include "tap_manager.hpp"
 #include "utils/rofl-utils.hpp"
 
 namespace std {
@@ -126,7 +125,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   }
 
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
-  bool is_bridge = rtnl_link_is_bridge(link);
+  bool is_bridge = rtnl_link_is_bridge(link); // XXX TODO svi as well?
   int ifindex = 0;
   uint16_t vid = vlan->get_vid(link);
 
@@ -150,7 +149,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
 
     if (port_id == 0) {
       if (is_bridge or nl->is_bridge_interface(link)) {
-        LOG(INFO) << __FUNCTION__ << ": host on top of bridge";
+        LOG(INFO) << __FUNCTION__ << ": address on top of bridge";
         port_id = 0;
       } else {
         LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0 for link "
@@ -523,7 +522,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
     }
     rv = sw->l3_unicast_host_add(ipv4_dst, l3_interface_id);
   } else {
-
+    // AF_INET6
     auto p = nl_addr_alloc(16);
     nl_addr_parse("fe80::/10", AF_INET6, &p);
     std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
@@ -543,6 +542,19 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": add l3 unicast host failed for "
                << OBJ_CAST(n);
+    return rv;
+  }
+
+  for (auto cb = std::begin(nh_callbacks); cb != std::end(nh_callbacks);) {
+    if (cb->second.nh.ifindex == rtnl_neigh_get_ifindex(n) &&
+        nl_addr_get_family(cb->second.np.addr) == rtnl_neigh_get_family(n) &&
+        nl_addr_cmp(cb->second.np.addr, rtnl_neigh_get_dst(n)) == 0) {
+      // XXX TODO add l3_interface?
+      cb->first->nh_reachable_notification(cb->second);
+      cb = nh_callbacks.erase(cb);
+    } else {
+      ++cb;
+    }
   }
 
   return rv;
@@ -573,7 +585,7 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
   uint32_t port_id = nl->get_port_id(ifindex);
 
   if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": invalid port id=" << port_id;
+    VLOG(1) << __FUNCTION__ << ": port not supported";
     return -EINVAL;
   }
 
@@ -714,8 +726,6 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
   if (n == nullptr)
     return -EINVAL;
 
-  LOG(INFO) << __FUNCTION__ << ": n=" << n;
-
   if (family == AF_INET) {
     addr = rtnl_neigh_get_dst(n);
     rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
@@ -814,6 +824,16 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
 
 void nl_l3::register_switch_interface(switch_interface *sw) { this->sw = sw; }
 
+void nl_l3::notify_on_net_reachable(net_reachable *f,
+                                    struct net_params p) noexcept {
+  net_callbacks.push_back(std::make_pair(f, p));
+}
+
+void nl_l3::notify_on_nh_reachable(nh_reachable *f,
+                                   struct nh_params p) noexcept {
+  nh_callbacks.push_back(std::make_pair(f, p));
+}
+
 int nl_l3::del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
                          const struct nl_addr *d_mac) {
   assert(s_mac);
@@ -822,7 +842,7 @@ int nl_l3::del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
   uint32_t port_id = nl->get_port_id(ifindex);
 
   if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": invalid port_id=0 of ifindex" << ifindex;
+    VLOG(1) << __FUNCTION__ << ": invalid port_id=0 of ifindex=" << ifindex;
     return -EINVAL;
   }
 
@@ -917,7 +937,6 @@ int nl_l3::del_l3_route(struct rtnl_route *r) {
 int nl_l3::add_l3_unicast_route(rtnl_route *r) {
   auto dst = rtnl_route_get_dst(r);
   auto dst_af = rtnl_route_get_family(r);
-  std::deque<struct rtnl_neigh *> neighs;
   int nnhs = rtnl_route_get_nnexthops(r);
 
   if (nnhs == 0) {
@@ -929,8 +948,9 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r) {
                  << ": ecmp not supported, only first next hop will be used.";
   }
 
-  nh_lookup_params p = {&neighs, r, nl};
-  get_neighbours_of_route(r, &p);
+  std::deque<struct rtnl_neigh *> neighs;
+  std::deque<nh_stub> unresolved_nh;
+  get_neighbours_of_route(r, &neighs, &unresolved_nh);
 
   int rv = 0;
   if (neighs.size()) {
@@ -985,19 +1005,29 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r) {
     LOG(ERROR) << __FUNCTION__ << ": no nexthop for this route";
   }
 
+  // nl_addr_cmp_prefix
+  for (auto cb = std::begin(net_callbacks); cb != std::end(net_callbacks);) {
+    if (nl_addr_cmp_prefix(cb->second.addr, dst) == 0) {
+      cb->first->net_reachable_notification(cb->second);
+      cb = net_callbacks.erase(cb);
+    } else {
+      ++cb;
+    }
+  }
+
   return rv;
 }
 
 int nl_l3::del_l3_unicast_route(rtnl_route *r) {
   auto dst = rtnl_route_get_dst(r);
-  std::deque<struct rtnl_neigh *> neighs;
   int family = rtnl_route_get_family(r);
 
   int nnhs = rtnl_route_get_nnexthops(r);
   VLOG(2) << __FUNCTION__ << ": number of next hops is " << nnhs;
 
-  nh_lookup_params p = {&neighs, r, nl};
-  get_neighbours_of_route(r, &p);
+  std::deque<struct rtnl_neigh *> neighs;
+  std::deque<nh_stub> unresolved_nh;
+  get_neighbours_of_route(r, &neighs, &unresolved_nh);
 
   int rv = 0;
   if (neighs.size()) {
@@ -1065,50 +1095,85 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r) {
   return rv;
 }
 
-void nl_l3::get_neighbours_of_route(rtnl_route *route, nh_lookup_params *p) {
-  // add local lookup here
+void nl_l3::get_nexthops_of_route(
+    rtnl_route *route, std::deque<struct rtnl_nexthop *> *nhs) noexcept {
+  std::deque<struct rtnl_nexthop *> _nhs;
+
+  assert(route);
+  assert(nhs);
+
+  // extract next hops
   rtnl_route_foreach_nexthop(
       route,
       [](struct rtnl_nexthop *nh, void *arg) {
-        struct nh_lookup_params *data = static_cast<nh_lookup_params *>(arg);
-        int ifindex = rtnl_route_nh_get_ifindex(nh);
-
-        if (!ifindex) {
-          LOG(WARNING) << ": next hop without ifindex " << nh;
-          return;
-        }
-
-        nl_addr *nh_addr = rtnl_route_nh_get_gateway(nh);
-        rtnl_neigh *neigh = nullptr;
-
-        if (nh_addr) {
-          switch (nl_addr_get_family(nh_addr)) {
-          case AF_INET:
-          case AF_INET6:
-            LOG(INFO) << "gw " << nh_addr;
-            break;
-          default:
-            LOG(INFO) << "gw " << nh_addr
-                      << " unsupported family=" << nl_addr_get_family(nh_addr);
-            break;
-          }
-          neigh = data->nl->get_neighbour(ifindex, nh_addr);
-        } else {
-          // lookup neigh in neigh cache, direct?
-          nl_addr *dst = rtnl_route_get_dst(data->rt);
-          if (dst != nullptr) {
-            neigh = data->nl->get_neighbour(ifindex, dst);
-          } else {
-            neigh = nullptr;
-          }
-        }
-
-        if (neigh) {
-          LOG(INFO) << " found neighbour: " << OBJ_CAST(neigh);
-          data->neighs->push_back(neigh);
-        }
+        auto nhops = static_cast<std::deque<struct rtnl_nexthop *> *>(arg);
+        nhops->push_back(nh);
       },
-      p);
+      &_nhs);
+
+  // verify next hop
+  for (auto nh : _nhs) {
+    int pport_id = nl->get_port_id(rtnl_route_nh_get_ifindex(nh));
+
+    if (pport_id == 0) {
+      VLOG(1) << __FUNCTION__ << ": ignoring next hop " << nh;
+      continue;
+    }
+
+    nhs->push_back(nh);
+  }
+}
+
+int nl_l3::get_neighbours_of_route(
+    rtnl_route *route, std::deque<struct rtnl_neigh *> *neighs,
+    std::deque<nh_stub> *unresolved_nh) noexcept {
+
+  auto route_dst = rtnl_route_get_dst(route);
+  std::deque<struct rtnl_nexthop *> nhs;
+
+  assert(route);
+  assert(neighs);
+  assert(unresolved_nh);
+
+  get_nexthops_of_route(route, &nhs);
+
+  if (nhs.size() == 0)
+    return -ENETUNREACH;
+
+  for (auto nh : nhs) {
+    int ifindex = rtnl_route_nh_get_ifindex(nh);
+    rtnl_neigh *neigh = nullptr;
+    nl_addr *nh_addr = rtnl_route_nh_get_gateway(nh);
+
+    if (!nh_addr)
+      nh_addr = rtnl_route_nh_get_via(nh);
+
+    if (!nh_addr)
+      nh_addr = route_dst;
+
+    if (nh_addr) {
+      switch (nl_addr_get_family(nh_addr)) {
+      case AF_INET:
+      case AF_INET6:
+        VLOG(2) << __FUNCTION__ << ": ifindex=" << ifindex << " gw=" << nh_addr;
+        break;
+      default:
+        LOG(ERROR) << "gw " << nh_addr
+                   << " unsupported family=" << nl_addr_get_family(nh_addr);
+        nh_addr = nullptr;
+      }
+
+      VLOG(2) << __FUNCTION__ << ": get neigh of nh_addr=" << nh_addr;
+      neigh = nl->get_neighbour(ifindex, nh_addr);
+    }
+
+    if (neigh)
+      neighs->push_back(neigh);
+    else
+      unresolved_nh->push_back({nh_addr, ifindex});
+  }
+
+  return nhs.size();
 }
 
 bool nl_l3::is_link_local_address(const struct nl_addr *addr) {
