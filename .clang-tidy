@@ -1,5 +1,5 @@
 ---
-Checks:          '-*,modernize-use-nullptr,modernize-use-auto'
+Checks:          '-*,modernize-*'
 WarningsAsErrors: ''
 AnalyzeTemporaryDtors: false
 FormatStyle:     file

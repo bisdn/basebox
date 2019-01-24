@@ -9,6 +9,7 @@
 #include <thread>
 #include <tuple>
 #include <unordered_map>
+#include <utility>
 
 #include <netlink/cache.h>
 #include <netlink/route/link.h>
@@ -112,8 +113,8 @@ struct endpoint_tunnel_port {
 namespace std {
 
 template <> struct hash<basebox::pport_vlan> {
-  typedef basebox::pport_vlan argument_type;
-  typedef std::size_t result_type;
+  using argument_type = basebox::pport_vlan;
+  using result_type = std::size_t;
   result_type operator()(argument_type const &v) const noexcept {
     size_t seed = 0;
     hash_combine(seed, v.pport);
@@ -123,8 +124,8 @@ template <> struct hash<basebox::pport_vlan> {
 };
 
 template <> struct hash<basebox::tunnel_nh> {
-  typedef basebox::tunnel_nh argument_type;
-  typedef std::size_t result_type;
+  using argument_type = basebox::tunnel_nh;
+  using result_type = std::size_t;
   result_type operator()(argument_type const &v) const noexcept {
     size_t seed = 0;
     hash_combine(seed, v.smac);
@@ -135,8 +136,8 @@ template <> struct hash<basebox::tunnel_nh> {
 };
 
 template <> struct hash<basebox::endpoint_port> {
-  typedef basebox::endpoint_port argument_type;
-  typedef std::size_t result_type;
+  using argument_type = basebox::endpoint_port;
+  using result_type = std::size_t;
   result_type operator()(argument_type const &v) const noexcept {
     size_t seed = 0;
     hash_combine(seed, v.local_ipv4);
@@ -186,7 +187,7 @@ static struct access_tunnel_port get_access_tunnel_port(uint32_t pport,
 }
 
 nl_vxlan::nl_vxlan(std::shared_ptr<nl_l3> l3, cnetlink *nl)
-    : sw(nullptr), bridge(nullptr), l3(l3), nl(nl) {}
+    : sw(nullptr), bridge(nullptr), l3(std::move(l3)), nl(nl) {}
 
 int nl_vxlan::init() {
   nl_cache *c = nl->get_cache(cnetlink::NL_LINK_CACHE);

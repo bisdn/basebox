@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstring>
 #include <map>
+#include <utility>
 
 #include <glog/logging.h>
 #include <netlink/route/link.h>
@@ -24,7 +25,8 @@ namespace basebox {
 
 nl_bridge::nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
                      cnetlink *nl, std::shared_ptr<nl_vxlan> vxlan)
-    : bridge(nullptr), sw(sw), tap_man(tap_man), nl(nl), vxlan(vxlan),
+    : bridge(nullptr), sw(sw), tap_man(std::move(tap_man)), nl(nl),
+      vxlan(std::move(vxlan)),
       l2_cache(nl_cache_alloc(nl_cache_ops_lookup("route/neigh")),
                nl_cache_free) {
   memset(&empty_br_vlan, 0, sizeof(rtnl_link_bridge_vlan));
