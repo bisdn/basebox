@@ -269,7 +269,7 @@ void cnetlink::get_bridge_ports(int br_ifindex,
   nl_cache_foreach_filter(caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
                           [](struct nl_object *obj, void *arg) {
                             assert(arg);
-                            std::deque<rtnl_link *> *list =
+                            auto *list =
                                 static_cast<std::deque<rtnl_link *> *>(arg);
 
                             VLOG(3) << __FUNCTION__ << ": found bridge port "

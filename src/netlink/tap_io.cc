@@ -100,7 +100,7 @@ void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
 
   VLOG(4) << __FUNCTION__ << ": read on fd=" << fd << ", max_len=" << len;
 
-  packet *pkt = (packet *)std::malloc(len);
+  auto *pkt = (packet *)std::malloc(len);
 
   if (pkt == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": no mem left";

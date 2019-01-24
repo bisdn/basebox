@@ -91,8 +91,7 @@ int nl_l3::init() noexcept {
       [](struct nl_object *obj, void *arg) {
         VLOG(3) << __FUNCTION__ << " : found configured loopback " << obj;
 
-        std::list<struct rtnl_addr *> *add_list =
-            static_cast<std::list<struct rtnl_addr *> *>(arg);
+        auto *add_list = static_cast<std::list<struct rtnl_addr *> *>(arg);
 
         add_list->emplace_back(ADDR_CAST(obj));
       },
