@@ -391,7 +391,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  if (rtnl_link_get_flags(link) & IFF_LOOPBACK){
+  if (rtnl_link_get_flags(link) & IFF_LOOPBACK) {
     return 0;
   }
 
