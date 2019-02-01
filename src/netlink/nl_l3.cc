@@ -385,6 +385,16 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
     }
   }
 
+  struct rtnl_link *link = rtnl_addr_get_link(a);
+  if (link == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": no link for addr a=" << a;
+    return -EINVAL;
+  }
+
+  if (rtnl_link_get_flags(link) & IFF_LOOPBACK) {
+    return 0;
+  }
+
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to remove l3 unicast host(local) rv=" << rv;
@@ -396,12 +406,6 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
 
   if (port_id == 0) {
     VLOG(1) << __FUNCTION__ << ": invalid port_id 0";
-    return -EINVAL;
-  }
-
-  struct rtnl_link *link = rtnl_addr_get_link(a);
-  if (link == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << ": no link for addr a=" << a;
     return -EINVAL;
   }
 

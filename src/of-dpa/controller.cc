@@ -26,8 +26,12 @@ void controller::handle_conn_established(rofl::crofdpt &dpt,
 }
 
 void controller::handle_dpt_open(rofl::crofdpt &dpt) {
-
   std::lock_guard<std::mutex> lock(conn_mutex);
+
+  // Avoid reopening the connection
+  if (dptid != rofl::cdptid(0))
+    return;
+
   dptid = dpt.get_dptid();
 
   LOG(INFO) << __FUNCTION__ << ": opening connection to dptid=" << std::showbase
@@ -45,23 +49,7 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
   dpt.set_conn(rofl::cauxid(0)).set_txqueue_max_size(128 * 1024);
 
   rofl::csockaddr raddr = dpt.set_conn(rofl::cauxid(0)).get_raddr();
-  std::string buf;
-
-  switch (raddr.get_family()) {
-  case AF_INET: {
-    rofl::caddress_in4 addr;
-    addr.set_addr_nbo(raddr.ca_s4addr->sin_addr.s_addr);
-    buf = addr.str();
-  } break;
-  case AF_INET6: {
-    rofl::caddress_in6 addr;
-    addr.unpack(raddr.ca_s6addr->sin6_addr.s6_addr, 16);
-    buf = addr.str();
-  } break;
-  default:
-    LOG(FATAL) << __FUNCTION__ << ": invalid socket address " << raddr;
-  }
-
+  std::string buf = raddr.str();
   std::string remote = buf + ":" + std::to_string(ofdpa_grpc_port);
 
   VLOG(1) << __FUNCTION__ << ": remote=" << remote;
