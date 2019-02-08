@@ -35,6 +35,8 @@ need the following dependencies installed:
 #### Build system
 
 * [meson](https://gitub.com/mesonbuild/meson/)
+* [clang-format](https://clang.llvm.org/docs/ClangFormat.html) for code formatting
+* [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) for linting (optionally)
 
 #### Libraries
 

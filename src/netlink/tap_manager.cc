@@ -4,6 +4,7 @@
 
 #include <glog/logging.h>
 #include <netlink/route/link.h>
+#include <utility>
 
 #include "cnetlink.h"
 #include "ctapdev.h"
@@ -13,7 +14,7 @@
 namespace basebox {
 
 tap_manager::tap_manager(std::shared_ptr<cnetlink> nl)
-    : io(new tap_io()), nl(nl) {}
+    : io(new tap_io()), nl(std::move(nl)) {}
 
 tap_manager::~tap_manager() {
   std::map<uint32_t, ctapdev *> ddevs;

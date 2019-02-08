@@ -6,6 +6,7 @@
 #include <memory>
 #include <tuple>
 #include <unordered_map>
+#include <utility>
 
 #include <glog/logging.h>
 #include <netlink/route/addr.h>
@@ -25,8 +26,8 @@
 namespace std {
 
 template <> struct hash<rofl::caddress_ll> {
-  typedef rofl::caddress_ll argument_type;
-  typedef std::size_t result_type;
+  using argument_type = rofl::caddress_ll;
+  using result_type = std::size_t;
   result_type operator()(argument_type const &lla) const noexcept {
     return std::hash<uint64_t>{}(lla.get_mac());
   }
@@ -52,7 +53,7 @@ std::unordered_multimap<
     l3_interface_mapping;
 
 nl_l3::nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl)
-    : sw(nullptr), vlan(vlan), nl(nl) {}
+    : sw(nullptr), vlan(std::move(vlan)), nl(nl) {}
 
 rofl::caddress_ll libnl_lladdr_2_rofl(const struct nl_addr *lladdr) {
   // XXX check for family
@@ -91,8 +92,7 @@ int nl_l3::init() noexcept {
       [](struct nl_object *obj, void *arg) {
         VLOG(3) << __FUNCTION__ << " : found configured loopback " << obj;
 
-        std::list<struct rtnl_addr *> *add_list =
-            static_cast<std::list<struct rtnl_addr *> *>(arg);
+        auto *add_list = static_cast<std::list<struct rtnl_addr *> *>(arg);
 
         add_list->emplace_back(ADDR_CAST(obj));
       },
@@ -830,12 +830,12 @@ void nl_l3::register_switch_interface(switch_interface *sw) { this->sw = sw; }
 
 void nl_l3::notify_on_net_reachable(net_reachable *f,
                                     struct net_params p) noexcept {
-  net_callbacks.push_back(std::make_pair(f, p));
+  net_callbacks.emplace_back(f, p);
 }
 
 void nl_l3::notify_on_nh_reachable(nh_reachable *f,
                                    struct nh_params p) noexcept {
-  nh_callbacks.push_back(std::make_pair(f, p));
+  nh_callbacks.emplace_back(f, p);
 }
 
 int nl_l3::del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,

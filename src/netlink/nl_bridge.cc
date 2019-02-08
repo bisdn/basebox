@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstring>
 #include <map>
+#include <utility>
 
 #include <glog/logging.h>
 #include <netlink/route/link.h>
@@ -24,7 +25,8 @@ namespace basebox {
 
 nl_bridge::nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
                      cnetlink *nl, std::shared_ptr<nl_vxlan> vxlan)
-    : bridge(nullptr), sw(sw), tap_man(tap_man), nl(nl), vxlan(vxlan),
+    : bridge(nullptr), sw(sw), tap_man(std::move(tap_man)), nl(nl),
+      vxlan(std::move(vxlan)),
       l2_cache(nl_cache_alloc(nl_cache_ops_lookup("route/neigh")),
                nl_cache_free) {
   memset(&empty_br_vlan, 0, sizeof(rtnl_link_bridge_vlan));
@@ -381,14 +383,14 @@ std::deque<rtnl_neigh *> nl_bridge::get_fdb_entries_of_port(rtnl_link *br_port,
   rtnl_neigh_set_family(filter.get(), AF_BRIDGE);
 
   std::deque<rtnl_neigh *> neighs;
-  nl_cache_foreach_filter(
-      nl->get_cache(cnetlink::NL_NEIGH_CACHE), OBJ_CAST(filter.get()),
-      [](struct nl_object *o, void *arg) {
-        std::deque<rtnl_neigh *> *neighs = (std::deque<rtnl_neigh *> *)arg;
-        neighs->push_back(NEIGH_CAST(o));
-        VLOG(3) << "needs to be updated " << o;
-      },
-      &neighs);
+  nl_cache_foreach_filter(nl->get_cache(cnetlink::NL_NEIGH_CACHE),
+                          OBJ_CAST(filter.get()),
+                          [](struct nl_object *o, void *arg) {
+                            auto *neighs = (std::deque<rtnl_neigh *> *)arg;
+                            neighs->push_back(NEIGH_CAST(o));
+                            VLOG(3) << "needs to be updated " << o;
+                          },
+                          &neighs);
 
   return neighs;
 }
@@ -547,7 +549,7 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   }
 
   // parse ether frame and check for vid
-  vlan_hdr *hdr = reinterpret_cast<basebox::vlan_hdr *>(p->data);
+  auto *hdr = reinterpret_cast<basebox::vlan_hdr *>(p->data);
   uint16_t vid = 0;
 
   // XXX TODO maybe move this to the utils to have a std lib for parsing the

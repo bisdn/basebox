@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <glog/logging.h>
+#include <utility>
 #include <vector>
 
 #include "basebox_grpc_statistics.h"
@@ -18,7 +19,7 @@ using openconfig_interfaces::Interfaces_Interface;
 
 NetworkStats::NetworkStats(std::shared_ptr<switch_interface> swi,
                            std::shared_ptr<tap_manager> tap_man)
-    : swi(swi), tap_man(tap_man) {}
+    : swi(std::move(swi)), tap_man(std::move(tap_man)) {}
 
 ::grpc::Status NetworkStats::GetStatistics(
     __attribute__((unused))::grpc::ServerContext *context,

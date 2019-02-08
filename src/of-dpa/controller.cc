@@ -220,7 +220,7 @@ void controller::handle_port_status(rofl::crofdpt &dpt,
   std::deque<nbi::port_notification_data> ntfys;
   uint32_t port_no = msg.get_port().get_port_no();
 
-  enum nbi::port_status status = (nbi::port_status)0;
+  auto status = (nbi::port_status)0;
   if (msg.get_port().get_config() & rofl::openflow13::OFPPC_PORT_DOWN) {
     status = (nbi::port_status)(status | nbi::PORT_STATUS_ADMIN_DOWN);
   }
@@ -284,7 +284,7 @@ void controller::handle_port_desc_stats_reply(
     notifications.emplace_back(nbi::port_notification_data{
         nbi::PORT_EVENT_ADD, port.get_port_no(), port.get_name()});
 
-    enum nbi::port_status status = (nbi::port_status)0;
+    auto status = (nbi::port_status)0;
     if (port.get_config() & rofl::openflow13::OFPPC_PORT_DOWN) {
       status = (nbi::port_status)(status | nbi::PORT_STATUS_ADMIN_DOWN);
     }
@@ -442,7 +442,7 @@ int controller::enqueue(uint32_t port_id, packet *pkt) noexcept {
   int rv = 0;
 
   assert(pkt && "invalid enque");
-  struct ethhdr *eth = (struct ethhdr *)pkt->data;
+  auto *eth = (struct ethhdr *)pkt->data;
 
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);

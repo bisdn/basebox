@@ -97,9 +97,9 @@ void cnetlink::init_caches() {
   }
 
   nl_socket_modify_cb(sock_mon, NL_CB_OVERRUN, NL_CB_CUSTOM,
-                      nl_overrun_handler_verbose, NULL);
+                      nl_overrun_handler_verbose, nullptr);
   nl_socket_modify_cb(sock_mon, NL_CB_INVALID, NL_CB_CUSTOM,
-                      nl_invalid_handler_verbose, NULL);
+                      nl_invalid_handler_verbose, nullptr);
 
   int rc = nl_cache_mngr_alloc(sock_mon, NETLINK_ROUTE, NL_AUTO_PROVIDE, &mngr);
 
@@ -269,7 +269,7 @@ void cnetlink::get_bridge_ports(int br_ifindex,
   nl_cache_foreach_filter(caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
                           [](struct nl_object *obj, void *arg) {
                             assert(arg);
-                            std::deque<rtnl_link *> *list =
+                            auto *list =
                                 static_cast<std::deque<rtnl_link *> *>(arg);
 
                             VLOG(3) << __FUNCTION__ << ": found bridge port "
