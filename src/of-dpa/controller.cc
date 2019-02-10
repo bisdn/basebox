@@ -967,21 +967,30 @@ int controller::l3_egress_remove(uint32_t l3_interface_id) noexcept {
 }
 
 int controller::l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
-                                    uint32_t l3_interface_id) noexcept {
+                                    uint32_t l3_interface_id, bool is_ecmp,
+                                    bool update_route) noexcept {
   int rv = 0;
 
   if (l3_interface_id > 0x0fffffff)
     return -EINVAL;
 
+  if (is_ecmp && l3_interface_id == 0)
+    return -EINVAL;
+
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
-    if (l3_interface_id)
-      l3_interface_id = fm_driver.group_id_l3_unicast(l3_interface_id);
+    if (l3_interface_id) {
+      if (is_ecmp)
+        l3_interface_id = fm_driver.group_id_l3_ecmp(l3_interface_id);
+      else
+        l3_interface_id = fm_driver.group_id_l3_unicast(l3_interface_id);
+    }
 
     dpt.send_flow_mod_message(
-        rofl::cauxid(0), fm_driver.enable_ipv4_unicast_host(
-                             dpt.get_version(), ipv4_dst, l3_interface_id));
+        rofl::cauxid(0),
+        fm_driver.enable_ipv4_unicast_host(dpt.get_version(), ipv4_dst,
+                                           l3_interface_id, update_route));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound : dptid : " << dptid;
     rv = -EINVAL;
@@ -997,21 +1006,30 @@ int controller::l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
 }
 
 int controller::l3_unicast_host_add(const rofl::caddress_in6 &ipv6_dst,
-                                    uint32_t l3_interface) noexcept {
+                                    uint32_t l3_interface_id, bool is_ecmp,
+                                    bool update_route) noexcept {
   int rv = 0;
 
-  if (l3_interface > 0x0fffffff)
+  if (l3_interface_id > 0x0fffffff)
+    return -EINVAL;
+
+  if (is_ecmp && l3_interface_id == 0)
     return -EINVAL;
 
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
-    if (l3_interface)
-      l3_interface = fm_driver.group_id_l3_unicast(l3_interface);
+    if (l3_interface_id) {
+      if (is_ecmp)
+        l3_interface_id = fm_driver.group_id_l3_ecmp(l3_interface_id);
+      else
+        l3_interface_id = fm_driver.group_id_l3_unicast(l3_interface_id);
+    }
 
-    dpt.send_flow_mod_message(rofl::cauxid(0),
-                              fm_driver.enable_ipv6_unicast_host(
-                                  dpt.get_version(), ipv6_dst, l3_interface));
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_ipv6_unicast_host(dpt.get_version(), ipv6_dst,
+                                           l3_interface_id, update_route));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound : dptid : " << dptid;
     rv = -EINVAL;
@@ -1078,17 +1096,25 @@ int controller::l3_unicast_host_remove(
 
 int controller::l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
                                      const rofl::caddress_in4 &mask,
-                                     uint32_t l3_interface_id) noexcept {
+                                     uint32_t l3_interface_id, bool is_ecmp,
+                                     bool update_route) noexcept {
   int rv = 0;
 
   if (l3_interface_id > 0x0fffffff)
     return -EINVAL;
 
+  if (is_ecmp && l3_interface_id == 0)
+    return -EINVAL;
+
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
-    if (l3_interface_id)
-      l3_interface_id = fm_driver.group_id_l3_unicast(l3_interface_id);
+    if (l3_interface_id) {
+      if (is_ecmp)
+        l3_interface_id = fm_driver.group_id_l3_ecmp(l3_interface_id);
+      else
+        l3_interface_id = fm_driver.group_id_l3_unicast(l3_interface_id);
+    }
 
     dpt.send_flow_mod_message(
         rofl::cauxid(0),
@@ -1110,22 +1136,92 @@ int controller::l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
 
 int controller::l3_unicast_route_add(const rofl::caddress_in6 &ipv6_dst,
                                      const rofl::caddress_in6 &mask,
-                                     uint32_t l3_interface_id) noexcept {
+                                     uint32_t l3_interface_id, bool is_ecmp,
+                                     bool update_route) noexcept {
   int rv = 0;
 
   if (l3_interface_id > 0x0fffffff)
     return -EINVAL;
 
+  if (is_ecmp && l3_interface_id == 0)
+    return -EINVAL;
+
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
-    if (l3_interface_id)
-      l3_interface_id = fm_driver.group_id_l3_unicast(l3_interface_id);
+    if (l3_interface_id) {
+      if (is_ecmp)
+        l3_interface_id = fm_driver.group_id_l3_ecmp(l3_interface_id);
+      else
+        l3_interface_id = fm_driver.group_id_l3_unicast(l3_interface_id);
+    }
 
     dpt.send_flow_mod_message(
         rofl::cauxid(0),
         fm_driver.enable_ipv6_unicast_lpm(dpt.get_version(), ipv6_dst, mask,
                                           l3_interface_id));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  return rv;
+}
+
+int controller::l3_ecmp_add(uint32_t l3_ecmp_id,
+                            const std::set<uint32_t> &l3_interfaces) noexcept {
+  int rv = 0;
+
+  if (l3_ecmp_id > 0x0fffffff)
+    return -EINVAL;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    std::set<uint32_t> l3_interface_groups;
+    std::transform(
+        l3_interfaces.begin(), l3_interfaces.end(),
+        std::inserter(l3_interface_groups, l3_interface_groups.end()),
+        [&](uint32_t id) { return fm_driver.group_id_l3_unicast(id); });
+
+    l3_ecmp_id = fm_driver.group_id_l3_ecmp(l3_ecmp_id);
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_group_l3_ecmp(dpt.get_version(), l3_ecmp_id,
+                                       l3_interface_groups));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  return rv;
+}
+
+int controller::l3_ecmp_remove(uint32_t l3_ecmp_id) noexcept {
+  int rv = 0;
+
+  if (l3_ecmp_id > 0x0fffffff)
+    return -EINVAL;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    l3_ecmp_id = fm_driver.group_id_l3_ecmp(l3_ecmp_id);
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_group_l3_ecmp(dpt.get_version(), l3_ecmp_id));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;

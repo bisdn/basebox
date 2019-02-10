@@ -814,10 +814,9 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
     switch (family = rtnl_route_get_family(ROUTE_CAST(obj.get_new_obj()))) {
     case AF_INET:
-      VLOG(2) << __FUNCTION__ << ": changed IPv4 route (not supported)";
-      break;
     case AF_INET6:
-      VLOG(2) << __FUNCTION__ << ": changed IPv6 route (not supported)";
+      l3->update_l3_route(ROUTE_CAST(obj.get_old_obj()),
+                          ROUTE_CAST(obj.get_new_obj()));
       break;
     default:
       LOG(WARNING) << __FUNCTION__ << ": family not supported: " << family;

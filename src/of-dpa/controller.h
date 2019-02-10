@@ -179,26 +179,34 @@ public:
   int l3_egress_remove(uint32_t l3_interface) noexcept override;
 
   int l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
-                          uint32_t l3_interface) noexcept override;
-  int l3_unicast_host_add(const rofl::caddress_in6 &ipv6_dst,
-                          uint32_t l3_interface) noexcept override;
-
+                          uint32_t l3_interface, bool is_ecmp,
+                          bool update_route) noexcept override;
   int l3_unicast_host_remove(
       const rofl::caddress_in4 &ipv4_dst) noexcept override;
+
+  int l3_unicast_host_add(const rofl::caddress_in6 &ipv6_dst,
+                          uint32_t l3_interface, bool is_ecmp,
+                          bool update_route) noexcept override;
   int l3_unicast_host_remove(
       const rofl::caddress_in6 &ipv6_dst) noexcept override;
 
   int l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
                            const rofl::caddress_in4 &mask,
-                           uint32_t l3_interface) noexcept override;
-  int l3_unicast_route_add(const rofl::caddress_in6 &ipv6_dst,
-                           const rofl::caddress_in6 &mask,
-                           uint32_t l3_interface) noexcept override;
-
+                           uint32_t l3_interface, bool is_ecmp,
+                           bool update_route) noexcept override;
   int l3_unicast_route_remove(const rofl::caddress_in4 &ipv4_dst,
                               const rofl::caddress_in4 &mask) noexcept override;
+
+  int l3_unicast_route_add(const rofl::caddress_in6 &ipv6_dst,
+                           const rofl::caddress_in6 &mask,
+                           uint32_t l3_interface, bool is_ecmp,
+                           bool update_route) noexcept override;
   int l3_unicast_route_remove(const rofl::caddress_in6 &ipv6_dst,
                               const rofl::caddress_in6 &mask) noexcept override;
+
+  int l3_ecmp_add(uint32_t l3_ecmp_id,
+                  const std::set<uint32_t> &l3_interfaces) noexcept override;
+  int l3_ecmp_remove(uint32_t l3_ecmp_id) noexcept override;
 
   int ingress_port_vlan_accept_all(uint32_t port) noexcept override;
   int ingress_port_vlan_drop_accept_all(uint32_t port) noexcept override;
