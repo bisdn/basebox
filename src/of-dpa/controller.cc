@@ -31,10 +31,12 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
   // Avoid reopening the connection
 
   dptid = dpt.get_dptid();
+  auto dpid = dpt.get_dpid();
 
   LOG(INFO) << __FUNCTION__ << ": opening connection to dptid=" << std::showbase
-            << std::hex << dptid << std::dec
-            << ", n_tables=" << static_cast<unsigned>(dpt.get_n_tables());
+            << std::hex << dptid << ", dpid=" << dpid << std::dec
+            << ", n_tables=" << static_cast<unsigned>(dpt.get_n_tables())
+            << ", dpt=" << &dpt;
 
   if (rofl::openflow13::OFP_VERSION != dpt.get_version()) {
     LOG(ERROR) << __FUNCTION__
@@ -61,7 +63,8 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
     buf = addr.str();
   } break;
   default:
-    LOG(FATAL) << __FUNCTION__ << ": invalid socket address " << raddr;
+    LOG(ERROR) << __FUNCTION__ << ": invalid socket address " << raddr;
+    return;
   }
 
   std::string remote = buf + ":" + std::to_string(ofdpa_grpc_port);
