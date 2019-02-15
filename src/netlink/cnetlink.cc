@@ -857,7 +857,8 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     try {
       // check for new bridge slaves
       if (rtnl_link_get_master(link) == 0) {
-        LOG(ERROR) << __FUNCTION__ << ": unknown link " << OBJ_CAST(link);
+        LOG(ERROR) << __FUNCTION__ << ": bridge slave without master "
+                   << OBJ_CAST(link);
         return;
       }
 
@@ -865,12 +866,14 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       // use only the first bridge an interface is attached to
       // XXX TODO more bridges!
       if (bridge == nullptr) {
-        LOG(INFO) << __FUNCTION__ << ": using bridge "
-                  << rtnl_link_get_master(link);
-        bridge = new nl_bridge(this->swi, tap_man, this, vxlan);
         std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> br_link(
             rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_master(link)),
             rtnl_link_put);
+
+        LOG(INFO) << __FUNCTION__ << ": using bridge "
+                  << OBJ_CAST(br_link.get());
+
+        bridge = new nl_bridge(this->swi, tap_man, this, vxlan);
         bridge->set_bridge_interface(br_link.get());
         vxlan->register_bridge(bridge);
       }
@@ -886,8 +889,11 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   case LT_VXLAN: {
     int rv = vxlan->create_vni(link);
 
-    if (rv < 0)
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to create vni for link "
+                 << OBJ_CAST(link);
       break;
+    }
 
     vxlan->create_endpoint(link);
   } break;
@@ -907,7 +913,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   } break;
   default:
     LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
-                 << " link:" << link;
+                 << " link:" << OBJ_CAST(link);
     break;
   } // switch link type
 }
@@ -961,10 +967,13 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   case LT_BOND:
   case LT_BRIDGE:
   case LT_UNSUPPORTED:
-    VLOG(1) << __FUNCTION__ << ": ignoring update of lt=" << lt_old;
+    VLOG(1) << __FUNCTION__ << ": ignoring update of old_lt=" << lt_old
+            << " old link: " << OBJ_CAST(old_link)
+            << ", new link: " << OBJ_CAST(new_link);
     break;
   default:
-    LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt_old;
+    LOG(ERROR) << __FUNCTION__ << ": link type not handled lt=" << lt_old
+               << ", link: " << OBJ_CAST(old_link);
     break;
   }
 }
