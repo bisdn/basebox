@@ -214,7 +214,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     }
 
   } else {
-    pport_no = nl->get_port_id(rtnl_link_get_ifindex(_link));
+    pport_no = nl->get_port_id(_link);
     if (pport_no == 0) {
       LOG(ERROR) << __FUNCTION__
                  << ": invalid pport_no=0 of link: " << OBJ_CAST(_link);

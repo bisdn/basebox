@@ -35,6 +35,7 @@ uint32_t nl_bond::get_lag_id(rtnl_link *bond) {
     return 0;
   }
 
+  VLOG(3) << __FUNCTION__ << ": found id=" << rv_lm->second;
   return rv_lm->second;
 }
 
@@ -106,6 +107,18 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   }
 
   swi->lag_add_member(it->second, port_id);
+
+  if (rtnl_link_get_master(bond)) {
+    // check bridge attachement
+    auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
+    if (br_link) {
+      VLOG(2) << __FUNCTION__
+              << ": bond was already bridge slave: " << OBJ_CAST(br_link);
+      nl->link_created(br_link);
+    }
+  }
+
+  // XXX FIXME check for vlan interfaces
 
   return rv;
 }
