@@ -535,7 +535,7 @@ int controller::lag_create(uint32_t *lag_id) noexcept {
   }
 
   assert(lag_id);
-  *lag_id = _lag_id;
+  *lag_id = nbi::combine_port_type(_lag_id, nbi::port_type_lag);
 
   _lag_id++;
   return 0;

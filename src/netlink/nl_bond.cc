@@ -103,9 +103,10 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   auto lm_rv = lag_members.emplace(it->second, port_id);
   if (!lm_rv.second) {
     LOG(ERROR) << __FUNCTION__ << ": cannot add multiple ports to a lag";
+    return -EINVAL;
   }
 
-  swi->lag_add_member(it->second, port_id);
+  rv = swi->lag_add_member(it->second, port_id);
 
   return rv;
 }
@@ -130,7 +131,7 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
     return -EINVAL;
   }
 
-  swi->lag_remove_member(it->second, port_id);
+  rv = swi->lag_remove_member(it->second, port_id);
   lag_members.erase(lm_rv);
 
   return rv;
