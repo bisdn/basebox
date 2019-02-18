@@ -196,6 +196,10 @@ public:
     SWITCH_STATE_FAILED,
   };
 
+  static uint32_t combine_port_type(uint16_t port_num, enum port_type type) {
+    return (uint32_t)port_num | type << 16;
+  }
+
   static enum port_type get_port_type(uint32_t port_id) {
     return static_cast<enum port_type>(port_id >> 16);
   }
