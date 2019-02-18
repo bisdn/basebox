@@ -65,9 +65,6 @@ private:
   int add_l3_unicast_route(rtnl_route *r);
   int del_l3_unicast_route(rtnl_route *r);
 
-  int add_l3_unicast_route_v6(rtnl_route *r);
-  int del_l3_unicast_route_v6(rtnl_route *r);
-
   int add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id);
   int del_l3_neigh_egress(struct rtnl_neigh *n);
 
