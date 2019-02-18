@@ -341,6 +341,7 @@ int cnetlink::get_port_id(rtnl_link *l) const {
 
   if (rtnl_link_is_vlan(l)) {
     ifindex = rtnl_link_get_link(l);
+    // XXX FIXME vlan interface on bond not handled
   } else if (rtnl_link_get_type(l) &&
              (0 == strcmp(rtnl_link_get_type(l), "bond") ||
               0 == strcmp(rtnl_link_get_type(l), "team"))) {

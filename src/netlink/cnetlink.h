@@ -26,6 +26,8 @@ class nl_vxlan;
 class tap_manager;
 
 class cnetlink final : public rofl::cthread_env {
+  friend class nl_bond;
+
 public:
   enum nl_cache_t {
     NL_ADDR_CACHE,
