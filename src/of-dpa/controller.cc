@@ -531,7 +531,7 @@ int controller::lag_create(uint32_t *lag_id) noexcept {
 
   if (!_rv.second) {
     LOG(ERROR) << __FUNCTION__ << ": maximum number of lags were created.";
-    return -EEXIST;
+    return -EINVAL;
   }
 
   assert(lag_id);
@@ -545,7 +545,7 @@ int controller::lag_remove(uint32_t lag_id) noexcept {
   // currently we don't have a real lag implementation
   // otherwise we should release the resoucres on the switch
 
-  auto rv = lag.erase(lag_id);
+  auto rv = lag.erase(nbi::get_port_num(lag_id));
   if (rv != 1) {
     LOG(WARNING) << __FUNCTION__ << ": rv=" << rv
                  << " entries in lag map were removed";
