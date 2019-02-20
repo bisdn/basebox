@@ -435,7 +435,7 @@ void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
 
   if (fd == nl_cache_mngr_get_fd(mngr)) {
     int rv = nl_cache_mngr_data_ready(mngr);
-    VLOG(1) << __FUNCTION__ << ": #processed=" << rv;
+    VLOG(3) << __FUNCTION__ << ": #processed=" << rv;
     // notify update
     if (state != NL_STATE_STOPPED) {
       this->thread.wakeup(this);
@@ -479,7 +479,7 @@ void cnetlink::handle_timeout(rofl::cthread &thread, uint32_t timer_id) {
 void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
                         struct nl_object *new_obj, uint64_t diff, int action,
                         void *data) {
-  VLOG(1) << ": cache=" << cache << ", diff=" << diff << " action=" << action
+  VLOG(3) << ": cache=" << cache << ", diff=" << diff << " action=" << action
           << " old_obj=" << static_cast<void *>(old_obj)
           << " new_obj=" << static_cast<void *>(new_obj);
 
@@ -858,7 +858,8 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     try {
       // check for new bridge slaves
       if (rtnl_link_get_master(link) == 0) {
-        LOG(ERROR) << __FUNCTION__ << ": unknown link " << OBJ_CAST(link);
+        LOG(ERROR) << __FUNCTION__ << ": bridge slave without master "
+                   << OBJ_CAST(link);
         return;
       }
 
@@ -866,12 +867,14 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       // use only the first bridge an interface is attached to
       // XXX TODO more bridges!
       if (bridge == nullptr) {
-        LOG(INFO) << __FUNCTION__ << ": using bridge "
-                  << rtnl_link_get_master(link);
-        bridge = new nl_bridge(this->swi, tap_man, this, vxlan);
         std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> br_link(
             rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_master(link)),
             rtnl_link_put);
+
+        LOG(INFO) << __FUNCTION__ << ": using bridge "
+                  << OBJ_CAST(br_link.get());
+
+        bridge = new nl_bridge(this->swi, tap_man, this, vxlan);
         bridge->set_bridge_interface(br_link.get());
         vxlan->register_bridge(bridge);
       }
@@ -887,8 +890,11 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   case LT_VXLAN: {
     int rv = vxlan->create_vni(link);
 
-    if (rv < 0)
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to create vni for link "
+                 << OBJ_CAST(link);
       break;
+    }
 
     vxlan->create_endpoint(link);
   } break;
@@ -908,7 +914,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   } break;
   default:
     LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
-                 << " link:" << link;
+                 << " link:" << OBJ_CAST(link);
     break;
   } // switch link type
 }
@@ -952,7 +958,8 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   case LT_TUN:
     if (lt_new == LT_BOND_SLAVE) {
       // XXX link enslaved
-      LOG(INFO) << __FUNCTION__ << ": link enslaved";
+      LOG(INFO) << __FUNCTION__ << ": link enslaved "
+                << rtnl_link_get_name(new_link);
       rtnl_link *_bond = get_link(rtnl_link_get_master(new_link), AF_UNSPEC);
       bond->add_lag_member(_bond, new_link);
       break;
@@ -962,10 +969,14 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   case LT_BOND:
   case LT_BRIDGE:
   case LT_UNSUPPORTED:
-    VLOG(1) << __FUNCTION__ << ": ignoring update of lt=" << lt_old;
+    VLOG(2) << __FUNCTION__
+            << ": ignoring update (not supported) of old_lt=" << lt_old
+            << " old link: " << OBJ_CAST(old_link)
+            << ", new link: " << OBJ_CAST(new_link);
     break;
   default:
-    LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt_old;
+    LOG(ERROR) << __FUNCTION__ << ": link type not handled lt=" << lt_old
+               << ", link: " << OBJ_CAST(old_link);
     break;
   }
 }
