@@ -21,8 +21,7 @@ uint32_t nl_bond::get_lag_id(rtnl_link *bond) {
 
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
   if (it == ifi2lag.end()) {
-    LOG(ERROR) << __FUNCTION__ << ": lag_id not found of lag "
-               << OBJ_CAST(bond);
+    VLOG(1) << __FUNCTION__ << ": lag_id not found of lag " << OBJ_CAST(bond);
     return 0;
   }
 
@@ -51,14 +50,19 @@ int nl_bond::add_lag(rtnl_link *bond) {
     return rv;
   }
 
+  rv = lag_id;
+
   auto rv_emp =
       ifi2lag.emplace(std::make_pair(rtnl_link_get_ifindex(bond), lag_id));
 
   if (!rv_emp.second) {
-    LOG(WARNING) << __FUNCTION__
-                 << ": lag exists with lag_id=" << rv_emp.first->second
-                 << " for bond " << OBJ_CAST(bond);
-    return -EEXIST;
+    VLOG(1) << __FUNCTION__
+            << ": lag exists with lag_id=" << rv_emp.first->second
+            << " for bond " << OBJ_CAST(bond);
+    rv = rv_emp.first->second;
+
+    if (lag_id != rv_emp.first->second)
+      swi->lag_remove(lag_id);
   }
 
   return rv;
@@ -89,10 +93,19 @@ int nl_bond::remove_lag(rtnl_link *bond) {
 
 int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   int rv = 0;
+  uint32_t lag_id;
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
   if (it == ifi2lag.end()) {
-    LOG(ERROR) << __FUNCTION__ << ": no lag_id found for " << OBJ_CAST(bond);
-    return -EINVAL;
+    VLOG(1) << __FUNCTION__ << ": no lag_id found creating new for "
+            << OBJ_CAST(bond);
+
+    rv = add_lag(bond);
+    if (rv < 0)
+      return rv;
+
+    lag_id = rv;
+  } else {
+    lag_id = it->second;
   }
 
   uint32_t port_id = nl->get_port_id(link);
@@ -101,13 +114,13 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
     return -EINVAL;
   }
 
-  auto lm_rv = lag_members.emplace(it->second, port_id);
+  auto lm_rv = lag_members.emplace(lag_id, port_id);
   if (!lm_rv.second) {
     LOG(ERROR) << __FUNCTION__ << ": cannot add multiple ports to a lag";
     return -EINVAL;
   }
 
-  rv = swi->lag_add_member(it->second, port_id);
+  rv = swi->lag_add_member(lag_id, port_id);
 
   if (rtnl_link_get_master(bond)) {
     // check bridge attachement

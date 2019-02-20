@@ -24,8 +24,20 @@ public:
 
   void register_switch_interface(switch_interface *swi) { this->swi = swi; }
 
+  /**
+   * returns the id of the lag
+   *
+   * @returns id > 0 if found, 0 if not found
+   */
   uint32_t get_lag_id(rtnl_link *bond);
+
+  /**
+   * create a new lag
+   *
+   * @returns <0 on error, lag_id on success
+   */
   int add_lag(rtnl_link *bond);
+
   int remove_lag(rtnl_link *bond);
   int add_lag_member(rtnl_link *bond, rtnl_link *link);
   int remove_lag_member(rtnl_link *bond, rtnl_link *link);
