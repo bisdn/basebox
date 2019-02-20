@@ -41,10 +41,8 @@ public:
   cnetlink();
   ~cnetlink() override;
 
-  /**
-   * rtnl_link_put has to be called
-   */
-  struct rtnl_link *get_link_by_ifindex(int ifindex) const;
+  std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)>
+  get_link_by_ifindex(int ifindex) const;
   struct rtnl_link *get_link(int ifindex, int family) const;
   void get_bridge_ports(int br_ifindex,
                         std::deque<rtnl_link *> *link_list) const noexcept;
@@ -55,6 +53,7 @@ public:
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
   bool is_bridge_interface(rtnl_link *l) const;
+  bool is_bridge_interface(int ifindex) const;
   bool is_bridge_configured(rtnl_link *l);
   int get_port_id(rtnl_link *l) const;
   int get_port_id(int ifindex) const;
@@ -81,6 +80,9 @@ public:
 
   void fdb_timeout(uint32_t port_id, uint16_t vid,
                    const rofl::caddress_ll &mac);
+
+  std::deque<rtnl_neigh *> search_fdb(uint16_t vid = 0,
+                                      nl_addr *lladdr = nullptr);
 
 private:
   // non copyable

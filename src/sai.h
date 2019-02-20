@@ -79,32 +79,36 @@ public:
 
   virtual int l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
                                   uint32_t l3_interface, bool is_ecmp,
-                                  bool update_route) noexcept = 0;
-  virtual int
-  l3_unicast_host_remove(const rofl::caddress_in4 &ipv4_dst) noexcept = 0;
+                                  bool update_route,
+                                  uint16_t vrf_id = 0) noexcept = 0;
+  virtual int l3_unicast_host_remove(const rofl::caddress_in4 &ipv4_dst,
+                                     uint16_t vrf_id = 0) noexcept = 0;
 
   virtual int l3_unicast_host_add(const rofl::caddress_in6 &ipv6_dst,
                                   uint32_t l3_interface, bool is_ecmp,
-                                  bool update_route) noexcept = 0;
-  virtual int
-  l3_unicast_host_remove(const rofl::caddress_in6 &ipv6_dst) noexcept = 0;
+                                  bool update_route,
+                                  uint16_t vrf_id = 0) noexcept = 0;
+  virtual int l3_unicast_host_remove(const rofl::caddress_in6 &ipv6_dst,
+                                     uint16_t vrf_id = 0) noexcept = 0;
 
   virtual int l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
                                    const rofl::caddress_in4 &mask,
                                    uint32_t l3_interface, bool is_ecmp,
-                                   bool update_route) noexcept = 0;
+                                   bool update_route,
+                                   uint16_t vrf_id = 0) noexcept = 0;
 
-  virtual int
-  l3_unicast_route_remove(const rofl::caddress_in4 &ipv4_dst,
-                          const rofl::caddress_in4 &mask) noexcept = 0;
+  virtual int l3_unicast_route_remove(const rofl::caddress_in4 &ipv4_dst,
+                                      const rofl::caddress_in4 &mask,
+                                      uint16_t vrf_id = 0) noexcept = 0;
 
   virtual int l3_unicast_route_add(const rofl::caddress_in6 &ipv6_dst,
                                    const rofl::caddress_in6 &mask,
                                    uint32_t l3_interface, bool is_ecmp,
-                                   bool update_route) noexcept = 0;
-  virtual int
-  l3_unicast_route_remove(const rofl::caddress_in6 &ipv6_dst,
-                          const rofl::caddress_in6 &mask) noexcept = 0;
+                                   bool update_route,
+                                   uint16_t vrf_id = 0) noexcept = 0;
+  virtual int l3_unicast_route_remove(const rofl::caddress_in6 &ipv6_dst,
+                                      const rofl::caddress_in6 &mask,
+                                      uint16_t vrf_id = 0) noexcept = 0;
 
   virtual int l3_ecmp_add(uint32_t l3_ecmp_id,
                           const std::set<uint32_t> &l3_interfaces) noexcept = 0;
@@ -112,10 +116,10 @@ public:
 
   virtual int ingress_port_vlan_accept_all(uint32_t port) noexcept = 0;
   virtual int ingress_port_vlan_drop_accept_all(uint32_t port) noexcept = 0;
-  virtual int ingress_port_vlan_add(uint32_t port, uint16_t vid,
-                                    bool pvid) noexcept = 0;
-  virtual int ingress_port_vlan_remove(uint32_t port, uint16_t vid,
-                                       bool pvid) noexcept = 0;
+  virtual int ingress_port_vlan_add(uint32_t port, uint16_t vid, bool pvid,
+                                    uint16_t vrf_id = 0) noexcept = 0;
+  virtual int ingress_port_vlan_remove(uint32_t port, uint16_t vid, bool pvid,
+                                       uint16_t vrf_id = 0) noexcept = 0;
 
   virtual int egress_port_vlan_accept_all(uint32_t port) noexcept = 0;
   virtual int egress_port_vlan_drop_accept_all(uint32_t port) noexcept = 0;

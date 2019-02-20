@@ -17,10 +17,12 @@ namespace basebox {
 
 nl_vlan::nl_vlan(cnetlink *nl) : swi(nullptr), nl(nl) {}
 
-int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
+int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged,
+                      uint16_t vrf_id) {
   assert(swi);
 
-  VLOG(2) << __FUNCTION__ << ": add vid=" << vid << " tagged=" << tagged;
+  VLOG(2) << __FUNCTION__ << ": add vid=" << vid << " tagged=" << tagged
+          << " vrf=" << vrf_id;
   if (!is_vid_valid(vid)) {
     LOG(ERROR) << __FUNCTION__ << ": invalid vid " << vid;
     return -EINVAL;
@@ -33,8 +35,7 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     return -EINVAL;
   }
 
-  int rv =
-      swi->ingress_port_vlan_add(port_id, vid, !tagged /* pvid == !tagged */);
+  int rv = swi->ingress_port_vlan_add(port_id, vid, !tagged, vrf_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to setup ingress vlan 1 (untagged) on port_id="
@@ -64,7 +65,15 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   return rv;
 }
 
-int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
+// remove vid at ingress
+int nl_vlan::remove_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
+                                 uint16_t vrf_id) {
+
+  return swi->ingress_port_vlan_remove(port_id, vid, !tagged, vrf_id);
+}
+
+int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged,
+                         uint16_t vrf_id) {
   assert(swi);
 
   if (!is_vid_valid(vid)) {
@@ -91,7 +100,7 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     port_vlan.erase(refcount);
 
   // remove vid at ingress
-  rv = swi->ingress_port_vlan_remove(port_id, vid, !tagged);
+  rv = swi->ingress_port_vlan_remove(port_id, vid, !tagged, vrf_id);
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv=" << rv
@@ -127,8 +136,10 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
   uint32_t pport_id = nl->get_port_id(link);
   auto lt = get_link_type(link);
 
-  if (pport_id == 0)
-    return 0;
+  if (!nl->is_bridge_interface(link) && pport_id == 0) {
+    VLOG(2) << __FUNCTION__ << ": invalid interface";
+    return vid;
+  }
 
   switch (lt) {
   case LT_BRIDGE:
@@ -140,6 +151,7 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
     vid = default_vid;
     break;
   case LT_VLAN:
+  case LT_VRF_SLAVE:
     vid = rtnl_link_vlan_get_id(link);
     break;
   default:
@@ -148,6 +160,8 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
                  << " of link " << OBJ_CAST(link);
     break;
   }
+
+  VLOG(2) << __FUNCTION__ << ": vid=" << vid << " interface=" << OBJ_CAST(link);
 
   return vid;
 }

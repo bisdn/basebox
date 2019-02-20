@@ -55,7 +55,12 @@ public:
   int learn_source_mac(rtnl_link *br_link, packet *p);
   int fdb_timeout(rtnl_link *br_link, uint16_t vid,
                   const rofl::caddress_ll &mac);
-  int get_ifindex() { return rtnl_link_get_ifindex(bridge); }
+  int get_ifindex() { return bridge ? rtnl_link_get_ifindex(bridge) : 0; }
+
+  // XXX Improve cache search mechanism
+  std::deque<rtnl_neigh *> get_fdb_entries_of_port(rtnl_link *br_port,
+                                                   uint16_t vid = 0,
+                                                   nl_addr *lladdr = nullptr);
 
   void get_bridge_ports(
       std::tuple<std::shared_ptr<tap_manager>, std::deque<rtnl_link *> *>
@@ -69,9 +74,6 @@ public:
 
 private:
   void update_vlans(rtnl_link *, rtnl_link *);
-
-  std::deque<rtnl_neigh *> get_fdb_entries_of_port(rtnl_link *br_port,
-                                                   uint16_t vid);
 
   void update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
                            const uint16_t vid, const uint32_t tunnel_id,

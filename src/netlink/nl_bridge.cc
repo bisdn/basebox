@@ -9,6 +9,7 @@
 
 #include <glog/logging.h>
 #include <netlink/route/link.h>
+#include <netlink/route/link/vlan.h>
 #include <netlink/route/link/vxlan.h>
 #include <netlink/route/neighbour.h>
 #include <rofl/common/openflow/cofport.h>
@@ -372,16 +373,23 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
 }
 
 std::deque<rtnl_neigh *> nl_bridge::get_fdb_entries_of_port(rtnl_link *br_port,
-                                                            uint16_t vid) {
+                                                            uint16_t vid,
+                                                            nl_addr *lladdr) {
 
   std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> filter(
       rtnl_neigh_alloc(), rtnl_neigh_put);
 
   rtnl_neigh_set_ifindex(filter.get(), rtnl_link_get_ifindex(br_port));
   rtnl_neigh_set_master(filter.get(), rtnl_link_get_ifindex(bridge));
-  rtnl_neigh_set_vlan(filter.get(), vid);
   rtnl_neigh_set_family(filter.get(), AF_BRIDGE);
 
+  if (vid)
+    rtnl_neigh_set_vlan(filter.get(), vid);
+
+  if (lladdr)
+    rtnl_neigh_set_lladdr(filter.get(), lladdr);
+
+  VLOG(3) << __FUNCTION__ << ": searching for " << OBJ_CAST(filter.get());
   std::deque<rtnl_neigh *> neighs;
   nl_cache_foreach_filter(nl->get_cache(cnetlink::NL_NEIGH_CACHE),
                           OBJ_CAST(filter.get()),
