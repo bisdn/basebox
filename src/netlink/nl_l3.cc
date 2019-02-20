@@ -377,7 +377,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
       return rv;
     }
 
-    if (prefixlen == 32) {
+    if (prefixlen == 128) {
       rv = sw->l3_unicast_host_remove(ipv6_dst);
     } else {
       rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
