@@ -52,6 +52,11 @@ std::unordered_multimap<
     l3_interface>
     l3_interface_mapping;
 
+// key: source port_id, vid, src_mac, ethertype ; value: refcount
+std::unordered_multimap<std::tuple<int, uint16_t, rofl::caddress_ll, uint16_t>,
+                        int>
+    termination_mac_mapping;
+
 nl_l3::nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl)
     : sw(nullptr), vlan(std::move(vlan)), nl(nl) {}
 
@@ -161,7 +166,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     auto addr = rtnl_link_get_addr(link);
     rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
 
-    rv = sw->l3_termination_add(port_id, vid, mac);
+    rv = add_l3_termination(port_id, vid, mac, AF_INET);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__
                  << ": failed to setup termination mac port_id=" << port_id
@@ -264,7 +269,7 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   auto lladdr = rtnl_link_get_addr(link);
   rofl::caddress_ll mac = libnl_lladdr_2_rofl(lladdr);
 
-  rv = sw->l3_termination_add_v6(port_id, vid, mac);
+  rv = add_l3_termination(port_id, vid, mac, AF_INET6);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to setup termination mac port_id=" << port_id
@@ -413,8 +418,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
   uint16_t vid = vlan->get_vid(link);
 
-  // XXX TODO don't do this in case more l3 addresses are on this link
-  rv = sw->l3_termination_remove(port_id, vid, mac);
+  rv = del_l3_termination(port_id, vid, mac, family);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to remove l3 termination mac(local) vid=" << vid
@@ -936,6 +940,100 @@ int nl_l3::del_l3_route(struct rtnl_route *r) {
   default:
     return -EINVAL;
   }
+}
+
+int nl_l3::add_l3_termination(uint32_t port_id, uint16_t vid,
+                              const rofl::caddress_ll &mac, int af) noexcept {
+  int rv = 0;
+
+  // lookup if this already exists
+  auto needle = std::make_tuple(port_id, vid, mac, static_cast<uint16_t>(af));
+  auto tmac_lookup_range = termination_mac_mapping.equal_range(needle);
+  auto i = tmac_lookup_range.first;
+  for (; i != tmac_lookup_range.second; ++i) {
+    if (i->first == needle) {
+      // found, increment refcount
+      i->second++;
+      return 0;
+    }
+  }
+
+  // not found, add
+  if (tmac_lookup_range.first != termination_mac_mapping.end())
+    termination_mac_mapping.emplace_hint(tmac_lookup_range.first,
+                                         std::move(needle), 1);
+  else
+    termination_mac_mapping.emplace(std::move(needle), 1);
+
+  switch (af) {
+  case AF_INET:
+    rv = sw->l3_termination_add(port_id, vid, mac);
+    break;
+
+  case AF_INET6:
+    rv = sw->l3_termination_add_v6(port_id, vid, mac);
+    break;
+
+  default:
+    LOG(FATAL) << __FUNCTION__ << ": invalid address family " << af;
+    break;
+  }
+
+  return rv;
+}
+
+int nl_l3::del_l3_termination(uint32_t port_id, uint16_t vid,
+                              const rofl::caddress_ll &mac, int af) noexcept {
+  int rv = 0;
+
+  VLOG(4) << __FUNCTION__ << ": trying to delete for port_id=" << port_id
+          << ", vid=" << vid << ", mac=" << mac << ", af=" << af;
+
+  // lookup if this already exists
+  auto needle = std::make_tuple(port_id, vid, mac, static_cast<uint16_t>(af));
+  auto tmac_lookup_range = termination_mac_mapping.equal_range(needle);
+  auto i = tmac_lookup_range.first;
+  for (; i != tmac_lookup_range.second; ++i) {
+    if (i->first == needle) {
+      // found, decrement refcount
+      --i->second;
+      VLOG(4) << __FUNCTION__ << ": found new refcount=" << i->second;
+      break;
+    }
+  }
+
+  // check if not found
+  if (i == termination_mac_mapping.end()) {
+    LOG(WARNING)
+        << __FUNCTION__
+        << ": tried to delete a non existing termination mac for port_id="
+        << port_id << ", vid=" << vid << ", mac=" << mac << ", af=" << af;
+    return 0;
+  }
+
+  // still existing references
+  if (i->second > 0) {
+    VLOG(4) << __FUNCTION__ << ": got references " << i->second;
+    return 0;
+  }
+
+  switch (af) {
+  case AF_INET:
+    rv = sw->l3_termination_remove(port_id, vid, mac);
+    break;
+
+  case AF_INET6:
+    rv = sw->l3_termination_remove_v6(port_id, vid, mac);
+    break;
+
+  default:
+    LOG(FATAL) << __FUNCTION__ << ": invalid address family " << af;
+    break;
+  }
+
+  termination_mac_mapping.erase(i);
+
+  return rv;
 }
 
 int nl_l3::add_l3_unicast_route(rtnl_route *r) {
