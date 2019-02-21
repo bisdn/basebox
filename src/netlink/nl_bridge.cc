@@ -453,7 +453,20 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
     } else {
       // delete access port and all bridging entries
       vxlan->delete_access_port(_br_port, pport_no, vid, true);
-      // XXX FIXME check if we have to add the VLANs again (ingress/egress)
+
+      sw->egress_bridge_port_vlan_add(pport_no, vid, untagged);
+      sw->ingress_port_vlan_add(pport_no, vid, br_port_vlans->pvid == vid);
+
+      auto neighs = get_fdb_entries_of_port(_br_port, vid);
+      for (auto n : neighs) {
+        // ignore ll addr of bridge on slave
+        if (nl_addr_cmp(rtnl_link_get_addr(bridge), rtnl_neigh_get_lladdr(n)) ==
+            0) {
+          continue;
+        }
+        VLOG(3) << ": needs to be updated " << OBJ_CAST(n);
+        add_neigh_to_fdb(n);
+      }
     }
   }
 }
