@@ -1121,78 +1121,64 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r) {
 }
 
 int nl_l3::del_l3_unicast_route(rtnl_route *r) {
+  int rv = 0;
   auto dst = rtnl_route_get_dst(r);
   int family = rtnl_route_get_family(r);
-
   int nnhs = rtnl_route_get_nnexthops(r);
-  VLOG(2) << __FUNCTION__ << ": number of next hops is " << nnhs;
-
   std::deque<struct rtnl_neigh *> neighs;
   std::deque<nh_stub> unresolved_nh;
   get_neighbours_of_route(r, &neighs, &unresolved_nh);
 
-  int rv = 0;
-  if (neighs.size()) {
+  VLOG(2) << __FUNCTION__ << ": number of next hops is " << nnhs;
 
-    sockaddr_in in_addr;
-    socklen_t len = sizeof(in_addr);
+  if (neighs.size() == 0) {
+    LOG(ERROR) << __FUNCTION__ << ": no nexthop for this route " << OBJ_CAST(r);
+    return rv;
+  }
 
-    rv = nl_addr_fill_sockaddr(
-        dst, reinterpret_cast<struct sockaddr *>(&in_addr), &len);
+  // remove route pointing to group
+  int prefixlen = nl_addr_get_prefixlen(dst);
+  if (family == AF_INET) {
+    rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(dst, &rv);
 
-    if (rv < 0) {
-      // clean up
-      for (auto neigh : neighs) {
-        rtnl_neigh_put(neigh);
-      }
-
-      neighs.clear();
-      LOG(ERROR) << __FUNCTION__ << ": nl_addr_fill_sockaddr failed with "
-                 << nl_geterror(rv);
-      return rv;
-    }
-
-    auto addr = rtnl_route_get_dst(r);
-    int prefixlen = nl_addr_get_prefixlen(addr);
-    if (family == AF_INET) {
-      rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
-      rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
-
-      rv = sw->l3_unicast_route_remove(ipv4_dst, mask);
+    if (prefixlen == 32) {
+      rv = sw->l3_unicast_host_remove(ipv4_dst);
     } else {
-      rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
-      rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
+      rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
+      rv = sw->l3_unicast_route_remove(ipv4_dst, mask);
+    }
+  } else {
+    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(dst, &rv);
 
+    if (prefixlen == 128) {
+      rv = sw->l3_unicast_host_remove(ipv6_dst);
+    } else {
+      rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
       rv = sw->l3_unicast_route_remove(ipv6_dst, mask);
     }
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to remove dst=";
-    }
-
-    // del neigh
-    struct rtnl_neigh *n = neighs.front();
-    rv = del_l3_neigh_egress(n);
-
-    if (rv < 0) {
-      // clean up
-      for (auto neigh : neighs) {
-        rtnl_neigh_put(neigh);
-      }
-
-      neighs.clear();
-      LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
-                 << OBJ_CAST(n);
-      return rv;
-    }
-
-    // clean up neighbours in neighs dequeue
-    for (auto neigh : neighs) {
-      rtnl_neigh_put(neigh);
-    }
-    neighs.clear();
-  } else {
-    LOG(ERROR) << __FUNCTION__ << ": no nexthop for this route";
   }
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to remove dst=";
+    // fallthrough
+  }
+
+  // del neigh
+  struct rtnl_neigh *n = neighs.front();
+  rv = del_l3_neigh_egress(n);
+
+  if (rv < 0) {
+    // clean up
+    LOG(ERROR) << __FUNCTION__ << ": del l3 neigh egress failed for neigh "
+               << OBJ_CAST(n);
+    // fallthrough
+  }
+
+  // clean up neighbours in neighs dequeue
+  for (auto neigh : neighs) {
+    rtnl_neigh_put(neigh);
+  }
+  neighs.clear();
 
   return rv;
 }
