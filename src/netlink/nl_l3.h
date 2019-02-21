@@ -62,6 +62,11 @@ public:
   void notify_on_nh_reachable(nh_reachable *f, struct nh_params p) noexcept;
 
 private:
+  int add_l3_termination(uint32_t port_id, uint16_t vid,
+                         const rofl::caddress_ll &mac, int af) noexcept;
+  int del_l3_termination(uint32_t port_id, uint16_t vid,
+                         const rofl::caddress_ll &mac, int af) noexcept;
+
   int add_l3_unicast_route(rtnl_route *r);
   int del_l3_unicast_route(rtnl_route *r);
 
