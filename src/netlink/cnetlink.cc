@@ -1194,8 +1194,7 @@ int cnetlink::handle_port_status_events() {
   }
 
   for (auto change : _pc_changes) {
-    int ifindex, rv;
-    rtnl_link *lchange, *link;
+    int ifindex;
 
     if (nbi::get_port_type(std::get<0>(change)) != nbi::port_type_physical) {
       VLOG(3) << __FUNCTION__
@@ -1220,51 +1219,6 @@ int cnetlink::handle_port_status_events() {
       }
       continue;
     }
-
-    VLOG(1) << __FUNCTION__ << ": update link with ifindex=" << ifindex
-            << " port_id=" << std::get<0>(change) << " status=" << std::hex
-            << std::get<1>(change) << std::dec << ") ";
-
-    // lookup link
-    link = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
-    if (!link) {
-      LOG(ERROR) << __FUNCTION__ << ": link not found with ifindex=" << ifindex;
-      continue;
-    }
-
-    // change request
-    lchange = rtnl_link_alloc();
-    if (!lchange) {
-      LOG(ERROR) << __FUNCTION__ << ": out of memory";
-      rtnl_link_put(link);
-      continue;
-    }
-
-    int flags = rtnl_link_get_flags(link);
-    // check admin state change
-    if (!((flags & IFF_UP) &&
-          !(std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN))) {
-      if (std::get<1>(change) & nbi::PORT_STATUS_ADMIN_DOWN) {
-        rtnl_link_unset_flags(lchange, IFF_UP);
-        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                  << " disabling";
-      } else {
-        rtnl_link_set_flags(lchange, IFF_UP);
-        LOG(INFO) << __FUNCTION__ << ": " << rtnl_link_get_name(link)
-                  << " enabling";
-      }
-    } else {
-      LOG(INFO) << __FUNCTION__ << ": notification of port "
-                << rtnl_link_get_name(link) << " received. State unchanged.";
-    }
-
-    // apply changes
-    if ((rv = rtnl_link_change(sock_tx, link, lchange, 0)) < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": Unable to change link, "
-                 << nl_geterror(rv);
-    }
-    rtnl_link_put(link);
-    rtnl_link_put(lchange);
   }
 
   int size = _pc_retry.size();
