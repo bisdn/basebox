@@ -101,6 +101,8 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
       std::lock_guard<std::mutex> lock(l2_domain_mutex);
       // clear local state, all ports are gone
       l2_domain.clear();
+      lag.clear();
+      // we keep the tunnel_dlf_flood for now
     }
 
     // TODO check dptid and dptid?
@@ -522,6 +524,11 @@ errout:
 }
 
 int controller::lag_create(uint32_t *lag_id) noexcept {
+  if (!connected) {
+    VLOG(1) << __FUNCTION__ << ": not connected";
+    return -EAGAIN;
+  }
+
   // XXX TODO this needs to be improved, we could use the maximum number of
   // ports as lag_id and have an efficient lookup which id is free. for now
   // 2^16-1 lag ids should be sufficient.
@@ -542,6 +549,10 @@ int controller::lag_create(uint32_t *lag_id) noexcept {
 }
 
 int controller::lag_remove(uint32_t lag_id) noexcept {
+  if (!connected) {
+    VLOG(1) << __FUNCTION__ << ": not connected";
+    return -EAGAIN;
+  }
   // currently we don't have a real lag implementation
   // otherwise we should release the resoucres on the switch
 
@@ -555,6 +566,11 @@ int controller::lag_remove(uint32_t lag_id) noexcept {
 }
 
 int controller::lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept {
+  if (!connected) {
+    VLOG(1) << __FUNCTION__ << ": not connected";
+    return -EAGAIN;
+  }
+
   if (nbi::get_port_type(lag_id) != nbi::port_type_lag) {
     LOG(ERROR) << __FUNCTION__ << ": invalid lag_id " << std::showbase
                << std::hex << lag_id;
@@ -582,6 +598,11 @@ int controller::lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept {
 }
 
 int controller::lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept {
+  if (!connected) {
+    VLOG(1) << __FUNCTION__ << ": not connected";
+    return -EAGAIN;
+  }
+
   if (nbi::get_port_type(lag_id) != nbi::port_type_lag) {
     LOG(ERROR) << __FUNCTION__ << ": invalid lag_id " << std::showbase
                << std::hex << lag_id;

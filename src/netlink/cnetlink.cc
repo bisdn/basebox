@@ -172,6 +172,11 @@ void cnetlink::init_subsystems() noexcept {
   vxlan->init();
 }
 
+void cnetlink::shutdown_subsystems() noexcept {
+  tap_man->clear();
+  bond->clear();
+}
+
 int cnetlink::set_nl_socket_buffer_sizes(nl_sock *sk) {
   int rx_size = load_from_file("/proc/sys/net/core/rmem_max");
   int tx_size = load_from_file("/proc/sys/net/core/wmem_max");
@@ -376,6 +381,10 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     break;
   case NL_STATE_RUNNING:
     break;
+  case NL_STATE_SHUTDOWN:
+    shutdown_subsystems();
+    state = NL_STATE_STOPPED;
+    /* fallthrough */
   case NL_STATE_STOPPED:
     return;
   }
@@ -1165,9 +1174,11 @@ void cnetlink::start() noexcept {
 }
 
 void cnetlink::stop() noexcept {
+  if (state == NL_STATE_STOPPED)
+    return;
+
   VLOG(1) << __FUNCTION__ << ": stopped netlink processing";
-  state = NL_STATE_STOPPED;
-  tap_man->clear();
+  state = NL_STATE_SHUTDOWN;
   thread.wakeup(this);
 }
 
