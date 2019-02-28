@@ -23,6 +23,7 @@ public:
   ~nl_bond() {}
 
   void register_switch_interface(switch_interface *swi) { this->swi = swi; }
+  void clear() noexcept;
 
   /**
    * returns the id of the lag

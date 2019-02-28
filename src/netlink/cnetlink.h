@@ -94,6 +94,7 @@ private:
   enum nl_state {
     NL_STATE_RUNNING,
     NL_STATE_INIT,
+    NL_STATE_SHUTDOWN,
     NL_STATE_STOPPED,
   };
 
@@ -159,6 +160,7 @@ private:
 
   void init_caches();
   void init_subsystems() noexcept;
+  void shutdown_subsystems() noexcept;
 
   int set_nl_socket_buffer_sizes(nl_sock *sk);
 

@@ -16,6 +16,11 @@ namespace basebox {
 
 nl_bond::nl_bond(cnetlink *nl) : swi(nullptr), nl(nl) {}
 
+void nl_bond::clear() noexcept {
+  lag_members.clear();
+  ifi2lag.clear();
+}
+
 uint32_t nl_bond::get_lag_id(rtnl_link *bond) {
   assert(bond);
 
