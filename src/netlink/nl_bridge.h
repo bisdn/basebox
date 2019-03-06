@@ -64,6 +64,9 @@ public:
 
   bool is_port_flooding(rtnl_link *br_link) const;
 
+  int update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
+                          const uint32_t tunnel_id, bool add);
+
 private:
   void update_vlans(rtnl_link *, rtnl_link *);
 
