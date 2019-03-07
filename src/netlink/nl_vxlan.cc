@@ -253,7 +253,7 @@ int nl_vxlan::init() {
       rv = add_l2_neigh(neigh, link, br_link);
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__ << ": failed (rv=" << rv
-                   << ") to add l2 neigh" << OBJ_CAST(link);
+                   << ") to add l2 neigh " << OBJ_CAST(link);
       }
     }
   }
@@ -642,6 +642,40 @@ int nl_vxlan::create_endpoint(rtnl_link *vxlan_link, rtnl_link *br_link,
       sw->tunnel_port_tenant_remove(lport_id, tunnel_id);
       delete_endpoint(vxlan_link, local_.get(), remote_addr);
       delete_next_hop(next_hop_id);
+    }
+  }
+
+  // get neighs on vxlan link
+  std::deque<rtnl_neigh *> neighs;
+  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> neigh_filter(
+      rtnl_neigh_alloc(), &rtnl_neigh_put);
+
+  rtnl_neigh_set_ifindex(neigh_filter.get(), rtnl_link_get_ifindex(vxlan_link));
+  // dst must be before setting family
+  rtnl_neigh_set_dst(neigh_filter.get(), remote_addr);
+  rtnl_neigh_set_family(neigh_filter.get(), AF_BRIDGE);
+
+  auto c = nl->get_cache(cnetlink::NL_NEIGH_CACHE);
+  nl_cache_foreach_filter(c, OBJ_CAST(neigh_filter.get()),
+                          [](struct nl_object *obj, void *arg) {
+                            auto n = NEIGH_CAST(obj);
+
+                            // ignore remotes
+                            if (nl_addr_iszero(rtnl_neigh_get_lladdr(n)))
+                              return;
+
+                            VLOG(3) << "found neigh for endpoint " << obj;
+                            auto neighs =
+                                static_cast<std::deque<rtnl_neigh *> *>(arg);
+                            neighs->push_back(n);
+                          },
+                          &neighs);
+
+  for (auto neigh : neighs) {
+    rv = add_l2_neigh(neigh, lport_id, tunnel_id);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed (rv=" << rv
+                 << ") to add l2 neigh " << OBJ_CAST(link);
     }
   }
 
