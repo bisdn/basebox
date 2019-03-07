@@ -395,6 +395,48 @@ std::deque<rtnl_neigh *> nl_bridge::get_fdb_entries_of_port(rtnl_link *br_port,
   return neighs;
 }
 
+int nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
+                                   const uint32_t tunnel_id, bool add) {
+  if (vxlan_link == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": vxlan_link cannot be nullptr";
+    return -EINVAL;
+  }
+
+  if (br_link == nullptr) {
+    LOG(ERROR) << __FUNCTION__ << ": br_link cannot be nullptr";
+    return -EINVAL;
+  }
+
+  // XXX get pvid from br_link
+  auto br_port_vlans = rtnl_link_bridge_get_port_vlan(br_link);
+  auto vid = br_port_vlans->pvid;
+
+  auto vxlan_domain_it = vxlan_domain.find(vid);
+  if (vxlan_domain_it != vxlan_domain.end()) {
+    if (vxlan_domain_it->second != tunnel_id) {
+      LOG(ERROR) << __FUNCTION__ << ": different tunnel_id ("
+                 << vxlan_domain_it->second
+                 << ") in vxlan_domain expected id=" << tunnel_id;
+    }
+    VLOG(2) << __FUNCTION__
+            << ": access ports already configured for vid=" << vid
+            << " and tunnel_id=" << tunnel_id;
+    // already vxlan domain
+    return 0;
+  }
+
+  // XXX get all bridge_ports
+  std::deque<rtnl_link *> bridge_ports;
+  nl->get_bridge_ports(rtnl_link_get_master(br_link), &bridge_ports);
+
+  update_access_ports(vxlan_link, br_link, vid, tunnel_id, bridge_ports, add);
+
+  // update vxlan_domain
+  vxlan_domain.emplace(vid, tunnel_id);
+
+  return 0;
+}
+
 void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
                                     const uint16_t vid,
                                     const uint32_t tunnel_id,
