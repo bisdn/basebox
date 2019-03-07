@@ -12,6 +12,10 @@
 
 #include "sai.h"
 
+extern "C" {
+struct rtnl_link;
+}
+
 namespace basebox {
 
 class cnetlink;
@@ -73,7 +77,8 @@ public:
 
   // access from northbound (cnetlink)
   int tapdev_removed(int ifindex, const std::string &portname);
-  void tapdev_ready(int ifindex, const std::string &name);
+  void tapdev_ready(rtnl_link *link);
+  int update_mtu(rtnl_link *link);
 
 private:
   tap_manager(const tap_manager &other) = delete; // non construction-copyable

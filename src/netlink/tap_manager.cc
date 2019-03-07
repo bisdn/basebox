@@ -141,70 +141,78 @@ int tap_manager::get_fd(uint32_t port_id) const noexcept {
   return it->second->get_fd();
 }
 
-void tap_manager::tapdev_ready(int ifindex, const std::string &name) {
-  auto it = ifindex_to_id.find(ifindex);
+void tap_manager::tapdev_ready(rtnl_link *link) {
+  assert(link);
 
   // already registered?
+  int ifindex = rtnl_link_get_ifindex(link);
+  auto it = ifindex_to_id.find(ifindex);
   if (it != ifindex_to_id.end()) {
-    LOG(ERROR) << __FUNCTION__ << ": already registered port " << name;
+    LOG(ERROR) << __FUNCTION__ << ": already registered port "
+               << rtnl_link_get_name(link);
     return;
   }
 
-  std::lock_guard<std::mutex> lock{tn_mutex};
-  auto tn_it = tap_names2id.find(name);
-  if (tn_it == tap_names2id.end()) {
-    LOG(WARNING) << __FUNCTION__ << "invalid port name " << name;
-    return;
-  }
-
-  // update maps
-  auto id2ifi_it = id_to_ifindex.insert(std::make_pair(tn_it->second, ifindex));
-  if (!id2ifi_it.second && id2ifi_it.first->second != ifindex) {
-    // update only if the ifindex has changed
-    LOG(WARNING) << __FUNCTION__
-                 << ": enforced update of id:ifindex mapping id="
-                 << id2ifi_it.first->first
-                 << " ifindex(old)=" << id2ifi_it.first->second
-                 << " ifindex(new)=" << ifindex;
-
-    // remove overwritten index in ifindex_to_id map
-    auto it = ifindex_to_id.find(id2ifi_it.first->second);
-    if (it != ifindex_to_id.end()) {
-      ifindex_to_id.erase(it);
+  {
+    std::string name(rtnl_link_get_name(link));
+    std::lock_guard<std::mutex> lock{tn_mutex};
+    auto tn_it = tap_names2id.find(name);
+    if (tn_it == tap_names2id.end()) {
+      LOG(WARNING) << __FUNCTION__ << "invalid port name " << name;
+      return;
     }
 
-    // update the old one
-    id2ifi_it.first->second = ifindex;
+    // update maps
+    auto id2ifi_it =
+        id_to_ifindex.insert(std::make_pair(tn_it->second, ifindex));
+    if (!id2ifi_it.second && id2ifi_it.first->second != ifindex) {
+      // update only if the ifindex has changed
+      LOG(WARNING) << __FUNCTION__
+                   << ": enforced update of id:ifindex mapping id="
+                   << id2ifi_it.first->first
+                   << " ifindex(old)=" << id2ifi_it.first->second
+                   << " ifindex(new)=" << ifindex;
+
+      // remove overwritten index in ifindex_to_id map
+      auto it = ifindex_to_id.find(id2ifi_it.first->second);
+      if (it != ifindex_to_id.end()) {
+        ifindex_to_id.erase(it);
+      }
+
+      // update the old one
+      id2ifi_it.first->second = ifindex;
+    }
+
+    auto rv1 = ifindex_to_id.insert(std::make_pair(ifindex, tn_it->second));
+    if (!rv1.second && rv1.first->second != tn_it->second) {
+      // update only if the id has changed
+      LOG(WARNING) << __FUNCTION__
+                   << ": enforced update of ifindex:id mapping ifindex="
+                   << ifindex << " id(old)=" << rv1.first->second
+                   << " id(new)=" << tn_it->second;
+      rv1.first->second = tn_it->second;
+    }
   }
 
-  auto rv1 = ifindex_to_id.insert(std::make_pair(ifindex, tn_it->second));
-  if (!rv1.second && rv1.first->second != tn_it->second) {
-    // update only if the id has changed
-    LOG(WARNING) << __FUNCTION__
-                 << ": enforced update of ifindex:id mapping ifindex="
-                 << ifindex << " id(old)=" << rv1.first->second
-                 << " id(new)=" << tn_it->second;
-    rv1.first->second = tn_it->second;
-  }
+  update_mtu(link);
+}
 
-  std::unique_ptr<rtnl_link, void (*)(rtnl_link *)> l(
-      nl->get_link_by_ifindex(ifindex), &rtnl_link_put);
-  if (!l) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid link ifindex=" << ifindex;
-    return;
-  }
+int tap_manager::update_mtu(rtnl_link *link) {
+  assert(link);
 
-  auto fd_it = tap_names2fds.find(name);
+  std::lock_guard<std::mutex> lock{tn_mutex};
+  auto fd_it = tap_names2fds.find(std::string(rtnl_link_get_name(link)));
   if (fd_it == tap_names2fds.end()) {
     LOG(ERROR) << __FUNCTION__ << ": tap_dev not found";
-    return;
+    return -EINVAL;
   }
 
   if (fd_it->second == -1) {
     LOG(FATAL) << __FUNCTION__ << ": need to update fd";
   }
 
-  io->update_mtu(fd_it->second, rtnl_link_get_mtu(l.get()));
+  io->update_mtu(fd_it->second, rtnl_link_get_mtu(link));
+  return 0;
 }
 
 int tap_manager::tapdev_removed(int ifindex, const std::string &portname) {
