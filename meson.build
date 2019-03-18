@@ -164,13 +164,15 @@ configure_file(input: 'pkg/release/rpm/baseboxd.spec.in',
 # includes
 inc = include_directories('src')
 
-# targets
-if clang_format.found()
-  run_target('clang-format',
-    command: [ clang_format, '-i', '-style=file', sources ])
-else
-  run_target('clang-format',
-    command: [ 'echo', 'install', 'clang-format', '&&', 'false' ])
+if meson.version() < '0.50'
+  # targets
+  if clang_format.found()
+    run_target('clang-format',
+      command: [ clang_format, '-i', '-style=file', sources ])
+  else
+    run_target('clang-format',
+      command: [ 'echo', 'install', 'clang-format', '&&', 'false' ])
+  endif
 endif
 
 if clang_tidy.found()
