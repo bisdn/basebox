@@ -27,6 +27,7 @@
 #include "tap_manager.h"
 
 #include "nl_bond.h"
+#include "nl_interface.h"
 #include "nl_l3.h"
 #include "nl_vlan.h"
 #include "nl_vxlan.h"
@@ -35,9 +36,9 @@ namespace basebox {
 
 cnetlink::cnetlink()
     : swi(nullptr), thread(1), caches(NL_MAX_CACHE, nullptr), nl_proc_max(10),
-      state(NL_STATE_STOPPED), bridge(nullptr), bond(new nl_bond(this)),
-      vlan(new nl_vlan(this)), l3(new nl_l3(vlan, this)),
-      vxlan(new nl_vxlan(l3, this)) {
+      state(NL_STATE_STOPPED), bridge(nullptr), iface(new nl_interface(this)),
+      bond(new nl_bond(this)), vlan(new nl_vlan(this)),
+      l3(new nl_l3(vlan, this)), vxlan(new nl_vxlan(l3, this)) {
 
   sock_tx = nl_socket_alloc();
   if (sock_tx == nullptr) {
@@ -500,7 +501,10 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
     nl->nl_objs.emplace_back(action, old_obj, new_obj);
 }
 
-void cnetlink::set_tapmanager(std::shared_ptr<tap_manager> tm) { tap_man = tm; }
+void cnetlink::set_tapmanager(std::shared_ptr<tap_manager> tm) {
+  tap_man = tm;
+  iface->set_tapmanager(tm);
+}
 
 int cnetlink::send_nl_msg(nl_msg *msg) { return nl_send_sync(sock_tx, msg); }
 
@@ -907,9 +911,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     vxlan->create_endpoint(link);
   } break;
   case LT_TUN: {
-    int ifindex = rtnl_link_get_ifindex(link);
-    std::string name(rtnl_link_get_name(link));
-    tap_man->tapdev_ready(ifindex, name);
+    tap_man->tapdev_ready(link);
   } break;
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
@@ -972,7 +974,8 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       bond->add_lag_member(_bond, new_link);
       break;
     }
-    /* fallthrough */
+    iface->changed(old_link, new_link);
+    break;
   case LT_VLAN:
   case LT_BOND:
   case LT_BRIDGE:
