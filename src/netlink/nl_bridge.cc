@@ -612,7 +612,7 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   switch (ntohs(hdr->eth.h_proto)) {
   case ETH_P_8021Q:
     // vid
-    vid = ntohs(hdr->vlan);
+    vid = ntohs(hdr->vlan) & 0xfff;
     break;
   default:
     // no vid, set vid to pvid
