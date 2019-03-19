@@ -17,7 +17,7 @@ namespace basebox {
 
 nl_vlan::nl_vlan(cnetlink *nl) : swi(nullptr), nl(nl) {}
 
-int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) const {
+int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   assert(swi);
 
   VLOG(2) << __FUNCTION__ << ": add vid=" << vid << " tagged=" << tagged;
@@ -54,12 +54,17 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) const {
     return rv;
   }
 
-  // XXX TODO store the vlan interface usage?
+  auto key = std::make_pair(port_id, vid);
+  auto refcount = port_vlan.find(key);
+  if (refcount == port_vlan.end()) {
+    port_vlan.emplace(key, 1);
+  } else
+    refcount->second++;
 
   return rv;
 }
 
-int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) const {
+int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   assert(swi);
 
   if (!is_vid_valid(vid)) {
@@ -75,6 +80,15 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) const {
     VLOG(1) << __FUNCTION__ << ": unknown link " << OBJ_CAST(link);
     return -EINVAL;
   }
+
+  // check for refcount
+  auto key = std::make_pair(port_id, vid);
+  auto refcount = port_vlan.find(key);
+  if (refcount != port_vlan.end()){
+    refcount->second--;
+    return rv;
+  } else if (refcount->second == 1)
+    port_vlan.erase(refcount);
 
   // remove vid at ingress
   rv = swi->ingress_port_vlan_remove(port_id, vid, !tagged);
