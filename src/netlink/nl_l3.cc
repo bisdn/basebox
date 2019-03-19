@@ -279,6 +279,9 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
                  << ", mask=" << mask;
       return rv;
     }
+
+    // adding link local addresses end here, no further handling required
+    return rv;
   }
 
   uint16_t vid = vlan->get_vid(link);
