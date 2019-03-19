@@ -280,7 +280,7 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
       return rv;
     }
 
-    // adding link local addresses end here, no further handling required
+    // adding link local addresses ends here, no further handling required
     return rv;
   }
 
