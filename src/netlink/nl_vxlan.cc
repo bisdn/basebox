@@ -1268,9 +1268,6 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *link,
 
         rv = create_endpoint(link, br_link, remote);
 
-        // XXX FIXME update access ports
-        bridge->update_access_ports(link, br_link, tunnel_id, true);
-
       } else {
         // existing remote but new tunnel_id/vni on link
         rv = sw->tunnel_port_tenant_add(lport, tunnel_id);
@@ -1298,6 +1295,9 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *link,
           }
         }
       }
+
+      // update access ports
+      bridge->update_access_ports(link, br_link, tunnel_id, true);
 
       return rv;
     } // endpoint
