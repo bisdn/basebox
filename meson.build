@@ -94,7 +94,11 @@ if not libgflags.found()
   libgflags = cppc.find_library('libgflags')
 endif
 
-glog = dependency('libglog', version: '>= 0.3.3')
+glog = dependency('libglog', version: '>= 0.3.3', required: false)
+if not glog.found()
+  # find the lib without pkg-config
+  glog = cppc.find_library('libglog')
+endif
 
 libnl = dependency('libnl-3.0', required: false)
 if not libnl.found()
