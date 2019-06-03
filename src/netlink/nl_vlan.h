@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <cstdint>
+#include <map>
 
 extern "C" {
 struct rtnl_link;
@@ -20,8 +21,8 @@ public:
 
   void register_switch_interface(switch_interface *swi) { this->swi = swi; }
 
-  int add_vlan(rtnl_link *link, uint16_t vid, bool tagged) const;
-  int remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) const;
+  int add_vlan(rtnl_link *link, uint16_t vid, bool tagged);
+  int remove_vlan(rtnl_link *link, uint16_t vid, bool tagged);
 
   uint16_t get_vid(rtnl_link *link);
 
@@ -35,6 +36,9 @@ private:
   static const uint16_t vid_low = 1;
   static const uint16_t vid_high = 0xfff;
   static const uint16_t default_vid = vid_low;
+
+  // ifindex - vlan - refcount
+  std::map<std::pair<uint32_t, uint16_t>, uint32_t> port_vlan;
 
   switch_interface *swi;
   cnetlink *nl;
