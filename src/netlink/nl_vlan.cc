@@ -84,7 +84,7 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   // check for refcount
   auto key = std::make_pair(port_id, vid);
   auto refcount = port_vlan.find(key);
-  if (refcount != port_vlan.end()){
+  if (refcount != port_vlan.end()) {
     refcount->second--;
     return rv;
   } else if (refcount->second == 1)
