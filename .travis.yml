@@ -6,7 +6,7 @@ services:
   - docker
 
 env:
-  - BUILDER="docker.io/toanju/builder:28" RELVER=28
+  - BUILDER="docker.io/rubensfig/builder:30" RELVER=30
 before_install:
   - docker pull $BUILDER
 
