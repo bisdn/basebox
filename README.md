@@ -16,17 +16,6 @@ dnf -y install baseboxd
 Copr repos are provided at https://copr.fedorainfracloud.org/coprs/bisdn/
 The "-testing" repos contain the latest builds for testing purposes and might not be as stable as the release versions.
 
-### Vagrant
-
-A Vagrant file is included that let's you create a VM with all dependencies installed. This is an easy way to build baseboxd without having to worry about libraries.
-```
-git clone https://github.com/bisdn/basebox.git
-cd basebox
-git submodule update --init
-vagrant up
-```
-More information how to use the Vagrant VM can be found [here](https://www.vagrantup.com/).
-
 ### Other distros
 
 Currently only installation from source is supported. To build baseboxd you
