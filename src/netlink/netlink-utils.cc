@@ -16,8 +16,8 @@
 #include "nl_output.h"
 
 #define lt_names                                                               \
-  "unsupported", "team", "bond", "bond_slave", "bridge", "bridge_slave",       \
-      "tun", "vlan", "vxlan"
+  "unsupported", "bond", "bond_slave", "bridge", "bridge_slave", "team",       \
+      "tun", "vlan", "vrf", "vrf_slave", "vxlan"
 
 namespace basebox {
 

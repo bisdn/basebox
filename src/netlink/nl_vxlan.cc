@@ -1018,14 +1018,14 @@ int nl_vxlan::create_next_hop(rtnl_neigh *neigh, uint32_t *next_hop_id) {
 
   // get outgoing interface
   uint32_t ifindex = rtnl_neigh_get_ifindex(neigh);
-  rtnl_link *local_link = nl->get_link_by_ifindex(ifindex);
+  auto local_link = nl->get_link_by_ifindex(ifindex);
 
-  if (local_link == nullptr) {
+  if (local_link.get() == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": invalid link ifindex=" << ifindex;
     return -EINVAL;
   }
 
-  uint32_t physical_port = nl->get_port_id(local_link);
+  uint32_t physical_port = nl->get_port_id(local_link.get());
 
   if (physical_port == 0) {
     // XXX retry this neigh later?
@@ -1033,10 +1033,10 @@ int nl_vxlan::create_next_hop(rtnl_neigh *neigh, uint32_t *next_hop_id) {
     return -EINVAL;
   }
 
-  nl_addr *addr = rtnl_link_get_addr(local_link);
+  nl_addr *addr = rtnl_link_get_addr(local_link.get());
   if (addr == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": invalid link (no ll addr) "
-               << OBJ_CAST(local_link);
+               << OBJ_CAST(local_link.get());
     return -EINVAL;
   }
 
@@ -1096,24 +1096,24 @@ int nl_vxlan::delete_next_hop(rtnl_neigh *neigh) {
 
   // get outgoing interface
   uint32_t ifindex = rtnl_neigh_get_ifindex(neigh);
-  rtnl_link *local_link = nl->get_link_by_ifindex(ifindex);
+  auto local_link = nl->get_link_by_ifindex(ifindex);
 
-  if (local_link == nullptr) {
+  if (local_link.get() == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": invalid link ifindex=" << ifindex;
     return -EINVAL;
   }
 
-  uint32_t physical_port = nl->get_port_id(local_link);
+  uint32_t physical_port = nl->get_port_id(local_link.get());
 
   if (physical_port == 0) {
     LOG(ERROR) << __FUNCTION__ << ": no port_id for ifindex=" << ifindex;
     return -EINVAL;
   }
 
-  nl_addr *addr = rtnl_link_get_addr(local_link);
+  nl_addr *addr = rtnl_link_get_addr(local_link.get());
   if (addr == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": invalid link (no ll addr) "
-               << OBJ_CAST(local_link);
+               << OBJ_CAST(local_link.get());
     return -EINVAL;
   }
 

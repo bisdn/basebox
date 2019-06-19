@@ -1,0 +1,122 @@
+#!/bin/bash
+
+# VRF creation example.
+# Virtual Routing and Forwarding (VRF) allows for the separation of
+# routing tables, independently processing of network paths.
+
+# Creation of VRFs in Linux is the creation of a network device,
+# which will then serve as a master to the attached interfaces.
+
+# For more information, consult the VRF documentation inside the 
+# Linux Kernel in: https://www.kernel.org/doc/Documentation/networking/vrf.txt
+# FRR configuration present in: 
+# https://gist.github.com/rubensfig/ef4a8663ad0c13639ffc78ac2ec62f6c
+
+# With the following physical topology:
+
+# +--------+       +------------+
+# | SERVER |       | CONTROLLER |
+# +--------+       +------------+
+#   eth1 (ns10) ------> port1
+#   eth2 (ns10) ------> port2
+#   eth3 (ns20) ------> port3
+#   eth4 (ns30) ------> port4
+
+# This script will create the following logical connections:
+
+# port1 (VLAN10) ---+             +----- swbridge.10 +--> red
+#                   |             |
+# port2 (VLAN10) ---+             |
+#                   |--> swbridge <----- swbridge.20 +--> blue
+# port3 (VLAN20) ---+             |
+#                   |             |
+# port4 (VLAN30) ---+             +----- swbridge.30 +--> green
+
+# IP addressing:
+# swbridge.10 = 10.0.10.1/24
+# swbridge.20 = 10.0.20.1/24
+# swbridge.30 = 10.0.30.1/24
+
+PORTA=${PORTA:-port1}
+PORTB=${PORTB:-port2}
+PORTC=${PORTC:-port3}
+PORTD=${PORTD:-port4}
+BRIDGE=${BRIDGE:-swbridge}
+
+VRF=${VRF:-red}
+VRF2=${VRF2:-blue}
+VRF3=${VRF3:-green}
+VRF_LIST=($VRF $VRF2 $VRF3)
+
+VRF_TABLE_ID=${VRF_TABLE_ID:-10}
+VRF_TABLE_ID2=${VRF_TABLE_ID2:-20}
+VRF_TABLE_ID3=${VRF_TABLE_ID3:-30}
+VRF_ID_LIST=($VRF_TABLE_ID $VRF_TABLE_ID2 $VRF_TABLE_ID3)
+
+BR_VLAN=${BR_VLAN:-10}
+BR_VLAN2=${BR_VLAN2:-20}
+BR_VLAN3=${BR_VLAN3:-30}
+BR_VLAN_LIST=($BR_VLAN $BR_VLAN2 $BR_VLAN3)
+  
+SVI_IP=${SVI_IP:-10.0.10.1/24}
+SVI_IP2=${SVI_IP2:-10.0.20.1/24}
+SVI_IP3=${SVI_IP3:-10.0.30.1/24}
+SVI_IP_LIST=($SVI_IP $SVI_IP2 $SVI_IP3)
+NEI_IP=${NEI_IP:-10.0.100.2}
+
+function setup() {
+  ## vrf
+  for i in {1..${#VRF_LIST[@]}}; do
+    ip link add ${VRF_LIST[$i]} type vrf table ${VRF_ID_LIST[$i]}
+    ip link set ${VRF_LIST[$i]} up
+  done
+
+  ## bridge
+  ip link add name ${BRIDGE} type bridge vlan_filtering 1 vlan_default_pvid 0
+  ip link set ${BRIDGE} up
+
+  ## port 1
+  ip link set ${PORTA} master ${BRIDGE}
+  bridge vlan add vid ${BR_VLAN} dev ${PORTA}
+  ip link set ${PORTA} up
+
+  ## port 2
+  ip link set ${PORTB} master ${BRIDGE}
+  bridge vlan add vid ${BR_VLAN} dev ${PORTB}
+  ip link set ${PORTB} up
+
+  ## port 3
+  ip link set ${PORTC} master ${BRIDGE}
+  bridge vlan add vid ${BR_VLAN2} dev ${PORTC}
+  ip link set ${PORTC} up
+
+  ## port 4
+  ip link set ${PORTD} master ${BRIDGE}
+  bridge vlan add vid ${BR_VLAN3} dev ${PORTD}
+  ip link set ${PORTD} up
+
+  ## SVI
+  for i in {1..${#BR_VLAN_LIST[@]}}; do
+    ip link add link ${BRIDGE} name ${BRIDGE}.${BR_VLAN_LIST[$i]} type vlan id ${BR_VLAN_LIST[$i]}
+    bridge vlan add vid ${BR_VLAN_LIST[$i]} dev ${BRIDGE} self
+    ip link set ${BRIDGE}.${BR_VLAN_LIST[$i]} up
+  done
+
+  ## SVI - VRF enslavement
+  for i in {1..${#BR_VLAN_LIST[@]}}; do
+    ip link set ${BRIDGE}.${BR_VLAN_LIST[$i]} vrf ${VRF_LIST[$i]}
+  done
+
+  ## IP Address attribution
+  for i in {1..${#SVI_IP_LIST[@]}}; do
+    ip add add ${SVI_IP_LIST[$i]} dev ${BRIDGE}.${BR_VLAN_LIST[$i]}
+  done
+}
+
+function teardown() {
+  for i in {1..${#VRF_LIST[@]}}; do
+    ip link del ${VRF_LIST[$i]}
+  done
+
+  ip link del ${BRIDGE}
+}

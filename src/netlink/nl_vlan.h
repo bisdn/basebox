@@ -21,8 +21,11 @@ public:
 
   void register_switch_interface(switch_interface *swi) { this->swi = swi; }
 
-  int add_vlan(rtnl_link *link, uint16_t vid, bool tagged);
-  int remove_vlan(rtnl_link *link, uint16_t vid, bool tagged);
+  int add_vlan(rtnl_link *link, uint16_t vid, bool tagged, uint16_t vrf_id = 0);
+  int remove_vlan(rtnl_link *link, uint16_t vid, bool tagged,
+                  uint16_t vrf_id = 0);
+  int remove_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
+                          uint16_t vrf_id = 0);
 
   uint16_t get_vid(rtnl_link *link);
 

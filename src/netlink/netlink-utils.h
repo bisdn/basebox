@@ -24,13 +24,15 @@ namespace basebox {
 
 enum link_type {
   LT_UNSUPPORTED,
-  LT_TEAM,
   LT_BOND,
   LT_BOND_SLAVE,
   LT_BRIDGE,
   LT_BRIDGE_SLAVE,
+  LT_TEAM,
   LT_TUN,
   LT_VLAN,
+  LT_VRF,
+  LT_VRF_SLAVE,
   LT_VXLAN,
   LT_MAX /* must be last */
 };
