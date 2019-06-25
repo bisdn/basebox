@@ -239,11 +239,12 @@ struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
   rtnl_link_set_family(filter.get(), family);
 
   // search link by filter
-  nl_cache_foreach_filter(caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
-                          [](struct nl_object *obj, void *arg) {
-                            *static_cast<nl_object **>(arg) = obj;
-                          },
-                          &_link);
+  nl_cache_foreach_filter(
+      caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
+      [](struct nl_object *obj, void *arg) {
+        *static_cast<nl_object **>(arg) = obj;
+      },
+      &_link);
 
   if (_link == nullptr) {
     // check the garbage
@@ -277,17 +278,16 @@ void cnetlink::get_bridge_ports(int br_ifindex,
   rtnl_link_set_family(filter.get(), AF_BRIDGE);
   rtnl_link_set_master(filter.get(), br_ifindex);
 
-  nl_cache_foreach_filter(caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
-                          [](struct nl_object *obj, void *arg) {
-                            assert(arg);
-                            auto *list =
-                                static_cast<std::deque<rtnl_link *> *>(arg);
+  nl_cache_foreach_filter(
+      caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
+      [](struct nl_object *obj, void *arg) {
+        assert(arg);
+        auto *list = static_cast<std::deque<rtnl_link *> *>(arg);
 
-                            VLOG(3) << __FUNCTION__ << ": found bridge port "
-                                    << obj;
-                            list->push_back(LINK_CAST(obj));
-                          },
-                          link_list);
+        VLOG(3) << __FUNCTION__ << ": found bridge port " << obj;
+        list->push_back(LINK_CAST(obj));
+      },
+      link_list);
 
   // check the garbage
   for (auto &obj : nl_objs) {

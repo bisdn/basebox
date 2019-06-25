@@ -326,12 +326,13 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
             rtnl_neigh_set_flags(filter.get(), NTF_MASTER | NTF_EXT_LEARNED);
             rtnl_neigh_set_state(filter.get(), NUD_REACHABLE);
 
-            nl_cache_foreach_filter(l2_cache.get(), OBJ_CAST(filter.get()),
-                                    [](struct nl_object *o, void *arg) {
-                                      VLOG(3) << "l2_cache remove object " << o;
-                                      nl_cache_remove(o);
-                                    },
-                                    nullptr);
+            nl_cache_foreach_filter(
+                l2_cache.get(), OBJ_CAST(filter.get()),
+                [](struct nl_object *o, void *arg) {
+                  VLOG(3) << "l2_cache remove object " << o;
+                  nl_cache_remove(o);
+                },
+                nullptr);
 
             sw->egress_bridge_port_vlan_remove(pport_no, vid);
           }
@@ -391,14 +392,14 @@ std::deque<rtnl_neigh *> nl_bridge::get_fdb_entries_of_port(rtnl_link *br_port,
 
   VLOG(3) << __FUNCTION__ << ": searching for " << OBJ_CAST(filter.get());
   std::deque<rtnl_neigh *> neighs;
-  nl_cache_foreach_filter(nl->get_cache(cnetlink::NL_NEIGH_CACHE),
-                          OBJ_CAST(filter.get()),
-                          [](struct nl_object *o, void *arg) {
-                            auto *neighs = (std::deque<rtnl_neigh *> *)arg;
-                            neighs->push_back(NEIGH_CAST(o));
-                            VLOG(3) << "needs to be updated " << o;
-                          },
-                          &neighs);
+  nl_cache_foreach_filter(
+      nl->get_cache(cnetlink::NL_NEIGH_CACHE), OBJ_CAST(filter.get()),
+      [](struct nl_object *o, void *arg) {
+        auto *neighs = (std::deque<rtnl_neigh *> *)arg;
+        neighs->push_back(NEIGH_CAST(o));
+        VLOG(3) << "needs to be updated " << o;
+      },
+      &neighs);
 
   return neighs;
 }
