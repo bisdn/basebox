@@ -1,9 +1,8 @@
 # Examples
 
-This folder serves the purpose of adding example configuration, using the iproute2 tool.
+This folder serves the purpose of adding example configuration, using the iproute2 and systemd-networkds tools.
 
-The structure of these examples show the features supported in baseboxd, so that configuration is more easily supported. So that configuration can be understood more easily,
-each test contains the setup to be used in the SDN controller and the servers.
+These examples are meant to show the features supported in baseboxd. So that configuration can be understood more easily, each test contains the setup to be used in the SDN controller and the servers.
 
 ## Physical Topology
 
@@ -40,4 +39,4 @@ Currently FRR support in baseboxd, is only tested with bgpd, and in the Free Ran
 
 ### networkd
 
-As examples for configuration using systemd-networkd, the files are available under the networkd folder. These files will generate a configuration similar to the one configured on the bridging section.
+As examples for configuration using systemd-networkd, the files are available under the networkd folder. These files will generate a configuration for 2 leaf - 2 spines setup for VxLAN-EVPN deployment.
