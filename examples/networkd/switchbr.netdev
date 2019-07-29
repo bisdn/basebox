@@ -1,7 +1,0 @@
-[NetDev]
-Name=switchbr
-Kind=bridge
-
-[Bridge]
-DefaultPVID=1
-VLANFiltering=1
