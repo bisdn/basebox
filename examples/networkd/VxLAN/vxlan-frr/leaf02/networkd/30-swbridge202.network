@@ -1,0 +1,11 @@
+# This file is managed by Salt via salt://systemd/networkd/templates/profile.jinja
+
+[Match]
+Name=swbridge.202
+    
+[Link]
+RequiredForOnline=no
+    
+[Network]
+Address=10.10.202.254/24
+    

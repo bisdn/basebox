@@ -1,0 +1,12 @@
+# This file is managed by Salt via salt://systemd/networkd/templates/profile.jinja
+
+[NetDev]
+Name=vxlan201
+Kind=vxlan
+    
+[VXLAN]
+Id=10201
+Local=100.0.0.60
+MacLearning=false
+DestinationPort=4789
+    

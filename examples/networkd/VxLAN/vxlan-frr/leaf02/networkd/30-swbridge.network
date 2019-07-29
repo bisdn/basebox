@@ -1,0 +1,16 @@
+# This file is managed by Salt via salt://systemd/networkd/templates/profile.jinja
+
+[Match]
+Name=swbridge
+    
+[Link]
+RequiredForOnline=no
+    
+[BridgeVLAN]
+VLAN=201
+VLAN=202
+    
+[Network]
+VLAN=swbridge.201
+VLAN=swbridge.202
+    
