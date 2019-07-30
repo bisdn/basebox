@@ -15,28 +15,30 @@
 #         > swbridge
 #  port2 /
 
-# Further, the VLAN ids in BR_VLAN_RANGE will be added to the ports
+# The VLAN ids in BR_VLAN_RANGE will be added to the ports
 
 PORTA=${PORTA:-port1}
 PORTB=${PORTB:-port2}
 BRIDGE=${BRIDGE:-swbridge}
 
-BR_VLAN_RANGE_DEF="{4..6}"
-BR_VLAN_RANGE=${BR_VLAN_RANGE:-$BR_VLAN_RANGE_DEF}
+BR_VLAN_RANGE=${BR_VLAN_RANGE:-6}
 
-ip link add name ${BRIDGE} type bridge vlan_filtering 1 vlan_default_pvid 0
-ip link set ${BRIDGE} up
+function setup() {
+  ip link add name ${BRIDGE} type bridge vlan_filtering 1
+  ip link set ${BRIDGE} up
 
-# port 1
-ip link set ${PORTA} master ${BRIDGE}
-ip link set ${PORTA} up
+  # port 1
+  ip link set ${PORTA} master ${BRIDGE}
+  ip link set ${PORTA} up
 
-# port 2
-ip link set ${PORTB} master ${BRIDGE}
-ip link set ${PORTB} up
+  # port 2
+  ip link set ${PORTB} master ${BRIDGE}
+  ip link set ${PORTB} up
 
-# vids
-for vid in $(eval echo $BR_VLAN_RANGE) ; do
-  bridge vlan add vid ${vid} dev ${PORTA}
-  bridge vlan add vid ${vid} dev ${PORTB}
-done
+  # vids
+  for vid in $(seq 2 $BR_VLAN_RANGE) ; do
+    bridge vlan add vid ${vid} dev ${PORTA}
+    bridge vlan add vid ${vid} dev ${PORTB}
+    bridge vlan add vid ${vid} dev ${BRIDGE} self
+  done
+}

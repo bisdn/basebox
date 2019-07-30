@@ -46,30 +46,29 @@ BRIDGE=${BRIDGE:-swbridge}
 VRF=${VRF:-red}
 VRF2=${VRF2:-blue}
 VRF3=${VRF3:-green}
-VRF_LIST=($VRF $VRF2 $VRF3)
 
 VRF_TABLE_ID=${VRF_TABLE_ID:-10}
-VRF_TABLE_ID2=${VRF_TABLE_ID2:-20}
-VRF_TABLE_ID3=${VRF_TABLE_ID3:-30}
-VRF_ID_LIST=($VRF_TABLE_ID $VRF_TABLE_ID2 $VRF_TABLE_ID3)
+VRF2_TABLE_ID=${VRF_TABLE_ID2:-20}
+VRF3_TABLE_ID=${VRF_TABLE_ID3:-30}
 
 BR_VLAN=${BR_VLAN:-10}
 BR_VLAN2=${BR_VLAN2:-20}
 BR_VLAN3=${BR_VLAN3:-30}
-BR_VLAN_LIST=($BR_VLAN $BR_VLAN2 $BR_VLAN3)
   
 SVI_IP=${SVI_IP:-10.0.10.1/24}
 SVI_IP2=${SVI_IP2:-10.0.20.1/24}
 SVI_IP3=${SVI_IP3:-10.0.30.1/24}
-SVI_IP_LIST=($SVI_IP $SVI_IP2 $SVI_IP3)
-NEI_IP=${NEI_IP:-10.0.100.2}
 
 function setup() {
   ## vrf
-  for i in {1..${#VRF_LIST[@]}}; do
-    ip link add ${VRF_LIST[$i]} type vrf table ${VRF_ID_LIST[$i]}
-    ip link set ${VRF_LIST[$i]} up
-  done
+  ip link add ${VRF} type vrf table ${VRF_TABLE_ID}
+  ip link set ${VRF} up
+
+  ip link add ${VRF2} type vrf table ${VRF2_TABLE_ID}
+  ip link set ${VRF2} up
+
+  ip link add ${VRF3} type vrf table ${VRF3_TABLE_ID}
+  ip link set ${VRF3} up
 
   ## bridge
   ip link add name ${BRIDGE} type bridge vlan_filtering 1 vlan_default_pvid 0
@@ -95,28 +94,36 @@ function setup() {
   bridge vlan add vid ${BR_VLAN3} dev ${PORTD}
   ip link set ${PORTD} up
 
-  ## SVI
-  for i in {1..${#BR_VLAN_LIST[@]}}; do
-    ip link add link ${BRIDGE} name ${BRIDGE}.${BR_VLAN_LIST[$i]} type vlan id ${BR_VLAN_LIST[$i]}
-    bridge vlan add vid ${BR_VLAN_LIST[$i]} dev ${BRIDGE} self
-    ip link set ${BRIDGE}.${BR_VLAN_LIST[$i]} up
-  done
+  ## SVI - swbridge.10
+  ip link add link ${BRIDGE} name ${BRIDGE}.${BR_VLAN} type vlan id ${BR_VLAN}
+  bridge vlan add vid ${BR_VLAN} dev ${BRIDGE} self
+  ip link set ${BRIDGE}.${BR_VLAN} up
+
+  ## SVI - swbridge.20
+  ip link add link ${BRIDGE} name ${BRIDGE}.${BR_VLAN2} type vlan id ${BR_VLAN2}
+  bridge vlan add vid ${BR_VLAN2} dev ${BRIDGE} self
+  ip link set ${BRIDGE}.${BR_VLAN2} up
+
+  ## SVI - swbridge.30
+  ip link add link ${BRIDGE} name ${BRIDGE}.${BR_VLAN3} type vlan id ${BR_VLAN3}
+  bridge vlan add vid ${BR_VLAN3} dev ${BRIDGE} self
+  ip link set ${BRIDGE}.${BR_VLAN3} up
 
   ## SVI - VRF enslavement
-  for i in {1..${#BR_VLAN_LIST[@]}}; do
-    ip link set ${BRIDGE}.${BR_VLAN_LIST[$i]} vrf ${VRF_LIST[$i]}
-  done
+  ip link set ${BRIDGE}.${BR_VLAN} vrf ${VRF}
+  ip link set ${BRIDGE}.${BR_VLAN2} vrf ${VRF2}
+  ip link set ${BRIDGE}.${BR_VLAN3} vrf ${VRF3}
 
   ## IP Address attribution
-  for i in {1..${#SVI_IP_LIST[@]}}; do
-    ip add add ${SVI_IP_LIST[$i]} dev ${BRIDGE}.${BR_VLAN_LIST[$i]}
-  done
+  ip add add ${SVI_IP} dev ${BRIDGE}.${BR_VLAN}
+  ip add add ${SVI_IP2} dev ${BRIDGE}.${BR_VLAN2}
+  ip add add ${SVI_IP3} dev ${BRIDGE}.${BR_VLAN3}
 }
 
 function teardown() {
-  for i in {1..${#VRF_LIST[@]}}; do
-    ip link del ${VRF_LIST[$i]}
-  done
+  ip link del ${VRF}
+  ip link del ${VRF2}
+  ip link del ${VRF3}
 
   ip link del ${BRIDGE}
 }
