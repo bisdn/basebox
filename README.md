@@ -47,6 +47,41 @@ meson build
 ninja -C build
 ```
 
+### Docker
+
+Running baseboxd as a service inside of a Docker container is currently under
+heavy development, but will probably be fully supported in the future. At the
+moment there are three builds available that you can directly pull from
+https://hub.docker.com/u/bisdn.
+
+- bisdn/baseboxd: contains the latest baseboxd package and its dependencies from
+  our stable repositories. 
+- bisdn/baseboxd-testing: contains the latest baseboxd package and its
+  dependencies from our testing repositories. 
+- bisdn/baseboxd-source: contains baseboxd and its dependencies build from
+  source from the master branch of this repository.
+
+To get the containers you can simply pull them with:
+
+```
+docker pull bisdn/baseboxd
+docker pull bisdn/baseboxd-testing
+docker pull bisdn/baseboxd-source
+```
+
+Since baseboxd needs to create kernel network interfaces, the container needs to
+run in privilged mode. To allow the direct orchestration of baseboxd via netlink
+events from the host itself, the container additionally needs to run within the
+host network namespace. All configuration parameters for baseboxd can be handed
+over to baseboxd via environment variables while starting the container.
+
+To run the current stable version of baseboxd on port 6654 with verbose logging
+and log output to stderr you can start it with:
+
+```
+docker run -d --privileged --network=host -e FLAGS_port="6654" -e GLOG_logtostderr="1" -e GLOG_v="2" bisdn/baseboxd
+```
+
 ## Usage
 
 ### bridge setup
