@@ -201,14 +201,14 @@ int nl_vxlan::init() {
   }
 
   std::deque<rtnl_link *> vxlan_links;
-  nl_cache_foreach_filter(
-      c, OBJ_CAST(link_filter.get()),
-      [](struct nl_object *obj, void *arg) {
-        LOG(INFO) << "found link " << obj;
-        auto vxlan_links = static_cast<std::deque<rtnl_link *> *>(arg);
-        vxlan_links->push_back(LINK_CAST(obj));
-      },
-      &vxlan_links);
+  nl_cache_foreach_filter(c, OBJ_CAST(link_filter.get()),
+                          [](struct nl_object *obj, void *arg) {
+                            LOG(INFO) << "found link " << obj;
+                            auto vxlan_links =
+                                static_cast<std::deque<rtnl_link *> *>(arg);
+                            vxlan_links->push_back(LINK_CAST(obj));
+                          },
+                          &vxlan_links);
 
   for (auto link : vxlan_links) {
     rv = create_vni(link);
@@ -239,14 +239,14 @@ int nl_vxlan::init() {
     rtnl_neigh_set_family(neigh_filter.get(), AF_BRIDGE);
 
     c = nl->get_cache(cnetlink::NL_NEIGH_CACHE);
-    nl_cache_foreach_filter(
-        c, OBJ_CAST(neigh_filter.get()),
-        [](struct nl_object *obj, void *arg) {
-          LOG(INFO) << "found neigh " << obj;
-          auto neighs = static_cast<std::deque<rtnl_neigh *> *>(arg);
-          neighs->push_back(NEIGH_CAST(obj));
-        },
-        &neighs);
+    nl_cache_foreach_filter(c, OBJ_CAST(neigh_filter.get()),
+                            [](struct nl_object *obj, void *arg) {
+                              LOG(INFO) << "found neigh " << obj;
+                              auto neighs =
+                                  static_cast<std::deque<rtnl_neigh *> *>(arg);
+                              neighs->push_back(NEIGH_CAST(obj));
+                            },
+                            &neighs);
 
     for (auto neigh : neighs) {
       auto br_link = nl->get_link(rtnl_link_get_ifindex(link), AF_BRIDGE);
@@ -656,20 +656,20 @@ int nl_vxlan::create_endpoint(rtnl_link *vxlan_link, rtnl_link *br_link,
   rtnl_neigh_set_family(neigh_filter.get(), AF_BRIDGE);
 
   auto c = nl->get_cache(cnetlink::NL_NEIGH_CACHE);
-  nl_cache_foreach_filter(
-      c, OBJ_CAST(neigh_filter.get()),
-      [](struct nl_object *obj, void *arg) {
-        auto n = NEIGH_CAST(obj);
+  nl_cache_foreach_filter(c, OBJ_CAST(neigh_filter.get()),
+                          [](struct nl_object *obj, void *arg) {
+                            auto n = NEIGH_CAST(obj);
 
-        // ignore remotes
-        if (nl_addr_iszero(rtnl_neigh_get_lladdr(n)))
-          return;
+                            // ignore remotes
+                            if (nl_addr_iszero(rtnl_neigh_get_lladdr(n)))
+                              return;
 
-        VLOG(3) << "found neigh for endpoint " << obj;
-        auto neighs = static_cast<std::deque<rtnl_neigh *> *>(arg);
-        neighs->push_back(n);
-      },
-      &neighs);
+                            VLOG(3) << "found neigh for endpoint " << obj;
+                            auto neighs =
+                                static_cast<std::deque<rtnl_neigh *> *>(arg);
+                            neighs->push_back(n);
+                          },
+                          &neighs);
 
   for (auto neigh : neighs) {
     rv = add_l2_neigh(neigh, lport_id, tunnel_id);
