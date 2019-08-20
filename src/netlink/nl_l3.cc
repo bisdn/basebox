@@ -1705,7 +1705,8 @@ uint16_t nl_l3::get_vrf_table_id(rtnl_link *link) {
   auto vrf = nl->get_link_by_ifindex(rtnl_link_get_master(link));
   if (vrf.get() && !rtnl_link_is_vrf(link) && rtnl_link_is_vrf(vrf.get())) {
     link = vrf.get();
-  } else if (!rtnl_link_is_vrf(link) && !vrf.get()) {
+// } else if (!rtnl_link_is_vrf(link) && !vrf.get()) {
+  } else {
     VLOG(2) << __FUNCTION__ << ": link=" << OBJ_CAST(link)
             << " is not a VRF interface ";
     return 0;
