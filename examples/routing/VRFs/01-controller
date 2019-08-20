@@ -12,118 +12,127 @@
 # FRR configuration present in: 
 # https://gist.github.com/rubensfig/ef4a8663ad0c13639ffc78ac2ec62f6c
 
-# With the following physical topology:
+# This file will configure a bridge with VLAN 10 and 20,
+# and the respective SVI interfaces (swbridge.10 and swbridge.20). 
+# 
+# These interfaces are then connected to one VRF (red),
+# with table Id 10.
+# 
+# IP addresses can then be configured on the SVI's. If the interfaces are configured with an IP address
+# before enslavement to the VRF, then the IP address will be lost.
+# 
+# The schematic for the setup is here:
+# 
+# +--------------------------------+
+# |        +--------------+        |
+# |        |  RED  (VRF)  |        |
+# |        +--+-------+---+        |
+# |           |       |            |
+# |+----------+--+  +-+-----------+|
+# || swbridge.X  |  | swbridge.Y  ||
+# ||10.0.100.1/24|  |10.0.200.1/24||
+# |+----+--------+  +-----+-------+|
+# |     |                 |        |
+# | +---+-----------------+------+ |
+# | |         swbridge           | |
+# | +---+-----------------+------+ |
+# |     |                 |        |
+# |  +--+----+         +--+----+   |
+# |  |portX  |         |portY  |   |
+# |  |VLAN100|         |VLAN200|   |
+# |  +-------+         +-------+   |
+# |     |                 |        |
+# |  +--+----+         +--+----+   |
+# |  |SERVER1|         |SERVER2|   |
+# |  +-------+         +-------+   |
+# |                                |
+# +--------------------------------+
+#
+# The configured setup will allow two servers connected to portX and portY 
+# with IP addresses from the same networks as SVI_IP and SVI_IP2 to connect
+# to each other, although they are in different VLANs. The traffic between both
+# servers and their respective networks will be routed inside of the VRF created
+# on the switch.
 
-# +--------+       +------------+
-# | SERVER |       | CONTROLLER |
-# +--------+       +------------+
-#   eth1 (ns10) ------> port1
-#   eth2 (ns10) ------> port2
-#   eth3 (ns20) ------> port3
-#   eth4 (ns30) ------> port4
-
-# This script will create the following logical connections:
-
-# port1 (VLAN10) ---+             +----- swbridge.10 +--> red
-#                   |             |
-# port2 (VLAN10) ---+             |
-#                   |--> swbridge <----- swbridge.20 +--> blue
-# port3 (VLAN20) ---+             |
-#                   |             |
-# port4 (VLAN30) ---+             +----- swbridge.30 +--> green
-
-# IP addressing:
-# swbridge.10 = 10.0.10.1/24
-# swbridge.20 = 10.0.20.1/24
-# swbridge.30 = 10.0.30.1/24
-
-PORTA=${PORTA:-port1}
-PORTB=${PORTB:-port2}
-PORTC=${PORTC:-port3}
-PORTD=${PORTD:-port4}
+# The port on the switch that SERVER1 is connected to
+PORTX=${PORTX:-port1}
+# The port on the switch that SERVER2 is connected to
+PORTY=${PORTY:-port2}
+# The name for the bridge on the switch that connects PORTX and PORTY
 BRIDGE=${BRIDGE:-swbridge}
 
+# The name for the VRF on the switch that will route traffic between the two
+# networks
 VRF=${VRF:-red}
-VRF2=${VRF2:-blue}
-VRF3=${VRF3:-green}
+# An ID for the routing table for the VRF to isolate all routes from the default
+# (host) routing table.  ID can be choosen in the range of 1 to 4294967295
+# (2^32-1) with the exclusion of 253-255 (which are used for the default routing
+# table).
+VRF_TABLE_ID=${VRF_TABLE_ID:-12345}
 
-VRF_TABLE_ID=${VRF_TABLE_ID:-10}
-VRF2_TABLE_ID=${VRF_TABLE_ID2:-20}
-VRF3_TABLE_ID=${VRF_TABLE_ID3:-30}
-
-BR_VLAN=${BR_VLAN:-10}
-BR_VLAN2=${BR_VLAN2:-20}
-BR_VLAN3=${BR_VLAN3:-30}
+# The VLAN which SERVER1 uses to tag its traffic
+BR_VLAN=${BR_VLAN:-100}
+# The VLAN which SERVER2 uses to tag its traffic
+BR_VLAN2=${BR_VLAN2:-200}
   
-SVI_IP=${SVI_IP:-10.0.10.1/24}
-SVI_IP2=${SVI_IP2:-10.0.20.1/24}
-SVI_IP3=${SVI_IP3:-10.0.30.1/24}
+# The IP that will be configured on the port on the switch connected to the VRF
+# that is reachable from SERVER1 (usually this will be the gateway of the
+# network)
+SVI_IP=${SVI_IP:-10.0.100.1/24}
+# The IP that will be configured on the port on the switch connected to the VRF
+# that is reachable from SERVER2 (usually this will be the gateway of the
+# network)
+SVI_IP2=${SVI_IP2:-10.0.200.1/24}
 
 function setup() {
-  ## vrf
+  # create vrf and set it up
   ip link add ${VRF} type vrf table ${VRF_TABLE_ID}
   ip link set ${VRF} up
 
-  ip link add ${VRF2} type vrf table ${VRF2_TABLE_ID}
-  ip link set ${VRF2} up
-
-  ip link add ${VRF3} type vrf table ${VRF3_TABLE_ID}
-  ip link set ${VRF3} up
-
-  ## bridge
-  ip link add name ${BRIDGE} type bridge vlan_filtering 1 vlan_default_pvid 0
+  # create bridge and set it up
+  ip link add name ${BRIDGE} type bridge vlan_filtering 1
   ip link set ${BRIDGE} up
 
-  ## port 1
-  ip link set ${PORTA} master ${BRIDGE}
-  bridge vlan add vid ${BR_VLAN} dev ${PORTA}
-  ip link set ${PORTA} up
+  # add portX to previously created bridge, set it up and allow VLAN traffic
+  ip link set ${PORTX} master ${BRIDGE}
+  bridge vlan add vid ${BR_VLAN} dev ${PORTX}
+  ip link set ${PORTX} up
 
-  ## port 2
-  ip link set ${PORTB} master ${BRIDGE}
-  bridge vlan add vid ${BR_VLAN} dev ${PORTB}
-  ip link set ${PORTB} up
+  # add portY to previously created bridge, set it up and allow VLAN traffic
+  ip link set ${PORTY} master ${BRIDGE}
+  bridge vlan add vid ${BR_VLAN} dev ${PORTY}
+  ip link set ${PORTY} up
 
-  ## port 3
-  ip link set ${PORTC} master ${BRIDGE}
-  bridge vlan add vid ${BR_VLAN2} dev ${PORTC}
-  ip link set ${PORTC} up
-
-  ## port 4
-  ip link set ${PORTD} master ${BRIDGE}
-  bridge vlan add vid ${BR_VLAN3} dev ${PORTD}
-  ip link set ${PORTD} up
-
-  ## SVI - swbridge.10
+  # add a link to the previously created bridge with the same VLAN as PORTX,
+  # that we can later on attach to our VRF
   ip link add link ${BRIDGE} name ${BRIDGE}.${BR_VLAN} type vlan id ${BR_VLAN}
+  # allow traffic with the VLAN used on PORTX on the bridge
   bridge vlan add vid ${BR_VLAN} dev ${BRIDGE} self
+  # set previously created link on bridge up
   ip link set ${BRIDGE}.${BR_VLAN} up
 
-  ## SVI - swbridge.20
+  # add a link to the previously created bridge with the same VLAN as PORT>,
+  # that we can lateron attach to our VRF
   ip link add link ${BRIDGE} name ${BRIDGE}.${BR_VLAN2} type vlan id ${BR_VLAN2}
+  # allow traffic with the VLAN used on PORTY on the bridge
   bridge vlan add vid ${BR_VLAN2} dev ${BRIDGE} self
+  # set previously created link on bridge up
   ip link set ${BRIDGE}.${BR_VLAN2} up
 
-  ## SVI - swbridge.30
-  ip link add link ${BRIDGE} name ${BRIDGE}.${BR_VLAN3} type vlan id ${BR_VLAN3}
-  bridge vlan add vid ${BR_VLAN3} dev ${BRIDGE} self
-  ip link set ${BRIDGE}.${BR_VLAN3} up
-
-  ## SVI - VRF enslavement
+  # connect (enslave) the previously created links on the bridge to the VRF to
+  # allow routing between the connected networks
   ip link set ${BRIDGE}.${BR_VLAN} vrf ${VRF}
-  ip link set ${BRIDGE}.${BR_VLAN2} vrf ${VRF2}
-  ip link set ${BRIDGE}.${BR_VLAN3} vrf ${VRF3}
+  ip link set ${BRIDGE}.${BR_VLAN2} vrf ${VRF}
 
-  ## IP Address attribution
-  ip add add ${SVI_IP} dev ${BRIDGE}.${BR_VLAN}
-  ip add add ${SVI_IP2} dev ${BRIDGE}.${BR_VLAN2}
-  ip add add ${SVI_IP3} dev ${BRIDGE}.${BR_VLAN3}
+  # add IP addresses (usually the gateways of these networks) from the networks
+  # of SERVER1 and SERVER2 to the links with the respective VLANs
+  ip address add ${SVI_IP} dev ${BRIDGE}.${BR_VLAN}
+  ip address add ${SVI_IP2} dev ${BRIDGE}.${BR_VLAN2}
 }
 
 function teardown() {
+  # delete the VRF
   ip link del ${VRF}
-  ip link del ${VRF2}
-  ip link del ${VRF3}
-
+  # delete the bridge
   ip link del ${BRIDGE}
 }
