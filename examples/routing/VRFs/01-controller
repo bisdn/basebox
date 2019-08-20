@@ -104,7 +104,7 @@ function setup() {
   ip link set ${PORTY} up
 
   # add a link to the previously created bridge with the same VLAN as PORTX,
-  # that we can lateron attach to our VRF
+  # that we can later on attach to our VRF
   ip link add link ${BRIDGE} name ${BRIDGE}.${BR_VLAN} type vlan id ${BR_VLAN}
   # allow traffic with the VLAN used on PORTX on the bridge
   bridge vlan add vid ${BR_VLAN} dev ${BRIDGE} self
