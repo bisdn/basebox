@@ -66,7 +66,7 @@ public:
 
   void notify_on_net_reachable(net_reachable *f, struct net_params p) noexcept;
   void notify_on_nh_reachable(nh_reachable *f, struct nh_params p) noexcept;
-  // void notify_on_nh_resovled(nh_resolved *f, struct nh_params p) noexcept;
+  void notify_on_nh_resolved(struct net_params p) noexcept;
 
 private:
   int get_l3_interface_id(rtnl_neigh *n, uint32_t *l3_interface_id,
@@ -102,7 +102,22 @@ private:
   int del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
                     const struct nl_addr *d_mac);
 
-  bool is_link_local_address(const struct nl_addr *addr);
+  bool is_ipv6_link_local_address(const struct nl_addr *addr) {
+    auto p = nl_addr_alloc(16);
+    nl_addr_parse("fe80::/10", AF_INET6, &p);
+    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> ll_addr(p, nl_addr_put);
+
+    return !nl_addr_cmp_prefix(ll_addr.get(), addr);
+  }
+
+  bool is_ipv6_multicast_address(const struct nl_addr *addr) {
+    auto p = nl_addr_alloc(16);
+    nl_addr_parse("ff80::/10", AF_INET6, &p);
+    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> mc_addr(p, nl_addr_put);
+
+    return !nl_addr_cmp_prefix(mc_addr.get(), addr);
+  }
+
   uint16_t get_vrf_table_id(rtnl_link *vrf);
 
   switch_interface *sw;
@@ -110,6 +125,7 @@ private:
   cnetlink *nl;
   std::deque<std::pair<net_reachable *, net_params>> net_callbacks;
   std::deque<std::pair<nh_reachable *, nh_params>> nh_callbacks;
+  std::deque<net_params> net_resolved_callbacks; // handle the unknown nexthops
   const uint8_t MAIN_ROUTING_TABLE = 254;
 };
 
