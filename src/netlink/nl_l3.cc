@@ -635,7 +635,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   }
 
   for (auto cb = std::begin(net_resolved_callbacks);
-       cb != std::end(net_resolved_callbacks); cb++) {
+       cb != std::end(net_resolved_callbacks);) {
     if (cb->ifindex == rtnl_neigh_get_ifindex(n) &&
         nl_addr_cmp_prefix(cb->addr, rtnl_neigh_get_dst(n))) {
 
@@ -652,9 +652,10 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
       nl_object_put(
           OBJ_CAST(rt)); // return object has to be freed using nl_object_put
 
-#if 0
-      net_resolved_callbacks.erase(cb); // Object must as well be freed
-#endif
+      cb = net_resolved_callbacks.erase(cb); // erase invalidates the pointer,
+                                             // so the value must be returned
+    } else {
+      ++cb;
     }
   }
 
@@ -1504,7 +1505,9 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
 
     // If the next-hop is currently unresolved, we store the route and
     // process it when the nh is found
-    notify_on_nh_resolved(net_params(rtnl_route_get_dst(r), nh.ifindex));
+    if (!is_ipv6_link_local_address(rtnl_route_get_dst(r)) &&
+        !is_ipv6_multicast_address(rtnl_route_get_dst(r)))
+      notify_on_nh_resolved(net_params(rtnl_route_get_dst(r), nh.ifindex));
   }
 
   VLOG(2) << __FUNCTION__ << ": got " << neighs.size() << " neighbours ("
