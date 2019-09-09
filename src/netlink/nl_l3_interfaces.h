@@ -27,6 +27,8 @@ struct net_params {
     nl_addr_put(addr);
   }
 
+  bool operator==(const int ifindex) const { return this->ifindex == ifindex; }
+
   nl_addr *addr;
   int ifindex;
 };

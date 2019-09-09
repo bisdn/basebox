@@ -1612,6 +1612,17 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   VLOG(2) << __FUNCTION__ << ": number of next hops is "
           << rtnl_route_get_nnexthops(r);
 
+  // Cleanup the unresolved route on deletion
+  for (auto i : unresolved_nh) {
+    auto it = std::find(net_resolved_callbacks.begin(),
+                        net_resolved_callbacks.end(), i.ifindex);
+    if (it == net_resolved_callbacks.end()) {
+      continue;
+    }
+
+    net_resolved_callbacks.erase(it);
+  }
+
   if (neighs.size() == 0) {
     LOG(ERROR) << __FUNCTION__ << ": no nexthop for this route " << OBJ_CAST(r);
     return rv;
@@ -1668,6 +1679,35 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
 
     // drop reference
     rtnl_neigh_put(n);
+  }
+
+  // Drop entries from net_reachable_callback
+  for (auto cb = std::begin(net_resolved_callbacks);
+       cb != std::end(net_resolved_callbacks);) {
+    VLOG(1) << " CB TO DELETE " << cb->addr;
+#if 0
+    if (cb->ifindex == rtnl_neigh_get_ifindex(n) &&
+        nl_addr_cmp_prefix(cb->addr, rtnl_neigh_get_dst(n))) {
+
+      // query the kernel for the correct route matching the dst addr
+      nl_route_query rq;
+      auto rt = rq.query_route(cb->addr);
+
+      auto ad = rtnl_route_get_dst(rt);
+      nl_addr_set_prefixlen(
+          ad,
+          nl_addr_get_prefixlen(cb->addr)); // guarantee the correct prefixlen
+
+      add_l3_unicast_route(rt, true);
+      nl_object_put(
+          OBJ_CAST(rt)); // return object has to be freed using nl_object_put
+
+      cb = net_resolved_callbacks.erase(cb); // erase invalidates the pointer,
+                                             // so the value must be returned
+    } else {
+      ++cb;
+    }
+#endif
   }
 
   return rv;
