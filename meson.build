@@ -54,6 +54,53 @@ sources = files('''
   src/utils/utils.h
   '''.split())
 
+test_sources = files('''
+  src/basebox_api.cc
+  src/basebox_api.h
+  src/basebox_grpc_statistics.cc
+  src/basebox_grpc_statistics.h
+  src/netlink/cnetlink.cc
+  src/netlink/cnetlink.h
+  src/netlink/ctapdev.cc
+  src/netlink/ctapdev.h
+  src/netlink/nbi_impl.cc
+  src/netlink/nbi_impl.h
+  src/netlink/netlink-utils.cc
+  src/netlink/netlink-utils.h
+  src/netlink/nl_bond.cc
+  src/netlink/nl_bond.h
+  src/netlink/nl_bridge.cc
+  src/netlink/nl_bridge.h
+  src/netlink/nl_hashing.h
+  src/netlink/nl_interface.cc
+  src/netlink/nl_interface.h
+  src/netlink/nl_l3.cc
+  src/netlink/nl_l3.h
+  src/netlink/nl_l3_interfaces.h
+  src/netlink/nl_obj.cc
+  src/netlink/nl_obj.h
+  src/netlink/nl_output.cc
+  src/netlink/nl_output.h
+  src/netlink/nl_route_query.h
+  src/netlink/nl_vlan.cc
+  src/netlink/nl_vlan.h
+  src/netlink/nl_vxlan.cc
+  src/netlink/nl_vxlan.h
+  src/netlink/tap_io.cc
+  src/netlink/tap_io.h
+  src/netlink/tap_manager.cc
+  src/netlink/tap_manager.h
+  src/of-dpa/controller.cc
+  src/of-dpa/controller.h
+  src/of-dpa/ofdpa_client.cc
+  src/of-dpa/ofdpa_client.h
+  src/of-dpa/ofdpa_datatypes.h
+  src/sai.h
+  src/utils/rofl-utils.h
+  src/utils/utils.h
+  '''.split())
+
+
 # setup paths
 prefixdir = get_option('prefix')
 systemunitdir = '/usr/lib/systemd/system'
@@ -64,6 +111,7 @@ libdir = join_paths(prefixdir, get_option('libdir'))
 bindir = join_paths(prefixdir, get_option('bindir'))
 sbindir = join_paths(prefixdir, get_option('sbindir'))
 sysconfdir = join_paths(prefixdir, get_option('sysconfdir'))
+project_source_root = meson.current_source_dir()
 
 # config data
 conf_data = configuration_data()
@@ -195,6 +243,10 @@ if clang_tidy.found()
 else
   run_target('clang-tidy',
     command: [ 'echo', 'install', 'clang-tidy', '&&', 'false' ])
+endif
+
+if get_option('enable-test')
+  subdir('tests')
 endif
 
 executable('baseboxd',
