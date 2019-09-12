@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# ECMP configuration example.
+# Equal-cost Multipath Routing (ECMP) is a routing mechanism that 
+# allows for selection of multiple best-paths to a given destination.
+# The ECMP-enabled router will have several possible next-hops to 
+# certain destinations, and the next-hop selection is made with different
+# methods. A more comprehensive description on the next-hop selection methods 
+# is available via the RFC 2991: https://tools.ietf.org/html/rfc2991#section-4
+# ECMP is supported natively on several routing protocols, such as OSPF and 
+# IS-IS, and its usage will provide load-balancing across the redundant paths.
+
+# This script will show baseboxd's capabilities on supporting ECMP. Currently
+# baseboxd will only support ECMP route configuration to previously discovered
+# next-hops, and unicast traffic only.
+
+# +---------------------+ 
+# |    10.1.0.0/24      |
+# +-+-----------------+-+
+#   |                 |
+# +-+------+   +------+-+
+# |Neigh X |   |Neigh Y |
+# |10.0.1.2|   |10.0.1.3|
+# +-+------+   +------+-+
+#   |                 |
+#  weight 1      weight 2
+#   |                 |
+#   +--------+--------+
+#            |
+#     +------+----+
+#     |portX      |
+#     |10.0.1.1/24|
+#     +-----------+
+
+# In this scenario, the router port configured portX, has two neighbors belonging
+# to the same network, and traffic outgoing to the 10.1.0.0/24 network will be routed
+# according to the weight set. This weight reflects the 'relative bandwidth or quality' 
+# (from man ip-route) # of the certain link. 
+
+# On the switch, this script results on the following routing table:
+# 10.0.1.0/24 dev port1 proto kernel scope link src 10.0.1.1
+# 10.1.0.0/24
+#         nexthop via 10.0.1.2 dev port1 weight 1
+#         nexthop via 10.0.1.3 dev port1 weight 2
+
+# Ports on baseboxd
+PORTX=${PORTX:-port1}
+
+# IP address configured on PORTX
+IPX=${IPX:-10.0.1.1/24}
+
+# Neighbor attached to PORTX
+NEIX=${NEIX:-10.0.1.2}
+# Neighbor attached to PORTY
+NEIY=${NEIY:-10.0.1.3}
+
+# MAC address of NEIX, attached to PORTX
+MACX=${MACX:-12:85:dd:75:91:b7}
+# MAC address of NEIY, attached to PORTY
+MACY=${MACY:-12:85:dd:45:22:a8}
+
+# ECMP route destination
+ECMP_ROUTE=${ECMP_ROUTE:-10.1.0.0/24}
+
+function setup() {
+  # Links are up
+  ip link set lo up
+  ip link set $PORTX up
+  
+  # IP address configuration
+  ip address add $IPX dev $PORTX
+
+  # ECMP routes will only be added to previously discovered neighbors
+  ip nei add $NEIX dev $PORTX lladdr $MACX
+  ip nei add $NEIY dev $PORTX lladdr $MACY
+
+  # ECMP route configuration via iproute2, the next-hops are selected with the 
+  # 'via' keyword, and the weight is configured with the 'weight' keyword
+  ip route add $ECMP_ROUTE nexthop via $NEIX weight 1 nexthop via $NEIY weight 2
+}
+
+function teardown() {
+  ip route delete $ECMP_ROUTE
+  ip address del $IPX dev $PORTX
+  ip address del $IPY dev $PORTY
+}
