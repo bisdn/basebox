@@ -1,11 +1,12 @@
 #include "netlink/cnetlink.h"
+#include "netlink/ctapdev.h"
 
 #include <netlink/route/link.h>
 #include "gtest/gtest.h"
 
 namespace basebox {
 
-TEST(cnetlink,  DISABLED_is_bridge_interface_false) {
+TEST(cnetlink,  is_bridge_interface_false) {
   basebox::cnetlink test;
   std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> link(rtnl_link_alloc(),
                                                               &rtnl_link_put);
@@ -18,7 +19,7 @@ TEST(cnetlink,  DISABLED_is_bridge_interface_false) {
 }
 
 // Test case not covered
-TEST(cnetlink, DISABLED_is_bridge_interface_bridge) {
+TEST(cnetlink, is_bridge_interface_bridge) {
   basebox::cnetlink test;
   std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> link(rtnl_link_alloc(),
                                                               &rtnl_link_put);
@@ -37,19 +38,21 @@ TEST(cnetlink, is_bridge_interface_bridge_slave) {
   std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> bridge(rtnl_link_bridge_alloc(),
                                                               &rtnl_link_put);
 
-  rtnl_link_set_ifindex(bridge.get(), 1);
+  rtnl_link_set_ifindex(bridge.get(), 123);
+  rtnl_link_set_name(bridge.get(), "bridge0");
   rtnl_link_set_family(bridge.get(), AF_BRIDGE);
 
   // bridge slave declaration
   std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> slave(rtnl_link_alloc(),
                                                               &rtnl_link_put);
-  rtnl_link_set_ifindex(slave.get(), 2);
-  rtnl_link_set_family(slave.get(), AF_UNSPEC);
+
+  rtnl_link_set_name(slave.get(), "port1");
+  rtnl_link_set_type(slave.get(), "vlan");
+  rtnl_link_set_master(slave.get(), 123);
 
   auto res = test.is_bridge_interface(slave.get());
   EXPECT_TRUE(res);
 }
-
 }
 
 int main(int argc, char **argv) {

@@ -314,7 +314,7 @@ bool cnetlink::is_bridge_interface(int ifindex) const {
 
 bool cnetlink::is_bridge_interface(rtnl_link *l) const {
   assert(l);
-
+#if 0
   // is a vlan on top of the bridge?
   if (rtnl_link_is_vlan(l)) {
     LOG(INFO) << __FUNCTION__ << ": vlan ok";
@@ -343,6 +343,15 @@ bool cnetlink::is_bridge_interface(rtnl_link *l) const {
       return true;
 
     // XXX TODO check rather nl_bridge ?
+  }
+#endif
+
+  // test for bridge interface
+  if(rtnl_link_is_bridge(l)) {
+    return true;
+  // test for bridge slave interface
+  } else if (rtnl_link_is_vlan(l) && rtnl_link_get_master(l)) { 
+    return true;
   }
 
   return false;
