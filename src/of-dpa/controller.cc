@@ -1795,7 +1795,7 @@ int controller::get_statistics(uint64_t port_no, uint32_t number_of_counters,
       counters[i] = stats_array.get_port_stats(port_no).get_rx_errors();
       break;
     case (SAI_PORT_STAT_TX_ERRORS):
-      counters[i] = stats_array.get_port_stats(port_no).get_tx_errors();
+      counters[i] = 0; // tx_errors counters are not supported in OF-DPA
       break;
     case (SAI_PORT_STAT_RX_FRAME_ERR):
       counters[i] = stats_array.get_port_stats(port_no).get_rx_frame_err();

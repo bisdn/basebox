@@ -54,12 +54,12 @@ NetworkStats::NetworkStats(std::shared_ptr<switch_interface> swi,
 
     state->mutable_counters()->set_in_discards(stats[4]);
     state->mutable_counters()->set_in_errors(stats[6] + stats[9]);
-    state->mutable_counters()->set_in_fcs_errors(stats[8] + stats[7]);
+    state->mutable_counters()->set_in_fcs_errors(stats[8]);
     state->mutable_counters()->set_in_octets(stats[2]);
     state->mutable_counters()->set_in_unicast_pkts(stats[0]);
 
     state->mutable_counters()->set_out_discards(stats[5]);
-    state->mutable_counters()->set_out_errors(stats[7] + stats[11]);
+    state->mutable_counters()->set_out_errors(stats[11]);
     state->mutable_counters()->set_out_octets(stats[3]);
     state->mutable_counters()->set_out_unicast_pkts(stats[1]);
   }
