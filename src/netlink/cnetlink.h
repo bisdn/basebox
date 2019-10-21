@@ -83,6 +83,8 @@ public:
 
   std::deque<rtnl_neigh *> search_fdb(uint16_t vid = 0,
                                       nl_addr *lladdr = nullptr);
+  int load_from_file(const std::string &path, int base=10);
+
 
 private:
   // non copyable
@@ -159,8 +161,6 @@ private:
     EVENT_NONE,
     EVENT_UPDATE_LINKS,
   };
-
-  int load_from_file(const std::string &path);
 
   void init_caches();
   void init_subsystems() noexcept;

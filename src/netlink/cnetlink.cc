@@ -64,20 +64,17 @@ cnetlink::~cnetlink() {
   nl_socket_free(sock_tx);
 }
 
-int cnetlink::load_from_file(const std::string &path) {
-  std::ifstream file;
-  int out = -1;
-  file.open(path);
+int cnetlink::load_from_file(const std::string &path, int base) {
+  std::ifstream file(path);
+  std::string out;
+
   if (file.is_open()) {
     while (!file.eof()) {
       file >> out;
     }
   }
-  if (out < 0) {
-    LOG(FATAL) << __FUNCTION__ << ": failed to load " << path;
-  }
 
-  return out;
+  return std::stoi(out, nullptr, base);
 }
 
 static int nl_overrun_handler_verbose(struct nl_msg *msg, void *arg) {
@@ -904,8 +901,10 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
                 << rtnl_link_get_name(link);
 
       bridge->add_interface(link);
+      bridge->get_vlan_proto();
     } catch (std::exception &e) {
       LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
+      LOG(FATAL);
     }
     break;
   case LT_VXLAN: {

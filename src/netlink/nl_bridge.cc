@@ -55,6 +55,11 @@ bool nl_bridge::is_bridge_interface(rtnl_link *link) {
   return true;
 }
 
+void nl_bridge::get_vlan_proto() {
+  std::string portname(rtnl_link_get_name(bridge));
+  nl->load_from_file("/sys/class/net/" + portname + "/bridge/vlan_protocol", 16);
+}
+
 static bool br_vlan_equal(const rtnl_link_bridge_vlan *lhs,
                           const rtnl_link_bridge_vlan *rhs) {
   assert(lhs);
