@@ -56,7 +56,8 @@ public:
   int fdb_timeout(rtnl_link *br_link, uint16_t vid,
                   const rofl::caddress_ll &mac);
   int get_ifindex() { return bridge ? rtnl_link_get_ifindex(bridge) : 0; }
-  void get_vlan_proto();
+  uint32_t  get_vlan_proto();
+  uint32_t  get_vlan_filtering();
 
   // XXX Improve cache search mechanism
   std::deque<rtnl_neigh *> get_fdb_entries_of_port(rtnl_link *br_port,

@@ -1,5 +1,4 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
+/* This Source Code Form is subject to the terms of the Mozilla Public * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #pragma once
@@ -137,6 +136,7 @@ public:
                                           bool untagged) noexcept = 0;
   virtual int egress_bridge_port_vlan_remove(uint32_t port,
                                              uint16_t vid) noexcept = 0;
+  virtual int egress_tpid_rewrite(uint32_t port) noexcept = 0;
 
   virtual int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept = 0;
   virtual int subscribe_to(enum swi_flags flags) noexcept = 0;

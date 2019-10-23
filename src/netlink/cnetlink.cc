@@ -901,7 +901,6 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
                 << rtnl_link_get_name(link);
 
       bridge->add_interface(link);
-      bridge->get_vlan_proto();
     } catch (std::exception &e) {
       LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
       LOG(FATAL);
@@ -1011,7 +1010,6 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     break;
   case LT_VRF: // No need to care about the vrf interface itself
   case LT_BOND:
-  case LT_BRIDGE:
   case LT_UNSUPPORTED:
     VLOG(2) << __FUNCTION__
             << ": ignoring update (not supported) of old_lt=" << lt_old

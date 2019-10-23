@@ -55,9 +55,19 @@ bool nl_bridge::is_bridge_interface(rtnl_link *link) {
   return true;
 }
 
-void nl_bridge::get_vlan_proto() {
+// Read sysfs to obtain the value for the VLAN protocol on the switch.
+// Only two values are suported: 0x8100 and 0x88a8
+uint32_t nl_bridge::get_vlan_proto() {
   std::string portname(rtnl_link_get_name(bridge));
-  nl->load_from_file("/sys/class/net/" + portname + "/bridge/vlan_protocol", 16);
+  return nl->load_from_file("/sys/class/net/" + portname + "/bridge/vlan_protocol", 16);
+}
+
+// Read sysfs to obtain the value for the VLAN filtering value on the switch.
+// baseboxd currently only supports VLAN-aware bridges, set with the vlan_filtering
+// flag to 1. 
+uint32_t nl_bridge::get_vlan_filtering() {
+  std::string portname(rtnl_link_get_name(bridge));
+  return nl->load_from_file("/sys/class/net/" + portname + "/bridge/vlan_filtering");
 }
 
 static bool br_vlan_equal(const rtnl_link_bridge_vlan *lhs,
@@ -117,6 +127,9 @@ void nl_bridge::add_interface(rtnl_link *link) {
   }
 
   update_vlans(nullptr, link);
+
+  if (get_vlan_proto() == ETH_P_8021AD)
+    sw->egress_tpid_rewrite(nl->get_port_id(link));
 }
 
 void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
@@ -624,6 +637,7 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   // ether frame
   switch (ntohs(hdr->eth.h_proto)) {
   case ETH_P_8021Q:
+  case ETH_P_8021AD:
     // vid
     vid = ntohs(hdr->vlan) & 0xfff;
     break;
