@@ -15,12 +15,14 @@
 #include <netlink/route/link/vrf.h>
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
+#include <netlink/cache.h>
 
 #include "cnetlink.h"
 #include "nl_hashing.h"
 #include "nl_l3.h"
 #include "nl_output.h"
 #include "nl_vlan.h"
+#include "nl_route_query.h"
 #include "sai.h"
 #include "utils/rofl-utils.h"
 
@@ -268,7 +270,7 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   // link local addresses must redirect to controllers
   int port_id = nl->get_port_id(link);
   auto addr = rtnl_addr_get_local(a);
-  if (is_link_local_address(addr)) {
+  if (is_ipv6_link_local_address(addr)) {
 
     rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
     if (rv < 0) {
@@ -627,6 +629,31 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
       // XXX TODO add l3_interface?
       cb->first->nh_reachable_notification(cb->second);
       cb = nh_callbacks.erase(cb);
+    } else {
+      ++cb;
+    }
+  }
+
+  for (auto cb = std::begin(net_resolved_callbacks);
+       cb != std::end(net_resolved_callbacks);) {
+    if (cb->ifindex == rtnl_neigh_get_ifindex(n) &&
+        nl_addr_cmp_prefix(cb->addr, rtnl_neigh_get_dst(n))) {
+
+      // query the kernel for the correct route matching the dst addr
+      nl_route_query rq;
+      auto rt = rq.query_route(cb->addr);
+
+      auto ad = rtnl_route_get_dst(rt);
+      nl_addr_set_prefixlen(
+          ad,
+          nl_addr_get_prefixlen(cb->addr)); // guarantee the correct prefixlen
+
+      add_l3_unicast_route(rt, true);
+      nl_object_put(
+          OBJ_CAST(rt)); // return object has to be freed using nl_object_put
+
+      cb = net_resolved_callbacks.erase(cb); // erase invalidates the pointer,
+                                             // so the value must be returned
     } else {
       ++cb;
     }
@@ -1247,6 +1274,10 @@ void nl_l3::notify_on_nh_reachable(nh_reachable *f,
   nh_callbacks.emplace_back(f, p);
 }
 
+void nl_l3::notify_on_nh_resolved(struct net_params p) noexcept {
+  net_resolved_callbacks.emplace_back(p);
+}
+
 int nl_l3::get_l3_interface_id(rtnl_neigh *n, uint32_t *l3_interface_id,
                                uint32_t vid) {
   assert(l3_interface_id);
@@ -1475,9 +1506,12 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   for (auto nh : unresolved_nh) {
     VLOG(2) << __FUNCTION__ << ": got unresolved nh ifindex=" << nh.ifindex
             << ", nh=" << nh.nh;
-#if 0
-    notify_on_nh_resolved() // XXX TODO implement nh update
-#endif // 0
+
+    // If the next-hop is currently unresolved, we store the route and
+    // process it when the nh is found
+    if (!is_ipv6_link_local_address(rtnl_route_get_dst(r)) &&
+        !is_ipv6_multicast_address(rtnl_route_get_dst(r)))
+      notify_on_nh_resolved(net_params(rtnl_route_get_dst(r), nh.ifindex));
   }
 
   VLOG(2) << __FUNCTION__ << ": got " << neighs.size() << " neighbours ("
@@ -1515,24 +1549,22 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     l3_interfaces.emplace(l3_interface_id);
   }
 
-  if (l3_interfaces.size() == 0) {
-    // got no neighs or egress interface creation failed
-    // XXX TODO handle this
-
-    // cleanup
-    for (auto n : neighs)
-      rtnl_neigh_put(n);
-
-    return -EINVAL;
-  }
-
-  if (nnhs == 1) {
-    // single next hop
+  switch (nnhs) {
+  case 0:
+    // Not yet determined next-hop, the rule must be installed to the switch
+    // pointing to controller and then updated after next-hop registration
+    rv = add_l3_unicast_route(rtnl_route_get_dst(r), 0, false, update_route,
+                              vrf_id);
+    break;
+  case 1:
+    // Single known next-hop
     rv = add_l3_unicast_route(rtnl_route_get_dst(r), *l3_interfaces.begin(),
                               false, update_route, vrf_id);
-  } else {
+    break;
+  default:
     // create ecmp group
     rv = add_l3_ecmp_route(r, l3_interfaces, update_route);
+    break;
   }
 
   if (rv < 0) {
@@ -1583,6 +1615,17 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
 
   VLOG(2) << __FUNCTION__ << ": number of next hops is "
           << rtnl_route_get_nnexthops(r);
+
+  // Cleanup the unresolved route on deletion
+  for (auto i : unresolved_nh) {
+    auto it = std::find(net_resolved_callbacks.begin(),
+                        net_resolved_callbacks.end(), i.ifindex);
+    if (it == net_resolved_callbacks.end()) {
+      continue;
+    }
+
+    net_resolved_callbacks.erase(it);
+  }
 
   if (neighs.size() == 0) {
     LOG(ERROR) << __FUNCTION__ << ": no nexthop for this route " << OBJ_CAST(r);
@@ -1643,14 +1686,6 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   }
 
   return rv;
-}
-
-bool nl_l3::is_link_local_address(const struct nl_addr *addr) {
-  auto p = nl_addr_alloc(16);
-  nl_addr_parse("fe80::/10", AF_INET6, &p);
-  std::unique_ptr<nl_addr, decltype(&nl_addr_put)> ll_addr(p, nl_addr_put);
-
-  return !nl_addr_cmp_prefix(ll_addr.get(), addr);
 }
 
 // Modifying the previously existing entries on the VLAN table requires
