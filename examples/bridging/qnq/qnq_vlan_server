@@ -1,0 +1,28 @@
+#!/bin/bash
+
+ip netns add qnqtest1
+ip netns add qnqtest2
+
+ip link set enp5s0f0 netns qnqtest1
+ip link set enp5s0f1 netns qnqtest2
+
+ip netns exec qnqtest1 ip link add link enp5s0f0 enp5s0f0.10 type vlan proto 802.1ad id 10
+# ip netns exec qnqtest1 ip link add link enp5s0f0 enp5s0f0.10 type vlan proto 802.1q id 10
+ip netns exec qnqtest1 ip link add link enp5s0f0.10 enp5s0f0.10.20 type vlan proto 802.1Q id 20
+
+ip netns exec qnqtest2 ip link add link enp5s0f1 enp5s0f1.10 type vlan proto 802.1ad id 10
+# ip netns exec qnqtest2 ip link add link enp5s0f1 enp5s0f1.10 type vlan proto 802.1q id 10
+ip netns exec qnqtest2 ip link add link enp5s0f1.10 enp5s0f1.10.20 type vlan proto 802.1Q id 20
+
+ip netns exec qnqtest1 ip l s up enp5s0f0
+ip netns exec qnqtest1 ip l s up enp5s0f0.10
+ip netns exec qnqtest1 ip l s up enp5s0f0.10.20
+
+ip netns exec qnqtest2 ip l s up enp5s0f1
+ip netns exec qnqtest2 ip l s up enp5s0f1.10
+ip netns exec qnqtest2 ip l s up enp5s0f1.10.20
+
+ip netns exec qnqtest1 ip a a 10.0.0.10/24 dev enp5s0f0.10.20
+ip netns exec qnqtest2 ip a a 10.0.0.11/24 dev enp5s0f1.10.20
+
+# ip netns exec qnqtest /bin/bash
