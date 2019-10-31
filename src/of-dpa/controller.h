@@ -237,7 +237,8 @@ public:
                                   bool untagged) noexcept override;
   int egress_bridge_port_vlan_remove(uint32_t port,
                                      uint16_t vid) noexcept override;
-  int egress_tpid_rewrite(uint32_t port) noexcept override;
+  int set_egress_tpid(uint32_t port) noexcept override;
+  int delete_egress_tpid(uint32_t port) noexcept override;
 
   int get_statistics(uint64_t port_no, uint32_t number_of_counters,
                      const sai_port_stat_t *counter_ids,

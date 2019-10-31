@@ -1049,6 +1049,7 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
     if (bridge && bridge->is_bridge_interface(link)) {
       LOG(INFO) << __FUNCTION__ << ": deleting bridge";
       vxlan->register_bridge(nullptr);
+      bridge->clear_tpid_entries(); // clear the Egress TPID table
       delete bridge;
       bridge = nullptr;
     }

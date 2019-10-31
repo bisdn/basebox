@@ -136,7 +136,8 @@ public:
                                           bool untagged) noexcept = 0;
   virtual int egress_bridge_port_vlan_remove(uint32_t port,
                                              uint16_t vid) noexcept = 0;
-  virtual int egress_tpid_rewrite(uint32_t port) noexcept = 0;
+  virtual int set_egress_tpid(uint32_t port) noexcept = 0;
+  virtual int delete_egress_tpid(uint32_t port) noexcept = 0;
 
   virtual int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept = 0;
   virtual int subscribe_to(enum swi_flags flags) noexcept = 0;

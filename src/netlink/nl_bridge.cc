@@ -59,15 +59,17 @@ bool nl_bridge::is_bridge_interface(rtnl_link *link) {
 // Only two values are suported: 0x8100 and 0x88a8
 uint32_t nl_bridge::get_vlan_proto() {
   std::string portname(rtnl_link_get_name(bridge));
-  return nl->load_from_file("/sys/class/net/" + portname + "/bridge/vlan_protocol", 16);
+  return nl->load_from_file(
+      "/sys/class/net/" + portname + "/bridge/vlan_protocol", 16);
 }
 
 // Read sysfs to obtain the value for the VLAN filtering value on the switch.
-// baseboxd currently only supports VLAN-aware bridges, set with the vlan_filtering
-// flag to 1. 
+// baseboxd currently only supports VLAN-aware bridges, set with the
+// vlan_filtering flag to 1.
 uint32_t nl_bridge::get_vlan_filtering() {
   std::string portname(rtnl_link_get_name(bridge));
-  return nl->load_from_file("/sys/class/net/" + portname + "/bridge/vlan_filtering");
+  return nl->load_from_file("/sys/class/net/" + portname +
+                            "/bridge/vlan_filtering");
 }
 
 static bool br_vlan_equal(const rtnl_link_bridge_vlan *lhs,
@@ -129,7 +131,7 @@ void nl_bridge::add_interface(rtnl_link *link) {
   update_vlans(nullptr, link);
 
   if (get_vlan_proto() == ETH_P_8021AD)
-    sw->egress_tpid_rewrite(nl->get_port_id(link));
+    sw->set_egress_tpid(nl->get_port_id(link));
 }
 
 void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
@@ -167,6 +169,8 @@ void nl_bridge::delete_interface(rtnl_link *link) {
   }
 
   update_vlans(link, nullptr);
+  if (get_vlan_proto() == ETH_P_8021AD)
+    sw->delete_egress_tpid(nl->get_port_id(link));
 }
 
 void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
@@ -752,6 +756,14 @@ bool nl_bridge::is_port_flooding(rtnl_link *br_link) const {
 
   int flags = rtnl_link_bridge_get_flags(br_link);
   return !!(flags & RTNL_BRIDGE_UNICAST_FLOOD);
+}
+
+void nl_bridge::clear_tpid_entries() {
+  std::deque<rtnl_link *> bridge_ports;
+  nl->get_bridge_ports(rtnl_link_get_ifindex(bridge), &bridge_ports);
+
+  for (auto iface : bridge_ports)
+    sw->delete_egress_tpid(nl->get_port_id(iface));
 }
 
 } /* namespace basebox */

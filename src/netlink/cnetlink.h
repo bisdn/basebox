@@ -83,8 +83,7 @@ public:
 
   std::deque<rtnl_neigh *> search_fdb(uint16_t vid = 0,
                                       nl_addr *lladdr = nullptr);
-  int load_from_file(const std::string &path, int base=10);
-
+  int load_from_file(const std::string &path, int base = 10);
 
 private:
   // non copyable
