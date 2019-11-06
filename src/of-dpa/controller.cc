@@ -1720,6 +1720,35 @@ int controller::egress_bridge_port_vlan_remove(uint32_t port,
   return rv;
 }
 
+int controller::set_egress_tpid(uint32_t port) noexcept {
+  int rv = 0;
+  try {
+
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.set_port_tpid(dpt.get_version(), port));
+
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int controller::delete_egress_tpid(uint32_t port) noexcept {
+  int rv = 0;
+  try {
+
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0), fm_driver.remove_port_tpid(dpt.get_version(), port));
+
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  }
+  return rv;
+}
 int controller::subscribe_to(enum swi_flags flags) noexcept {
   int rv = 0;
   this->flags = this->flags | flags;

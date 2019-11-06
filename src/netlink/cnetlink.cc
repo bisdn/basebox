@@ -64,20 +64,17 @@ cnetlink::~cnetlink() {
   nl_socket_free(sock_tx);
 }
 
-int cnetlink::load_from_file(const std::string &path) {
-  std::ifstream file;
-  int out = -1;
-  file.open(path);
+int cnetlink::load_from_file(const std::string &path, int base) {
+  std::ifstream file(path);
+  std::string out;
+
   if (file.is_open()) {
     while (!file.eof()) {
       file >> out;
     }
   }
-  if (out < 0) {
-    LOG(FATAL) << __FUNCTION__ << ": failed to load " << path;
-  }
 
-  return out;
+  return std::stoi(out, nullptr, base);
 }
 
 static int nl_overrun_handler_verbose(struct nl_msg *msg, void *arg) {
@@ -1052,6 +1049,7 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
     if (bridge && bridge->is_bridge_interface(link)) {
       LOG(INFO) << __FUNCTION__ << ": deleting bridge";
       vxlan->register_bridge(nullptr);
+      bridge->clear_tpid_entries(); // clear the Egress TPID table
       delete bridge;
       bridge = nullptr;
     }

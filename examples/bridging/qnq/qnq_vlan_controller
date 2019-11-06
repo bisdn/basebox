@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Stag - 10 (bridge)
+# Ctag - 20 
+
+ip link add swbridge type bridge vlan_filtering 1 vlan_protocol 802.1ad
+
+ip link set port25 master swbridge
+ip link set port24 master swbridge
+
+bridge vlan add dev swbridge vid 10 self
+
+bridge vlan add dev port25 vid 10 # pvid untagged
+bridge vlan add dev port24 vid 10 # pvid untagged
