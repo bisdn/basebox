@@ -42,6 +42,10 @@ void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
 
   this->bridge = bridge;
   nl_object_get(OBJ_CAST(bridge));
+
+  if (!get_vlan_filtering())
+    LOG(FATAL) << __FUNCTION__
+               << " unsupported: bridge configured with vlan_filtering 0";
 }
 
 bool nl_bridge::is_bridge_interface(rtnl_link *link) {
