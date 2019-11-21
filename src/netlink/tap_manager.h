@@ -76,6 +76,7 @@ public:
   int get_fd(uint32_t port_id) const noexcept;
 
   int change_port_status(const std::string name, bool status);
+
   // access from northbound (cnetlink)
   int tapdev_removed(int ifindex, const std::string &portname);
   void tapdev_ready(rtnl_link *link);

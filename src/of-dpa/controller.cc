@@ -270,7 +270,6 @@ void controller::handle_port_desc_stats_reply(
   using rofl::openflow::cofport;
 
   std::deque<struct nbi::port_notification_data> notifications;
-  std::deque<std::pair<uint32_t, enum nbi::port_status>> stats;
 
   for (auto i : msg.get_ports().keys()) {
     const cofport &port = msg.get_ports().get_port(i);

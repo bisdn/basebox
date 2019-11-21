@@ -323,6 +323,7 @@ int tap_manager::change_port_status(const std::string name, bool status) {
 
   // Set flags
   error = ioctl(sockFd, SIOCSIFFLAGS, static_cast<void *>(&ifr));
+  close(sockFd);
   return error;
 }
 
