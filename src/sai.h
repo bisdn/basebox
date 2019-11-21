@@ -230,8 +230,6 @@ public:
   virtual void resend_state() noexcept = 0;
   virtual void
   port_notification(std::deque<port_notification_data> &) noexcept = 0;
-  virtual void port_status_changed(uint32_t port,
-                                   enum port_status) noexcept = 0;
   virtual int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept = 0;
   virtual int fdb_timeout(uint32_t port_id, uint16_t vid,
                           const rofl::caddress_ll &mac) noexcept = 0;

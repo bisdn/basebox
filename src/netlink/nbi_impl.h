@@ -29,13 +29,14 @@ public:
   void resend_state() noexcept override;
   void
   port_notification(std::deque<port_notification_data> &) noexcept override;
-  void port_status_changed(uint32_t port, enum port_status) noexcept override;
   int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept override;
   int fdb_timeout(uint32_t port_id, uint16_t vid,
                   const rofl::caddress_ll &mac) noexcept override;
 
   // tap_callback
   int enqueue_to_switch(uint32_t port_id, struct basebox::packet *) override;
+
+  void netlink_state_running();
 
   std::shared_ptr<tap_manager> get_tapmanager() { return tap_man; }
 };

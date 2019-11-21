@@ -427,10 +427,6 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     }
   }
 
-  if (handle_port_status_events()) {
-    do_wakeup = true;
-  }
-
   if (handle_source_mac_learn()) {
     do_wakeup = true;
   }
@@ -1215,68 +1211,6 @@ void cnetlink::stop() noexcept {
   VLOG(1) << __FUNCTION__ << ": stopped netlink processing";
   state = NL_STATE_SHUTDOWN;
   thread.wakeup(this);
-}
-
-void cnetlink::port_status_changed(uint32_t port_no,
-                                   enum nbi::port_status ps) noexcept {
-  try {
-    auto pps = std::make_tuple(port_no, ps, 0);
-    std::lock_guard<std::mutex> scoped_lock(pc_mutex);
-    port_status_changes.push_back(pps);
-  } catch (std::exception &e) {
-    LOG(ERROR) << __FUNCTION__ << ": unknown exception " << e.what();
-    return;
-  }
-  thread.wakeup(this);
-}
-
-int cnetlink::handle_port_status_events() {
-  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_changes;
-  std::deque<std::tuple<uint32_t, enum nbi::port_status, int>> _pc_retry;
-
-  {
-    std::lock_guard<std::mutex> scoped_lock(pc_mutex);
-    _pc_changes.swap(port_status_changes);
-  }
-
-  for (auto change : _pc_changes) {
-    int ifindex;
-
-    if (nbi::get_port_type(std::get<0>(change)) != nbi::port_type_physical) {
-      VLOG(3) << __FUNCTION__
-              << ": ignore non physical port with id=" << std::get<0>(change);
-      continue;
-    }
-
-    // get ifindex
-    ifindex = tap_man->get_ifindex(std::get<0>(change));
-    if (0 == ifindex) {
-      // XXX not yet registered push back, this should be done async
-      int n_retries = std::get<2>(change);
-      if (n_retries < 10) {
-        std::get<2>(change) = ++n_retries;
-        _pc_retry.push_back(change);
-      } else {
-        LOG(ERROR) << __FUNCTION__
-                   << ": no ifindex of port_id=" << std::get<0>(change)
-                   << " found";
-        // XXX TODO resync caches?
-        // XXX FIXME ignore logical ports
-      }
-      continue;
-    }
-  }
-
-  int size = _pc_retry.size();
-  if (size) {
-    VLOG(3) << __FUNCTION__ << ": " << size << " changes not processed";
-    std::lock_guard<std::mutex> scoped_lock(pc_mutex);
-    std::copy(make_move_iterator(_pc_retry.begin()),
-              make_move_iterator(_pc_retry.end()),
-              std::back_inserter(port_status_changes));
-  }
-
-  return size;
 }
 
 bool cnetlink::is_bridge_configured(rtnl_link *l) {

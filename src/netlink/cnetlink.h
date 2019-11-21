@@ -67,8 +67,6 @@ public:
   void start() noexcept;
   void stop() noexcept;
 
-  void port_status_changed(uint32_t, enum nbi::port_status) noexcept;
-
   static void nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
                        struct nl_object *new_obj, uint64_t diff, int action,
                        void *data);
