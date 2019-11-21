@@ -293,9 +293,9 @@ int tap_manager::recreate_tapdev(int ifindex, const std::string &portname) {
   return rv;
 }
 
-/* 
- * Adds a function to set port state according to link state 
- * Status is determined via the portstatus/port_desc_reply message 
+/*
+ * Adds a function to set port state according to link state
+ * Status is determined via the portstatus/port_desc_reply message
  * This function sets the state using ioctl since netlink apparently cannot
  * handle setting these parameters
  *
@@ -312,17 +312,17 @@ int tap_manager::change_port_status(const std::string name, bool status) {
 
   // Get existing flags
   auto sockFd = socket(PF_INET, SOCK_DGRAM, 0);
-  int error = ioctl(sockFd, SIOCGIFFLAGS, static_cast<void*>(&ifr)); 
+  int error = ioctl(sockFd, SIOCGIFFLAGS, static_cast<void *>(&ifr));
 
   // Mutate flags
   if (status) {
-    ifr.ifr_flags |= IFF_UP;     
+    ifr.ifr_flags |= IFF_UP;
   } else {
     ifr.ifr_flags &= ~IFF_UP;
   }
 
   // Set flags
-  error = ioctl(sockFd, SIOCSIFFLAGS, static_cast<void*>(&ifr));
+  error = ioctl(sockFd, SIOCSIFFLAGS, static_cast<void *>(&ifr));
   return error;
 }
 

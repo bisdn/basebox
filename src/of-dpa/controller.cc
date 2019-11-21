@@ -240,10 +240,11 @@ void controller::handle_port_status(rofl::crofdpt &dpt,
   auto port = msg.get_port();
 
   bool status = (!(port.get_config() & rofl::openflow13::OFPPC_PORT_DOWN) &&
-                !(port.get_state() & rofl::openflow13::OFPPS_LINK_DOWN));
+                 !(port.get_state() & rofl::openflow13::OFPPS_LINK_DOWN));
 
-  ntfys.emplace_back(nbi::port_notification_data{(nbi::port_event)msg.get_reason(), port.get_port_no(),
-                                                 msg.get_port().get_name(), status});
+  ntfys.emplace_back(nbi::port_notification_data{
+      (nbi::port_event)msg.get_reason(), port.get_port_no(),
+      msg.get_port().get_name(), status});
   nb->port_notification(ntfys);
 }
 
@@ -275,7 +276,7 @@ void controller::handle_port_desc_stats_reply(
     const cofport &port = msg.get_ports().get_port(i);
 
     bool status = (!(port.get_config() & rofl::openflow13::OFPPC_PORT_DOWN) &&
-                  !(port.get_state() & rofl::openflow13::OFPPS_LINK_DOWN));
+                   !(port.get_state() & rofl::openflow13::OFPPS_LINK_DOWN));
 
     notifications.emplace_back(nbi::port_notification_data{
         nbi::PORT_EVENT_ADD, port.get_port_no(), port.get_name(), status});

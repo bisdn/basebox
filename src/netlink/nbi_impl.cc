@@ -57,7 +57,8 @@ void nbi_impl::port_notification(
         break;
       default:
         LOG(ERROR) << __FUNCTION__ << ": unknown port";
-    } break;
+      }
+      break;
 
     case PORT_EVENT_ADD:
       switch (get_port_type(ntfy.port_id)) {
@@ -92,7 +93,7 @@ void nbi_impl::port_notification(
     default:
       break;
     }
-  }
+    }
   }
 }
 
