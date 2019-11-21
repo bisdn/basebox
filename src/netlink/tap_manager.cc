@@ -7,7 +7,6 @@
 #include <utility>
 #include <net/if.h>
 #include <sys/ioctl.h>
-#include <string>
 
 #include "cnetlink.h"
 #include "ctapdev.h"
