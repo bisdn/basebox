@@ -49,10 +49,21 @@ void nbi_impl::port_notification(
 
   for (auto &&ntfy : notifications) {
     switch (ntfy.ev) {
+
+    case PORT_EVENT_MODIFY: {
+      switch (get_port_type(ntfy.port_id)) {
+      case nbi::port_type_physical:
+        tap_man->change_port_status(ntfy.name, ntfy.status);
+        break;
+      default:
+        LOG(ERROR) << __FUNCTION__ << ": unknown port";
+    } break;
+
     case PORT_EVENT_ADD:
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
         tap_man->create_tapdev(ntfy.port_id, ntfy.name, *this);
+        tap_man->change_port_status(ntfy.name, ntfy.status);
         break;
       case nbi::port_type_vxlan:
         // XXX TODO notify this?
@@ -63,6 +74,7 @@ void nbi_impl::port_notification(
         break;
       }
       break;
+
     case PORT_EVENT_DEL:
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
@@ -81,11 +93,7 @@ void nbi_impl::port_notification(
       break;
     }
   }
-}
-
-void nbi_impl::port_status_changed(uint32_t port_no,
-                                   enum nbi::port_status ps) noexcept {
-  nl->port_status_changed(port_no, ps);
+  }
 }
 
 int nbi_impl::enqueue_to_switch(uint32_t port_id, basebox::packet *packet) {

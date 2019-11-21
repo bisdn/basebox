@@ -185,6 +185,7 @@ public:
   enum port_event {
     PORT_EVENT_ADD,
     PORT_EVENT_DEL,
+    PORT_EVENT_MODIFY,
   };
 
   enum port_status {
@@ -196,6 +197,7 @@ public:
     enum port_event ev;
     uint32_t port_id;
     std::string name;
+    bool status;
   };
 
   enum port_type {
