@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <glog/logging.h>
-#include <netlink/route/link.h>
-#include <utility>
 #include <net/if.h>
+#include <netlink/route/link.h>
 #include <sys/ioctl.h>
+#include <utility>
 
 #include "cnetlink.h"
 #include "ctapdev.h"
@@ -307,14 +307,14 @@ int tap_manager::change_port_status(const std::string name, bool status) {
   struct ifreq ifr;
   memset(&ifr, 0, sizeof(ifr));
 
-  std::lock_guard<std::mutex> lock{tn_mutex};
   strncpy(ifr.ifr_name, name.c_str(), IFNAMSIZ);
 
   // Get existing flags
   auto sockFd = socket(PF_INET, SOCK_DGRAM, 0);
   int error = ioctl(sockFd, SIOCGIFFLAGS, static_cast<void *>(&ifr));
   if (error) {
-    LOG(ERROR) << __FUNCTION << ": ioctl failed with error code " << error;
+    LOG(ERROR) << __FUNCTION__ << ": ioctl failed with error code " << error;
+    close(sockFd);
     return error;
   }
 
@@ -328,8 +328,7 @@ int tap_manager::change_port_status(const std::string name, bool status) {
   // Set flags
   error = ioctl(sockFd, SIOCSIFFLAGS, static_cast<void *>(&ifr));
   if (error) {
-    LOG(ERROR) << __FUNCTION << ": ioctl failed with error code " << error;
-    return error;
+    LOG(ERROR) << __FUNCTION__ << ": ioctl failed with error code " << error;
   }
 
   close(sockFd);
