@@ -313,6 +313,10 @@ int tap_manager::change_port_status(const std::string name, bool status) {
   // Get existing flags
   auto sockFd = socket(PF_INET, SOCK_DGRAM, 0);
   int error = ioctl(sockFd, SIOCGIFFLAGS, static_cast<void *>(&ifr));
+  if (error) {
+    LOG(ERROR) << __FUNCTION << ": ioctl failed with error code " << error;
+    return error;
+  }
 
   // Mutate flags
   if (status) {
@@ -323,6 +327,11 @@ int tap_manager::change_port_status(const std::string name, bool status) {
 
   // Set flags
   error = ioctl(sockFd, SIOCSIFFLAGS, static_cast<void *>(&ifr));
+  if (error) {
+    LOG(ERROR) << __FUNCTION << ": ioctl failed with error code " << error;
+    return error;
+  }
+
   close(sockFd);
   return error;
 }
