@@ -237,42 +237,15 @@ void controller::handle_port_status(rofl::crofdpt &dpt,
           << msg;
 
   std::deque<nbi::port_notification_data> ntfys;
-  uint32_t port_no = msg.get_port().get_port_no();
+  auto port = msg.get_port();
 
-  auto status = (nbi::port_status)0;
-  if (msg.get_port().get_config() & rofl::openflow13::OFPPC_PORT_DOWN) {
-    status = (nbi::port_status)(status | nbi::PORT_STATUS_ADMIN_DOWN);
-  }
+  bool status = (!(port.get_config() & rofl::openflow13::OFPPC_PORT_DOWN) &&
+                 !(port.get_state() & rofl::openflow13::OFPPS_LINK_DOWN));
 
-  if (msg.get_port().get_state() & rofl::openflow13::OFPPS_LINK_DOWN) {
-    status = (nbi::port_status)(status | nbi::PORT_STATUS_LOWER_DOWN);
-  }
-
-  switch (msg.get_reason()) {
-  case rofl::openflow::OFPPR_MODIFY: {
-
-    try {
-      nb->port_status_changed(port_no, status);
-    } catch (std::out_of_range &e) {
-      LOG(WARNING) << __FUNCTION__
-                   << ": unknown port with OF portno=" << port_no;
-    }
-  } break;
-  case rofl::openflow::OFPPR_ADD:
-    ntfys.emplace_back(nbi::port_notification_data{nbi::PORT_EVENT_ADD, port_no,
-                                                   msg.get_port().get_name()});
-    nb->port_notification(ntfys);
-    nb->port_status_changed(port_no, status);
-    break;
-  case rofl::openflow::OFPPR_DELETE:
-    ntfys.emplace_back(nbi::port_notification_data{nbi::PORT_EVENT_DEL, port_no,
-                                                   msg.get_port().get_name()});
-    nb->port_notification(ntfys);
-    break;
-  default:
-    LOG(ERROR) << __FUNCTION__ << ": invalid port status";
-    break;
-  }
+  ntfys.emplace_back(nbi::port_notification_data{
+      (nbi::port_event)msg.get_reason(), port.get_port_no(),
+      msg.get_port().get_name(), status});
+  nb->port_notification(ntfys);
 }
 
 void controller::handle_error_message(rofl::crofdpt &dpt,
@@ -297,30 +270,20 @@ void controller::handle_port_desc_stats_reply(
   using rofl::openflow::cofport;
 
   std::deque<struct nbi::port_notification_data> notifications;
-  std::deque<std::pair<uint32_t, enum nbi::port_status>> stats;
+
   for (auto i : msg.get_ports().keys()) {
     const cofport &port = msg.get_ports().get_port(i);
+
+    bool status = (!(port.get_config() & rofl::openflow13::OFPPC_PORT_DOWN) &&
+                   !(port.get_state() & rofl::openflow13::OFPPS_LINK_DOWN));
+
     notifications.emplace_back(nbi::port_notification_data{
-        nbi::PORT_EVENT_ADD, port.get_port_no(), port.get_name()});
-
-    auto status = (nbi::port_status)0;
-    if (port.get_config() & rofl::openflow13::OFPPC_PORT_DOWN) {
-      status = (nbi::port_status)(status | nbi::PORT_STATUS_ADMIN_DOWN);
-    }
-
-    if (port.get_state() & rofl::openflow13::OFPPS_LINK_DOWN) {
-      status = (nbi::port_status)(status | nbi::PORT_STATUS_LOWER_DOWN);
-    }
-    stats.emplace_back(port.get_port_no(), status);
+        nbi::PORT_EVENT_ADD, port.get_port_no(), port.get_name(), status});
   }
 
   /* init 1:1 port mapping */
   try {
     nb->port_notification(notifications);
-
-    for (auto status : stats) {
-      nb->port_status_changed(status.first, status.second);
-    }
     LOG(INFO) << "ports initialized";
 
     bb_thread.add_timer(

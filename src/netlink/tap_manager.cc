@@ -3,7 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <glog/logging.h>
+#include <net/if.h>
 #include <netlink/route/link.h>
+#include <sys/ioctl.h>
 #include <utility>
 
 #include "cnetlink.h"
@@ -289,6 +291,48 @@ int tap_manager::recreate_tapdev(int ifindex, const std::string &portname) {
   }
 
   return rv;
+}
+
+/*
+ * Adds a function to set port state according to link state
+ * Status is determined via the portstatus/port_desc_reply message
+ * This function sets the state using ioctl since netlink apparently cannot
+ * handle setting these parameters
+ *
+ * @param name port name to be changed
+ * @param status interface status: 1=up / 0=down
+ * @return ioctl value from setting the flags
+ */
+int tap_manager::change_port_status(const std::string name, bool status) {
+  struct ifreq ifr;
+  memset(&ifr, 0, sizeof(ifr));
+
+  strncpy(ifr.ifr_name, name.c_str(), IFNAMSIZ);
+
+  // Get existing flags
+  auto sockFd = socket(PF_INET, SOCK_DGRAM, 0);
+  int error = ioctl(sockFd, SIOCGIFFLAGS, static_cast<void *>(&ifr));
+  if (error) {
+    LOG(ERROR) << __FUNCTION__ << ": ioctl failed with error code " << error;
+    close(sockFd);
+    return error;
+  }
+
+  // Mutate flags
+  if (status) {
+    ifr.ifr_flags |= IFF_UP;
+  } else {
+    ifr.ifr_flags &= ~IFF_UP;
+  }
+
+  // Set flags
+  error = ioctl(sockFd, SIOCSIFFLAGS, static_cast<void *>(&ifr));
+  if (error) {
+    LOG(ERROR) << __FUNCTION__ << ": ioctl failed with error code " << error;
+  }
+
+  close(sockFd);
+  return error;
 }
 
 } // namespace basebox
