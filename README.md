@@ -31,7 +31,7 @@ need the following dependencies installed:
 
 * [libnl3](https://github.com/thom311/libnl) (> 3.4)
 * [rofl-common](https://github.com/bisdn/rofl-common) (>= 0.13.1)
-* [rofl-ofdpa](https://github.com/bisdn/rofl-ofdpa) (>= 0.14)
+* [rofl-ofdpa](https://github.com/bisdn/rofl-ofdpa) (>= 1.0.0)
 * [gflags](https://github.com/gflags/gflags)
 * [glog](https://github.com/google/glog) (>= 0.3.3)
 * [protobuf](https://github.com/google/protobuf) (>= 3.5.0)
