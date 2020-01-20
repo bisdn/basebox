@@ -1,9 +1,15 @@
 #!/bin/bash
 
-PORTA=${PORTA:-port31}
-PORTB=${PORTB:-port32}
-PORTC=${PORTC:-port33}
-PORTD=${PORTD:-port34}
+# Bridging and Trunking test setup script
+
+# This script configures trunk and access ports on the bridge
+# Access Ports: Bridge Interfaces configured with ONLY PVID (native VLAN).
+# Trunk Ports: Bridge Interfaces configured with more than one VLAN.
+
+PORTA=${PORTA:-port31} # Access ports
+PORTB=${PORTB:-port32} # Access ports
+PORTC=${PORTC:-port33} # Trunk ports
+PORTD=${PORTD:-port34} # Trunk ports
 BRIDGE=${BRIDGE:-swbridge}
 
 function setup() {
