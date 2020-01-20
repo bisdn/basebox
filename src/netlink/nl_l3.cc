@@ -287,8 +287,9 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
       LOG(ERROR) << __FUNCTION__
                  << ": could not add unicast route ipv6_dst=" << ipv6_dst
                  << ", mask=" << mask;
-      return rv;
     }
+
+    return rv;
   }
 
   uint16_t vid = vlan->get_vid(link);
