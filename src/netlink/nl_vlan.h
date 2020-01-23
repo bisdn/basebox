@@ -28,6 +28,7 @@ public:
                           uint16_t vrf_id = 0);
 
   uint16_t get_vid(rtnl_link *link);
+  std::vector<uint16_t> get_bridge_vids(rtnl_link *link);
 
   bool is_vid_valid(uint16_t vid) const {
     if (vid < vid_low || vid > vid_high)

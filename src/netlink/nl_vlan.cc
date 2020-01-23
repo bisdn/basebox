@@ -131,6 +131,76 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged,
   return rv;
 }
 
+static int find_next_bit(int i, uint32_t x) {
+  int j;
+
+  if (i >= 32)
+    return -1;
+
+  /* find first bit */
+  if (i < 0)
+    return __builtin_ffs(x);
+
+  /* mask off prior finds to get next */
+  j = __builtin_ffs(x >> i);
+  return j ? j + i : 0;
+}
+
+std::vector<uint16_t> parse_vlan_bitmap(const uint32_t *bitmap) {
+  int i = -1, j;
+  int start = -1, prev = -1;
+  int done;
+  std::vector<uint16_t> _vid_arr;
+
+  for (int k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
+    int base_bit;
+    uint32_t a = bitmap[k];
+
+    base_bit = k * 32;
+    i = -1;
+    done = 0;
+    while (!done) {
+      j = find_next_bit(i, a);
+      if (j > 0) {
+        int vid = j - 1 + base_bit;
+        _vid_arr.push_back(vid);
+
+        /* first hit of any bit */
+        if (start < 0 && prev < 0) {
+          start = prev = j - 1 + base_bit;
+        }
+        /* this bit is a continuation of prior bits */
+        if (j - 2 + base_bit == prev) {
+          prev++;
+        }
+
+        i = j;
+      } else
+        done = 1;
+    }
+  }
+
+  return _vid_arr;
+}
+
+std::vector<uint16_t> nl_vlan::get_bridge_vids(rtnl_link *link) {
+  if (!rtnl_link_get_master(link)) {
+    LOG(ERROR) << __FUNCTION__ << ": interface is not in bridge";
+  }
+
+  std::deque<rtnl_link *> bridge_ports;
+  nl->get_bridge_ports(rtnl_link_get_master(link), &bridge_ports);
+
+  auto it = bridge_ports.begin();
+  while (true) {
+    if (rtnl_link_get_ifindex(*it) == rtnl_link_get_ifindex(link))
+      break;
+
+    it++;
+  }
+  return parse_vlan_bitmap(rtnl_link_bridge_get_port_vlan(*it)->vlan_bitmap);
+}
+
 uint16_t nl_vlan::get_vid(rtnl_link *link) {
   uint16_t vid = 0;
   uint32_t pport_id = nl->get_port_id(link);
