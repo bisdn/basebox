@@ -153,8 +153,9 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     return rv;
   }
 
-  uint32_t vrf_id = 0; // real size is uint16
-  uint16_t vid = vlan->get_vid(link);
+  bool is_bridge = rtnl_link_is_bridge(link);
+  // int ifindex = rtnl_addr_get_ifindex(a);
+  int _af = rtnl_addr_get_family(a);
 
   // checks if the bridge is the configured one
   if (is_bridge && !nl->is_bridge_configured(link)) {
@@ -170,67 +171,79 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
+  // gets the VRF table id
+  uint32_t vrf_id = 0; // real size is uint16
   if (auto vrf = nl->get_link_by_ifindex(master_id);
       master_id && !is_bridge && rtnl_link_is_vrf(vrf.get())) {
     rtnl_link_vrf_get_tableid(vrf.get(), &vrf_id);
   }
 
-  // XXX TODO split this into several functions
-  if (!is_loopback) {
-    ifindex = rtnl_addr_get_ifindex(a);
-    int port_id = nl->get_port_id(link);
-
-    if (port_id == 0) {
-      if (is_bridge or nl->is_bridge_interface(link)) {
-        LOG(INFO) << __FUNCTION__ << ": address on top of bridge";
-        port_id = 0;
-      } else {
-        LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0 for link "
-                   << OBJ_CAST(link);
-        return -EINVAL;
-      }
-    }
-
-    auto addr = rtnl_link_get_addr(link);
-    rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
-
-    rv = add_l3_termination(port_id, vid, mac, AF_INET);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": failed to setup termination mac port_id=" << port_id
-                 << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
-      return rv;
+  // gets the Port ID for TMAC table write
+  int port_id = nl->get_port_id(link);
+  if (port_id == 0) {
+    if (is_bridge or nl->is_bridge_interface(link)) {
+      LOG(INFO) << __FUNCTION__ << ": address on top of bridge";
+      port_id = 0;
+    } else {
+      LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0 for link "
+                 << OBJ_CAST(link);
+      return -EINVAL;
     }
   }
 
-  // get v4 dst (local v4 addr)
-  auto prefixlen = rtnl_addr_get_prefixlen(a);
-  auto addr = rtnl_addr_get_local(a);
-  rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
-  rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
+  // writes the TMAC entry
+  auto _addr = rtnl_link_get_addr(link);
+  rofl::caddress_ll mac = libnl_lladdr_2_rofl(_addr);
+  uint16_t pvid = vlan->get_vid(link);
+  std::vector<uint16_t> vidarr;
 
+  if (master_id) {
+    vidarr = vlan->get_bridge_vids(link);
+    for (auto it : vidarr)
+      rv = add_l3_termination(port_id, it, mac, _af);
+  } else {
+    rv = add_l3_termination(port_id, pvid, mac, _af);
+  }
   if (rv < 0) {
-    // TODO shall we remove the l3_termination mac?
-    LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+    LOG(ERROR) << __FUNCTION__
+               << ": failed to setup termination mac port_id=" << port_id
+               << ", vid=" << pvid << " mac=" << mac << "; rv=" << rv;
     return rv;
   }
 
   // Add the host routes
+  auto prefixlen = rtnl_addr_get_prefixlen(a);
+  switch (rtnl_addr_get_family(a)) {
+  case AF_INET:
+    rv = sw->l3_unicast_route_add(libnl_in4addr_2_rofl(_addr, &rv),
+                                  rofl::build_mask_in4(prefixlen), 0, false,
+                                  false);
+    break;
+  case AF_INET6:
+    rv = sw->l3_unicast_route_add(libnl_in6addr_2_rofl(_addr, &rv),
+                                  rofl::build_mask_in6(prefixlen), 0, false,
+                                  false);
+    break;
   }
 
-  rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0, false, false, vrf_id);
-  if (rv < 0) {
-    // TODO shall we remove the l3_termination mac?
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
-  }
+  // for link local addresses all necessary steps are done
+  if (is_ipv6_link_local_address(rtnl_addr_get_local(a)))
+    return 0;
 
-  if (!is_loopback && !is_bridge) {
-    assert(ifindex);
-    // add vlan
-    bool tagged = !!rtnl_link_is_vlan(link);
-    rv = vlan->add_vlan(link, vid, tagged, vrf_id);
+  // Adds the VLAN entry
+  bool tagged = !!rtnl_link_is_vlan(link);
+  if (master_id && !is_bridge) {
+    for (auto it : vidarr) {
+      rv = vlan->add_vlan(link, it, tagged, vrf_id);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << pvid
+                   << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+      }
+    }
+  } else {
+    rv = vlan->add_vlan(link, pvid, tagged, vrf_id);
     if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
+      LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << pvid
                  << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
     }
   }
@@ -1005,7 +1018,9 @@ int nl_l3::add_l3_termination(uint32_t port_id, uint16_t vid,
   auto i = tmac_lookup_range.first;
   for (; i != tmac_lookup_range.second; ++i) {
     if (i->first == needle) {
+
       // found, increment refcount
+
       i->second++;
       return 0;
     }
