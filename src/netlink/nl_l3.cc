@@ -133,7 +133,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   assert(sw);
   assert(a);
 
-  int rv;
+  int rv = 0;
 
   if (a == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": addr can't be null";
@@ -146,9 +146,11 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
+  // configure the Loopback Addresses on the interfaces
   if ((rtnl_link_get_flags(link) & IFF_LOOPBACK)) {
-    VLOG(1) << __FUNCTION__ << ": adding loopback address";
-    add_lo_addr(a);
+    LOG(INFO) << __FUNCTION__ << ": adding loopback address";
+    rv = add_lo_addr(a);
+    return rv;
   }
 
   uint32_t vrf_id = 0; // real size is uint16
@@ -213,22 +215,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     return rv;
   }
 
-  if (is_loopback) {
-    auto p = nl_addr_alloc(255);
-    nl_addr_parse("127.0.0.0/8", AF_INET, &p);
-    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
-
-    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
-      VLOG(3) << __FUNCTION__ << ": skipping 127.0.0.0/8";
-      return 0;
-    }
-
-    if (prefixlen == 32)
-      rv = sw->l3_unicast_host_add(ipv4_dst, 0, false, false);
-    else
-      rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0, false, false);
-
-    return rv;
+  // Add the host routes
   }
 
   rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0, false, false, vrf_id);
@@ -267,54 +254,25 @@ int nl_l3::add_lo_addr(struct rtnl_addr *a) {
       return 0;
     }
 
-  uint16_t vid = vlan->get_vid(link);
-  auto lladdr = rtnl_link_get_addr(link);
-  rofl::caddress_ll mac = libnl_lladdr_2_rofl(lladdr);
-
-  rv = add_l3_termination(port_id, vid, mac, AF_INET6);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup termination mac port_id=" << port_id
-               << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
-    return rv;
+    if (prefixlen == 32)
+      rv = sw->l3_unicast_host_add(libnl_in4addr_2_rofl(_addr, &rv), 0, false,
+                                   false);
+    else
+      rv = sw->l3_unicast_route_add(libnl_in4addr_2_rofl(_addr, &rv),
+                                    rofl::build_mask_in4(prefixlen), 0, false,
+                                    false);
+    break;
   }
+  case AF_INET6: {
+    auto p = nl_addr_alloc(16);
+    nl_addr_parse("::1/128", AF_INET6, &p);
+    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
 
-  bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
-  if (is_loopback) {
-    rv = add_lo_addr_v6(a);
-    return rv;
-  }
-
-  auto prefixlen = rtnl_addr_get_prefixlen(a);
-  rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
-  rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-    return rv;
-  }
-
-  rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, false);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup address " << OBJ_CAST(a);
-    return rv;
-  }
-
-  if (!is_loopback) {
-    // add vlan
-    bool tagged = !!rtnl_link_is_vlan(link);
-    rv = vlan->add_vlan(link, vid, tagged);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
-                 << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+    if (!nl_addr_cmp_prefix(_addr, lo_addr.get())) {
+      VLOG(1) << __FUNCTION__ << ": skipping ::1/128 address";
+      rv = -EINVAL;
+      return rv;
     }
-  }
-
-  VLOG(1) << __FUNCTION__ << ": added addr " << OBJ_CAST(a);
-
-  return rv;
-}
-
 
     if (prefixlen == 128)
       rv = sw->l3_unicast_host_add(libnl_in6addr_2_rofl(_addr, &rv), 0, false,
