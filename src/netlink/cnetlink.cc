@@ -627,7 +627,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
       l3->add_l3_addr(ADDR_CAST(obj.get_new_obj()));
       break;
     case AF_INET6:
-      l3->add_l3_addr_v6(ADDR_CAST(obj.get_new_obj()));
+      l3->add_l3_addr(ADDR_CAST(obj.get_new_obj()));
       break;
     default:
       LOG(ERROR) << __FUNCTION__ << ": unsupported family " << family;
