@@ -33,12 +33,12 @@ function setup() {
   ip link set ${PORTD} up
 
   # Trunk port vids
-  bridge vlan add vid 123 dev ${PORTC}
-  bridge vlan add vid 124 dev ${PORTD}
+  bridge vlan add vid 133 dev ${PORTC}
+  bridge vlan add vid 134 dev ${PORTD}
 
   # Access port vids
-  bridge vlan add vid 123 dev ${PORTA} pvid
-  bridge vlan add vid 124 dev ${PORTB} pvid
+  bridge vlan add vid 131 dev ${PORTA} pvid
+  bridge vlan add vid 132 dev ${PORTB} pvid
 }
 
 setup
