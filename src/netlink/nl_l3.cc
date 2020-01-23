@@ -129,7 +129,6 @@ int nl_l3::init() noexcept {
   return 0;
 }
 
-// XXX separate function to make it possible to add lo addresses more directly
 int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   assert(sw);
   assert(a);
@@ -147,9 +146,11 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
-  bool is_bridge = rtnl_link_is_bridge(link); // XXX TODO svi as well?
-  int ifindex = 0;
+  if ((rtnl_link_get_flags(link) & IFF_LOOPBACK)) {
+    VLOG(1) << __FUNCTION__ << ": adding loopback address";
+    add_lo_addr(a);
+  }
+
   uint32_t vrf_id = 0; // real size is uint16
   uint16_t vid = vlan->get_vid(link);
 
@@ -250,47 +251,21 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   return rv;
 }
 
-int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
-  assert(sw);
-  assert(a);
-
+int nl_l3::add_lo_addr(struct rtnl_addr *a) {
   int rv = 0;
+  auto _addr = rtnl_addr_get_local(a);
+  auto prefixlen = rtnl_addr_get_prefixlen(a);
 
-  if (a == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << ": addr can't be null";
-    return -EINVAL;
-  }
+  switch (rtnl_addr_get_family(a)) {
+  case AF_INET: {
+    auto p = nl_addr_alloc(255);
+    nl_addr_parse("127.0.0.0/8", AF_INET, &p);
+    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
 
-  struct rtnl_link *link = rtnl_addr_get_link(a);
-  if (link == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << ": no link for addr a=" << OBJ_CAST(a);
-    return -EINVAL;
-  }
-
-  // link local addresses must redirect to controllers
-  int port_id = nl->get_port_id(link);
-  auto addr = rtnl_addr_get_local(a);
-  if (is_ipv6_link_local_address(addr)) {
-
-    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-      return rv;
+    if (!nl_addr_cmp_prefix(_addr, lo_addr.get())) {
+      VLOG(3) << __FUNCTION__ << ": skipping 127.0.0.0/8";
+      return 0;
     }
-
-    // All link local addresses have a prefix length of /10
-    rofl::caddress_in6 mask = rofl::build_mask_in6(10);
-
-    VLOG(2) << __FUNCTION__ << ": added link local addr " << OBJ_CAST(a);
-    rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, false);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": could not add unicast route ipv6_dst=" << ipv6_dst
-                 << ", mask=" << mask;
-    }
-
-    return rv;
-  }
 
   uint16_t vid = vlan->get_vid(link);
   auto lladdr = rtnl_link_get_addr(link);
@@ -340,33 +315,17 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   return rv;
 }
 
-int nl_l3::add_lo_addr_v6(struct rtnl_addr *a) {
-  int rv = 0;
-  auto addr = rtnl_addr_get_local(a);
 
-  auto p = nl_addr_alloc(16);
-  nl_addr_parse("::1/128", AF_INET, &p);
-  std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
-
-  if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
-    VLOG(1) << __FUNCTION__ << ": skipping loopback address";
-    rv = -EINVAL;
-    return rv;
+    if (prefixlen == 128)
+      rv = sw->l3_unicast_host_add(libnl_in6addr_2_rofl(_addr, &rv), 0, false,
+                                   false);
+    else
+      rv = sw->l3_unicast_route_add(libnl_in6addr_2_rofl(_addr, &rv),
+                                    rofl::build_mask_in6(prefixlen), 0, false,
+                                    false);
+    break;
   }
-
-  auto prefixlen = rtnl_addr_get_prefixlen(a);
-  rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
-  auto mask = rofl::build_mask_in6(prefixlen);
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-    return rv;
   }
-
-  if (prefixlen == 128)
-    rv = sw->l3_unicast_host_add(ipv6_dst, 0, false, false);
-  else
-    rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, false);
 
   return rv;
 }

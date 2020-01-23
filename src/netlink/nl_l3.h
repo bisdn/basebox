@@ -39,10 +39,8 @@ public:
   int init() noexcept;
 
   int add_l3_addr(struct rtnl_addr *a);
-  int add_l3_addr_v6(struct rtnl_addr *a);
   int del_l3_addr(struct rtnl_addr *a);
-
-  int add_lo_addr_v6(struct rtnl_addr *a);
+  int add_lo_addr(struct rtnl_addr *a);
 
   int add_l3_neigh(struct rtnl_neigh *n);
   int update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new);
