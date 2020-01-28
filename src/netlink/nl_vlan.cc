@@ -65,13 +65,6 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged,
   return rv;
 }
 
-// remove vid at ingress
-int nl_vlan::remove_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
-                                 uint16_t vrf_id) {
-
-  return swi->ingress_port_vlan_remove(port_id, vid, !tagged, vrf_id);
-}
-
 int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged,
                          uint16_t vrf_id) {
   assert(swi);
@@ -184,6 +177,8 @@ std::vector<uint16_t> parse_vlan_bitmap(const uint32_t *bitmap) {
 }
 
 std::vector<uint16_t> nl_vlan::get_bridge_vids(rtnl_link *link) {
+  assert(link);
+
   if (!rtnl_link_get_master(link)) {
     LOG(ERROR) << __FUNCTION__ << ": interface is not in bridge";
   }
@@ -198,7 +193,12 @@ std::vector<uint16_t> nl_vlan::get_bridge_vids(rtnl_link *link) {
 
     it++;
   }
-  return parse_vlan_bitmap(rtnl_link_bridge_get_port_vlan(*it)->vlan_bitmap);
+
+  auto ret = rtnl_link_bridge_get_port_vlan(*it);
+  if(!ret)
+    return std::vector<uint16_t>();
+
+  return parse_vlan_bitmap(ret->vlan_bitmap);
 }
 
 uint16_t nl_vlan::get_vid(rtnl_link *link) {

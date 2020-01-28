@@ -197,7 +197,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   uint16_t pvid = vlan->get_vid(link);
   std::vector<uint16_t> vidarr;
 
-  if (master_id) {
+  if (master_id && !is_bridge && get_link_type(link) != LT_VRF_SLAVE) {
     vidarr = vlan->get_bridge_vids(link);
     for (auto it : vidarr)
       rv = add_l3_termination(port_id, it, mac, _af);
@@ -1012,6 +1012,9 @@ int nl_l3::add_l3_termination(uint32_t port_id, uint16_t vid,
                               const rofl::caddress_ll &mac, int af) noexcept {
   int rv = 0;
 
+  if(port_id == 0)
+    return 0;
+
   // lookup if this already exists
   auto needle = std::make_tuple(port_id, vid, mac, static_cast<uint16_t>(af));
   auto tmac_lookup_range = termination_mac_mapping.equal_range(needle);
@@ -1636,13 +1639,13 @@ void nl_l3::vrf_attach(rtnl_link *old_link, rtnl_link *new_link) {
   for (auto entry : fdb_entries) {
     auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
 
-    vlan->remove_ingress_vlan(nl->get_port_id(link.get()), vid, true);
+    vlan->remove_vlan(link.get(), vid, !rtnl_link_is_vlan(new_link));
   }
 
   for (auto entry : fdb_entries) {
     auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
 
-    vlan->add_vlan(link.get(), vid, true, vrf_id);
+    vlan->add_vlan(link.get(), vid, !rtnl_link_is_vlan(new_link), vrf_id);
   }
 }
 
@@ -1656,18 +1659,21 @@ void nl_l3::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
 
   uint16_t vid = vlan->get_vid(new_link);
 
+  if(vid == 1)
+    return;
+
   uint16_t vrf_id = get_vrf_table_id(old_link);
   auto fdb_entries = nl->search_fdb(vid, nullptr);
   for (auto entry : fdb_entries) {
     auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
 
-    vlan->remove_ingress_vlan(nl->get_port_id(link.get()), vid, true, vrf_id);
+    vlan->remove_vlan(link.get(), vid, !rtnl_link_is_vlan(new_link), vrf_id);
   }
 
   for (auto entry : fdb_entries) {
     auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
 
-    vlan->add_vlan(link.get(), vid, true);
+    vlan->add_vlan(link.get(), vid, !rtnl_link_is_vlan(new_link));
   }
 }
 
