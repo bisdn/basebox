@@ -195,7 +195,7 @@ std::vector<uint16_t> nl_vlan::get_bridge_vids(rtnl_link *link) {
   }
 
   auto ret = rtnl_link_bridge_get_port_vlan(*it);
-  if(!ret)
+  if (!ret)
     return std::vector<uint16_t>();
 
   return parse_vlan_bitmap(ret->vlan_bitmap);

@@ -192,8 +192,8 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   }
 
   // writes the TMAC entry
-  auto _addr = rtnl_link_get_addr(link);
-  rofl::caddress_ll mac = libnl_lladdr_2_rofl(_addr);
+  auto _lladdr = rtnl_link_get_addr(link);
+  rofl::caddress_ll mac = libnl_lladdr_2_rofl(_lladdr);
   uint16_t pvid = vlan->get_vid(link);
   std::vector<uint16_t> vidarr;
 
@@ -212,17 +212,18 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   }
 
   // Add the host routes
+  auto _addr = rtnl_addr_get_local(a);
   auto prefixlen = rtnl_addr_get_prefixlen(a);
   switch (rtnl_addr_get_family(a)) {
   case AF_INET:
     rv = sw->l3_unicast_route_add(libnl_in4addr_2_rofl(_addr, &rv),
                                   rofl::build_mask_in4(prefixlen), 0, false,
-                                  false);
+                                  false, vrf_id);
     break;
   case AF_INET6:
     rv = sw->l3_unicast_route_add(libnl_in6addr_2_rofl(_addr, &rv),
                                   rofl::build_mask_in6(prefixlen), 0, false,
-                                  false);
+                                  false, vrf_id);
     break;
   }
 
@@ -432,9 +433,6 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
 
     auto fdb_neigh = nl->search_fdb(vid, lladdr);
     for (auto neigh : fdb_neigh) {
-      VLOG(2) << __FUNCTION__ << ": found iface=" << OBJ_CAST(neigh);
-      VLOG(2) << __FUNCTION__ << ": found link=" << OBJ_CAST(link.get());
-
       auto neigh_ifindex = rtnl_neigh_get_ifindex(neigh);
       auto neigh_link = nl->get_link_by_ifindex(neigh_ifindex);
 
@@ -509,6 +507,12 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   if (n == nullptr)
     return -EINVAL;
 
+  addr = rtnl_neigh_get_dst(n);
+  if (is_ipv6_link_local_address(addr)) {
+    VLOG(1) << __FUNCTION__ << ": ignoring IPv6 link local address";
+    return rv;
+  }
+
   rv = add_l3_neigh_egress(n, &l3_interface_id, &vrf_id);
   LOG(INFO) << __FUNCTION__ << ": adding l3 neigh egress for neigh "
             << OBJ_CAST(n);
@@ -519,7 +523,6 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
     return rv;
   }
 
-  addr = rtnl_neigh_get_dst(n);
   if (family == AF_INET) {
     rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
     if (rv < 0) {
@@ -530,14 +533,6 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
                                  vrf_id);
   } else {
     // AF_INET6
-    auto p = nl_addr_alloc(16);
-    nl_addr_parse("fe80::/10", AF_INET6, &p);
-    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
-
-    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
-      VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
-      return 0;
-    }
     rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
@@ -610,7 +605,6 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
       return rv;
     }
 
-    VLOG(1) << " new neigh " << ipv6_dst;
     return 0;
   }
 
@@ -1012,7 +1006,7 @@ int nl_l3::add_l3_termination(uint32_t port_id, uint16_t vid,
                               const rofl::caddress_ll &mac, int af) noexcept {
   int rv = 0;
 
-  if(port_id == 0)
+  if (port_id == 0)
     return 0;
 
   // lookup if this already exists
@@ -1659,7 +1653,7 @@ void nl_l3::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
 
   uint16_t vid = vlan->get_vid(new_link);
 
-  if(vid == 1)
+  if (vid == 1)
     return;
 
   uint16_t vrf_id = get_vrf_table_id(old_link);

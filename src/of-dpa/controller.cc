@@ -256,7 +256,7 @@ void controller::handle_error_message(rofl::crofdpt &dpt,
           << " pkt received: " << std::endl
           << msg;
 
-  LOG(WARNING) << __FUNCTION__ << ": not implemented";
+  LOG(WARNING) << __FUNCTION__ << msg;
 }
 
 void controller::handle_port_desc_stats_reply(
@@ -1325,9 +1325,9 @@ int controller::ingress_port_vlan_add(uint32_t port, uint16_t vid, bool pvid,
       dpt.send_flow_mod_message(rofl::cauxid(0),
                                 fm_driver.enable_port_vid_ingress(
                                     dpt.get_version(), port, vid, vrf_id));
-      dpt.send_flow_mod_message(
-          rofl::cauxid(0),
-          fm_driver.enable_port_pvid_ingress(dpt.get_version(), port, vid, vrf_id));
+      dpt.send_flow_mod_message(rofl::cauxid(0),
+                                fm_driver.enable_port_pvid_ingress(
+                                    dpt.get_version(), port, vid, vrf_id));
     } else {
       dpt.send_flow_mod_message(rofl::cauxid(0),
                                 fm_driver.enable_port_vid_ingress(
