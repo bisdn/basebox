@@ -249,6 +249,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     }
   }
 
+  LOG(FATAL);
   return rv;
 }
 
@@ -455,6 +456,7 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
     return rv;
   }
 
+#if 0
   // XXX TODO is this still needed?
   rv = vlan->add_vlan(link.get(), vid, tagged);
   if (rv < 0) {
@@ -462,6 +464,7 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
                << " on link " << OBJ_CAST(link.get());
     return rv;
   }
+#endif
 
   rv = add_l3_egress(ifindex, vid, s_mac, d_mac, l3_interface_id);
   if (rv < 0) {
