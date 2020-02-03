@@ -1,2 +1,16 @@
-- name: Automated Version Bump
-  uses: phips28/gh-action-bump-version@v5.0.18
+name: "Bump Version"
+
+on:
+  push:
+    branches:
+      - "master"
+
+jobs:
+  bump-version:
+    name: "Bump Version on master"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Automated Version Bump"
+        uses: "phips28/gh-action-bump-version@master"
+        with:
+          tag-prefix: ''
