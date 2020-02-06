@@ -136,3 +136,4 @@ function teardown() {
   # delete the bridge
   ip link del ${BRIDGE}
 }
+setup

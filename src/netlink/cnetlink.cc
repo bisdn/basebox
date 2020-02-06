@@ -312,6 +312,9 @@ bool cnetlink::is_bridge_interface(int ifindex) const {
 bool cnetlink::is_bridge_interface(rtnl_link *l) const {
   assert(l);
 
+  if(bridge && rtnl_link_get_master(l) == bridge->get_ifindex()) {
+    return true;
+  }
   // is a vlan on top of the bridge?
   if (rtnl_link_is_vlan(l)) {
     LOG(INFO) << __FUNCTION__ << ": vlan ok";
@@ -627,7 +630,7 @@ void cnetlink::route_addr_apply(const nl_obj &obj) {
       l3->add_l3_addr(ADDR_CAST(obj.get_new_obj()));
       break;
     case AF_INET6:
-      //l3->add_l3_addr_v6(ADDR_CAST(obj.get_new_obj()));
+      l3->add_l3_addr_v6(ADDR_CAST(obj.get_new_obj()));
       break;
     default:
       LOG(ERROR) << __FUNCTION__ << ": unsupported family " << family;

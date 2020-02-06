@@ -1,0 +1,22 @@
+#!/bin/bash
+
+ip link add name swbridge type bridge vlan_filtering 1
+ip link set swbridge up
+
+ip link set port7 master swbridge
+ip link set port8 master swbridge
+
+ip link set port7 up
+ip link set port8 up
+
+bridge vlan add vid 10 dev port7
+bridge vlan add vid 20 dev port8
+
+ip link add link swbridge name swbridge.10 type vlan id 10
+ip link add link swbridge name swbridge.20 type vlan id 20
+
+ip link set swbridge.10 up
+ip link set swbridge.20 up
+
+ip address add 10.0.10.1/24 dev swbridge.10
+ip address add 10.0.20.1/24 dev swbridge.20

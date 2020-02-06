@@ -236,7 +236,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
   }
 
-  if (!is_loopback && !is_bridge) {
+  if (!is_loopback && !is_bridge && !nl->is_bridge_interface(link)) {
     assert(ifindex);
     // add vlan
     bool tagged = !!rtnl_link_is_vlan(link);
@@ -324,7 +324,7 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     return rv;
   }
 
-  if (!is_loopback) {
+  if (!is_loopback && !nl->is_bridge_interface(link)) {
     // add vlan
     bool tagged = !!rtnl_link_is_vlan(link);
     rv = vlan->add_vlan(link, vid, tagged);
