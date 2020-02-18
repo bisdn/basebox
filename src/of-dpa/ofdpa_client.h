@@ -8,9 +8,7 @@
 
 #include "api/ofdpa.grpc.pb.h"
 
-namespace grpc {
-class Channel;
-}
+using grpc::Channel;
 
 namespace basebox {
 
