@@ -6,6 +6,10 @@ PORTC=${PORTC:-port33}
 PORTD=${PORTD:-port34}
 BRIDGE=${BRIDGE:-swbridge}
 
+function teardown {
+  ip link del ${BRIDGE}
+}
+
 function setup() {
   ip link add name ${BRIDGE} type bridge vlan_filtering 1
   ip link set ${BRIDGE} up
@@ -35,4 +39,5 @@ function setup() {
   bridge vlan add vid 124 dev ${PORTB} pvid
 }
 
+teardown
 setup

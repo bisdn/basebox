@@ -23,6 +23,10 @@ BRIDGE=${BRIDGE:-swbridge}
 
 BR_VLAN_RANGE=${BR_VLAN_RANGE:-6}
 
+function teardown {
+  ip link del ${BRIDGE}
+}
+
 function setup() {
   ip link add name ${BRIDGE} type bridge vlan_filtering 1
   ip link set ${BRIDGE} up
@@ -42,3 +46,6 @@ function setup() {
     bridge vlan add vid ${vid} dev ${BRIDGE} self
   done
 }
+
+teardown
+setup

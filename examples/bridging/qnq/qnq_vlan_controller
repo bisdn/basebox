@@ -3,6 +3,8 @@
 # Stag - 10 (bridge)
 # Ctag - 20 
 
+ip l del swbridge
+
 ip link add swbridge type bridge vlan_filtering 1 vlan_protocol 802.1ad
 
 ip link set port25 master swbridge
