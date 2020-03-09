@@ -256,7 +256,7 @@ void controller::handle_error_message(rofl::crofdpt &dpt,
           << " pkt received: " << std::endl
           << msg;
 
-  LOG(WARNING) << __FUNCTION__ << ": not implemented";
+  LOG(WARNING) << __FUNCTION__ << ": " << msg;
 }
 
 void controller::handle_port_desc_stats_reply(
