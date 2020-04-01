@@ -1,0 +1,20 @@
+#!/bin/bash
+
+ip link add name br0 type bridge vlan_filtering 1 stp_state 1
+ip link set br0 up
+
+ip link add name br1 type bridge vlan_filtering 1 stp_state 1
+ip link set br1 up
+
+ip link set eno2 master br0
+ip link set eno2 up
+
+ip link set eno3 master br1
+ip link set eno3 up
+
+ip link add br0-veth1 type veth peer name br1-veth1
+ip link set br0-veth1 master br0
+ip link set br1-veth1 master br1
+ip link set br0-veth1 up
+ip link set br1-veth1 up
+
