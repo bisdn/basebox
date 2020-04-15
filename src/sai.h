@@ -198,6 +198,8 @@ public:
     uint32_t port_id;
     std::string name;
     bool status;
+    uint32_t speed;
+    uint8_t duplex;
   };
 
   enum port_type {
