@@ -20,6 +20,7 @@
 #include <netlink/route/link/vxlan.h>
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
+#include <systemd/sd-daemon.h>
 
 #include "cnetlink.h"
 #include "netlink-utils.h"

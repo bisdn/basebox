@@ -3,10 +3,11 @@ Description=baseboxd
 After=network.target
 
 [Service]
-Type=simple
+Type=notify
 ExecStart=@bindir@/baseboxd
 EnvironmentFile=-@sysconfdir@/sysconfig/baseboxd
 Restart=always
+NotifyAcess=main
 
 [Install]
 WantedBy=multi-user.target
