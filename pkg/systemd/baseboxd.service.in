@@ -7,7 +7,7 @@ Type=notify
 ExecStart=@bindir@/baseboxd
 EnvironmentFile=-@sysconfdir@/sysconfig/baseboxd
 Restart=always
-NotifyAcess=main
+NotifyAccess=main
 
 [Install]
 WantedBy=multi-user.target

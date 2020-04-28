@@ -288,7 +288,7 @@ void controller::handle_port_desc_stats_reply(
     LOG(INFO) << "ports initialized";
 
     // Let systemd know baseboxd is ready
-    sd_notify(0, "READY=1");
+    sd_notify(0, "READY=1\nSTATUS=Active");
 
     bb_thread.add_timer(
         this, TIMER_port_stats_request,
