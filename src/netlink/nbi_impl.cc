@@ -37,7 +37,7 @@ void nbi_impl::port_notification(
     case PORT_EVENT_MODIFY:
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
-        LOG(INFO) << __FUNCTION__ << ": port state changed, continuing";
+        tap_man->change_port_status(ntfy.name, ntfy.status);
         break;
       default:
         LOG(ERROR) << __FUNCTION__ << ": unknown port";
@@ -51,6 +51,7 @@ void nbi_impl::port_notification(
           LOG(INFO) << __FUNCTION__ << ": port already exists";
           break;
         }
+        tap_man->change_port_status(ntfy.name, ntfy.status);
         break;
       case nbi::port_type_vxlan:
         // XXX TODO notify this?
