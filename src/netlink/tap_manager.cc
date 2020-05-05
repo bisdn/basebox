@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <glog/logging.h>
+#include <linux/if_tun.h>
 #include <net/if.h>
 #include <netlink/route/link.h>
 #include <sys/ioctl.h>
@@ -305,34 +306,27 @@ int tap_manager::recreate_tapdev(int ifindex, const std::string &portname) {
  * @return ioctl value from setting the flags
  */
 int tap_manager::change_port_status(const std::string name, bool status) {
-  struct ifreq ifr;
-  memset(&ifr, 0, sizeof(ifr));
+  std::lock_guard<std::mutex> lock{tn_mutex};
+  auto fd_it = tap_names2fds.find(name);
+  int error;
+  int carrier = status;
 
-  strncpy(ifr.ifr_name, name.c_str(), IFNAMSIZ);
-
-  // Get existing flags
-  auto sockFd = socket(PF_INET, SOCK_DGRAM, 0);
-  int error = ioctl(sockFd, SIOCGIFFLAGS, static_cast<void *>(&ifr));
-  if (error) {
-    LOG(ERROR) << __FUNCTION__ << ": ioctl failed with error code " << error;
-    close(sockFd);
-    return error;
+  if (fd_it == tap_names2fds.end()) {
+    LOG(ERROR) << __FUNCTION__ << ": tap_dev not found";
+    return -EINVAL;
   }
 
-  // Mutate flags
-  if (status) {
-    ifr.ifr_flags |= IFF_UP;
-  } else {
-    ifr.ifr_flags &= ~IFF_UP;
+  if (fd_it->second == -1) {
+    LOG(FATAL) << __FUNCTION__ << ": need to update fd";
+    return -EINVAL;
   }
 
   // Set flags
-  error = ioctl(sockFd, SIOCSIFFLAGS, static_cast<void *>(&ifr));
+  error = ioctl(fd_it->second, TUNSETCARRIER, &carrier);
   if (error) {
     LOG(ERROR) << __FUNCTION__ << ": ioctl failed with error code " << error;
   }
 
-  close(sockFd);
   return error;
 }
 
