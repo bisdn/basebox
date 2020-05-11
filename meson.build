@@ -94,6 +94,12 @@ if not libgflags.found()
   libgflags = cppc.find_library('libgflags')
 endif
 
+libsystemd = dependency('libsystemd', required: false)
+if not libsystemd.found()
+  # find the lib without pkg-config
+  libsystemd = cppc.find_library('libsystemd')
+endif
+
 glog = dependency('libglog', version: '>= 0.3.3', required: false)
 if not glog.found()
   # find the lib without pkg-config
@@ -210,6 +216,7 @@ executable('baseboxd',
     libnl_route,
     librofl_common,
     librofl_ofdpa,
+    libsystemd,
     protobuf,
   ],
   install: true,

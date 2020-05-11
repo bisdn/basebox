@@ -20,6 +20,7 @@
 #include <netlink/route/link/vxlan.h>
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
+#include <systemd/sd-daemon.h>
 
 #include "cnetlink.h"
 #include "netlink-utils.h"
@@ -394,6 +395,8 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
   case NL_STATE_SHUTDOWN:
     shutdown_subsystems();
     state = NL_STATE_STOPPED;
+
+    sd_notify(0, "STATUS=Connection broke");
     /* fallthrough */
   case NL_STATE_STOPPED:
     return;

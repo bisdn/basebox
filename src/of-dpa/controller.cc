@@ -11,6 +11,7 @@
 
 #include <linux/if_ether.h>
 #include <grpc++/grpc++.h>
+#include <systemd/sd-daemon.h>
 
 #include "controller.h"
 #include "ofdpa_client.h"
@@ -285,6 +286,9 @@ void controller::handle_port_desc_stats_reply(
   try {
     nb->port_notification(notifications);
     LOG(INFO) << "ports initialized";
+
+    // Let systemd know baseboxd is ready
+    sd_notify(0, "READY=1\nSTATUS=Active");
 
     bb_thread.add_timer(
         this, TIMER_port_stats_request,
