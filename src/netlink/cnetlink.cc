@@ -500,10 +500,7 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
 
   assert(data);
   auto nl = static_cast<cnetlink *>(data);
-
-  // only enqueue nl msgs if not in stopped state
-  if (nl->state != NL_STATE_STOPPED)
-    nl->nl_objs.emplace_back(action, old_obj, new_obj);
+  nl->nl_objs.emplace_back(action, old_obj, new_obj);
 }
 
 void cnetlink::set_tapmanager(std::shared_ptr<tap_manager> tm) {
