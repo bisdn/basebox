@@ -8,6 +8,7 @@ RUN dnf -y install dnf-plugins-core && \
     dnf -y install ninja-build && \
     dnf -y install gettext && \
     dnf -y install findutils && \
+    dnf -y install systemd-devel && \
     dnf -y copr enable bisdn/rofl && \
     dnf -y copr enable bisdn/rofl-testing && \
     dnf -y copr enable bisdn/baseboxd && \
