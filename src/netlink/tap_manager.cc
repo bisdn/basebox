@@ -82,7 +82,6 @@ int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
   } else {
     VLOG(1) << __FUNCTION__ << ": " << port_name << " with port_id=" << port_id
             << " already existing";
-    r = -EEXIST;
   }
 
   return r;
