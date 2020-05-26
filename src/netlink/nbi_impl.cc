@@ -51,7 +51,6 @@ void nbi_impl::port_notification(
           LOG(INFO) << __FUNCTION__ << ": port already exists";
           break;
         }
-        tap_man->change_port_status(ntfy.name, ntfy.status);
         break;
       case nbi::port_type_vxlan:
         // XXX TODO notify this?
