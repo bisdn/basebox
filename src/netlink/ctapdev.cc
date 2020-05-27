@@ -29,7 +29,7 @@ ctapdev::~ctapdev() { tap_close(); }
 
 void ctapdev::tap_open() {
   struct ifreq ifr;
-  int rc;
+  int rc, carrier = 0;
 
   if (fd != -1) {
     VLOG(1) << __FUNCTION__ << ": tapdev is already open using fd=" << fd;
@@ -50,6 +50,11 @@ void ctapdev::tap_open() {
                << " errno=" << errno << " reason: " << strerror(errno);
     close(fd);
     fd = -1;
+  }
+
+  if ((rc = ioctl(fd, TUNSETCARRIER, &carrier)) < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": ioctl TUNSETCARRIER failed on fd=" << fd
+               << " errno=" << errno << " reason: " << strerror(errno);
   }
 
   LOG(INFO) << __FUNCTION__ << ": created tapdev " << devname << " fd=" << fd
