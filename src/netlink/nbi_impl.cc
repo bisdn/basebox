@@ -17,6 +17,7 @@ nbi_impl::nbi_impl(std::shared_ptr<cnetlink> nl,
                    std::shared_ptr<tap_manager> tap_man)
     : nl(nl), tap_man(tap_man) {
   nl->set_tapmanager(tap_man);
+  nl->start();
 }
 
 nbi_impl::~nbi_impl() { nl->stop(); }
@@ -31,12 +32,9 @@ void nbi_impl::register_switch(switch_interface *swi) noexcept {
 void nbi_impl::switch_state_notification(enum switch_state state) noexcept {
   switch (state) {
   case SWITCH_STATE_UP:
-    nl->start();
-    break;
   case SWITCH_STATE_DOWN:
   case SWITCH_STATE_FAILED:
   case SWITCH_STATE_UNKNOWN:
-    nl->stop();
     break;
   default:
     LOG(FATAL) << __FUNCTION__ << ": invalid state";
