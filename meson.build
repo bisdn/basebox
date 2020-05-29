@@ -86,7 +86,7 @@ protobuf = dependency('protobuf')
 grpc_cpp = find_program('grpc_cpp_plugin')
 
 librofl_common = dependency('rofl_common')
-librofl_ofdpa = dependency('rofl_ofdpa', version: '>= 1.1.0')
+librofl_ofdpa = dependency('rofl_ofdpa')
 
 libgflags = dependency('libgflags', required: false)
 if not libgflags.found()
