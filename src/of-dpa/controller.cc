@@ -127,8 +127,6 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
   }
 
   this->dptid = rofl::cdptid(0);
-
-  nb->switch_state_notification(nbi::SWITCH_STATE_DOWN);
 }
 
 void controller::handle_conn_terminated(rofl::crofdpt &dpt,
@@ -172,7 +170,6 @@ void controller::handle_features_reply(
     rofl::openflow::cofmsg_features_reply &msg) {
   VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid
           << ", msg: " << msg;
-  nb->switch_state_notification(nbi::SWITCH_STATE_UP);
 }
 
 void controller::handle_barrier_reply(
