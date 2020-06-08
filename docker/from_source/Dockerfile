@@ -1,5 +1,6 @@
 FROM fedora:30
 LABEL maintainer="jan.klare@bisdn.de"
+ADD . / basebox/
 RUN dnf -y install dnf-plugins-core && \
     dnf -y install git && \
     dnf -y install clang && \
@@ -13,8 +14,8 @@ RUN dnf -y install dnf-plugins-core && \
     dnf -y copr enable bisdn/rofl-testing && \
     dnf -y copr enable bisdn/baseboxd && \
     dnf -y copr enable bisdn/baseboxd-testing && \
-    git clone --recursive https://github.com/bisdn/basebox.git && \
     cd basebox && \
+    git submodule update --init --recursive && \
     make -C ./pkg/testing/rpm/ spec && \
     dnf -y builddep ./pkg/testing/rpm/baseboxd.spec && \
     meson build && \

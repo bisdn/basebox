@@ -17,5 +17,4 @@ jobs:
       services:
         - docker
       script:
-        - cd docker/from_source
-        - docker build .
+        - docker build -f docker/from_source/Dockerfile .
