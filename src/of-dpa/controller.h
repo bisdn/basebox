@@ -22,6 +22,7 @@
 
 #include "sai.h"
 
+#define CHECK_BIT(var, pos) (((var) >> (pos)) & 1)
 namespace basebox {
 
 // forward declarations
@@ -303,6 +304,13 @@ private:
   bool connected;
   std::shared_ptr<ofdpa_client> ofdpa;
   uint16_t ofdpa_grpc_port;
+
+  uint8_t get_duplex(uint32_t current) {
+    if (CHECK_BIT(current, 0) or CHECK_BIT(current, 2) or CHECK_BIT(current, 4))
+      return 0;
+    else
+      return 1;
+  }
 
   enum timer_t {
     /* handle_timeout will be called as well from crofbase, hence we need some

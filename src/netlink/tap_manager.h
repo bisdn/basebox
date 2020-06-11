@@ -11,6 +11,7 @@
 #include <mutex>
 
 #include "sai.h"
+#include <linux/ethtool.h>
 
 extern "C" {
 struct rtnl_link;
@@ -76,6 +77,7 @@ public:
   int get_fd(uint32_t port_id) const noexcept;
 
   int change_port_status(const std::string name, bool status);
+  int set_port_speed(const std::string name, uint32_t speed, uint8_t duplex);
 
   // access from northbound (cnetlink)
   int tapdev_removed(int ifindex, const std::string &portname);

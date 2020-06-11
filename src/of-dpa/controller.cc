@@ -239,10 +239,12 @@ void controller::handle_port_status(rofl::crofdpt &dpt,
 
   bool status = (!(port.get_config() & rofl::openflow13::OFPPC_PORT_DOWN) &&
                  !(port.get_state() & rofl::openflow13::OFPPS_LINK_DOWN));
+  uint32_t speed = port.get_ethernet().get_curr_speed();
+  uint8_t duplex = get_duplex(port.get_ethernet().get_curr());
 
   ntfys.emplace_back(nbi::port_notification_data{
       (nbi::port_event)msg.get_reason(), port.get_port_no(),
-      msg.get_port().get_name(), status});
+      msg.get_port().get_name(), status, speed, duplex});
   nb->port_notification(ntfys);
 }
 
@@ -274,9 +276,12 @@ void controller::handle_port_desc_stats_reply(
 
     bool status = (!(port.get_config() & rofl::openflow13::OFPPC_PORT_DOWN) &&
                    !(port.get_state() & rofl::openflow13::OFPPS_LINK_DOWN));
+    uint32_t speed = port.get_ethernet().get_curr_speed();
+    uint8_t duplex = get_duplex(port.get_ethernet().get_curr());
 
-    notifications.emplace_back(nbi::port_notification_data{
-        nbi::PORT_EVENT_ADD, port.get_port_no(), port.get_name(), status});
+    notifications.emplace_back(
+        nbi::port_notification_data{nbi::PORT_EVENT_ADD, port.get_port_no(),
+                                    port.get_name(), status, speed, duplex});
   }
 
   /* init 1:1 port mapping */
