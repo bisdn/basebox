@@ -1746,7 +1746,7 @@ int controller::subscribe_to(enum swi_flags flags) noexcept {
     dpt.send_flow_mod_message(
         rofl::cauxid(0), fm_driver.enable_policy_ipv4_multicast(
                              dpt.get_version(), rofl::caddress_in4("224.0.0.0"),
-                             rofl::build_mask_in4(24)));
+                             rofl::build_mask_in4(4)));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
