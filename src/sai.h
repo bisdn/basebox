@@ -35,14 +35,19 @@ public:
     SAI_PORT_STAT_COLLISIONS,
   } sai_port_stat_t;
 
+  /* @ LAG { */
   virtual int lag_create(uint32_t *lag_id) noexcept = 0;
   virtual int lag_remove(uint32_t lag_id) noexcept = 0;
   virtual int lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept = 0;
   virtual int lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept = 0;
+  /* @} */
 
+  /* @ tunnel overlay { */
   virtual int overlay_tunnel_add(uint32_t tunnel_id) noexcept = 0;
   virtual int overlay_tunnel_remove(uint32_t tunnel_id) noexcept = 0;
+  /* @} */
 
+  /* @ Layer 2 bridging { */
   virtual int l2_addr_remove_all_in_vlan(uint32_t port,
                                          uint16_t vid) noexcept = 0;
   virtual int l2_addr_add(uint32_t port, uint16_t vid,
@@ -56,7 +61,15 @@ public:
                                   bool permanent) noexcept = 0;
   virtual int l2_overlay_addr_remove(uint32_t tunnel_id, uint32_t lport_id,
                                      const rofl::cmacaddr &mac) noexcept = 0;
+  virtual int l2_multicast_addr_add(uint32_t port, uint16_t vid,
+                                    const rofl::caddress_ll &mac) noexcept = 0;
+  virtual int
+  l2_multicast_addr_remove(uint32_t port, uint16_t vid,
+                           const rofl::caddress_ll &mac) noexcept = 0;
+  /* @} */
 
+
+  /* @ termination MAC { */
   virtual int l3_termination_add(uint32_t sport, uint16_t vid,
                                  const rofl::caddress_ll &dmac) noexcept = 0;
   virtual int l3_termination_add_v6(uint32_t sport, uint16_t vid,
@@ -66,7 +79,9 @@ public:
   virtual int
   l3_termination_remove_v6(uint32_t sport, uint16_t vid,
                            const rofl::caddress_ll &dmac) noexcept = 0;
+  /* @} */
 
+  /* @ Layer 3 egress group { */
   virtual int l3_egress_create(uint32_t port, uint16_t vid,
                                const rofl::caddress_ll &src_mac,
                                const rofl::caddress_ll &dst_mac,
@@ -76,7 +91,9 @@ public:
                                const rofl::caddress_ll &dst_mac,
                                uint32_t *l3_interface_id) noexcept = 0;
   virtual int l3_egress_remove(uint32_t l3_interface) noexcept = 0;
+  /* @} */
 
+  /* @ Layer3 Unicast { */
   virtual int l3_unicast_host_add(const rofl::caddress_in4 &ipv4_dst,
                                   uint32_t l3_interface, bool is_ecmp,
                                   bool update_route,
@@ -109,18 +126,24 @@ public:
   virtual int l3_unicast_route_remove(const rofl::caddress_in6 &ipv6_dst,
                                       const rofl::caddress_in6 &mask,
                                       uint16_t vrf_id = 0) noexcept = 0;
+  /* @} */
 
+  /* @ Layer3 ECMP { */
   virtual int l3_ecmp_add(uint32_t l3_ecmp_id,
                           const std::set<uint32_t> &l3_interfaces) noexcept = 0;
   virtual int l3_ecmp_remove(uint32_t l3_ecmp_id) noexcept = 0;
+  /* @} */
 
+  /* @ Ingress port vlan  { */
   virtual int ingress_port_vlan_accept_all(uint32_t port) noexcept = 0;
   virtual int ingress_port_vlan_drop_accept_all(uint32_t port) noexcept = 0;
   virtual int ingress_port_vlan_add(uint32_t port, uint16_t vid, bool pvid,
                                     uint16_t vrf_id = 0) noexcept = 0;
   virtual int ingress_port_vlan_remove(uint32_t port, uint16_t vid, bool pvid,
                                        uint16_t vrf_id = 0) noexcept = 0;
+  /* @} */
 
+  /* @ Egress port vlan  { */
   virtual int egress_port_vlan_accept_all(uint32_t port) noexcept = 0;
   virtual int egress_port_vlan_drop_accept_all(uint32_t port) noexcept = 0;
 
@@ -128,18 +151,25 @@ public:
                                    bool untagged) noexcept = 0;
   virtual int egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept = 0;
 
-  virtual int add_l2_overlay_flood(uint32_t tunnel_id,
-                                   uint32_t lport_id) noexcept = 0;
-  virtual int del_l2_overlay_flood(uint32_t tunnel_id,
-                                   uint32_t lport_id) noexcept = 0;
-
   virtual int egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
                                           bool untagged) noexcept = 0;
   virtual int egress_bridge_port_vlan_remove(uint32_t port,
                                              uint16_t vid) noexcept = 0;
+  /* @} */
+
+  /* @ Layer 2 overlay  { */
+  virtual int add_l2_overlay_flood(uint32_t tunnel_id,
+                                   uint32_t lport_id) noexcept = 0;
+  virtual int del_l2_overlay_flood(uint32_t tunnel_id,
+                                   uint32_t lport_id) noexcept = 0;
+  /* @} */
+
+  /* @ QnQ  { */
   virtual int set_egress_tpid(uint32_t port) noexcept = 0;
   virtual int delete_egress_tpid(uint32_t port) noexcept = 0;
+  /* @} */
 
+  /* @ control  { */
   virtual int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept = 0;
   virtual int subscribe_to(enum swi_flags flags) noexcept = 0;
 
@@ -148,7 +178,9 @@ public:
   virtual int get_statistics(uint64_t port_no, uint32_t number_of_counters,
                              const sai_port_stat_t *counter_ids,
                              uint64_t *counters) noexcept = 0;
+  /* @} */
 
+  /* @ tunnels  { */
   virtual int tunnel_tenant_create(uint32_t tunnel_id,
                                    uint32_t vni) noexcept = 0;
   virtual int tunnel_tenant_delete(uint32_t tunnel_id) noexcept = 0;
@@ -177,6 +209,7 @@ public:
                                      uint32_t tunnel_id) noexcept = 0;
   virtual int tunnel_port_tenant_remove(uint32_t port_id,
                                         uint32_t tunnel_id) noexcept = 0;
+  /* @} */
 };
 
 class nbi {
