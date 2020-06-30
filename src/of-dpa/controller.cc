@@ -778,7 +778,6 @@ int controller::l2_multicast_group_add(uint32_t port, uint16_t vid,
     // find grp/vlan combination
     auto it = std::find(mc_groups.begin(), mc_groups.end(), n_mcast);
 
-
     if (it != mc_groups.end()) { // if mmac does exist, update
       it->l2_interface.emplace(fm_driver.group_id_l2_interface(port, vid));
       index = it->index;
