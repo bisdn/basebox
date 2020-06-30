@@ -150,7 +150,7 @@ void cnetlink::init_caches() {
                                     NL_CACHE_AF_ITER);
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__
-               << ": rtnl_link_alloc_cache_flags failed rc=" << rc;
+               << ": rtnl_neigh_alloc_cache_flags failed rc=" << rc;
   }
   rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_NEIGH_CACHE],
                                   (change_func_v2_t)&nl_cb_v2, this);
