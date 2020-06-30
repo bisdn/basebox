@@ -13,12 +13,14 @@ struct rtnl_addr;
 struct rtnl_link;
 struct rtnl_neigh;
 struct rtnl_route;
+struct rtnl_mdb;
 }
 
 #define LINK_CAST(obj) reinterpret_cast<struct rtnl_link *>(obj)
 #define NEIGH_CAST(obj) reinterpret_cast<struct rtnl_neigh *>(obj)
 #define ROUTE_CAST(obj) reinterpret_cast<struct rtnl_route *>(obj)
 #define ADDR_CAST(obj) reinterpret_cast<struct rtnl_addr *>(obj)
+#define MDB_CAST(obj) reinterpret_cast<struct rtnl_mdb *>(obj)
 
 namespace basebox {
 
@@ -40,5 +42,8 @@ enum link_type {
 enum link_type get_link_type(rtnl_link *link) noexcept;
 
 uint64_t nlall2uint64(const nl_addr *a) noexcept;
+void multicast_ipv4_to_ll(const uint32_t addr, unsigned char *dst) noexcept;
+void multicast_ipv6_to_ll(const struct in6_addr *addr,
+                          unsigned char *dst) noexcept;
 
 } // namespace basebox
