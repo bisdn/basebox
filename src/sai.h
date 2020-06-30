@@ -68,6 +68,13 @@ public:
                            const rofl::caddress_ll &mac) noexcept = 0;
   /* @} */
 
+  /* @ Layer 2 Multicast { */
+  virtual int l2_multicast_group_add(uint32_t port, uint16_t vid,
+                                     rofl::caddress_ll mc_group) noexcept = 0;
+  virtual int
+  l2_multicast_group_remove(uint32_t port, uint16_t vid,
+                            rofl::caddress_ll mc_group) noexcept = 0;
+  /* @} */
 
   /* @ termination MAC { */
   virtual int l3_termination_add(uint32_t sport, uint16_t vid,

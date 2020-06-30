@@ -763,14 +763,190 @@ int controller::l2_overlay_addr_remove(uint32_t tunnel_id, uint32_t lport_id,
   return rv;
 }
 
+int controller::l2_multicast_group_add(uint32_t port, uint16_t vid,
+                                       rofl::caddress_ll mc_group) noexcept {
+  int rv = 0;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    int index = 1;
+    struct multicast_entry n_mcast;
+    n_mcast.key = std::make_tuple(mc_group, vid);
+    n_mcast.index = index;
+
+    // find grp/vlan combination
+    auto it = std::find(mc_groups.begin(), mc_groups.end(), n_mcast);
+
+
+    if (it != mc_groups.end()) { // if mmac does exist, update
+      it->l2_interface.emplace(fm_driver.group_id_l2_interface(port, vid));
+      index = it->index;
+    } else { // add
+      for (auto i : mc_groups) {
+        if (std::get<1>(i.key) == vid) {
+
+          if (index == i.index)
+            index++;
+        }
+      }
+
+      n_mcast.index = index;
+      n_mcast.l2_interface.emplace(fm_driver.group_id_l2_interface(port, vid));
+      it = mc_groups.insert(mc_groups.end(), n_mcast);
+    }
+
+    dpt.send_group_mod_message(
+        rofl::cauxid(0), fm_driver.enable_group_l2_multicast(
+                             dpt.get_version(), index, vid, it->l2_interface,
+                             (it->l2_interface.size() > 1)));
+
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  return rv;
+}
+
+int controller::l2_multicast_group_remove(uint32_t port, uint16_t vid,
+                                          rofl::caddress_ll mc_group) noexcept {
+  int rv = 0;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    struct multicast_entry n_mcast;
+    n_mcast.key = std::make_tuple(mc_group, vid);
+
+    // find grp/vlan combination
+    auto it = std::find(mc_groups.begin(), mc_groups.end(), n_mcast);
+    if (it == mc_groups.end()) {
+      LOG(ERROR) << __FUNCTION__ << ": multicast group not found";
+      return -EINVAL;
+    }
+
+    auto set_it =
+        it->l2_interface.find(fm_driver.group_id_l2_interface(port, vid));
+    if (set_it == it->l2_interface.end()) {
+      LOG(ERROR) << __FUNCTION__ << ": interface group not found";
+      return -EINVAL;
+    }
+
+    it->l2_interface.erase(set_it);
+
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        // send update without port
+        fm_driver.enable_group_l2_multicast(dpt.get_version(), it->index, vid,
+                                            it->l2_interface, true));
+
+    dpt.send_barrier_request(rofl::cauxid(0));
+    if (it->l2_interface.size() != 0) {
+      return -ENOTEMPTY;
+    }
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  return rv;
+}
+
+int controller::l2_multicast_addr_add(uint32_t port, uint16_t vid,
+                                      const rofl::caddress_ll &mac) noexcept {
+  int rv = 0;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    struct multicast_entry n_mcast;
+    n_mcast.key = std::make_tuple(mac, vid);
+
+    // find grp/vlan combination
+    auto it = std::find(mc_groups.begin(), mc_groups.end(), n_mcast);
+
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.add_bridging_multicast_vlan(
+                                  dpt.get_version(), it->index, vid, mac));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  return rv;
+}
+
+int controller::l2_multicast_addr_remove(
+    uint32_t port, uint16_t vid, const rofl::caddress_ll &mac) noexcept {
+  int rv = 0;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    struct multicast_entry n_mcast;
+    n_mcast.key = std::make_tuple(mac, vid);
+
+    // find grp/vlan combination
+    auto it = std::find(mc_groups.begin(), mc_groups.end(), n_mcast);
+
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.remove_bridging_multicast_vlan(
+                                  dpt.get_version(), port, vid, mac));
+
+    dpt.send_barrier_request(rofl::cauxid(0));
+
+    dpt.send_group_mod_message(
+        rofl::cauxid(0), fm_driver.disable_group_l2_multicast(dpt.get_version(),
+                                                              it->index, vid));
+
+    mc_groups.erase(it);
+
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  return rv;
+}
+
 int controller::l3_termination_add(uint32_t sport, uint16_t vid,
                                    const rofl::caddress_ll &dmac) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    rv = dpt.send_flow_mod_message(rofl::cauxid(0),
-                                   fm_driver.enable_tmac_ipv4_unicast_mac(
-                                       dpt.get_version(), sport, vid, dmac));
+    if (dmac.is_multicast()) {
+      rv = dpt.send_flow_mod_message(
+          rofl::cauxid(0),
+          fm_driver.enable_tmac_ipv4_multicast_mac(dpt.get_version()));
+    } else {
+      rv = dpt.send_flow_mod_message(rofl::cauxid(0),
+                                     fm_driver.enable_tmac_ipv4_unicast_mac(
+                                         dpt.get_version(), sport, vid, dmac));
+    }
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -790,9 +966,15 @@ int controller::l3_termination_add_v6(uint32_t sport, uint16_t vid,
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    dpt.send_flow_mod_message(rofl::cauxid(0),
-                              fm_driver.enable_tmac_ipv6_unicast_mac(
-                                  dpt.get_version(), sport, vid, dmac));
+    if (dmac.is_multicast()) {
+      rv = dpt.send_flow_mod_message(
+          rofl::cauxid(0),
+          fm_driver.enable_tmac_ipv6_multicast_mac(dpt.get_version()));
+    } else {
+      rv = dpt.send_flow_mod_message(rofl::cauxid(0),
+                                     fm_driver.enable_tmac_ipv6_unicast_mac(
+                                         dpt.get_version(), sport, vid, dmac));
+    }
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
