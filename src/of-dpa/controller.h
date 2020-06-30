@@ -159,7 +159,19 @@ public:
                           bool permanent) noexcept override;
   int l2_overlay_addr_remove(uint32_t tunnel_id, uint32_t lport_id,
                              const rofl::cmacaddr &mac) noexcept override;
+  int l2_multicast_addr_add(uint32_t port, uint16_t vid,
+                            const rofl::caddress_ll &mac) noexcept override;
+  int l2_multicast_addr_remove(uint32_t port, uint16_t vid,
+                               const rofl::caddress_ll &mac) noexcept override;
 
+  /* @ Layer 2 Multicast { */
+  int l2_multicast_group_add(uint32_t port, uint16_t vid,
+                             rofl::caddress_ll mc_group) noexcept override;
+  int l2_multicast_group_remove(uint32_t port, uint16_t vid,
+                                rofl::caddress_ll mc_group) noexcept override;
+  /* @} */
+
+  // dmac = Multicast or Unicast MAC Address
   int l3_termination_add(uint32_t sport, uint16_t vid,
                          const rofl::caddress_ll &dmac) noexcept override;
   int l3_termination_add_v6(uint32_t sport, uint16_t vid,
@@ -291,12 +303,27 @@ private:
   rofl::cdptid dptid;
   rofl::openflow::rofl_ofdpa_fm_driver fm_driver;
   std::mutex l2_domain_mutex;
+  std::mutex multicast_groups_mutex;
+  std::mutex stats_mutex;
+  std::mutex conn_mutex;
+
   std::map<uint16_t, std::set<uint32_t>> l2_domain;
   std::map<uint16_t, std::set<uint32_t>> lag;
   std::map<uint16_t, std::set<uint32_t>> tunnel_dlf_flood;
-  std::mutex conn_mutex;
+
+  struct multicast_entry {
+    // mmac, vlan
+    std::tuple<rofl::caddress_ll, uint16_t> key;
+    int index;
+    std::set<uint32_t> l2_interface;
+
+    multicast_entry() {}
+    bool operator==(const struct multicast_entry c1) { return (c1.key == key); }
+  };
+  std::deque<struct multicast_entry>
+      mc_groups; // mac address, vlan , index, l2_interfaces
+
   rofl::cthread bb_thread;
-  std::mutex stats_mutex;
   rofl::openflow::cofportstatsarray stats_array;
   uint32_t egress_interface_id;
   std::set<uint32_t> freed_egress_interfaces_ids;

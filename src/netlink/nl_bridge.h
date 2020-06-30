@@ -19,6 +19,7 @@ extern "C" {
 struct rtnl_link_bridge_vlan;
 struct rtnl_link;
 struct rtnl_neigh;
+struct rtnl_mdb;
 struct nl_addr;
 }
 
@@ -50,6 +51,9 @@ public:
 
   void add_neigh_to_fdb(rtnl_neigh *);
   void remove_neigh_from_fdb(rtnl_neigh *);
+
+  int mdb_entry_add(rtnl_mdb *mdb_entry);
+  int mdb_entry_remove(rtnl_mdb *mdb_entry);
 
   bool is_mac_in_l2_cache(rtnl_neigh *n);
   int learn_source_mac(rtnl_link *br_link, packet *p);

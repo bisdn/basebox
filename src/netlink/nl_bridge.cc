@@ -6,9 +6,11 @@
 #include <cstring>
 #include <map>
 #include <utility>
+#include <linux/if_packet.h>
 
 #include <glog/logging.h>
 #include <netlink/route/link.h>
+#include <netlink/route/mdb.h>
 #include <netlink/route/link/vlan.h>
 #include <netlink/route/link/vxlan.h>
 #include <netlink/route/neighbour.h>
@@ -35,6 +37,15 @@ nl_bridge::nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
 }
 
 nl_bridge::~nl_bridge() { rtnl_link_put(bridge); }
+
+static rofl::caddress_in4 libnl_in4addr_2_rofl(struct nl_addr *addr, int *rv) {
+  struct sockaddr_in sin;
+  socklen_t salen = sizeof(sin);
+
+  assert(rv);
+  *rv = nl_addr_fill_sockaddr(addr, (struct sockaddr *)&sin, &salen);
+  return rofl::caddress_in4(&sin, salen);
+}
 
 void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
   assert(bridge);
@@ -768,6 +779,171 @@ void nl_bridge::clear_tpid_entries() {
 
   for (auto iface : bridge_ports)
     sw->delete_egress_tpid(nl->get_port_id(iface));
+}
+
+int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
+  int rv = 0;
+  std::deque<struct rtnl_mdb_entry *> mdb;
+  uint32_t bridge = rtnl_mdb_get_ifindex(mdb_entry);
+
+  if (!is_bridge_interface(nl->get_link_by_ifindex(bridge).get())) {
+    LOG(ERROR) << ": bridge not set correctly";
+    return -EINVAL;
+  }
+
+  // parse MDB object to get all nested information
+  rtnl_mdb_foreach_entry(
+      mdb_entry,
+      [](struct rtnl_mdb_entry *it, void *arg) {
+        auto m_database =
+            static_cast<std::deque<struct rtnl_mdb_entry *> *>(arg);
+        m_database->push_back(it);
+      },
+      &mdb);
+
+  for (auto i : mdb) {
+    uint32_t port_ifindex = rtnl_mdb_entry_get_ifindex(i);
+    uint32_t port_id = nl->get_port_id(port_ifindex);
+    uint16_t vid = rtnl_mdb_entry_get_vid(i);
+
+    auto addr = rtnl_mdb_entry_get_addr(i);
+    if (rtnl_mdb_entry_get_proto(i) == ETH_P_IP) {
+      rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+        return rv;
+      }
+
+      unsigned char buf[ETH_ALEN];
+      multicast_ipv4_to_ll(ipv4_dst.get_addr_hbo(), buf);
+      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
+
+      rv = sw->l2_multicast_group_add(port_id, vid, mc_ll);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__
+                   << ": failed to add Layer 2 Multicast Group Entry";
+        return rv;
+      }
+
+      rv = sw->l2_multicast_addr_add(port_id, vid, mc_ll);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
+        return rv;
+      }
+    } else if (rtnl_mdb_entry_get_proto(i) == ETH_P_IPV6) {
+      struct in6_addr *v6_addr =
+          (struct in6_addr *)nl_addr_get_binary_addr(addr);
+
+      unsigned char buf[ETH_ALEN];
+      multicast_ipv6_to_ll(v6_addr, buf);
+      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
+
+      rv = sw->l2_multicast_group_add(port_id, vid, mc_ll);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__
+                   << ": failed to add Layer 2 Multicast Group Entry";
+        return rv;
+      }
+
+      rv = sw->l2_multicast_addr_add(port_id, vid, mc_ll);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
+        return rv;
+      }
+    }
+
+    VLOG(2) << __FUNCTION__ << ": mdb entry added, port" << port_id
+            << " grp= " << addr;
+  }
+
+  return rv;
+}
+
+int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
+  int rv = 0;
+  uint32_t bridge = rtnl_mdb_get_ifindex(mdb_entry);
+
+  if (!is_bridge_interface(nl->get_link_by_ifindex(bridge).get())) {
+    LOG(ERROR) << ": bridge not set correctly";
+    return -EINVAL;
+  }
+
+  std::deque<struct rtnl_mdb_entry *> mdb;
+
+  // parse MDB object to get all nested information
+  rtnl_mdb_foreach_entry(
+      mdb_entry,
+      [](struct rtnl_mdb_entry *it, void *arg) {
+        auto m_database =
+            static_cast<std::deque<struct rtnl_mdb_entry *> *>(arg);
+        m_database->push_back(it);
+      },
+      &mdb);
+
+  for (auto i : mdb) {
+    uint32_t port_ifindex = rtnl_mdb_entry_get_ifindex(i);
+    uint32_t port_id = nl->get_port_id(port_ifindex);
+    uint16_t vid = rtnl_mdb_entry_get_vid(i);
+
+    auto addr = rtnl_mdb_entry_get_addr(i);
+    if (rtnl_mdb_entry_get_proto(i) == ETH_P_IP) {
+      rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+        return rv;
+      }
+
+      unsigned char buf[ETH_ALEN];
+      multicast_ipv4_to_ll(ipv4_dst.get_addr_hbo(), buf);
+      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
+
+      rv = sw->l2_multicast_group_remove(port_id, vid, mc_ll);
+
+      // nothing left to do, there are still entries in the mc group
+      if (rv == -ENOTEMPTY) {
+        return 0;
+      } else if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__
+                   << ": failed to remove Layer 2 Multicast Group Entry";
+        return rv;
+      }
+
+      rv = sw->l2_multicast_addr_remove(port_id, vid, mc_ll);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
+        return rv;
+      }
+    } else if (rtnl_mdb_entry_get_proto(i) == ETH_P_IPV6) {
+      struct in6_addr *v6_addr =
+          (struct in6_addr *)nl_addr_get_binary_addr(addr);
+
+      unsigned char buf[ETH_ALEN];
+      multicast_ipv6_to_ll(v6_addr, buf);
+      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
+
+      rv = sw->l2_multicast_group_remove(port_id, vid, mc_ll);
+
+      // nothing left to do, there are still entries in the mc group
+      if (rv == -ENOTEMPTY) {
+        return 0;
+      } else if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__
+                   << ": failed to remove Layer 2 Multicast Group Entry";
+        return rv;
+      }
+
+      rv = sw->l2_multicast_addr_remove(port_id, vid, mc_ll);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
+        return rv;
+      }
+    }
+
+    VLOG(2) << __FUNCTION__ << ": mdb entry removed, port" << port_id
+            << " grp= " << addr;
+  }
+
+  return rv;
 }
 
 } /* namespace basebox */

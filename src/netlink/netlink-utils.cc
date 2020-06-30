@@ -10,6 +10,7 @@
 #include <cstring>
 
 #include <glog/logging.h>
+#include <linux/if_ether.h>
 #include <netlink/route/link.h>
 
 #include "netlink-utils.h"
@@ -108,6 +109,27 @@ uint64_t nlall2uint64(const nl_addr *a) noexcept {
   b_[1] = a_[4];
   b_[0] = a_[5];
   return b;
+}
+
+// Convert Multicast IPv4 addresses to MAC address
+// Multicast MAC address : 01:00:53:XX:XX:XX
+void multicast_ipv4_to_ll(const uint32_t addr, unsigned char *dst) noexcept {
+  dst[0] = 0x01;
+  dst[1] = 0x00;
+  dst[2] = 0x5e;
+  dst[3] = (addr >> 16) & 0x7f;
+  dst[4] = (addr >> 8) & 0xff;
+  dst[5] = addr & 0xff;
+}
+
+// Convert Multicast IPv6 addresses to MAC address
+// Multicast MAC address : 33:33:XX:XX:XX:XX
+void multicast_ipv6_to_ll(const struct in6_addr *addr,
+                          unsigned char *dst) noexcept {
+  dst[0] = 0x33;
+  dst[1] = 0x33;
+
+  memcpy(dst + 2, &addr->s6_addr32[3], sizeof(__u32));
 }
 
 } // namespace basebox

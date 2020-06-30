@@ -35,6 +35,7 @@ public:
     NL_LINK_CACHE,
     NL_NEIGH_CACHE,
     NL_ROUTE_CACHE,
+    NL_MDB_CACHE,
     NL_MAX_CACHE,
   };
 
@@ -153,6 +154,7 @@ private:
   void route_link_apply(const nl_obj &obj);
   void route_neigh_apply(const nl_obj &obj);
   void route_route_apply(const nl_obj &obj);
+  void route_mdb_apply(const nl_obj &obj);
 
   enum cnetlink_event_t {
     EVENT_NONE,
