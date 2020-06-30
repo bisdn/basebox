@@ -15,9 +15,10 @@
 #include <netlink/object.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
-#include <netlink/route/link/vlan.h>
 #include <netlink/route/link/bonding.h>
+#include <netlink/route/link/vlan.h>
 #include <netlink/route/link/vxlan.h>
+#include <netlink/route/mdb.h>
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
 #include <systemd/sd-daemon.h>
@@ -156,6 +157,20 @@ void cnetlink::init_caches() {
                                   (change_func_v2_t)&nl_cb_v2, this);
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__ << ": add route/neigh to cache mngr";
+  }
+
+  /* init mdb cache */
+  rc = rtnl_mdb_alloc_cache_flags(sock_mon, &caches[NL_MDB_CACHE],
+                                  NL_CACHE_AF_ITER);
+  if (0 != rc) {
+    LOG(FATAL) << __FUNCTION__
+               << ": rtnl_mdb_alloc_cache_flags failed rc=" << rc;
+  }
+  rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_MDB_CACHE],
+                                  (change_func_v2_t)&nl_cb_v2, this);
+  if (0 != rc) {
+    LOG(FATAL) << __FUNCTION__
+               << ": nl_cache_mngr_add_cache_v2: add route/mdb to cache mngr";
   }
 
   try {
@@ -425,6 +440,10 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     case RTM_NEWADDR:
     case RTM_DELADDR:
       route_addr_apply(obj);
+      break;
+    case RTM_NEWMDB:
+    case RTM_DELMDB:
+      route_mdb_apply(obj);
       break;
     default:
       LOG(ERROR) << __FUNCTION__ << ": unexpected netlink type "
@@ -1245,6 +1264,29 @@ std::deque<rtnl_neigh *> cnetlink::search_fdb(uint16_t vid, nl_addr *lladdr) {
   }
 
   return fdb_entries;
+}
+
+void cnetlink::route_mdb_apply(const nl_obj &obj) {
+
+  switch (obj.get_action()) {
+  case NL_ACT_NEW:
+    assert(obj.get_new_obj());
+    LOG(INFO) << __FUNCTION__ << ": new mdb entry";
+
+    if (bridge)
+      bridge->mdb_entry_add(MDB_CAST(obj.get_new_obj()));
+    break;
+  case NL_ACT_DEL:
+    assert(obj.get_old_obj());
+    LOG(INFO) << __FUNCTION__ << ": deleting mdb entry";
+
+    if (bridge)
+      bridge->mdb_entry_remove(MDB_CAST(obj.get_old_obj()));
+    break;
+  default:
+    LOG(ERROR) << __FUNCTION__ << ": invalid action " << obj.get_action();
+    break;
+  }
 }
 
 } // namespace basebox
