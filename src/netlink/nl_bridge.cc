@@ -806,6 +806,10 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
     uint32_t port_id = nl->get_port_id(port_ifindex);
     uint16_t vid = rtnl_mdb_entry_get_vid(i);
 
+    if (port_ifindex == get_ifindex()) {
+      return rv;
+    }
+
     auto addr = rtnl_mdb_entry_get_addr(i);
     if (rtnl_mdb_entry_get_proto(i) == ETH_P_IP) {
       rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
