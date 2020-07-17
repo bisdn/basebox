@@ -835,6 +835,14 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
         return rv;
       }
     } else if (rtnl_mdb_entry_get_proto(i) == ETH_P_IPV6) {
+
+      // Is address Linklocal Multicast
+      auto p = nl_addr_alloc(16);
+      nl_addr_parse("ff02::/10", AF_INET6, &p);
+      std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
+      if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
+        return 0;
+
       struct in6_addr *v6_addr =
           (struct in6_addr *)nl_addr_get_binary_addr(addr);
 
