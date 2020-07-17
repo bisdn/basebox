@@ -1268,20 +1268,20 @@ std::deque<rtnl_neigh *> cnetlink::search_fdb(uint16_t vid, nl_addr *lladdr) {
 
 void cnetlink::route_mdb_apply(const nl_obj &obj) {
 
-  switch (obj.get_action()) {
-  case NL_ACT_NEW:
+  switch (obj.get_msg_type()) {
+  case RTM_NEWMDB:
     assert(obj.get_new_obj());
     LOG(INFO) << __FUNCTION__ << ": new mdb entry";
 
     if (bridge)
       bridge->mdb_entry_add(MDB_CAST(obj.get_new_obj()));
     break;
-  case NL_ACT_DEL:
+  case RTM_DELMDB:
     assert(obj.get_old_obj());
     LOG(INFO) << __FUNCTION__ << ": deleting mdb entry";
 
     if (bridge)
-      bridge->mdb_entry_remove(MDB_CAST(obj.get_old_obj()));
+      bridge->mdb_entry_remove(MDB_CAST(obj.get_new_obj()));
     break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": invalid action " << obj.get_action();
