@@ -676,19 +676,6 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
   struct nl_addr *n_ll_old;
   struct nl_addr *n_ll_new;
 
-  int family = rtnl_neigh_get_family(n_new);
-  if (family == AF_INET6) {
-    struct nl_addr *addr = rtnl_neigh_get_dst(n_old);
-    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-      return rv;
-    }
-
-    VLOG(1) << " new neigh " << ipv6_dst;
-    return 0;
-  }
-
   int ifindex = rtnl_neigh_get_ifindex(n_old);
   uint32_t port_id = nl->get_port_id(ifindex);
 
@@ -702,8 +689,7 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
 
   if (n_ll_old == nullptr && n_ll_new == nullptr) {
     VLOG(1) << __FUNCTION__ << ": neighbour ll still not reachable";
-  } else if (n_ll_old == nullptr && n_ll_new) {
-    // XXX neighbour reachable
+  } else if (n_ll_old == nullptr && n_ll_new) { // neighbour reachable
     VLOG(2) << __FUNCTION__ << ": neighbour ll reachable";
 
     rv = add_l3_neigh(n_new);
@@ -725,21 +711,38 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
       return -EINVAL;
     }
 
+    int family = rtnl_neigh_get_family(n_new);
     struct nl_addr *addr = rtnl_neigh_get_dst(n_old);
-    rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
+    if (family == AF_INET) {
+      rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+        return rv;
+      }
 
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-      return rv;
-    }
+      // delete next hop
+      rv = sw->l3_unicast_host_remove(ipv4_dst);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__
+                   << ": failed to remove l3 unicast host ipv4_dst" << ipv4_dst
+                   << "; rv=" << rv;
+        return rv;
+      }
+    } else if (family == AF_INET6) {
+      rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+        return rv;
+      }
 
-    // delete next hop
-    rv = sw->l3_unicast_host_remove(ipv4_dst);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": failed to remove l3 unicast host ipv4_dst" << ipv4_dst
-                 << "; rv=" << rv;
-      return rv;
+      // delete next hop
+      rv = sw->l3_unicast_host_remove(ipv6_dst);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__
+                   << ": failed to remove l3 unicast host ipv6_dst" << ipv6_dst
+                   << "; rv=" << rv;
+        return rv;
+      }
     }
 
     // delete from mapping
