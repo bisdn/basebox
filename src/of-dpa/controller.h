@@ -293,6 +293,18 @@ public:
   int tunnel_port_tenant_remove(uint32_t lport_id,
                                 uint32_t tunnel_id) noexcept override;
 
+  /* STP */
+#if 0 // TODO Unimplemented
+  int ofdpa_stg_create() noexcept override;
+  int ofdpa_stg_destroy() noexcept override;
+
+  int ofdpa_stg_vlan_add() noexcept override;
+  int ofdpa_stg_vlan_remove() noexcept override;
+#endif
+
+  int ofdpa_stg_state_port_set(uint32_t port_id,
+                               std::string state) noexcept override;
+
   /* print this */
   friend std::ostream &operator<<(std::ostream &os, const controller &box) {
     os << "<controller>" << std::endl;

@@ -217,6 +217,19 @@ public:
   virtual int tunnel_port_tenant_remove(uint32_t port_id,
                                         uint32_t tunnel_id) noexcept = 0;
   /* @} */
+
+  /* @ STP  { */
+#if 0 // TODO Unimplemented
+  virtual int ofdpa_stg_create() noexcept = 0;
+  virtual int ofdpa_stg_destroy() noexcept = 0;
+
+  virtual int ofdpa_stg_vlan_add() noexcept = 0;
+  virtual int ofdpa_stg_vlan_remove() noexcept = 0;
+#endif
+
+  virtual int ofdpa_stg_state_port_set(uint32_t port_id,
+                                       std::string state) noexcept = 0;
+  /* @} */
 };
 
 class nbi {
