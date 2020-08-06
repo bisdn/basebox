@@ -2115,7 +2115,6 @@ int controller::ofdpa_stg_state_port_set(uint32_t port_id,
     LOG(ERROR) << __FUNCTION__ << ": failed to set the STP state";
   }
 
-
   return rv;
 }
 } // namespace basebox
