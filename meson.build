@@ -152,6 +152,7 @@ src_pb = protoc_gen.process(
   'src/grpc/proto/common/empty.proto',
   'src/grpc/proto/common/openconfig-interfaces.proto',
   'src/grpc/proto/statistics/statistics-service.proto',
+  'src/grpc/proto/stp/openconfig-spanning-tree.proto',
   preserve_path_from : meson.current_source_dir()+'/src/grpc/proto')
 
 src_grpc = grpc_gen.process(
