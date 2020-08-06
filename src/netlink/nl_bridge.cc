@@ -9,6 +9,7 @@
 #include <linux/if_packet.h>
 
 #include <glog/logging.h>
+#include <linux/if_bridge.h>
 #include <netlink/route/link.h>
 #include <netlink/route/mdb.h>
 #include <netlink/route/link/vlan.h>
@@ -162,6 +163,36 @@ void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
   if (rtnl_link_get_ifindex(bridge) != rtnl_link_get_master(new_link)) {
     LOG(INFO) << __FUNCTION__ << ": link " << rtnl_link_get_name(new_link)
               << " is no slave of " << rtnl_link_get_name(bridge);
+    return;
+  }
+
+  if (rtnl_link_bridge_get_port_state(old_link) !=
+      rtnl_link_bridge_get_port_state(new_link)) {
+
+    VLOG(1) << __FUNCTION__ << "STP state changed, old="
+            << rtnl_link_bridge_get_port_state(old_link)
+            << " new=" << rtnl_link_bridge_get_port_state(new_link);
+
+    switch (rtnl_link_bridge_get_port_state(new_link)) {
+    case BR_STATE_FORWARDING:
+      sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), "forward");
+      break;
+    case BR_STATE_BLOCKING:
+      sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), "block");
+      break;
+    case BR_STATE_DISABLED:
+      sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), "disable");
+      break;
+    case BR_STATE_LISTENING:
+      sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), "listen");
+      break;
+    case BR_STATE_LEARNING:
+      sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), "learn");
+      break;
+    default:
+      VLOG(1) << __FUNCTION__ << ": stp state change not supported";
+      break;
+    }
     return;
   }
 
