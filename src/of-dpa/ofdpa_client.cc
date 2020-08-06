@@ -277,4 +277,18 @@ ofdpa_client::ofdpaTunnelPortTenantDelete(uint32_t port_id,
   return response.status();
 }
 
+ofdpa::OfdpaStatus::OfdpaStatusCode
+ofdpa_client::ofdpaStgStatePortSet(uint32_t port_id, std::string state) {
+  ::OfdpaStatus response;
+  ::ClientContext context;
+  ::openconfig_spanning_tree::Stp_Rstp_Interface_State request;
+
+  request.set_name(std::to_string(port_id));
+  request.set_port_state(state);
+
+  ::Status rv = stub_->ofdpaStgStatePortSet(&context, request, &response);
+
+  return response.status();
+}
+
 } // namespace basebox

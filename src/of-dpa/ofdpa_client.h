@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "api/ofdpa.grpc.pb.h"
+#include "stp/openconfig-spanning-tree.pb.h"
 
 using grpc::Channel;
 
@@ -53,6 +54,15 @@ public:
 
   ofdpa::OfdpaStatus::OfdpaStatusCode
   ofdpaTunnelPortTenantDelete(uint32_t port_id, uint32_t tunnel_id);
+
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgCreate();
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgDestroy();
+
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgVlanAdd();
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgVlanRemove();
+
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgStatePortSet(uint32_t port_id,
+                                                           std::string state);
 
 private:
   ofdpa::OfdpaStatus::OfdpaStatusCode
