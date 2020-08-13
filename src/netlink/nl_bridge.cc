@@ -166,33 +166,42 @@ void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
     return;
   }
 
-  if (rtnl_link_bridge_get_port_state(old_link) !=
-      rtnl_link_bridge_get_port_state(new_link)) {
+  auto old_state = rtnl_link_bridge_get_port_state(old_link);
+  auto new_state = rtnl_link_bridge_get_port_state(new_link);
+  std::string state;
 
-    VLOG(1) << __FUNCTION__ << "STP state changed, old="
-            << rtnl_link_bridge_get_port_state(old_link)
-            << " new=" << rtnl_link_bridge_get_port_state(new_link);
+  if (old_state != new_state) {
+    LOG(INFO) << __FUNCTION__ << "STP state changed, old=" << old_state
+              << " new=" << new_state;
 
-    switch (rtnl_link_bridge_get_port_state(new_link)) {
+    switch (new_state) {
     case BR_STATE_FORWARDING:
-      sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), "forward");
+      state = "forward";
       break;
     case BR_STATE_BLOCKING:
-      sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), "block");
+      state = "block";
       break;
     case BR_STATE_DISABLED:
-      sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), "disable");
+      state = "disable";
       break;
     case BR_STATE_LISTENING:
-      sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), "listen");
+      state = "listen";
       break;
     case BR_STATE_LEARNING:
-      sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), "learn");
+      state = "learn";
       break;
     default:
-      VLOG(1) << __FUNCTION__ << ": stp state change not supported";
+      state = "";
       break;
     }
+
+    if (state == "") {
+      VLOG(1) << __FUNCTION__ << ": stp state change not supported";
+      return;
+    }
+
+    sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), state);
+
     return;
   }
 
@@ -217,6 +226,9 @@ void nl_bridge::delete_interface(rtnl_link *link) {
   update_vlans(link, nullptr);
   if (get_vlan_proto() == ETH_P_8021AD)
     sw->delete_egress_tpid(nl->get_port_id(link));
+
+  // interface default is to STP state forward by default
+  sw->ofdpa_stg_state_port_set(nl->get_port_id(link), "forward");
 }
 
 void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {

@@ -55,11 +55,13 @@ public:
   ofdpa::OfdpaStatus::OfdpaStatusCode
   ofdpaTunnelPortTenantDelete(uint32_t port_id, uint32_t tunnel_id);
 
+#if 0
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgCreate();
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgDestroy();
 
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgVlanAdd();
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgVlanRemove();
+#endif
 
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgStatePortSet(uint32_t port_id,
                                                            std::string state);

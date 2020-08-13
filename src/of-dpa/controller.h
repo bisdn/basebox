@@ -294,7 +294,15 @@ public:
                                 uint32_t tunnel_id) noexcept override;
 
   /* STP */
-#if 0 // TODO Unimplemented
+#if 0 
+  // TODO Unimplemented
+  // This set of functions is currently defined in our datamodel
+  // but no implementation. It is intented that these functions
+  // provide the Per VLAN STP functions
+  // The stg_create and stg_destroy functions implement creating 
+  // other Spanning Tree Groups/Instances
+  // the stg_vlan_add and stg_vlan_remove function implements adding/removing
+  // VLANS from a certain STG 
   int ofdpa_stg_create() noexcept override;
   int ofdpa_stg_destroy() noexcept override;
 

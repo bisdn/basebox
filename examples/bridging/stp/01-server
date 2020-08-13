@@ -8,8 +8,8 @@ PORTB=${PORTA:-eno3}
 ip link add name ${BRIDGE0} type bridge vlan_filtering 1 stp_state 1
 ip link set ${BRIDGE0} up
 
-ip link add name ${BRIDGE0} type bridge vlan_filtering 1 stp_state 1
-ip link set ${BRIDGE0} up
+ip link add name ${BRIDGE1} type bridge vlan_filtering 1 stp_state 1
+ip link set ${BRIDGE1} up
 
 ip link set ${PORTA} master ${BRIDGE0}
 ip link set ${PORTA} up
