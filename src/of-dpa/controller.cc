@@ -2096,25 +2096,4 @@ int controller::tunnel_port_tenant_remove(uint32_t lport_id,
   return rv;
 }
 
-// TODO Unimplemented
-#if 0
-int controller::ofdpa_stg_create() noexcept { return 0; }
-int controller::ofdpa_stg_destroy() noexcept { return 0; }
-
-int controller::ofdpa_stg_vlan_add() noexcept { return 0; }
-
-int controller::ofdpa_stg_vlan_remove() noexcept { return 0; }
-#endif
-
-int controller::ofdpa_stg_state_port_set(uint32_t port_id,
-                                         std::string state) noexcept {
-  int rv;
-
-  rv = ofdpa->ofdpaStgStatePortSet(port_id, state);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to set the STP state";
-  }
-
-  return rv;
-}
 } // namespace basebox

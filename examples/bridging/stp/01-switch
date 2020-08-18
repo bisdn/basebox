@@ -1,15 +1,12 @@
 #!/bin/bash
 
-BRIDGE=${BRIDGE:-swbridge}
-PORTA=${PORTA:-port2}
-PORTB=${PORTA:-port3}
+ip link add name br0 type bridge vlan_filtering 1 stp_state 1
 
-ip link add name swbridge type bridge vlan_filtering 1 stp_state 1
-ip link set swbridge up
+ip link set br0 up
 
-ip link set ${PORTA} master ${BRIDGE}
-ip link set ${PORTA} up
+ip link set port2 master br0
+ip link set port2 up
 
-ip link set ${PORTB} master ${BRIDGE}
-ip link set ${PORTB} up
+ip link set port3 master br0
+ip link set port3 up
 
