@@ -191,11 +191,6 @@ void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
       state = "learn";
       break;
     default:
-      state = "";
-      break;
-    }
-
-    if (state == "") {
       VLOG(1) << __FUNCTION__ << ": stp state change not supported";
       return;
     }
