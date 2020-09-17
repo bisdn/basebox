@@ -144,7 +144,16 @@ void nl_bridge::add_interface(rtnl_link *link) {
     return;
   }
 
+  // configure bonds and physical ports (non members of bond)
   update_vlans(nullptr, link);
+
+  // configure bond slaves
+  auto members = nl->get_bond_members_by_lag(link);
+  for (auto mem : members) {
+    VLOG(1) << " MEMBER ID " << mem;
+    auto _link = nl->get_link_by_ifindex(nl->get_ifindex_by_port_id(mem));
+    update_vlans(nullptr, _link.get());
+  }
 
   if (get_vlan_proto() == ETH_P_8021AD)
     sw->set_egress_tpid(nl->get_port_id(link));
@@ -269,6 +278,14 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     return;
   }
 
+  // bond slave added
+  if (/* old_link == nullptr && */ get_link_type(_link) == LT_BOND_SLAVE) {
+    int master = rtnl_link_get_master(_link);
+    auto _l = nl->get_link(master, AF_BRIDGE);
+    old_br_vlan = &empty_br_vlan;
+    new_br_vlan = rtnl_link_bridge_get_port_vlan(_l);
+  }
+
   // check for vid changes
   if (br_vlan_equal(old_br_vlan, new_br_vlan)) {
     VLOG(2) << __FUNCTION__ << ": vlans did not change";
@@ -288,7 +305,6 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
       LOG(ERROR) << __FUNCTION__ << ": failed to get vni of link "
                  << OBJ_CAST(_link);
     }
-
   } else {
     pport_no = nl->get_port_id(_link);
     if (pport_no == 0) {
@@ -367,7 +383,9 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
               VLOG(3) << __FUNCTION__ << ": add vid=" << vid
                       << " on pport_no=" << pport_no
                       << " link: " << OBJ_CAST(_link);
-              sw->egress_bridge_port_vlan_add(pport_no, vid, egress_untagged);
+              bool lag = nbi::get_port_type(pport_no) == nbi::port_type_lag;
+              sw->egress_bridge_port_vlan_add(pport_no, vid, egress_untagged,
+                                              lag);
               sw->ingress_port_vlan_add(pport_no, vid,
                                         new_br_vlan->pvid == vid);
             }
@@ -608,6 +626,7 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
 
   nl_addr *mac = rtnl_neigh_get_lladdr(neigh);
   int vlan = rtnl_neigh_get_vlan(neigh);
+  bool lag = nbi::get_port_type(port) == nbi::port_type_lag;
 
   bool permanent = true;
 
@@ -629,7 +648,7 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
             << rtnl_link_get_name(bridge) << " on port=" << port
             << " vlan=" << (unsigned)vlan << ", permanent=" << permanent;
   LOG(INFO) << __FUNCTION__ << ": object: " << OBJ_CAST(neigh);
-  sw->l2_addr_add(port, vlan, _mac, true, permanent);
+  sw->l2_addr_add(port, vlan, _mac, true, permanent, lag);
 }
 
 void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {

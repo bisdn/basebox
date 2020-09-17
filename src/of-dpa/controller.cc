@@ -256,7 +256,7 @@ void controller::handle_error_message(rofl::crofdpt &dpt,
           << " pkt received: " << std::endl
           << msg;
 
-  LOG(WARNING) << __FUNCTION__ << ": not implemented";
+  LOG(WARNING) << __FUNCTION__ << msg;
 }
 
 void controller::handle_port_desc_stats_reply(
@@ -492,7 +492,8 @@ errout:
   return rv;
 }
 
-int controller::lag_create(uint32_t *lag_id) noexcept {
+int controller::lag_create(uint32_t *lag_id, std::string name,
+                           uint8_t mode) noexcept {
   if (!connected) {
     VLOG(1) << __FUNCTION__ << ": not connected";
     return -EAGAIN;
@@ -512,8 +513,10 @@ int controller::lag_create(uint32_t *lag_id) noexcept {
 
   assert(lag_id);
   *lag_id = nbi::combine_port_type(_lag_id, nbi::port_type_lag);
-
   _lag_id++;
+
+  ofdpa->OfdpaTrunkCreate(*lag_id, name, mode);
+
   return 0;
 }
 
@@ -553,15 +556,9 @@ int controller::lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept {
     return -ENODATA;
   }
 
-  // currently we can deal only with a single slave
-  if (it->second.size()) {
-    LOG(ERROR) << __FUNCTION__
-               << ": lag already has a member lag_id=" << std::showbase
-               << std::hex << lag_id << ", member=" << *it->second.begin();
-    return -EINVAL;
-  }
-
   it->second.emplace(port_id);
+
+  ofdpa->OfdpaTrunkPortMemberSet(port_id, lag_id);
 
   return 0;
 }
@@ -593,6 +590,28 @@ int controller::lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept {
     return -EINVAL;
   }
 
+  return 0;
+}
+
+int controller::lag_set_active_member(uint32_t lag_id, uint32_t port_id,
+                                      uint8_t active) noexcept {
+  if (!connected) {
+    VLOG(1) << __FUNCTION__ << ": not connected";
+    return -EAGAIN;
+  }
+
+  ofdpa->OfdpaTrunkPortMemberActiveSet(port_id, lag_id, active);
+
+  return 0;
+}
+
+int controller::lag_set_mode(uint32_t lag_id, uint8_t mode) noexcept {
+  if (!connected) {
+    VLOG(1) << __FUNCTION__ << ": not connected";
+    return -EAGAIN;
+  }
+
+  ofdpa->ofdpaTrunkPortPSCSet(lag_id, mode);
   return 0;
 }
 
@@ -660,7 +679,7 @@ int controller::l2_addr_remove_all_in_vlan(uint32_t port,
 
 int controller::l2_addr_add(uint32_t port, uint16_t vid,
                             const rofl::caddress_ll &mac, bool filtered,
-                            bool permanent) noexcept {
+                            bool permanent, bool lag) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -669,9 +688,9 @@ int controller::l2_addr_add(uint32_t port, uint16_t vid,
       fm_driver.set_idle_timeout(300);
 
     // XXX have the knowlege here about filtered/unfiltered?
-    dpt.send_flow_mod_message(rofl::cauxid(0),
-                              fm_driver.add_bridging_unicast_vlan(
-                                  dpt.get_version(), port, vid, mac, filtered));
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0), fm_driver.add_bridging_unicast_vlan(
+                             dpt.get_version(), port, vid, mac, filtered, lag));
 
     if (!permanent)
       fm_driver.set_idle_timeout(default_idle_timeout);
@@ -1606,14 +1625,21 @@ int controller::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   return rv;
 }
 
-int controller::egress_port_vlan_add(uint32_t port, uint16_t vid,
-                                     bool untagged) noexcept {
+int controller::egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged,
+                                     bool lag) noexcept {
   int rv = 0;
   try {
     // create filtered egress interface
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    rofl::openflow::cofgroupmod gm = fm_driver.enable_group_l2_interface(
-        dpt.get_version(), port, vid, untagged);
+    rofl::openflow::cofgroupmod gm;
+
+    if (lag) {
+      gm = fm_driver.enable_group_l2_trunk_interface(dpt.get_version(), port,
+                                                     vid, untagged);
+    } else {
+      gm = fm_driver.enable_group_l2_interface(dpt.get_version(), port, vid,
+                                               untagged);
+    }
     dpt.send_group_mod_message(rofl::cauxid(0), gm);
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
@@ -1756,17 +1782,20 @@ int controller::del_l2_overlay_flood(uint32_t tunnel_id,
 }
 
 int controller::egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
-                                            bool untagged) noexcept {
+                                            bool untagged,
+                                            bool is_lag) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     std::set<uint32_t> l2_dom_set;
 
     // create filtered egress interface
-    rv = egress_port_vlan_add(port, vid, untagged);
+    rv = egress_port_vlan_add(port, vid, untagged, is_lag);
+    if (is_lag)
+      return 0;
+
     if (rv < 0)
       return rv;
-    dpt.send_barrier_request(rofl::cauxid(0));
 
     {
       std::lock_guard<std::mutex> lock(l2_domain_mutex);

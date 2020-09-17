@@ -44,7 +44,12 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged,
   }
 
   // setup egress interface
-  rv = swi->egress_port_vlan_add(port_id, vid, !tagged);
+  auto type = nbi::get_port_type(port_id);
+  if (type == nbi::port_type_lag) {
+    rv = swi->egress_port_vlan_add(port_id, vid, !tagged);
+  } else {
+    rv = swi->egress_port_vlan_add(port_id, vid, !tagged);
+  }
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__

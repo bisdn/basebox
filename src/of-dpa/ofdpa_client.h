@@ -8,6 +8,7 @@
 
 #include "api/ofdpa.grpc.pb.h"
 #include "stp/openconfig-spanning-tree.pb.h"
+#include "common/openconfig-interfaces.pb.h"
 
 using grpc::Channel;
 
@@ -65,6 +66,20 @@ public:
 
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgStatePortSet(uint32_t port_id,
                                                            std::string state);
+
+  ofdpa::OfdpaStatus::OfdpaStatusCode
+  OfdpaTrunkCreate(uint32_t lag_id, std::string name, uint8_t mode);
+  ofdpa::OfdpaStatus::OfdpaStatusCode OfdpaTrunkDelete(uint32_t lag_id,
+                                                       std::string name);
+
+  ofdpa::OfdpaStatus::OfdpaStatusCode
+  OfdpaTrunkPortMemberSet(uint32_t port_id, uint32_t trunk_id);
+  ofdpa::OfdpaStatus::OfdpaStatusCode
+  OfdpaTrunkPortMemberActiveSet(uint32_t port_id, uint32_t trunk_id,
+                                uint32_t active);
+
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaTrunkPortPSCSet(uint32_t lag_id,
+                                                           uint8_t mode);
 
 private:
   ofdpa::OfdpaStatus::OfdpaStatusCode
