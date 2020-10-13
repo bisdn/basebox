@@ -63,29 +63,30 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
   VLOG(1) << __FUNCTION__ << ": updating bond interface ";
   int rv = 0;
 
-  uint8_t state;
-  uint32_t o_active;
-  uint32_t n_active;
-  uint8_t o_mode;
-  uint8_t n_mode;
+  uint32_t o_active, n_active;
+  uint8_t o_mode, n_mode;
   uint32_t lag_id = nl->get_port_id(new_link);
 
-  rtnl_link_bond_get_active_slave(old_link, &o_active);
-  rtnl_link_bond_get_active_slave(new_link, &n_active);
+  rv = rtnl_link_bond_get_active_slave(old_link, &o_active);
+  if (rv < 0) {
+    VLOG(1) << __FUNCTION__ << ": failed to get active state for "
+            << OBJ_CAST(old_link);
+  }
 
-  if (o_active == 0 || n_active == 0) {
-    VLOG(1) << __FUNCTION__ << ": no active bond slave";
-    return 0;
+  rv = rtnl_link_bond_get_active_slave(new_link, &n_active);
+  if (rv < 0) {
+    VLOG(1) << __FUNCTION__ << ": failed to get active state for "
+            << OBJ_CAST(new_link);
   }
 
   if (o_active != n_active) {
-    rv = swi->lag_set_active_member(lag_id, nl->get_port_id(n_active), 1);
+    rv = swi->lag_set_member_active(lag_id, nl->get_port_id(n_active), 1);
     if (rv < 0) {
       VLOG(1) << __FUNCTION__ << ": failed to set active state for "
               << OBJ_CAST(new_link);
     }
 
-    rv = swi->lag_set_active_member(lag_id, nl->get_port_id(o_active), 0);
+    rv = swi->lag_set_member_active(lag_id, nl->get_port_id(o_active), 0);
 
     if (rv < 0) {
       VLOG(1) << __FUNCTION__ << ": failed to set active state for "
@@ -95,8 +96,17 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
     return 0;
   }
 
-  rtnl_link_bond_get_mode(old_link, &o_mode);
-  rtnl_link_bond_get_mode(new_link, &n_mode);
+  rv = rtnl_link_bond_get_mode(old_link, &o_mode);
+  if (rv < 0) {
+    VLOG(1) << __FUNCTION__ << ": failed to get mode for "
+            << OBJ_CAST(new_link);
+  }
+
+  rv = rtnl_link_bond_get_mode(new_link, &n_mode);
+  if (rv < 0) {
+    VLOG(1) << __FUNCTION__ << ": failed to get mode for "
+            << OBJ_CAST(new_link);
+  }
 
   if (o_mode != n_mode) {
     VLOG(1) << __FUNCTION__ << ": bond mode updated "
@@ -206,13 +216,21 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
 
   rv = rtnl_link_bond_slave_get_state(link, &state);
   if (rv < 0) {
-    VLOG(1) << __FUNCTION__ << ": failed to get slave state for "<<  OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": failed to get slave state for "
+            << OBJ_CAST(link);
   }
 
   rv = swi->lag_add_member(lag_id, port_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed add member " << port_id;
+    return -EINVAL;
+  }
 
-  VLOG(1) << " SET ACTIVE MEMBER " << lag_id << " " << port_id << " " << static_cast<uint32_t>(state);
-  rv = swi->lag_set_active_member(lag_id, port_id, state == 0);
+  rv = swi->lag_set_member_active(lag_id, port_id, state == 0);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed set active member " << port_id;
+    return -EINVAL;
+  }
 
   if (rtnl_link_get_master(bond)) {
     // check bridge attachement
@@ -281,7 +299,7 @@ int nl_bond::update_lag_member(rtnl_link *old_slave, rtnl_link *new_slave) {
     return -EINVAL;
   }
 
-  rv = swi->lag_set_active_member(nl->get_port_id(new_master), port_id,
+  rv = swi->lag_set_member_active(nl->get_port_id(new_master), port_id,
                                   new_state == 0);
   return 0;
 }

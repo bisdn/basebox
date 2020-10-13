@@ -145,7 +145,7 @@ public:
   int lag_remove(uint32_t lag_id) noexcept override;
   int lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept override;
   int lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept override;
-  int lag_set_active_member(uint32_t lag_id, uint32_t port_id,
+  int lag_set_member_active(uint32_t lag_id, uint32_t port_id,
                             uint8_t active) noexcept override;
   int lag_set_mode(uint32_t lag_id, uint8_t mode) noexcept override;
 
@@ -242,8 +242,7 @@ public:
   int egress_port_vlan_accept_all(uint32_t port) noexcept override;
   int egress_port_vlan_drop_accept_all(uint32_t port) noexcept override;
 
-  int egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged,
-                           bool lag = false) noexcept override;
+  int egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged) noexcept override;
   int egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept override;
 
   int add_l2_overlay_flood(uint32_t tunnel_id,
@@ -251,8 +250,7 @@ public:
   int del_l2_overlay_flood(uint32_t tunnel_id,
                            uint32_t lport_id) noexcept override;
 
-  int egress_bridge_port_vlan_add(uint32_t port, uint16_t vid, bool untagged,
-                                  bool is_lag = false) noexcept override;
+  int egress_bridge_port_vlan_add(uint32_t port, uint16_t vid, bool untagged) noexcept override;
   int egress_bridge_port_vlan_remove(uint32_t port,
                                      uint16_t vid) noexcept override;
   int set_egress_tpid(uint32_t port) noexcept override;

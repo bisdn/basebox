@@ -41,7 +41,7 @@ public:
   virtual int lag_remove(uint32_t lag_id) noexcept = 0;
   virtual int lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept = 0;
   virtual int lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept = 0;
-  virtual int lag_set_active_member(uint32_t lag_id, uint32_t port_id,
+  virtual int lag_set_member_active(uint32_t lag_id, uint32_t port_id,
                                     uint8_t active) noexcept = 0;
   virtual int lag_set_mode(uint32_t lag_id, uint8_t mode) noexcept = 0;
   /* @} */
@@ -158,13 +158,11 @@ public:
   virtual int egress_port_vlan_accept_all(uint32_t port) noexcept = 0;
   virtual int egress_port_vlan_drop_accept_all(uint32_t port) noexcept = 0;
 
-  virtual int egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged,
-                                   bool lag = false) noexcept = 0;
+  virtual int egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged) noexcept = 0;
   virtual int egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept = 0;
 
   virtual int egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
-                                          bool untagged,
-                                          bool lag = false) noexcept = 0;
+                                          bool untagged) noexcept = 0;
   virtual int egress_bridge_port_vlan_remove(uint32_t port,
                                              uint16_t vid) noexcept = 0;
   /* @} */

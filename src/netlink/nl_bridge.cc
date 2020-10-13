@@ -383,9 +383,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
               VLOG(3) << __FUNCTION__ << ": add vid=" << vid
                       << " on pport_no=" << pport_no
                       << " link: " << OBJ_CAST(_link);
-              bool lag = nbi::get_port_type(pport_no) == nbi::port_type_lag;
-              sw->egress_bridge_port_vlan_add(pport_no, vid, egress_untagged,
-                                              lag);
+              sw->egress_bridge_port_vlan_add(pport_no, vid, egress_untagged);
               sw->ingress_port_vlan_add(pport_no, vid,
                                         new_br_vlan->pvid == vid);
             }

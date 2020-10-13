@@ -256,7 +256,7 @@ void controller::handle_error_message(rofl::crofdpt &dpt,
           << " pkt received: " << std::endl
           << msg;
 
-  LOG(WARNING) << __FUNCTION__ << msg;
+  LOG(WARNING) << __FUNCTION__ << ": not implemented";
 }
 
 void controller::handle_port_desc_stats_reply(
@@ -593,7 +593,7 @@ int controller::lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept {
   return 0;
 }
 
-int controller::lag_set_active_member(uint32_t lag_id, uint32_t port_id,
+int controller::lag_set_member_active(uint32_t lag_id, uint32_t port_id,
                                       uint8_t active) noexcept {
   if (!connected) {
     VLOG(1) << __FUNCTION__ << ": not connected";
@@ -1625,13 +1625,13 @@ int controller::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   return rv;
 }
 
-int controller::egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged,
-                                     bool lag) noexcept {
+int controller::egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged) noexcept {
   int rv = 0;
   try {
     // create filtered egress interface
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     rofl::openflow::cofgroupmod gm;
+    bool lag = nbi::get_port_type(port) == nbi::port_type_lag;
 
     if (lag) {
       gm = fm_driver.enable_group_l2_trunk_interface(dpt.get_version(), port,
@@ -1782,20 +1782,20 @@ int controller::del_l2_overlay_flood(uint32_t tunnel_id,
 }
 
 int controller::egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
-                                            bool untagged,
-                                            bool is_lag) noexcept {
+                                            bool untagged) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     std::set<uint32_t> l2_dom_set;
 
     // create filtered egress interface
-    rv = egress_port_vlan_add(port, vid, untagged, is_lag);
-    if (is_lag)
+    rv = egress_port_vlan_add(port, vid, untagged);
+    if (nbi::get_port_type(port) == nbi::port_type_lag)
       return 0;
 
     if (rv < 0)
       return rv;
+    dpt.send_barrier_request(rofl::cauxid(0));
 
     {
       std::lock_guard<std::mutex> lock(l2_domain_mutex);

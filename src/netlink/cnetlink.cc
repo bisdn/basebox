@@ -1037,6 +1037,9 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
                 << rtnl_link_get_name(new_link);
       rtnl_link *_bond = get_link(rtnl_link_get_master(new_link), AF_UNSPEC);
       bond->add_lag_member(_bond, new_link);
+
+      LOG(INFO) << __FUNCTION__ << " set active member " << get_port_id(_bond)
+                << " port id " << rtnl_link_get_ifindex(new_link);
     } else if (lt_new == LT_VRF_SLAVE) {
       LOG(INFO) << __FUNCTION__ << ": link enslaved "
                 << rtnl_link_get_name(new_link) << " but not handled";
