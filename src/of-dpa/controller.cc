@@ -518,7 +518,6 @@ int controller::lag_create(uint32_t *lag_id, std::string name,
   _lag_id++;
 
   rv = ofdpa->OfdpaTrunkCreate(*lag_id, name, mode);
-  VLOG(1) << " TRUNK CREATE " << rv;
   return rv;
 }
 
