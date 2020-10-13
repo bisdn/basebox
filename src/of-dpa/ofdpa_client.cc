@@ -298,12 +298,12 @@ ofdpa_client::OfdpaTrunkCreate(uint32_t lag_id, std::string name,
                                uint8_t mode) {
   ::OfdpaStatus response;
   ::ClientContext context;
-  ::openconfig_interfaces::Interfaces_Interface request;
+  ::trunk::Interface_Trunk_Description request;
 
   request.set_name(name);
-  request.mutable_aggregation()->mutable_state()->set_lag_id(lag_id);
-  request.mutable_aggregation()->mutable_state()->set_lag_type(
-      (::openconfig_interfaces::Interface_Aggregation_State::LagType)mode);
+  request.set_lag_id(lag_id);
+  request.set_lag_type(
+      (::trunk::Interface_Trunk_Description::LagType)mode);
 
   ::Status rv = stub_->ofdpaTrunkCreate(&context, request, &response);
   if (not rv.ok()) {
@@ -325,7 +325,7 @@ ofdpa::OfdpaStatus::OfdpaStatusCode
 ofdpa_client::OfdpaTrunkPortMemberSet(uint32_t port_id, uint32_t trunk_id) {
   ::OfdpaStatus response;
   ::ClientContext context;
-  ::openconfig_interfaces::Interface_Aggregation_State request;
+  ::trunk::Interface_Trunk_Description request;
 
   request.set_lag_id(trunk_id);
   request.set_member(port_id);
@@ -343,7 +343,7 @@ ofdpa_client::OfdpaTrunkPortMemberActiveSet(uint32_t port_id, uint32_t trunk_id,
                                             uint32_t active) {
   ::OfdpaStatus response;
   ::ClientContext context;
-  ::openconfig_interfaces::Interface_Aggregation_State request;
+  ::trunk::Interface_Trunk_Description request;
 
   request.set_lag_id(trunk_id);
   request.set_member(port_id);
@@ -362,11 +362,11 @@ ofdpa::OfdpaStatus::OfdpaStatusCode
 ofdpa_client::ofdpaTrunkPortPSCSet(uint32_t lag_id, uint8_t mode) {
   ::OfdpaStatus response;
   ::ClientContext context;
-  ::openconfig_interfaces::Interface_Aggregation_State request;
+  ::trunk::Interface_Trunk_Description request;
 
   request.set_lag_id(lag_id);
   request.set_lag_type(
-      (::openconfig_interfaces::Interface_Aggregation_State::LagType)mode);
+      (::trunk::Interface_Trunk_Description::LagType)mode);
 
   ::Status rv = stub_->ofdpaTrunkPortPSCSet(&context, request, &response);
   if (not rv.ok()) {

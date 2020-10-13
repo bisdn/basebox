@@ -8,7 +8,7 @@
 
 #include "api/ofdpa.grpc.pb.h"
 #include "stp/openconfig-spanning-tree.pb.h"
-#include "common/openconfig-interfaces.pb.h"
+#include "trunk/trunk-interfaces.pb.h"
 
 using grpc::Channel;
 
