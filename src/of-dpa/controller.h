@@ -242,7 +242,8 @@ public:
   int egress_port_vlan_accept_all(uint32_t port) noexcept override;
   int egress_port_vlan_drop_accept_all(uint32_t port) noexcept override;
 
-  int egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged) noexcept override;
+  int egress_port_vlan_add(uint32_t port, uint16_t vid,
+                           bool untagged) noexcept override;
   int egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept override;
 
   int add_l2_overlay_flood(uint32_t tunnel_id,
@@ -250,7 +251,8 @@ public:
   int del_l2_overlay_flood(uint32_t tunnel_id,
                            uint32_t lport_id) noexcept override;
 
-  int egress_bridge_port_vlan_add(uint32_t port, uint16_t vid, bool untagged) noexcept override;
+  int egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,
+                                  bool untagged) noexcept override;
   int egress_bridge_port_vlan_remove(uint32_t port,
                                      uint16_t vid) noexcept override;
   int set_egress_tpid(uint32_t port) noexcept override;

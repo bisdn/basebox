@@ -499,6 +499,8 @@ int controller::lag_create(uint32_t *lag_id, std::string name,
     return -EAGAIN;
   }
 
+  int rv = 0;
+
   // XXX TODO this needs to be improved, we could use the maximum number of
   // ports as lag_id and have an efficient lookup which id is free. for now
   // 2^16-1 lag ids should be sufficient.
@@ -515,9 +517,8 @@ int controller::lag_create(uint32_t *lag_id, std::string name,
   *lag_id = nbi::combine_port_type(_lag_id, nbi::port_type_lag);
   _lag_id++;
 
-  ofdpa->OfdpaTrunkCreate(*lag_id, name, mode);
-
-  return 0;
+  rv = ofdpa->OfdpaTrunkCreate(*lag_id, name, mode);
+  return rv;
 }
 
 int controller::lag_remove(uint32_t lag_id) noexcept {
@@ -543,6 +544,7 @@ int controller::lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept {
     return -EAGAIN;
   }
 
+  int rv = 0;
   if (nbi::get_port_type(lag_id) != nbi::port_type_lag) {
     LOG(ERROR) << __FUNCTION__ << ": invalid lag_id " << std::showbase
                << std::hex << lag_id;
@@ -558,9 +560,8 @@ int controller::lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept {
 
   it->second.emplace(port_id);
 
-  ofdpa->OfdpaTrunkPortMemberSet(port_id, lag_id);
-
-  return 0;
+  rv = ofdpa->OfdpaTrunkPortMemberSet(port_id, lag_id);
+  return rv;
 }
 
 int controller::lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept {
@@ -599,10 +600,11 @@ int controller::lag_set_member_active(uint32_t lag_id, uint32_t port_id,
     VLOG(1) << __FUNCTION__ << ": not connected";
     return -EAGAIN;
   }
+  int rv = 0;
 
-  ofdpa->OfdpaTrunkPortMemberActiveSet(port_id, lag_id, active);
+  rv = ofdpa->OfdpaTrunkPortMemberActiveSet(port_id, lag_id, active);
 
-  return 0;
+  return rv;
 }
 
 int controller::lag_set_mode(uint32_t lag_id, uint8_t mode) noexcept {
@@ -610,9 +612,10 @@ int controller::lag_set_mode(uint32_t lag_id, uint8_t mode) noexcept {
     VLOG(1) << __FUNCTION__ << ": not connected";
     return -EAGAIN;
   }
+  int rv = 0;
 
-  ofdpa->ofdpaTrunkPortPSCSet(lag_id, mode);
-  return 0;
+  rv = ofdpa->ofdpaTrunkPortPSCSet(lag_id, mode);
+  return rv;
 }
 
 int controller::overlay_tunnel_add(uint32_t tunnel_id) noexcept {
@@ -1625,7 +1628,8 @@ int controller::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   return rv;
 }
 
-int controller::egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged) noexcept {
+int controller::egress_port_vlan_add(uint32_t port, uint16_t vid,
+                                     bool untagged) noexcept {
   int rv = 0;
   try {
     // create filtered egress interface
