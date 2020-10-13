@@ -603,6 +603,16 @@ int controller::lag_set_member_active(uint32_t lag_id, uint32_t port_id,
   }
   int rv = 0;
 
+  if(lag_id == 0) {
+    LOG(ERROR) << __FUNCTION__ << ": invalid lag_id";
+    return -EAGAIN;
+  }
+
+  if(port_id == 0) {
+    LOG(ERROR) << __FUNCTION__ << ": invalid port_id";
+    return -EAGAIN;
+  }
+
   rv = ofdpa->OfdpaTrunkPortMemberActiveSet(port_id, lag_id, active);
 
   return rv;
