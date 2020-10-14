@@ -302,8 +302,7 @@ ofdpa_client::OfdpaTrunkCreate(uint32_t lag_id, std::string name,
 
   request.set_name(name);
   request.set_lag_id(lag_id);
-  request.set_lag_type(
-      (::trunk::Interface_Trunk_Description::LagType)mode);
+  request.set_lag_type((::trunk::Interface_Trunk_Description::LagType)mode);
 
   ::Status rv = stub_->ofdpaTrunkCreate(&context, request, &response);
   if (not rv.ok()) {
@@ -314,9 +313,17 @@ ofdpa_client::OfdpaTrunkCreate(uint32_t lag_id, std::string name,
 }
 
 ofdpa::OfdpaStatus::OfdpaStatusCode
-ofdpa_client::OfdpaTrunkDelete(uint32_t lag_id, std::string name) {
+ofdpa_client::OfdpaTrunkDelete(uint32_t lag_id) {
   ::OfdpaStatus response;
   ::ClientContext context;
+  ::trunk::Interface_Trunk_Description request;
+
+  request.set_lag_id(lag_id);
+
+  ::Status rv = stub_->ofdpaTrunkDelete(&context, request, &response);
+  if (not rv.ok()) {
+    return ofdpa::OfdpaStatus::OFDPA_E_RPC;
+  }
 
   return response.status();
 }
@@ -365,8 +372,7 @@ ofdpa_client::ofdpaTrunkPortPSCSet(uint32_t lag_id, uint8_t mode) {
   ::trunk::Interface_Trunk_Description request;
 
   request.set_lag_id(lag_id);
-  request.set_lag_type(
-      (::trunk::Interface_Trunk_Description::LagType)mode);
+  request.set_lag_type((::trunk::Interface_Trunk_Description::LagType)mode);
 
   ::Status rv = stub_->ofdpaTrunkPortPSCSet(&context, request, &response);
   if (not rv.ok()) {

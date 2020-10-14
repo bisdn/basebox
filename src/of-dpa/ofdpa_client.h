@@ -69,8 +69,7 @@ public:
 
   ofdpa::OfdpaStatus::OfdpaStatusCode
   OfdpaTrunkCreate(uint32_t lag_id, std::string name, uint8_t mode);
-  ofdpa::OfdpaStatus::OfdpaStatusCode OfdpaTrunkDelete(uint32_t lag_id,
-                                                       std::string name);
+  ofdpa::OfdpaStatus::OfdpaStatusCode OfdpaTrunkDelete(uint32_t lag_id);
 
   ofdpa::OfdpaStatus::OfdpaStatusCode
   OfdpaTrunkPortMemberSet(uint32_t port_id, uint32_t trunk_id);

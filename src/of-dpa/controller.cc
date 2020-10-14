@@ -526,16 +526,13 @@ int controller::lag_remove(uint32_t lag_id) noexcept {
     VLOG(1) << __FUNCTION__ << ": not connected";
     return -EAGAIN;
   }
-  // currently we don't have a real lag implementation
-  // otherwise we should release the resoucres on the switch
-
   auto rv = lag.erase(nbi::get_port_num(lag_id));
   if (rv != 1) {
     LOG(WARNING) << __FUNCTION__ << ": rv=" << rv
                  << " entries in lag map were removed";
   }
 
-  return 0;
+  return ofdpa->OfdpaTrunkDelete(lag_id);
 }
 
 int controller::lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept {
@@ -569,6 +566,7 @@ int controller::lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept {
     VLOG(1) << __FUNCTION__ << ": not connected";
     return -EAGAIN;
   }
+  int rv = 0;
 
   if (nbi::get_port_type(lag_id) != nbi::port_type_lag) {
     LOG(ERROR) << __FUNCTION__ << ": invalid lag_id " << std::showbase
@@ -591,7 +589,8 @@ int controller::lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept {
     return -EINVAL;
   }
 
-  return 0;
+  rv = ofdpa->OfdpaTrunkPortMemberSet(port_id, 0);
+  return rv;
 }
 
 int controller::lag_set_member_active(uint32_t lag_id, uint32_t port_id,
@@ -602,18 +601,17 @@ int controller::lag_set_member_active(uint32_t lag_id, uint32_t port_id,
   }
   int rv = 0;
 
-  if(lag_id == 0) {
+  if (lag_id == 0) {
     LOG(ERROR) << __FUNCTION__ << ": invalid lag_id";
-    return -EAGAIN;
+    return -EINVAL;
   }
 
-  if(port_id == 0) {
+  if (port_id == 0) {
     LOG(ERROR) << __FUNCTION__ << ": invalid port_id";
-    return -EAGAIN;
+    return -EINVAL;
   }
 
   rv = ofdpa->OfdpaTrunkPortMemberActiveSet(port_id, lag_id, active);
-
   return rv;
 }
 
