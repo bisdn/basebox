@@ -247,6 +247,15 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   return rv;
 }
 
+int nl_bond::remove_lag_member(rtnl_link *link) {
+  assert(link);
+
+  int master_id = rtnl_link_get_master(link);
+  auto master = nl->get_link(master_id, AF_UNSPEC);
+
+  return remove_lag_member(master, link);
+}
+
 int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
   int rv = 0;
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
@@ -274,6 +283,8 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
 }
 
 int nl_bond::update_lag_member(rtnl_link *old_slave, rtnl_link *new_slave) {
+  assert(new_slave);
+
   int rv;
   uint8_t new_state;
   uint8_t old_state;

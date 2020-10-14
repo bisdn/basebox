@@ -994,8 +994,10 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
 
   switch (lt_old) {
   case LT_BOND_SLAVE:
-    if (lt_new == LT_BOND_SLAVE) { // bond updated
+    if (lt_new == LT_BOND_SLAVE) { // bond slave updated
       bond->update_lag_member(old_link, new_link);
+    } else if (lt_new == LT_TUN) { // bond slave removed
+      bond->remove_lag_member(old_link);
     }
     break;
   case LT_BRIDGE_SLAVE: // a bridge slave was changed

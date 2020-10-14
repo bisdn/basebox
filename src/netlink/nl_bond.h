@@ -47,6 +47,7 @@ public:
   int remove_lag(rtnl_link *bond);
   int add_lag_member(rtnl_link *bond, rtnl_link *link);
   int remove_lag_member(rtnl_link *bond, rtnl_link *link);
+  int remove_lag_member(rtnl_link *link);
   int update_lag(rtnl_link *old_link, rtnl_link *new_link);
 
   int update_lag_member(rtnl_link *old_slave, rtnl_link *new_slave);

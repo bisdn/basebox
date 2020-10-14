@@ -150,7 +150,6 @@ void nl_bridge::add_interface(rtnl_link *link) {
   // configure bond slaves
   auto members = nl->get_bond_members_by_lag(link);
   for (auto mem : members) {
-    VLOG(1) << " MEMBER ID " << mem;
     auto _link = nl->get_link_by_ifindex(nl->get_ifindex_by_port_id(mem));
     update_vlans(nullptr, _link.get());
   }
