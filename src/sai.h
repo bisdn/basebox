@@ -36,10 +36,14 @@ public:
   } sai_port_stat_t;
 
   /* @ LAG { */
-  virtual int lag_create(uint32_t *lag_id) noexcept = 0;
+  virtual int lag_create(uint32_t *lag_id, std::string name,
+                         uint8_t mode) noexcept = 0;
   virtual int lag_remove(uint32_t lag_id) noexcept = 0;
   virtual int lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept = 0;
   virtual int lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept = 0;
+  virtual int lag_set_member_active(uint32_t lag_id, uint32_t port_id,
+                                    uint8_t active) noexcept = 0;
+  virtual int lag_set_mode(uint32_t lag_id, uint8_t mode) noexcept = 0;
   /* @} */
 
   /* @ tunnel overlay { */

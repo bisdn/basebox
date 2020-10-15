@@ -144,7 +144,15 @@ void nl_bridge::add_interface(rtnl_link *link) {
     return;
   }
 
+  // configure bonds and physical ports (non members of bond)
   update_vlans(nullptr, link);
+
+  // configure bond slaves
+  auto members = nl->get_bond_members_by_lag(link);
+  for (auto mem : members) {
+    auto _link = nl->get_link_by_ifindex(nl->get_ifindex_by_port_id(mem));
+    update_vlans(nullptr, _link.get());
+  }
 
   if (get_vlan_proto() == ETH_P_8021AD)
     sw->set_egress_tpid(nl->get_port_id(link));
@@ -269,6 +277,14 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     return;
   }
 
+  // bond slave added
+  if (/* old_link == nullptr && */ get_link_type(_link) == LT_BOND_SLAVE) {
+    int master = rtnl_link_get_master(_link);
+    auto _l = nl->get_link(master, AF_BRIDGE);
+    old_br_vlan = &empty_br_vlan;
+    new_br_vlan = rtnl_link_bridge_get_port_vlan(_l);
+  }
+
   // check for vid changes
   if (br_vlan_equal(old_br_vlan, new_br_vlan)) {
     VLOG(2) << __FUNCTION__ << ": vlans did not change";
@@ -288,7 +304,6 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
       LOG(ERROR) << __FUNCTION__ << ": failed to get vni of link "
                  << OBJ_CAST(_link);
     }
-
   } else {
     pport_no = nl->get_port_id(_link);
     if (pport_no == 0) {

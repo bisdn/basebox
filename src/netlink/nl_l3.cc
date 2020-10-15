@@ -250,6 +250,22 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     }
   }
 
+  if (auto members = nl->get_bond_members_by_lag(link); !members.empty()) {
+    VLOG(1) << __FUNCTION__ << ": BOND configuring slaves";
+
+    for (auto mem : members) {
+      auto _link = nl->get_link_by_ifindex(nl->get_ifindex_by_port_id(mem));
+      bool tagged = !!rtnl_link_is_vlan(link);
+
+      rv = vlan->add_vlan(_link.get(), vid, tagged, vrf_id);
+
+      auto addr = rtnl_link_get_addr(_link.get());
+      rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
+
+      rv = add_l3_termination(mem, vid, mac, AF_INET);
+    }
+  }
+
   return rv;
 }
 

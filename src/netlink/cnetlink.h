@@ -47,6 +47,7 @@ public:
   struct rtnl_link *get_link(int ifindex, int family) const;
   void get_bridge_ports(int br_ifindex,
                         std::deque<rtnl_link *> *link_list) const noexcept;
+  std::set<uint32_t> get_bond_members_by_lag(rtnl_link *bond_link);
 
   /**
    * @return rtnl_neigh* which needs to be freed using rtnl_neigh_put
@@ -58,6 +59,7 @@ public:
   bool is_bridge_configured(rtnl_link *l);
   int get_port_id(rtnl_link *l) const;
   int get_port_id(int ifindex) const;
+  int get_ifindex_by_port_id(uint32_t port_id) const;
 
   nl_cache *get_cache(enum nl_cache_t id) { return caches[id]; }
 

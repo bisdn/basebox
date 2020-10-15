@@ -140,10 +140,14 @@ protected:
 
 public:
   // switch_interface
-  int lag_create(uint32_t *lag_id) noexcept override;
+  int lag_create(uint32_t *lag_id, std::string name,
+                 uint8_t mode) noexcept override;
   int lag_remove(uint32_t lag_id) noexcept override;
   int lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept override;
   int lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept override;
+  int lag_set_member_active(uint32_t lag_id, uint32_t port_id,
+                            uint8_t active) noexcept override;
+  int lag_set_mode(uint32_t lag_id, uint8_t mode) noexcept override;
 
   int overlay_tunnel_add(uint32_t tunnel_id) noexcept override;
   int overlay_tunnel_remove(uint32_t tunnel_id) noexcept override;

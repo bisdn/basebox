@@ -112,6 +112,10 @@ if not libnl.found()
   libnl = cppc.find_library('libnl-3')
 endif
 
+if cppc.has_header_symbol('netlink/route/link/bonding.h', 'rtnl_link_bond_get_mode', dependencies: libnl, required: false)
+  add_global_arguments('-DHAVE_RTNL_LINK_BOND_GET_MODE',  language: 'cpp')
+endif
+
 libnl_route = dependency('libnl-route-3.0', required: false)
 if not libnl_route.found()
   # find the lib without pkg-config

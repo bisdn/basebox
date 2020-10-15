@@ -66,6 +66,19 @@ public:
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgStatePortSet(uint32_t port_id,
                                                            std::string state);
 
+  ofdpa::OfdpaStatus::OfdpaStatusCode
+  OfdpaTrunkCreate(uint32_t lag_id, std::string name, uint8_t mode);
+  ofdpa::OfdpaStatus::OfdpaStatusCode OfdpaTrunkDelete(uint32_t lag_id);
+
+  ofdpa::OfdpaStatus::OfdpaStatusCode OfdpaPortTrunkGroupSet(uint32_t port_id,
+                                                             uint32_t trunk_id);
+  ofdpa::OfdpaStatus::OfdpaStatusCode
+  OfdpaTrunkPortMemberActiveSet(uint32_t port_id, uint32_t trunk_id,
+                                uint32_t active);
+
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaTrunkPortPSCSet(uint32_t lag_id,
+                                                           uint8_t mode);
+
 private:
   ofdpa::OfdpaStatus::OfdpaStatusCode
   ofdpaTunnelPortCreate(const ::ofdpa::TunnelPortCreate &request);

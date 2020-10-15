@@ -31,6 +31,12 @@ public:
    * @returns id > 0 if found, 0 if not found
    */
   uint32_t get_lag_id(rtnl_link *bond);
+  /**
+   * returns the members of the lag
+   *
+   * @returns id > 0 if found, 0 if not found
+   */
+  std::set<uint32_t> get_members(rtnl_link *bond);
 
   /**
    * create a new lag
@@ -38,17 +44,20 @@ public:
    * @returns <0 on error, lag_id on success
    */
   int add_lag(rtnl_link *bond);
-
   int remove_lag(rtnl_link *bond);
   int add_lag_member(rtnl_link *bond, rtnl_link *link);
   int remove_lag_member(rtnl_link *bond, rtnl_link *link);
+  int remove_lag_member(rtnl_link *link);
+  int update_lag(rtnl_link *old_link, rtnl_link *new_link);
+
+  int update_lag_member(rtnl_link *old_slave, rtnl_link *new_slave);
 
 private:
   switch_interface *swi;
   cnetlink *nl;
 
   std::map<int, uint32_t> ifi2lag;
-  std::map<int, uint32_t> lag_members;
+  std::map<int, std::set<uint32_t>> lag_members;
 };
 
 } // namespace basebox

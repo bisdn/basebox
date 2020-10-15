@@ -313,6 +313,10 @@ void cnetlink::get_bridge_ports(int br_ifindex,
   }
 }
 
+std::set<uint32_t> cnetlink::get_bond_members_by_lag(rtnl_link *bond_link) {
+  return bond->get_members(bond_link);
+}
+
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
                                            struct nl_addr *a) const {
   assert(ifindex);
@@ -392,6 +396,11 @@ int cnetlink::get_port_id(int ifindex) const {
   auto link = get_link_by_ifindex(ifindex);
 
   return get_port_id(link.get());
+}
+
+int cnetlink::get_ifindex_by_port_id(uint32_t port_id) const {
+
+    return tap_man->get_ifindex(port_id);
 }
 
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
@@ -984,6 +993,13 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   }
 
   switch (lt_old) {
+  case LT_BOND_SLAVE:
+    if (lt_new == LT_BOND_SLAVE) { // bond slave updated
+      bond->update_lag_member(old_link, new_link);
+    } else if (lt_new == LT_TUN) { // bond slave removed
+      bond->remove_lag_member(old_link);
+    }
+    break;
   case LT_BRIDGE_SLAVE: // a bridge slave was changed
     if (bridge) {
       try {
@@ -1022,14 +1038,19 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
                 << rtnl_link_get_name(new_link);
       rtnl_link *_bond = get_link(rtnl_link_get_master(new_link), AF_UNSPEC);
       bond->add_lag_member(_bond, new_link);
+
+      LOG(INFO) << __FUNCTION__ << " set active member " << get_port_id(_bond)
+                << " port id " << rtnl_link_get_ifindex(new_link);
     } else if (lt_new == LT_VRF_SLAVE) {
       LOG(INFO) << __FUNCTION__ << ": link enslaved "
                 << rtnl_link_get_name(new_link) << " but not handled";
     }
     iface->changed(old_link, new_link);
     break;
-  case LT_VRF: // No need to care about the vrf interface itself
   case LT_BOND:
+    bond->update_lag(old_link, new_link);
+    break;
+  case LT_VRF: // No need to care about the vrf interface itself
   case LT_BRIDGE:
   case LT_UNSUPPORTED:
     VLOG(2) << __FUNCTION__

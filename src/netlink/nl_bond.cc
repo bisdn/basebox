@@ -7,6 +7,7 @@
 #include <cassert>
 #include <glog/logging.h>
 #include <netlink/route/link.h>
+#include <netlink/route/link/bonding.h>
 
 #include "cnetlink.h"
 #include "nl_output.h"
@@ -30,25 +31,81 @@ uint32_t nl_bond::get_lag_id(rtnl_link *bond) {
     return 0;
   }
 
-  // XXX currently we do not deal with a real lag since we just deal with
-  // a single port in the lag. Thus we just mimic the lag behaviour and map
-  // everything on the linux bond/team to the single physical port
   auto rv_lm = lag_members.find(it->second);
   if (rv_lm == lag_members.end()) {
     VLOG(1) << ": no members in lag " << OBJ_CAST(bond);
     return 0;
   }
 
-  VLOG(3) << __FUNCTION__ << ": found id=" << rv_lm->second;
-  return rv_lm->second;
+  VLOG(3) << __FUNCTION__ << ": found id=" << rv_lm->first;
+  return rv_lm->first;
+}
+
+std::set<uint32_t> nl_bond::get_members(rtnl_link *bond) {
+  auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
+  if (it == ifi2lag.end()) {
+    LOG(WARNING) << __FUNCTION__ << ": lag does not exist for "
+                 << OBJ_CAST(bond);
+    return {};
+  }
+
+  auto mem_it = lag_members.find(it->second);
+  if (mem_it == lag_members.end()) {
+    LOG(WARNING) << __FUNCTION__ << ": lag does not exist for "
+                 << OBJ_CAST(bond);
+    return {};
+  }
+
+  return mem_it->second;
+}
+
+int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
+  VLOG(1) << __FUNCTION__ << ": updating bond interface ";
+  int rv = 0;
+
+  uint8_t o_mode, n_mode;
+  uint32_t lag_id = nl->get_port_id(new_link);
+
+  rv = rtnl_link_bond_get_mode(old_link, &o_mode);
+  if (rv < 0) {
+    VLOG(1) << __FUNCTION__ << ": failed to get mode for "
+            << OBJ_CAST(new_link);
+  }
+
+  rv = rtnl_link_bond_get_mode(new_link, &n_mode);
+  if (rv < 0) {
+    VLOG(1) << __FUNCTION__ << ": failed to get mode for "
+            << OBJ_CAST(new_link);
+  }
+
+  if (o_mode != n_mode) {
+    VLOG(1) << __FUNCTION__ << ": bond mode updated "
+            << static_cast<uint32_t>(n_mode);
+    rv = swi->lag_set_mode(lag_id, n_mode);
+
+    if (rv < 0) {
+      VLOG(1) << __FUNCTION__ << ": failed to set active state for "
+              << OBJ_CAST(new_link);
+    }
+
+    return 0;
+  }
+#endif
+
+  return 0;
 }
 
 int nl_bond::add_lag(rtnl_link *bond) {
   uint32_t lag_id = 0;
   int rv = 0;
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
+  uint8_t mode;
+
+  rtnl_link_bond_get_mode(bond, &mode);
 
   assert(bond);
-  rv = swi->lag_create(&lag_id);
+  rv = swi->lag_create(&lag_id, rtnl_link_get_name(bond), mode);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to create lag for "
                << OBJ_CAST(bond);
@@ -69,11 +126,13 @@ int nl_bond::add_lag(rtnl_link *bond) {
     if (lag_id != rv_emp.first->second)
       swi->lag_remove(lag_id);
   }
+#endif
 
   return rv;
 }
 
 int nl_bond::remove_lag(rtnl_link *bond) {
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   int rv = 0;
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
 
@@ -92,13 +151,17 @@ int nl_bond::remove_lag(rtnl_link *bond) {
   }
 
   ifi2lag.erase(it);
+#endif
 
   return 0;
 }
 
 int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   int rv = 0;
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   uint32_t lag_id;
+  uint8_t state = 0;
+
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
   if (it == ifi2lag.end()) {
     VLOG(1) << __FUNCTION__ << ": no lag_id found creating new for "
@@ -119,13 +182,32 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
     return -EINVAL;
   }
 
-  auto lm_rv = lag_members.emplace(lag_id, port_id);
-  if (!lm_rv.second) {
-    LOG(ERROR) << __FUNCTION__ << ": cannot add multiple ports to a lag";
-    return -EINVAL;
+  auto mem_it = lag_members.find(it->second);
+  if (mem_it == lag_members.end()) { // No ports in lag
+    std::set<uint32_t> members;
+    members.insert(port_id);
+    auto lm_rv = lag_members.emplace(lag_id, members);
+  } else {
+    mem_it->second.insert(port_id);
+  }
+
+  rv = rtnl_link_bond_slave_get_state(link, &state);
+  if (rv < 0) {
+    VLOG(1) << __FUNCTION__ << ": failed to get slave state for "
+            << OBJ_CAST(link);
   }
 
   rv = swi->lag_add_member(lag_id, port_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed add member " << port_id;
+    return -EINVAL;
+  }
+
+  rv = swi->lag_set_member_active(lag_id, port_id, state == 0);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed set active member " << port_id;
+    return -EINVAL;
+  }
 
   if (rtnl_link_get_master(bond)) {
     // check bridge attachement
@@ -138,12 +220,23 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   }
 
   // XXX FIXME check for vlan interfaces
+#endif
 
   return rv;
 }
 
+int nl_bond::remove_lag_member(rtnl_link *link) {
+  assert(link);
+
+  int master_id = rtnl_link_get_master(link);
+  auto master = nl->get_link(master_id, AF_UNSPEC);
+
+  return remove_lag_member(master, link);
+}
+
 int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
   int rv = 0;
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
   if (it == ifi2lag.end()) {
     LOG(FATAL) << __FUNCTION__ << ": no lag_id found for " << OBJ_CAST(bond);
@@ -164,8 +257,44 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
 
   rv = swi->lag_remove_member(it->second, port_id);
   lag_members.erase(lm_rv);
+#endif
 
   return rv;
+}
+
+int nl_bond::update_lag_member(rtnl_link *old_slave, rtnl_link *new_slave) {
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
+  assert(new_slave);
+
+  int rv;
+  uint8_t new_state;
+  uint8_t old_state;
+
+  int n_master_id = rtnl_link_get_master(new_slave);
+  int o_master_id = rtnl_link_get_master(old_slave);
+  auto new_master = nl->get_link(n_master_id, AF_UNSPEC);
+  auto old_master = nl->get_link(o_master_id, AF_UNSPEC);
+  auto port_id = nl->get_port_id(new_slave);
+
+  if (old_master != new_master || new_master == 0) {
+    return -EINVAL;
+  }
+
+  rv = rtnl_link_bond_slave_get_state(new_slave, &new_state);
+  if (rv != 0) {
+    VLOG(1) << __FUNCTION__ << ": failed to get state";
+    return -EINVAL;
+  }
+  rtnl_link_bond_slave_get_state(old_slave, &old_state);
+  if (rv != 0) {
+    VLOG(1) << __FUNCTION__ << ": failed to get state";
+    return -EINVAL;
+  }
+
+  rv = swi->lag_set_member_active(nl->get_port_id(new_master), port_id,
+                                  new_state == 0);
+#endif
+  return 0;
 }
 
 } // namespace basebox
