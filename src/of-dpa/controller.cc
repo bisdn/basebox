@@ -557,7 +557,7 @@ int controller::lag_add_member(uint32_t lag_id, uint32_t port_id) noexcept {
 
   it->second.emplace(port_id);
 
-  rv = ofdpa->OfdpaTrunkPortMemberSet(port_id, lag_id);
+  rv = ofdpa->OfdpaPortTrunkGroupSet(port_id, lag_id);
   return rv;
 }
 
@@ -589,7 +589,7 @@ int controller::lag_remove_member(uint32_t lag_id, uint32_t port_id) noexcept {
     return -EINVAL;
   }
 
-  rv = ofdpa->OfdpaTrunkPortMemberSet(port_id, 0);
+  rv = ofdpa->OfdpaPortTrunkGroupSet(port_id, 0);
   return rv;
 }
 

@@ -316,9 +316,9 @@ ofdpa::OfdpaStatus::OfdpaStatusCode
 ofdpa_client::OfdpaTrunkDelete(uint32_t lag_id) {
   ::OfdpaStatus response;
   ::ClientContext context;
-  ::trunk::Interface_Trunk_Description request;
+  ::PortNum request;
 
-  request.set_lag_id(lag_id);
+  request.set_port_num(lag_id);
 
   ::Status rv = stub_->ofdpaTrunkDelete(&context, request, &response);
   if (not rv.ok()) {
@@ -329,7 +329,7 @@ ofdpa_client::OfdpaTrunkDelete(uint32_t lag_id) {
 }
 
 ofdpa::OfdpaStatus::OfdpaStatusCode
-ofdpa_client::OfdpaTrunkPortMemberSet(uint32_t port_id, uint32_t trunk_id) {
+ofdpa_client::OfdpaPortTrunkGroupSet(uint32_t port_id, uint32_t trunk_id) {
   ::OfdpaStatus response;
   ::ClientContext context;
   ::trunk::Interface_Trunk_Description request;
@@ -337,7 +337,7 @@ ofdpa_client::OfdpaTrunkPortMemberSet(uint32_t port_id, uint32_t trunk_id) {
   request.set_lag_id(trunk_id);
   request.set_member(port_id);
 
-  ::Status rv = stub_->ofdpaTrunkPortMemberSet(&context, request, &response);
+  ::Status rv = stub_->ofdpaPortTrunkGroupSet(&context, request, &response);
   if (not rv.ok()) {
     return ofdpa::OfdpaStatus::OFDPA_E_RPC;
   }

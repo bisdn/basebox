@@ -72,7 +72,7 @@ public:
   ofdpa::OfdpaStatus::OfdpaStatusCode OfdpaTrunkDelete(uint32_t lag_id);
 
   ofdpa::OfdpaStatus::OfdpaStatusCode
-  OfdpaTrunkPortMemberSet(uint32_t port_id, uint32_t trunk_id);
+  OfdpaPortTrunkGroupSet(uint32_t port_id, uint32_t trunk_id);
   ofdpa::OfdpaStatus::OfdpaStatusCode
   OfdpaTrunkPortMemberActiveSet(uint32_t port_id, uint32_t trunk_id,
                                 uint32_t active);
