@@ -60,6 +60,7 @@ std::set<uint32_t> nl_bond::get_members(rtnl_link *bond) {
 }
 
 int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   VLOG(1) << __FUNCTION__ << ": updating bond interface ";
   int rv = 0;
 
@@ -120,6 +121,7 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
 
     return 0;
   }
+#endif
 
   return 0;
 }
@@ -127,6 +129,7 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
 int nl_bond::add_lag(rtnl_link *bond) {
   uint32_t lag_id = 0;
   int rv = 0;
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   uint8_t mode;
 
   rtnl_link_bond_get_mode(bond, &mode);
@@ -153,11 +156,13 @@ int nl_bond::add_lag(rtnl_link *bond) {
     if (lag_id != rv_emp.first->second)
       swi->lag_remove(lag_id);
   }
+#endif
 
   return rv;
 }
 
 int nl_bond::remove_lag(rtnl_link *bond) {
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   int rv = 0;
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
 
@@ -176,12 +181,14 @@ int nl_bond::remove_lag(rtnl_link *bond) {
   }
 
   ifi2lag.erase(it);
+#endif
 
   return 0;
 }
 
 int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   int rv = 0;
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   uint32_t lag_id;
   uint8_t state = 0;
 
@@ -243,6 +250,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   }
 
   // XXX FIXME check for vlan interfaces
+#endif
 
   return rv;
 }
@@ -258,6 +266,7 @@ int nl_bond::remove_lag_member(rtnl_link *link) {
 
 int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
   int rv = 0;
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
   if (it == ifi2lag.end()) {
     LOG(FATAL) << __FUNCTION__ << ": no lag_id found for " << OBJ_CAST(bond);
@@ -278,11 +287,13 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
 
   rv = swi->lag_remove_member(it->second, port_id);
   lag_members.erase(lm_rv);
+#endif
 
   return rv;
 }
 
 int nl_bond::update_lag_member(rtnl_link *old_slave, rtnl_link *new_slave) {
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   assert(new_slave);
 
   int rv;
@@ -312,6 +323,7 @@ int nl_bond::update_lag_member(rtnl_link *old_slave, rtnl_link *new_slave) {
 
   rv = swi->lag_set_member_active(nl->get_port_id(new_master), port_id,
                                   new_state == 0);
+#endif
   return 0;
 }
 
