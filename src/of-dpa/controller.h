@@ -154,8 +154,7 @@ public:
 
   int l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept override;
   int l2_addr_add(uint32_t port, uint16_t vid, const rofl::caddress_ll &mac,
-                  bool filtered, bool permanent,
-                  bool lag = false) noexcept override;
+                  bool filtered, bool permanent) noexcept override;
   int l2_addr_remove(uint32_t port, uint16_t vid,
                      const rofl::caddress_ll &mac) noexcept override;
 

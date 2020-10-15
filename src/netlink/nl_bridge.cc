@@ -623,7 +623,6 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
 
   nl_addr *mac = rtnl_neigh_get_lladdr(neigh);
   int vlan = rtnl_neigh_get_vlan(neigh);
-  bool lag = nbi::get_port_type(port) == nbi::port_type_lag;
 
   bool permanent = true;
 
@@ -645,7 +644,7 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
             << rtnl_link_get_name(bridge) << " on port=" << port
             << " vlan=" << (unsigned)vlan << ", permanent=" << permanent;
   LOG(INFO) << __FUNCTION__ << ": object: " << OBJ_CAST(neigh);
-  sw->l2_addr_add(port, vlan, _mac, true, permanent, lag);
+  sw->l2_addr_add(port, vlan, _mac, true, permanent);
 }
 
 void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {

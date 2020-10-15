@@ -690,10 +690,11 @@ int controller::l2_addr_remove_all_in_vlan(uint32_t port,
 
 int controller::l2_addr_add(uint32_t port, uint16_t vid,
                             const rofl::caddress_ll &mac, bool filtered,
-                            bool permanent, bool lag) noexcept {
+                            bool permanent) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
+    bool lag = nbi::get_port_type(port) == nbi::port_type_lag;
 
     if (!permanent)
       fm_driver.set_idle_timeout(300);
@@ -1643,9 +1644,8 @@ int controller::egress_port_vlan_add(uint32_t port, uint16_t vid,
     // create filtered egress interface
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     rofl::openflow::cofgroupmod gm;
-    bool lag = nbi::get_port_type(port) == nbi::port_type_lag;
 
-    if (lag) {
+    if (nbi::get_port_type(port) == nbi::port_type_lag) {
       gm = fm_driver.enable_group_l2_trunk_interface(dpt.get_version(), port,
                                                      vid, untagged);
     } else {
