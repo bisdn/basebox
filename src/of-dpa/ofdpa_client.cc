@@ -302,7 +302,7 @@ ofdpa_client::OfdpaTrunkCreate(uint32_t lag_id, std::string name,
 
   request.set_name(name);
   request.set_lag_id(lag_id);
-  request.set_lag_type((::TrunkCreate::LagType)mode);
+  request.set_lag_type((::LagType)mode);
 
   ::Status rv = stub_->ofdpaTrunkCreate(&context, request, &response);
   if (not rv.ok()) {
@@ -372,7 +372,7 @@ ofdpa_client::ofdpaTrunkPortPSCSet(uint32_t lag_id, uint8_t mode) {
   ::PSC request;
 
   request.set_lag_id(lag_id);
-  request.set_lag_type((::PSC::LagType)mode);
+  request.set_lag_type((::LagType)mode);
 
   ::Status rv = stub_->ofdpaTrunkPortPSCSet(&context, request, &response);
   if (not rv.ok()) {
