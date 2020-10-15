@@ -64,38 +64,8 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
   VLOG(1) << __FUNCTION__ << ": updating bond interface ";
   int rv = 0;
 
-  uint32_t o_active, n_active;
   uint8_t o_mode, n_mode;
   uint32_t lag_id = nl->get_port_id(new_link);
-
-  rv = rtnl_link_bond_get_active_slave(old_link, &o_active);
-  if (rv < 0) {
-    VLOG(1) << __FUNCTION__ << ": failed to get active state for "
-            << OBJ_CAST(old_link);
-  }
-
-  rv = rtnl_link_bond_get_active_slave(new_link, &n_active);
-  if (rv < 0) {
-    VLOG(1) << __FUNCTION__ << ": failed to get active state for "
-            << OBJ_CAST(new_link);
-  }
-
-  if (o_active != n_active) {
-    rv = swi->lag_set_member_active(lag_id, nl->get_port_id(n_active), 1);
-    if (rv < 0) {
-      VLOG(1) << __FUNCTION__ << ": failed to set active state for "
-              << OBJ_CAST(new_link);
-    }
-
-    rv = swi->lag_set_member_active(lag_id, nl->get_port_id(o_active), 0);
-
-    if (rv < 0) {
-      VLOG(1) << __FUNCTION__ << ": failed to set active state for "
-              << OBJ_CAST(new_link);
-    }
-
-    return 0;
-  }
 
   rv = rtnl_link_bond_get_mode(old_link, &o_mode);
   if (rv < 0) {
