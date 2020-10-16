@@ -836,6 +836,7 @@ void nl_bridge::clear_tpid_entries() {
 
 int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
   int rv = 0;
+#ifdef HAVE_NETLINK_ROUTE_MDB_H
   std::deque<struct rtnl_mdb_entry *> mdb;
   uint32_t bridge = rtnl_mdb_get_ifindex(mdb_entry);
 
@@ -920,12 +921,14 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
     VLOG(2) << __FUNCTION__ << ": mdb entry added, port" << port_id
             << " grp= " << addr;
   }
+#endif
 
   return rv;
 }
 
 int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
   int rv = 0;
+#ifdef HAVE_NETLINK_ROUTE_MDB_H
   uint32_t bridge = rtnl_mdb_get_ifindex(mdb_entry);
 
   if (!is_bridge_interface(nl->get_link_by_ifindex(bridge).get())) {
@@ -1007,6 +1010,7 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
     VLOG(2) << __FUNCTION__ << ": mdb entry removed, port" << port_id
             << " grp= " << addr;
   }
+#endif
 
   return rv;
 }

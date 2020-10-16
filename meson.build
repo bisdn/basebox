@@ -112,6 +112,10 @@ if not libnl.found()
   libnl = cppc.find_library('libnl-3')
 endif
 
+if cppc.has_header('netlink/route/mdb.h', dependencies: libnl, required: false)
+  add_global_arguments('-DHAVE_NETLINK_ROUTE_MDB_H',  language: 'cpp')
+endif
+
 if cppc.has_header_symbol('netlink/route/link/bonding.h', 'rtnl_link_bond_get_mode', dependencies: libnl, required: false)
   add_global_arguments('-DHAVE_RTNL_LINK_BOND_GET_MODE',  language: 'cpp')
 endif
