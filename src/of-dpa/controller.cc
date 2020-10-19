@@ -252,11 +252,10 @@ void controller::handle_error_message(rofl::crofdpt &dpt,
                                       const rofl::cauxid &auxid,
                                       rofl::openflow::cofmsg_error &msg) {
   VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
-  VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
+  VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
-
-  LOG(WARNING) << __FUNCTION__ << ": not implemented";
+  LOG(WARNING) << __FUNCTION__ << ": " << (((uint32_t)msg.get_err_type() << 16) | msg.get_err_code());
 }
 
 void controller::handle_port_desc_stats_reply(
