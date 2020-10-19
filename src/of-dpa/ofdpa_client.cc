@@ -28,6 +28,8 @@ ofdpa_client::ofdpaTunnelTenantCreate(uint32_t tunnel_id, uint32_t vni) {
   ::OfdpaStatus response;
   ::ClientContext context;
 
+  context.set_wait_for_ready(true);
+
   ::Status rv = stub_->ofdpaTunnelTenantCreate(&context, request, &response);
 
   if (not rv.ok()) {
@@ -46,6 +48,8 @@ ofdpa_client::ofdpaTunnelTenantDelete(uint32_t tunnel_id) {
   request.set_tunnel_id(tunnel_id);
   ::OfdpaStatus response;
   ::ClientContext context;
+
+  context.set_wait_for_ready(true);
 
   ::Status rv = stub_->ofdpaTunnelTenantDelete(&context, request, &response);
 
@@ -73,6 +77,8 @@ ofdpa_client::ofdpaTunnelNextHopCreate(uint32_t next_hop_id, uint64_t src_mac,
   ::OfdpaStatus response;
   ::ClientContext context;
 
+  context.set_wait_for_ready(true);
+
   ::Status rv = stub_->ofdpaTunnelNextHopCreate(&context, request, &response);
 
   if (not rv.ok()) {
@@ -90,6 +96,8 @@ ofdpa_client::ofdpaTunnelNextHopDelete(uint32_t next_hop_id) {
 
   ::OfdpaStatus response;
   ::ClientContext context;
+
+  context.set_wait_for_ready(true);
 
   ::Status rv = stub_->ofdpaTunnelNextHopDelete(&context, request, &response);
 
@@ -116,6 +124,8 @@ ofdpa_client::ofdpaTunnelNextHopModify(uint32_t next_hop_id, uint64_t src_mac,
 
   ::OfdpaStatus response;
   ::ClientContext context;
+
+  context.set_wait_for_ready(true);
 
   ::Status rv = stub_->ofdpaTunnelNextHopModify(&context, request, &response);
 
@@ -210,6 +220,9 @@ OfdpaStatus::OfdpaStatusCode
 ofdpa_client::ofdpaTunnelPortCreate(const ::ofdpa::TunnelPortCreate &request) {
   ::OfdpaStatus response;
   ::ClientContext context;
+
+  context.set_wait_for_ready(true);
+
   ::Status rv = stub_->ofdpaTunnelPortCreate(&context, request, &response);
 
   if (not rv.ok()) {
@@ -226,6 +239,8 @@ ofdpa_client::ofdpaTunnelPortDelete(uint32_t lport_id) {
   request.set_port_num(lport_id);
   ::OfdpaStatus response;
   ::ClientContext context;
+
+  context.set_wait_for_ready(true);
 
   ::Status rv = stub_->ofdpaTunnelPortDelete(&context, request, &response);
 
@@ -246,6 +261,9 @@ ofdpa_client::ofdpaTunnelPortTenantAdd(uint32_t port_id, uint32_t tunnel_id) {
 
   ::OfdpaStatus response;
   ::ClientContext context;
+
+  context.set_wait_for_ready(true);
+
   ::Status rv = stub_->ofdpaTunnelPortTenantAdd(&context, request, &response);
 
   if (not rv.ok()) {
@@ -266,6 +284,9 @@ ofdpa_client::ofdpaTunnelPortTenantDelete(uint32_t port_id,
 
   ::OfdpaStatus response;
   ::ClientContext context;
+
+  context.set_wait_for_ready(true);
+
   ::Status rv =
       stub_->ofdpaTunnelPortTenantDelete(&context, request, &response);
 
@@ -281,6 +302,8 @@ ofdpa_client::ofdpaStgStatePortSet(uint32_t port_id, std::string state) {
   ::OfdpaStatus response;
   ::ClientContext context;
   ::openconfig_spanning_tree::Stp_Rstp_Interface_State request;
+
+  context.set_wait_for_ready(true);
 
   request.set_name(std::to_string(port_id));
   request.set_port_state(state);
@@ -300,6 +323,8 @@ ofdpa_client::OfdpaTrunkCreate(uint32_t lag_id, std::string name,
   ::ClientContext context;
   ::TrunkCreate request;
 
+  context.set_wait_for_ready(true);
+
   request.set_name(name);
   request.set_lag_id(lag_id);
   request.set_lag_type((::LagType)mode);
@@ -318,6 +343,8 @@ ofdpa_client::OfdpaTrunkDelete(uint32_t lag_id) {
   ::ClientContext context;
   ::PortNum request;
 
+  context.set_wait_for_ready(true);
+
   request.set_port_num(lag_id);
 
   ::Status rv = stub_->ofdpaTrunkDelete(&context, request, &response);
@@ -333,6 +360,8 @@ ofdpa_client::OfdpaPortTrunkGroupSet(uint32_t port_id, uint32_t trunk_id) {
   ::OfdpaStatus response;
   ::ClientContext context;
   ::TrunkGroupSet request;
+
+  context.set_wait_for_ready(true);
 
   request.set_lag_id(trunk_id);
   request.set_member(port_id);
@@ -352,6 +381,8 @@ ofdpa_client::OfdpaTrunkPortMemberActiveSet(uint32_t port_id, uint32_t trunk_id,
   ::ClientContext context;
   ::PortMemberActiveSet request;
 
+  context.set_wait_for_ready(true);
+
   request.set_lag_id(trunk_id);
   request.set_member(port_id);
   request.set_active(active);
@@ -370,6 +401,8 @@ ofdpa_client::ofdpaTrunkPortPSCSet(uint32_t lag_id, uint8_t mode) {
   ::OfdpaStatus response;
   ::ClientContext context;
   ::PSC request;
+
+  context.set_wait_for_ready(true);
 
   request.set_lag_id(lag_id);
   request.set_lag_type((::LagType)mode);
