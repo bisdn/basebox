@@ -18,7 +18,9 @@
 #include <netlink/route/link/bonding.h>
 #include <netlink/route/link/vlan.h>
 #include <netlink/route/link/vxlan.h>
+#ifdef HAVE_NETLINK_ROUTE_MDB_H
 #include <netlink/route/mdb.h>
+#endif
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
 #include <systemd/sd-daemon.h>
@@ -159,6 +161,7 @@ void cnetlink::init_caches() {
     LOG(FATAL) << __FUNCTION__ << ": add route/neigh to cache mngr";
   }
 
+#ifdef HAVE_NETLINK_ROUTE_MDB_H
   /* init mdb cache */
   rc = rtnl_mdb_alloc_cache_flags(sock_mon, &caches[NL_MDB_CACHE],
                                   NL_CACHE_AF_ITER);
@@ -172,6 +175,7 @@ void cnetlink::init_caches() {
     LOG(FATAL) << __FUNCTION__
                << ": nl_cache_mngr_add_cache_v2: add route/mdb to cache mngr";
   }
+#endif
 
   try {
     thread.add_read_fd(this, nl_cache_mngr_get_fd(mngr), true, false);
@@ -450,10 +454,12 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     case RTM_DELADDR:
       route_addr_apply(obj);
       break;
+#ifdef HAVE_NETLINK_ROUTE_MDB_H
     case RTM_NEWMDB:
     case RTM_DELMDB:
       route_mdb_apply(obj);
       break;
+#endif
     default:
       LOG(ERROR) << __FUNCTION__ << ": unexpected netlink type "
                  << obj.get_msg_type();
