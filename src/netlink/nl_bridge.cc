@@ -196,7 +196,15 @@ void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
       return;
     }
 
-    sw->ofdpa_stg_state_port_set(nl->get_port_id(new_link), state);
+    auto port_id = nl->get_port_id(new_link);
+    if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+      auto members = nl->get_bond_members_by_lag(new_link);
+      for (auto mem : members) {
+        sw->ofdpa_stg_state_port_set(mem, state);
+      }
+    } else {
+      sw->ofdpa_stg_state_port_set(port_id, state);
+    }
 
     return;
   }
@@ -224,7 +232,15 @@ void nl_bridge::delete_interface(rtnl_link *link) {
     sw->delete_egress_tpid(nl->get_port_id(link));
 
   // interface default is to STP state forward by default
-  sw->ofdpa_stg_state_port_set(nl->get_port_id(link), "forward");
+  auto port_id = nl->get_port_id(link);
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_lag(link);
+    for (auto mem : members) {
+      sw->ofdpa_stg_state_port_set(mem, "forward");
+    }
+  } else {
+    sw->ofdpa_stg_state_port_set(port_id, "forward");
+  }
 }
 
 void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
