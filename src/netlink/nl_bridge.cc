@@ -147,13 +147,6 @@ void nl_bridge::add_interface(rtnl_link *link) {
   // configure bonds and physical ports (non members of bond)
   update_vlans(nullptr, link);
 
-  // configure bond slaves
-  auto members = nl->get_bond_members_by_lag(link);
-  for (auto mem : members) {
-    auto _link = nl->get_link_by_ifindex(nl->get_ifindex_by_port_id(mem));
-    update_vlans(nullptr, _link.get());
-  }
-
   if (get_vlan_proto() == ETH_P_8021AD)
     sw->set_egress_tpid(nl->get_port_id(link));
 }
@@ -312,6 +305,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
       return;
     }
   }
+  auto members = nl->get_bond_members_by_lag(_link);
 
   for (int k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
     int base_bit;
@@ -385,6 +379,11 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
               sw->egress_bridge_port_vlan_add(pport_no, vid, egress_untagged);
               sw->ingress_port_vlan_add(pport_no, vid,
                                         new_br_vlan->pvid == vid);
+              // update bond slaves
+              for (auto mem : members) {
+                sw->egress_bridge_port_vlan_add(mem, vid, egress_untagged);
+                sw->ingress_port_vlan_add(mem, vid, new_br_vlan->pvid == vid);
+	      }
             }
           }
         } else {
@@ -400,6 +399,10 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
             VLOG(3) << __FUNCTION__ << ": remove vid=" << vid
                     << " on pport_no=" << pport_no
                     << " link: " << OBJ_CAST(_link);
+            // update bond slaves
+            for (auto mem : members) {
+              sw->ingress_port_vlan_remove(mem, vid, old_br_vlan->pvid == vid);
+            }
             sw->ingress_port_vlan_remove(pport_no, vid,
                                          old_br_vlan->pvid == vid);
 
@@ -423,6 +426,10 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
                                     },
                                     nullptr);
 
+            // update bond slaves
+            for (auto mem : members) {
+              sw->egress_bridge_port_vlan_remove(mem, vid);
+            }
             sw->egress_bridge_port_vlan_remove(pport_no, vid);
           }
         }
