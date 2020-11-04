@@ -379,6 +379,12 @@ int cnetlink::get_port_id(rtnl_link *l) const {
     return 0;
   }
 
+  // resolve any br_link interfaces to their bridged interfaces
+  l = get_link(rtnl_link_get_ifindex(l), AF_UNSPEC);
+  if (l == nullptr) {
+    return 0;
+  }
+
   if (rtnl_link_is_vlan(l)) {
     ifindex = rtnl_link_get_link(l);
     // XXX FIXME vlan interface on bond not handled
