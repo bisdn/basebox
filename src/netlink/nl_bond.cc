@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <glog/logging.h>
+#include <linux/if_bridge.h>
 #include <netlink/route/link.h>
 #include <netlink/route/link/bonding.h>
 
@@ -216,6 +217,32 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
       VLOG(2) << __FUNCTION__
               << ": bond was already bridge slave: " << OBJ_CAST(br_link);
       nl->link_created(br_link);
+
+      auto new_state = rtnl_link_bridge_get_port_state(br_link);
+      std::string state;
+
+      switch (new_state) {
+      case BR_STATE_FORWARDING:
+        state = "forward";
+        break;
+      case BR_STATE_BLOCKING:
+        state = "block";
+        break;
+      case BR_STATE_DISABLED:
+        state = "disable";
+        break;
+      case BR_STATE_LISTENING:
+        state = "listen";
+        break;
+      case BR_STATE_LEARNING:
+        state = "learn";
+        break;
+      default:
+        VLOG(1) << __FUNCTION__ << ": stp state change not supported";
+        return rv;
+      }
+
+      swi->ofdpa_stg_state_port_set(port_id, state);
     }
   }
 
@@ -257,6 +284,9 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
 
   rv = swi->lag_remove_member(it->second, port_id);
   lag_members.erase(lm_rv);
+
+  if (nl->is_bridge_interface(bond))
+    swi->ofdpa_stg_state_port_set(port_id, "forward");
 #endif
 
   return rv;
