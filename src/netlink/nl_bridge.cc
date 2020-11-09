@@ -147,8 +147,16 @@ void nl_bridge::add_interface(rtnl_link *link) {
   // configure bonds and physical ports (non members of bond)
   update_vlans(nullptr, link);
 
-  if (get_vlan_proto() == ETH_P_8021AD)
-    sw->set_egress_tpid(nl->get_port_id(link));
+  auto port_id = nl->get_port_id(link);
+  if (get_vlan_proto() == ETH_P_8021AD) {
+    if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+      auto members = nl->get_bond_members_by_lag(link);
+      for (auto i : members)
+        sw->set_egress_tpid(i);
+
+    } else
+      sw->set_egress_tpid(port_id);
+  }
 }
 
 void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
@@ -228,11 +236,19 @@ void nl_bridge::delete_interface(rtnl_link *link) {
   }
 
   update_vlans(link, nullptr);
-  if (get_vlan_proto() == ETH_P_8021AD)
-    sw->delete_egress_tpid(nl->get_port_id(link));
+
+  auto port_id = nl->get_port_id(link);
+  if (get_vlan_proto() == ETH_P_8021AD) {
+    if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+      auto members = nl->get_bond_members_by_lag(link);
+      for (auto i : members)
+        sw->delete_egress_tpid(i);
+
+    } else
+      sw->delete_egress_tpid(port_id);
+  }
 
   // interface default is to STP state forward by default
-  auto port_id = nl->get_port_id(link);
   if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
     auto members = nl->get_bond_members_by_lag(link);
     for (auto mem : members) {
