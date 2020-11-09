@@ -11,7 +11,9 @@
 #include <glog/logging.h>
 #include <linux/if_bridge.h>
 #include <netlink/route/link.h>
+#ifdef HAVE_NETLINK_ROUTE_MDB_H
 #include <netlink/route/mdb.h>
+#endif
 #include <netlink/route/link/vlan.h>
 #include <netlink/route/link/vxlan.h>
 #include <netlink/route/neighbour.h>
