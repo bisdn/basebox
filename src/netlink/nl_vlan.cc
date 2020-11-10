@@ -38,8 +38,9 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged,
   int rv = swi->ingress_port_vlan_add(port_id, vid, !tagged, vrf_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
-               << ": failed to setup ingress vlan 1 (untagged) on port_id="
-               << port_id << "; rv=" << rv;
+               << ": failed to setup ingress vlan " << vid
+               << (tagged ? " (tagged)" : " (untagged)")
+               << " on port_id=" << port_id << "; rv=" << rv;
     return rv;
   }
 
@@ -48,9 +49,10 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged,
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
-               << ": failed to setup egress vlan 1 (untagged) on port_id="
-               << port_id << "; rv=" << rv;
-    (void)swi->ingress_port_vlan_remove(port_id, 1, true);
+               << ": failed to setup egress vlan " << vid
+               << (tagged ? " (tagged)" : " (untagged)")
+               << " on port_id=" << port_id << "; rv=" << rv;
+    (void)swi->ingress_port_vlan_remove(port_id, vid, !tagged);
 
     return rv;
   }
