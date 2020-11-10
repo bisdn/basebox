@@ -250,18 +250,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     }
   }
 
-  if (auto members = nl->get_bond_members_by_lag(link); !members.empty()) {
-    VLOG(2) << __FUNCTION__ << ": configuring VLAN entry for bond slave "
-            << link;
-
-    for (auto mem : members) {
-      auto _link = nl->get_link_by_ifindex(nl->get_ifindex_by_port_id(mem));
-      bool tagged = !!rtnl_link_is_vlan(link);
-
-      rv = vlan->add_vlan(_link.get(), vid, tagged, vrf_id);
-    }
-  }
-
   return rv;
 }
 
@@ -349,18 +337,6 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
                  << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
-    }
-  }
-
-  if (auto members = nl->get_bond_members_by_lag(link); !members.empty()) {
-    VLOG(2) << __FUNCTION__ << ": configuring VLAN entry for bond slave "
-            << OBJ_CAST(link);
-
-    for (auto mem : members) {
-      auto _link = nl->get_link_by_ifindex(nl->get_ifindex_by_port_id(mem));
-      bool tagged = !!rtnl_link_is_vlan(link);
-
-      rv = vlan->add_vlan(_link.get(), vid, tagged);
     }
   }
 
