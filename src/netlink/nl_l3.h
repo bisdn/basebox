@@ -71,6 +71,9 @@ public:
 private:
   int get_l3_interface_id(rtnl_neigh *n, uint32_t *l3_interface_id,
                           uint32_t vid = 0);
+  int get_l3_interface_id(int ifindex, const struct nl_addr *s_mac,
+                          const struct nl_addr *d_mac,
+                          uint32_t *l3_interface_id, uint16_t vid = 0);
 
   int add_l3_termination(uint32_t port_id, uint16_t vid,
                          const rofl::caddress_ll &mac, int af) noexcept;
