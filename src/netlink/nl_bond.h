@@ -39,6 +39,8 @@ public:
    */
   std::set<uint32_t> get_members(rtnl_link *bond);
 
+  std::set<uint32_t> get_members_by_port_id(uint32_t port_id);
+
   /**
    * create a new lag
    *

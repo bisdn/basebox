@@ -57,6 +57,17 @@ std::set<uint32_t> nl_bond::get_members(rtnl_link *bond) {
   return mem_it->second;
 }
 
+std::set<uint32_t> nl_bond::get_members_by_port_id(uint32_t port_id) {
+  auto mem_it = lag_members.find(port_id);
+  if (mem_it == lag_members.end()) {
+    LOG(WARNING) << __FUNCTION__ << ": lag does not exist for port_id="
+	         << port_id;
+    return {};
+  }
+
+  return mem_it->second;
+}
+
 int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
 #ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   VLOG(1) << __FUNCTION__ << ": updating bond interface ";
