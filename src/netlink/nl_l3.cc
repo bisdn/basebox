@@ -1596,14 +1596,20 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     uint32_t l3_interface_id = 0;
     auto ifindex = rtnl_neigh_get_ifindex(n);
 
+    auto link = nl->get_link_by_ifindex(ifindex);
+    struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
+    struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
+
     // For the Bridge SVI, the l3 interface already exists
     // so we can just get that one
     if (nl->is_bridge_interface(ifindex)) {
-      auto fdb_res = nl->search_fdb(0, rtnl_neigh_get_lladdr(n));
+      auto fdb_res = nl->search_fdb(0, d_mac);
 
       for (auto i : fdb_res) {
         auto vid = rtnl_neigh_get_vlan(i);
-        get_l3_interface_id(i, &l3_interface_id, vid);
+        int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(i);
+        get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
+                            vid);
       }
 
     } else {
