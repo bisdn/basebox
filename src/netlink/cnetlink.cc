@@ -326,6 +326,10 @@ int cnetlink::get_l3_addrs(struct rtnl_link *link,
   return l3->get_l3_addrs(link, addresses);
 }
 
+std::set<uint32_t> cnetlink::get_bond_members_by_port_id(uint32_t port_id) {
+  return bond->get_members_by_port_id(port_id);
+}
+
 int cnetlink::add_l3_addr(struct rtnl_addr *a) {
   switch (rtnl_addr_get_family(a)) {
   case AF_INET:
