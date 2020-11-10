@@ -1718,16 +1718,24 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
       uint32_t l3_interface_id = 0;
       auto ifindex = rtnl_neigh_get_ifindex(n);
 
+      auto link = nl->get_link_by_ifindex(ifindex);
+      struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
+      struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
+
       // For the Bridge SVI, the l3 interface already exists
       // so we can just get that one
       if (nl->is_bridge_interface(ifindex)) {
-        auto fdb_res = nl->search_fdb(0, rtnl_neigh_get_lladdr(n));
-        get_l3_interface_id(fdb_res.front(), &l3_interface_id);
+        auto fdb_res = nl->search_fdb(0, d_mac);
+        rtnl_neigh *fdb_neigh = fdb_res.front();
+        int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(fdb_neigh);
+        auto vid = rtnl_neigh_get_vlan(fdb_neigh);
+        get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
+                            vid);
         l3_interfaces.emplace(l3_interface_id);
         continue;
       }
       // add neigh
-      rv = get_l3_interface_id(n, &l3_interface_id);
+      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id);
 
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__
