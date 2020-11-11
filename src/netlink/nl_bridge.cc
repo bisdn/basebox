@@ -151,11 +151,12 @@ void nl_bridge::add_interface(rtnl_link *link) {
   if (get_vlan_proto() == ETH_P_8021AD) {
     if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
       auto members = nl->get_bond_members_by_lag(link);
-      for (auto i : members)
-        sw->set_egress_tpid(i);
+      for (auto mem : members)
+        sw->set_egress_tpid(mem);
 
-    } else
+    } else {
       sw->set_egress_tpid(port_id);
+    }
   }
 }
 
@@ -241,11 +242,12 @@ void nl_bridge::delete_interface(rtnl_link *link) {
   if (get_vlan_proto() == ETH_P_8021AD) {
     if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
       auto members = nl->get_bond_members_by_lag(link);
-      for (auto i : members)
-        sw->delete_egress_tpid(i);
+      for (auto mem : members)
+        sw->delete_egress_tpid(mem);
 
-    } else
+    } else {
       sw->delete_egress_tpid(port_id);
+    }
   }
 
   // interface default is to STP state forward by default
