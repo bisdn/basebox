@@ -872,7 +872,14 @@ void nl_bridge::clear_tpid_entries() {
   nl->get_bridge_ports(rtnl_link_get_ifindex(bridge), &bridge_ports);
 
   for (auto iface : bridge_ports)
-    sw->delete_egress_tpid(nl->get_port_id(iface));
+    if (auto port_id = nl->get_port_id(iface);
+        nbi::get_port_type(port_id) == nbi::port_type_lag) {
+      auto members = nl->get_bond_members_by_lag(iface);
+      for (auto i : members)
+        sw->delete_egress_tpid(i);
+    } else {
+      sw->delete_egress_tpid(port_id);
+    }
 }
 
 int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
