@@ -129,7 +129,7 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged,
   }
 
   // remove vid from egress
-  rv = swi->egress_bridge_port_vlan_remove(port_id, vid);
+  rv = swi->egress_port_vlan_remove(port_id, vid);
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv= " << rv
