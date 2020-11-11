@@ -321,22 +321,9 @@ std::set<uint32_t> cnetlink::get_bond_members_by_lag(rtnl_link *bond_link) {
   return bond->get_members(bond_link);
 }
 
-int cnetlink::get_l3_addr(struct rtnl_link *link,
-                          std::deque<rtnl_addr *> *addresses) {
-  std::unique_ptr<rtnl_addr, decltype(&rtnl_addr_put)> filter(rtnl_addr_alloc(),
-                                                              rtnl_addr_put);
-
-  rtnl_addr_set_ifindex(filter.get(), rtnl_link_get_ifindex(link));
-
-  nl_cache_foreach_filter(
-      get_cache(cnetlink::NL_ADDR_CACHE), OBJ_CAST(filter.get()),
-      [](struct nl_object *o, void *arg) {
-        auto *addr = (std::deque<rtnl_addr *> *)arg;
-        addr->push_back(ADDR_CAST(o));
-      },
-      addresses);
-
-  return 0;
+int cnetlink::get_l3_addrs(struct rtnl_link *link,
+                           std::deque<rtnl_addr *> *addresses) {
+  return l3->get_l3_addrs(link, addresses);
 }
 
 int cnetlink::add_l3_addr(struct rtnl_addr *a) {
@@ -352,9 +339,7 @@ int cnetlink::add_l3_addr(struct rtnl_addr *a) {
   return -EINVAL;
 }
 
-int cnetlink::del_l3_addr(struct rtnl_addr *a) {
-  return l3->del_l3_addr(a);
-}
+int cnetlink::del_l3_addr(struct rtnl_addr *a) { return l3->del_l3_addr(a); }
 
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
                                            struct nl_addr *a) const {

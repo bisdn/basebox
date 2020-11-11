@@ -352,13 +352,14 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   }
 
   if (auto members = nl->get_bond_members_by_lag(link); !members.empty()) {
-    VLOG(1) << __FUNCTION__ << ": BOND configuring slaves";
+    VLOG(2) << __FUNCTION__ << ": configuring VLAN entry for bond slave "
+            << link;
 
     for (auto mem : members) {
       auto _link = nl->get_link_by_ifindex(nl->get_ifindex_by_port_id(mem));
       bool tagged = !!rtnl_link_is_vlan(link);
 
-      rv = vlan->add_vlan(_link.get(), vid, tagged, 0);
+      rv = vlan->add_vlan(_link.get(), vid, tagged);
     }
   }
 
@@ -491,8 +492,8 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   return rv;
 }
 
-int nl_l3::get_l3_addr(struct rtnl_link *link,
-                       std::deque<rtnl_addr *> addresses) {
+int nl_l3::get_l3_addrs(struct rtnl_link *link,
+                        std::deque<rtnl_addr *> *addresses) {
   std::unique_ptr<rtnl_addr, decltype(&rtnl_addr_put)> filter(rtnl_addr_alloc(),
                                                               rtnl_addr_put);
 

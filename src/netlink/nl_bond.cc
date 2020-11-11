@@ -71,9 +71,8 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
     int master_id = rtnl_link_get_master(new_link);
     auto master = nl->get_link(master_id, AF_UNSPEC);
 
-    if(master == nullptr) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to get master "
-              << master;
+    if (master == nullptr) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to get master " << master;
       return -EINVAL;
     }
 
@@ -143,6 +142,8 @@ int nl_bond::add_lag(rtnl_link *bond) {
     if (lag_id != rv_emp.first->second)
       swi->lag_remove(lag_id);
   }
+
+  add_l3_address(bond);
 #endif
 
   return rv;
@@ -237,7 +238,6 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   }
 
   // XXX FIXME check for vlan interfaces
-  add_l3_address(bond);
 #endif
 
   return rv;
@@ -274,9 +274,11 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
   }
 
   rv = swi->lag_remove_member(it->second, port_id);
-  lag_members.erase(lm_rv);
 
-  remove_l3_address(bond);
+  if (lm_rv->second.empty())
+    remove_l3_address(bond);
+
+  lag_members.erase(lm_rv);
 #endif
 
   return rv;
@@ -323,12 +325,12 @@ int nl_bond::add_l3_address(rtnl_link *link) {
   assert(link);
 
   std::deque<rtnl_addr *> addresses;
-  nl->get_l3_addr(link, &addresses);
+  nl->get_l3_addrs(link, &addresses);
 
   for (auto i : addresses) {
     rv = nl->add_l3_addr(i);
     if (rv < 0)
-      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address to "
+      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address " << i << " to "
                  << OBJ_CAST(link);
   }
 
@@ -342,7 +344,7 @@ int nl_bond::remove_l3_address(rtnl_link *link) {
   assert(link);
 
   std::deque<rtnl_addr *> addresses;
-  nl->get_l3_addr(link, &addresses);
+  nl->get_l3_addrs(link, &addresses);
 
   for (auto i : addresses) {
     rv = nl->del_l3_addr(i);
