@@ -57,6 +57,8 @@ public:
   bool is_bridge_interface(rtnl_link *l) const;
   bool is_bridge_interface(int ifindex) const;
   bool is_bridge_configured(rtnl_link *l);
+  int set_bridge_port_vlan_tpid(rtnl_link *l);
+  int unset_bridge_port_vlan_tpid(rtnl_link *l);
   int get_port_id(rtnl_link *l) const;
   int get_port_id(int ifindex) const;
   int get_ifindex_by_port_id(uint32_t port_id) const;

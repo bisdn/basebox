@@ -244,6 +244,12 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
 
       swi->ofdpa_stg_state_port_set(port_id, state);
     }
+
+    rv = nl->set_bridge_port_vlan_tpid(br_link);
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to set egress TPID entry for port "
+                 << OBJ_CAST(link);
   }
 
   // XXX FIXME check for vlan interfaces
@@ -285,8 +291,18 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
   rv = swi->lag_remove_member(it->second, port_id);
   lag_members.erase(lm_rv);
 
-  if (nl->is_bridge_interface(bond))
+  if (nl->is_bridge_interface(bond)) {
     swi->ofdpa_stg_state_port_set(port_id, "forward");
+
+    auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
+    rv = nl->unset_bridge_port_vlan_tpid(br_link);
+
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to set egress TPID entry for port "
+                 << OBJ_CAST(link);
+  }
+
 #endif
 
   return rv;

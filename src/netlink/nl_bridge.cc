@@ -79,6 +79,42 @@ uint32_t nl_bridge::get_vlan_proto() {
       "/sys/class/net/" + portname + "/bridge/vlan_protocol", 16);
 }
 
+int nl_bridge::set_vlan_proto(rtnl_link *link) {
+  int rv = 0;
+  if (get_vlan_proto() != ETH_P_8021AD)
+    return rv;
+
+  auto port_id = nl->get_port_id(link);
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_lag(link);
+    for (auto mem : members)
+      rv = sw->set_egress_tpid(mem);
+
+  } else {
+    rv = sw->set_egress_tpid(port_id);
+  }
+
+  return rv;
+}
+
+int nl_bridge::delete_vlan_proto(rtnl_link *link) {
+  int rv = 0;
+  if (get_vlan_proto() != ETH_P_8021AD)
+    return rv;
+
+  auto port_id = nl->get_port_id(link);
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_lag(link);
+    for (auto mem : members)
+      rv = sw->delete_egress_tpid(mem);
+
+  } else {
+    rv = sw->delete_egress_tpid(port_id);
+  }
+
+  return rv;
+}
+
 // Read sysfs to obtain the value for the VLAN filtering value on the switch.
 // baseboxd currently only supports VLAN-aware bridges, set with the
 // vlan_filtering flag to 1.
@@ -147,17 +183,7 @@ void nl_bridge::add_interface(rtnl_link *link) {
   // configure bonds and physical ports (non members of bond)
   update_vlans(nullptr, link);
 
-  auto port_id = nl->get_port_id(link);
-  if (get_vlan_proto() == ETH_P_8021AD) {
-    if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-      auto members = nl->get_bond_members_by_lag(link);
-      for (auto mem : members)
-        sw->set_egress_tpid(mem);
-
-    } else {
-      sw->set_egress_tpid(port_id);
-    }
-  }
+  set_vlan_proto(link);
 }
 
 void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
@@ -238,18 +264,9 @@ void nl_bridge::delete_interface(rtnl_link *link) {
 
   update_vlans(link, nullptr);
 
+  delete_vlan_proto(link);
+
   auto port_id = nl->get_port_id(link);
-  if (get_vlan_proto() == ETH_P_8021AD) {
-    if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-      auto members = nl->get_bond_members_by_lag(link);
-      for (auto mem : members)
-        sw->delete_egress_tpid(mem);
-
-    } else {
-      sw->delete_egress_tpid(port_id);
-    }
-  }
-
   // interface default is to STP state forward by default
   if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
     auto members = nl->get_bond_members_by_lag(link);
@@ -871,15 +888,9 @@ void nl_bridge::clear_tpid_entries() {
   std::deque<rtnl_link *> bridge_ports;
   nl->get_bridge_ports(rtnl_link_get_ifindex(bridge), &bridge_ports);
 
-  for (auto iface : bridge_ports)
-    if (auto port_id = nl->get_port_id(iface);
-        nbi::get_port_type(port_id) == nbi::port_type_lag) {
-      auto members = nl->get_bond_members_by_lag(iface);
-      for (auto i : members)
-        sw->delete_egress_tpid(i);
-    } else {
-      sw->delete_egress_tpid(port_id);
-    }
+  for (auto iface : bridge_ports) {
+    delete_vlan_proto(iface);
+  }
 }
 
 int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
