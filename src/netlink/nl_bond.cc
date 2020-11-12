@@ -72,7 +72,7 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
     auto master = nl->get_link(master_id, AF_UNSPEC);
 
     if (master == nullptr) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to get master " << master;
+      LOG(ERROR) << __FUNCTION__ << ": failed to get master ";
       return -EINVAL;
     }
 
@@ -330,8 +330,8 @@ int nl_bond::add_l3_address(rtnl_link *link) {
   for (auto i : addresses) {
     rv = nl->add_l3_addr(i);
     if (rv < 0)
-      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address " << i << " to "
-                 << OBJ_CAST(link);
+      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address " << OBJ_CAST(i)
+                 << " to " << OBJ_CAST(link);
   }
 
 #endif
@@ -349,7 +349,7 @@ int nl_bond::remove_l3_address(rtnl_link *link) {
   for (auto i : addresses) {
     rv = nl->del_l3_addr(i);
     if (rv < 0)
-      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address to "
+      LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 address from "
                  << OBJ_CAST(link);
   }
 

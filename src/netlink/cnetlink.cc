@@ -333,7 +333,9 @@ int cnetlink::add_l3_addr(struct rtnl_addr *a) {
   case AF_INET6:
     return l3->add_l3_addr_v6(a);
   default:
-    LOG(ERROR) << __FUNCTION__ << ": unsupported family ";
+    LOG(ERROR) << __FUNCTION__
+               << ": unsupported family=" << rtnl_addr_get_family(a)
+               << " for address=" << OBJ_CAST(a);
     break;
   }
   return -EINVAL;

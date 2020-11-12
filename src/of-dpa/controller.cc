@@ -1122,6 +1122,8 @@ int controller::l3_egress_update(uint32_t port, uint16_t vid,
 
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
+    // TODO unfiltered interface
+
     uint32_t group_id = (nbi::get_port_type(port) == nbi::port_type_lag)
                             ? fm_driver.group_id_l2_trunk_interface(port, vid)
                             : fm_driver.group_id_l2_interface(port, vid);
