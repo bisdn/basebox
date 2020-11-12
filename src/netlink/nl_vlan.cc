@@ -67,6 +67,13 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged,
   return rv;
 }
 
+// add vid at ingress
+int nl_vlan::add_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
+                                 uint16_t vrf_id) {
+
+  return swi->ingress_port_vlan_add(port_id, vid, !tagged, vrf_id);
+}
+
 // remove vid at ingress
 int nl_vlan::remove_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
                                  uint16_t vrf_id) {
