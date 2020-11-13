@@ -26,9 +26,13 @@ void nl_bond::clear() noexcept {
 uint32_t nl_bond::get_lag_id(rtnl_link *bond) {
   assert(bond);
 
-  auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
+  return get_lag_id(rtnl_link_get_ifindex(bond));
+}
+
+uint32_t nl_bond::get_lag_id(int ifindex) {
+  auto it = ifi2lag.find(ifindex);
   if (it == ifi2lag.end()) {
-    VLOG(1) << __FUNCTION__ << ": lag_id not found of lag " << OBJ_CAST(bond);
+    VLOG(1) << __FUNCTION__ << ": lag_id not found for if=" << ifindex;
     return 0;
   }
 
