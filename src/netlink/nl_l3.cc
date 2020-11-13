@@ -1303,12 +1303,13 @@ void nl_l3::notify_on_nh_resolved(struct net_params p) noexcept {
   net_resolved_callbacks.emplace_back(p);
 }
 
-int nl_l3::get_l3_interface_id(rtnl_neigh *n, uint32_t *l3_interface_id,
-                               uint32_t vid) {
+int nl_l3::get_l3_interface_id(int ifindex, const struct nl_addr *s_mac,
+                               const struct nl_addr *d_mac,
+                               uint32_t *l3_interface_id, uint16_t vid) {
   assert(l3_interface_id);
+  assert(s_mac);
+  assert(d_mac);
 
-  struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
-  int ifindex = rtnl_neigh_get_ifindex(n);
   auto link = nl->get_link_by_ifindex(ifindex);
 
   if (link == nullptr)
@@ -1316,7 +1317,7 @@ int nl_l3::get_l3_interface_id(rtnl_neigh *n, uint32_t *l3_interface_id,
 
   if (!vid)
     vid = vlan->get_vid(link.get());
-  auto s_mac = rtnl_link_get_addr(link.get());
+
   uint32_t port_id = nl->get_port_id(ifindex);
   rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(s_mac);
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(d_mac);
@@ -1325,15 +1326,26 @@ int nl_l3::get_l3_interface_id(rtnl_neigh *n, uint32_t *l3_interface_id,
   auto it = l3_interface_mapping.equal_range(needle);
 
   if (it.first == l3_interface_mapping.end()) {
+    LOG(ERROR) << __FUNCTION__ << ": l3_interface_id entry not found for port "
+               << port_id << ", src_mac " << src_mac << ", dst_mac " << dst_mac
+               << ", vid " << vid;
     return -ENODATA;
   }
 
   for (auto i = it.first; i != it.second; ++i) {
     if (i->first == needle) {
       *l3_interface_id = i->second.l3_interface_id;
+
+      VLOG(2) << __FUNCTION__ << ": l3_interface_id " << *l3_interface_id
+                << " found for port " << port_id << ", src_mac " << src_mac
+                << ", dst_mac " << dst_mac << ", vid " << vid;
       return 0;
     }
   }
+
+  LOG(ERROR) << __FUNCTION__ << ": l3_interface_id entry not found for port "
+             << port_id << ", src_mac " << src_mac << ", dst_mac " << dst_mac
+             << ", vid " << vid;
 
   // not found either
   return -ENODATA;
@@ -1548,14 +1560,20 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     uint32_t l3_interface_id = 0;
     auto ifindex = rtnl_neigh_get_ifindex(n);
 
+    auto link = nl->get_link_by_ifindex(ifindex);
+    struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
+    struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
+
     // For the Bridge SVI, the l3 interface already exists
     // so we can just get that one
     if (nl->is_bridge_interface(ifindex)) {
-      auto fdb_res = nl->search_fdb(0, rtnl_neigh_get_lladdr(n));
+      auto fdb_res = nl->search_fdb(0, d_mac);
 
       for (auto i : fdb_res) {
         auto vid = rtnl_neigh_get_vlan(i);
-        get_l3_interface_id(i, &l3_interface_id, vid);
+        int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(i);
+        get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
+                            vid);
       }
 
     } else {
@@ -1664,16 +1682,24 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
       uint32_t l3_interface_id = 0;
       auto ifindex = rtnl_neigh_get_ifindex(n);
 
+      auto link = nl->get_link_by_ifindex(ifindex);
+      struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
+      struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
+
       // For the Bridge SVI, the l3 interface already exists
       // so we can just get that one
       if (nl->is_bridge_interface(ifindex)) {
-        auto fdb_res = nl->search_fdb(0, rtnl_neigh_get_lladdr(n));
-        get_l3_interface_id(fdb_res.front(), &l3_interface_id);
+        auto fdb_res = nl->search_fdb(0, d_mac);
+        rtnl_neigh *fdb_neigh = fdb_res.front();
+        int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(fdb_neigh);
+        auto vid = rtnl_neigh_get_vlan(fdb_neigh);
+        get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
+                            vid);
         l3_interfaces.emplace(l3_interface_id);
         continue;
       }
       // add neigh
-      rv = get_l3_interface_id(n, &l3_interface_id);
+      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id);
 
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__
