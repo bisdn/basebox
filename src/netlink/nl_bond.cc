@@ -68,7 +68,7 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
   uint32_t lag_id = nl->get_port_id(new_link);
 
   if (lag_id == 0) {
-    int master_id = rtnl_link_get_master(new_link);
+    int master_id = rtnl_link_get_ifindex(new_link);
     auto master = nl->get_link(master_id, AF_UNSPEC);
 
     if (master == nullptr) {
