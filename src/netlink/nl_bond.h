@@ -31,6 +31,7 @@ public:
    * @returns id > 0 if found, 0 if not found
    */
   uint32_t get_lag_id(rtnl_link *bond);
+  uint32_t get_lag_id(int ifindex);
   /**
    * returns the members of the lag
    *
