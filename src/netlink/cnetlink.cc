@@ -401,33 +401,23 @@ int cnetlink::get_port_id(rtnl_link *l) const {
     return 0;
   }
 
-  // resolve any br_link interfaces to their bridged interfaces
-  l = get_link(rtnl_link_get_ifindex(l), AF_UNSPEC);
-  if (l == nullptr) {
-    return 0;
-  }
-
-  if (rtnl_link_is_vlan(l)) {
+  if (rtnl_link_is_vlan(l))
     ifindex = rtnl_link_get_link(l);
-    // XXX FIXME vlan interface on bond not handled
-  } else if (rtnl_link_get_type(l) &&
-             (0 == strcmp(rtnl_link_get_type(l), "bond") ||
-              0 == strcmp(rtnl_link_get_type(l), "team"))) {
-    return bond->get_lag_id(l);
-  } else {
+  else
     ifindex = rtnl_link_get_ifindex(l);
-  }
 
-  return tap_man->get_port_id(ifindex);
+  return get_port_id(ifindex);
 }
 
 int cnetlink::get_port_id(int ifindex) const {
   if (ifindex == 0)
     return 0;
 
-  auto link = get_link_by_ifindex(ifindex);
+  int port_id = tap_man->get_port_id(ifindex);
+  if (port_id > 0)
+	  return port_id;
 
-  return get_port_id(link.get());
+  return bond->get_lag_id(ifindex);
 }
 
 int cnetlink::get_ifindex_by_port_id(uint32_t port_id) const {
