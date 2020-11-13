@@ -107,6 +107,8 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
 
     return 0;
   }
+
+  add_l3_address(new_link);
 #endif
 
   return 0;
