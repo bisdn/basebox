@@ -506,7 +506,7 @@ int nl_l3::get_l3_addrs(struct rtnl_link *link,
         auto *addr = (std::deque<rtnl_addr *> *)arg;
         addr->push_back(ADDR_CAST(o));
       },
-      &addresses);
+      addresses);
   return 0;
 }
 
