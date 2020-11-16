@@ -949,7 +949,8 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
   if (rv < 0)
     l3_interface_mapping.emplace(
         std::make_pair(l3_if_tuple, l3_interface(*l3_interface_id)));
-
+  
+  VLOG(1) << __FUNCTION__ << ": L3 IFACE " << *l3_interface_id;
   return rv;
 }
 
