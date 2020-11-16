@@ -198,7 +198,7 @@ void controller::handle_desc_stats_reply(
 
 void controller::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                                   rofl::openflow::cofmsg_packet_in &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
+  VLOG(3) << __FUNCTION__ << ": dp3=" << dpt << " on auxid=" << auxid;
   VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " received: " << std::endl
           << msg;
@@ -256,7 +256,7 @@ void controller::handle_error_message(rofl::crofdpt &dpt,
           << " pkt received: " << std::endl
           << msg;
 
-  LOG(WARNING) << __FUNCTION__ << ": not implemented";
+  LOG(WARNING) << __FUNCTION__ << msg;
 }
 
 void controller::handle_port_desc_stats_reply(
