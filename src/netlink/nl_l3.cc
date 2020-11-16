@@ -628,6 +628,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
     return -EINVAL;
 
   // AF_INET6
+  addr = rtnl_neigh_get_dst(n);
   auto p = nl_addr_alloc(16);
   nl_addr_parse("fe80::/10", AF_INET6, &p);
   std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
@@ -647,7 +648,6 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
     return rv;
   }
 
-  addr = rtnl_neigh_get_dst(n);
   if (family == AF_INET) {
     rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
     if (rv < 0) {
