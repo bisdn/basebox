@@ -572,7 +572,10 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
     }
     return rv;
   } else {
+    VLOG(1) << " HERE ";
+    get_l3_interface_id(ifindex, s_mac, d_mac, l3_interface_id);
 
+    VLOG(1) << " IFACE ID " << l3_interface_id;
   }
 
   // XXX TODO is this still needed?
