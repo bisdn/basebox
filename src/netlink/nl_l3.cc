@@ -1608,7 +1608,7 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
       }
     }
 
-    VLOG(2) << __FUNCTION__ << ": got l3_interface_id=" << l3_interface_id;
+    VLOG(1) << __FUNCTION__ << ": got l3_interface_id=" << l3_interface_id;
     l3_interfaces.emplace(l3_interface_id);
   }
 
