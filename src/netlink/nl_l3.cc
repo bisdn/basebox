@@ -918,7 +918,8 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
   auto l3_if_tuple = std::make_tuple(port_id, vid, src_mac, dst_mac);
   auto it = l3_interface_mapping.equal_range(l3_if_tuple);
 
-  if (it.first == l3_interface_mapping.end()) {
+  rv = get_l3_interface_id(ifindex, s_mac, d_mac, l3_interface_id);
+  if (rv < 0) {
     rv = sw->l3_egress_create(port_id, vid, src_mac, dst_mac, l3_interface_id);
 
     if (rv < 0) {
@@ -931,16 +932,6 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
 
     l3_interface_mapping.emplace(
         std::make_pair(l3_if_tuple, l3_interface(*l3_interface_id)));
-  } else {
-    for (auto i = it.first; i != it.second; ++i) {
-      if (i->first == l3_if_tuple) {
-        if (l3_interface_id)
-          *l3_interface_id = i->second.l3_interface_id;
-        i->second.refcnt++;
-        rv = 0;
-        break;
-      }
-    }
   }
 
   return rv;
