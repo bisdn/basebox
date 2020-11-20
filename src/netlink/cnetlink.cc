@@ -1285,6 +1285,22 @@ bool cnetlink::is_bridge_configured(rtnl_link *l) {
   return bridge->is_bridge_interface(l);
 }
 
+int cnetlink::set_bridge_port_vlan_tpid(rtnl_link *l) {
+  if (!bridge) {
+    return -EINVAL;
+  }
+
+  return bridge->set_vlan_proto(l);
+}
+
+int cnetlink::unset_bridge_port_vlan_tpid(rtnl_link *l) {
+  if (!bridge) {
+    return -EINVAL;
+  }
+
+  return bridge->delete_vlan_proto(l);
+}
+
 std::deque<rtnl_neigh *> cnetlink::search_fdb(uint16_t vid, nl_addr *lladdr) {
   std::deque<rtnl_link *> br_ports;
   get_bridge_ports(bridge->get_ifindex(), &br_ports);

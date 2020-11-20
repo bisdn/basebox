@@ -62,6 +62,8 @@ public:
   int get_ifindex() { return bridge ? rtnl_link_get_ifindex(bridge) : 0; }
 
   uint32_t get_vlan_proto();
+  int set_vlan_proto(rtnl_link *link);
+  int delete_vlan_proto(rtnl_link *link);
   uint32_t get_vlan_filtering();
 
   void clear_tpid_entries();
