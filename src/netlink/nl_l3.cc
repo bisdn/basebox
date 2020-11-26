@@ -251,18 +251,14 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   }
 
   if (auto members = nl->get_bond_members_by_lag(link); !members.empty()) {
-    VLOG(1) << __FUNCTION__ << ": BOND configuring slaves";
+    VLOG(2) << __FUNCTION__ << ": configuring VLAN entry for bond slave "
+            << link;
 
     for (auto mem : members) {
       auto _link = nl->get_link_by_ifindex(nl->get_ifindex_by_port_id(mem));
       bool tagged = !!rtnl_link_is_vlan(link);
 
       rv = vlan->add_vlan(_link.get(), vid, tagged, vrf_id);
-
-      auto addr = rtnl_link_get_addr(_link.get());
-      rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
-
-      rv = add_l3_termination(mem, vid, mac, AF_INET);
     }
   }
 
@@ -353,6 +349,18 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
                  << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+    }
+  }
+
+  if (auto members = nl->get_bond_members_by_lag(link); !members.empty()) {
+    VLOG(2) << __FUNCTION__ << ": configuring VLAN entry for bond slave "
+            << OBJ_CAST(link);
+
+    for (auto mem : members) {
+      auto _link = nl->get_link_by_ifindex(nl->get_ifindex_by_port_id(mem));
+      bool tagged = !!rtnl_link_is_vlan(link);
+
+      rv = vlan->add_vlan(_link.get(), vid, tagged);
     }
   }
 
@@ -483,6 +491,26 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   }
 
   return rv;
+}
+
+int nl_l3::get_l3_addrs(struct rtnl_link *link,
+                        std::deque<rtnl_addr *> *addresses) {
+  std::unique_ptr<rtnl_addr, decltype(&rtnl_addr_put)> filter(rtnl_addr_alloc(),
+                                                              rtnl_addr_put);
+
+  rtnl_addr_set_ifindex(filter.get(), rtnl_link_get_ifindex(link));
+
+  VLOG(1) << __FUNCTION__
+          << ": searching l3 addresses from interface=" << OBJ_CAST(link);
+
+  nl_cache_foreach_filter(
+      nl->get_cache(cnetlink::NL_ADDR_CACHE), OBJ_CAST(filter.get()),
+      [](struct nl_object *o, void *arg) {
+        auto *addr = (std::deque<rtnl_addr *> *)arg;
+        addr->push_back(ADDR_CAST(o));
+      },
+      addresses);
+  return 0;
 }
 
 int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
@@ -918,7 +946,8 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
   auto l3_if_tuple = std::make_tuple(port_id, vid, src_mac, dst_mac);
   auto it = l3_interface_mapping.equal_range(l3_if_tuple);
 
-  if (it.first == l3_interface_mapping.end()) {
+  rv = get_l3_interface_id(ifindex, s_mac, d_mac, l3_interface_id);
+  if (rv < 0) {
     rv = sw->l3_egress_create(port_id, vid, src_mac, dst_mac, l3_interface_id);
 
     if (rv < 0) {
@@ -931,16 +960,6 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
 
     l3_interface_mapping.emplace(
         std::make_pair(l3_if_tuple, l3_interface(*l3_interface_id)));
-  } else {
-    for (auto i = it.first; i != it.second; ++i) {
-      if (i->first == l3_if_tuple) {
-        if (l3_interface_id)
-          *l3_interface_id = i->second.l3_interface_id;
-        i->second.refcnt++;
-        rv = 0;
-        break;
-      }
-    }
   }
 
   return rv;

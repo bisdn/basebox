@@ -48,6 +48,8 @@ public:
   int update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new);
   int del_l3_neigh(struct rtnl_neigh *n);
 
+  int get_l3_addrs(struct rtnl_link *link, std::deque<rtnl_addr *> *addresses);
+
   int add_l3_route(struct rtnl_route *r);
   int update_l3_route(struct rtnl_route *r_old, struct rtnl_route *r_new);
   int del_l3_route(struct rtnl_route *r);
