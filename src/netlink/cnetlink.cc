@@ -321,6 +321,28 @@ std::set<uint32_t> cnetlink::get_bond_members_by_lag(rtnl_link *bond_link) {
   return bond->get_members(bond_link);
 }
 
+int cnetlink::get_l3_addrs(struct rtnl_link *link,
+                           std::deque<rtnl_addr *> *addresses) {
+  return l3->get_l3_addrs(link, addresses);
+}
+
+int cnetlink::add_l3_addr(struct rtnl_addr *a) {
+  switch (rtnl_addr_get_family(a)) {
+  case AF_INET:
+    return l3->add_l3_addr(a);
+  case AF_INET6:
+    return l3->add_l3_addr_v6(a);
+  default:
+    LOG(ERROR) << __FUNCTION__
+               << ": unsupported family=" << rtnl_addr_get_family(a)
+               << " for address=" << OBJ_CAST(a);
+    break;
+  }
+  return -EINVAL;
+}
+
+int cnetlink::del_l3_addr(struct rtnl_addr *a) { return l3->del_l3_addr(a); }
+
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
                                            struct nl_addr *a) const {
   assert(ifindex);
