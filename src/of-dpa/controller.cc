@@ -813,9 +813,12 @@ int controller::l2_multicast_group_add(uint32_t port, uint16_t vid,
 
     // find grp/vlan combination
     auto it = std::find(mc_groups.begin(), mc_groups.end(), n_mcast);
+    uint32_t group_id = (nbi::get_port_type(port) == nbi::port_type_lag)
+                            ? fm_driver.group_id_l2_trunk_interface(port, vid)
+                            : fm_driver.group_id_l2_interface(port, vid);
 
     if (it != mc_groups.end()) { // if mmac does exist, update
-      it->l2_interface.emplace(fm_driver.group_id_l2_interface(port, vid));
+      it->l2_interface.emplace(group_id);
       index = it->index;
     } else { // add
       for (auto i : mc_groups) {
@@ -827,7 +830,7 @@ int controller::l2_multicast_group_add(uint32_t port, uint16_t vid,
       }
 
       n_mcast.index = index;
-      n_mcast.l2_interface.emplace(fm_driver.group_id_l2_interface(port, vid));
+      n_mcast.l2_interface.emplace(group_id);
       it = mc_groups.insert(mc_groups.end(), n_mcast);
     }
 
@@ -866,9 +869,12 @@ int controller::l2_multicast_group_remove(uint32_t port, uint16_t vid,
       LOG(ERROR) << __FUNCTION__ << ": multicast group not found";
       return -EINVAL;
     }
+    uint32_t group_id = (nbi::get_port_type(port) == nbi::port_type_lag)
+                            ? fm_driver.group_id_l2_trunk_interface(port, vid)
+                            : fm_driver.group_id_l2_interface(port, vid);
 
     auto set_it =
-        it->l2_interface.find(fm_driver.group_id_l2_interface(port, vid));
+        it->l2_interface.find(group_id);
     if (set_it == it->l2_interface.end()) {
       LOG(ERROR) << __FUNCTION__ << ": interface group not found";
       return -EINVAL;
