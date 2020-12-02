@@ -233,6 +233,84 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged,
   return rv;
 }
 
+int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
+                             bool tagged, uint16_t vrf_id) {
+  int rv;
+  assert(swi);
+
+  VLOG(2) << __FUNCTION__ << ": add vid=" << vid << " pvid=" << pvid
+	  <<  " tagged=" << tagged << " vrf=" << vrf_id;
+
+  if (!is_vid_valid(vid)) {
+    LOG(ERROR) << __FUNCTION__ << ": invalid vid " << vid;
+    return -EINVAL;
+  }
+
+  uint32_t port_id = nl->get_port_id(link);
+
+  if (port_id == 0) {
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    return -EINVAL;
+  }
+
+  rv = swi->egress_bridge_port_vlan_add(port_id, vid, !tagged);
+  if (rv < 0)
+    return rv;
+
+  rv = swi->ingress_port_vlan_add(port_id, vid, pvid, vrf_id);
+  if (rv < 0) {
+     swi->egress_bridge_port_vlan_remove(port_id, vid);
+     return rv;
+  }
+
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_port_id(port_id);
+
+    for (auto mem : members) {
+       swi->egress_bridge_port_vlan_add(mem, vid, !tagged);
+       swi->ingress_port_vlan_add(mem, vid, pvid, vrf_id);
+    }
+
+    if (rv < 0) {
+      remove_bridge_vlan(link, vid, pvid, tagged, vrf_id);
+    }
+  }
+
+  return rv;
+}
+
+void nl_vlan::remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
+                                 bool tagged, uint16_t vrf_id) {
+  assert(swi);
+
+  VLOG(2) << __FUNCTION__ << ": remove vid=" << vid << " pvid=" << pvid
+	  <<  " tagged=" << tagged << " vrf=" << vrf_id;
+
+  if (!is_vid_valid(vid)) {
+    LOG(ERROR) << __FUNCTION__ << ": invalid vid " << vid;
+    return;
+  }
+
+  uint32_t port_id = nl->get_port_id(link);
+
+  if (port_id == 0) {
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    return;
+  }
+
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_port_id(port_id);
+
+    for (auto mem : members) {
+       swi->egress_bridge_port_vlan_remove(mem, vid);
+       swi->ingress_port_vlan_remove(mem, vid, pvid, vrf_id);
+    }
+  }
+
+  swi->egress_bridge_port_vlan_remove(port_id, vid);
+  swi->ingress_port_vlan_remove(port_id, vid, pvid, vrf_id);
+}
+
 uint16_t nl_vlan::get_vid(rtnl_link *link) {
   uint16_t vid = 0;
   uint32_t pport_id = nl->get_port_id(link);
