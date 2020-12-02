@@ -124,12 +124,40 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged,
 int nl_vlan::add_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
                                  uint16_t vrf_id) {
 
-  return swi->ingress_port_vlan_add(port_id, vid, !tagged, vrf_id);
+  int rv;
+
+  rv = swi->ingress_port_vlan_add(port_id, vid, !tagged, vrf_id);
+  if (rv < 0)
+    return rv;
+
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_port_id(port_id);
+
+    for (auto mem : members) {
+      rv = swi->ingress_port_vlan_add(mem, vid, !tagged, vrf_id);
+      if (rv < 0)
+        break;
+    }
+  }
+
+  if (rv < 0) {
+    (void)remove_ingress_vlan(port_id, vid, tagged, vrf_id);
+  }
+
+  return rv;
 }
 
 // remove vid at ingress
 int nl_vlan::remove_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
                                  uint16_t vrf_id) {
+
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_port_id(port_id);
+
+    for (auto mem : members) {
+      swi->ingress_port_vlan_remove(mem, vid, !tagged, vrf_id);
+    }
+  }
 
   return swi->ingress_port_vlan_remove(port_id, vid, !tagged, vrf_id);
 }
