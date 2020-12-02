@@ -32,14 +32,7 @@ uint32_t nl_bond::get_lag_id(rtnl_link *bond) {
     return 0;
   }
 
-  auto rv_lm = lag_members.find(it->second);
-  if (rv_lm == lag_members.end()) {
-    VLOG(1) << ": no members in lag " << OBJ_CAST(bond);
-    return 0;
-  }
-
-  VLOG(3) << __FUNCTION__ << ": found id=" << rv_lm->first;
-  return rv_lm->first;
+  return it->second;
 }
 
 std::set<uint32_t> nl_bond::get_members(rtnl_link *bond) {
