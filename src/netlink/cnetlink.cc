@@ -977,7 +977,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
         LOG(INFO) << __FUNCTION__ << ": using bridge "
                   << OBJ_CAST(br_link.get());
 
-        bridge = new nl_bridge(this->swi, tap_man, this, vxlan);
+        bridge = new nl_bridge(this->swi, tap_man, this, vlan, vxlan);
         bridge->set_bridge_interface(br_link.get());
         vxlan->register_bridge(bridge);
       }
