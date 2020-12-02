@@ -23,6 +23,7 @@
 #include "netlink-utils.h"
 #include "nl_bridge.h"
 #include "nl_output.h"
+#include "nl_vlan.h"
 #include "nl_vxlan.h"
 #include "sai.h"
 #include "tap_manager.h"
@@ -430,14 +431,8 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
               VLOG(3) << __FUNCTION__ << ": add vid=" << vid
                       << " on pport_no=" << pport_no
                       << " link: " << OBJ_CAST(_link);
-              sw->egress_bridge_port_vlan_add(pport_no, vid, egress_untagged);
-              sw->ingress_port_vlan_add(pport_no, vid,
-                                        new_br_vlan->pvid == vid);
-              // update bond slaves
-              for (auto mem : members) {
-                sw->egress_bridge_port_vlan_add(mem, vid, egress_untagged);
-                sw->ingress_port_vlan_add(mem, vid, new_br_vlan->pvid == vid);
-	      }
+	      vlan->add_bridge_vlan(_link, vid, new_br_vlan->pvid == vid,
+                                    !egress_untagged);
             }
           }
         } else {
@@ -453,12 +448,6 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
             VLOG(3) << __FUNCTION__ << ": remove vid=" << vid
                     << " on pport_no=" << pport_no
                     << " link: " << OBJ_CAST(_link);
-            // update bond slaves
-            for (auto mem : members) {
-              sw->ingress_port_vlan_remove(mem, vid, old_br_vlan->pvid == vid);
-            }
-            sw->ingress_port_vlan_remove(pport_no, vid,
-                                         old_br_vlan->pvid == vid);
 
             // delete all FM pointing to this group first
             sw->l2_addr_remove_all_in_vlan(pport_no, vid);
@@ -480,11 +469,8 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
                                     },
                                     nullptr);
 
-            // update bond slaves
-            for (auto mem : members) {
-              sw->egress_bridge_port_vlan_remove(mem, vid);
-            }
-            sw->egress_bridge_port_vlan_remove(pport_no, vid);
+            vlan->remove_bridge_vlan(_link, vid, new_br_vlan->pvid == vid,
+                                     !egress_untagged);
           }
         }
 
@@ -655,8 +641,8 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
       // delete access port and all bridging entries
       vxlan->delete_access_port(_br_port, pport_no, vid, true);
 
-      sw->egress_bridge_port_vlan_add(pport_no, vid, untagged);
-      sw->ingress_port_vlan_add(pport_no, vid, br_port_vlans->pvid == vid);
+      vlan->add_bridge_vlan(_br_port, vid, br_port_vlans->pvid == vid,
+		            !untagged);
 
       auto neighs = get_fdb_entries_of_port(_br_port, vid);
       for (auto n : neighs) {
