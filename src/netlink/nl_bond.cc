@@ -131,7 +131,6 @@ int nl_bond::add_lag(rtnl_link *bond) {
       swi->lag_remove(lag_id);
   }
 
-  add_l3_address(bond);
 #endif
 
   return rv;
@@ -258,6 +257,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   }
 
   // XXX FIXME check for vlan interfaces
+  add_l3_address(bond);
 #endif
 
   return rv;
