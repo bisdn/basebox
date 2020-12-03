@@ -257,6 +257,11 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   }
 
   // XXX FIXME check for vlan interfaces
+  // Adding an IP address here will ensure that every slave that is
+  // added will retry to add the address. It will not be written to the
+  // ASIC, but repeated messages will be seen
+  // This should be done in ::add_lag, but for currently unknown reasons
+  // this fails when the lag has no members yet. So keep it here for now.
   add_l3_address(bond);
 #endif
 
