@@ -1091,11 +1091,14 @@ int controller::l3_egress_create(uint32_t port, uint16_t vid,
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     // TODO unfiltered interface
-    dpt.send_group_mod_message(
-        rofl::cauxid(0),
-        fm_driver.enable_group_l3_unicast(
-            dpt.get_version(), _egress_interface_id, src_mac, dst_mac,
-            fm_driver.group_id_l2_interface(port, vid), false));
+    uint32_t group_id = (nbi::get_port_type(port) == nbi::port_type_lag)
+                            ? fm_driver.group_id_l2_trunk_interface(port, vid)
+                            : fm_driver.group_id_l2_interface(port, vid);
+
+    dpt.send_group_mod_message(rofl::cauxid(0),
+                               fm_driver.enable_group_l3_unicast(
+                                   dpt.get_version(), _egress_interface_id,
+                                   src_mac, dst_mac, group_id, false));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1126,11 +1129,15 @@ int controller::l3_egress_update(uint32_t port, uint16_t vid,
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     // TODO unfiltered interface
+
+    uint32_t group_id = (nbi::get_port_type(port) == nbi::port_type_lag)
+                            ? fm_driver.group_id_l2_trunk_interface(port, vid)
+                            : fm_driver.group_id_l2_interface(port, vid);
+
     dpt.send_group_mod_message(
         rofl::cauxid(0),
-        fm_driver.enable_group_l3_unicast(
-            dpt.get_version(), *l3_interface_id, src_mac, dst_mac,
-            fm_driver.group_id_l2_interface(port, vid), true));
+        fm_driver.enable_group_l3_unicast(dpt.get_version(), *l3_interface_id,
+                                          src_mac, dst_mac, group_id, true));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;

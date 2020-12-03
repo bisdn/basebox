@@ -32,14 +32,7 @@ uint32_t nl_bond::get_lag_id(rtnl_link *bond) {
     return 0;
   }
 
-  auto rv_lm = lag_members.find(it->second);
-  if (rv_lm == lag_members.end()) {
-    VLOG(1) << ": no members in lag " << OBJ_CAST(bond);
-    return 0;
-  }
-
-  VLOG(3) << __FUNCTION__ << ": found id=" << rv_lm->first;
-  return rv_lm->first;
+  return it->second;
 }
 
 std::set<uint32_t> nl_bond::get_members(rtnl_link *bond) {
@@ -68,6 +61,14 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
   uint8_t o_mode, n_mode;
   uint32_t lag_id = nl->get_port_id(new_link);
 
+  if (lag_id == 0) {
+    rv = add_lag(new_link);
+    if (rv < 0)
+      return rv;
+
+    lag_id = rv;
+  }
+
   rv = rtnl_link_bond_get_mode(old_link, &o_mode);
   if (rv < 0) {
     VLOG(1) << __FUNCTION__ << ": failed to get mode for "
@@ -92,6 +93,8 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
 
     return 0;
   }
+
+  add_l3_address(new_link);
 #endif
 
   return 0;
@@ -127,6 +130,7 @@ int nl_bond::add_lag(rtnl_link *bond) {
     if (lag_id != rv_emp.first->second)
       swi->lag_remove(lag_id);
   }
+
 #endif
 
   return rv;
@@ -253,6 +257,12 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   }
 
   // XXX FIXME check for vlan interfaces
+  // Adding an IP address here will ensure that every slave that is
+  // added will retry to add the address. It will not be written to the
+  // ASIC, but repeated messages will be seen
+  // This should be done in ::add_lag, but for currently unknown reasons
+  // this fails when the lag has no members yet. So keep it here for now.
+  add_l3_address(bond);
 #endif
 
   return rv;
@@ -303,6 +313,11 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
                  << OBJ_CAST(link);
   }
 
+  if (lm_rv->second.empty())
+    remove_l3_address(bond);
+
+  if (nl->is_bridge_interface(bond))
+    swi->ofdpa_stg_state_port_set(port_id, "forward");
 #endif
 
   return rv;
@@ -341,6 +356,48 @@ int nl_bond::update_lag_member(rtnl_link *old_slave, rtnl_link *new_slave) {
                                   new_state == 0);
 #endif
   return 0;
+}
+
+int nl_bond::add_l3_address(rtnl_link *link) {
+  int rv = 0;
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
+  assert(link);
+
+  std::deque<rtnl_addr *> addresses;
+  nl->get_l3_addrs(link, &addresses);
+
+  for (auto i : addresses) {
+    LOG(INFO) << __FUNCTION__ << ": adding address=" << OBJ_CAST(i);
+
+    rv = nl->add_l3_addr(i);
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address " << OBJ_CAST(i)
+                 << " to " << OBJ_CAST(link);
+  }
+  LOG(INFO) << __FUNCTION__ << ": added l3 addresses to bond "
+            << OBJ_CAST(link);
+
+#endif
+  return rv;
+}
+
+int nl_bond::remove_l3_address(rtnl_link *link) {
+  int rv = 0;
+#ifdef HAVE_RTNL_LINK_BOND_GET_MODE
+  assert(link);
+
+  std::deque<rtnl_addr *> addresses;
+  nl->get_l3_addrs(link, &addresses);
+
+  for (auto i : addresses) {
+    rv = nl->del_l3_addr(i);
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 address from "
+                 << OBJ_CAST(link);
+  }
+
+#endif
+  return rv;
 }
 
 } // namespace basebox
