@@ -26,9 +26,13 @@ void nl_bond::clear() noexcept {
 uint32_t nl_bond::get_lag_id(rtnl_link *bond) {
   assert(bond);
 
-  auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
+  return get_lag_id(rtnl_link_get_ifindex(bond));
+}
+
+uint32_t nl_bond::get_lag_id(int ifindex) {
+  auto it = ifi2lag.find(ifindex);
   if (it == ifi2lag.end()) {
-    VLOG(1) << __FUNCTION__ << ": lag_id not found of lag " << OBJ_CAST(bond);
+    VLOG(1) << __FUNCTION__ << ": lag_id not found for if=" << ifindex;
     return 0;
   }
 
@@ -47,6 +51,17 @@ std::set<uint32_t> nl_bond::get_members(rtnl_link *bond) {
   if (mem_it == lag_members.end()) {
     LOG(WARNING) << __FUNCTION__ << ": lag does not exist for "
                  << OBJ_CAST(bond);
+    return {};
+  }
+
+  return mem_it->second;
+}
+
+std::set<uint32_t> nl_bond::get_members_by_port_id(uint32_t port_id) {
+  auto mem_it = lag_members.find(port_id);
+  if (mem_it == lag_members.end()) {
+    LOG(WARNING) << __FUNCTION__ << ": lag does not exist for port_id="
+	         << port_id;
     return {};
   }
 
@@ -254,6 +269,14 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
       LOG(ERROR) << __FUNCTION__
                  << ": failed to set egress TPID entry for port "
                  << OBJ_CAST(link);
+  } else {
+    std::deque<uint16_t> vlans;
+
+    nl->get_vlans(rtnl_link_get_ifindex(bond), &vlans);
+    for (auto vid : vlans) {
+      swi->ingress_port_vlan_add(port_id, vid, false);
+      swi->egress_port_vlan_add(port_id, vid, false);
+    }
   }
 
   // XXX FIXME check for vlan interfaces
@@ -311,13 +334,22 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
       LOG(ERROR) << __FUNCTION__
                  << ": failed to set egress TPID entry for port "
                  << OBJ_CAST(link);
-  }
+  } else {
+    std::deque<uint16_t> vlans;
+
+    nl->get_vlans(rtnl_link_get_ifindex(bond), &vlans);
 
   if (lm_rv->second.empty())
     remove_l3_address(bond);
 
   if (nl->is_bridge_interface(bond))
     swi->ofdpa_stg_state_port_set(port_id, "forward");
+
+    for (auto vid : vlans) {
+      swi->ingress_port_vlan_remove(port_id, vid, false);
+      swi->egress_port_vlan_remove(port_id, vid);
+    }
+  }
 #endif
 
   return rv;

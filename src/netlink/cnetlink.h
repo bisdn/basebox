@@ -48,6 +48,9 @@ public:
   void get_bridge_ports(int br_ifindex,
                         std::deque<rtnl_link *> *link_list) const noexcept;
   std::set<uint32_t> get_bond_members_by_lag(rtnl_link *bond_link);
+  std::set<uint32_t> get_bond_members_by_port_id(uint32_t port_id);
+
+  void get_vlans(int ifindex, std::deque<uint16_t> *vid_list) const noexcept;
 
   /**
    * @return rtnl_neigh* which needs to be freed using rtnl_neigh_put

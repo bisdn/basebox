@@ -326,6 +326,10 @@ int cnetlink::get_l3_addrs(struct rtnl_link *link,
   return l3->get_l3_addrs(link, addresses);
 }
 
+std::set<uint32_t> cnetlink::get_bond_members_by_port_id(uint32_t port_id) {
+  return bond->get_members_by_port_id(port_id);
+}
+
 int cnetlink::add_l3_addr(struct rtnl_addr *a) {
   switch (rtnl_addr_get_family(a)) {
   case AF_INET:
@@ -342,6 +346,33 @@ int cnetlink::add_l3_addr(struct rtnl_addr *a) {
 }
 
 int cnetlink::del_l3_addr(struct rtnl_addr *a) { return l3->del_l3_addr(a); }
+
+void cnetlink::get_vlans(int ifindex, std::deque<uint16_t> *vlan_list) const
+    noexcept {
+  assert(vlan_list);
+
+  std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> filter(rtnl_link_alloc(),
+                                                              &rtnl_link_put);
+  assert(filter && "out of memory");
+
+  rtnl_link_set_family(filter.get(), AF_UNSPEC);
+  rtnl_link_set_type(filter.get(), "vlan");
+  rtnl_link_set_link(filter.get(), ifindex);
+
+  nl_cache_foreach_filter(caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
+                          [](struct nl_object *obj, void *arg) {
+                            assert(arg);
+                            auto *list =
+                                static_cast<std::deque<uint16_t> *>(arg);
+			    uint16_t vid;
+
+                            VLOG(3) << __FUNCTION__ << ": found vlan interface "
+                                    << obj;
+			    vid = rtnl_link_vlan_get_id(LINK_CAST(obj));
+                            list->push_back(vid);
+                          },
+                          vlan_list);
+}
 
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
                                            struct nl_addr *a) const {
@@ -401,33 +432,23 @@ int cnetlink::get_port_id(rtnl_link *l) const {
     return 0;
   }
 
-  // resolve any br_link interfaces to their bridged interfaces
-  l = get_link(rtnl_link_get_ifindex(l), AF_UNSPEC);
-  if (l == nullptr) {
-    return 0;
-  }
-
-  if (rtnl_link_is_vlan(l)) {
+  if (rtnl_link_is_vlan(l))
     ifindex = rtnl_link_get_link(l);
-    // XXX FIXME vlan interface on bond not handled
-  } else if (rtnl_link_get_type(l) &&
-             (0 == strcmp(rtnl_link_get_type(l), "bond") ||
-              0 == strcmp(rtnl_link_get_type(l), "team"))) {
-    return bond->get_lag_id(l);
-  } else {
+  else
     ifindex = rtnl_link_get_ifindex(l);
-  }
 
-  return tap_man->get_port_id(ifindex);
+  return get_port_id(ifindex);
 }
 
 int cnetlink::get_port_id(int ifindex) const {
   if (ifindex == 0)
     return 0;
 
-  auto link = get_link_by_ifindex(ifindex);
+  int port_id = tap_man->get_port_id(ifindex);
+  if (port_id > 0)
+	  return port_id;
 
-  return get_port_id(link.get());
+  return bond->get_lag_id(ifindex);
 }
 
 int cnetlink::get_ifindex_by_port_id(uint32_t port_id) const {
@@ -956,7 +977,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
         LOG(INFO) << __FUNCTION__ << ": using bridge "
                   << OBJ_CAST(br_link.get());
 
-        bridge = new nl_bridge(this->swi, tap_man, this, vxlan);
+        bridge = new nl_bridge(this->swi, tap_man, this, vlan, vxlan);
         bridge->set_bridge_interface(br_link.get());
         vxlan->register_bridge(bridge);
       }

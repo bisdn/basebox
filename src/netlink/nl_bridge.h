@@ -30,6 +30,7 @@ class caddress_ll;
 namespace basebox {
 
 class cnetlink;
+class nl_vlan;
 class nl_vxlan;
 class switch_interface;
 class tap_manager;
@@ -38,7 +39,8 @@ struct packet;
 class nl_bridge {
 public:
   nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
-            cnetlink *nl, std::shared_ptr<nl_vxlan> vxlan);
+            cnetlink *nl, std::shared_ptr<nl_vlan> vlan,
+            std::shared_ptr<nl_vxlan> vxlan);
 
   virtual ~nl_bridge();
 
@@ -94,6 +96,7 @@ private:
   switch_interface *sw;
   std::shared_ptr<tap_manager> tap_man;
   cnetlink *nl;
+  std::shared_ptr<nl_vlan> vlan;
   std::shared_ptr<nl_vxlan> vxlan;
   std::unique_ptr<nl_cache, decltype(&nl_cache_free)> l2_cache;
 
