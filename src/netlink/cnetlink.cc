@@ -17,6 +17,7 @@
 #include <netlink/route/link.h>
 #include <netlink/route/link/bonding.h>
 #include <netlink/route/link/vlan.h>
+#include <netlink/route/link/vrf.h>
 #include <netlink/route/link/vxlan.h>
 #ifdef HAVE_NETLINK_ROUTE_MDB_H
 #include <netlink/route/mdb.h>
@@ -454,6 +455,32 @@ int cnetlink::get_port_id(int ifindex) const {
 int cnetlink::get_ifindex_by_port_id(uint32_t port_id) const {
 
     return tap_man->get_ifindex(port_id);
+}
+
+uint16_t cnetlink::get_vrf_table_id(rtnl_link *link) {
+  int rv = 0;
+
+  auto vrf = get_link_by_ifindex(rtnl_link_get_master(link));
+  if (vrf.get() && !rtnl_link_is_vrf(link) && rtnl_link_is_vrf(vrf.get())) {
+    link = vrf.get();
+  } else {
+    VLOG(2) << __FUNCTION__ << ": link=" << OBJ_CAST(link)
+            << " is not a VRF interface ";
+    return 0;
+  }
+
+  uint32_t vrf_id;
+  rv = rtnl_link_vrf_get_tableid(link, &vrf_id);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__
+               << ": error fetching vrf table id for link=" << OBJ_CAST(link);
+    return 0;
+  }
+
+  VLOG(1) << __FUNCTION__ << ": table id=" << vrf_id
+          << " vrf=" << rtnl_link_get_name(link);
+  return vrf_id;
 }
 
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
@@ -1075,7 +1102,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
               << rtnl_link_get_name(new_link) << " to vrf "
               << OBJ_CAST(
                      get_link_by_ifindex(rtnl_link_get_master(new_link)).get());
-    l3->vrf_attach(old_link, new_link);
+    vlan->vrf_attach(old_link, new_link);
     break;
   case LT_VRF_SLAVE:
     if (lt_new != LT_VLAN) {

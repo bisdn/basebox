@@ -150,8 +150,8 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
   bool is_bridge = rtnl_link_is_bridge(link); // XXX TODO svi as well?
   int ifindex = 0;
-  uint32_t vrf_id = 0; // real size is uint16
   uint16_t vid = vlan->get_vid(link);
+  uint32_t vrf_id = vlan->get_vrf_id(vid, link);
 
   // checks if the bridge is the configured one
   if (is_bridge && !nl->is_bridge_configured(link)) {
@@ -165,11 +165,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
       rtnl_link_get_addr(nl->get_link(master_id, AF_BRIDGE))) {
     VLOG(1) << __FUNCTION__ << ": ignoring address on " << OBJ_CAST(link);
     return -EINVAL;
-  }
-
-  if (auto vrf = nl->get_link_by_ifindex(master_id);
-      master_id && !is_bridge && rtnl_link_is_vrf(vrf.get())) {
-    rtnl_link_vrf_get_tableid(vrf.get(), &vrf_id);
   }
 
   // XXX TODO split this into several functions
@@ -243,7 +238,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     assert(ifindex);
     // add vlan
     bool tagged = !!rtnl_link_is_vlan(link);
-    rv = vlan->add_vlan(link, vid, tagged, vrf_id);
+    rv = vlan->add_vlan(link, vid, tagged);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
                  << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
@@ -383,7 +378,8 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   int rv = 0;
   int family = rtnl_addr_get_family(a);
   struct rtnl_link *link = rtnl_addr_get_link(a);
-  uint16_t vrf_id = get_vrf_table_id(link);
+  uint16_t vid = vlan->get_vid(link);
+  uint32_t vrf_id = vlan->get_vrf_id(vid, link);
 
   if (a == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": addr can't be null";
@@ -449,7 +445,6 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
 
   addr = rtnl_link_get_addr(link);
   rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
-  uint16_t vid = vlan->get_vid(link);
 
   rv = del_l3_termination(port_id, vid, mac, family);
   if (rv < 0) {
@@ -523,7 +518,8 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
     // the egress entries for the Bridge SVIs are the ports
     // attached to the bridge
     auto lladdr = rtnl_neigh_get_lladdr(n);
-    *vrf_id = get_vrf_table_id(link.get());
+    uint16_t vid = vlan->get_vid(link.get());
+    *vrf_id = vlan->get_vrf_id(vid, link.get());
 
     auto fdb_neigh = nl->search_fdb(vid, lladdr);
     for (auto neigh : fdb_neigh) {
@@ -533,7 +529,7 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
       auto neigh_ifindex = rtnl_neigh_get_ifindex(neigh);
       auto neigh_link = nl->get_link_by_ifindex(neigh_ifindex);
 
-      rv = vlan->add_vlan(neigh_link.get(), vid, tagged, *vrf_id);
+      rv = vlan->add_vlan(neigh_link.get(), vid, tagged);
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__
                    << ": failed to setup vid ingress vid=" << vid << " on link "
@@ -1732,83 +1728,6 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   }
 
   return rv;
-}
-
-// Modifying the previously existing entries on the VLAN table requires
-// removing the existing entry, since OFDPA requires that the VLAN must be
-// configured with the same VRF
-void nl_l3::vrf_attach(rtnl_link *old_link, rtnl_link *new_link) {
-  assert(link);
-
-  uint16_t vid = vlan->get_vid(old_link);
-
-  uint16_t vrf_id = get_vrf_table_id(new_link);
-  // get bridge ports, and rewrite VLAN with the
-  // correct VRF
-  auto fdb_entries = nl->search_fdb(vid, nullptr);
-  for (auto entry : fdb_entries) {
-    auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
-
-    vlan->remove_ingress_vlan(nl->get_port_id(link.get()), vid, true);
-  }
-
-  for (auto entry : fdb_entries) {
-    auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
-
-    vlan->add_ingress_vlan(nl->get_port_id(link.get()), vid, true, vrf_id);
-  }
-}
-
-// Modifying the previously existing entries on the VLAN table requires
-// removing the existing entry, since OFDPA requires that the VLAN must be
-// configured with the same VRF
-void nl_l3::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
-  assert(link);
-  if (!nl->is_bridge_configured(old_link))
-    return;
-
-  uint16_t vid = vlan->get_vid(new_link);
-
-  uint16_t vrf_id = get_vrf_table_id(old_link);
-
-  auto fdb_entries = nl->search_fdb(vid, nullptr);
-  for (auto entry : fdb_entries) {
-    auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
-
-    vlan->remove_ingress_vlan(nl->get_port_id(link.get()), vid, true, vrf_id);
-  }
-
-  for (auto entry : fdb_entries) {
-    auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
-
-    vlan->add_ingress_vlan(nl->get_port_id(link.get()), vid, true);
-  }
-}
-
-uint16_t nl_l3::get_vrf_table_id(rtnl_link *link) {
-  int rv = 0;
-
-  auto vrf = nl->get_link_by_ifindex(rtnl_link_get_master(link));
-  if (vrf.get() && !rtnl_link_is_vrf(link) && rtnl_link_is_vrf(vrf.get())) {
-    link = vrf.get();
-  } else {
-    VLOG(2) << __FUNCTION__ << ": link=" << OBJ_CAST(link)
-            << " is not a VRF interface ";
-    return 0;
-  }
-
-  uint32_t vrf_id;
-  rv = rtnl_link_vrf_get_tableid(link, &vrf_id);
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": error fetching vrf table id for link=" << OBJ_CAST(link);
-    return 0;
-  }
-
-  VLOG(3) << __FUNCTION__ << ": table id=" << vrf_id
-          << " vrf=" << rtnl_link_get_name(link);
-  return vrf_id;
 }
 
 } // namespace basebox

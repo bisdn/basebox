@@ -21,17 +21,12 @@ public:
 
   void register_switch_interface(switch_interface *swi) { this->swi = swi; }
 
-  int add_vlan(rtnl_link *link, uint16_t vid, bool tagged, uint16_t vrf_id = 0);
-  int remove_vlan(rtnl_link *link, uint16_t vid, bool tagged,
-                  uint16_t vrf_id = 0);
-  int add_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
-                          uint16_t vrf_id = 0);
-  int remove_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
-                          uint16_t vrf_id = 0);
-  int add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,  bool tagged,
-                      uint16_t vrf_id = 0);
-  void remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,  bool tagged,
-                          uint16_t vrf_id = 0);
+  int add_vlan(rtnl_link *link, uint16_t vid, bool tagged);
+  int remove_vlan(rtnl_link *link, uint16_t vid, bool tagged);
+  int add_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged, uint16_t vrf_id=0);
+  int remove_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged, uint16_t vrf_id=0);
+  int add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,  bool tagged);
+  void remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,  bool tagged);
 
   uint16_t get_vid(rtnl_link *link);
 
@@ -41,6 +36,10 @@ public:
     return true;
   }
 
+  void vrf_attach(rtnl_link *old_link, rtnl_link *new_link);
+  void vrf_detach(rtnl_link *old_link, rtnl_link *new_link);
+  uint16_t get_vrf_id(uint16_t vid, rtnl_link *link);
+
 private:
   static const uint16_t vid_low = 1;
   static const uint16_t vid_high = 0xfff;
@@ -48,6 +47,8 @@ private:
 
   // ifindex - vlan - refcount
   std::map<std::pair<uint32_t, uint16_t>, uint32_t> port_vlan;
+  // vlan - vrf
+  std::map<uint16_t, uint16_t> vlan_vrf;
 
   switch_interface *swi;
   cnetlink *nl;
