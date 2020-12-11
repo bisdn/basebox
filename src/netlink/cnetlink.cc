@@ -1105,13 +1105,16 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     vlan->vrf_attach(old_link, new_link);
     break;
   case LT_VRF_SLAVE:
-    if (lt_new != LT_VLAN) {
-      VLOG(1) << __FUNCTION__ << ": ignoring update of VRF SLAVE interface";
-      return;
+    if (lt_new == LT_VLAN) {
+      LOG(INFO) << __FUNCTION__ << ": freed vrf slave interface "
+                << OBJ_CAST(old_link);
+      vlan->vrf_detach(old_link, new_link);
+    } else if (lt_new == LT_VRF_SLAVE) {
+      LOG(INFO) << __FUNCTION__ << ": link updated " << OBJ_CAST(new_link);
+      vlan->vrf_attach(old_link, new_link);
     }
-    LOG(INFO) << __FUNCTION__ << ": freed vrf slave interface "
-              << OBJ_CAST(old_link);
-    l3->vrf_detach(old_link, new_link);
+    // TODO handle LT_TAP/LT_BOND, currently unimplemented
+    // happens when a bond/tap interface enslaved directly to a VRF and you set nomaster
     break;
   case LT_TUN:
     if (lt_new == LT_BOND_SLAVE) {
