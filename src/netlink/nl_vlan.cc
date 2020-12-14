@@ -358,12 +358,7 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
 uint16_t nl_vlan::get_vrf_id(uint16_t vid, rtnl_link *link) {
   auto vlanmap = vlan_vrf.find(vid);
   if (vlanmap == vlan_vrf.end()) {
-    auto id = nl->get_vrf_table_id(link);
-    if (id <= 0) // not found, doesnt exist
-      return 0;
-
-    vlan_vrf.insert(std::make_pair(vid, id));
-    return id;
+    return 0;
   }
 
   return vlanmap->second;
@@ -371,10 +366,17 @@ uint16_t nl_vlan::get_vrf_id(uint16_t vid, rtnl_link *link) {
 
 void nl_vlan::vrf_attach(rtnl_link *old_link, rtnl_link *new_link) {
   uint16_t vid = get_vid(new_link);
-  if(vid == 0)
+  if (vid == 0)
     return;
 
   uint16_t vrf = get_vrf_id(vid, new_link);
+  if (vrf == 0) {
+    vrf = nl->get_vrf_table_id(new_link);
+    if (vrf <= 0) // not found, doesnt exist
+      VLOG(1) << __FUNCTION__ << ": did not find correct VRF";
+
+    vlan_vrf.insert(std::make_pair(vid, vrf));
+  }
 
   LOG(INFO) << __FUNCTION__ << ": map vlan=" << vid << " vrf=" << vrf;
 
