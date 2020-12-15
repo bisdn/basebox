@@ -398,16 +398,22 @@ void nl_vlan::vrf_attach(rtnl_link *old_link, rtnl_link *new_link) {
 
 void nl_vlan::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
   uint16_t vid = get_vid(new_link);
-  auto vrf = get_vrf_id(vid, old_link);
-  if (vrf == 0)
+  if (vid == 0)
     return;
+
+  auto vrf = vlan_vrf.find(vid);
+  if (vrf == vlan_vrf.end()) {
+    return;
+  }
+
+  vlan_vrf.erase(vrf);
 
   // delete old entries
   auto fdb_entries = nl->search_fdb(vid, nullptr);
   for (auto entry : fdb_entries) {
     auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
 
-    remove_ingress_vlan(nl->get_port_id(link.get()), vid, true, vrf);
+    remove_ingress_vlan(nl->get_port_id(link.get()), vid, true, vrf->second);
   }
 
   // add updated entries
