@@ -408,8 +408,6 @@ void nl_vlan::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
     return;
   }
 
-  vlan_vrf.erase(vrf);
-
   // delete old entries
   auto fdb_entries = nl->search_fdb(vid, nullptr);
   for (auto entry : fdb_entries) {
@@ -426,6 +424,8 @@ void nl_vlan::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
   }
 
   VLOG(1) << __FUNCTION__ << ": detached=" << OBJ_CAST(new_link) << " to VRF id=" << vrf->second;
+  vlan_vrf.erase(vrf);
+
 }
 
 } // namespace basebox
