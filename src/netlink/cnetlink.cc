@@ -17,6 +17,7 @@
 #include <netlink/route/link.h>
 #include <netlink/route/link/bonding.h>
 #include <netlink/route/link/vlan.h>
+#include <netlink/route/link/vrf.h>
 #include <netlink/route/link/vxlan.h>
 #ifdef HAVE_NETLINK_ROUTE_MDB_H
 #include <netlink/route/mdb.h>
@@ -454,6 +455,32 @@ int cnetlink::get_port_id(int ifindex) const {
 int cnetlink::get_ifindex_by_port_id(uint32_t port_id) const {
 
     return tap_man->get_ifindex(port_id);
+}
+
+uint16_t cnetlink::get_vrf_table_id(rtnl_link *link) {
+  int rv = 0;
+
+  auto vrf = get_link_by_ifindex(rtnl_link_get_master(link));
+  if (vrf.get() && !rtnl_link_is_vrf(link) && rtnl_link_is_vrf(vrf.get())) {
+    link = vrf.get();
+  } else {
+    VLOG(2) << __FUNCTION__ << ": link=" << OBJ_CAST(link)
+            << " is not a VRF interface ";
+    return 0;
+  }
+
+  uint32_t vrf_id;
+  rv = rtnl_link_vrf_get_tableid(link, &vrf_id);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__
+               << ": error fetching vrf table id for link=" << OBJ_CAST(link);
+    return 0;
+  }
+
+  VLOG(1) << __FUNCTION__ << ": table id=" << vrf_id
+          << " vrf=" << rtnl_link_get_name(link);
+  return vrf_id;
 }
 
 void cnetlink::handle_wakeup(rofl::cthread &thread) {
@@ -1066,7 +1093,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       }
     }
     break;
-  case LT_VLAN:
+  case LT_VLAN: {
     if (lt_new != LT_VRF_SLAVE) {
       VLOG(1) << __FUNCTION__ << ": ignoring update of VLAN interface";
       break;
@@ -1075,17 +1102,37 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
               << rtnl_link_get_name(new_link) << " to vrf "
               << OBJ_CAST(
                      get_link_by_ifindex(rtnl_link_get_master(new_link)).get());
-    l3->vrf_attach(old_link, new_link);
-    break;
-  case LT_VRF_SLAVE:
-    if (lt_new != LT_VLAN) {
-      VLOG(1) << __FUNCTION__ << ": ignoring update of VRF SLAVE interface";
-      return;
+    // Lookup l3 addresses to delete
+    // We can delete the addresses on the interface because we will later receive a
+    // notification readding the addresses, that time with the correct VRF
+    std::deque<rtnl_addr *> addresses;
+    get_l3_addrs(old_link, &addresses);
+    for (auto i : addresses)
+      l3->del_l3_addr(i);
+
+    vlan->vrf_attach(old_link, new_link);
+    } break;
+  case LT_VRF_SLAVE: {
+    if (lt_new == LT_VLAN) {
+      LOG(INFO) << __FUNCTION__ << ": freed vrf slave interface "
+                << OBJ_CAST(old_link);
+
+      // Lookup l3 addresses to delete
+      // We can delete the addresses on the interface because we will later receive a
+      // notification readding the addresses, that time with the correct VRF
+      std::deque<rtnl_addr *> addresses;
+      get_l3_addrs(old_link, &addresses);
+      // delete l3 addresses no longer associated with vrf 
+      for (auto i: addresses)
+          l3->del_l3_addr(i);
+      vlan->vrf_detach(old_link, new_link);
+    } else if (lt_new == LT_VRF_SLAVE) {
+      LOG(INFO) << __FUNCTION__ << ": link updated " << OBJ_CAST(new_link);
+      vlan->vrf_attach(old_link, new_link);
     }
-    LOG(INFO) << __FUNCTION__ << ": freed vrf slave interface "
-              << OBJ_CAST(old_link);
-    l3->vrf_detach(old_link, new_link);
-    break;
+    // TODO handle LT_TAP/LT_BOND, currently unimplemented
+    // happens when a bond/tap interface enslaved directly to a VRF and you set nomaster
+    } break;
   case LT_TUN:
     if (lt_new == LT_BOND_SLAVE) {
       // XXX link enslaved

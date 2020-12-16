@@ -52,6 +52,7 @@ public:
 
   void get_vlans(int ifindex, std::deque<uint16_t> *vid_list) const noexcept;
 
+  uint16_t get_vrf_table_id(rtnl_link *link);
   /**
    * @return rtnl_neigh* which needs to be freed using rtnl_neigh_put
    */

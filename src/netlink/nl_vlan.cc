@@ -7,6 +7,8 @@
 #include <glog/logging.h>
 #include <netlink/route/link.h>
 #include <netlink/route/link/vlan.h>
+#include <netlink/route/link/vrf.h>
+#include <netlink/route/neighbour.h>
 
 #include "cnetlink.h"
 #include "nl_output.h"
@@ -17,16 +19,18 @@ namespace basebox {
 
 nl_vlan::nl_vlan(cnetlink *nl) : swi(nullptr), nl(nl) {}
 
-int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged,
-                      uint16_t vrf_id) {
+int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   assert(swi);
 
-  VLOG(2) << __FUNCTION__ << ": add vid=" << vid << " tagged=" << tagged
-          << " vrf=" << vrf_id;
   if (!is_vid_valid(vid)) {
     LOG(ERROR) << __FUNCTION__ << ": invalid vid " << vid;
     return -EINVAL;
   }
+
+  uint16_t vrf_id = get_vrf_id(vid, link);
+
+  VLOG(2) << __FUNCTION__ << ": add vid=" << vid << " tagged=" << tagged
+          << " vrf=" << vrf_id;
 
   uint32_t port_id = nl->get_port_id(link);
 
@@ -162,9 +166,10 @@ int nl_vlan::remove_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
   return swi->ingress_port_vlan_remove(port_id, vid, !tagged, vrf_id);
 }
 
-int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged,
-                         uint16_t vrf_id) {
+int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   assert(swi);
+
+  uint16_t vrf_id = get_vrf_id(vid, link);
 
   if (!is_vid_valid(vid)) {
     LOG(ERROR) << __FUNCTION__ << ": invalid vid " << vid;
@@ -234,9 +239,11 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged,
 }
 
 int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
-                             bool tagged, uint16_t vrf_id) {
+                             bool tagged) {
   int rv;
   assert(swi);
+
+  uint16_t vrf_id = get_vrf_id(vid, link);
 
   VLOG(2) << __FUNCTION__ << ": add vid=" << vid << " pvid=" << pvid
 	  <<  " tagged=" << tagged << " vrf=" << vrf_id;
@@ -272,7 +279,7 @@ int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
     }
 
     if (rv < 0) {
-      remove_bridge_vlan(link, vid, pvid, tagged, vrf_id);
+      remove_bridge_vlan(link, vid, pvid, tagged);
     }
   }
 
@@ -280,8 +287,10 @@ int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
 }
 
 void nl_vlan::remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
-                                 bool tagged, uint16_t vrf_id) {
+                                 bool tagged) {
   assert(swi);
+
+  uint16_t vrf_id = get_vrf_id(vid, link);
 
   VLOG(2) << __FUNCTION__ << ": remove vid=" << vid << " pvid=" << pvid
 	  <<  " tagged=" << tagged << " vrf=" << vrf_id;
@@ -344,6 +353,79 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
   VLOG(2) << __FUNCTION__ << ": vid=" << vid << " interface=" << OBJ_CAST(link);
 
   return vid;
+}
+
+uint16_t nl_vlan::get_vrf_id(uint16_t vid, rtnl_link *link) {
+  auto vlanmap = vlan_vrf.find(vid);
+  if (vlanmap == vlan_vrf.end()) {
+    return 0;
+  }
+
+  return vlanmap->second;
+}
+
+void nl_vlan::vrf_attach(rtnl_link *old_link, rtnl_link *new_link) {
+  uint16_t vid = get_vid(new_link);
+  if (vid == 0)
+    return;
+
+  uint16_t vrf = get_vrf_id(vid, new_link);
+  if (vrf == 0) {
+    vrf = nl->get_vrf_table_id(new_link);
+    if (vrf <= 0) // not found, doesnt exist
+      VLOG(1) << __FUNCTION__ << ": did not find correct VRF";
+
+    vlan_vrf.insert(std::make_pair(vid, vrf));
+  }
+
+  LOG(INFO) << __FUNCTION__ << ": map vlan=" << vid << " vrf=" << vrf;
+
+  // delete old entries
+  auto fdb_entries = nl->search_fdb(vid, nullptr);
+  for (auto entry : fdb_entries) {
+    auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
+
+    remove_ingress_vlan(nl->get_port_id(link.get()), vid, true);
+  }
+
+  // add updated entries
+  for (auto entry : fdb_entries) {
+    auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
+
+    add_ingress_vlan(nl->get_port_id(link.get()), vid, true, vrf);
+  }
+
+  VLOG(1) << __FUNCTION__ << ": attached=" << OBJ_CAST(new_link) << " to VRF id=" << vrf;
+}
+
+void nl_vlan::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
+  uint16_t vid = get_vid(new_link);
+  if (vid == 0)
+    return;
+
+  auto vrf = vlan_vrf.find(vid);
+  if (vrf == vlan_vrf.end()) {
+    return;
+  }
+
+  // delete old entries
+  auto fdb_entries = nl->search_fdb(vid, nullptr);
+  for (auto entry : fdb_entries) {
+    auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
+
+    remove_ingress_vlan(nl->get_port_id(link.get()), vid, true, vrf->second);
+  }
+
+  // add updated entries
+  for (auto entry : fdb_entries) {
+    auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
+
+    add_ingress_vlan(nl->get_port_id(link.get()), vid, true);
+  }
+
+  VLOG(1) << __FUNCTION__ << ": detached=" << OBJ_CAST(new_link) << " to VRF id=" << vrf->second;
+  vlan_vrf.erase(vrf);
+
 }
 
 } // namespace basebox
