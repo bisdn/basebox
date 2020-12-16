@@ -54,7 +54,10 @@ static rofl::caddress_in4 libnl_in4addr_2_rofl(struct nl_addr *addr, int *rv) {
 
 void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
   assert(bridge);
-  assert(std::string("bridge").compare(rtnl_link_get_type(bridge)) == 0);
+  assert((rtnl_link_get_type(bridge) != nullptr &&
+          std::string("bridge").compare(rtnl_link_get_type(bridge)) == 0) ||
+         (rtnl_link_get_family(bridge) == AF_BRIDGE &&
+          rtnl_link_get_ifindex(bridge) == rtnl_link_get_master(bridge)));
 
   this->bridge = bridge;
   nl_object_get(OBJ_CAST(bridge));
