@@ -41,8 +41,7 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
 
   int rv = swi->ingress_port_vlan_add(port_id, vid, !tagged, vrf_id);
   if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup ingress vlan " << vid
+    LOG(ERROR) << __FUNCTION__ << ": failed to setup ingress vlan " << vid
                << (tagged ? " (tagged)" : " (untagged)")
                << " on port_id=" << port_id << "; rv=" << rv;
     return rv;
@@ -53,11 +52,10 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     for (auto mem : members) {
       rv = swi->ingress_port_vlan_add(mem, vid, !tagged, vrf_id);
       if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to setup ingress vlan " << vid
-		   << (tagged ? " (tagged)" : " (untagged)")
+        LOG(ERROR) << __FUNCTION__ << ": failed to setup ingress vlan " << vid
+                   << (tagged ? " (tagged)" : " (untagged)")
                    << " on port_id=" << port_id << "; rv=" << rv;
-	break;
+        break;
       }
     }
 
@@ -73,8 +71,7 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   rv = swi->egress_port_vlan_add(port_id, vid, !tagged);
 
   if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup egress vlan " << vid
+    LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
                << (tagged ? " (tagged)" : " (untagged)")
                << " on port_id=" << port_id << "; rv=" << rv;
     (void)swi->ingress_port_vlan_remove(port_id, vid, !tagged);
@@ -101,11 +98,10 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     for (auto mem : members) {
       rv = swi->egress_port_vlan_add(mem, vid, !tagged);
       if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to setup egress vlan " << vid
-		   << (tagged ? " (tagged)" : " (untagged)")
+        LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
+                   << (tagged ? " (tagged)" : " (untagged)")
                    << " on port_id=" << port_id << "; rv=" << rv;
-	break;
+        break;
       }
     }
 
@@ -126,7 +122,7 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
 
 // add vid at ingress
 int nl_vlan::add_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
-                                 uint16_t vrf_id) {
+                              uint16_t vrf_id) {
 
   int rv;
 
@@ -246,7 +242,7 @@ int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
   uint16_t vrf_id = get_vrf_id(vid, link);
 
   VLOG(2) << __FUNCTION__ << ": add vid=" << vid << " pvid=" << pvid
-	  <<  " tagged=" << tagged << " vrf=" << vrf_id;
+          << " tagged=" << tagged << " vrf=" << vrf_id;
 
   if (!is_vid_valid(vid)) {
     LOG(ERROR) << __FUNCTION__ << ": invalid vid " << vid;
@@ -266,16 +262,16 @@ int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
 
   rv = swi->ingress_port_vlan_add(port_id, vid, pvid, vrf_id);
   if (rv < 0) {
-     swi->egress_bridge_port_vlan_remove(port_id, vid);
-     return rv;
+    swi->egress_bridge_port_vlan_remove(port_id, vid);
+    return rv;
   }
 
   if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
     auto members = nl->get_bond_members_by_port_id(port_id);
 
     for (auto mem : members) {
-       swi->egress_bridge_port_vlan_add(mem, vid, !tagged);
-       swi->ingress_port_vlan_add(mem, vid, pvid, vrf_id);
+      swi->egress_bridge_port_vlan_add(mem, vid, !tagged);
+      swi->ingress_port_vlan_add(mem, vid, pvid, vrf_id);
     }
 
     if (rv < 0) {
@@ -293,7 +289,7 @@ void nl_vlan::remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
   uint16_t vrf_id = get_vrf_id(vid, link);
 
   VLOG(2) << __FUNCTION__ << ": remove vid=" << vid << " pvid=" << pvid
-	  <<  " tagged=" << tagged << " vrf=" << vrf_id;
+          << " tagged=" << tagged << " vrf=" << vrf_id;
 
   if (!is_vid_valid(vid)) {
     LOG(ERROR) << __FUNCTION__ << ": invalid vid " << vid;
@@ -311,8 +307,8 @@ void nl_vlan::remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
     auto members = nl->get_bond_members_by_port_id(port_id);
 
     for (auto mem : members) {
-       swi->egress_bridge_port_vlan_remove(mem, vid);
-       swi->ingress_port_vlan_remove(mem, vid, pvid, vrf_id);
+      swi->egress_bridge_port_vlan_remove(mem, vid);
+      swi->ingress_port_vlan_remove(mem, vid, pvid, vrf_id);
     }
   }
 
@@ -395,7 +391,8 @@ void nl_vlan::vrf_attach(rtnl_link *old_link, rtnl_link *new_link) {
     add_ingress_vlan(nl->get_port_id(link.get()), vid, true, vrf);
   }
 
-  VLOG(1) << __FUNCTION__ << ": attached=" << OBJ_CAST(new_link) << " to VRF id=" << vrf;
+  VLOG(1) << __FUNCTION__ << ": attached=" << OBJ_CAST(new_link)
+          << " to VRF id=" << vrf;
 }
 
 void nl_vlan::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
@@ -423,9 +420,9 @@ void nl_vlan::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
     add_ingress_vlan(nl->get_port_id(link.get()), vid, true);
   }
 
-  VLOG(1) << __FUNCTION__ << ": detached=" << OBJ_CAST(new_link) << " to VRF id=" << vrf->second;
+  VLOG(1) << __FUNCTION__ << ": detached=" << OBJ_CAST(new_link)
+          << " to VRF id=" << vrf->second;
   vlan_vrf.erase(vrf);
-
 }
 
 } // namespace basebox

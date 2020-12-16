@@ -255,7 +255,8 @@ void controller::handle_error_message(rofl::crofdpt &dpt,
   VLOG(1) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;
-  LOG(WARNING) << __FUNCTION__ << ": " << (((uint32_t)msg.get_err_type() << 16) | msg.get_err_code());
+  LOG(WARNING) << __FUNCTION__ << ": "
+               << (((uint32_t)msg.get_err_type() << 16) | msg.get_err_code());
   VLOG(1) << __FUNCTION__ << msg;
 }
 
@@ -873,8 +874,7 @@ int controller::l2_multicast_group_remove(uint32_t port, uint16_t vid,
                             ? fm_driver.group_id_l2_trunk_interface(port, vid)
                             : fm_driver.group_id_l2_interface(port, vid);
 
-    auto set_it =
-        it->l2_interface.find(group_id);
+    auto set_it = it->l2_interface.find(group_id);
     if (set_it == it->l2_interface.end()) {
       LOG(ERROR) << __FUNCTION__ << ": interface group not found";
       return -EINVAL;
