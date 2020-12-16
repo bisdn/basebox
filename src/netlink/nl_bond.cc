@@ -60,8 +60,8 @@ std::set<uint32_t> nl_bond::get_members(rtnl_link *bond) {
 std::set<uint32_t> nl_bond::get_members_by_port_id(uint32_t port_id) {
   auto mem_it = lag_members.find(port_id);
   if (mem_it == lag_members.end()) {
-    LOG(WARNING) << __FUNCTION__ << ": lag does not exist for port_id="
-	         << port_id;
+    LOG(WARNING) << __FUNCTION__
+                 << ": lag does not exist for port_id=" << port_id;
     return {};
   }
 
@@ -339,11 +339,11 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
 
     nl->get_vlans(rtnl_link_get_ifindex(bond), &vlans);
 
-  if (lm_rv->second.empty())
-    remove_l3_address(bond);
+    if (lm_rv->second.empty())
+      remove_l3_address(bond);
 
-  if (nl->is_bridge_interface(bond))
-    swi->ofdpa_stg_state_port_set(port_id, "forward");
+    if (nl->is_bridge_interface(bond))
+      swi->ofdpa_stg_state_port_set(port_id, "forward");
 
     for (auto vid : vlans) {
       swi->ingress_port_vlan_remove(port_id, vid, false);

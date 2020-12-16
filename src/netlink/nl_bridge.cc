@@ -371,7 +371,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     uint32_t b = new_br_vlan->vlan_bitmap[k];
     uint32_t vlan_diff = a ^ b;
 
-#if 0  // untagged change not yet implemented
+#if 0 // untagged change not yet implemented
     uint32_t c = old_br_vlan->untagged_bitmap[k];
     uint32_t d = new_br_vlan->untagged_bitmap[k];
     uint32_t untagged_diff = c ^ d;
@@ -391,8 +391,8 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
         if (new_br_vlan->untagged_bitmap[k] & 1 << (j - 1)) {
           egress_untagged = true;
 
-#if 0  // untagged change not yet implemented
-       // clear untagged_diff bit
+#if 0 // untagged change not yet implemented
+      // clear untagged_diff bit
           untagged_diff &= ~((uint32_t)1 << (j - 1));
 #endif // 0
         }
@@ -434,7 +434,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
               VLOG(3) << __FUNCTION__ << ": add vid=" << vid
                       << " on pport_no=" << pport_no
                       << " link: " << OBJ_CAST(_link);
-	      vlan->add_bridge_vlan(_link, vid, new_br_vlan->pvid == vid,
+              vlan->add_bridge_vlan(_link, vid, new_br_vlan->pvid == vid,
                                     !egress_untagged);
             }
           }
@@ -465,12 +465,13 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
             rtnl_neigh_set_flags(filter.get(), NTF_MASTER | NTF_EXT_LEARNED);
             rtnl_neigh_set_state(filter.get(), NUD_REACHABLE);
 
-            nl_cache_foreach_filter(l2_cache.get(), OBJ_CAST(filter.get()),
-                                    [](struct nl_object *o, void *arg) {
-                                      VLOG(3) << "l2_cache remove object " << o;
-                                      nl_cache_remove(o);
-                                    },
-                                    nullptr);
+            nl_cache_foreach_filter(
+                l2_cache.get(), OBJ_CAST(filter.get()),
+                [](struct nl_object *o, void *arg) {
+                  VLOG(3) << "l2_cache remove object " << o;
+                  nl_cache_remove(o);
+                },
+                nullptr);
 
             vlan->remove_bridge_vlan(_link, vid, new_br_vlan->pvid == vid,
                                      !egress_untagged);
@@ -531,14 +532,14 @@ std::deque<rtnl_neigh *> nl_bridge::get_fdb_entries_of_port(rtnl_link *br_port,
 
   VLOG(3) << __FUNCTION__ << ": searching for " << OBJ_CAST(filter.get());
   std::deque<rtnl_neigh *> neighs;
-  nl_cache_foreach_filter(nl->get_cache(cnetlink::NL_NEIGH_CACHE),
-                          OBJ_CAST(filter.get()),
-                          [](struct nl_object *o, void *arg) {
-                            auto *neighs = (std::deque<rtnl_neigh *> *)arg;
-                            neighs->push_back(NEIGH_CAST(o));
-                            VLOG(3) << "needs to be updated " << o;
-                          },
-                          &neighs);
+  nl_cache_foreach_filter(
+      nl->get_cache(cnetlink::NL_NEIGH_CACHE), OBJ_CAST(filter.get()),
+      [](struct nl_object *o, void *arg) {
+        auto *neighs = (std::deque<rtnl_neigh *> *)arg;
+        neighs->push_back(NEIGH_CAST(o));
+        VLOG(3) << "needs to be updated " << o;
+      },
+      &neighs);
 
   return neighs;
 }
@@ -645,7 +646,7 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
       vxlan->delete_access_port(_br_port, pport_no, vid, true);
 
       vlan->add_bridge_vlan(_br_port, vid, br_port_vlans->pvid == vid,
-		            !untagged);
+                            !untagged);
 
       auto neighs = get_fdb_entries_of_port(_br_port, vid);
       for (auto n : neighs) {

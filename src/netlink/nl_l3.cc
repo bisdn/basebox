@@ -1328,8 +1328,8 @@ int nl_l3::get_l3_interface_id(int ifindex, const struct nl_addr *s_mac,
       *l3_interface_id = i->second.l3_interface_id;
 
       VLOG(2) << __FUNCTION__ << ": l3_interface_id " << *l3_interface_id
-                << " found for port " << port_id << ", src_mac " << src_mac
-                << ", dst_mac " << dst_mac << ", vid " << vid;
+              << " found for port " << port_id << ", src_mac " << src_mac
+              << ", dst_mac " << dst_mac << ", vid " << vid;
       return 0;
     }
   }
