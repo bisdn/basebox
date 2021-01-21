@@ -659,7 +659,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   for (auto cb = std::begin(net_resolved_callbacks);
        cb != std::end(net_resolved_callbacks);) {
     if (cb->ifindex == rtnl_neigh_get_ifindex(n) &&
-        nl_addr_cmp_prefix(cb->addr, rtnl_neigh_get_dst(n))) {
+        nl_addr_cmp_prefix(cb->addr, rtnl_neigh_get_dst(n)) == 0) {
 
       // query the kernel for the correct route matching the dst addr
       nl_route_query rq;
