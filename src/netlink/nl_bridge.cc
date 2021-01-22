@@ -68,15 +68,19 @@ void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
                << " unsupported: bridge configured with vlan_filtering 0";
 }
 
+bool nl_bridge::is_bridge_interface(int ifindex) {
+  assert(bridge);
+
+  return (ifindex == rtnl_link_get_ifindex(bridge)) ? true : false;
+}
+
 bool nl_bridge::is_bridge_interface(rtnl_link *link) {
+  assert(bridge);
   assert(link);
 
-  if (rtnl_link_get_ifindex(link) != rtnl_link_get_ifindex(bridge))
-    return false;
+  return is_bridge_interface(rtnl_link_get_ifindex(link));
+}
 
-  // TODO compare more?
-
-  return true;
 // Read sysfs to obtain the value for STP state on a bridge
 uint32_t nl_bridge::get_stp_state() {
   std::string portname(rtnl_link_get_name(bridge));
