@@ -76,6 +76,10 @@ bool nl_bridge::is_bridge_interface(rtnl_link *link) {
   // TODO compare more?
 
   return true;
+// Read sysfs to obtain the value for STP state on a bridge
+uint32_t nl_bridge::get_stp_state() {
+  std::string portname(rtnl_link_get_name(bridge));
+  return nl->load_from_file("/sys/class/net/" + portname + "/bridge/stp_state");
 }
 
 // Read sysfs to obtain the value for the VLAN protocol on the switch.
