@@ -1538,7 +1538,8 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     // If the next-hop is currently unresolved, we store the route and
     // process it when the nh is found
     if (!is_ipv6_link_local_address(rtnl_route_get_dst(r)) &&
-        !is_ipv6_multicast_address(rtnl_route_get_dst(r)))
+        !is_ipv6_multicast_address(rtnl_route_get_dst(r)) &&
+        rtnl_route_get_scope(r) != RT_SCOPE_LINK)
       notify_on_nh_resolved(net_params(rtnl_route_get_dst(r), nh.ifindex));
   }
 
