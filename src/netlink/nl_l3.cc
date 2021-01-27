@@ -925,7 +925,7 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
   auto it = l3_interface_mapping.equal_range(l3_if_tuple);
 
   rv = get_l3_interface_id(ifindex, s_mac, d_mac, l3_interface_id);
-  if (rv < 0) {
+  if (rv == -ENODATA) {
     rv = sw->l3_egress_create(port_id, vid, src_mac, dst_mac, l3_interface_id);
 
     if (rv < 0) {
@@ -1584,10 +1584,11 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
       }
 
     } else {
-      // add neigh
-      rv = add_l3_neigh_egress(n, &l3_interface_id);
-
-      if (rv < 0) {
+      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id);
+      if (rv == -ENODATA) {
+        // add neigh
+        rv = add_l3_neigh_egress(n, &l3_interface_id);
+      } else if (rv < 0) {
         LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
                    << OBJ_CAST(n);
         // XXX TODO create l3 neigh later
