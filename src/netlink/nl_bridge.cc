@@ -223,7 +223,7 @@ void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
   std::string state;
 
   if (old_state != new_state) {
-    if (get_stp_state() == BR_STATE_DISABLED)
+    if (get_stp_state() == STP_STATE_DISABLED)
       return;
 
     LOG(INFO) << __FUNCTION__ << " STP state changed, old=" << old_state
@@ -1078,7 +1078,7 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
 int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   int err = 0;
 
-  if (get_stp_state() == BR_STATE_DISABLED)
+  if (get_stp_state() == STP_STATE_DISABLED)
     return err;
 
   uint32_t ifindex = rtnl_bridge_vlan_get_ifindex(bvlan_info);
@@ -1094,10 +1094,7 @@ int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   if (err < 0)
     return err;
 
-  int pv_state = bridge_stp_states.get_pvlan_state(port_id, vlan_id);
-  if (pv_state < 0)
-    bridge_stp_states.add_pvlan_state(port_id, vlan_id, stp_state);
-
+  bridge_stp_states.add_pvlan_state(port_id, vlan_id, stp_state);
   auto g_stp_state = bridge_stp_states.get_min_state(port_id, vlan_id);
 
   LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
