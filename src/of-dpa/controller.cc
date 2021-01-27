@@ -2171,7 +2171,7 @@ int controller::tunnel_port_tenant_remove(uint32_t lport_id,
 int controller::lookup_stpid(uint32_t vlan_id) noexcept {
   auto it = vlan_to_stg.find(vlan_id);
 
-  return (it == vlan_to_stg.end()) ? 1 : it->second;
+  return (it == vlan_to_stg.end()) ? 0 : it->second;
 }
 
 int controller::ofdpa_stg_destroy(uint16_t vlan_id) noexcept { return 0; }
@@ -2180,6 +2180,8 @@ int controller::ofdpa_stg_state_port_set(uint32_t port_id, uint16_t vlan_id,
                                          std::string state) noexcept {
   int rv;
   int stg_id = lookup_stpid(vlan_id);
+  if (stg_id == 0)
+    stg_id = 1;
 
   rv = ofdpa->ofdpaStgStatePortSet(port_id, state, stg_id);
   if (rv < 0) {
