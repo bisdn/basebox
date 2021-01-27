@@ -2171,7 +2171,7 @@ int controller::tunnel_port_tenant_remove(uint32_t lport_id,
 int controller::lookup_stpid(uint32_t vlan_id) noexcept {
   auto it = vlan_to_stg.find(vlan_id);
 
-  return (it == vlan_to_stg.end()) ? 0 : it->second;
+  return (it == vlan_to_stg.end()) ? 1 : it->second;
 }
 
 int controller::ofdpa_stg_destroy(uint16_t vlan_id) noexcept { return 0; }
@@ -2212,18 +2212,6 @@ int controller::ofdpa_stg_create(uint16_t vlan_id) noexcept {
   vlan_to_stg.emplace(std::make_pair(vlan_id, current_stg));
 
   current_stg++;
-  return rv;
-}
-
-int controller::ofdpa_global_stp_state_port_set(uint32_t port_id,
-                                                std::string state) noexcept {
-  int rv;
-
-  rv = ofdpa->ofdpaGlobalStpStatePortSet(port_id, state);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to set the STP state";
-  }
-
   return rv;
 }
 

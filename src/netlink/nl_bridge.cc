@@ -241,10 +241,10 @@ void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
     if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
       auto members = nl->get_bond_members_by_lag(new_link);
       for (auto mem : members) {
-        sw->ofdpa_global_stp_state_port_set(mem, state);
+        sw->ofdpa_stg_state_port_set(mem, 1, state);
       }
     } else {
-      sw->ofdpa_global_stp_state_port_set(port_id, state);
+      sw->ofdpa_stg_state_port_set(port_id, 1, state);
     }
 
     return;
@@ -277,10 +277,10 @@ void nl_bridge::delete_interface(rtnl_link *link) {
   if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
     auto members = nl->get_bond_members_by_lag(link);
     for (auto mem : members) {
-      sw->ofdpa_global_stp_state_port_set(mem, "forward");
+      sw->ofdpa_stg_state_port_set(mem, 1, "forward");
     }
   } else {
-    sw->ofdpa_global_stp_state_port_set(port_id, "forward");
+    sw->ofdpa_stg_state_port_set(port_id, 1, "forward");
   }
 }
 

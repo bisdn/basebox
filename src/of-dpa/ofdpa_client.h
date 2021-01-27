@@ -65,8 +65,6 @@ public:
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgStatePortSet(uint32_t port_id,
                                                            std::string state,
                                                            uint32_t stg_id = 0);
-  ofdpa::OfdpaStatus::OfdpaStatusCode
-  ofdpaGlobalStpStatePortSet(uint32_t port_id, std::string state);
 
   ofdpa::OfdpaStatus::OfdpaStatusCode
   OfdpaTrunkCreate(uint32_t lag_id, std::string name, uint8_t mode);

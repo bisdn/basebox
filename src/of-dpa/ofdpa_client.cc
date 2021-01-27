@@ -319,25 +319,6 @@ ofdpa_client::ofdpaStgStatePortSet(uint32_t port_id, std::string state,
 }
 
 ofdpa::OfdpaStatus::OfdpaStatusCode
-ofdpa_client::ofdpaGlobalStpStatePortSet(uint32_t port_id, std::string state) {
-  ::OfdpaStatus response;
-  ::ClientContext context;
-  ::StpInterfaceState request;
-
-  context.set_wait_for_ready(true);
-
-  request.set_port_num(port_id);
-  request.set_port_state(state);
-
-  ::Status rv = stub_->ofdpaGlobalStpStatePortSet(&context, request, &response);
-  if (not rv.ok()) {
-    return ofdpa::OfdpaStatus::OFDPA_E_RPC;
-  }
-
-  return response.status();
-}
-
-ofdpa::OfdpaStatus::OfdpaStatusCode
 ofdpa_client::ofdpaStgCreate(uint16_t stg_id) {
   ::OfdpaStatus response;
   ::ClientContext context;

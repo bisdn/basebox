@@ -264,7 +264,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
         return rv;
       }
 
-      swi->ofdpa_global_stp_state_port_set(port_id, state);
+      swi->ofdpa_stg_state_port_set(port_id, 1, state);
     }
 
     rv = nl->set_bridge_port_vlan_tpid(br_link);
@@ -328,7 +328,7 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
   lag_members.erase(lm_rv);
 
   if (nl->is_bridge_interface(bond)) {
-    swi->ofdpa_global_stp_state_port_set(port_id, "forward");
+    swi->ofdpa_stg_state_port_set(port_id, 1, "forward");
 
     auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
     rv = nl->unset_bridge_port_vlan_tpid(br_link);
@@ -346,7 +346,7 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
       remove_l3_address(bond);
 
     if (nl->is_bridge_interface(bond))
-      swi->ofdpa_global_stp_state_port_set(port_id, "forward");
+      swi->ofdpa_stg_state_port_set(port_id, 1, "forward");
 
     for (auto vid : vlans) {
       swi->ingress_port_vlan_remove(port_id, vid, false);
