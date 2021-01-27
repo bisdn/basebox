@@ -1095,7 +1095,7 @@ int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
     return err;
 
   int pv_state = bridge_stp_states.get_pvlan_state(port_id, vlan_id);
-  if (pv_state == 0)
+  if (pv_state < 0)
     bridge_stp_states.add_pvlan_state(port_id, vlan_id, stp_state);
 
   auto g_stp_state = bridge_stp_states.get_min_state(port_id, vlan_id);

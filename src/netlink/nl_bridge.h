@@ -89,7 +89,7 @@ struct bridge_stp_states {
   uint8_t get_global_state(int port_id) {
     auto it = gl_states.find(port_id);
 
-    return (it == gl_states.end()) ? 0 : it->second;
+    return (it == gl_states.end()) ? -EINVAL : it->second;
   }
 
   uint8_t get_pvlan_state(int port_id, uint16_t vid) {
@@ -97,12 +97,12 @@ struct bridge_stp_states {
 
     // no vlan found
     if (it == pv_states.end())
-      return 0;
+      return -EINVAL;
 
     // no port found
     auto pv_state = it->second.find(port_id);
     if (pv_state == it->second.end())
-      return 0;
+      return -EINVAL;
 
     return pv_state->second;
   }
@@ -127,11 +127,11 @@ struct bridge_stp_states {
     int g_state = get_global_state(port_id);
     int pv_state = get_pvlan_state(port_id, vid);
 
-    if (pv_state == 0)
-      return 0;
+    if (pv_state < 0)
+      return g_state;
 
     if (g_state == BR_STATE_BLOCKING || pv_state == BR_STATE_BLOCKING)
-      return g_state;
+      return BR_STATE_BLOCKING;
 
     return get_min(g_state, pv_state);
   }
