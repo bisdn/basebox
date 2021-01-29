@@ -198,7 +198,7 @@ void controller::handle_desc_stats_reply(
 
 void controller::handle_packet_in(rofl::crofdpt &dpt, const rofl::cauxid &auxid,
                                   rofl::openflow::cofmsg_packet_in &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
+  VLOG(2) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
   VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " received: " << std::endl
           << msg;
@@ -229,7 +229,7 @@ void controller::handle_flow_removed(rofl::crofdpt &dpt,
 void controller::handle_port_status(rofl::crofdpt &dpt,
                                     const rofl::cauxid &auxid,
                                     rofl::openflow::cofmsg_port_status &msg) {
-  VLOG(1) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
+  VLOG(2) << __FUNCTION__ << ": dpt=" << dpt << " on auxid=" << auxid;
   VLOG(3) << __FUNCTION__ << ": dpid=" << dpt.get_dpid()
           << " pkt received: " << std::endl
           << msg;

@@ -619,6 +619,9 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
     }
     rv = sw->l3_unicast_host_add(ipv4_dst, l3_interface_id, false, false,
                                  vrf_id);
+    VLOG(2) << __FUNCTION__ << ": adding route =" << ipv4_dst
+            << " l3 interface id=" << l3_interface_id;
+
   } else {
     // AF_INET6
     auto p = nl_addr_alloc(16);
@@ -658,8 +661,11 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
   for (auto cb = std::begin(net_resolved_callbacks);
        cb != std::end(net_resolved_callbacks);) {
+    VLOG(2) << __FUNCTION__ << " neigh ifindex=" << rtnl_neigh_get_ifindex(n)
+            << " cb ifindex=" << cb->ifindex << " neigh add=" << cb->addr
+            << " neigh dst=" << rtnl_neigh_get_dst(n);
     if (cb->ifindex == rtnl_neigh_get_ifindex(n) &&
-        nl_addr_cmp_prefix(cb->addr, rtnl_neigh_get_dst(n))) {
+        nl_addr_cmp_prefix(cb->addr, rtnl_neigh_get_dst(n)) == 0) {
 
       // query the kernel for the correct route matching the dst addr
       nl_route_query rq;
@@ -919,7 +925,7 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
   auto it = l3_interface_mapping.equal_range(l3_if_tuple);
 
   rv = get_l3_interface_id(ifindex, s_mac, d_mac, l3_interface_id);
-  if (rv < 0) {
+  if (rv == -ENODATA) {
     rv = sw->l3_egress_create(port_id, vid, src_mac, dst_mac, l3_interface_id);
 
     if (rv < 0) {
@@ -932,6 +938,9 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
 
     l3_interface_mapping.emplace(
         std::make_pair(l3_if_tuple, l3_interface(*l3_interface_id)));
+    VLOG(1) << __FUNCTION__
+            << ": Layer 3 egress id created, l3_interface=" << *l3_interface_id
+            << " port_id=" << port_id;
   }
 
   return rv;
@@ -1008,11 +1017,11 @@ int nl_l3::add_l3_route(struct rtnl_route *r) {
   case RTN_NAT:
   case RTN_XRESOLVE:
     VLOG(1) << __FUNCTION__
-            << ": skip route with type=" << rtnl_route_get_type(r);
+            << ": skip route with type=" << (uint32_t)rtnl_route_get_type(r);
     return -ENOTSUP;
   default:
-    VLOG(1) << __FUNCTION__
-            << ": skip route with unknown type=" << rtnl_route_get_type(r);
+    VLOG(1) << __FUNCTION__ << ": skip route with unknown type="
+            << (uint32_t)rtnl_route_get_type(r);
     return -EINVAL;
   }
 
@@ -1265,8 +1274,9 @@ int nl_l3::get_neighbours_of_route(
         nh_addr = nullptr;
       }
 
-      VLOG(2) << __FUNCTION__ << ": get neigh of nh_addr=" << nh_addr;
       neigh = nl->get_neighbour(ifindex, nh_addr);
+      VLOG(2) << __FUNCTION__ << ": get neigh=" << OBJ_CAST(neigh)
+              << " of nh_addr=" << nh_addr;
     }
 
     if (neigh)
@@ -1365,6 +1375,8 @@ int nl_l3::add_l3_unicast_route(nl_addr *rt_dst, uint32_t l3_interface_id,
       rv = sw->l3_unicast_route_add(ipv4_dst, mask, l3_interface_id, is_ecmp,
                                     update_route, vrf_id);
     }
+    VLOG(2) << __FUNCTION__ << ": adding route =" << ipv4_dst
+            << "l3 interface id=" << l3_interface_id;
   } else if (dst_af == AF_INET6) {
     rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(rt_dst, &rv);
     rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
@@ -1516,6 +1528,9 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   if (vrf_id == MAIN_ROUTING_TABLE)
     vrf_id = 0;
 
+  VLOG(2) << __FUNCTION__ << ": adding route= " << OBJ_CAST(r)
+          << " update=" << update_route;
+
   if (nnhs == 0) {
     LOG(WARNING) << __FUNCTION__ << ": no neighbours of route " << OBJ_CAST(r);
     return -ENOTSUP;
@@ -1538,7 +1553,8 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     // If the next-hop is currently unresolved, we store the route and
     // process it when the nh is found
     if (!is_ipv6_link_local_address(rtnl_route_get_dst(r)) &&
-        !is_ipv6_multicast_address(rtnl_route_get_dst(r)))
+        !is_ipv6_multicast_address(rtnl_route_get_dst(r)) &&
+        rtnl_route_get_scope(r) != RT_SCOPE_LINK)
       notify_on_nh_resolved(net_params(rtnl_route_get_dst(r), nh.ifindex));
   }
 
@@ -1568,10 +1584,11 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
       }
 
     } else {
-      // add neigh
-      rv = add_l3_neigh_egress(n, &l3_interface_id);
-
-      if (rv < 0) {
+      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id);
+      if (rv == -ENODATA) {
+        // add neigh
+        rv = add_l3_neigh_egress(n, &l3_interface_id);
+      } else if (rv < 0) {
         LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
                    << OBJ_CAST(n);
         // XXX TODO create l3 neigh later
