@@ -14,6 +14,7 @@
 #include <linux/if.h>
 #include <netlink/object.h>
 #include <netlink/route/addr.h>
+#include <netlink/route/bridge_vlan.h>
 #include <netlink/route/link.h>
 #include <netlink/route/link/bonding.h>
 #include <netlink/route/link/vlan.h>
@@ -177,6 +178,19 @@ void cnetlink::init_caches() {
                << ": nl_cache_mngr_add_cache_v2: add route/mdb to cache mngr";
   }
 #endif
+
+  /* init bridge-vlan cache */
+  rc = rtnl_bridge_vlan_alloc_cache_flags(sock_mon, &caches[NL_BVLAN_CACHE],
+                                          NL_CACHE_AF_ITER);
+  if (0 != rc) {
+    LOG(FATAL) << __FUNCTION__
+               << ": rtnl_bridge_vlan_alloc_cache_flags failed rc=" << rc;
+  }
+  rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_BVLAN_CACHE],
+                                  (change_func_v2_t)&nl_cb_v2, this);
+  if (0 != rc) {
+    LOG(FATAL) << __FUNCTION__ << ": add route/bridge-vlan to cache mngr";
+  }
 
   try {
     thread.add_read_fd(this, nl_cache_mngr_get_fd(mngr), true, false);
@@ -534,6 +548,10 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
       route_mdb_apply(obj);
       break;
 #endif
+    case RTM_NEWVLAN:
+    case RTM_DELVLAN:
+      route_bridge_vlan_apply(obj);
+      break;
     default:
       LOG(ERROR) << __FUNCTION__ << ": unexpected netlink type "
                  << obj.get_msg_type();
@@ -1423,6 +1441,26 @@ void cnetlink::route_mdb_apply(const nl_obj &obj) {
     if (bridge)
       bridge->mdb_entry_remove(MDB_CAST(obj.get_new_obj()));
     break;
+  default:
+    LOG(ERROR) << __FUNCTION__ << ": invalid action " << obj.get_action();
+    break;
+  }
+}
+
+void cnetlink::route_bridge_vlan_apply(const nl_obj &obj) {
+  assert(obj.get_new_obj());
+
+  switch (obj.get_msg_type()) {
+  case RTM_NEWVLAN:
+    if (bridge)
+      bridge->set_pvlan_stp(BRIDGE_VLAN_CAST(obj.get_new_obj()));
+    break;
+#if 0
+  case RTM_DELVLAN:
+	if (bridge)
+	        bridge->set_pvlan_stp(BRIDGE_VLAN_CAST(obj.get_new_obj()));
+	break;
+#endif
   default:
     LOG(ERROR) << __FUNCTION__ << ": invalid action " << obj.get_action();
     break;

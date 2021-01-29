@@ -15,8 +15,18 @@
 
 #include "netlink-utils.h"
 
+#define BR_STATE_DISABLED 0
+#define BR_STATE_LISTENING 1
+#define BR_STATE_LEARNING 2
+#define BR_STATE_FORWARDING 3
+#define BR_STATE_BLOCKING 4
+
+#define STP_STATE_DISABLED 0
+#define STP_STATE_KERNEL 1
+#define STP_STATE_USERSPACE 2
+
 extern "C" {
-struct rtnl_link_bridge_vlan;
+struct rtnl_bridge_vlan;
 struct rtnl_link;
 struct rtnl_neigh;
 struct rtnl_mdb;
@@ -36,6 +46,97 @@ class switch_interface;
 class tap_manager;
 struct packet;
 
+struct key {
+  int port_id;
+  uint16_t vid;
+
+  key(int port_id, uint16_t vid) : port_id(port_id), vid(vid) {}
+  bool operator<(const struct key &rhs) const {
+    return std::tie(port_id, vid) < std::tie(rhs.port_id, rhs.vid);
+  }
+};
+
+struct bridge_stp_states {
+  // Global STP state: KEY : port_id + vid, state
+  std::map<int, uint8_t> gl_states;
+  std::map<uint16_t, std::map<uint16_t, uint8_t>> pv_states;
+
+  bridge_stp_states() = default;
+  void add_pvlan_state(int port_id, uint16_t vlan_id, uint8_t state) {
+    auto it = pv_states.find(vlan_id);
+    if (it == pv_states.end()) {
+      std::map<uint16_t, uint8_t> pv_map;
+      pv_map.emplace(port_id, state);
+      pv_states.emplace(vlan_id, pv_map);
+      return;
+    }
+
+    auto pv_it = it->second.find(port_id);
+    if (pv_it != it->second.end())
+      pv_it = it->second.erase(pv_it);
+
+    it->second.emplace(port_id, state);
+  }
+
+  void add_global_state(int port_id, uint8_t state) {
+    auto it = gl_states.find(port_id);
+    if (it != gl_states.end())
+      gl_states.erase(it);
+
+    gl_states.emplace(port_id, state);
+  }
+
+  uint8_t get_global_state(int port_id) {
+    auto it = gl_states.find(port_id);
+
+    return (it == gl_states.end()) ? -EINVAL : it->second;
+  }
+
+  uint8_t get_pvlan_state(int port_id, uint16_t vid) {
+    auto it = pv_states.find(vid);
+
+    // no vlan found
+    if (it == pv_states.end())
+      return -EINVAL;
+
+    // no port found
+    auto pv_state = it->second.find(port_id);
+    if (pv_state == it->second.end())
+      return -EINVAL;
+
+    return pv_state->second;
+  }
+
+  uint8_t get_min(uint8_t g_state, uint8_t pv_state) {
+    return (g_state < pv_state) ? g_state : pv_state;
+  }
+
+  std::map<uint16_t, uint8_t> get_min_states(int port_id) {
+    std::map<uint16_t, uint8_t> ret;
+    for (auto it : pv_states) {
+      auto pv_it = it.second.find(port_id);
+      if (pv_it == it.second.end())
+        continue;
+
+      ret.emplace(it.first, pv_it->second);
+    }
+    return ret;
+  }
+
+  int get_min_state(int port_id, uint16_t vid) {
+    int g_state = get_global_state(port_id);
+    int pv_state = get_pvlan_state(port_id, vid);
+
+    if (pv_state < 0)
+      return g_state;
+
+    if (g_state == BR_STATE_BLOCKING || pv_state == BR_STATE_BLOCKING)
+      return BR_STATE_BLOCKING;
+
+    return get_min(g_state, pv_state);
+  }
+};
+
 class nl_bridge {
 public:
   nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
@@ -44,7 +145,10 @@ public:
 
   virtual ~nl_bridge();
 
+  int set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info);
+
   void set_bridge_interface(rtnl_link *);
+  bool is_bridge_interface(int ifindex);
   bool is_bridge_interface(rtnl_link *);
 
   void add_interface(rtnl_link *);
@@ -63,6 +167,7 @@ public:
                   const rofl::caddress_ll &mac);
   int get_ifindex() { return bridge ? rtnl_link_get_ifindex(bridge) : 0; }
 
+  uint32_t get_stp_state();
   uint32_t get_vlan_proto();
   int set_vlan_proto(rtnl_link *link);
   int delete_vlan_proto(rtnl_link *link);
@@ -86,12 +191,16 @@ public:
                           const uint32_t tunnel_id, bool add);
 
 private:
+  struct bridge_stp_states bridge_stp_states;
+  std::string stp_state_to_string(uint8_t state);
+
   void update_vlans(rtnl_link *, rtnl_link *);
 
   void update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
                            const uint16_t vid, const uint32_t tunnel_id,
                            const std::deque<rtnl_link *> &bridge_ports,
                            bool add);
+
   rtnl_link *bridge;
   switch_interface *sw;
   std::shared_ptr<tap_manager> tap_man;

@@ -67,6 +67,7 @@ public:
   }
 
   ~controller() override {}
+  int lookup_stpid(uint32_t vlan_id) noexcept;
 
 protected:
   void handle_conn_established(rofl::crofdpt &dpt,
@@ -298,23 +299,17 @@ public:
                                 uint32_t tunnel_id) noexcept override;
 
   /* STP */
-#if 0 
-  // TODO Unimplemented
   // This set of functions is currently defined in our datamodel
   // but no implementation. It is intented that these functions
   // provide the Per VLAN STP functions
-  // The stg_create and stg_destroy functions implement creating 
+  // The stg_create and stg_destroy functions implement creating
   // other Spanning Tree Groups/Instances
   // the stg_vlan_add and stg_vlan_remove function implements adding/removing
-  // VLANS from a certain STG 
-  int ofdpa_stg_create() noexcept override;
-  int ofdpa_stg_destroy() noexcept override;
+  // VLANS from a certain STG
+  int ofdpa_stg_create(uint16_t vlan_id) noexcept override;
+  int ofdpa_stg_destroy(uint16_t vlan_id) noexcept override;
 
-  int ofdpa_stg_vlan_add() noexcept override;
-  int ofdpa_stg_vlan_remove() noexcept override;
-#endif
-
-  int ofdpa_stg_state_port_set(uint32_t port_id,
+  int ofdpa_stg_state_port_set(uint32_t port_id, uint16_t vlan_id,
                                std::string state) noexcept override;
 
   /* print this */
@@ -334,6 +329,8 @@ private:
   std::map<uint16_t, std::set<uint32_t>> l2_domain;
   std::map<uint16_t, std::set<uint32_t>> lag;
   std::map<uint16_t, std::set<uint32_t>> tunnel_dlf_flood;
+  std::map<uint16_t, uint32_t> vlan_to_stg;
+  uint32_t current_stg = 2;
 
   struct multicast_entry {
     // mmac, vlan

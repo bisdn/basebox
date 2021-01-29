@@ -7,10 +7,11 @@
 #include <map>
 #include <utility>
 #include <linux/if_packet.h>
+#include <linux/if_bridge.h>
 
 #include <glog/logging.h>
-#include <linux/if_bridge.h>
 #include <netlink/route/link.h>
+#include <netlink/route/bridge_vlan.h>
 #ifdef HAVE_NETLINK_ROUTE_MDB_H
 #include <netlink/route/mdb.h>
 #endif
@@ -67,15 +68,23 @@ void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
                << " unsupported: bridge configured with vlan_filtering 0";
 }
 
+bool nl_bridge::is_bridge_interface(int ifindex) {
+  assert(bridge);
+
+  return (ifindex == rtnl_link_get_ifindex(bridge)) ? true : false;
+}
+
 bool nl_bridge::is_bridge_interface(rtnl_link *link) {
+  assert(bridge);
   assert(link);
 
-  if (rtnl_link_get_ifindex(link) != rtnl_link_get_ifindex(bridge))
-    return false;
+  return is_bridge_interface(rtnl_link_get_ifindex(link));
+}
 
-  // TODO compare more?
-
-  return true;
+// Read sysfs to obtain the value for STP state on a bridge
+uint32_t nl_bridge::get_stp_state() {
+  std::string portname(rtnl_link_get_name(bridge));
+  return nl->load_from_file("/sys/class/net/" + portname + "/bridge/stp_state");
 }
 
 // Read sysfs to obtain the value for the VLAN protocol on the switch.
@@ -214,38 +223,28 @@ void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
   std::string state;
 
   if (old_state != new_state) {
-    LOG(INFO) << __FUNCTION__ << "STP state changed, old=" << old_state
+    if (get_stp_state() == STP_STATE_DISABLED)
+      return;
+
+    LOG(INFO) << __FUNCTION__ << " STP state changed, old=" << old_state
               << " new=" << new_state;
 
-    switch (new_state) {
-    case BR_STATE_FORWARDING:
-      state = "forward";
-      break;
-    case BR_STATE_BLOCKING:
-      state = "block";
-      break;
-    case BR_STATE_DISABLED:
-      state = "disable";
-      break;
-    case BR_STATE_LISTENING:
-      state = "listen";
-      break;
-    case BR_STATE_LEARNING:
-      state = "learn";
-      break;
-    default:
-      VLOG(1) << __FUNCTION__ << ": stp state change not supported";
-      return;
-    }
-
     auto port_id = nl->get_port_id(new_link);
+    bridge_stp_states.add_global_state(port_id, new_state);
+
+    auto pv_states = bridge_stp_states.get_min_states(port_id);
+    for (auto it : pv_states)
+      sw->ofdpa_stg_state_port_set(port_id, it.first,
+                                   stp_state_to_string(it.second));
+
+    state = stp_state_to_string(new_state);
     if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
       auto members = nl->get_bond_members_by_lag(new_link);
       for (auto mem : members) {
-        sw->ofdpa_stg_state_port_set(mem, state);
+        sw->ofdpa_stg_state_port_set(mem, 1, state);
       }
     } else {
-      sw->ofdpa_stg_state_port_set(port_id, state);
+      sw->ofdpa_stg_state_port_set(port_id, 1, state);
     }
 
     return;
@@ -278,10 +277,10 @@ void nl_bridge::delete_interface(rtnl_link *link) {
   if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
     auto members = nl->get_bond_members_by_lag(link);
     for (auto mem : members) {
-      sw->ofdpa_stg_state_port_set(mem, "forward");
+      sw->ofdpa_stg_state_port_set(mem, 1, "forward");
     }
   } else {
-    sw->ofdpa_stg_state_port_set(port_id, "forward");
+    sw->ofdpa_stg_state_port_set(port_id, 1, "forward");
   }
 }
 
@@ -1065,6 +1064,70 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
 #endif
 
   return rv;
+}
+
+// struct rtnl_bridge_vlan {
+//	NLHDR_COMMON
+//	uint32_t ifindex;
+//	uint8_t family;
+//
+//	uint16_t vlan_id;
+//	uint16_t flags;
+//	uint16_t range;
+//	uint8_t state;
+int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
+  int err = 0;
+
+  if (get_stp_state() == STP_STATE_DISABLED)
+    return err;
+
+  uint32_t ifindex = rtnl_bridge_vlan_get_ifindex(bvlan_info);
+  int port_id = nl->get_port_id(ifindex);
+  struct rtnl_bvlan_entry *entry = rtnl_bridge_vlan_get_entry_head(bvlan_info);
+  uint16_t vlan_id = rtnl_bridge_vlan_entry_get_vlan_id(entry);
+  uint8_t stp_state = rtnl_bridge_vlan_entry_get_state(entry);
+
+  if (is_bridge_interface(ifindex))
+    return err;
+
+  err = sw->ofdpa_stg_create(vlan_id);
+  if (err < 0)
+    return err;
+
+  bridge_stp_states.add_pvlan_state(port_id, vlan_id, stp_state);
+  auto g_stp_state = bridge_stp_states.get_min_state(port_id, vlan_id);
+
+  LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
+            << " ifindex= " << ifindex << " VLAN =" << vlan_id;
+
+  err = sw->ofdpa_stg_state_port_set(nl->get_port_id(ifindex), vlan_id,
+                                     stp_state_to_string(g_stp_state));
+  return err;
+}
+
+std::string nl_bridge::stp_state_to_string(uint8_t state) {
+  std::string ret;
+  switch (state) {
+  case BR_STATE_FORWARDING:
+    ret = "forward";
+    break;
+  case BR_STATE_BLOCKING:
+    ret = "block";
+    break;
+  case BR_STATE_DISABLED:
+    ret = "disable";
+    break;
+  case BR_STATE_LISTENING:
+    ret = "listen";
+    break;
+  case BR_STATE_LEARNING:
+    ret = "learn";
+    break;
+  default:
+    ret = "";
+  }
+
+  return ret;
 }
 
 } /* namespace basebox */
