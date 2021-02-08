@@ -62,7 +62,7 @@ public:
 };
 
 // next hop mapping key: <port_id, vid, src_mac, dst_mac>
-std::unordered_multimap<
+std::unordered_map<
     std::tuple<int, uint16_t, rofl::caddress_ll, rofl::caddress_ll>,
     l3_interface>
     l3_interface_mapping;
