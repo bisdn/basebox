@@ -797,46 +797,30 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
                         libnl_lladdr_2_rofl(n_ll_new));
 
     // Obtain l3_interface_id
-    auto it_range = l3_interface_mapping.equal_range(l3_if_old_tuple);
-    if (it_range.first == l3_interface_mapping.end()) {
+    auto it_old = l3_interface_mapping.find(l3_if_old_tuple);
+    if (it_old == l3_interface_mapping.end()) {
       LOG(ERROR) << __FUNCTION__ << ": could not retrieve neighbor";
       return -EINVAL;
     }
 
-    uint32_t l3_interface_id = 0;
-    auto it = it_range.first;
-    for (; it != it_range.second; ++it) {
-      if (l3_if_old_tuple == it->first) {
-        l3_interface_id = it->second.l3_interface_id;
-
-        rv = sw->l3_egress_update(port_id, vid, libnl_lladdr_2_rofl(s_mac),
-                                  libnl_lladdr_2_rofl(n_ll_new),
-                                  &l3_interface_id);
-        if (rv < 0) {
-          VLOG(2) << __FUNCTION__ << ": failed to add neighbor";
-          return -EINVAL;
-        }
-        break;
-
-      } else {
-        VLOG(2) << __FUNCTION__ << ": skipping interface";
-      }
-    }
-
-    if (it_range.first == it_range.second) {
-      LOG(ERROR) << __FUNCTION__ << ": could not update neighbor";
+    uint32_t l3_interface_id = it_old->second.l3_interface_id;
+    rv = sw->l3_egress_update(port_id, vid, libnl_lladdr_2_rofl(s_mac),
+                              libnl_lladdr_2_rofl(n_ll_new),
+                              &l3_interface_id);
+    if (rv < 0) {
+      VLOG(2) << __FUNCTION__ << ": failed to update neighbor";
       return -EINVAL;
     }
 
-    it_range = l3_interface_mapping.equal_range(l3_if_new_tuple);
-    if (it_range.first != l3_interface_mapping.end()) {
+    auto it_new = l3_interface_mapping.find(l3_if_new_tuple);
+    if (it_new != l3_interface_mapping.end()) {
       LOG(ERROR) << __FUNCTION__ << ": neighbor already present";
       return -EINVAL;
     }
 
-    l3_interface_mapping.erase(it->first);
+    l3_interface_mapping.erase(it_old->first);
     l3_interface_mapping.emplace(
-        std::make_pair(l3_if_new_tuple, l3_interface(l3_interface_id)));
+        std::make_pair(l3_if_new_tuple, it_old->second));
 
   } else {
     // nothing changed besides the nud
