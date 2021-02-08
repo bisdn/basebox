@@ -963,31 +963,30 @@ int nl_l3::del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
   rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(s_mac);
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(d_mac);
   auto l3_if_tuple = std::make_tuple(port_id, vid, src_mac, dst_mac);
-  auto it = l3_interface_mapping.equal_range(l3_if_tuple);
+  auto it = l3_interface_mapping.find(l3_if_tuple);
 
-  for (auto i = it.first; i != it.second; ++i) {
-    if (i->first == l3_if_tuple) {
-      i->second.refcnt--;
-      VLOG(2) << __FUNCTION__ << ": port_id=" << port_id << ", vid=" << vid
-              << ", s_mac=" << s_mac << ", d_mac=" << d_mac
-              << ", refcnt=" << i->second.refcnt;
+  if (it != l3_interface_mapping.end()) {
+    it->second.refcnt--;
+    VLOG(2) << __FUNCTION__ << ": port_id=" << port_id << ", vid=" << vid
+            << ", s_mac=" << s_mac << ", d_mac=" << d_mac
+            << ", refcnt=" << it->second.refcnt;
 
-      if (i->second.refcnt == 0) {
-        // remove egress L3 Unicast group
-        int rv = sw->l3_egress_remove(i->second.l3_interface_id);
+    if (it->second.refcnt == 0) {
+      // remove egress L3 Unicast group
+      int rv = sw->l3_egress_remove(it->second.l3_interface_id);
 
-        l3_interface_mapping.erase(i);
+      l3_interface_mapping.erase(it);
 
-        if (rv < 0) {
-          LOG(ERROR) << __FUNCTION__
-                     << ": failed to setup l3 egress port_id=" << port_id
-                     << ", vid=" << vid << ", src_mac=" << src_mac
-                     << ", dst_mac=" << dst_mac << "; rv=" << rv;
-          return rv;
-        }
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__
+                   << ": failed to remove l3 egress port_id=" << port_id
+                   << ", vid=" << vid << ", src_mac=" << src_mac
+                   << ", dst_mac=" << dst_mac << "; rv=" << rv;
+        return rv;
       }
-      return 0;
     }
+
+    return 0;
   }
 
   LOG(ERROR) << __FUNCTION__
