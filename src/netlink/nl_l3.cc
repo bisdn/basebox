@@ -908,7 +908,7 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
   assert(s_mac);
   assert(d_mac);
 
-  int rv = -EINVAL;
+  int rv = 0;
 
   // XXX TODO handle this on bridge interface
   uint32_t port_id = nl->get_port_id(ifindex);
@@ -922,10 +922,9 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
   rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(s_mac);
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(d_mac);
   auto l3_if_tuple = std::make_tuple(port_id, vid, src_mac, dst_mac);
-  auto it = l3_interface_mapping.equal_range(l3_if_tuple);
+  auto it = l3_interface_mapping.find(l3_if_tuple);
 
-  rv = get_l3_interface_id(ifindex, s_mac, d_mac, l3_interface_id);
-  if (rv == -ENODATA) {
+  if (it == l3_interface_mapping.end()) {
     rv = sw->l3_egress_create(port_id, vid, src_mac, dst_mac, l3_interface_id);
 
     if (rv < 0) {
@@ -941,6 +940,9 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
     VLOG(1) << __FUNCTION__
             << ": Layer 3 egress id created, l3_interface=" << *l3_interface_id
             << " port_id=" << port_id;
+  } else {
+    it->second.refcnt++;
+    *l3_interface_id = it->second.l3_interface_id;
   }
 
   return rv;
