@@ -1324,32 +1324,21 @@ int nl_l3::get_l3_interface_id(int ifindex, const struct nl_addr *s_mac,
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(d_mac);
   auto needle = std::make_tuple(port_id, vid, src_mac, dst_mac);
 
-  auto it = l3_interface_mapping.equal_range(needle);
+  auto it = l3_interface_mapping.find(needle);
 
-  if (it.first == l3_interface_mapping.end()) {
+  if (it == l3_interface_mapping.end()) {
     LOG(ERROR) << __FUNCTION__ << ": l3_interface_id entry not found for port "
                << port_id << ", src_mac " << src_mac << ", dst_mac " << dst_mac
                << ", vid " << vid;
     return -ENODATA;
   }
 
-  for (auto i = it.first; i != it.second; ++i) {
-    if (i->first == needle) {
-      *l3_interface_id = i->second.l3_interface_id;
+  *l3_interface_id = it->second.l3_interface_id;
 
-      VLOG(2) << __FUNCTION__ << ": l3_interface_id " << *l3_interface_id
-              << " found for port " << port_id << ", src_mac " << src_mac
-              << ", dst_mac " << dst_mac << ", vid " << vid;
-      return 0;
-    }
-  }
-
-  LOG(ERROR) << __FUNCTION__ << ": l3_interface_id entry not found for port "
-             << port_id << ", src_mac " << src_mac << ", dst_mac " << dst_mac
-             << ", vid " << vid;
-
-  // not found either
-  return -ENODATA;
+  VLOG(2) << __FUNCTION__ << ": l3_interface_id " << *l3_interface_id
+          << " found for port " << port_id << ", src_mac " << src_mac
+          << ", dst_mac " << dst_mac << ", vid " << vid;
+  return 0;
 }
 
 int nl_l3::add_l3_unicast_route(nl_addr *rt_dst, uint32_t l3_interface_id,
