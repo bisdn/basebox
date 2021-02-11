@@ -1542,21 +1542,20 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     auto ifindex = rtnl_neigh_get_ifindex(n);
 
     auto link = nl->get_link_by_ifindex(ifindex);
+    auto vid = vlan->get_vid(link.get());
     struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
     struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
 
     // For the Bridge SVI, the l3 interface already exists
     // so we can just get that one
     if (nl->is_bridge_interface(ifindex)) {
-      auto fdb_res = nl->search_fdb(0, d_mac);
+      auto fdb_res = nl->search_fdb(vid, d_mac);
 
-      for (auto i : fdb_res) {
-        auto vid = rtnl_neigh_get_vlan(i);
-        int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(i);
-        get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
+      assert(fdb_res.size() == 1);
+      int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+
+      get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
                             vid);
-      }
-
     } else {
       rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id);
       if (rv == -ENODATA) {
@@ -1665,16 +1664,18 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
       auto ifindex = rtnl_neigh_get_ifindex(n);
 
       auto link = nl->get_link_by_ifindex(ifindex);
+      auto vid = vlan->get_vid(link.get());
+
       struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
       struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
 
       // For the Bridge SVI, the l3 interface already exists
       // so we can just get that one
       if (nl->is_bridge_interface(ifindex)) {
-        auto fdb_res = nl->search_fdb(0, d_mac);
-        rtnl_neigh *fdb_neigh = fdb_res.front();
-        int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(fdb_neigh);
-        auto vid = rtnl_neigh_get_vlan(fdb_neigh);
+        auto fdb_res = nl->search_fdb(vid, d_mac);
+
+        assert(fdb_res.size() == 1);
+        int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
         get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
                             vid);
         l3_interfaces.emplace(l3_interface_id);
