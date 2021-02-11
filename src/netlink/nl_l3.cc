@@ -600,6 +600,18 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   if (n == nullptr)
     return -EINVAL;
 
+  addr = rtnl_neigh_get_dst(n);
+  if (family == AF_INET6) {
+    auto p = nl_addr_alloc(16);
+    nl_addr_parse("fe80::/10", AF_INET6, &p);
+    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
+
+    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
+      VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
+      return 0;
+    }
+  }
+
   rv = add_l3_neigh_egress(n, &l3_interface_id, &vrf_id);
   LOG(INFO) << __FUNCTION__ << ": adding l3 neigh egress for neigh "
             << OBJ_CAST(n);
@@ -610,7 +622,6 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
     return rv;
   }
 
-  addr = rtnl_neigh_get_dst(n);
   if (family == AF_INET) {
     rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
     if (rv < 0) {
@@ -624,14 +635,6 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
   } else {
     // AF_INET6
-    auto p = nl_addr_alloc(16);
-    nl_addr_parse("fe80::/10", AF_INET6, &p);
-    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
-
-    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
-      VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
-      return 0;
-    }
     rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
