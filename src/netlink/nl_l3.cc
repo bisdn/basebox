@@ -1552,21 +1552,16 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
       auto fdb_res = nl->search_fdb(vid, d_mac);
 
       assert(fdb_res.size() == 1);
-      int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+      ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+    }
 
-      get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
-                            vid);
-    } else {
-      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id, vid);
-      if (rv == -ENODATA) {
-        // add neigh
-        rv = add_l3_egress(ifindex, vid, s_mac, d_mac, &l3_interface_id);
-      } else if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": add l3 egress failed for neigh "
-                   << OBJ_CAST(n);
-        // XXX TODO create l3 neigh later
-        continue;
-      }
+    // add neigh
+    rv = add_l3_egress(ifindex, vid, s_mac, d_mac, &l3_interface_id);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": add l3 egress failed for neigh "
+                 << OBJ_CAST(n);
+      // XXX TODO create l3 neigh later
+      continue;
     }
 
     VLOG(2) << __FUNCTION__ << ": got l3_interface_id=" << l3_interface_id;
