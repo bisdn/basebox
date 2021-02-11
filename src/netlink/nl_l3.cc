@@ -1557,7 +1557,7 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
       get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
                             vid);
     } else {
-      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id);
+      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id, vid);
       if (rv == -ENODATA) {
         // add neigh
         rv = add_l3_neigh_egress(n, &l3_interface_id);
@@ -1682,7 +1682,7 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
         continue;
       }
       // add neigh
-      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id);
+      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id, vid);
 
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__
