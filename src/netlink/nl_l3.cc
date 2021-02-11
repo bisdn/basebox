@@ -577,6 +577,13 @@ int nl_l3::del_l3_neigh_egress(struct rtnl_neigh *n) {
   uint16_t vid = vlan->get_vid(link.get());
   auto s_mac = rtnl_link_get_addr(link.get());
 
+  if (nl->is_bridge_interface(ifindex)) {
+    auto fdb_res = nl->search_fdb(vid, d_mac);
+
+    assert(fdb_res.size() == 1);
+    ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+  }
+
   // XXX TODO del vlan
 
   // remove egress group reference
