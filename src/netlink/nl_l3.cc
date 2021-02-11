@@ -1675,11 +1675,7 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
         auto fdb_res = nl->search_fdb(vid, d_mac);
 
         assert(fdb_res.size() == 1);
-        int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
-        get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
-                            vid);
-        l3_interfaces.emplace(l3_interface_id);
-        continue;
+        ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
       }
       // add neigh
       rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id, vid);
