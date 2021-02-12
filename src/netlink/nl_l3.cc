@@ -62,7 +62,7 @@ public:
 };
 
 // next hop mapping key: <port_id, vid, src_mac, dst_mac>
-std::unordered_multimap<
+std::unordered_map<
     std::tuple<int, uint16_t, rofl::caddress_ll, rofl::caddress_ll>,
     l3_interface>
     l3_interface_mapping;
@@ -577,6 +577,13 @@ int nl_l3::del_l3_neigh_egress(struct rtnl_neigh *n) {
   uint16_t vid = vlan->get_vid(link.get());
   auto s_mac = rtnl_link_get_addr(link.get());
 
+  if (nl->is_bridge_interface(ifindex)) {
+    auto fdb_res = nl->search_fdb(vid, d_mac);
+
+    assert(fdb_res.size() == 1);
+    ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+  }
+
   // XXX TODO del vlan
 
   // remove egress group reference
@@ -600,6 +607,18 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   if (n == nullptr)
     return -EINVAL;
 
+  addr = rtnl_neigh_get_dst(n);
+  if (family == AF_INET6) {
+    auto p = nl_addr_alloc(16);
+    nl_addr_parse("fe80::/10", AF_INET6, &p);
+    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
+
+    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
+      VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
+      return 0;
+    }
+  }
+
   rv = add_l3_neigh_egress(n, &l3_interface_id, &vrf_id);
   LOG(INFO) << __FUNCTION__ << ": adding l3 neigh egress for neigh "
             << OBJ_CAST(n);
@@ -610,7 +629,6 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
     return rv;
   }
 
-  addr = rtnl_neigh_get_dst(n);
   if (family == AF_INET) {
     rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
     if (rv < 0) {
@@ -624,14 +642,6 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
   } else {
     // AF_INET6
-    auto p = nl_addr_alloc(16);
-    nl_addr_parse("fe80::/10", AF_INET6, &p);
-    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
-
-    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
-      VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
-      return 0;
-    }
     rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
@@ -797,46 +807,30 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
                         libnl_lladdr_2_rofl(n_ll_new));
 
     // Obtain l3_interface_id
-    auto it_range = l3_interface_mapping.equal_range(l3_if_old_tuple);
-    if (it_range.first == l3_interface_mapping.end()) {
+    auto it_old = l3_interface_mapping.find(l3_if_old_tuple);
+    if (it_old == l3_interface_mapping.end()) {
       LOG(ERROR) << __FUNCTION__ << ": could not retrieve neighbor";
       return -EINVAL;
     }
 
-    uint32_t l3_interface_id = 0;
-    auto it = it_range.first;
-    for (; it != it_range.second; ++it) {
-      if (l3_if_old_tuple == it->first) {
-        l3_interface_id = it->second.l3_interface_id;
-
-        rv = sw->l3_egress_update(port_id, vid, libnl_lladdr_2_rofl(s_mac),
-                                  libnl_lladdr_2_rofl(n_ll_new),
-                                  &l3_interface_id);
-        if (rv < 0) {
-          VLOG(2) << __FUNCTION__ << ": failed to add neighbor";
-          return -EINVAL;
-        }
-        break;
-
-      } else {
-        VLOG(2) << __FUNCTION__ << ": skipping interface";
-      }
-    }
-
-    if (it_range.first == it_range.second) {
-      LOG(ERROR) << __FUNCTION__ << ": could not update neighbor";
+    uint32_t l3_interface_id = it_old->second.l3_interface_id;
+    rv = sw->l3_egress_update(port_id, vid, libnl_lladdr_2_rofl(s_mac),
+                              libnl_lladdr_2_rofl(n_ll_new),
+                              &l3_interface_id);
+    if (rv < 0) {
+      VLOG(2) << __FUNCTION__ << ": failed to update neighbor";
       return -EINVAL;
     }
 
-    it_range = l3_interface_mapping.equal_range(l3_if_new_tuple);
-    if (it_range.first != l3_interface_mapping.end()) {
+    auto it_new = l3_interface_mapping.find(l3_if_new_tuple);
+    if (it_new != l3_interface_mapping.end()) {
       LOG(ERROR) << __FUNCTION__ << ": neighbor already present";
       return -EINVAL;
     }
 
-    l3_interface_mapping.erase(it->first);
+    l3_interface_mapping.erase(it_old->first);
     l3_interface_mapping.emplace(
-        std::make_pair(l3_if_new_tuple, l3_interface(l3_interface_id)));
+        std::make_pair(l3_if_new_tuple, it_old->second));
 
   } else {
     // nothing changed besides the nud
@@ -908,7 +902,7 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
   assert(s_mac);
   assert(d_mac);
 
-  int rv = -EINVAL;
+  int rv = 0;
 
   // XXX TODO handle this on bridge interface
   uint32_t port_id = nl->get_port_id(ifindex);
@@ -922,10 +916,9 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
   rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(s_mac);
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(d_mac);
   auto l3_if_tuple = std::make_tuple(port_id, vid, src_mac, dst_mac);
-  auto it = l3_interface_mapping.equal_range(l3_if_tuple);
+  auto it = l3_interface_mapping.find(l3_if_tuple);
 
-  rv = get_l3_interface_id(ifindex, s_mac, d_mac, l3_interface_id);
-  if (rv == -ENODATA) {
+  if (it == l3_interface_mapping.end()) {
     rv = sw->l3_egress_create(port_id, vid, src_mac, dst_mac, l3_interface_id);
 
     if (rv < 0) {
@@ -941,6 +934,9 @@ int nl_l3::add_l3_egress(int ifindex, const uint16_t vid,
     VLOG(1) << __FUNCTION__
             << ": Layer 3 egress id created, l3_interface=" << *l3_interface_id
             << " port_id=" << port_id;
+  } else {
+    it->second.refcnt++;
+    *l3_interface_id = it->second.l3_interface_id;
   }
 
   return rv;
@@ -961,31 +957,30 @@ int nl_l3::del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
   rofl::caddress_ll src_mac = libnl_lladdr_2_rofl(s_mac);
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(d_mac);
   auto l3_if_tuple = std::make_tuple(port_id, vid, src_mac, dst_mac);
-  auto it = l3_interface_mapping.equal_range(l3_if_tuple);
+  auto it = l3_interface_mapping.find(l3_if_tuple);
 
-  for (auto i = it.first; i != it.second; ++i) {
-    if (i->first == l3_if_tuple) {
-      i->second.refcnt--;
-      VLOG(2) << __FUNCTION__ << ": port_id=" << port_id << ", vid=" << vid
-              << ", s_mac=" << s_mac << ", d_mac=" << d_mac
-              << ", refcnt=" << i->second.refcnt;
+  if (it != l3_interface_mapping.end()) {
+    it->second.refcnt--;
+    VLOG(2) << __FUNCTION__ << ": port_id=" << port_id << ", vid=" << vid
+            << ", s_mac=" << s_mac << ", d_mac=" << d_mac
+            << ", refcnt=" << it->second.refcnt;
 
-      if (i->second.refcnt == 0) {
-        // remove egress L3 Unicast group
-        int rv = sw->l3_egress_remove(i->second.l3_interface_id);
+    if (it->second.refcnt == 0) {
+      // remove egress L3 Unicast group
+      int rv = sw->l3_egress_remove(it->second.l3_interface_id);
 
-        l3_interface_mapping.erase(i);
+      l3_interface_mapping.erase(it);
 
-        if (rv < 0) {
-          LOG(ERROR) << __FUNCTION__
-                     << ": failed to setup l3 egress port_id=" << port_id
-                     << ", vid=" << vid << ", src_mac=" << src_mac
-                     << ", dst_mac=" << dst_mac << "; rv=" << rv;
-          return rv;
-        }
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__
+                   << ": failed to remove l3 egress port_id=" << port_id
+                   << ", vid=" << vid << ", src_mac=" << src_mac
+                   << ", dst_mac=" << dst_mac << "; rv=" << rv;
+        return rv;
       }
-      return 0;
     }
+
+    return 0;
   }
 
   LOG(ERROR) << __FUNCTION__
@@ -1324,32 +1319,21 @@ int nl_l3::get_l3_interface_id(int ifindex, const struct nl_addr *s_mac,
   rofl::caddress_ll dst_mac = libnl_lladdr_2_rofl(d_mac);
   auto needle = std::make_tuple(port_id, vid, src_mac, dst_mac);
 
-  auto it = l3_interface_mapping.equal_range(needle);
+  auto it = l3_interface_mapping.find(needle);
 
-  if (it.first == l3_interface_mapping.end()) {
+  if (it == l3_interface_mapping.end()) {
     LOG(ERROR) << __FUNCTION__ << ": l3_interface_id entry not found for port "
                << port_id << ", src_mac " << src_mac << ", dst_mac " << dst_mac
                << ", vid " << vid;
     return -ENODATA;
   }
 
-  for (auto i = it.first; i != it.second; ++i) {
-    if (i->first == needle) {
-      *l3_interface_id = i->second.l3_interface_id;
+  *l3_interface_id = it->second.l3_interface_id;
 
-      VLOG(2) << __FUNCTION__ << ": l3_interface_id " << *l3_interface_id
-              << " found for port " << port_id << ", src_mac " << src_mac
-              << ", dst_mac " << dst_mac << ", vid " << vid;
-      return 0;
-    }
-  }
-
-  LOG(ERROR) << __FUNCTION__ << ": l3_interface_id entry not found for port "
-             << port_id << ", src_mac " << src_mac << ", dst_mac " << dst_mac
-             << ", vid " << vid;
-
-  // not found either
-  return -ENODATA;
+  VLOG(2) << __FUNCTION__ << ": l3_interface_id " << *l3_interface_id
+          << " found for port " << port_id << ", src_mac " << src_mac
+          << ", dst_mac " << dst_mac << ", vid " << vid;
+  return 0;
 }
 
 int nl_l3::add_l3_unicast_route(nl_addr *rt_dst, uint32_t l3_interface_id,
@@ -1568,32 +1552,26 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     auto ifindex = rtnl_neigh_get_ifindex(n);
 
     auto link = nl->get_link_by_ifindex(ifindex);
+    auto vid = vlan->get_vid(link.get());
     struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
     struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
 
     // For the Bridge SVI, the l3 interface already exists
     // so we can just get that one
     if (nl->is_bridge_interface(ifindex)) {
-      auto fdb_res = nl->search_fdb(0, d_mac);
+      auto fdb_res = nl->search_fdb(vid, d_mac);
 
-      for (auto i : fdb_res) {
-        auto vid = rtnl_neigh_get_vlan(i);
-        int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(i);
-        get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
-                            vid);
-      }
+      assert(fdb_res.size() == 1);
+      ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+    }
 
-    } else {
-      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id);
-      if (rv == -ENODATA) {
-        // add neigh
-        rv = add_l3_neigh_egress(n, &l3_interface_id);
-      } else if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
-                   << OBJ_CAST(n);
-        // XXX TODO create l3 neigh later
-        continue;
-      }
+    // add neigh
+    rv = add_l3_egress(ifindex, vid, s_mac, d_mac, &l3_interface_id);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": add l3 egress failed for neigh "
+                 << OBJ_CAST(n);
+      // XXX TODO create l3 neigh later
+      continue;
     }
 
     VLOG(2) << __FUNCTION__ << ": got l3_interface_id=" << l3_interface_id;
@@ -1691,23 +1669,21 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
       auto ifindex = rtnl_neigh_get_ifindex(n);
 
       auto link = nl->get_link_by_ifindex(ifindex);
+      auto vid = vlan->get_vid(link.get());
+
       struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
       struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
 
       // For the Bridge SVI, the l3 interface already exists
       // so we can just get that one
       if (nl->is_bridge_interface(ifindex)) {
-        auto fdb_res = nl->search_fdb(0, d_mac);
-        rtnl_neigh *fdb_neigh = fdb_res.front();
-        int fdb_neigh_ifindex = rtnl_neigh_get_ifindex(fdb_neigh);
-        auto vid = rtnl_neigh_get_vlan(fdb_neigh);
-        get_l3_interface_id(fdb_neigh_ifindex, s_mac, d_mac, &l3_interface_id,
-                            vid);
-        l3_interfaces.emplace(l3_interface_id);
-        continue;
+        auto fdb_res = nl->search_fdb(vid, d_mac);
+
+        assert(fdb_res.size() == 1);
+        ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
       }
       // add neigh
-      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id);
+      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id, vid);
 
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__
@@ -1731,11 +1707,25 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
 
   // remove egress references
   for (auto n : neighs) {
-    rv = del_l3_neigh_egress(n);
+    auto ifindex = rtnl_neigh_get_ifindex(n);
+
+    auto link = nl->get_link_by_ifindex(ifindex);
+    auto vid = vlan->get_vid(link.get());
+
+    struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
+    struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
+
+    if (nl->is_bridge_interface(ifindex)) {
+      auto fdb_res = nl->search_fdb(vid, d_mac);
+
+      assert(fdb_res.size() == 1);
+      ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+    }
+    rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
 
     if (rv < 0) {
       // clean up
-      LOG(ERROR) << __FUNCTION__ << ": del l3 neigh egress failed for neigh "
+      LOG(ERROR) << __FUNCTION__ << ": del l3 egress failed for neigh "
                  << OBJ_CAST(n);
       // fallthrough
     }
