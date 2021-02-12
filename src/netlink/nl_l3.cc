@@ -668,34 +668,6 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
     }
   }
 
-  for (auto cb = std::begin(net_resolved_callbacks);
-       cb != std::end(net_resolved_callbacks);) {
-    VLOG(2) << __FUNCTION__ << " neigh ifindex=" << rtnl_neigh_get_ifindex(n)
-            << " cb ifindex=" << cb->ifindex << " neigh add=" << cb->addr
-            << " neigh dst=" << rtnl_neigh_get_dst(n);
-    if (cb->ifindex == rtnl_neigh_get_ifindex(n) &&
-        nl_addr_cmp_prefix(cb->addr, rtnl_neigh_get_dst(n)) == 0) {
-
-      // query the kernel for the correct route matching the dst addr
-      nl_route_query rq;
-      auto rt = rq.query_route(cb->addr);
-
-      auto ad = rtnl_route_get_dst(rt);
-      nl_addr_set_prefixlen(
-          ad,
-          nl_addr_get_prefixlen(cb->addr)); // guarantee the correct prefixlen
-
-      add_l3_unicast_route(rt, true);
-      nl_object_put(
-          OBJ_CAST(rt)); // return object has to be freed using nl_object_put
-
-      cb = net_resolved_callbacks.erase(cb); // erase invalidates the pointer,
-                                             // so the value must be returned
-    } else {
-      ++cb;
-    }
-  }
-
   return rv;
 }
 
@@ -1293,10 +1265,6 @@ void nl_l3::notify_on_nh_reachable(nh_reachable *f,
   nh_callbacks.emplace_back(f, p);
 }
 
-void nl_l3::notify_on_nh_resolved(struct net_params p) noexcept {
-  net_resolved_callbacks.emplace_back(p);
-}
-
 int nl_l3::get_l3_interface_id(int ifindex, const struct nl_addr *s_mac,
                                const struct nl_addr *d_mac,
                                uint32_t *l3_interface_id, uint16_t vid) {
@@ -1503,6 +1471,19 @@ int nl_l3::del_l3_ecmp_route(rtnl_route *r,
   return -EINVAL;
 }
 
+void nl_l3::nh_reachable_notification(struct nh_params p) noexcept {
+  nl_route_query rq;
+  auto rt = rq.query_route(p.np.addr);
+  auto ad = rtnl_route_get_dst(rt);
+
+  // guarantee the correct prefixlen
+  nl_addr_set_prefixlen(ad, nl_addr_get_prefixlen(p.np.addr));
+
+  add_l3_unicast_route(rt, true);
+  // return object has to be freed using nl_object_put
+  nl_object_put(OBJ_CAST(rt));
+}
+
 int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   assert(r);
   int nnhs = rtnl_route_get_nnexthops(r);
@@ -1537,7 +1518,8 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     if (!is_ipv6_link_local_address(rtnl_route_get_dst(r)) &&
         !is_ipv6_multicast_address(rtnl_route_get_dst(r)) &&
         rtnl_route_get_scope(r) != RT_SCOPE_LINK)
-      notify_on_nh_resolved(net_params(rtnl_route_get_dst(r), nh.ifindex));
+      notify_on_nh_reachable(
+          this, nh_params{net_params{rtnl_route_get_dst(r), nh.ifindex}, nh});
   }
 
   VLOG(2) << __FUNCTION__ << ": got " << neighs.size() << " neighbours ("
@@ -1643,15 +1625,20 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   VLOG(2) << __FUNCTION__ << ": number of next hops is "
           << rtnl_route_get_nnexthops(r);
 
-  // Cleanup the unresolved route on deletion
+  // Cleanup the unresolved route on deletion. Make sure to only remove the
+  // first hit, as we want to keep the second one that will have been added
+  // by add_l3_unicast_route() from update_l3_unicact_route().
+  // If this is an actual deletion, there should only be one anyway.
   for (auto i : unresolved_nh) {
-    auto it = std::find(net_resolved_callbacks.begin(),
-                        net_resolved_callbacks.end(), i.ifindex);
-    if (it == net_resolved_callbacks.end()) {
-      continue;
-    }
+    auto it = std::find_if(nh_callbacks.begin(), nh_callbacks.end(),
+                           [&](std::pair<nh_reachable *, nh_params> &cb) {
+                             return cb.first == this &&
+                                    cb.second.nh.ifindex == i.ifindex &&
+                                    !nl_addr_cmp_prefix(cb.second.np.addr, dst);
+                           });
 
-    net_resolved_callbacks.erase(it);
+    if (it != nh_callbacks.end())
+      nh_callbacks.erase(it);
   }
 
   if (neighs.size() == 0) {
