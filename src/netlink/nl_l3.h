@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <deque>
+#include <list>
 #include <memory>
 #include <set>
 
@@ -122,8 +123,8 @@ private:
   switch_interface *sw;
   std::shared_ptr<nl_vlan> vlan;
   cnetlink *nl;
-  std::deque<std::pair<net_reachable *, net_params>> net_callbacks;
-  std::deque<std::pair<nh_reachable *, nh_params>> nh_callbacks;
+  std::list<std::pair<net_reachable *, net_params>> net_callbacks;
+  std::list<std::pair<nh_reachable *, nh_params>> nh_callbacks;
   const uint8_t MAIN_ROUTING_TABLE = 254;
 };
 
