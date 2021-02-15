@@ -815,8 +815,7 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
 
     uint32_t l3_interface_id = it_old->second.l3_interface_id;
     rv = sw->l3_egress_update(port_id, vid, libnl_lladdr_2_rofl(s_mac),
-                              libnl_lladdr_2_rofl(n_ll_new),
-                              &l3_interface_id);
+                              libnl_lladdr_2_rofl(n_ll_new), &l3_interface_id);
     if (rv < 0) {
       VLOG(2) << __FUNCTION__ << ": failed to update neighbor";
       return -EINVAL;
