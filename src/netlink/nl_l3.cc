@@ -659,8 +659,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
   for (auto cb = std::begin(nh_callbacks); cb != std::end(nh_callbacks);) {
     if (cb->second.nh.ifindex == rtnl_neigh_get_ifindex(n) &&
-        nl_addr_get_family(cb->second.np.addr) == rtnl_neigh_get_family(n) &&
-        nl_addr_cmp(cb->second.np.addr, rtnl_neigh_get_dst(n)) == 0) {
+        nl_addr_cmp(cb->second.nh.nh, rtnl_neigh_get_dst(n)) == 0) {
       // XXX TODO add l3_interface?
       cb->first->nh_reachable_notification(cb->second);
       cb = nh_callbacks.erase(cb);
