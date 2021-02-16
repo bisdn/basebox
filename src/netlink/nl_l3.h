@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <deque>
+#include <list>
 #include <memory>
 #include <set>
 
@@ -31,7 +32,7 @@ class nl_vlan;
 class nl_bridge;
 class switch_interface;
 
-class nl_l3 {
+class nl_l3 : public nh_reachable {
 public:
   nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl);
   ~nl_l3() {}
@@ -65,7 +66,8 @@ public:
 
   void notify_on_net_reachable(net_reachable *f, struct net_params p) noexcept;
   void notify_on_nh_reachable(nh_reachable *f, struct nh_params p) noexcept;
-  void notify_on_nh_resolved(struct net_params p) noexcept;
+
+  void nh_reachable_notification(struct nh_params) noexcept override;
 
 private:
   int get_l3_interface_id(int ifindex, const struct nl_addr *s_mac,
@@ -121,9 +123,8 @@ private:
   switch_interface *sw;
   std::shared_ptr<nl_vlan> vlan;
   cnetlink *nl;
-  std::deque<std::pair<net_reachable *, net_params>> net_callbacks;
-  std::deque<std::pair<nh_reachable *, nh_params>> nh_callbacks;
-  std::deque<net_params> net_resolved_callbacks; // handle the unknown nexthops
+  std::list<std::pair<net_reachable *, net_params>> net_callbacks;
+  std::list<std::pair<nh_reachable *, nh_params>> nh_callbacks;
   const uint8_t MAIN_ROUTING_TABLE = 254;
 };
 
