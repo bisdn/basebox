@@ -833,6 +833,16 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
     rv = sw->l3_unicast_host_remove(ipv4_dst);
   } else {
     addr = rtnl_neigh_get_dst(n);
+
+    auto p = nl_addr_alloc(16);
+    nl_addr_parse("fe80::/10", AF_INET6, &p);
+    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
+
+    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
+      VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
+      return 0;
+    }
+
     rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
