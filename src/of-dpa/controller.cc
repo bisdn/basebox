@@ -1338,6 +1338,8 @@ int controller::l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
                               fm_driver.enable_ipv4_unicast_lpm(
                                   dpt.get_version(), ipv4_dst, mask,
                                   l3_interface_id, update_route, vrf_id));
+
+    dpt.send_barrier_request(rofl::cauxid(0));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1379,6 +1381,8 @@ int controller::l3_unicast_route_add(const rofl::caddress_in6 &ipv6_dst,
                               fm_driver.enable_ipv6_unicast_lpm(
                                   dpt.get_version(), ipv6_dst, mask,
                                   l3_interface_id, update_route, vrf_id));
+
+    dpt.send_barrier_request(rofl::cauxid(0));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
