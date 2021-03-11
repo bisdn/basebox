@@ -129,6 +129,26 @@ int nl_l3::init() noexcept {
   return 0;
 }
 
+int nl_l3::search_neigh_cache(int ifindex, struct nl_addr *addr, std::list<struct rtnl_neigh *> *neigh) {
+  std::unique_ptr<struct rtnl_neigh, void (*)(rtnl_neigh *)> neigh_filter(
+      rtnl_neigh_alloc(), &rtnl_neigh_put);
+
+  rtnl_neigh_set_ifindex(neigh_filter.get(), ifindex);
+  rtnl_neigh_set_dst(neigh_filter.get(), addr);
+  rtnl_neigh_set_family(neigh_filter.get(), AF_INET);
+
+  nl_cache_foreach_filter(
+      nl->get_cache(cnetlink::NL_NEIGH_CACHE), OBJ_CAST(neigh_filter.get()),
+      [](struct nl_object *obj, void *arg) {
+        auto *add_list = static_cast<std::list<struct rtnl_neigh *> *>(arg);
+
+        add_list->emplace_back(NEIGH_CAST(obj));
+      },
+      neigh);
+
+  return 0;
+}
+
 // XXX separate function to make it possible to add lo addresses more directly
 int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   assert(sw);
@@ -225,7 +245,17 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     return rv;
   }
 
-  rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0, false, false, vrf_id);
+  bool update = false;
+  if (std::list<struct rtnl_neigh *> neigh; search_neigh_cache(ifindex, addr, &neigh) == 0) {
+    VLOG(2) << __FUNCTION__ << ": list neigh size " << neigh.size();
+    if (neigh.size() > 0)
+      update = true;
+  }
+
+  if (prefixlen == 32)
+    rv = sw->l3_unicast_host_add(ipv4_dst, 0, false, update, vrf_id);
+  else
+    rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0, false, update, vrf_id);
   if (rv < 0) {
     // TODO shall we remove the l3_termination mac?
     LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
