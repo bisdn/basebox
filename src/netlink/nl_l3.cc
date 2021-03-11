@@ -588,7 +588,7 @@ int nl_l3::del_l3_neigh_egress(struct rtnl_neigh *n) {
 
   // remove egress group reference
   int rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
-  if (rv < 0) {
+  if (rv < 0 and rv != -EEXIST) {
     LOG(ERROR) << __FUNCTION__ << ": failed to add l3 egress";
   }
 
@@ -833,6 +833,16 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
     rv = sw->l3_unicast_host_remove(ipv4_dst);
   } else {
     addr = rtnl_neigh_get_dst(n);
+
+    auto p = nl_addr_alloc(16);
+    nl_addr_parse("fe80::/10", AF_INET6, &p);
+    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
+
+    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
+      VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
+      return 0;
+    }
+
     rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
@@ -861,6 +871,22 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
 
   if (s_mac && d_mac)
     rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
+
+  // if a route still exists thats pointing to the nexthop,
+  // update the route to point to controller and delete the nexthop egress 
+  // reference
+  if (rv == -EEXIST) {
+    for (auto cb = std::begin(nh_unreach_callbacks);
+         cb != std::end(nh_unreach_callbacks);) {
+      if (cb->second.nh.ifindex == rtnl_neigh_get_ifindex(n) &&
+          nl_addr_cmp(cb->second.nh.nh, rtnl_neigh_get_dst(n)) == 0) {
+        cb->first->nh_unreachable_notification(n, cb->second);
+        cb = nh_unreach_callbacks.erase(cb);
+      } else {
+        ++cb;
+      }
+    }
+  }
 
   return rv;
 }
@@ -949,8 +975,7 @@ int nl_l3::del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
         return rv;
       }
     }
-
-    return 0;
+    return -EEXIST;
   }
 
   LOG(ERROR) << __FUNCTION__
@@ -1265,6 +1290,11 @@ void nl_l3::notify_on_nh_reachable(nh_reachable *f,
   nh_callbacks.emplace_back(f, p);
 }
 
+void nl_l3::notify_on_nh_unreachable(nh_unreachable *f,
+                                     struct nh_params p) noexcept {
+  nh_unreach_callbacks.emplace_back(f, p);
+}
+
 int nl_l3::get_l3_interface_id(int ifindex, const struct nl_addr *s_mac,
                                const struct nl_addr *d_mac,
                                uint32_t *l3_interface_id, uint16_t vid) {
@@ -1484,6 +1514,14 @@ void nl_l3::nh_reachable_notification(struct nh_params p) noexcept {
   nl_object_put(OBJ_CAST(rt));
 }
 
+void nl_l3::nh_unreachable_notification(struct rtnl_neigh *n,
+                                        struct nh_params p) noexcept {
+  // TODO handle VRF
+  add_l3_unicast_route(p.np.addr, 0, false, true, 0);
+  del_l3_neigh_egress(n);
+  notify_on_nh_reachable(this, p);
+}
+
 int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   assert(r);
   int nnhs = rtnl_route_get_nnexthops(r);
@@ -1556,6 +1594,13 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
 
     VLOG(2) << __FUNCTION__ << ": got l3_interface_id=" << l3_interface_id;
     l3_interfaces.emplace(l3_interface_id);
+
+    // Register route to track nexthop changes
+    struct nh_stub nh {
+      rtnl_neigh_get_dst(n), ifindex
+    };
+    notify_on_nh_unreachable(
+        this, nh_params{net_params{rtnl_route_get_dst(r), nh.ifindex}, nh});
   }
 
   switch (nnhs) {
@@ -1708,7 +1753,7 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
     }
     rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
 
-    if (rv < 0) {
+    if (rv < 0 and rv != -EEXIST) {
       // clean up
       LOG(ERROR) << __FUNCTION__ << ": del l3 egress failed for neigh "
                  << OBJ_CAST(n);

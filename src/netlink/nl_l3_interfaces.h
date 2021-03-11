@@ -73,4 +73,11 @@ public:
   virtual void nh_reachable_notification(struct nh_params) noexcept = 0;
 };
 
+class nh_unreachable {
+public:
+  virtual ~nh_unreachable() = default;
+  virtual void nh_unreachable_notification(struct rtnl_neigh *,
+                                           struct nh_params) noexcept = 0;
+};
+
 } // namespace basebox
