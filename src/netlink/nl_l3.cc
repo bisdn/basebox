@@ -368,6 +368,7 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     rv = sw->l3_unicast_host_add(ipv6_dst, 0, false, update, 0);
   else
     rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, update, 0);
+
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to setup address " << OBJ_CAST(a);
     return rv;
@@ -867,7 +868,7 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
   assert(n);
 
   int rv = 0;
-  struct nl_addr *addr = rtnl_neigh_get_dst(n);;
+  struct nl_addr *addr = rtnl_neigh_get_dst(n);
   int family = rtnl_neigh_get_family(n);
   bool skip_addr_remove = false;
 

@@ -106,7 +106,8 @@ private:
                     uint32_t *l3_interface_id);
   int del_l3_egress(int ifindex, uint16_t vid, const struct nl_addr *s_mac,
                     const struct nl_addr *d_mac);
-  int search_neigh_cache(int ifindex, struct nl_addr *addr, std::list<struct rtnl_neigh *> *neigh);
+  int search_neigh_cache(int ifindex, struct nl_addr *addr, int family,
+                         std::list<struct rtnl_neigh *> *neigh);
 
   bool is_ipv6_link_local_address(const struct nl_addr *addr) {
     auto p = nl_addr_alloc(16);
