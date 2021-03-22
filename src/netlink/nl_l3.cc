@@ -358,7 +358,7 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   bool update = false;
   if (std::list<struct rtnl_neigh *> neigh;
       search_neigh_cache(rtnl_addr_get_ifindex(a), addr, AF_INET6, &neigh) == 0) {
-    VLOG(2) << __FUNCTION__ << ": list neigh size " << neigh.size();
+    VLOG(3) << __FUNCTION__ << ": list neigh size " << neigh.size();
     if (neigh.size() > 0)
       update = true;
   }
@@ -886,8 +886,6 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
   for (auto i : link_addresses) {
     if (struct nl_addr *link_addr = rtnl_addr_get_local(i);
         nl_addr_cmp(addr, link_addr) == 0) {
-      VLOG(1) << __FUNCTION__
-              << ": address configured on the interface, skipping";
       skip_addr_remove = true;
       break;
     }
