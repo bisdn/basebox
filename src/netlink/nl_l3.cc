@@ -129,6 +129,28 @@ int nl_l3::init() noexcept {
   return 0;
 }
 
+// searches the neigh cache for an address on one interface
+int nl_l3::search_neigh_cache(int ifindex, struct nl_addr *addr, int family,
+                              std::list<struct rtnl_neigh *> *neigh) {
+  std::unique_ptr<struct rtnl_neigh, void (*)(rtnl_neigh *)> neigh_filter(
+      rtnl_neigh_alloc(), &rtnl_neigh_put);
+
+  rtnl_neigh_set_ifindex(neigh_filter.get(), ifindex);
+  rtnl_neigh_set_dst(neigh_filter.get(), addr);
+  rtnl_neigh_set_family(neigh_filter.get(), family);
+
+  nl_cache_foreach_filter(
+      nl->get_cache(cnetlink::NL_NEIGH_CACHE), OBJ_CAST(neigh_filter.get()),
+      [](struct nl_object *obj, void *arg) {
+        auto *add_list = static_cast<std::list<struct rtnl_neigh *> *>(arg);
+
+        add_list->emplace_back(NEIGH_CAST(obj));
+      },
+      neigh);
+
+  return 0;
+}
+
 // XXX separate function to make it possible to add lo addresses more directly
 int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   assert(sw);
@@ -225,7 +247,21 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     return rv;
   }
 
-  rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0, false, false, vrf_id);
+  // check if neighbor is configured on this interface
+  // if neighbor exists, list size > 0, then force the address entry on
+  // the ASIC
+  bool update = false;
+  if (std::list<struct rtnl_neigh *> neigh;
+      search_neigh_cache(ifindex, addr, AF_INET, &neigh) == 0) {
+    VLOG(2) << __FUNCTION__ << ": list neigh size " << neigh.size();
+    if (neigh.size() > 0)
+      update = true;
+  }
+
+  if (prefixlen == 32)
+    rv = sw->l3_unicast_host_add(ipv4_dst, 0, false, update, vrf_id);
+  else
+    rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0, false, update, vrf_id);
   if (rv < 0) {
     // TODO shall we remove the l3_termination mac?
     LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
@@ -316,7 +352,23 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     return rv;
   }
 
-  rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, false);
+  // check if neighbor is configured on this interface
+  // if neighbor exists, list size > 0, then force the address entry on
+  // the ASIC
+  bool update = false;
+  if (std::list<struct rtnl_neigh *> neigh;
+      search_neigh_cache(rtnl_addr_get_ifindex(a), addr, AF_INET6, &neigh) == 0) {
+    VLOG(3) << __FUNCTION__ << ": list neigh size " << neigh.size();
+    if (neigh.size() > 0)
+      update = true;
+  }
+
+  // TODO support VRF on IPv6 addresses
+  if (prefixlen == 32)
+    rv = sw->l3_unicast_host_add(ipv6_dst, 0, false, update, 0);
+  else
+    rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, update, 0);
+
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to setup address " << OBJ_CAST(a);
     return rv;
@@ -813,16 +865,33 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
 }
 
 int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
-  int rv = 0;
-  struct nl_addr *addr;
-  int family = rtnl_neigh_get_family(n);
-
   assert(n);
+
+  int rv = 0;
+  struct nl_addr *addr = rtnl_neigh_get_dst(n);
+  int family = rtnl_neigh_get_family(n);
+  bool skip_addr_remove = false;
+
   if (n == nullptr)
     return -EINVAL;
 
-  if (family == AF_INET) {
-    addr = rtnl_neigh_get_dst(n);
+  int ifindex = rtnl_neigh_get_ifindex(n);
+  auto link = nl->get_link_by_ifindex(ifindex);
+
+  if (!link)
+    return -EINVAL;
+
+  std::deque<rtnl_addr *> link_addresses;
+  get_l3_addrs(link.get(), &link_addresses);
+  for (auto i : link_addresses) {
+    if (struct nl_addr *link_addr = rtnl_addr_get_local(i);
+        nl_addr_cmp(addr, link_addr) == 0) {
+      skip_addr_remove = true;
+      break;
+    }
+  }
+
+  if (family == AF_INET && !skip_addr_remove) {
     rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
@@ -831,9 +900,7 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
 
     // delete next hop
     rv = sw->l3_unicast_host_remove(ipv4_dst);
-  } else {
-    addr = rtnl_neigh_get_dst(n);
-
+  } else if (family == AF_INET6 && !skip_addr_remove) {
     auto p = nl_addr_alloc(16);
     nl_addr_parse("fe80::/10", AF_INET6, &p);
     std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
@@ -858,17 +925,11 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
     return rv;
   }
 
-  // delete l3 unicast group (mac rewrite)
-  int ifindex = rtnl_neigh_get_ifindex(n);
-  auto link = nl->get_link_by_ifindex(ifindex);
-
-  if (!link)
-    return -EINVAL;
-
   struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
   struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
   uint16_t vid = vlan->get_vid(link.get());
 
+  // delete l3 unicast group (mac rewrite)
   if (s_mac && d_mac)
     rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
 
