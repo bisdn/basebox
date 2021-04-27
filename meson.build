@@ -140,6 +140,8 @@ endif
 
 grpc_reflection = cppc.find_library('grpc++_reflection', required: false)
 
+threadlibs = dependency('threads')
+
 # set up generators
 protoc_gen = generator(protoc,
   output    : ['@BASENAME@.pb.cc', '@BASENAME@.pb.h'],
@@ -226,6 +228,7 @@ executable('baseboxd',
     librofl_ofdpa,
     libsystemd,
     protobuf,
+    threadlibs,
   ],
   install: true,
   install_dir: bindir)
