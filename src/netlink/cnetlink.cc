@@ -1196,6 +1196,14 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
         return;
       }
 
+      // we only care if we attach a link that is backed by openflow,
+      // i.e. a tap device or a bond with attached tap devices
+      if (get_port_id(link) == 0) {
+        VLOG(1) << __FUNCTION__ << ": ignoring untracked interface "
+                << rtnl_link_get_name(link);
+        break;
+      }
+
       auto br_link = get_link_by_ifindex(rtnl_link_get_master(link));
       LOG(INFO) << __FUNCTION__ << ": using bridge "
                 << OBJ_CAST(br_link.get());
