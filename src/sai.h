@@ -264,6 +264,13 @@ public:
     port_type_lag = 2,
   };
 
+  enum switch_state {
+    SWITCH_STATE_UNKNOWN,
+    SWITCH_STATE_UP,
+    SWITCH_STATE_DOWN,
+    SWITCH_STATE_FAILED,
+  };
+
   static uint32_t combine_port_type(uint16_t port_num, enum port_type type) {
     return (uint32_t)port_num | type << 16;
   }
@@ -277,6 +284,7 @@ public:
   }
 
   virtual void register_switch(switch_interface *) noexcept = 0;
+  virtual void switch_state_notification(enum switch_state) noexcept = 0;
   virtual void resend_state() noexcept = 0;
   virtual void
   port_notification(std::deque<port_notification_data> &) noexcept = 0;
