@@ -630,9 +630,11 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
   assert(data);
   auto nl = static_cast<cnetlink *>(data);
 
-  // only enqueue nl msgs if not in stopped state
-  if (nl->state != NL_STATE_STOPPED)
-    nl->nl_objs.emplace_back(action, old_obj, new_obj);
+  // Enqueue the messages regardless of the state
+  // Due to the cache synch, we will enqueue the objects
+  // from the start of the netlink thread, ensuring baseboxd
+  // will process all events from the nl caches
+  nl->nl_objs.emplace_back(action, old_obj, new_obj);
 }
 
 void cnetlink::set_tapmanager(std::shared_ptr<tap_manager> tm) {
