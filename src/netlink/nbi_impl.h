@@ -25,6 +25,7 @@ public:
 
   // nbi
   void register_switch(switch_interface *) noexcept override;
+  void switch_state_notification(enum switch_state) noexcept override;
   void resend_state() noexcept override;
   void
   port_notification(std::deque<port_notification_data> &) noexcept override;
