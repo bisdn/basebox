@@ -63,6 +63,9 @@ public:
   int add_l3_addr(struct rtnl_addr *a);
   int del_l3_addr(struct rtnl_addr *a);
 
+  int add_l3_address(rtnl_link *link);
+  int remove_l3_address(rtnl_link *link);
+
   bool is_bridge_interface(rtnl_link *l) const;
   bool is_bridge_interface(int ifindex) const;
   bool is_bridge_configured(rtnl_link *l);

@@ -387,6 +387,43 @@ void cnetlink::get_vlans(int ifindex,
       vlan_list);
 }
 
+int cnetlink::add_l3_address(rtnl_link *link) {
+  int rv = 0;
+  assert(link);
+
+  std::deque<rtnl_addr *> addresses;
+  get_l3_addrs(link, &addresses);
+
+  for (auto i : addresses) {
+    LOG(INFO) << __FUNCTION__ << ": adding address=" << OBJ_CAST(i);
+
+    rv = add_l3_addr(i);
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address " << OBJ_CAST(i)
+                 << " to " << OBJ_CAST(link);
+  }
+  LOG(INFO) << __FUNCTION__ << ": added l3 addresses to " << OBJ_CAST(link);
+
+  return rv;
+}
+
+int cnetlink::remove_l3_address(rtnl_link *link) {
+  int rv = 0;
+  assert(link);
+
+  std::deque<rtnl_addr *> addresses;
+  get_l3_addrs(link, &addresses);
+
+  for (auto i : addresses) {
+    rv = del_l3_addr(i);
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 address from "
+                 << OBJ_CAST(link);
+  }
+
+  return rv;
+}
+
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
                                            struct nl_addr *a) const {
   assert(ifindex);
