@@ -60,7 +60,6 @@ public:
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
   int add_l3_addr(struct rtnl_addr *a);
-  int del_l3_addr(struct rtnl_addr *a);
 
   int add_l3_address(rtnl_link *link);
   int remove_l3_address(rtnl_link *link);

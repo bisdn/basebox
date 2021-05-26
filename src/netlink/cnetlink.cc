@@ -354,8 +354,6 @@ int cnetlink::add_l3_addr(struct rtnl_addr *a) {
   return -EINVAL;
 }
 
-int cnetlink::del_l3_addr(struct rtnl_addr *a) { return l3->del_l3_addr(a); }
-
 void cnetlink::get_vlans(int ifindex,
                          std::deque<uint16_t> *vlan_list) const noexcept {
   assert(vlan_list);
@@ -410,7 +408,7 @@ int cnetlink::remove_l3_address(rtnl_link *link) {
   l3->get_l3_addrs(link, &addresses);
 
   for (auto i : addresses) {
-    rv = del_l3_addr(i);
+    rv = l3->del_l3_addr(i);
     if (rv < 0)
       LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 address from "
                  << OBJ_CAST(link);
