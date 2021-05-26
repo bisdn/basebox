@@ -339,21 +339,6 @@ std::set<uint32_t> cnetlink::get_bond_members_by_port_id(uint32_t port_id) {
   return bond->get_members_by_port_id(port_id);
 }
 
-int cnetlink::add_l3_addr(struct rtnl_addr *a) {
-  switch (rtnl_addr_get_family(a)) {
-  case AF_INET:
-    return l3->add_l3_addr(a);
-  case AF_INET6:
-    return l3->add_l3_addr_v6(a);
-  default:
-    LOG(ERROR) << __FUNCTION__
-               << ": unsupported family=" << rtnl_addr_get_family(a)
-               << " for address=" << OBJ_CAST(a);
-    break;
-  }
-  return -EINVAL;
-}
-
 void cnetlink::get_vlans(int ifindex,
                          std::deque<uint16_t> *vlan_list) const noexcept {
   assert(vlan_list);
@@ -390,7 +375,21 @@ int cnetlink::add_l3_address(rtnl_link *link) {
   for (auto i : addresses) {
     LOG(INFO) << __FUNCTION__ << ": adding address=" << OBJ_CAST(i);
 
-    rv = add_l3_addr(i);
+    switch (rtnl_addr_get_family(i)) {
+    case AF_INET:
+      rv = l3->add_l3_addr(i);
+      break;
+    case AF_INET6:
+      rv = l3->add_l3_addr_v6(i);
+      break;
+    default:
+      LOG(ERROR) << __FUNCTION__
+                 << ": unsupported family=" << rtnl_addr_get_family(i)
+                 << " for address=" << OBJ_CAST(i);
+      rv = -EINVAL;
+      break;
+    }
+
     if (rv < 0)
       LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address " << OBJ_CAST(i)
                  << " to " << OBJ_CAST(link);
