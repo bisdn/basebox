@@ -1169,26 +1169,30 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
         return;
       }
 
+      auto br_link = get_link_by_ifindex(rtnl_link_get_master(link));
+      LOG(INFO) << __FUNCTION__ << ": using bridge "
+                << OBJ_CAST(br_link.get());
+
+      bool new_bridge = false;
       // slave interface
       // use only the first bridge an interface is attached to
       // XXX TODO more bridges!
       if (bridge == nullptr) {
-        std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> br_link(
-            rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_master(link)),
-            rtnl_link_put);
-
-        LOG(INFO) << __FUNCTION__ << ": using bridge "
-                  << OBJ_CAST(br_link.get());
-
         bridge = new nl_bridge(this->swi, tap_man, this, vlan, vxlan);
         bridge->set_bridge_interface(br_link.get());
         vxlan->register_bridge(bridge);
+        new_bridge = true;
       }
 
       LOG(INFO) << __FUNCTION__ << ": enslaving interface "
                 << rtnl_link_get_name(link);
 
       bridge->add_interface(link);
+
+      // Scan the bridge for L3 addresses and routes we ignored previously
+      // due to no relation to any of our interfaces yet.
+      if (new_bridge)
+        add_l3_configuration(br_link.get());
     } catch (std::exception &e) {
       LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
     }
