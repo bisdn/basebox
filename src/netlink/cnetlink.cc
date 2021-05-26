@@ -1159,10 +1159,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     // We can delete the addresses on the interface because we will later
     // receive a notification readding the addresses, that time with the correct
     // VRF
-    std::deque<rtnl_addr *> addresses;
-    get_l3_addrs(old_link, &addresses);
-    for (auto i : addresses)
-      l3->del_l3_addr(i);
+    remove_l3_address(old_link);
 
     vlan->vrf_attach(old_link, new_link);
   } break;
@@ -1175,11 +1172,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       // We can delete the addresses on the interface because we will later
       // receive a notification readding the addresses, that time with the
       // correct VRF
-      std::deque<rtnl_addr *> addresses;
-      get_l3_addrs(old_link, &addresses);
-      // delete l3 addresses no longer associated with vrf
-      for (auto i : addresses)
-        l3->del_l3_addr(i);
+      remove_l3_address(old_link);
       vlan->vrf_detach(old_link, new_link);
     } else if (lt_new == LT_VRF_SLAVE) {
       LOG(INFO) << __FUNCTION__ << ": link updated " << OBJ_CAST(new_link);
