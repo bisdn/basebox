@@ -59,7 +59,6 @@ public:
    */
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
-  int get_l3_addrs(struct rtnl_link *link, std::deque<rtnl_addr *> *addresses);
   int add_l3_addr(struct rtnl_addr *a);
   int del_l3_addr(struct rtnl_addr *a);
 

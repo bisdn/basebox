@@ -335,11 +335,6 @@ std::set<uint32_t> cnetlink::get_bond_members_by_lag(rtnl_link *bond_link) {
   return bond->get_members(bond_link);
 }
 
-int cnetlink::get_l3_addrs(struct rtnl_link *link,
-                           std::deque<rtnl_addr *> *addresses) {
-  return l3->get_l3_addrs(link, addresses);
-}
-
 std::set<uint32_t> cnetlink::get_bond_members_by_port_id(uint32_t port_id) {
   return bond->get_members_by_port_id(port_id);
 }
@@ -392,7 +387,7 @@ int cnetlink::add_l3_address(rtnl_link *link) {
   assert(link);
 
   std::deque<rtnl_addr *> addresses;
-  get_l3_addrs(link, &addresses);
+  l3->get_l3_addrs(link, &addresses);
 
   for (auto i : addresses) {
     LOG(INFO) << __FUNCTION__ << ": adding address=" << OBJ_CAST(i);
@@ -412,7 +407,7 @@ int cnetlink::remove_l3_address(rtnl_link *link) {
   assert(link);
 
   std::deque<rtnl_addr *> addresses;
-  get_l3_addrs(link, &addresses);
+  l3->get_l3_addrs(link, &addresses);
 
   for (auto i : addresses) {
     rv = del_l3_addr(i);
