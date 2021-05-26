@@ -365,7 +365,7 @@ void cnetlink::get_vlans(int ifindex,
       vlan_list);
 }
 
-int cnetlink::add_l3_address(rtnl_link *link) {
+int cnetlink::add_l3_addresses(rtnl_link *link) {
   int rv = 0;
   assert(link);
 
@@ -399,7 +399,7 @@ int cnetlink::add_l3_address(rtnl_link *link) {
   return rv;
 }
 
-int cnetlink::remove_l3_address(rtnl_link *link) {
+int cnetlink::remove_l3_addresses(rtnl_link *link) {
   int rv = 0;
   assert(link);
 
@@ -1151,7 +1151,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     // We can delete the addresses on the interface because we will later
     // receive a notification readding the addresses, that time with the correct
     // VRF
-    remove_l3_address(old_link);
+    remove_l3_addresses(old_link);
 
     vlan->vrf_attach(old_link, new_link);
   } break;
@@ -1164,7 +1164,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       // We can delete the addresses on the interface because we will later
       // receive a notification readding the addresses, that time with the
       // correct VRF
-      remove_l3_address(old_link);
+      remove_l3_addresses(old_link);
       vlan->vrf_detach(old_link, new_link);
     } else if (lt_new == LT_VRF_SLAVE) {
       LOG(INFO) << __FUNCTION__ << ": link updated " << OBJ_CAST(new_link);

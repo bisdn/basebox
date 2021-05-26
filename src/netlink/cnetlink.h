@@ -59,8 +59,8 @@ public:
    */
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
-  int add_l3_address(rtnl_link *link);
-  int remove_l3_address(rtnl_link *link);
+  int add_l3_addresses(rtnl_link *link);
+  int remove_l3_addresses(rtnl_link *link);
 
   bool is_bridge_interface(rtnl_link *l) const;
   bool is_bridge_interface(int ifindex) const;

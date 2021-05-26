@@ -109,7 +109,7 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
     return 0;
   }
 
-  nl->add_l3_address(new_link);
+  nl->add_l3_addresses(new_link);
 #endif
 
   return 0;
@@ -288,7 +288,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   // ASIC, but repeated messages will be seen
   // This should be done in ::add_lag, but for currently unknown reasons
   // this fails when the lag has no members yet. So keep it here for now.
-  nl->add_l3_address(bond);
+  nl->add_l3_addresses(bond);
 #endif
 
   return rv;
@@ -343,7 +343,7 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
     nl->get_vlans(rtnl_link_get_ifindex(bond), &vlans);
 
     if (lm_rv->second.empty())
-      nl->remove_l3_address(bond);
+      nl->remove_l3_addresses(bond);
 
     if (nl->is_bridge_interface(bond))
       swi->ofdpa_stg_state_port_set(port_id, 1, "forward");
