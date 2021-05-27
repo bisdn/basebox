@@ -77,11 +77,9 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
   uint32_t lag_id = nl->get_port_id(new_link);
 
   if (lag_id == 0) {
-    rv = add_lag(new_link);
-    if (rv < 0)
-      return rv;
-
-    lag_id = rv;
+    VLOG(2) << __FUNCTION__ ": ignoring update for foreign bond interface "
+	    << OBJ_CAST(new_link);
+    return 0;
   }
 
   rv = rtnl_link_bond_get_mode(old_link, &o_mode);
