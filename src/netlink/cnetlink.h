@@ -204,6 +204,8 @@ private:
 
   int add_l3_addresses(rtnl_link *link);
   int remove_l3_addresses(rtnl_link *link);
+  int add_l3_routes(rtnl_link *link);
+  int remove_l3_routes(rtnl_link *link);
 };
 
 } // end of namespace basebox

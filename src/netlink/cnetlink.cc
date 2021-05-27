@@ -416,6 +416,65 @@ int cnetlink::remove_l3_addresses(rtnl_link *link) {
   return rv;
 }
 
+int cnetlink::add_l3_routes(rtnl_link *link) {
+  int rv = 0;
+  assert(link);
+
+  std::deque<rtnl_route *> routes;
+  l3->get_l3_routes(link, &routes);
+
+  for (auto i : routes) {
+    LOG(INFO) << __FUNCTION__ << ": adding route=" << OBJ_CAST(i);
+
+    switch (rtnl_route_get_family(i)) {
+    case AF_INET:
+    case AF_INET6:
+      rv = l3->add_l3_route(i);
+      break;
+    default:
+      LOG(WARNING) << __FUNCTION__ << ": family not supported: " << rtnl_route_get_family(i)
+	           << " for route=" << OBJ_CAST(i);
+      rv = -EINVAL;
+      break;
+    }
+
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 route " << OBJ_CAST(i)
+                 << " to " << OBJ_CAST(link);
+  }
+  LOG(INFO) << __FUNCTION__ << ": added l3 routes to " << OBJ_CAST(link);
+
+  return rv;
+}
+
+int cnetlink::remove_l3_routes(rtnl_link *link) {
+  int rv = 0;
+  assert(link);
+
+  std::deque<rtnl_route *> routes;
+  l3->get_l3_routes(link, &routes);
+
+  for (auto i : routes) {
+    switch (rtnl_route_get_family(i)) {
+    case AF_INET:
+    case AF_INET6:
+      rv = l3->del_l3_route(i);
+      break;
+    default:
+      LOG(WARNING) << __FUNCTION__ << ": family not supported: " << rtnl_route_get_family(i)
+	           << " for route=" << OBJ_CAST(i);
+      rv = -EINVAL;
+      break;
+    }
+
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 route from "
+                 << OBJ_CAST(link);
+  }
+
+  return rv;
+}
+
 int cnetlink::add_l3_configuration(rtnl_link *link) {
   return add_l3_addresses(link);
 }
