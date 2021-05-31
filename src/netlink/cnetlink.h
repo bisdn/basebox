@@ -59,8 +59,8 @@ public:
    */
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
-  int add_l3_addresses(rtnl_link *link);
-  int remove_l3_addresses(rtnl_link *link);
+  int add_l3_configuration(rtnl_link *link);
+  int remove_l3_configuration(rtnl_link *link);
 
   bool is_bridge_interface(rtnl_link *l) const;
   bool is_bridge_interface(int ifindex) const;
@@ -201,6 +201,9 @@ private:
   void neigh_ll_created(rtnl_neigh *neigh) noexcept;
   void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
   void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
+
+  int add_l3_addresses(rtnl_link *link);
+  int remove_l3_addresses(rtnl_link *link);
 };
 
 } // end of namespace basebox

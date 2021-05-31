@@ -416,6 +416,14 @@ int cnetlink::remove_l3_addresses(rtnl_link *link) {
   return rv;
 }
 
+int cnetlink::add_l3_configuration(rtnl_link *link) {
+  return add_l3_addresses(link);
+}
+
+int cnetlink::remove_l3_configuration(rtnl_link *link) {
+  return remove_l3_addresses(link);
+}
+
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
                                            struct nl_addr *a) const {
   assert(ifindex);
