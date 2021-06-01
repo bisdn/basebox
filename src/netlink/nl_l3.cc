@@ -175,8 +175,8 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   uint16_t vid = vlan->get_vid(link);
   uint32_t vrf_id = vlan->get_vrf_id(vid, link);
 
-  // checks if the bridge is the configured one
-  if (is_bridge && !nl->is_bridge_configured(link)) {
+  // if it isn't on loopback and not our interfaces, ignore it
+  if (!is_loopback && !nl->is_switch_interface(link)) {
     VLOG(1) << __FUNCTION__ << ": ignoring " << OBJ_CAST(link);
     return -EINVAL;
   }
@@ -193,18 +193,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   if (!is_loopback) {
     ifindex = rtnl_addr_get_ifindex(a);
     int port_id = nl->get_port_id(link);
-
-    if (port_id == 0) {
-      if (is_bridge or nl->is_bridge_interface(link)) {
-        LOG(INFO) << __FUNCTION__ << ": address on top of bridge";
-        port_id = 0;
-      } else {
-        LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0 for link "
-                   << OBJ_CAST(link);
-        return -EINVAL;
-      }
-    }
-
     auto addr = rtnl_link_get_addr(link);
     rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
 
@@ -301,6 +289,14 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
+  bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
+
+  // if it isn't on loopback and not our interfaces, ignore it
+  if (!is_loopback && !nl->is_switch_interface(link)) {
+    VLOG(1) << __FUNCTION__ << ": ignoring " << OBJ_CAST(link);
+    return -EINVAL;
+  }
+
   // link local addresses must redirect to controllers
   int port_id = nl->get_port_id(link);
   auto addr = rtnl_addr_get_local(a);
@@ -337,7 +333,6 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     return rv;
   }
 
-  bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
   if (is_loopback) {
     rv = add_lo_addr_v6(a);
     return rv;
