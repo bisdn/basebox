@@ -476,10 +476,22 @@ int cnetlink::remove_l3_routes(rtnl_link *link) {
 }
 
 int cnetlink::add_l3_configuration(rtnl_link *link) {
-  return add_l3_addresses(link);
+  int rv;
+
+  rv = add_l3_addresses(link);
+  ir (rv < 0)
+    LOG(WARNING) << __FUNCTION__ << ": failed to add l3 addresses: " << rv;
+
+  return add_l3_routes(link);
 }
 
 int cnetlink::remove_l3_configuration(rtnl_link *link) {
+  int rv;
+
+  rv = remove_l3_routes(link);
+  if (rv < 0)
+    LOG(WARNING) << __FUNCTION__ << ": failed to remove l3 routes: " << rv;
+
   return remove_l3_addresses(link);
 }
 
