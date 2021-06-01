@@ -500,23 +500,51 @@ int cnetlink::remove_l3_routes(rtnl_link *link) {
 }
 
 int cnetlink::add_l3_configuration(rtnl_link *link) {
-  int rv;
+  std::deque<struct rtnl_link *> links;
+  int rv = 0;
 
-  rv = add_l3_addresses(link);
-  ir (rv < 0)
-    LOG(WARNING) << __FUNCTION__ << ": failed to add l3 addresses: " << rv;
+  // collect base interface and all vlan interfaces on top
+  links.push_back(link);
+  get_vlan_links(rtnl_link_get_ifindex(link), &links);
 
-  return add_l3_routes(link);
+  //add all ip addresses and routes from collected interfaces
+  for (auto l : links) {
+    rv = add_l3_addresses(l);
+    if (rv < 0)
+      LOG(WARNING) << __FUNCTION__ << ": failed to add l3 addresses (" << rv
+                   << ") for link " << OBJ_CAST(l);
+
+    rv = add_l3_routes(l);
+    if (rv < 0)
+      LOG(WARNING) << __FUNCTION__ << ": failed to add l3 routes (" << rv
+                   << ") for link " << OBJ_CAST(l);
+  }
+
+  return rv;
 }
 
 int cnetlink::remove_l3_configuration(rtnl_link *link) {
-  int rv;
+  std::deque<struct rtnl_link *> links;
+  int rv = 0;
 
-  rv = remove_l3_routes(link);
-  if (rv < 0)
-    LOG(WARNING) << __FUNCTION__ << ": failed to remove l3 routes: " << rv;
+  // collect base interface and all vlan interfaces on top
+  links.push_back(link);
+  get_vlan_links(rtnl_link_get_ifindex(link), &links);
 
-  return remove_l3_addresses(link);
+  //remove all ip addresses and routes from collected interfaces
+  for (auto l : links) {
+    rv = remove_l3_routes(l);
+    if (rv < 0)
+      LOG(WARNING) << __FUNCTION__ << ": failed to remove l3 routes (" << rv
+                   << " from link " << OBJ_CAST(l);
+
+    rv = remove_l3_addresses(l);
+    if (rv < 0)
+      LOG(WARNING) << __FUNCTION__ << ": failed to remove l3 addresses (" << rv
+                   << " from link " << OBJ_CAST(l);
+  }
+
+  return rv;
 }
 
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
