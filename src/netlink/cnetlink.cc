@@ -1072,15 +1072,19 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   int af_old = rtnl_link_get_family(old_link);
   int af_new = rtnl_link_get_family(new_link);
 
-  VLOG(3) << __FUNCTION__ << ": old_link_type="
-          << std::string_view(rtnl_link_get_type(old_link))
-          << ", new_link_type="
-          << std::string_view(rtnl_link_get_type(new_link))
-          << ", old_link_slave_type="
-          << std::string_view(rtnl_link_get_slave_type(old_link))
-          << ", new_link_slave_type="
-          << std::string_view(rtnl_link_get_slave_type(new_link))
-          << ", af_old=" << af_old << ", af_new=" << af_new;
+  if ((rtnl_link_get_type(old_link) != NULL) && (rtnl_link_get_type(new_link) != NULL)) {
+          VLOG(3) << __FUNCTION__ << ": old_link_type="
+                  << std::string_view(rtnl_link_get_type(old_link))
+                  << ", new_link_type="
+                  << std::string_view(rtnl_link_get_type(new_link));
+  }
+  if ((rtnl_link_get_slave_type(old_link) != NULL) && (rtnl_link_get_slave_type(new_link) != NULL)) {
+          VLOG(3) << __FUNCTION__ << ": old_link_slave_type="
+                  << std::string_view(rtnl_link_get_slave_type(old_link))
+                  << ", new_link_slave_type="
+                  << std::string_view(rtnl_link_get_slave_type(new_link))
+                  << ", af_old=" << af_old << ", af_new=" << af_new;
+  }
 
   if (af_old != af_new) {
     VLOG(1) << __FUNCTION__ << ": af changed from " << af_old << " to "
