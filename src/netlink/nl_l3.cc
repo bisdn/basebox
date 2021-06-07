@@ -364,7 +364,7 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   }
 
   // TODO support VRF on IPv6 addresses
-  if (prefixlen == 32)
+  if (prefixlen == 128)
     rv = sw->l3_unicast_host_add(ipv6_dst, 0, false, update, 0);
   else
     rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, update, 0);
