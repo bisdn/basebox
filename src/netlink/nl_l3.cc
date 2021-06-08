@@ -301,7 +301,30 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
+  // link local addresses must redirect to controllers
   int port_id = nl->get_port_id(link);
+  auto addr = rtnl_addr_get_local(a);
+  if (is_ipv6_link_local_address(addr)) {
+
+    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      return rv;
+    }
+
+    // All link local addresses have a prefix length of /10
+    rofl::caddress_in6 mask = rofl::build_mask_in6(10);
+
+    VLOG(2) << __FUNCTION__ << ": added link local addr " << OBJ_CAST(a);
+    rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, false);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": could not add unicast route ipv6_dst=" << ipv6_dst
+                 << ", mask=" << mask;
+      return rv;
+    }
+  }
+
   uint16_t vid = vlan->get_vid(link);
   auto lladdr = rtnl_link_get_addr(link);
   rofl::caddress_ll mac = libnl_lladdr_2_rofl(lladdr);
@@ -320,7 +343,6 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     return rv;
   }
 
-  auto addr = rtnl_addr_get_local(a);
   auto prefixlen = rtnl_addr_get_prefixlen(a);
   rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
   rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
