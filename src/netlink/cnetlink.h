@@ -53,15 +53,16 @@ public:
 
   void get_vlans(int ifindex, std::deque<uint16_t> *vid_list) const noexcept;
 
+  void get_vlan_links(int ifindex, std::deque<struct rtnl_link *> *vlan_list) const noexcept;
+
   uint16_t get_vrf_table_id(rtnl_link *link);
   /**
    * @return rtnl_neigh* which needs to be freed using rtnl_neigh_put
    */
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
-  int get_l3_addrs(struct rtnl_link *link, std::deque<rtnl_addr *> *addresses);
-  int add_l3_addr(struct rtnl_addr *a);
-  int del_l3_addr(struct rtnl_addr *a);
+  int add_l3_configuration(rtnl_link *link);
+  int remove_l3_configuration(rtnl_link *link);
 
   bool is_bridge_interface(rtnl_link *l) const;
   bool is_bridge_interface(int ifindex) const;
@@ -202,6 +203,11 @@ private:
   void neigh_ll_created(rtnl_neigh *neigh) noexcept;
   void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
   void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
+
+  int add_l3_addresses(rtnl_link *link);
+  int remove_l3_addresses(rtnl_link *link);
+  int add_l3_routes(rtnl_link *link);
+  int remove_l3_routes(rtnl_link *link);
 };
 
 } // end of namespace basebox
