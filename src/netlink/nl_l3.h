@@ -55,8 +55,6 @@ public:
   int update_l3_route(struct rtnl_route *r_old, struct rtnl_route *r_new);
   int del_l3_route(struct rtnl_route *r);
 
-  int get_l3_routes(struct rtnl_link *link, std::deque<rtnl_route *> *routes);
-
   void get_nexthops_of_route(rtnl_route *route,
                              std::deque<struct rtnl_nexthop *> *nhs) noexcept;
 
