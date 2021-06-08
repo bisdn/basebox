@@ -15,6 +15,7 @@
 #include <netlink/route/link/vrf.h>
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
+#include <netlink/route/nexthop.h>
 #include <netlink/cache.h>
 
 #include "cnetlink.h"
@@ -528,6 +529,29 @@ int nl_l3::get_l3_addrs(struct rtnl_link *link,
         addr->push_back(ADDR_CAST(o));
       },
       addresses);
+  return 0;
+}
+
+int nl_l3::get_l3_routes(struct rtnl_link *link,
+                         std::deque<rtnl_route *> *routes) {
+  std::unique_ptr<rtnl_route, decltype(&rtnl_route_put)> filter(rtnl_route_alloc(),
+                                                                rtnl_route_put);
+  auto nh = rtnl_route_nh_alloc();
+
+  rtnl_route_nh_set_ifindex(nh, rtnl_link_get_ifindex(link));
+  rtnl_route_add_nexthop(filter.get(), nh);
+  rtnl_route_set_type(filter.get(), RTN_UNICAST);
+
+  VLOG(1) << __FUNCTION__
+          << ": searching l3 routes from interface=" << OBJ_CAST(link);
+
+  nl_cache_foreach_filter(
+      nl->get_cache(cnetlink::NL_ROUTE_CACHE), OBJ_CAST(filter.get()),
+      [](struct nl_object *o, void *arg) {
+        auto *route = (std::deque<rtnl_route *> *)arg;
+        route->push_back(ROUTE_CAST(o));
+      },
+      routes);
   return 0;
 }
 

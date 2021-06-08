@@ -335,31 +335,9 @@ std::set<uint32_t> cnetlink::get_bond_members_by_lag(rtnl_link *bond_link) {
   return bond->get_members(bond_link);
 }
 
-int cnetlink::get_l3_addrs(struct rtnl_link *link,
-                           std::deque<rtnl_addr *> *addresses) {
-  return l3->get_l3_addrs(link, addresses);
-}
-
 std::set<uint32_t> cnetlink::get_bond_members_by_port_id(uint32_t port_id) {
   return bond->get_members_by_port_id(port_id);
 }
-
-int cnetlink::add_l3_addr(struct rtnl_addr *a) {
-  switch (rtnl_addr_get_family(a)) {
-  case AF_INET:
-    return l3->add_l3_addr(a);
-  case AF_INET6:
-    return l3->add_l3_addr_v6(a);
-  default:
-    LOG(ERROR) << __FUNCTION__
-               << ": unsupported family=" << rtnl_addr_get_family(a)
-               << " for address=" << OBJ_CAST(a);
-    break;
-  }
-  return -EINVAL;
-}
-
-int cnetlink::del_l3_addr(struct rtnl_addr *a) { return l3->del_l3_addr(a); }
 
 void cnetlink::get_vlans(int ifindex,
                          std::deque<uint16_t> *vlan_list) const noexcept {
@@ -385,6 +363,188 @@ void cnetlink::get_vlans(int ifindex,
         list->push_back(vid);
       },
       vlan_list);
+}
+
+void cnetlink::get_vlan_links(int ifindex,
+                              std::deque<struct rtnl_link *> *vlan_list) const noexcept {
+  assert(vlan_list);
+
+  std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> filter(rtnl_link_alloc(),
+                                                              &rtnl_link_put);
+  assert(filter && "out of memory");
+
+  rtnl_link_set_family(filter.get(), AF_UNSPEC);
+  rtnl_link_set_type(filter.get(), "vlan");
+  rtnl_link_set_link(filter.get(), ifindex);
+
+  nl_cache_foreach_filter(
+      caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
+      [](struct nl_object *obj, void *arg) {
+        assert(arg);
+        auto *list = static_cast<std::deque<struct rtnl_link *> *>(arg);
+
+        VLOG(3) << __FUNCTION__ << ": found vlan interface " << obj;
+        list->push_back(LINK_CAST(obj));
+      },
+      vlan_list);
+}
+
+int cnetlink::add_l3_addresses(rtnl_link *link) {
+  int rv = 0;
+  assert(link);
+
+  std::deque<rtnl_addr *> addresses;
+  l3->get_l3_addrs(link, &addresses);
+
+  for (auto i : addresses) {
+    LOG(INFO) << __FUNCTION__ << ": adding address=" << OBJ_CAST(i);
+
+    switch (rtnl_addr_get_family(i)) {
+    case AF_INET:
+      rv = l3->add_l3_addr(i);
+      break;
+    case AF_INET6:
+      rv = l3->add_l3_addr_v6(i);
+      break;
+    default:
+      LOG(ERROR) << __FUNCTION__
+                 << ": unsupported family=" << rtnl_addr_get_family(i)
+                 << " for address=" << OBJ_CAST(i);
+      rv = -EINVAL;
+      break;
+    }
+
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address " << OBJ_CAST(i)
+                 << " to " << OBJ_CAST(link);
+  }
+  LOG(INFO) << __FUNCTION__ << ": added l3 addresses to " << OBJ_CAST(link);
+
+  return rv;
+}
+
+int cnetlink::remove_l3_addresses(rtnl_link *link) {
+  int rv = 0;
+  assert(link);
+
+  std::deque<rtnl_addr *> addresses;
+  l3->get_l3_addrs(link, &addresses);
+
+  for (auto i : addresses) {
+    rv = l3->del_l3_addr(i);
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 address from "
+                 << OBJ_CAST(link);
+  }
+
+  return rv;
+}
+
+int cnetlink::add_l3_routes(rtnl_link *link) {
+  int rv = 0;
+  assert(link);
+
+  std::deque<rtnl_route *> routes;
+  l3->get_l3_routes(link, &routes);
+
+  for (auto i : routes) {
+    LOG(INFO) << __FUNCTION__ << ": adding route=" << OBJ_CAST(i);
+
+    switch (rtnl_route_get_family(i)) {
+    case AF_INET:
+    case AF_INET6:
+      rv = l3->add_l3_route(i);
+      break;
+    default:
+      LOG(WARNING) << __FUNCTION__ << ": family not supported: " << rtnl_route_get_family(i)
+	           << " for route=" << OBJ_CAST(i);
+      rv = -EINVAL;
+      break;
+    }
+
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 route " << OBJ_CAST(i)
+                 << " to " << OBJ_CAST(link);
+  }
+  LOG(INFO) << __FUNCTION__ << ": added l3 routes to " << OBJ_CAST(link);
+
+  return rv;
+}
+
+int cnetlink::remove_l3_routes(rtnl_link *link) {
+  int rv = 0;
+  assert(link);
+
+  std::deque<rtnl_route *> routes;
+  l3->get_l3_routes(link, &routes);
+
+  for (auto i : routes) {
+    switch (rtnl_route_get_family(i)) {
+    case AF_INET:
+    case AF_INET6:
+      rv = l3->del_l3_route(i);
+      break;
+    default:
+      LOG(WARNING) << __FUNCTION__ << ": family not supported: " << rtnl_route_get_family(i)
+	           << " for route=" << OBJ_CAST(i);
+      rv = -EINVAL;
+      break;
+    }
+
+    if (rv < 0)
+      LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 route from "
+                 << OBJ_CAST(link);
+  }
+
+  return rv;
+}
+
+int cnetlink::add_l3_configuration(rtnl_link *link) {
+  std::deque<struct rtnl_link *> links;
+  int rv = 0;
+
+  // collect base interface and all vlan interfaces on top
+  links.push_back(link);
+  get_vlan_links(rtnl_link_get_ifindex(link), &links);
+
+  //add all ip addresses and routes from collected interfaces
+  for (auto l : links) {
+    rv = add_l3_addresses(l);
+    if (rv < 0)
+      LOG(WARNING) << __FUNCTION__ << ": failed to add l3 addresses (" << rv
+                   << ") for link " << OBJ_CAST(l);
+
+    rv = add_l3_routes(l);
+    if (rv < 0)
+      LOG(WARNING) << __FUNCTION__ << ": failed to add l3 routes (" << rv
+                   << ") for link " << OBJ_CAST(l);
+  }
+
+  return rv;
+}
+
+int cnetlink::remove_l3_configuration(rtnl_link *link) {
+  std::deque<struct rtnl_link *> links;
+  int rv = 0;
+
+  // collect base interface and all vlan interfaces on top
+  links.push_back(link);
+  get_vlan_links(rtnl_link_get_ifindex(link), &links);
+
+  //remove all ip addresses and routes from collected interfaces
+  for (auto l : links) {
+    rv = remove_l3_routes(l);
+    if (rv < 0)
+      LOG(WARNING) << __FUNCTION__ << ": failed to remove l3 routes (" << rv
+                   << " from link " << OBJ_CAST(l);
+
+    rv = remove_l3_addresses(l);
+    if (rv < 0)
+      LOG(WARNING) << __FUNCTION__ << ": failed to remove l3 addresses (" << rv
+                   << " from link " << OBJ_CAST(l);
+  }
+
+  return rv;
 }
 
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
@@ -1036,26 +1196,30 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
         return;
       }
 
+      auto br_link = get_link_by_ifindex(rtnl_link_get_master(link));
+      LOG(INFO) << __FUNCTION__ << ": using bridge "
+                << OBJ_CAST(br_link.get());
+
+      bool new_bridge = false;
       // slave interface
       // use only the first bridge an interface is attached to
       // XXX TODO more bridges!
       if (bridge == nullptr) {
-        std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> br_link(
-            rtnl_link_get(caches[NL_LINK_CACHE], rtnl_link_get_master(link)),
-            rtnl_link_put);
-
-        LOG(INFO) << __FUNCTION__ << ": using bridge "
-                  << OBJ_CAST(br_link.get());
-
         bridge = new nl_bridge(this->swi, tap_man, this, vlan, vxlan);
         bridge->set_bridge_interface(br_link.get());
         vxlan->register_bridge(bridge);
+        new_bridge = true;
       }
 
       LOG(INFO) << __FUNCTION__ << ": enslaving interface "
                 << rtnl_link_get_name(link);
 
       bridge->add_interface(link);
+
+      // Scan the bridge for L3 addresses and routes we ignored previously
+      // due to no relation to any of our interfaces yet.
+      if (new_bridge)
+        add_l3_configuration(br_link.get());
     } catch (std::exception &e) {
       LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
     }
@@ -1149,10 +1313,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     // We can delete the addresses on the interface because we will later
     // receive a notification readding the addresses, that time with the correct
     // VRF
-    std::deque<rtnl_addr *> addresses;
-    get_l3_addrs(old_link, &addresses);
-    for (auto i : addresses)
-      l3->del_l3_addr(i);
+    remove_l3_addresses(old_link);
 
     vlan->vrf_attach(old_link, new_link);
   } break;
@@ -1165,11 +1326,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       // We can delete the addresses on the interface because we will later
       // receive a notification readding the addresses, that time with the
       // correct VRF
-      std::deque<rtnl_addr *> addresses;
-      get_l3_addrs(old_link, &addresses);
-      // delete l3 addresses no longer associated with vrf
-      for (auto i : addresses)
-        l3->del_l3_addr(i);
+      remove_l3_addresses(old_link);
       vlan->vrf_detach(old_link, new_link);
     } else if (lt_new == LT_VRF_SLAVE) {
       LOG(INFO) << __FUNCTION__ << ": link updated " << OBJ_CAST(new_link);
