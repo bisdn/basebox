@@ -66,6 +66,10 @@ public:
   bool is_bridge_interface(rtnl_link *l) const;
   bool is_bridge_interface(int ifindex) const;
   bool is_bridge_configured(rtnl_link *l);
+
+  bool is_switch_interface(rtnl_link *l) const;
+  bool is_switch_interface(int ifindex) const;
+
   int set_bridge_port_vlan_tpid(rtnl_link *l);
   int unset_bridge_port_vlan_tpid(rtnl_link *l);
   int get_port_id(rtnl_link *l) const;

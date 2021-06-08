@@ -438,6 +438,33 @@ bool cnetlink::is_bridge_interface(rtnl_link *l) const {
   return false;
 }
 
+bool cnetlink::is_switch_interface(int ifindex) const {
+  return is_switch_interface(get_link_by_ifindex(ifindex).get());
+}
+
+bool cnetlink::is_switch_interface(rtnl_link *l) const {
+  assert(l);
+  auto link = l;
+
+  // if it is a vlan interface, get the linked interface
+  if (rtnl_link_is_vlan(l)) {
+    link = get_link_by_ifindex(rtnl_link_get_link(l)).get();
+    if (link == nullptr)
+      return false;
+  }
+
+  // if it has a port_id, it is a switch interface
+  if (get_port_id(link) > 0)
+    return true;
+
+  // if it is "our" bridge, it is a switch interface
+  if (bridge && bridge->is_bridge_interface(link))
+    return true;
+
+  // else it is not ours
+  return false;
+}
+
 int cnetlink::get_port_id(rtnl_link *l) const {
   int ifindex;
 
