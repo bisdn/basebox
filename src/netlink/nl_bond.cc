@@ -77,11 +77,9 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
   uint32_t lag_id = nl->get_port_id(new_link);
 
   if (lag_id == 0) {
-    rv = add_lag(new_link);
-    if (rv < 0)
-      return rv;
-
-    lag_id = rv;
+    VLOG(2) << __FUNCTION__ ": ignoring update for foreign bond interface "
+	    << OBJ_CAST(new_link);
+    return 0;
   }
 
   rv = rtnl_link_bond_get_mode(old_link, &o_mode);
@@ -108,8 +106,6 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
 
     return 0;
   }
-
-  nl->add_l3_configuration(new_link);
 #endif
 
   return 0;
@@ -181,6 +177,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
 #ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   uint32_t lag_id;
   uint8_t state = 0;
+  bool new_lag = false;
 
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
   if (it == ifi2lag.end()) {
@@ -192,6 +189,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
       return rv;
 
     lag_id = rv;
+    new_lag = true;
   } else {
     lag_id = it->second;
   }
@@ -282,13 +280,8 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
     }
   }
 
-  // XXX FIXME check for vlan interfaces
-  // Adding an IP address here will ensure that every slave that is
-  // added will retry to add the address. It will not be written to the
-  // ASIC, but repeated messages will be seen
-  // This should be done in ::add_lag, but for currently unknown reasons
-  // this fails when the lag has no members yet. So keep it here for now.
-  nl->add_l3_configuration(bond);
+  if (new_lag)
+    nl->add_l3_configuration(bond);
 #endif
 
   return rv;
