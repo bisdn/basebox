@@ -298,17 +298,20 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  int port_id = nl->get_port_id(link);
   uint16_t vid = vlan->get_vid(link);
-  auto lladdr = rtnl_link_get_addr(link);
-  rofl::caddress_ll mac = libnl_lladdr_2_rofl(lladdr);
 
-  rv = add_l3_termination(port_id, vid, mac, AF_INET6);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup termination mac port_id=" << port_id
-               << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
-    return rv;
+  if (!is_loopback) {
+    int port_id = nl->get_port_id(link);
+    auto addr = rtnl_link_get_addr(link);
+    rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
+
+    rv = add_l3_termination(port_id, vid, mac, AF_INET6);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to setup termination mac port_id=" << port_id
+                 << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
+      return rv;
+    }
   }
 
   if (is_loopback) {
