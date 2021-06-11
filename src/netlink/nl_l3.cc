@@ -15,6 +15,7 @@
 #include <netlink/route/link/vrf.h>
 #include <netlink/route/neighbour.h>
 #include <netlink/route/route.h>
+#include <netlink/route/nexthop.h>
 #include <netlink/cache.h>
 
 #include "cnetlink.h"
@@ -175,8 +176,8 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   uint16_t vid = vlan->get_vid(link);
   uint32_t vrf_id = vlan->get_vrf_id(vid, link);
 
-  // checks if the bridge is the configured one
-  if (is_bridge && !nl->is_bridge_configured(link)) {
+  // if it isn't on loopback and not our interfaces, ignore it
+  if (!is_loopback && !nl->is_switch_interface(link)) {
     VLOG(1) << __FUNCTION__ << ": ignoring " << OBJ_CAST(link);
     return -EINVAL;
   }
@@ -193,18 +194,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   if (!is_loopback) {
     ifindex = rtnl_addr_get_ifindex(a);
     int port_id = nl->get_port_id(link);
-
-    if (port_id == 0) {
-      if (is_bridge or nl->is_bridge_interface(link)) {
-        LOG(INFO) << __FUNCTION__ << ": address on top of bridge";
-        port_id = 0;
-      } else {
-        LOG(ERROR) << __FUNCTION__ << ": invalid port_id 0 for link "
-                   << OBJ_CAST(link);
-        return -EINVAL;
-      }
-    }
-
     auto addr = rtnl_link_get_addr(link);
     rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
 
@@ -301,48 +290,36 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  // link local addresses must redirect to controllers
-  int port_id = nl->get_port_id(link);
-  auto addr = rtnl_addr_get_local(a);
-  if (is_ipv6_link_local_address(addr)) {
+  bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
 
-    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-      return rv;
-    }
-
-    // All link local addresses have a prefix length of /10
-    rofl::caddress_in6 mask = rofl::build_mask_in6(10);
-
-    VLOG(2) << __FUNCTION__ << ": added link local addr " << OBJ_CAST(a);
-    rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, false);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": could not add unicast route ipv6_dst=" << ipv6_dst
-                 << ", mask=" << mask;
-      return rv;
-    }
+  // if it isn't on loopback and not our interfaces, ignore it
+  if (!is_loopback && !nl->is_switch_interface(link)) {
+    VLOG(1) << __FUNCTION__ << ": ignoring " << OBJ_CAST(link);
+    return -EINVAL;
   }
 
   uint16_t vid = vlan->get_vid(link);
-  auto lladdr = rtnl_link_get_addr(link);
-  rofl::caddress_ll mac = libnl_lladdr_2_rofl(lladdr);
 
-  rv = add_l3_termination(port_id, vid, mac, AF_INET6);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to setup termination mac port_id=" << port_id
-               << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
-    return rv;
+  if (!is_loopback) {
+    int port_id = nl->get_port_id(link);
+    auto addr = rtnl_link_get_addr(link);
+    rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
+
+    rv = add_l3_termination(port_id, vid, mac, AF_INET6);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to setup termination mac port_id=" << port_id
+                 << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
+      return rv;
+    }
   }
 
-  bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
   if (is_loopback) {
     rv = add_lo_addr_v6(a);
     return rv;
   }
 
+  auto addr = rtnl_addr_get_local(a);
   auto prefixlen = rtnl_addr_get_prefixlen(a);
   rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
   rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
@@ -364,7 +341,7 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   }
 
   // TODO support VRF on IPv6 addresses
-  if (prefixlen == 32)
+  if (prefixlen == 128)
     rv = sw->l3_unicast_host_add(ipv6_dst, 0, false, update, 0);
   else
     rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, update, 0);
@@ -533,6 +510,29 @@ int nl_l3::get_l3_addrs(struct rtnl_link *link,
         addr->push_back(ADDR_CAST(o));
       },
       addresses);
+  return 0;
+}
+
+int nl_l3::get_l3_routes(struct rtnl_link *link,
+                         std::deque<rtnl_route *> *routes) {
+  std::unique_ptr<rtnl_route, decltype(&rtnl_route_put)> filter(rtnl_route_alloc(),
+                                                                rtnl_route_put);
+  auto nh = rtnl_route_nh_alloc();
+
+  rtnl_route_nh_set_ifindex(nh, rtnl_link_get_ifindex(link));
+  rtnl_route_add_nexthop(filter.get(), nh);
+  rtnl_route_set_type(filter.get(), RTN_UNICAST);
+
+  VLOG(1) << __FUNCTION__
+          << ": searching l3 routes from interface=" << OBJ_CAST(link);
+
+  nl_cache_foreach_filter(
+      nl->get_cache(cnetlink::NL_ROUTE_CACHE), OBJ_CAST(filter.get()),
+      [](struct nl_object *o, void *arg) {
+        auto *route = (std::deque<rtnl_route *> *)arg;
+        route->push_back(ROUTE_CAST(o));
+      },
+      routes);
   return 0;
 }
 
