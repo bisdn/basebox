@@ -732,9 +732,8 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
   struct nl_addr *n_ll_new;
 
   int ifindex = rtnl_neigh_get_ifindex(n_old);
-  uint32_t port_id = nl->get_port_id(ifindex);
 
-  if (port_id == 0) {
+  if (!nl->is_switch_interface(ifindex)) {
     VLOG(1) << __FUNCTION__ << ": port not supported";
     return -EINVAL;
   }
@@ -786,7 +785,7 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
       ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
     }
 
-    port_id = nl->get_port_id(ifindex);
+    uint32_t port_id = nl->get_port_id(ifindex);
 
     VLOG(2) << __FUNCTION__ << " : source old mac " << s_mac << " dst old mac  "
             << n_ll_old << " dst new mac " << n_ll_new;
