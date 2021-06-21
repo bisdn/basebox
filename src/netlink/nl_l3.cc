@@ -779,6 +779,15 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
     auto s_mac = rtnl_link_get_addr(link.get());
     uint16_t vid = vlan->get_vid(link.get());
 
+    if (nl->is_bridge_interface(ifindex)) {
+      auto fdb_res = nl->search_fdb(vid, n_ll_new);
+
+      assert(fdb_res.size() == 1);
+      ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+    }
+
+    port_id = nl->get_port_id(ifindex);
+
     VLOG(2) << __FUNCTION__ << " : source old mac " << s_mac << " dst old mac  "
             << n_ll_old << " dst new mac " << n_ll_new;
 
