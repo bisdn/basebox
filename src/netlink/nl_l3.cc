@@ -899,13 +899,8 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
     return rv;
   }
 
-  struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
-  struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
-  uint16_t vid = vlan->get_vid(link.get());
-
   // delete l3 unicast group (mac rewrite)
-  if (s_mac && d_mac)
-    rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
+  rv = del_l3_neigh_egress(n);
 
   // if a route still exists thats pointing to the nexthop,
   // update the route to point to controller and delete the nexthop egress 
