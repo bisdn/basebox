@@ -1798,21 +1798,7 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
 
   // remove egress references
   for (auto n : neighs) {
-    auto ifindex = rtnl_neigh_get_ifindex(n);
-
-    auto link = nl->get_link_by_ifindex(ifindex);
-    auto vid = vlan->get_vid(link.get());
-
-    struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
-    struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
-
-    if (nl->is_bridge_interface(ifindex)) {
-      auto fdb_res = nl->search_fdb(vid, d_mac);
-
-      assert(fdb_res.size() == 1);
-      ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
-    }
-    rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
+    rv = del_l3_neigh_egress(n);
 
     if (rv < 0 and rv != -EEXIST) {
       // clean up
