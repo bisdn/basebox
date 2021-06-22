@@ -832,6 +832,20 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
   int family = rtnl_neigh_get_family(n);
   bool skip_addr_remove = false;
 
+  int state = rtnl_neigh_get_state(n);
+
+  switch (state) {
+  case NUD_FAILED:
+    LOG(INFO) << __FUNCTION__ << ": neighbour not reachable state=failed";
+    return -EINVAL;
+  case NUD_INCOMPLETE:
+    LOG(INFO) << __FUNCTION__ << ": neighbour state=incomplete";
+    return 0;
+  case NUD_STALE:
+    LOG(INFO) << __FUNCTION__ << ": neighbour state=stale";
+    break;
+  }
+
   if (n == nullptr)
     return -EINVAL;
 
