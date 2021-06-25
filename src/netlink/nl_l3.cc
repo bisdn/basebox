@@ -732,9 +732,8 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
   struct nl_addr *n_ll_new;
 
   int ifindex = rtnl_neigh_get_ifindex(n_old);
-  uint32_t port_id = nl->get_port_id(ifindex);
 
-  if (port_id == 0) {
+  if (!nl->is_switch_interface(ifindex)) {
     VLOG(1) << __FUNCTION__ << ": port not supported";
     return -EINVAL;
   }
@@ -758,52 +757,12 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
     // neighbour unreachable
     VLOG(2) << __FUNCTION__ << ": neighbour ll unreachable";
 
-    int ifindex = rtnl_neigh_get_ifindex(n_old);
-    auto link = nl->get_link_by_ifindex(ifindex);
-
-    if (link.get() == nullptr) {
-      LOG(ERROR) << __FUNCTION__ << ": link not found ifindex=" << ifindex;
-      return -EINVAL;
+    rv = del_l3_neigh(n_old);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to remove l3 neighbor " << n_old
+                 << "; rv=" << rv;
+      return rv;
     }
-
-    int family = rtnl_neigh_get_family(n_new);
-    struct nl_addr *addr = rtnl_neigh_get_dst(n_old);
-    if (family == AF_INET) {
-      rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-        return rv;
-      }
-
-      // delete next hop
-      rv = sw->l3_unicast_host_remove(ipv4_dst);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to remove l3 unicast host ipv4_dst" << ipv4_dst
-                   << "; rv=" << rv;
-        return rv;
-      }
-    } else if (family == AF_INET6) {
-      rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-        return rv;
-      }
-
-      // delete next hop
-      rv = sw->l3_unicast_host_remove(ipv6_dst);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to remove l3 unicast host ipv6_dst" << ipv6_dst
-                   << "; rv=" << rv;
-        return rv;
-      }
-    }
-
-    // delete from mapping
-    uint16_t vid = vlan->get_vid(link.get());
-    rv = del_l3_egress(ifindex, vid, rtnl_link_get_addr(link.get()),
-                       rtnl_neigh_get_lladdr(n_old));
   } else if (nl_addr_cmp(n_ll_old, n_ll_new)) {
     // XXX TODO ll addr changed
     VLOG(1) << __FUNCTION__ << ": neighbour ll changed: new neighbor "
@@ -818,6 +777,15 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
 
     auto s_mac = rtnl_link_get_addr(link.get());
     uint16_t vid = vlan->get_vid(link.get());
+
+    if (nl->is_bridge_interface(ifindex)) {
+      auto fdb_res = nl->search_fdb(vid, n_ll_new);
+
+      assert(fdb_res.size() == 1);
+      ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+    }
+
+    uint32_t port_id = nl->get_port_id(ifindex);
 
     VLOG(2) << __FUNCTION__ << " : source old mac " << s_mac << " dst old mac  "
             << n_ll_old << " dst new mac " << n_ll_new;
@@ -872,6 +840,20 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
   int family = rtnl_neigh_get_family(n);
   bool skip_addr_remove = false;
 
+  int state = rtnl_neigh_get_state(n);
+
+  switch (state) {
+  case NUD_FAILED:
+    LOG(INFO) << __FUNCTION__ << ": neighbour not reachable state=failed";
+    return -EINVAL;
+  case NUD_INCOMPLETE:
+    LOG(INFO) << __FUNCTION__ << ": neighbour state=incomplete";
+    return 0;
+  case NUD_STALE:
+    LOG(INFO) << __FUNCTION__ << ": neighbour state=stale";
+    break;
+  }
+
   if (n == nullptr)
     return -EINVAL;
 
@@ -925,13 +907,8 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
     return rv;
   }
 
-  struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
-  struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
-  uint16_t vid = vlan->get_vid(link.get());
-
   // delete l3 unicast group (mac rewrite)
-  if (s_mac && d_mac)
-    rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
+  rv = del_l3_neigh_egress(n);
 
   // if a route still exists thats pointing to the nexthop,
   // update the route to point to controller and delete the nexthop egress 
@@ -1798,21 +1775,7 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
 
   // remove egress references
   for (auto n : neighs) {
-    auto ifindex = rtnl_neigh_get_ifindex(n);
-
-    auto link = nl->get_link_by_ifindex(ifindex);
-    auto vid = vlan->get_vid(link.get());
-
-    struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
-    struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
-
-    if (nl->is_bridge_interface(ifindex)) {
-      auto fdb_res = nl->search_fdb(vid, d_mac);
-
-      assert(fdb_res.size() == 1);
-      ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
-    }
-    rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
+    rv = del_l3_neigh_egress(n);
 
     if (rv < 0 and rv != -EEXIST) {
       // clean up
