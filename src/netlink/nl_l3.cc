@@ -68,7 +68,7 @@ std::unordered_map<
     l3_interface>
     l3_interface_mapping;
 
-// key: source port_id, vid, src_mac, ethertype ; value: refcount
+// key: source port_id, vid, src_mac, af ; value: refcount
 std::unordered_multimap<std::tuple<int, uint16_t, rofl::caddress_ll, uint16_t>,
                         int>
     termination_mac_mapping;
