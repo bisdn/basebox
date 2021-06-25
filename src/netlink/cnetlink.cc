@@ -551,6 +551,10 @@ int cnetlink::remove_l3_configuration(rtnl_link *link) {
   return rv;
 }
 
+int cnetlink::update_on_mac_change(rtnl_link *old_link, rtnl_link *new_link) {
+  return 0;
+}
+
 bool cnetlink::has_l3_addresses(rtnl_link *link) {
   assert(link);
 
