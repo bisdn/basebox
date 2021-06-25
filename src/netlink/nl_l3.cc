@@ -476,7 +476,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
 
   rv = del_l3_termination(port_id, vid, mac, family);
-  if (rv < 0) {
+  if (rv < 0 && rv != -ENODATA) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to remove l3 termination mac(local) vid=" << vid
                << "; rv=" << rv;
@@ -1200,7 +1200,7 @@ int nl_l3::del_l3_termination(uint32_t port_id, uint16_t vid,
         << __FUNCTION__
         << ": tried to delete a non existing termination mac for port_id="
         << port_id << ", vid=" << vid << ", mac=" << mac << ", af=" << af;
-    return 0;
+    return -ENODATA;
   }
 
   // still existing references
