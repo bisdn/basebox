@@ -14,7 +14,9 @@
 #include <linux/if.h>
 #include <netlink/object.h>
 #include <netlink/route/addr.h>
+#ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
 #include <netlink/route/bridge_vlan.h>
+#endif
 #include <netlink/route/link.h>
 #include <netlink/route/link/bonding.h>
 #include <netlink/route/link/vlan.h>
@@ -179,6 +181,7 @@ void cnetlink::init_caches() {
   }
 #endif
 
+#ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
   /* init bridge-vlan cache */
   rc = rtnl_bridge_vlan_alloc_cache_flags(sock_mon, &caches[NL_BVLAN_CACHE],
                                           NL_CACHE_AF_ITER);
@@ -191,6 +194,7 @@ void cnetlink::init_caches() {
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__ << ": add route/bridge-vlan to cache mngr";
   }
+#endif
 
   try {
     thread.add_read_fd(this, nl_cache_mngr_get_fd(mngr), true, false);
@@ -735,10 +739,12 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
       route_mdb_apply(obj);
       break;
 #endif
+#ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
     case RTM_NEWVLAN:
     case RTM_DELVLAN:
       route_bridge_vlan_apply(obj);
       break;
+#endif
     default:
       LOG(ERROR) << __FUNCTION__ << ": unexpected netlink type "
                  << obj.get_msg_type();
