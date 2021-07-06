@@ -11,7 +11,9 @@
 
 #include <glog/logging.h>
 #include <netlink/route/link.h>
+#ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
 #include <netlink/route/bridge_vlan.h>
+#endif
 #ifdef HAVE_NETLINK_ROUTE_MDB_H
 #include <netlink/route/mdb.h>
 #endif
@@ -1078,6 +1080,7 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
 int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   int err = 0;
 
+#ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
   if (get_stp_state() == STP_STATE_DISABLED)
     return err;
 
@@ -1102,6 +1105,7 @@ int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
 
   err = sw->ofdpa_stg_state_port_set(nl->get_port_id(ifindex), vlan_id,
                                      stp_state_to_string(g_stp_state));
+#endif
   return err;
 }
 
