@@ -64,6 +64,8 @@ public:
   int add_l3_configuration(rtnl_link *link);
   int remove_l3_configuration(rtnl_link *link);
 
+  bool has_l3_addresses(rtnl_link *link);
+
   bool is_bridge_interface(rtnl_link *l) const;
   bool is_bridge_interface(int ifindex) const;
   bool is_bridge_configured(rtnl_link *l);
