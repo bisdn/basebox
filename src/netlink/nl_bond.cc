@@ -273,6 +273,11 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   } else {
     std::deque<uint16_t> vlans;
 
+    if (nl->has_l3_addresses(bond)) {
+      swi->ingress_port_vlan_add(port_id, 1, true);
+      swi->egress_port_vlan_add(port_id, 1, true);
+    }
+
     nl->get_vlans(rtnl_link_get_ifindex(bond), &vlans);
     for (auto vid : vlans) {
       swi->ingress_port_vlan_add(port_id, vid, false);
@@ -344,6 +349,11 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
     for (auto vid : vlans) {
       swi->ingress_port_vlan_remove(port_id, vid, false);
       swi->egress_port_vlan_remove(port_id, vid);
+    }
+
+    if (nl->has_l3_addresses(bond)) {
+      swi->ingress_port_vlan_remove(port_id, 1, true);
+      swi->egress_port_vlan_remove(port_id, 1);
     }
   }
 #endif

@@ -551,6 +551,15 @@ int cnetlink::remove_l3_configuration(rtnl_link *link) {
   return rv;
 }
 
+bool cnetlink::has_l3_addresses(rtnl_link *link) {
+  assert(link);
+
+  std::deque<rtnl_addr *> addresses;
+  l3->get_l3_addrs(link, &addresses);
+
+  return !addresses.empty();
+}
+
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
                                            struct nl_addr *a) const {
   assert(ifindex);
