@@ -655,6 +655,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   struct nl_addr *addr;
   int family = rtnl_neigh_get_family(n);
   uint16_t vrf_id = 0;
+  bool add_host_entry = true;
 
   if (n == nullptr)
     return -EINVAL;
@@ -667,46 +668,49 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
     if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
       VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
-      return 0;
+      // we must not route IPv6 LL addresses, so do not add a host entry
+      add_host_entry = false;
     }
   }
 
-  rv = add_l3_neigh_egress(n, &l3_interface_id, &vrf_id);
-  LOG(INFO) << __FUNCTION__ << ": adding l3 neigh egress for neigh "
-            << OBJ_CAST(n);
+  if (add_host_entry) {
+    rv = add_l3_neigh_egress(n, &l3_interface_id, &vrf_id);
+    LOG(INFO) << __FUNCTION__ << ": adding l3 neigh egress for neigh "
+              << OBJ_CAST(n);
 
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
-               << OBJ_CAST(n);
-    return rv;
-  }
-
-  if (family == AF_INET) {
-    rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
     if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      LOG(ERROR) << __FUNCTION__ << ": add l3 neigh egress failed for neigh "
+                 << OBJ_CAST(n);
       return rv;
     }
-    rv = sw->l3_unicast_host_add(ipv4_dst, l3_interface_id, false, false,
-                                 vrf_id);
-    VLOG(2) << __FUNCTION__ << ": adding route =" << ipv4_dst
-            << " l3 interface id=" << l3_interface_id;
 
-  } else {
-    // AF_INET6
-    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
+    if (family == AF_INET) {
+      rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+        return rv;
+      }
+      rv = sw->l3_unicast_host_add(ipv4_dst, l3_interface_id, false, false,
+                                   vrf_id);
+      VLOG(2) << __FUNCTION__ << ": adding route =" << ipv4_dst
+              << " l3 interface id=" << l3_interface_id;
+
+    } else {
+      // AF_INET6
+      rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+        return rv;
+      }
+      rv = sw->l3_unicast_host_add(ipv6_dst, l3_interface_id, false, false,
+                                   vrf_id);
+    }
+
     if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+      LOG(ERROR) << __FUNCTION__ << ": add l3 unicast host failed for "
+                 << OBJ_CAST(n);
       return rv;
     }
-    rv = sw->l3_unicast_host_add(ipv6_dst, l3_interface_id, false, false,
-                                 vrf_id);
-  }
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": add l3 unicast host failed for "
-               << OBJ_CAST(n);
-    return rv;
   }
 
   for (auto cb = std::begin(nh_callbacks); cb != std::end(nh_callbacks);) {
@@ -839,6 +843,7 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
   struct nl_addr *addr = rtnl_neigh_get_dst(n);
   int family = rtnl_neigh_get_family(n);
   bool skip_addr_remove = false;
+  bool skip_egress_remove = false;
 
   int state = rtnl_neigh_get_state(n);
 
@@ -889,17 +894,18 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
 
     if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
       VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
-      return 0;
-    }
+      // we never added a host route, and therefore no egress interface
+      skip_egress_remove = true;
+    } else {
+      rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
+        return rv;
+      }
 
-    rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-      return rv;
+      // delete next hop
+      rv = sw->l3_unicast_host_remove(ipv6_dst);
     }
-
-    // delete next hop
-    rv = sw->l3_unicast_host_remove(ipv6_dst);
   }
 
   if (rv < 0) {
@@ -907,22 +913,21 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
     return rv;
   }
 
-  // delete l3 unicast group (mac rewrite)
-  rv = del_l3_neigh_egress(n);
+  // delete l3 unicast group for host entry (if existed)
+  if (!skip_egress_remove)
+    rv = del_l3_neigh_egress(n);
 
   // if a route still exists thats pointing to the nexthop,
   // update the route to point to controller and delete the nexthop egress 
   // reference
-  if (rv == -EEXIST) {
-    for (auto cb = std::begin(nh_unreach_callbacks);
-         cb != std::end(nh_unreach_callbacks);) {
-      if (cb->second.nh.ifindex == rtnl_neigh_get_ifindex(n) &&
-          nl_addr_cmp(cb->second.nh.nh, rtnl_neigh_get_dst(n)) == 0) {
-        cb->first->nh_unreachable_notification(n, cb->second);
-        cb = nh_unreach_callbacks.erase(cb);
-      } else {
-        ++cb;
-      }
+  for (auto cb = std::begin(nh_unreach_callbacks);
+       cb != std::end(nh_unreach_callbacks);) {
+    if (cb->second.nh.ifindex == rtnl_neigh_get_ifindex(n) &&
+        nl_addr_cmp(cb->second.nh.nh, rtnl_neigh_get_dst(n)) == 0) {
+      cb->first->nh_unreachable_notification(n, cb->second);
+      cb = nh_unreach_callbacks.erase(cb);
+    } else {
+      ++cb;
     }
   }
 
