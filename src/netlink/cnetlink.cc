@@ -6,6 +6,7 @@
 #include <cstring>
 #include <exception>
 #include <fstream>
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <iterator>
 #include <string_view>
@@ -39,6 +40,8 @@
 #include "nl_l3.h"
 #include "nl_vlan.h"
 #include "nl_vxlan.h"
+
+DECLARE_bool(multicast);
 
 namespace basebox {
 
@@ -166,18 +169,20 @@ void cnetlink::init_caches() {
   }
 
 #ifdef HAVE_NETLINK_ROUTE_MDB_H
-  /* init mdb cache */
-  rc = rtnl_mdb_alloc_cache_flags(sock_mon, &caches[NL_MDB_CACHE],
-                                  NL_CACHE_AF_ITER);
-  if (0 != rc) {
-    LOG(FATAL) << __FUNCTION__
-               << ": rtnl_mdb_alloc_cache_flags failed rc=" << rc;
-  }
-  rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_MDB_CACHE],
-                                  (change_func_v2_t)&nl_cb_v2, this);
-  if (0 != rc) {
-    LOG(FATAL) << __FUNCTION__
-               << ": nl_cache_mngr_add_cache_v2: add route/mdb to cache mngr";
+  if (FLAGS_multicast) {
+    /* init mdb cache */
+    rc = rtnl_mdb_alloc_cache_flags(sock_mon, &caches[NL_MDB_CACHE],
+                                    NL_CACHE_AF_ITER);
+    if (0 != rc) {
+      LOG(FATAL) << __FUNCTION__
+                 << ": rtnl_mdb_alloc_cache_flags failed rc=" << rc;
+    }
+    rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_MDB_CACHE],
+                                    (change_func_v2_t)&nl_cb_v2, this);
+    if (0 != rc) {
+      LOG(FATAL) << __FUNCTION__
+                 << ": nl_cache_mngr_add_cache_v2: add route/mdb to cache mngr";
+    }
   }
 #endif
 
@@ -745,6 +750,7 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
 #ifdef HAVE_NETLINK_ROUTE_MDB_H
     case RTM_NEWMDB:
     case RTM_DELMDB:
+      assert(FLAGS_multicast);
       route_mdb_apply(obj);
       break;
 #endif
