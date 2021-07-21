@@ -1310,6 +1310,13 @@ int nl_l3::get_neighbours_of_route(
       neigh = nl->get_neighbour(ifindex, nh_addr);
       VLOG(2) << __FUNCTION__ << ": get neigh=" << OBJ_CAST(neigh)
               << " of nh_addr=" << nh_addr;
+
+      if (neigh && rtnl_neigh_get_lladdr(neigh) == nullptr) {
+        VLOG(2) << __FUNCTION__ << ": neigh=" << OBJ_CAST(neigh)
+                << " is not reachable";
+        rtnl_neigh_put(neigh);
+        neigh = nullptr;
+      }
     }
 
     if (neigh)
