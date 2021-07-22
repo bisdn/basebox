@@ -988,6 +988,8 @@ int controller::l3_termination_add(uint32_t sport, uint16_t vid,
                                      fm_driver.enable_tmac_ipv4_unicast_mac(
                                          dpt.get_version(), sport, vid, dmac));
     }
+
+    dpt.send_barrier_request(rofl::cauxid(0));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1016,6 +1018,8 @@ int controller::l3_termination_add_v6(uint32_t sport, uint16_t vid,
                                      fm_driver.enable_tmac_ipv6_unicast_mac(
                                          dpt.get_version(), sport, vid, dmac));
     }
+
+    dpt.send_barrier_request(rofl::cauxid(0));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1038,6 +1042,8 @@ int controller::l3_termination_remove(uint32_t sport, uint16_t vid,
     dpt.send_flow_mod_message(rofl::cauxid(0),
                               fm_driver.disable_tmac_ipv4_unicast_mac(
                                   dpt.get_version(), sport, vid, dmac));
+
+    dpt.send_barrier_request(rofl::cauxid(0));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1060,6 +1066,8 @@ int controller::l3_termination_remove_v6(
     dpt.send_flow_mod_message(rofl::cauxid(0),
                               fm_driver.disable_tmac_ipv6_unicast_mac(
                                   dpt.get_version(), sport, vid, dmac));
+
+    dpt.send_barrier_request(rofl::cauxid(0));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;

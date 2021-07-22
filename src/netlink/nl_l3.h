@@ -57,6 +57,11 @@ public:
 
   int get_l3_routes(struct rtnl_link *link, std::deque<rtnl_route *> *routes);
 
+  int update_l3_termination(int port_id, uint16_t vid, struct nl_addr *old_mac,
+                            struct nl_addr *new_mac) noexcept;
+  int update_l3_egress(int port_id, uint16_t vid, struct nl_addr *old_mac,
+                       struct nl_addr *new_mac) noexcept;
+
   void get_nexthops_of_route(rtnl_route *route,
                              std::deque<struct rtnl_nexthop *> *nhs) noexcept;
 
