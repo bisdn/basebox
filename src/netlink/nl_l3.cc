@@ -565,7 +565,7 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
   auto tagged = !!rtnl_link_is_vlan(link.get());
   auto s_mac = rtnl_link_get_addr(link.get());
 
-  if (nl->is_bridge_interface(link.get())) {
+  if (nl->is_bridge_interface(link.get()) && nl->is_switch_interface(ifindex)) {
     // Handle the Bridge SVI
     // the egress entries for the Bridge SVIs are the ports
     // attached to the bridge
@@ -629,7 +629,7 @@ int nl_l3::del_l3_neigh_egress(struct rtnl_neigh *n) {
   uint16_t vid = vlan->get_vid(link.get());
   auto s_mac = rtnl_link_get_addr(link.get());
 
-  if (nl->is_bridge_interface(ifindex)) {
+  if (nl->is_bridge_interface(ifindex) && nl->is_switch_interface(ifindex)) {
     auto fdb_res = nl->search_fdb(vid, d_mac);
 
     assert(fdb_res.size() == 1);
