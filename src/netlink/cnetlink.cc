@@ -556,6 +556,36 @@ int cnetlink::remove_l3_configuration(rtnl_link *link) {
   return rv;
 }
 
+int cnetlink::update_on_mac_change(rtnl_link *old_link, rtnl_link *new_link) {
+  int rv = 0;
+  int port_id = get_port_id(old_link);
+  uint16_t vid = vlan->get_vid(old_link);
+  struct nl_addr *old_mac = rtnl_link_get_addr(old_link);
+  struct nl_addr *new_mac = rtnl_link_get_addr(new_link);
+
+  rv = l3->update_l3_termination(port_id, vid, old_mac, new_mac);
+  if (rv < 0)
+    VLOG(1) << __FUNCTION__ << ": failed to update termination MAC, old link="
+            << OBJ_CAST(old_link) << " new link=" << OBJ_CAST(new_link);
+
+  // In response to the MAC address change on the interface, linux deletes the
+  // neighbors configured on the interface. We are tracking the state
+  // of the nexthops in the l3_interface_mapping in the nl_l3 class, by storing
+  // the port id, vid, src mac and dst mac.  The neighbor deletion messages are
+  // received for all neighbors on the link.
+  // While these messages will delete the link neighbors after the MAC address
+  // changes, they do not carry the source mac, which forces a lookup for it
+  // returning the updated one. We need to make sure the deletions find their
+  // targets by updating the entry and the map.
+  rv = l3->update_l3_egress(port_id, vid, old_mac, new_mac);
+  if (rv < 0)
+    VLOG(1) << __FUNCTION__
+            << ": failed to update l3 egress, old link=" << OBJ_CAST(old_link)
+            << " new link=" << OBJ_CAST(new_link);
+
+  return rv;
+}
+
 bool cnetlink::has_l3_addresses(rtnl_link *link) {
   assert(link);
 
@@ -1301,6 +1331,14 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
           << ", new_link_slave_type="
           << std::string_view(rtnl_link_get_slave_type(new_link))
           << ", af_old=" << af_old << ", af_new=" << af_new;
+
+  if (nl_addr_cmp(rtnl_link_get_addr(old_link), rtnl_link_get_addr(new_link)) &&
+      is_switch_interface(old_link)) {
+    if (update_on_mac_change(old_link, new_link) < 0)
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to update MAC old_link=" << OBJ_CAST(old_link)
+                 << " new_link=" << OBJ_CAST(new_link);
+  }
 
   if (af_old != af_new) {
     VLOG(1) << __FUNCTION__ << ": af changed from " << af_old << " to "

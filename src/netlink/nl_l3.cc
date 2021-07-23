@@ -68,7 +68,7 @@ std::unordered_map<
     l3_interface>
     l3_interface_mapping;
 
-// key: source port_id, vid, src_mac, ethertype ; value: refcount
+// key: source port_id, vid, src_mac, af ; value: refcount
 std::unordered_multimap<std::tuple<int, uint16_t, rofl::caddress_ll, uint16_t>,
                         int>
     termination_mac_mapping;
@@ -476,7 +476,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
 
   rv = del_l3_termination(port_id, vid, mac, family);
-  if (rv < 0) {
+  if (rv < 0 && rv != -ENODATA) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to remove l3 termination mac(local) vid=" << vid
                << "; rv=" << rv;
@@ -641,7 +641,9 @@ int nl_l3::del_l3_neigh_egress(struct rtnl_neigh *n) {
   // remove egress group reference
   int rv = del_l3_egress(ifindex, vid, s_mac, d_mac);
   if (rv < 0 and rv != -EEXIST) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to add l3 egress";
+    LOG(ERROR) << __FUNCTION__
+               << ": failed to remove l3 egress ifindex=" << ifindex
+               << " vid=" << vid;
   }
 
   return rv;
@@ -1147,6 +1149,9 @@ int nl_l3::add_l3_termination(uint32_t port_id, uint16_t vid,
     if (i->first == needle) {
       // found, increment refcount
       i->second++;
+      VLOG(4) << __FUNCTION__ << ": incremented refcount=" << i->second
+              << " for key portid=" << port_id << " vid=" << vid
+              << " mac=" << mac << " af=" << af;
       return 0;
     }
   }
@@ -1172,6 +1177,9 @@ int nl_l3::add_l3_termination(uint32_t port_id, uint16_t vid,
     break;
   }
 
+  VLOG(3) << __FUNCTION__ << ": added l3 termination for port=" << port_id
+          << " vid=" << vid << " mac=" << mac << " af=" << af;
+
   return rv;
 }
 
@@ -1190,7 +1198,9 @@ int nl_l3::del_l3_termination(uint32_t port_id, uint16_t vid,
     if (i->first == needle) {
       // found, decrement refcount
       --i->second;
-      VLOG(4) << __FUNCTION__ << ": found new refcount=" << i->second;
+      VLOG(4) << __FUNCTION__ << ": decremented refcount=" << i->second
+              << " for l3 terminaton for portid=" << port_id << " vid=" << vid
+              << " mac=" << mac << " af=" << af;
       break;
     }
   }
@@ -1205,7 +1215,7 @@ int nl_l3::del_l3_termination(uint32_t port_id, uint16_t vid,
         << __FUNCTION__
         << ": tried to delete a non existing termination mac for port_id="
         << port_id << ", vid=" << vid << ", mac=" << mac << ", af=" << af;
-    return 0;
+    return -ENODATA;
   }
 
   // still existing references
@@ -1229,6 +1239,129 @@ int nl_l3::del_l3_termination(uint32_t port_id, uint16_t vid,
   }
 
   termination_mac_mapping.erase(i);
+
+  return rv;
+}
+
+int nl_l3::update_l3_termination(int port_id, uint16_t vid,
+                                 struct nl_addr *old_mac,
+                                 struct nl_addr *new_mac) noexcept {
+  int rv = 0;
+
+  auto o_mac = libnl_lladdr_2_rofl(old_mac);
+  auto n_mac = libnl_lladdr_2_rofl(new_mac);
+
+  // parse the AF list and remove the entry from the termination mac map
+  // call the switch function to remove and insert the entry with the
+  // new mac address.
+  // We cant call del_l3_termination because we need to keep the refcounts
+  // currently configured in the map
+  auto entry = termination_mac_mapping.find(
+      std::make_tuple(port_id, vid, o_mac, AF_INET));
+  if (entry != termination_mac_mapping.end()) {
+    int refcnt = entry->second;
+
+    termination_mac_mapping.erase(entry);
+    rv = sw->l3_termination_remove(port_id, vid, o_mac);
+
+    if (rv < 0)
+      VLOG(3) << __FUNCTION__
+              << ": failed to remove termination mac port=" << port_id
+              << " vid=" << vid << " mac=" << o_mac;
+    rv = sw->l3_termination_add(port_id, vid, n_mac);
+    if (rv < 0) {
+      VLOG(3) << __FUNCTION__
+              << ": failed to add termination mac port=" << port_id
+              << " vid=" << vid << " mac=" << n_mac;
+      return rv;
+    }
+
+    auto new_key = std::make_tuple(port_id, vid, n_mac, AF_INET);
+    termination_mac_mapping.emplace(std::move(new_key), refcnt);
+
+    VLOG(2) << __FUNCTION__
+            << ": updated Termination MAC for port_id=" << port_id
+            << " old mac address=" << o_mac << " new mac address=" << n_mac
+            << " AF=" << AF_INET;
+  }
+
+  entry = termination_mac_mapping.find(
+      std::make_tuple(port_id, vid, o_mac, AF_INET6));
+  if (entry != termination_mac_mapping.end()) {
+    int refcnt = entry->second;
+
+    termination_mac_mapping.erase(entry);
+    rv = sw->l3_termination_remove_v6(port_id, vid, o_mac);
+    if (rv < 0)
+      VLOG(3) << __FUNCTION__
+              << ": failed to remove termination mac port=" << port_id
+              << " vid=" << vid << " mac=" << o_mac;
+    rv = sw->l3_termination_add_v6(port_id, vid, n_mac);
+    if (rv < 0) {
+      VLOG(3) << __FUNCTION__
+              << ": failed to add termination mac port=" << port_id
+              << " vid=" << vid << " mac=" << n_mac;
+      return rv;
+    }
+
+    auto new_key = std::make_tuple(port_id, vid, n_mac, AF_INET6);
+    termination_mac_mapping.emplace(std::move(new_key), refcnt);
+    VLOG(2) << __FUNCTION__
+            << ": updated Termination MAC for port_id=" << port_id
+            << " old mac address=" << o_mac << " new mac address=" << n_mac
+            << " AF=" << AF_INET6;
+  }
+  return rv;
+}
+
+int nl_l3::update_l3_egress(int port_id, uint16_t vid, struct nl_addr *old_mac,
+                            struct nl_addr *new_mac) noexcept {
+
+  int rv = 0;
+
+  auto o_mac = libnl_lladdr_2_rofl(old_mac);
+  auto n_mac = libnl_lladdr_2_rofl(new_mac);
+
+  // search the l3 interface mapping for an entry corresponding to the
+  // old mac address to be updated
+  std::unordered_map<
+      std::tuple<int, uint16_t, rofl::caddress_ll, rofl::caddress_ll>,
+      l3_interface>
+      update_l3;
+
+  // vlan, mac address combination is unique, get the entries that match
+  // not parsing for the port id solves the issue for bridge interfaces
+  // that portid is 0 and the entries are gotten from the fdb
+  for (auto it : l3_interface_mapping) {
+    if (std::get<1>(it.first) == vid && std::get<2>(it.first) == o_mac)
+      update_l3.emplace(it.first, it.second);
+  }
+
+  if (update_l3.empty()) {
+    VLOG(4) << __FUNCTION__
+            << ": no mapping found, no egress entry to be updated";
+    return 0;
+  }
+
+  // update the switch egress entry with the new mac address
+  for (auto it : update_l3) {
+    uint32_t l3_iface_id = it.second.l3_interface_id;
+    rv = sw->l3_egress_update(std::get<0>(it.first), vid, n_mac,
+                              std::get<3>(it.first), &l3_iface_id);
+
+    auto l3_if_new_tuple =
+        std::make_tuple(port_id, vid, n_mac, std::get<3>(it.first));
+
+    // updates the l3 interface map, erasing the entry to the old mac address
+    // and inserting the new one
+    l3_interface_mapping.erase(it.first);
+    l3_interface_mapping.emplace(std::make_pair(l3_if_new_tuple, it.second));
+
+    VLOG(2) << __FUNCTION__ << ": updated egress l3 for port_id=" << port_id
+            << " old mac address=" << std::get<3>(it.first)
+            << " new mac address=" << n_mac
+            << " l3 interface id=" << l3_iface_id;
+  }
 
   return rv;
 }
