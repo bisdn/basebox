@@ -13,6 +13,7 @@
 #include "version.h"
 
 DECLARE_string(tryfromenv); // from gflags
+DEFINE_bool(multicast, true, "Enable multicast support");
 DEFINE_int32(port, 6653, "Listening port");
 DEFINE_int32(ofdpa_grpc_port, 50051, "Listening port of ofdpa gRPC server");
 
@@ -40,7 +41,7 @@ int main(int argc, char **argv) {
   }
 
   // all variables can be set from env
-  FLAGS_tryfromenv = std::string("port,ofdpa_grpc_port");
+  FLAGS_tryfromenv = std::string("multicast,port,ofdpa_grpc_port");
   gflags::SetUsageMessage("");
   gflags::SetVersionString(PROJECT_VERSION);
 
