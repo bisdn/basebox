@@ -632,8 +632,32 @@ int nl_l3::del_l3_neigh_egress(struct rtnl_neigh *n) {
   if (nl->is_bridge_interface(ifindex)) {
     auto fdb_res = nl->search_fdb(vid, d_mac);
 
-    assert(fdb_res.size() == 1);
-    ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+    assert(fdb_res.size() <= 1);
+    if (fdb_res.size() == 1) {
+      ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+    } else {
+      // neighbor already purged from fdb, so check map
+      uint32_t portid = 0;
+      auto src_mac = libnl_lladdr_2_rofl(s_mac);
+      auto dst_mac = libnl_lladdr_2_rofl(d_mac);
+
+      for (auto it : l3_interface_mapping) {
+        if (std::get<1>(it.first) == vid && std::get<2>(it.first) == src_mac &&
+            std::get<3>(it.first) == dst_mac) {
+          portid = std::get<0>(it.first);
+          break;
+        }
+      }
+
+      if (portid == 0) {
+        LOG(ERROR) << __FUNCTION__
+                   << ": failed to determine physical port of l3 egress entry for neigh "
+                   << OBJ_CAST(n);
+        return -ENODATA;
+      }
+
+      ifindex = nl->get_ifindex_by_port_id(portid);
+    }
   }
 
   // XXX TODO del vlan
