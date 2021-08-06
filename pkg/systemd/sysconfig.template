@@ -1,6 +1,6 @@
 ### Configuration options for baseboxd
 #
-# Enable multicast supporrt:
+# Enable multicast support:
 # FLAGS_multicast=true
 #
 # Listening port:
