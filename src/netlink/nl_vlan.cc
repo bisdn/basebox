@@ -39,6 +39,13 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     return -EINVAL;
   }
 
+  auto key = std::make_pair(port_id, vid);
+  auto refcount = port_vlan.find(key);
+  if (refcount != port_vlan.end()) {
+    refcount->second++;
+    return 0;
+  }
+
   int rv = swi->ingress_port_vlan_add(port_id, vid, !tagged, vrf_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to setup ingress vlan " << vid
@@ -86,12 +93,7 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     return rv;
   }
 
-  auto key = std::make_pair(port_id, vid);
-  auto refcount = port_vlan.find(key);
-  if (refcount == port_vlan.end()) {
-    port_vlan.emplace(key, 1);
-  } else
-    refcount->second++;
+  port_vlan.emplace(key, 1);
 
   if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
     auto members = nl->get_bond_members_by_port_id(port_id);
@@ -184,11 +186,13 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   // check for refcount
   auto key = std::make_pair(port_id, vid);
   auto refcount = port_vlan.find(key);
-  if (refcount != port_vlan.end()) {
-    refcount->second--;
+  if (refcount == port_vlan.end())
+    return -EINVAL;
+
+  if (--refcount->second > 0)
     return rv;
-  } else if (refcount->second == 1)
-    port_vlan.erase(refcount);
+
+  port_vlan.erase(refcount);
 
   // remove vid at ingress
   if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
