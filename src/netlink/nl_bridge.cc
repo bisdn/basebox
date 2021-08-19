@@ -1086,9 +1086,8 @@ int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
 
   uint32_t ifindex = rtnl_bridge_vlan_get_ifindex(bvlan_info);
   int port_id = nl->get_port_id(ifindex);
-  struct rtnl_bvlan_entry *entry = rtnl_bridge_vlan_get_entry_head(bvlan_info);
-  uint16_t vlan_id = rtnl_bridge_vlan_entry_get_vlan_id(entry);
-  uint8_t stp_state = rtnl_bridge_vlan_entry_get_state(entry);
+  uint16_t vlan_id = rtnl_bridge_vlan_get_vlan_id(bvlan_info);
+  uint8_t stp_state = rtnl_bridge_vlan_get_state(bvlan_info);
 
   if (is_bridge_interface(ifindex))
     return err;

@@ -1699,19 +1699,17 @@ void cnetlink::route_mdb_apply(const nl_obj &obj) {
 }
 
 void cnetlink::route_bridge_vlan_apply(const nl_obj &obj) {
-  assert(obj.get_new_obj());
 
-  switch (obj.get_msg_type()) {
-  case RTM_NEWVLAN:
+  switch (obj.get_action()) {
+  case NL_ACT_NEW:
+  case NL_ACT_CHANGE:
+    assert(obj.get_new_obj());
     if (bridge)
       bridge->set_pvlan_stp(BRIDGE_VLAN_CAST(obj.get_new_obj()));
     break;
-#if 0
-  case RTM_DELVLAN:
-	if (bridge)
-	        bridge->set_pvlan_stp(BRIDGE_VLAN_CAST(obj.get_new_obj()));
-	break;
-#endif
+  case NL_ACT_DEL:
+    VLOG(1) << __FUNCTION__ << ": removing vlan stg membership not supported";
+    break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": invalid action " << obj.get_action();
     break;
