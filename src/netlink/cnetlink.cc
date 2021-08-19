@@ -1707,12 +1707,9 @@ void cnetlink::route_bridge_vlan_apply(const nl_obj &obj) {
     if (bridge)
       bridge->set_pvlan_stp(BRIDGE_VLAN_CAST(obj.get_new_obj()));
     break;
-#if 0
   case NL_ACT_DEL:
-	if (bridge)
-	        bridge->set_pvlan_stp(BRIDGE_VLAN_CAST(obj.get_new_obj()));
-	break;
-#endif
+    VLOG(1) << __FUNCTION__ << ": removing vlan stg membership not supported";
+    break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": invalid action " << obj.get_action();
     break;
