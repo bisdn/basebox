@@ -1108,6 +1108,34 @@ int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   return err;
 }
 
+int nl_bridge::drop_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
+  int err = 0;
+
+#ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
+  if (get_stp_state() == STP_STATE_DISABLED)
+    return err;
+
+  uint32_t ifindex = rtnl_bridge_vlan_get_ifindex(bvlan_info);
+  int port_id = nl->get_port_id(ifindex);
+  uint16_t vlan_id = rtnl_bridge_vlan_get_vlan_id(bvlan_info);
+
+  if (is_bridge_interface(ifindex))
+    return err;
+
+  bridge_stp_states.del_pvlan_state(port_id, vlan_id);
+
+  // default state when not part of the vlan
+  auto g_stp_state = BR_STATE_DISABLED;
+
+  LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
+            << " ifindex= " << ifindex << " VLAN =" << vlan_id;
+
+  err = sw->ofdpa_stg_state_port_set(nl->get_port_id(ifindex), vlan_id,
+                                     stp_state_to_string(g_stp_state));
+#endif
+  return err;
+}
+
 std::string nl_bridge::stp_state_to_string(uint8_t state) {
   std::string ret;
   switch (state) {
