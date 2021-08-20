@@ -2186,7 +2186,23 @@ int controller::lookup_stpid(uint32_t vlan_id) noexcept {
   return (it == vlan_to_stg.end()) ? 0 : it->second;
 }
 
-int controller::ofdpa_stg_destroy(uint16_t vlan_id) noexcept { return 0; }
+int controller::ofdpa_stg_destroy(uint16_t vlan_id) noexcept {
+  int rv;
+  int stg_id = lookup_stpid(vlan_id);
+
+  if (stg_id == 0)
+    return 0;
+
+  rv = ofdpa->ofdpaStgDestroy(stg_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to destroy the STP group";
+    return rv;
+  }
+
+  vlan_to_stg.erase(vlan_id);
+
+  return rv;
+}
 
 int controller::ofdpa_stg_state_port_set(uint32_t port_id, uint16_t vlan_id,
                                          std::string state) noexcept {
