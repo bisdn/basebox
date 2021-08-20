@@ -333,6 +333,8 @@ private:
   uint32_t current_stg = 2;
   std::bitset<512> stg_in_use;
 
+  int find_free_stgid(void) noexcept;
+
   struct multicast_entry {
     // mmac, vlan
     std::tuple<rofl::caddress_ll, uint16_t> key;
