@@ -62,29 +62,32 @@ struct bridge_stp_states {
   std::map<uint16_t, std::map<uint16_t, uint8_t>> pv_states;
 
   bridge_stp_states() = default;
-  void add_pvlan_state(int port_id, uint16_t vlan_id, uint8_t state) {
+  bool add_pvlan_state(int port_id, uint16_t vlan_id, uint8_t state) {
     auto it = pv_states.find(vlan_id);
     if (it == pv_states.end()) {
       std::map<uint16_t, uint8_t> pv_map;
       pv_map.emplace(port_id, state);
       pv_states.emplace(vlan_id, pv_map);
-      return;
+      return true;
     }
 
     it->second.insert_or_assign(port_id, state);
+    return false;
   }
 
-  void del_pvlan_state(int port_id, uint16_t vlan_id) {
+  bool del_pvlan_state(int port_id, uint16_t vlan_id) {
     auto it = pv_states.find(vlan_id);
     if (it == pv_states.end()) {
-      return;
+      return false;
     }
 
     it->second.erase(port_id);
 
     if (it->second.empty()) {
       pv_states.erase(it);
+      return true;
     }
+    return false;
   }
 
   void add_global_state(int port_id, uint8_t state) {
