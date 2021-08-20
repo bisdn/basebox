@@ -74,6 +74,19 @@ struct bridge_stp_states {
     it->second.insert_or_assign(port_id, state);
   }
 
+  void del_pvlan_state(int port_id, uint16_t vlan_id) {
+    auto it = pv_states.find(vlan_id);
+    if (it == pv_states.end()) {
+      return;
+    }
+
+    it->second.erase(port_id);
+
+    if (it->second.empty()) {
+      pv_states.erase(it);
+    }
+  }
+
   void add_global_state(int port_id, uint8_t state) {
     gl_states.insert_or_assign(port_id, state);
   }
