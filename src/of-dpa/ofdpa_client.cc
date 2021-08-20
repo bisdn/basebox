@@ -336,6 +336,23 @@ ofdpa_client::ofdpaStgCreate(uint16_t stg_id) {
 }
 
 ofdpa::OfdpaStatus::OfdpaStatusCode
+ofdpa_client::ofdpaStgDestroy(uint16_t stg_id) {
+  ::OfdpaStatus response;
+  ::ClientContext context;
+  ::StgId request;
+
+  context.set_wait_for_ready(true);
+  request.set_id(stg_id);
+
+  ::Status rv = stub_->ofdpaStgDestroy(&context, request, &response);
+  if (not rv.ok()) {
+    return ofdpa::OfdpaStatus::OFDPA_E_RPC;
+  }
+
+  return response.status();
+}
+
+ofdpa::OfdpaStatus::OfdpaStatusCode
 ofdpa_client::ofdpaStgVlanAdd(uint16_t vlanid, uint32_t stgid) {
   ::OfdpaStatus response;
   ::ClientContext context;
