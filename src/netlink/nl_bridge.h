@@ -151,6 +151,7 @@ public:
   virtual ~nl_bridge();
 
   int set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info);
+  int drop_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info);
 
   void set_bridge_interface(rtnl_link *);
   bool is_bridge_interface(int ifindex);
