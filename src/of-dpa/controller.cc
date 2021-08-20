@@ -2200,6 +2200,7 @@ int controller::ofdpa_stg_destroy(uint16_t vlan_id) noexcept {
   }
 
   vlan_to_stg.erase(vlan_id);
+  stg_in_use[stg_id] = false;
 
   return rv;
 }
@@ -2240,6 +2241,7 @@ int controller::ofdpa_stg_create(uint16_t vlan_id) noexcept {
   }
 
   vlan_to_stg.emplace(std::make_pair(vlan_id, current_stg));
+  stg_in_use[current_stg] = true;
 
   current_stg++;
   return rv;
