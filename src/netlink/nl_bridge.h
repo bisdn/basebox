@@ -71,19 +71,11 @@ struct bridge_stp_states {
       return;
     }
 
-    auto pv_it = it->second.find(port_id);
-    if (pv_it != it->second.end())
-      pv_it = it->second.erase(pv_it);
-
-    it->second.emplace(port_id, state);
+    it->second.insert_or_assign(port_id, state);
   }
 
   void add_global_state(int port_id, uint8_t state) {
-    auto it = gl_states.find(port_id);
-    if (it != gl_states.end())
-      gl_states.erase(it);
-
-    gl_states.emplace(port_id, state);
+    gl_states.insert_or_assign(port_id, state);
   }
 
   uint8_t get_global_state(int port_id) {
