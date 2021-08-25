@@ -118,7 +118,7 @@ void cnetlink::init_caches() {
 
   set_nl_socket_buffer_sizes(sock_mon);
 
-  rc = rtnl_link_alloc_cache_flags(sock_mon, AF_UNSPEC, &caches[NL_LINK_CACHE],
+  rc = rtnl_link_alloc_cache_flags(nullptr, AF_UNSPEC, &caches[NL_LINK_CACHE],
                                    NL_CACHE_AF_ITER);
 
   if (0 != rc) {
@@ -134,7 +134,7 @@ void cnetlink::init_caches() {
   }
 
   /* init route cache */
-  rc = rtnl_route_alloc_cache(sock_mon, AF_UNSPEC, 0, &caches[NL_ROUTE_CACHE]);
+  rc = rtnl_route_alloc_cache(nullptr, AF_UNSPEC, 0, &caches[NL_ROUTE_CACHE]);
   if (rc < 0) {
     LOG(FATAL) << __FUNCTION__ << ": add route/route to cache mngr";
   }
@@ -145,7 +145,7 @@ void cnetlink::init_caches() {
   }
 
   /* init addr cache*/
-  rc = rtnl_addr_alloc_cache(sock_mon, &caches[NL_ADDR_CACHE]);
+  rc = rtnl_addr_alloc_cache(nullptr, &caches[NL_ADDR_CACHE]);
   if (rc < 0) {
     LOG(FATAL) << __FUNCTION__ << ": add route/addr to cache mngr";
   }
@@ -156,7 +156,7 @@ void cnetlink::init_caches() {
   }
 
   /* init neigh cache */
-  rc = rtnl_neigh_alloc_cache_flags(sock_mon, &caches[NL_NEIGH_CACHE],
+  rc = rtnl_neigh_alloc_cache_flags(nullptr, &caches[NL_NEIGH_CACHE],
                                     NL_CACHE_AF_ITER);
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__
@@ -171,7 +171,7 @@ void cnetlink::init_caches() {
 #ifdef HAVE_NETLINK_ROUTE_MDB_H
   if (FLAGS_multicast) {
     /* init mdb cache */
-    rc = rtnl_mdb_alloc_cache_flags(sock_mon, &caches[NL_MDB_CACHE],
+    rc = rtnl_mdb_alloc_cache_flags(nullptr, &caches[NL_MDB_CACHE],
                                     NL_CACHE_AF_ITER);
     if (0 != rc) {
       LOG(FATAL) << __FUNCTION__
@@ -188,7 +188,7 @@ void cnetlink::init_caches() {
 
 #ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
   /* init bridge-vlan cache */
-  rc = rtnl_bridge_vlan_alloc_cache_flags(sock_mon, &caches[NL_BVLAN_CACHE],
+  rc = rtnl_bridge_vlan_alloc_cache_flags(nullptr, &caches[NL_BVLAN_CACHE],
                                           NL_CACHE_AF_ITER);
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__
