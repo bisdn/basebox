@@ -359,12 +359,15 @@ int tap_manager::set_port_speed(const std::string name, uint32_t speed,
   int error = ioctl(sockFd, SIOCETHTOOL, static_cast<void *>(&ifr));
   if (error < 0) {
     LOG(ERROR) << __FUNCTION__ << " handshake failed error=" << error;
+    close(sockFd);
     return error;
   }
 
   if (link_settings.req.link_mode_masks_nwords >= 0 ||
-      link_settings.req.cmd != ETHTOOL_GLINKSETTINGS)
+      link_settings.req.cmd != ETHTOOL_GLINKSETTINGS) {
+    close(sockFd);
     return -EOPNOTSUPP;
+  }
 
   link_settings.req.link_mode_masks_nwords =
       -link_settings.req.link_mode_masks_nwords;
@@ -374,6 +377,7 @@ int tap_manager::set_port_speed(const std::string name, uint32_t speed,
   if (error < 0) {
     LOG(ERROR) << __FUNCTION__ << " failed to get port= " << name
                << " error=" << error;
+    close(sockFd);
     return error;
   }
 
@@ -388,6 +392,7 @@ int tap_manager::set_port_speed(const std::string name, uint32_t speed,
                << " speed, error=" << error;
   }
 
+  close(sockFd);
   return error;
 }
 
