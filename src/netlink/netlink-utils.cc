@@ -66,7 +66,7 @@ enum link_type get_link_type(rtnl_link *link) noexcept {
     type = rtnl_link_get_type(link);
   }
 
-  VLOG(4) << __FUNCTION__ << ": type=" << std::string_view(type)
+  VLOG(4) << __FUNCTION__ << ": type=" << safe_string_view(type)
           << ", slave=" << slave << ", af=" << rtnl_link_get_family(link)
           << " of link " << OBJ_CAST(link);
 

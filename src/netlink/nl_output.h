@@ -14,4 +14,8 @@ std::ostream &operator<<(std::ostream &stream, struct nl_object *n);
 
 std::ostream &operator<<(std::ostream &stream, struct rtnl_nexthop *nh);
 
+inline std::string_view safe_string_view(const char *str) {
+  return std::string_view(str ? str : "(null)");
+}
+
 } // namespace basebox
