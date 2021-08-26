@@ -907,7 +907,7 @@ int cnetlink::handle_source_mac_learn() {
 
     if (ifindex && bridge) {
       rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
-      VLOG(2) << __FUNCTION__ << ": ifindex=" << ifindex
+      VLOG(3) << __FUNCTION__ << ": ifindex=" << ifindex
               << ", bridge=" << bridge << ", br_link=" << OBJ_CAST(br_link);
 
       if (br_link) {
@@ -916,7 +916,7 @@ int cnetlink::handle_source_mac_learn() {
       }
     }
 
-    VLOG(2) << __FUNCTION__ << ": send pkt " << p.pkt
+    VLOG(3) << __FUNCTION__ << ": send pkt " << p.pkt
             << " to tap on fd=" << p.fd;
     // pass process packets to tap_man
     tap_man->enqueue(p.fd, p.pkt);
