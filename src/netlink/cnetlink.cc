@@ -1323,13 +1323,13 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   int af_new = rtnl_link_get_family(new_link);
 
   VLOG(3) << __FUNCTION__ << ": old_link_type="
-          << std::string_view(rtnl_link_get_type(old_link))
+          << safe_string_view(rtnl_link_get_type(old_link))
           << ", new_link_type="
-          << std::string_view(rtnl_link_get_type(new_link))
+          << safe_string_view(rtnl_link_get_type(new_link))
           << ", old_link_slave_type="
-          << std::string_view(rtnl_link_get_slave_type(old_link))
+          << safe_string_view(rtnl_link_get_slave_type(old_link))
           << ", new_link_slave_type="
-          << std::string_view(rtnl_link_get_slave_type(new_link))
+          << safe_string_view(rtnl_link_get_slave_type(new_link))
           << ", af_old=" << af_old << ", af_new=" << af_new;
 
   if (nl_addr_cmp(rtnl_link_get_addr(old_link), rtnl_link_get_addr(new_link)) &&
