@@ -907,7 +907,7 @@ int cnetlink::handle_source_mac_learn() {
 
     if (ifindex && bridge) {
       rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
-      VLOG(2) << __FUNCTION__ << ": ifindex=" << ifindex
+      VLOG(3) << __FUNCTION__ << ": ifindex=" << ifindex
               << ", bridge=" << bridge << ", br_link=" << OBJ_CAST(br_link);
 
       if (br_link) {
@@ -916,7 +916,7 @@ int cnetlink::handle_source_mac_learn() {
       }
     }
 
-    VLOG(2) << __FUNCTION__ << ": send pkt " << p.pkt
+    VLOG(3) << __FUNCTION__ << ": send pkt " << p.pkt
             << " to tap on fd=" << p.fd;
     // pass process packets to tap_man
     tap_man->enqueue(p.fd, p.pkt);
@@ -1323,13 +1323,13 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   int af_new = rtnl_link_get_family(new_link);
 
   VLOG(3) << __FUNCTION__ << ": old_link_type="
-          << std::string_view(rtnl_link_get_type(old_link))
+          << safe_string_view(rtnl_link_get_type(old_link))
           << ", new_link_type="
-          << std::string_view(rtnl_link_get_type(new_link))
+          << safe_string_view(rtnl_link_get_type(new_link))
           << ", old_link_slave_type="
-          << std::string_view(rtnl_link_get_slave_type(old_link))
+          << safe_string_view(rtnl_link_get_slave_type(old_link))
           << ", new_link_slave_type="
-          << std::string_view(rtnl_link_get_slave_type(new_link))
+          << safe_string_view(rtnl_link_get_slave_type(new_link))
           << ", af_old=" << af_old << ", af_new=" << af_new;
 
   if (nl_addr_cmp(rtnl_link_get_addr(old_link), rtnl_link_get_addr(new_link)) &&

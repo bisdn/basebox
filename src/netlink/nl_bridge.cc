@@ -743,7 +743,7 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   // we still assume vlan filtering bridge
   assert(rtnl_link_get_family(br_link) == AF_BRIDGE);
 
-  VLOG(2) << __FUNCTION__ << ": pkt " << p << " on link " << OBJ_CAST(br_link);
+  VLOG(3) << __FUNCTION__ << ": pkt " << p << " on link " << OBJ_CAST(br_link);
 
   rtnl_link_bridge_vlan *br_vlan = rtnl_link_bridge_get_port_vlan(br_link);
 
@@ -768,8 +768,8 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   default:
     // no vid, set vid to pvid
     vid = br_vlan->pvid;
-    LOG(WARNING) << __FUNCTION__ << ": assuming untagged for ethertype "
-                 << std::showbase << std::hex << ntohs(hdr->eth.h_proto);
+    VLOG(3) << __FUNCTION__ << ": assuming untagged for ethertype "
+            << std::showbase << std::hex << ntohs(hdr->eth.h_proto);
     break;
   }
 
@@ -823,7 +823,7 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
     return -EINVAL;
   }
 
-  VLOG(2) << __FUNCTION__ << ": learned new source mac " << OBJ_CAST(n.get());
+  VLOG(3) << __FUNCTION__ << ": learned new source mac " << OBJ_CAST(n.get());
 
   return 0;
 }
