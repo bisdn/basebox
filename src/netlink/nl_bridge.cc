@@ -935,7 +935,7 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
       nl_addr_parse("ff02::/10", AF_INET6, &p);
       std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
       if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
-        return 0;
+        continue;
 
       struct in6_addr *v6_addr =
           (struct in6_addr *)nl_addr_get_binary_addr(addr);
