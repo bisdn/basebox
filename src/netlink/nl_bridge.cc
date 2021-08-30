@@ -920,6 +920,18 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
 
     auto addr = rtnl_mdb_entry_get_addr(i);
     if (rtnl_mdb_entry_get_proto(i) == ETH_P_IP) {
+      // RFC 4541, section 2.1.2 says:
+      // 2) Packets with a destination IP (DIP) address in the 224.0.0.X range
+      //    which are not IGMP must be forwarded on all ports.
+      //
+      // Therefore we must not create groups for them to ensure that.
+
+      auto p = nl_addr_alloc(4);
+      nl_addr_parse("224.0.0.0/24", AF_INET, &p);
+      std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
+      if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
+        continue;
+
       rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
@@ -1000,6 +1012,12 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
 
     auto addr = rtnl_mdb_entry_get_addr(i);
     if (rtnl_mdb_entry_get_proto(i) == ETH_P_IP) {
+      auto p = nl_addr_alloc(4);
+      nl_addr_parse("224.0.0.0/24", AF_INET, &p);
+      std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
+      if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
+        continue;
+
       rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
