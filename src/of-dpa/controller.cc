@@ -2244,7 +2244,7 @@ int controller::ofdpa_stg_create(uint16_t vlan_id) noexcept {
 
   stg_id = find_free_stgid();
   if (stg_id < 0) {
-    LOG(ERRROR) << _FUNCTION__ << ": failed to allocate STG ID: " << stg_id;
+    LOG(ERROR) << __FUNCTION__ << ": failed to allocate STG ID: " << stg_id;
     return stg_id;
   }
 
