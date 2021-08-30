@@ -942,10 +942,24 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
       multicast_ipv4_to_ll(ipv4_dst.get_addr_hbo(), buf);
     } else if (rtnl_mdb_entry_get_proto(i) == ETH_P_IPV6) {
 
-      // Is address Linklocal Multicast
+      // RFC 4541, section 3 says:
+      // In IPv6, the data forwarding rules are more straight forward because
+      // MLD is mandated for addresses with scope 2 (link-scope) or greater.
+      // The only exception is the address FF02::1 which is the all hosts
+      // link-scope address for which MLD messages are never sent.  Packets
+      // with the all hosts link-scope address should be forwarded on all
+      // ports.
       auto p = nl_addr_alloc(16);
-      nl_addr_parse("ff02::/10", AF_INET6, &p);
+      nl_addr_parse("ff02::1/128", AF_INET6, &p);
       std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
+      if (!nl_addr_cmp(addr, tm_addr.get()))
+        continue;
+
+      // MLD messages are also not sent regarding groups with addresses in the
+      // range FF00::/15 (which encompasses both the reserved FF00::/16 and
+      // node-local FF01::/16 IPv6 address spaces).  These addresses should
+      // never appear in packets on the link.
+      nl_addr_parse("ff00::/15", AF_INET6, &p);
       if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
         continue;
 
@@ -1027,10 +1041,12 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
       multicast_ipv4_to_ll(ipv4_dst.get_addr_hbo(), buf);
     } else if (rtnl_mdb_entry_get_proto(i) == ETH_P_IPV6) {
 
-      // Is address Linklocal Multicast
       auto p = nl_addr_alloc(16);
-      nl_addr_parse("ff02::/10", AF_INET6, &p);
+      nl_addr_parse("ff02::1/128", AF_INET6, &p);
       std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
+      if (!nl_addr_cmp(addr, tm_addr.get()))
+        continue;
+      nl_addr_parse("ff00::/15", AF_INET6, &p);
       if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
         continue;
 
