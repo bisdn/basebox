@@ -1031,7 +1031,7 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
 
       rv = sw->l2_multicast_addr_remove(port_id, vid, mc_ll);
       if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
+        LOG(ERROR) << __FUNCTION__ << ": failed to remove bridging MC entry";
         return rv;
       }
     } else if (rtnl_mdb_entry_get_proto(i) == ETH_P_IPV6) {
@@ -1055,7 +1055,7 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
 
       rv = sw->l2_multicast_addr_remove(port_id, vid, mc_ll);
       if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
+        LOG(ERROR) << __FUNCTION__ << ": failed to remove bridging MC entry";
         return rv;
       }
     }
