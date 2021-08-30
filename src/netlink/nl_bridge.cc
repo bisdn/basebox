@@ -994,6 +994,10 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
     uint16_t vid = rtnl_mdb_entry_get_vid(i);
     unsigned char buf[ETH_ALEN];
 
+    if (port_ifindex == get_ifindex()) {
+      continue;
+    }
+
     auto addr = rtnl_mdb_entry_get_addr(i);
     if (rtnl_mdb_entry_get_proto(i) == ETH_P_IP) {
       rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
