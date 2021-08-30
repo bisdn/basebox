@@ -915,7 +915,7 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
     unsigned char buf[ETH_ALEN];
 
     if (port_ifindex == get_ifindex()) {
-      return rv;
+      continue;
     }
 
     auto addr = rtnl_mdb_entry_get_addr(i);
