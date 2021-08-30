@@ -1015,18 +1015,20 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
     rv = sw->l2_multicast_group_remove(port_id, vid, mc_ll);
 
     // nothing left to do, there are still entries in the mc group
-    if (rv == -ENOTEMPTY) {
-      return 0;
-    } else if (rv < 0) {
+    if (rv < 0 && rv != -ENOTEMPTY) {
       LOG(ERROR) << __FUNCTION__
                  << ": failed to remove Layer 2 Multicast Group Entry";
       return rv;
     }
 
-    rv = sw->l2_multicast_addr_remove(port_id, vid, mc_ll);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to remove bridging MC entry";
-      return rv;
+    if (rv != -ENOTEMPTY) {
+      rv = sw->l2_multicast_addr_remove(port_id, vid, mc_ll);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": failed to remove bridging MC entry";
+        return rv;
+      }
+    } else {
+      rv = 0;
     }
 
     VLOG(2) << __FUNCTION__ << ": mdb entry removed, port" << port_id
