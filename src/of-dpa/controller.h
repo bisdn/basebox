@@ -331,6 +331,9 @@ private:
   std::map<uint16_t, std::set<uint32_t>> tunnel_dlf_flood;
   std::map<uint16_t, uint32_t> vlan_to_stg;
   uint32_t current_stg = 2;
+  std::bitset<512> stg_in_use;
+
+  int find_free_stgid(void) noexcept;
 
   struct multicast_entry {
     // mmac, vlan

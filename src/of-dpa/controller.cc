@@ -2186,7 +2186,39 @@ int controller::lookup_stpid(uint32_t vlan_id) noexcept {
   return (it == vlan_to_stg.end()) ? 0 : it->second;
 }
 
-int controller::ofdpa_stg_destroy(uint16_t vlan_id) noexcept { return 0; }
+int controller::find_free_stgid() noexcept {
+  // 512 groups, 2 reserved (0 and 1)
+  if (vlan_to_stg.size() == (512 - 2))
+    return -ENOSPC;
+
+  while (stg_in_use[current_stg]) {
+    current_stg++;
+
+    if (current_stg == 512)
+      current_stg = 2;
+  }
+
+  return current_stg;
+}
+
+int controller::ofdpa_stg_destroy(uint16_t vlan_id) noexcept {
+  int rv;
+  int stg_id = lookup_stpid(vlan_id);
+
+  if (stg_id == 0)
+    return 0;
+
+  rv = ofdpa->ofdpaStgDestroy(stg_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to destroy the STP group";
+    return rv;
+  }
+
+  vlan_to_stg.erase(vlan_id);
+  stg_in_use[stg_id] = false;
+
+  return rv;
+}
 
 int controller::ofdpa_stg_state_port_set(uint32_t port_id, uint16_t vlan_id,
                                          std::string state) noexcept {
@@ -2210,22 +2242,28 @@ int controller::ofdpa_stg_create(uint16_t vlan_id) noexcept {
   if (stg_id != 0)
     return stg_id;
 
-  rv = ofdpa->ofdpaStgCreate(current_stg);
+  stg_id = find_free_stgid();
+  if (stg_id < 0) {
+    LOG(ERRROR) << _FUNCTION__ << ": failed to allocate STG ID: " << stg_id;
+    return stg_id;
+  }
+
+  rv = ofdpa->ofdpaStgCreate(stg_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to create the STP group";
     return rv;
   }
 
-  rv = ofdpa->ofdpaStgVlanAdd(vlan_id, current_stg);
+  rv = ofdpa->ofdpaStgVlanAdd(vlan_id, stg_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to add VLAN=" << vlan_id
-               << " to the STP group=" << current_stg;
+               << " to the STP group=" << stg_id;
     return rv;
   }
 
-  vlan_to_stg.emplace(std::make_pair(vlan_id, current_stg));
+  vlan_to_stg.emplace(std::make_pair(vlan_id, stg_id));
+  stg_in_use[current_stg] = true;
 
-  current_stg++;
   return rv;
 }
 

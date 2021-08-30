@@ -62,28 +62,36 @@ struct bridge_stp_states {
   std::map<uint16_t, std::map<uint16_t, uint8_t>> pv_states;
 
   bridge_stp_states() = default;
-  void add_pvlan_state(int port_id, uint16_t vlan_id, uint8_t state) {
+  bool add_pvlan_state(int port_id, uint16_t vlan_id, uint8_t state) {
     auto it = pv_states.find(vlan_id);
     if (it == pv_states.end()) {
       std::map<uint16_t, uint8_t> pv_map;
       pv_map.emplace(port_id, state);
       pv_states.emplace(vlan_id, pv_map);
-      return;
+      return true;
     }
 
-    auto pv_it = it->second.find(port_id);
-    if (pv_it != it->second.end())
-      pv_it = it->second.erase(pv_it);
+    it->second.insert_or_assign(port_id, state);
+    return false;
+  }
 
-    it->second.emplace(port_id, state);
+  bool del_pvlan_state(int port_id, uint16_t vlan_id) {
+    auto it = pv_states.find(vlan_id);
+    if (it == pv_states.end()) {
+      return false;
+    }
+
+    it->second.erase(port_id);
+
+    if (it->second.empty()) {
+      pv_states.erase(it);
+      return true;
+    }
+    return false;
   }
 
   void add_global_state(int port_id, uint8_t state) {
-    auto it = gl_states.find(port_id);
-    if (it != gl_states.end())
-      gl_states.erase(it);
-
-    gl_states.emplace(port_id, state);
+    gl_states.insert_or_assign(port_id, state);
   }
 
   uint8_t get_global_state(int port_id) {
@@ -146,6 +154,7 @@ public:
   virtual ~nl_bridge();
 
   int set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info);
+  int drop_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info);
 
   void set_bridge_interface(rtnl_link *);
   bool is_bridge_interface(int ifindex);

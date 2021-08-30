@@ -743,7 +743,7 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   // we still assume vlan filtering bridge
   assert(rtnl_link_get_family(br_link) == AF_BRIDGE);
 
-  VLOG(2) << __FUNCTION__ << ": pkt " << p << " on link " << OBJ_CAST(br_link);
+  VLOG(3) << __FUNCTION__ << ": pkt " << p << " on link " << OBJ_CAST(br_link);
 
   rtnl_link_bridge_vlan *br_vlan = rtnl_link_bridge_get_port_vlan(br_link);
 
@@ -768,8 +768,8 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   default:
     // no vid, set vid to pvid
     vid = br_vlan->pvid;
-    LOG(WARNING) << __FUNCTION__ << ": assuming untagged for ethertype "
-                 << std::showbase << std::hex << ntohs(hdr->eth.h_proto);
+    VLOG(3) << __FUNCTION__ << ": assuming untagged for ethertype "
+            << std::showbase << std::hex << ntohs(hdr->eth.h_proto);
     break;
   }
 
@@ -823,7 +823,7 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
     return -EINVAL;
   }
 
-  VLOG(2) << __FUNCTION__ << ": learned new source mac " << OBJ_CAST(n.get());
+  VLOG(3) << __FUNCTION__ << ": learned new source mac " << OBJ_CAST(n.get());
 
   return 0;
 }
@@ -1092,11 +1092,16 @@ int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   if (is_bridge_interface(ifindex))
     return err;
 
-  err = sw->ofdpa_stg_create(vlan_id);
-  if (err < 0)
-    return err;
+  bool new_group =
+      bridge_stp_states.add_pvlan_state(port_id, vlan_id, stp_state);
+  if (new_group) {
+    err = sw->ofdpa_stg_create(vlan_id);
+    if (err < 0) {
+      bridge_stp_states.del_pvlan_state(port_id, vlan_id);
+      return err;
+    }
+  }
 
-  bridge_stp_states.add_pvlan_state(port_id, vlan_id, stp_state);
   auto g_stp_state = bridge_stp_states.get_min_state(port_id, vlan_id);
 
   LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
@@ -1104,6 +1109,37 @@ int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
 
   err = sw->ofdpa_stg_state_port_set(nl->get_port_id(ifindex), vlan_id,
                                      stp_state_to_string(g_stp_state));
+#endif
+  return err;
+}
+
+int nl_bridge::drop_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
+  int err = 0;
+
+#ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
+  if (get_stp_state() == STP_STATE_DISABLED)
+    return err;
+
+  uint32_t ifindex = rtnl_bridge_vlan_get_ifindex(bvlan_info);
+  int port_id = nl->get_port_id(ifindex);
+  uint16_t vlan_id = rtnl_bridge_vlan_get_vlan_id(bvlan_info);
+
+  if (is_bridge_interface(ifindex))
+    return err;
+
+  // default state when not part of the vlan
+  auto g_stp_state = BR_STATE_DISABLED;
+
+  LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
+            << " ifindex= " << ifindex << " VLAN =" << vlan_id;
+
+  err = sw->ofdpa_stg_state_port_set(nl->get_port_id(ifindex), vlan_id,
+                                     stp_state_to_string(g_stp_state));
+
+  bool last_member = bridge_stp_states.del_pvlan_state(port_id, vlan_id);
+  if (last_member) {
+    err = sw->ofdpa_stg_destroy(vlan_id);
+  }
 #endif
   return err;
 }

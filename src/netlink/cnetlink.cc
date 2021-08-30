@@ -118,7 +118,7 @@ void cnetlink::init_caches() {
 
   set_nl_socket_buffer_sizes(sock_mon);
 
-  rc = rtnl_link_alloc_cache_flags(sock_mon, AF_UNSPEC, &caches[NL_LINK_CACHE],
+  rc = rtnl_link_alloc_cache_flags(nullptr, AF_UNSPEC, &caches[NL_LINK_CACHE],
                                    NL_CACHE_AF_ITER);
 
   if (0 != rc) {
@@ -134,7 +134,7 @@ void cnetlink::init_caches() {
   }
 
   /* init route cache */
-  rc = rtnl_route_alloc_cache(sock_mon, AF_UNSPEC, 0, &caches[NL_ROUTE_CACHE]);
+  rc = rtnl_route_alloc_cache(nullptr, AF_UNSPEC, 0, &caches[NL_ROUTE_CACHE]);
   if (rc < 0) {
     LOG(FATAL) << __FUNCTION__ << ": add route/route to cache mngr";
   }
@@ -145,7 +145,7 @@ void cnetlink::init_caches() {
   }
 
   /* init addr cache*/
-  rc = rtnl_addr_alloc_cache(sock_mon, &caches[NL_ADDR_CACHE]);
+  rc = rtnl_addr_alloc_cache(nullptr, &caches[NL_ADDR_CACHE]);
   if (rc < 0) {
     LOG(FATAL) << __FUNCTION__ << ": add route/addr to cache mngr";
   }
@@ -156,7 +156,7 @@ void cnetlink::init_caches() {
   }
 
   /* init neigh cache */
-  rc = rtnl_neigh_alloc_cache_flags(sock_mon, &caches[NL_NEIGH_CACHE],
+  rc = rtnl_neigh_alloc_cache_flags(nullptr, &caches[NL_NEIGH_CACHE],
                                     NL_CACHE_AF_ITER);
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__
@@ -171,7 +171,7 @@ void cnetlink::init_caches() {
 #ifdef HAVE_NETLINK_ROUTE_MDB_H
   if (FLAGS_multicast) {
     /* init mdb cache */
-    rc = rtnl_mdb_alloc_cache_flags(sock_mon, &caches[NL_MDB_CACHE],
+    rc = rtnl_mdb_alloc_cache_flags(nullptr, &caches[NL_MDB_CACHE],
                                     NL_CACHE_AF_ITER);
     if (0 != rc) {
       LOG(FATAL) << __FUNCTION__
@@ -188,7 +188,7 @@ void cnetlink::init_caches() {
 
 #ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
   /* init bridge-vlan cache */
-  rc = rtnl_bridge_vlan_alloc_cache_flags(sock_mon, &caches[NL_BVLAN_CACHE],
+  rc = rtnl_bridge_vlan_alloc_cache_flags(nullptr, &caches[NL_BVLAN_CACHE],
                                           NL_CACHE_AF_ITER);
   if (0 != rc) {
     LOG(FATAL) << __FUNCTION__
@@ -907,7 +907,7 @@ int cnetlink::handle_source_mac_learn() {
 
     if (ifindex && bridge) {
       rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
-      VLOG(2) << __FUNCTION__ << ": ifindex=" << ifindex
+      VLOG(3) << __FUNCTION__ << ": ifindex=" << ifindex
               << ", bridge=" << bridge << ", br_link=" << OBJ_CAST(br_link);
 
       if (br_link) {
@@ -916,7 +916,7 @@ int cnetlink::handle_source_mac_learn() {
       }
     }
 
-    VLOG(2) << __FUNCTION__ << ": send pkt " << p.pkt
+    VLOG(3) << __FUNCTION__ << ": send pkt " << p.pkt
             << " to tap on fd=" << p.fd;
     // pass process packets to tap_man
     tap_man->enqueue(p.fd, p.pkt);
@@ -1323,13 +1323,13 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   int af_new = rtnl_link_get_family(new_link);
 
   VLOG(3) << __FUNCTION__ << ": old_link_type="
-          << std::string_view(rtnl_link_get_type(old_link))
+          << safe_string_view(rtnl_link_get_type(old_link))
           << ", new_link_type="
-          << std::string_view(rtnl_link_get_type(new_link))
+          << safe_string_view(rtnl_link_get_type(new_link))
           << ", old_link_slave_type="
-          << std::string_view(rtnl_link_get_slave_type(old_link))
+          << safe_string_view(rtnl_link_get_slave_type(old_link))
           << ", new_link_slave_type="
-          << std::string_view(rtnl_link_get_slave_type(new_link))
+          << safe_string_view(rtnl_link_get_slave_type(new_link))
           << ", af_old=" << af_old << ", af_new=" << af_new;
 
   if (nl_addr_cmp(rtnl_link_get_addr(old_link), rtnl_link_get_addr(new_link)) &&
@@ -1662,10 +1662,14 @@ int cnetlink::unset_bridge_port_vlan_tpid(rtnl_link *l) {
 }
 
 std::deque<rtnl_neigh *> cnetlink::search_fdb(uint16_t vid, nl_addr *lladdr) {
+  std::deque<rtnl_neigh *> fdb_entries;
+
+  if (!bridge)
+    return fdb_entries;
+
   std::deque<rtnl_link *> br_ports;
   get_bridge_ports(bridge->get_ifindex(), &br_ports);
 
-  std::deque<rtnl_neigh *> fdb_entries;
   for (auto port : br_ports) {
     auto fdb = bridge->get_fdb_entries_of_port(port, vid, lladdr);
 
@@ -1708,7 +1712,9 @@ void cnetlink::route_bridge_vlan_apply(const nl_obj &obj) {
       bridge->set_pvlan_stp(BRIDGE_VLAN_CAST(obj.get_new_obj()));
     break;
   case NL_ACT_DEL:
-    VLOG(1) << __FUNCTION__ << ": removing vlan stg membership not supported";
+    assert(obj.get_old_obj());
+    if (bridge)
+      bridge->drop_pvlan_stp(BRIDGE_VLAN_CAST(obj.get_old_obj()));
     break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": invalid action " << obj.get_action();
