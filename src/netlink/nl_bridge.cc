@@ -912,6 +912,7 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
     uint32_t port_ifindex = rtnl_mdb_entry_get_ifindex(i);
     uint32_t port_id = nl->get_port_id(port_ifindex);
     uint16_t vid = rtnl_mdb_entry_get_vid(i);
+    unsigned char buf[ETH_ALEN];
 
     if (port_ifindex == get_ifindex()) {
       return rv;
@@ -927,20 +928,6 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
 
       unsigned char buf[ETH_ALEN];
       multicast_ipv4_to_ll(ipv4_dst.get_addr_hbo(), buf);
-      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
-
-      rv = sw->l2_multicast_group_add(port_id, vid, mc_ll);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to add Layer 2 Multicast Group Entry";
-        return rv;
-      }
-
-      rv = sw->l2_multicast_addr_add(port_id, vid, mc_ll);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
-        return rv;
-      }
     } else if (rtnl_mdb_entry_get_proto(i) == ETH_P_IPV6) {
 
       // Is address Linklocal Multicast
@@ -953,22 +940,22 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
       struct in6_addr *v6_addr =
           (struct in6_addr *)nl_addr_get_binary_addr(addr);
 
-      unsigned char buf[ETH_ALEN];
       multicast_ipv6_to_ll(v6_addr, buf);
-      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
+    }
 
-      rv = sw->l2_multicast_group_add(port_id, vid, mc_ll);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to add Layer 2 Multicast Group Entry";
-        return rv;
-      }
+    rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
 
-      rv = sw->l2_multicast_addr_add(port_id, vid, mc_ll);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
-        return rv;
-      }
+    rv = sw->l2_multicast_group_add(port_id, vid, mc_ll);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to add Layer 2 Multicast Group Entry";
+      return rv;
+    }
+
+    rv = sw->l2_multicast_addr_add(port_id, vid, mc_ll);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
+      return rv;
     }
 
     VLOG(2) << __FUNCTION__ << ": mdb entry added, port" << port_id
@@ -1005,6 +992,7 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
     uint32_t port_ifindex = rtnl_mdb_entry_get_ifindex(i);
     uint32_t port_id = nl->get_port_id(port_ifindex);
     uint16_t vid = rtnl_mdb_entry_get_vid(i);
+    unsigned char buf[ETH_ALEN];
 
     auto addr = rtnl_mdb_entry_get_addr(i);
     if (rtnl_mdb_entry_get_proto(i) == ETH_P_IP) {
@@ -1014,50 +1002,31 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
         return rv;
       }
 
-      unsigned char buf[ETH_ALEN];
       multicast_ipv4_to_ll(ipv4_dst.get_addr_hbo(), buf);
-      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
-
-      rv = sw->l2_multicast_group_remove(port_id, vid, mc_ll);
-
-      // nothing left to do, there are still entries in the mc group
-      if (rv == -ENOTEMPTY) {
-        return 0;
-      } else if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to remove Layer 2 Multicast Group Entry";
-        return rv;
-      }
-
-      rv = sw->l2_multicast_addr_remove(port_id, vid, mc_ll);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to remove bridging MC entry";
-        return rv;
-      }
     } else if (rtnl_mdb_entry_get_proto(i) == ETH_P_IPV6) {
       struct in6_addr *v6_addr =
           (struct in6_addr *)nl_addr_get_binary_addr(addr);
 
-      unsigned char buf[ETH_ALEN];
       multicast_ipv6_to_ll(v6_addr, buf);
-      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
+    }
 
-      rv = sw->l2_multicast_group_remove(port_id, vid, mc_ll);
+    rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
 
-      // nothing left to do, there are still entries in the mc group
-      if (rv == -ENOTEMPTY) {
-        return 0;
-      } else if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to remove Layer 2 Multicast Group Entry";
-        return rv;
-      }
+    rv = sw->l2_multicast_group_remove(port_id, vid, mc_ll);
 
-      rv = sw->l2_multicast_addr_remove(port_id, vid, mc_ll);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to remove bridging MC entry";
-        return rv;
-      }
+    // nothing left to do, there are still entries in the mc group
+    if (rv == -ENOTEMPTY) {
+      return 0;
+    } else if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to remove Layer 2 Multicast Group Entry";
+      return rv;
+    }
+
+    rv = sw->l2_multicast_addr_remove(port_id, vid, mc_ll);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to remove bridging MC entry";
+      return rv;
     }
 
     VLOG(2) << __FUNCTION__ << ": mdb entry removed, port" << port_id
