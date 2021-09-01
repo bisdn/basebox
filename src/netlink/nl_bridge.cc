@@ -912,13 +912,26 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
     uint32_t port_ifindex = rtnl_mdb_entry_get_ifindex(i);
     uint32_t port_id = nl->get_port_id(port_ifindex);
     uint16_t vid = rtnl_mdb_entry_get_vid(i);
+    unsigned char buf[ETH_ALEN];
 
     if (port_ifindex == get_ifindex()) {
-      return rv;
+      continue;
     }
 
     auto addr = rtnl_mdb_entry_get_addr(i);
     if (rtnl_mdb_entry_get_proto(i) == ETH_P_IP) {
+      // RFC 4541, section 2.1.2 says:
+      // 2) Packets with a destination IP (DIP) address in the 224.0.0.X range
+      //    which are not IGMP must be forwarded on all ports.
+      //
+      // Therefore we must not create groups for them to ensure that.
+
+      auto p = nl_addr_alloc(4);
+      nl_addr_parse("224.0.0.0/24", AF_INET, &p);
+      std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
+      if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
+        continue;
+
       rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
@@ -927,48 +940,48 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
 
       unsigned char buf[ETH_ALEN];
       multicast_ipv4_to_ll(ipv4_dst.get_addr_hbo(), buf);
-      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
-
-      rv = sw->l2_multicast_group_add(port_id, vid, mc_ll);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to add Layer 2 Multicast Group Entry";
-        return rv;
-      }
-
-      rv = sw->l2_multicast_addr_add(port_id, vid, mc_ll);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
-        return rv;
-      }
     } else if (rtnl_mdb_entry_get_proto(i) == ETH_P_IPV6) {
 
-      // Is address Linklocal Multicast
+      // RFC 4541, section 3 says:
+      // In IPv6, the data forwarding rules are more straight forward because
+      // MLD is mandated for addresses with scope 2 (link-scope) or greater.
+      // The only exception is the address FF02::1 which is the all hosts
+      // link-scope address for which MLD messages are never sent.  Packets
+      // with the all hosts link-scope address should be forwarded on all
+      // ports.
       auto p = nl_addr_alloc(16);
-      nl_addr_parse("ff02::/10", AF_INET6, &p);
+      nl_addr_parse("ff02::1/128", AF_INET6, &p);
       std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
+      if (!nl_addr_cmp(addr, tm_addr.get()))
+        continue;
+
+      // MLD messages are also not sent regarding groups with addresses in the
+      // range FF00::/15 (which encompasses both the reserved FF00::/16 and
+      // node-local FF01::/16 IPv6 address spaces).  These addresses should
+      // never appear in packets on the link.
+      nl_addr_parse("ff00::/15", AF_INET6, &p);
       if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
-        return 0;
+        continue;
 
       struct in6_addr *v6_addr =
           (struct in6_addr *)nl_addr_get_binary_addr(addr);
 
-      unsigned char buf[ETH_ALEN];
       multicast_ipv6_to_ll(v6_addr, buf);
-      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
+    }
 
-      rv = sw->l2_multicast_group_add(port_id, vid, mc_ll);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to add Layer 2 Multicast Group Entry";
-        return rv;
-      }
+    rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
 
-      rv = sw->l2_multicast_addr_add(port_id, vid, mc_ll);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
-        return rv;
-      }
+    rv = sw->l2_multicast_group_add(port_id, vid, mc_ll);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to add Layer 2 Multicast Group Entry";
+      return rv;
+    }
+
+    rv = sw->l2_multicast_addr_add(port_id, vid, mc_ll);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
+      return rv;
     }
 
     VLOG(2) << __FUNCTION__ << ": mdb entry added, port" << port_id
@@ -1005,59 +1018,63 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
     uint32_t port_ifindex = rtnl_mdb_entry_get_ifindex(i);
     uint32_t port_id = nl->get_port_id(port_ifindex);
     uint16_t vid = rtnl_mdb_entry_get_vid(i);
+    unsigned char buf[ETH_ALEN];
+
+    if (port_ifindex == get_ifindex()) {
+      continue;
+    }
 
     auto addr = rtnl_mdb_entry_get_addr(i);
     if (rtnl_mdb_entry_get_proto(i) == ETH_P_IP) {
+      auto p = nl_addr_alloc(4);
+      nl_addr_parse("224.0.0.0/24", AF_INET, &p);
+      std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
+      if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
+        continue;
+
       rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
         return rv;
       }
 
-      unsigned char buf[ETH_ALEN];
       multicast_ipv4_to_ll(ipv4_dst.get_addr_hbo(), buf);
-      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
-
-      rv = sw->l2_multicast_group_remove(port_id, vid, mc_ll);
-
-      // nothing left to do, there are still entries in the mc group
-      if (rv == -ENOTEMPTY) {
-        return 0;
-      } else if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to remove Layer 2 Multicast Group Entry";
-        return rv;
-      }
-
-      rv = sw->l2_multicast_addr_remove(port_id, vid, mc_ll);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
-        return rv;
-      }
     } else if (rtnl_mdb_entry_get_proto(i) == ETH_P_IPV6) {
+
+      auto p = nl_addr_alloc(16);
+      nl_addr_parse("ff02::1/128", AF_INET6, &p);
+      std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
+      if (!nl_addr_cmp(addr, tm_addr.get()))
+        continue;
+      nl_addr_parse("ff00::/15", AF_INET6, &p);
+      if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
+        continue;
+
       struct in6_addr *v6_addr =
           (struct in6_addr *)nl_addr_get_binary_addr(addr);
 
-      unsigned char buf[ETH_ALEN];
       multicast_ipv6_to_ll(v6_addr, buf);
-      rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
+    }
 
-      rv = sw->l2_multicast_group_remove(port_id, vid, mc_ll);
+    rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
 
-      // nothing left to do, there are still entries in the mc group
-      if (rv == -ENOTEMPTY) {
-        return 0;
-      } else if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to remove Layer 2 Multicast Group Entry";
-        return rv;
-      }
+    rv = sw->l2_multicast_group_remove(port_id, vid, mc_ll);
 
+    // nothing left to do, there are still entries in the mc group
+    if (rv < 0 && rv != -ENOTEMPTY) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to remove Layer 2 Multicast Group Entry";
+      return rv;
+    }
+
+    if (rv != -ENOTEMPTY) {
       rv = sw->l2_multicast_addr_remove(port_id, vid, mc_ll);
       if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
+        LOG(ERROR) << __FUNCTION__ << ": failed to remove bridging MC entry";
         return rv;
       }
+    } else {
+      rv = 0;
     }
 
     VLOG(2) << __FUNCTION__ << ": mdb entry removed, port" << port_id
