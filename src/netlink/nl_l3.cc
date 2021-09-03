@@ -415,6 +415,14 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
+  bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
+
+  // if it isn't on loopback and not our interfaces, ignore it
+  if (!is_loopback && !nl->is_switch_interface(link)) {
+    VLOG(1) << __FUNCTION__ << ": ignoring " << OBJ_CAST(link);
+    return -EINVAL;
+  }
+
   struct nl_addr *addr = rtnl_addr_get_local(a);
   int prefixlen = nl_addr_get_prefixlen(addr);
 
@@ -454,7 +462,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  if (rtnl_link_get_flags(link) & IFF_LOOPBACK) {
+  if (is_loopback) {
     return 0;
   }
 
