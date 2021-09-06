@@ -486,11 +486,16 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   }
 
   // del vlan
-  bool tagged = !!rtnl_link_is_vlan(link);
-  rv = vlan->remove_vlan(link, vid, tagged);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to remove vlan id " << vid
-               << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+  // Avoid deleting table VLAN entry for the following two cases
+  // Loopback: does not require entry on the Ingress table
+  // Bridges and Bridge Interfaces: Entry set through bridge vlan table
+  if (!is_loopback && !nl->is_bridge_interface(link)) {
+    bool tagged = !!rtnl_link_is_vlan(link);
+    rv = vlan->remove_vlan(link, vid, tagged);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to remove vlan id " << vid
+                 << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+    }
   }
 
   return rv;
