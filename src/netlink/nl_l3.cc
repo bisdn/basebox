@@ -415,6 +415,14 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
+  bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
+
+  // if it isn't on loopback and not our interfaces, ignore it
+  if (!is_loopback && !nl->is_switch_interface(link)) {
+    VLOG(1) << __FUNCTION__ << ": ignoring " << OBJ_CAST(link);
+    return -EINVAL;
+  }
+
   struct nl_addr *addr = rtnl_addr_get_local(a);
   int prefixlen = nl_addr_get_prefixlen(addr);
 
@@ -454,7 +462,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  if (rtnl_link_get_flags(link) & IFF_LOOPBACK) {
+  if (is_loopback) {
     return 0;
   }
 
@@ -467,11 +475,6 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   int ifindex = rtnl_addr_get_ifindex(a);
   int port_id = nl->get_port_id(ifindex);
 
-  if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": invalid port_id 0";
-    return -EINVAL;
-  }
-
   addr = rtnl_link_get_addr(link);
   rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
 
@@ -483,11 +486,16 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   }
 
   // del vlan
-  bool tagged = !!rtnl_link_is_vlan(link);
-  rv = vlan->remove_vlan(link, vid, tagged);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to remove vlan id " << vid
-               << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+  // Avoid deleting table VLAN entry for the following two cases
+  // Loopback: does not require entry on the Ingress table
+  // Bridges and Bridge Interfaces: Entry set through bridge vlan table
+  if (!is_loopback && !nl->is_bridge_interface(link)) {
+    bool tagged = !!rtnl_link_is_vlan(link);
+    rv = vlan->remove_vlan(link, vid, tagged);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to remove vlan id " << vid
+                 << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
+    }
   }
 
   return rv;
