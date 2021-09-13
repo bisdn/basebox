@@ -1165,6 +1165,7 @@ int controller::l3_egress_remove(uint32_t l3_interface_id) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_barrier_request(rofl::cauxid(0));
     dpt.send_group_mod_message(
         rofl::cauxid(0),
         fm_driver.disable_group_l3_unicast(dpt.get_version(), l3_interface_id));
