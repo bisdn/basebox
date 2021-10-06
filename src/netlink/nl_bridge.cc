@@ -1092,10 +1092,10 @@ void nl_bridge::set_port_stp_state(uint32_t port_id, uint8_t stp_state) {
   if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
     auto members = nl->get_bond_members_by_port_id(port_id);
     for (auto mem : members) {
-      sw->ofdpa_stg_state_port_set(mem, 1, state);
+      sw->ofdpa_stg_state_port_set(mem, 0, state);
     }
   } else {
-    sw->ofdpa_stg_state_port_set(port_id, 1, state);
+    sw->ofdpa_stg_state_port_set(port_id, 0, state);
   }
 }
 
