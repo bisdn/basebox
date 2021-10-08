@@ -123,13 +123,15 @@ struct bridge_stp_states {
   }
 
   std::map<uint16_t, uint8_t> get_min_states(int port_id) {
+    int g_state = get_global_state(port_id);
+
     std::map<uint16_t, uint8_t> ret;
     for (auto it : pv_states) {
       auto pv_it = it.second.find(port_id);
       if (pv_it == it.second.end())
         continue;
 
-      ret.emplace(it.first, pv_it->second);
+      ret.emplace(it.first, get_effective_state(g_state, pv_it->second));
     }
     return ret;
   }
