@@ -115,6 +115,13 @@ struct bridge_stp_states {
     return pv_state->second;
   }
 
+  uint8_t get_effective_state(uint8_t g_state, uint8_t pv_state) {
+    if (g_state == BR_STATE_BLOCKING || pv_state == BR_STATE_BLOCKING)
+      return BR_STATE_BLOCKING;
+
+    return std::min(g_state, pv_state);
+  }
+
   std::map<uint16_t, uint8_t> get_min_states(int port_id) {
     std::map<uint16_t, uint8_t> ret;
     for (auto it : pv_states) {
@@ -134,10 +141,7 @@ struct bridge_stp_states {
     if (pv_state < 0)
       return g_state;
 
-    if (g_state == BR_STATE_BLOCKING || pv_state == BR_STATE_BLOCKING)
-      return BR_STATE_BLOCKING;
-
-    return std::min(g_state, pv_state);
+    return get_effective_state(g_state, pv_state);
   }
 };
 
