@@ -348,6 +348,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     }
   }
   auto members = nl->get_bond_members_by_lag(_link);
+  bool stp_enabled = (get_stp_state() != STP_STATE_DISABLED);
 
   for (int k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
     int base_bit;
@@ -420,6 +421,17 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
                       << " link: " << OBJ_CAST(_link);
               vlan->add_bridge_vlan(_link, vid, new_br_vlan->pvid == vid,
                                     !egress_untagged);
+#ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
+              // we might have missed the initial port vlan message since it
+              // may come before the attachment message, make sure that any
+              // existing vlans have their expected stp states.
+              if (stp_enabled && old_link == nullptr &&
+                  (bridge_stp_states.get_pvlan_state(pport_no, vid) ==
+                   -EINVAL)) {
+                // default state is FORWARDING in the kernel
+                add_port_vlan_stp_state(pport_no, vid, BR_STATE_FORWARDING);
+              }
+#endif
             }
           }
         } else {
