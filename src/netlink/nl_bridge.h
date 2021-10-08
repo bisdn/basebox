@@ -210,6 +210,11 @@ private:
                            const std::deque<rtnl_link *> &bridge_ports,
                            bool add);
 
+  void set_port_stp_state(uint32_t port_id, uint8_t stp_state);
+  int add_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
+                              uint8_t stp_state);
+  int del_port_vlan_stp_state(uint32_t port_id, uint16_t vid);
+
   rtnl_link *bridge;
   switch_interface *sw;
   std::shared_ptr<tap_manager> tap_man;
