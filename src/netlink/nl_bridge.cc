@@ -198,6 +198,12 @@ void nl_bridge::add_interface(rtnl_link *link) {
     return;
   }
 
+  if (get_stp_state() != STP_STATE_DISABLED) {
+    auto state = rtnl_link_bridge_get_port_state(link);
+    auto port_id = nl->get_port_id(link);
+    set_port_stp_state(port_id, state);
+  }
+
   // configure bonds and physical ports (non members of bond)
   update_vlans(nullptr, link);
 
