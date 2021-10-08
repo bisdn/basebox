@@ -94,13 +94,13 @@ struct bridge_stp_states {
     gl_states.insert_or_assign(port_id, state);
   }
 
-  uint8_t get_global_state(int port_id) {
+  int get_global_state(int port_id) {
     auto it = gl_states.find(port_id);
 
     return (it == gl_states.end()) ? -EINVAL : it->second;
   }
 
-  uint8_t get_pvlan_state(int port_id, uint16_t vid) {
+  int get_pvlan_state(int port_id, uint16_t vid) {
     auto it = pv_states.find(vid);
 
     // no vlan found
