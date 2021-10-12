@@ -94,13 +94,13 @@ struct bridge_stp_states {
     gl_states.insert_or_assign(port_id, state);
   }
 
-  uint8_t get_global_state(int port_id) {
+  int get_global_state(int port_id) {
     auto it = gl_states.find(port_id);
 
     return (it == gl_states.end()) ? -EINVAL : it->second;
   }
 
-  uint8_t get_pvlan_state(int port_id, uint16_t vid) {
+  int get_pvlan_state(int port_id, uint16_t vid) {
     auto it = pv_states.find(vid);
 
     // no vlan found
@@ -115,18 +115,23 @@ struct bridge_stp_states {
     return pv_state->second;
   }
 
-  uint8_t get_min(uint8_t g_state, uint8_t pv_state) {
-    return (g_state < pv_state) ? g_state : pv_state;
+  uint8_t get_effective_state(uint8_t g_state, uint8_t pv_state) {
+    if (g_state == BR_STATE_BLOCKING || pv_state == BR_STATE_BLOCKING)
+      return BR_STATE_BLOCKING;
+
+    return std::min(g_state, pv_state);
   }
 
   std::map<uint16_t, uint8_t> get_min_states(int port_id) {
+    int g_state = get_global_state(port_id);
+
     std::map<uint16_t, uint8_t> ret;
     for (auto it : pv_states) {
       auto pv_it = it.second.find(port_id);
       if (pv_it == it.second.end())
         continue;
 
-      ret.emplace(it.first, pv_it->second);
+      ret.emplace(it.first, get_effective_state(g_state, pv_it->second));
     }
     return ret;
   }
@@ -138,10 +143,7 @@ struct bridge_stp_states {
     if (pv_state < 0)
       return g_state;
 
-    if (g_state == BR_STATE_BLOCKING || pv_state == BR_STATE_BLOCKING)
-      return BR_STATE_BLOCKING;
-
-    return get_min(g_state, pv_state);
+    return get_effective_state(g_state, pv_state);
   }
 };
 
@@ -209,6 +211,11 @@ private:
                            const uint16_t vid, const uint32_t tunnel_id,
                            const std::deque<rtnl_link *> &bridge_ports,
                            bool add);
+
+  void set_port_stp_state(uint32_t port_id, uint8_t stp_state);
+  int add_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
+                              uint8_t stp_state);
+  int del_port_vlan_stp_state(uint32_t port_id, uint16_t vid);
 
   rtnl_link *bridge;
   switch_interface *sw;

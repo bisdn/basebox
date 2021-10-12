@@ -198,6 +198,12 @@ void nl_bridge::add_interface(rtnl_link *link) {
     return;
   }
 
+  if (get_stp_state() != STP_STATE_DISABLED) {
+    auto state = rtnl_link_bridge_get_port_state(link);
+    auto port_id = nl->get_port_id(link);
+    set_port_stp_state(port_id, state);
+  }
+
   // configure bonds and physical ports (non members of bond)
   update_vlans(nullptr, link);
 
@@ -232,23 +238,7 @@ void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
               << " new=" << new_state;
 
     auto port_id = nl->get_port_id(new_link);
-    bridge_stp_states.add_global_state(port_id, new_state);
-
-    auto pv_states = bridge_stp_states.get_min_states(port_id);
-    for (auto it : pv_states)
-      sw->ofdpa_stg_state_port_set(port_id, it.first,
-                                   stp_state_to_string(it.second));
-
-    state = stp_state_to_string(new_state);
-    if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-      auto members = nl->get_bond_members_by_lag(new_link);
-      for (auto mem : members) {
-        sw->ofdpa_stg_state_port_set(mem, 1, state);
-      }
-    } else {
-      sw->ofdpa_stg_state_port_set(port_id, 1, state);
-    }
-
+    set_port_stp_state(port_id, new_state);
     return;
   }
 
@@ -276,14 +266,7 @@ void nl_bridge::delete_interface(rtnl_link *link) {
 
   auto port_id = nl->get_port_id(link);
   // interface default is to STP state forward by default
-  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-    auto members = nl->get_bond_members_by_lag(link);
-    for (auto mem : members) {
-      sw->ofdpa_stg_state_port_set(mem, 1, "forward");
-    }
-  } else {
-    sw->ofdpa_stg_state_port_set(port_id, 1, "forward");
-  }
+  set_port_stp_state(port_id, BR_STATE_FORWARDING);
 }
 
 void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
@@ -365,6 +348,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     }
   }
   auto members = nl->get_bond_members_by_lag(_link);
+  bool stp_enabled = (get_stp_state() != STP_STATE_DISABLED);
 
   for (int k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
     int base_bit;
@@ -437,6 +421,17 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
                       << " link: " << OBJ_CAST(_link);
               vlan->add_bridge_vlan(_link, vid, new_br_vlan->pvid == vid,
                                     !egress_untagged);
+#ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
+              // we might have missed the initial port vlan message since it
+              // may come before the attachment message, make sure that any
+              // existing vlans have their expected stp states.
+              if (stp_enabled && old_link == nullptr &&
+                  (bridge_stp_states.get_pvlan_state(pport_no, vid) ==
+                   -EINVAL)) {
+                // default state is FORWARDING in the kernel
+                add_port_vlan_stp_state(pport_no, vid, BR_STATE_FORWARDING);
+              }
+#endif
             }
           }
         } else {
@@ -1085,6 +1080,63 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
   return rv;
 }
 
+void nl_bridge::set_port_stp_state(uint32_t port_id, uint8_t stp_state) {
+  bridge_stp_states.add_global_state(port_id, stp_state);
+
+  auto pv_states = bridge_stp_states.get_min_states(port_id);
+  for (auto it : pv_states)
+    sw->ofdpa_stg_state_port_set(port_id, it.first,
+                                 stp_state_to_string(it.second));
+
+  auto state = stp_state_to_string(stp_state);
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_port_id(port_id);
+    for (auto mem : members) {
+      sw->ofdpa_stg_state_port_set(mem, 0, state);
+    }
+  } else {
+    sw->ofdpa_stg_state_port_set(port_id, 0, state);
+  }
+}
+
+int nl_bridge::add_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
+                                       uint8_t stp_state) {
+  bool new_group = bridge_stp_states.add_pvlan_state(port_id, vid, stp_state);
+  if (new_group) {
+    auto err = sw->ofdpa_stg_create(vid);
+    if (err < 0) {
+      bridge_stp_states.del_pvlan_state(port_id, vid);
+      return err;
+    }
+  }
+
+  auto g_stp_state = bridge_stp_states.get_min_state(port_id, vid);
+
+  LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
+            << " port_id= " << port_id << " VLAN =" << vid;
+
+  return sw->ofdpa_stg_state_port_set(port_id, vid,
+                                      stp_state_to_string(g_stp_state));
+}
+
+int nl_bridge::del_port_vlan_stp_state(uint32_t port_id, uint16_t vid) {
+  // default state when not part of the vlan
+  auto g_stp_state = BR_STATE_DISABLED;
+
+  LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
+            << " ifindex= " << port_id << " VLAN =" << vid;
+
+  auto err = sw->ofdpa_stg_state_port_set(port_id, vid,
+                                          stp_state_to_string(g_stp_state));
+
+  bool last_member = bridge_stp_states.del_pvlan_state(port_id, vid);
+  if (last_member) {
+    err = sw->ofdpa_stg_destroy(vid);
+  }
+
+  return err;
+}
+
 // struct rtnl_bridge_vlan {
 //	NLHDR_COMMON
 //	uint32_t ifindex;
@@ -1109,23 +1161,7 @@ int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   if (is_bridge_interface(ifindex))
     return err;
 
-  bool new_group =
-      bridge_stp_states.add_pvlan_state(port_id, vlan_id, stp_state);
-  if (new_group) {
-    err = sw->ofdpa_stg_create(vlan_id);
-    if (err < 0) {
-      bridge_stp_states.del_pvlan_state(port_id, vlan_id);
-      return err;
-    }
-  }
-
-  auto g_stp_state = bridge_stp_states.get_min_state(port_id, vlan_id);
-
-  LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
-            << " ifindex= " << ifindex << " VLAN =" << vlan_id;
-
-  err = sw->ofdpa_stg_state_port_set(nl->get_port_id(ifindex), vlan_id,
-                                     stp_state_to_string(g_stp_state));
+  err = add_port_vlan_stp_state(port_id, vlan_id, stp_state);
 #endif
   return err;
 }
@@ -1144,19 +1180,7 @@ int nl_bridge::drop_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   if (is_bridge_interface(ifindex))
     return err;
 
-  // default state when not part of the vlan
-  auto g_stp_state = BR_STATE_DISABLED;
-
-  LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
-            << " ifindex= " << ifindex << " VLAN =" << vlan_id;
-
-  err = sw->ofdpa_stg_state_port_set(nl->get_port_id(ifindex), vlan_id,
-                                     stp_state_to_string(g_stp_state));
-
-  bool last_member = bridge_stp_states.del_pvlan_state(port_id, vlan_id);
-  if (last_member) {
-    err = sw->ofdpa_stg_destroy(vlan_id);
-  }
+  err = del_port_vlan_stp_state(port_id, vlan_id);
 #endif
   return err;
 }
