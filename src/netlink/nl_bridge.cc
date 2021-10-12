@@ -669,7 +669,16 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
   }
 
   nl_addr *mac = rtnl_neigh_get_lladdr(neigh);
-  int vlan = rtnl_neigh_get_vlan(neigh);
+  int vid = rtnl_neigh_get_vlan(neigh);
+
+  // Dont add the fdb entry does not have any vlan assigned,
+  // rtnl_neigh_get_vlan() returns -1 when vid is unset,
+  // which is not a valid VID.
+  if (vid < 0) {
+    VLOG(2) << __FUNCTION__
+            << ": vlan not set, skipping add neigh=" << OBJ_CAST(neigh);
+    return;
+  }
 
   bool permanent = true;
 
@@ -689,13 +698,26 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
 
   LOG(INFO) << __FUNCTION__ << ": add mac=" << _mac << " to bridge "
             << rtnl_link_get_name(bridge) << " on port=" << port
-            << " vlan=" << (unsigned)vlan << ", permanent=" << permanent;
+            << " vlan=" << (unsigned)vid << ", permanent=" << permanent;
   LOG(INFO) << __FUNCTION__ << ": object: " << OBJ_CAST(neigh);
-  sw->l2_addr_add(port, vlan, _mac, true, permanent);
+  sw->l2_addr_add(port, vid, _mac, true, permanent);
 }
 
 void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {
   assert(sw);
+
+  int vid = rtnl_neigh_get_vlan(neigh);
+
+  // Dont delete the fdb entry does not have any vlan assigned,
+  // rtnl_neigh_get_vlan() returns -1 when vid is unset,
+  // which is not a valid VID. We dont add, so we shouldnt remove
+  // as well
+  if (vid < 0) {
+    VLOG(2) << __FUNCTION__
+            << ": vlan not set, skipping remove neigh=" << OBJ_CAST(neigh);
+    return;
+  }
+
   nl_addr *addr = rtnl_neigh_get_lladdr(neigh);
 
   if (nl_addr_cmp(rtnl_link_get_addr(bridge), addr) == 0) {
@@ -716,7 +738,7 @@ void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {
   rofl::caddress_ll mac((uint8_t *)nl_addr_get_binary_addr(addr),
                         nl_addr_get_len(addr));
 
-  sw->l2_addr_remove(port, rtnl_neigh_get_vlan(neigh), mac);
+  sw->l2_addr_remove(port, vid, mac);
 }
 
 bool nl_bridge::is_mac_in_l2_cache(rtnl_neigh *n) {
