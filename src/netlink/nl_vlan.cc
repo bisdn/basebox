@@ -75,7 +75,7 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   }
 
   // setup egress interface
-  rv = swi->egress_port_vlan_add(port_id, vid, !tagged);
+  rv = swi->egress_port_vlan_add(port_id, vid, !tagged, false);
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
@@ -98,7 +98,7 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
     auto members = nl->get_bond_members_by_port_id(port_id);
     for (auto mem : members) {
-      rv = swi->egress_port_vlan_add(mem, vid, !tagged);
+      rv = swi->egress_port_vlan_add(mem, vid, !tagged, false);
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
                    << (tagged ? " (tagged)" : " (untagged)")

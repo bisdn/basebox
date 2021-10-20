@@ -275,13 +275,13 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
 
     if (nl->has_l3_addresses(bond)) {
       swi->ingress_port_vlan_add(port_id, 1, true);
-      swi->egress_port_vlan_add(port_id, 1, true);
+      swi->egress_port_vlan_add(port_id, 1, true, false);
     }
 
     nl->get_vlans(rtnl_link_get_ifindex(bond), &vlans);
     for (auto vid : vlans) {
       swi->ingress_port_vlan_add(port_id, vid, false);
-      swi->egress_port_vlan_add(port_id, vid, false);
+      swi->egress_port_vlan_add(port_id, vid, false, false);
     }
   }
 

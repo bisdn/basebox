@@ -1663,8 +1663,8 @@ int controller::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   return rv;
 }
 
-int controller::egress_port_vlan_add(uint32_t port, uint16_t vid,
-                                     bool untagged) noexcept {
+int controller::egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged,
+                                     bool update) noexcept {
   int rv = 0;
   try {
     // create filtered egress interface
@@ -1673,10 +1673,10 @@ int controller::egress_port_vlan_add(uint32_t port, uint16_t vid,
 
     if (nbi::get_port_type(port) == nbi::port_type_lag) {
       gm = fm_driver.enable_group_l2_trunk_interface(dpt.get_version(), port,
-                                                     vid, untagged);
+                                                     vid, untagged, update);
     } else {
       gm = fm_driver.enable_group_l2_interface(dpt.get_version(), port, vid,
-                                               untagged);
+                                               untagged, update);
     }
     dpt.send_group_mod_message(rofl::cauxid(0), gm);
   } catch (rofl::eRofBaseNotFound &e) {

@@ -356,11 +356,11 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     uint32_t b = new_br_vlan->vlan_bitmap[k];
     uint32_t vlan_diff = a ^ b;
 
-#if 0 // untagged change not yet implemented
     uint32_t c = old_br_vlan->untagged_bitmap[k];
     uint32_t d = new_br_vlan->untagged_bitmap[k];
     uint32_t untagged_diff = c ^ d;
-#endif // 0
+
+    VLOG(1) << "DEBUG untagged diff =" << untagged_diff;
 
     base_bit = k * 32;
     int i = -1;
@@ -376,10 +376,9 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
         if (new_br_vlan->untagged_bitmap[k] & 1 << (j - 1)) {
           egress_untagged = true;
 
-#if 0 // untagged change not yet implemented
-      // clear untagged_diff bit
+          // clear untagged_diff bit
           untagged_diff &= ~((uint32_t)1 << (j - 1));
-#endif // 0
+          VLOG(1) << "DEBUG untagged diff =" << untagged_diff;
         }
 
         if (new_br_vlan->vlan_bitmap[k] & 1 << (j - 1)) {
@@ -473,6 +472,24 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
                                      !egress_untagged);
           }
         }
+
+        i = j;
+      }
+
+      i = -1;
+      j = find_next_bit(i, untagged_diff);
+      if (j > 0) {
+        // egress untagged changed
+        int vid = j - 1 + base_bit;
+        bool egress_untagged = false;
+
+        // check if egress is untagged
+        if (new_br_vlan->untagged_bitmap[k] & 1 << (j - 1)) {
+          egress_untagged = true;
+        }
+
+        // XXX implement update
+        sw->egress_port_vlan_add(pport_no, vid, egress_untagged, true);
 
         i = j;
       } else {
