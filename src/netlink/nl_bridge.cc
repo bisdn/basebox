@@ -476,8 +476,8 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
         i = j;
       }
 
-      i = -1;
-      j = find_next_bit(i, untagged_diff);
+      int ni = -1;
+      j = find_next_bit(ni, untagged_diff);
       if (j > 0) {
         // egress untagged changed
         int vid = j - 1 + base_bit;
@@ -491,7 +491,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
         // XXX implement update
         sw->egress_port_vlan_add(pport_no, vid, egress_untagged, true);
 
-        i = j;
+        ni = j;
       } else {
         done = 1;
       }
