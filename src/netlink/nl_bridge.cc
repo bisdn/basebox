@@ -376,7 +376,6 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
 
           // clear untagged_diff bit
           untagged_diff &= ~((uint32_t)1 << (j - 1));
-          VLOG(1) << "DEBUG untagged diff =" << untagged_diff;
         }
 
         if (new_br_vlan->vlan_bitmap[k] & 1 << (j - 1)) {
@@ -476,7 +475,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
         done = 1;
       }
 
-      base_bit = k * 32;
+      // Process untagged changes
       i = -1;
       done = 0;
       while (!done) {
@@ -503,33 +502,6 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
         }
       }
     }
-
-#if 0 // not yet implemented the update
-		done = 0;
-		i = -1;
-		while (!done) {
-			// vlan is existing, but swapping egress tagged/untagged
-			int j = find_next_bit(i, untagged_diff);
-			if (j > 0) {
-				// egress untagged changed
-				int vid = j - 1 + base_bit;
-				bool egress_untagged = false;
-
-				// check if egress is untagged
-				if (new_br_vlan->untagged_bitmap[k] & 1 << (j-1)) {
-					egress_untagged = true;
-				}
-
-				// XXX implement update
-				fm_driver.update_port_vid_egress(devname, vid, egress_untagged);
-
-
-				i = j;
-			} else {
-				done = 1;
-			}
-		}
-#endif
   }
 }
 
