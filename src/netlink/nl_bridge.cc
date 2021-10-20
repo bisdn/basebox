@@ -481,8 +481,6 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
       done = 0;
       while (!done) {
         int j = find_next_bit(i, untagged_diff);
-	VLOG(1) << "DEBUG diff=" << untagged_diff
-		<< " j=" << j;
         if (j > 0) {
           // egress untagged changed
           int vid = j - 1 + base_bit;
@@ -492,12 +490,12 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
           if (new_br_vlan->untagged_bitmap[k] & 1 << (j - 1)) {
             egress_untagged = true;
           }
-              VLOG(3) << __FUNCTION__ << ": change vid=" << vid
-                      << " on pport_no=" << pport_no
-		      << " egress untagged=" << egress_untagged
-                      << " link: " << OBJ_CAST(_link);
+          VLOG(3) << __FUNCTION__ << ": change vid=" << vid
+                  << " on pport_no=" << pport_no
+                  << " egress untagged=" << egress_untagged
+                  << " link: " << OBJ_CAST(_link);
 
-          sw->egress_port_vlan_add(pport_no, vid, true, true);
+          sw->egress_port_vlan_add(pport_no, vid, egress_untagged, true);
 
           i = j;
         } else {
