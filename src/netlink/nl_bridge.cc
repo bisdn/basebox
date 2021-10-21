@@ -792,7 +792,8 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
 
   // verify that the vid is in use here
   if (!is_vid_set(vid, br_vlan->vlan_bitmap)) {
-    LOG(WARNING) << __FUNCTION__ << ": got packet on unconfigured port";
+    LOG(WARNING) << __FUNCTION__ << ": got packet tagged with unconfigured vid = " << vid
+                 << " on bridge link = " << OBJ_CAST(br_link);
     return -ENOTSUP;
   }
 
