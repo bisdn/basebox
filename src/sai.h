@@ -158,8 +158,8 @@ public:
   virtual int egress_port_vlan_accept_all(uint32_t port) noexcept = 0;
   virtual int egress_port_vlan_drop_accept_all(uint32_t port) noexcept = 0;
 
-  virtual int egress_port_vlan_add(uint32_t port, uint16_t vid,
-                                   bool untagged) noexcept = 0;
+  virtual int egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged,
+                                   bool update = false) noexcept = 0;
   virtual int egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept = 0;
 
   virtual int egress_bridge_port_vlan_add(uint32_t port, uint16_t vid,

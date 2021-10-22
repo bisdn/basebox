@@ -242,8 +242,8 @@ public:
   int egress_port_vlan_accept_all(uint32_t port) noexcept override;
   int egress_port_vlan_drop_accept_all(uint32_t port) noexcept override;
 
-  int egress_port_vlan_add(uint32_t port, uint16_t vid,
-                           bool untagged) noexcept override;
+  int egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged,
+                           bool update = false) noexcept override;
   int egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept override;
 
   int add_l2_overlay_flood(uint32_t tunnel_id,
