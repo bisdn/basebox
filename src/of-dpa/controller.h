@@ -238,6 +238,8 @@ public:
                             uint16_t vrf_id = 0) noexcept override;
   int ingress_port_vlan_remove(uint32_t port, uint16_t vid, bool pvid,
                                uint16_t vrf_id = 0) noexcept override;
+  int ingress_port_pvid_add(uint32_t port, uint16_t pvid) noexcept override;
+  int ingress_port_pvid_remove(uint32_t port, uint16_t pvid) noexcept override;
 
   int egress_port_vlan_accept_all(uint32_t port) noexcept override;
   int egress_port_vlan_drop_accept_all(uint32_t port) noexcept override;
