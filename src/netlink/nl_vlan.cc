@@ -159,14 +159,53 @@ int nl_vlan::add_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
   return rv;
 }
 
-// remove vid at ingress
-int nl_vlan::remove_ingress_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
+// add pvid at ingress
+int nl_vlan::add_ingress_pvid(rtnl_link *link, uint16_t pvid) {
   assert(swi);
 
-  uint16_t vrf_id = get_vrf_id(vid, link);
+  int rv;
   uint32_t port_id = nl->get_port_id(link);
 
-  return remove_ingress_vlan(port_id, vid, tagged, vrf_id);
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_port_id(port_id);
+
+    for (auto mem : members) {
+      rv = swi->ingress_port_pvid_add(mem, pvid);
+      if (rv < 0)
+        break;
+    }
+  }
+
+  return swi->ingress_port_pvid_add(port_id, pvid);
+}
+
+// remove pvid at ingress
+int nl_vlan::remove_ingress_pvid(rtnl_link *link, uint16_t pvid) {
+  assert(swi);
+
+  int rv;
+  uint32_t port_id = nl->get_port_id(link);
+
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_port_id(port_id);
+
+    for (auto mem : members) {
+      rv = swi->ingress_port_pvid_remove(mem, pvid);
+      if (rv < 0)
+        break;
+    }
+  }
+
+  return swi->ingress_port_pvid_remove(port_id, pvid);
+}
+
+// remove vid at ingress
+int nl_vlan::remove_ingress_vlan(rtnl_link *link, uint16_t vid, bool pvid) {
+  assert(swi);
+
+  uint32_t port_id = nl->get_port_id(link);
+
+  return remove_ingress_vlan(port_id, vid, pvid);
 }
 
 // remove vid at ingress

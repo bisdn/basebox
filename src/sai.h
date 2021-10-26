@@ -152,6 +152,9 @@ public:
                                     uint16_t vrf_id = 0) noexcept = 0;
   virtual int ingress_port_vlan_remove(uint32_t port, uint16_t vid, bool pvid,
                                        uint16_t vrf_id = 0) noexcept = 0;
+  virtual int ingress_port_pvid_add(uint32_t port, uint16_t pvid) noexcept = 0;
+  virtual int ingress_port_pvid_remove(uint32_t port,
+                                       uint16_t pvid) noexcept = 0;
   /* @} */
 
   /* @ Egress port vlan  { */
