@@ -682,7 +682,7 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
   }
 }
 
-void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
+void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
   assert(sw);
   assert(neigh);
 
@@ -724,7 +724,7 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
             << rtnl_link_get_name(bridge) << " on port=" << port
             << " vlan=" << (unsigned)vid << ", permanent=" << permanent;
   LOG(INFO) << __FUNCTION__ << ": object: " << OBJ_CAST(neigh);
-  sw->l2_addr_add(port, vid, _mac, true, permanent);
+  sw->l2_addr_add(port, vid, _mac, true, permanent, update);
 }
 
 void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {
