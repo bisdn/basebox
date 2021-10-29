@@ -208,6 +208,9 @@ private:
   void link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept;
   void link_deleted(rtnl_link *) noexcept;
 
+
+  bool check_ll_neigh(rtnl_neigh *neigh) noexcept;
+
   void neigh_ll_created(rtnl_neigh *neigh) noexcept;
   void neigh_ll_updated(rtnl_neigh *old_neigh, rtnl_neigh *new_neigh) noexcept;
   void neigh_ll_deleted(rtnl_neigh *neigh) noexcept;
