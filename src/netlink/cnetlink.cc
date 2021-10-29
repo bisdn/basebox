@@ -1559,10 +1559,25 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
   }
 }
 
-void cnetlink::neigh_ll_updated(__attribute__((unused)) rtnl_neigh *old_neigh,
-                                __attribute__((unused))
+void cnetlink::neigh_ll_updated(rtnl_neigh *old_neigh,
                                 rtnl_neigh *new_neigh) noexcept {
-  LOG(WARNING) << __FUNCTION__ << ": neighbor update not supported";
+  if (!check_ll_neigh(old_neigh) || !check_ll_neigh(new_neigh))
+    return;
+
+  int old_ifindex = rtnl_neigh_get_ifindex(old_neigh);
+  rtnl_link *old_base_link =
+      get_link(old_ifindex, AF_UNSPEC); // either tap, vxlan, ...
+  int new_ifindex = rtnl_neigh_get_ifindex(new_neigh);
+  rtnl_link *new_base_link =
+      get_link(new_ifindex, AF_UNSPEC); // either tap, vxlan, ...
+
+  if (get_link_type(old_base_link) == LT_VXLAN ||
+      get_link_type(new_base_link) == LT_VXLAN) {
+    LOG(WARNING) << __FUNCTION__
+                 << ": neighbor update for VXLAN neighbors not supported";
+  } else {
+    bridge->add_neigh_to_fdb(new_neigh, true);
+  }
 }
 
 void cnetlink::neigh_ll_deleted(rtnl_neigh *neigh) noexcept {
