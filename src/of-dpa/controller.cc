@@ -1590,6 +1590,57 @@ int controller::ingress_port_vlan_add(uint32_t port, uint16_t vid, bool pvid,
   return rv;
 }
 
+int controller::ingress_port_pvid_add(uint32_t port, uint16_t pvid) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_port_pvid_ingress(dpt.get_version(), port, pvid));
+
+    uint32_t xid = 0;
+    dpt.send_barrier_request(rofl::cauxid(0), 1, &xid);
+    VLOG(2) << __FUNCTION__ << ": sent barrier with xid=" << (unsigned)xid;
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int controller::ingress_port_pvid_remove(uint32_t port,
+                                         uint16_t pvid) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_port_pvid_ingress(dpt.get_version(), port, pvid));
+
+    uint32_t xid = 0;
+    dpt.send_barrier_request(rofl::cauxid(0), 1, &xid);
+    VLOG(2) << __FUNCTION__ << ": sent barrier with xid=" << (unsigned)xid;
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
 int controller::ingress_port_vlan_remove(uint32_t port, uint16_t vid, bool pvid,
                                          uint16_t vrf_id) noexcept {
   int rv = 0;
@@ -1663,8 +1714,8 @@ int controller::egress_port_vlan_drop_accept_all(uint32_t port) noexcept {
   return rv;
 }
 
-int controller::egress_port_vlan_add(uint32_t port, uint16_t vid,
-                                     bool untagged) noexcept {
+int controller::egress_port_vlan_add(uint32_t port, uint16_t vid, bool untagged,
+                                     bool update) noexcept {
   int rv = 0;
   try {
     // create filtered egress interface
@@ -1673,10 +1724,10 @@ int controller::egress_port_vlan_add(uint32_t port, uint16_t vid,
 
     if (nbi::get_port_type(port) == nbi::port_type_lag) {
       gm = fm_driver.enable_group_l2_trunk_interface(dpt.get_version(), port,
-                                                     vid, untagged);
+                                                     vid, untagged, update);
     } else {
       gm = fm_driver.enable_group_l2_interface(dpt.get_version(), port, vid,
-                                               untagged);
+                                               untagged, update);
     }
     dpt.send_group_mod_message(rofl::cauxid(0), gm);
   } catch (rofl::eRofBaseNotFound &e) {

@@ -23,11 +23,20 @@ public:
 
   int add_vlan(rtnl_link *link, uint16_t vid, bool tagged);
   int remove_vlan(rtnl_link *link, uint16_t vid, bool tagged);
-  int add_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
+
+  int add_ingress_vlan(rtnl_link *link, uint16_t vid, bool pvid);
+  int add_ingress_vlan(uint32_t port_id, uint16_t vid, bool pvid,
                        uint16_t vrf_id = 0);
-  int remove_ingress_vlan(uint32_t port_id, uint16_t vid, bool tagged,
+
+  int add_ingress_pvid(rtnl_link *link, uint16_t pvid);
+  int remove_ingress_pvid(rtnl_link *link, uint16_t vid);
+
+  int remove_ingress_vlan(rtnl_link *link, uint16_t vid, bool pvid);
+  int remove_ingress_vlan(uint32_t port_id, uint16_t vid, bool pvid,
                           uint16_t vrf_id = 0);
+
   int add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid, bool tagged);
+  int update_egress_bridge_vlan(rtnl_link *link, uint16_t vid, bool tagged);
   void remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
                           bool tagged);
 
