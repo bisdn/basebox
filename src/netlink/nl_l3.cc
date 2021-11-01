@@ -374,7 +374,7 @@ int nl_l3::add_lo_addr_v6(struct rtnl_addr *a) {
   auto addr = rtnl_addr_get_local(a);
 
   auto p = nl_addr_alloc(16);
-  nl_addr_parse("::1/128", AF_INET, &p);
+  nl_addr_parse("::1/128", AF_INET6, &p);
   std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
 
   if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
