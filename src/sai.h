@@ -56,7 +56,7 @@ public:
                                          uint16_t vid) noexcept = 0;
   virtual int l2_addr_add(uint32_t port, uint16_t vid,
                           const rofl::caddress_ll &mac, bool filtered,
-                          bool permanent) noexcept = 0;
+                          bool permanent, bool update = false) noexcept = 0;
   virtual int l2_addr_remove(uint32_t port, uint16_t vid,
                              const rofl::caddress_ll &mac) noexcept = 0;
 

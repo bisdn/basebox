@@ -166,7 +166,7 @@ public:
   void update_interface(rtnl_link *old_link, rtnl_link *new_link);
   void delete_interface(rtnl_link *);
 
-  void add_neigh_to_fdb(rtnl_neigh *);
+  void add_neigh_to_fdb(rtnl_neigh *, bool update = false);
   void remove_neigh_from_fdb(rtnl_neigh *);
 
   int mdb_entry_add(rtnl_mdb *mdb_entry);
