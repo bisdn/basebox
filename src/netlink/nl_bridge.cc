@@ -682,7 +682,7 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
   }
 }
 
-void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
+void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
   assert(sw);
   assert(neigh);
 
@@ -724,7 +724,7 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh) {
             << rtnl_link_get_name(bridge) << " on port=" << port
             << " vlan=" << (unsigned)vid << ", permanent=" << permanent;
   LOG(INFO) << __FUNCTION__ << ": object: " << OBJ_CAST(neigh);
-  sw->l2_addr_add(port, vid, _mac, true, permanent);
+  sw->l2_addr_add(port, vid, _mac, true, permanent, update);
 }
 
 void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {
@@ -834,7 +834,6 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n(rtnl_neigh_alloc(),
                                                            rtnl_neigh_put);
 
-  rtnl_neigh_set_ifindex(n.get(), rtnl_link_get_ifindex(br_link));
   rtnl_neigh_set_master(n.get(), rtnl_link_get_master(br_link));
   rtnl_neigh_set_family(n.get(), AF_BRIDGE);
   rtnl_neigh_set_vlan(n.get(), vid);
@@ -843,19 +842,35 @@ int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
   rtnl_neigh_set_state(n.get(), NUD_REACHABLE);
 
   // check if entry already exists in cache
-  if (is_mac_in_l2_cache(n.get())) {
-    return 0;
+  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n_lookup(
+      NEIGH_CAST(nl_cache_search(l2_cache.get(), OBJ_CAST(n.get()))),
+      rtnl_neigh_put);
+
+  int flags;
+
+  if (n_lookup) {
+    if (rtnl_neigh_get_ifindex(n_lookup.get()) ==
+        rtnl_link_get_ifindex(br_link))
+      return 0;
+
+    flags = NLM_F_REPLACE;
+  } else {
+    flags = NLM_F_CREATE | NLM_F_EXCL;
   }
+  rtnl_neigh_set_ifindex(n.get(), rtnl_link_get_ifindex(br_link));
 
   nl_msg *msg = nullptr;
-  rtnl_neigh_build_add_request(n.get(),
-                               NLM_F_REQUEST | NLM_F_CREATE | NLM_F_EXCL, &msg);
+  rtnl_neigh_build_add_request(n.get(), flags, &msg);
   assert(msg);
 
   // send the message and create new fdb entry
   if (nl->send_nl_msg(msg) < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to send netlink message";
     return -EINVAL;
+  }
+
+  if (n_lookup) {
+    nl_cache_remove(OBJ_CAST(n_lookup.get()));
   }
 
   // cache the entry

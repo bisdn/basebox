@@ -691,11 +691,22 @@ int controller::l2_addr_remove_all_in_vlan(uint32_t port,
 
 int controller::l2_addr_add(uint32_t port, uint16_t vid,
                             const rofl::caddress_ll &mac, bool filtered,
-                            bool permanent) noexcept {
+                            bool permanent, bool update) noexcept {
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     bool lag = nbi::get_port_type(port) == nbi::port_type_lag;
+
+
+    if (update) {
+      // the port is part of the cookie, so we would need to update the cookie,
+      // but we cannot update the cookie, so we will need to replace it with a
+      // new flow entry.
+      dpt.send_flow_mod_message(rofl::cauxid(0),
+                                fm_driver.remove_bridging_unicast_vlan(
+                                    dpt.get_version(), 0, vid, mac));
+      dpt.send_barrier_request(rofl::cauxid(0));
+    }
 
     if (!permanent)
       fm_driver.set_idle_timeout(300);

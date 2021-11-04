@@ -1495,36 +1495,45 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   }
 }
 
-// TODO this function could already be moved to nl_bridge
-void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
+// returns true if the neigh should be handled by us
+bool cnetlink::check_ll_neigh(rtnl_neigh *neigh) noexcept {
   if (nullptr == bridge) {
     LOG(ERROR) << __FUNCTION__ << ": bridge not set";
-    return;
+    return false;
   }
 
   int ifindex = rtnl_neigh_get_ifindex(neigh);
-
   if (ifindex == 0) {
     VLOG(1) << __FUNCTION__ << ": no ifindex for neighbour " << neigh;
-    return;
+    return false;
   }
 
   rtnl_link *base_link = get_link(ifindex, AF_UNSPEC); // either tap, vxlan, ...
-  rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
-
   if (base_link == nullptr) {
     LOG(ERROR) << __FUNCTION__
                << ": unknown link ifindex=" << rtnl_neigh_get_ifindex(neigh)
-               << " of new L2 neighbour";
-    return;
+               << " of L2 neighbour";
+    return false;
   }
 
   if (nl_addr_cmp(rtnl_link_get_addr(base_link),
                   rtnl_neigh_get_lladdr(neigh)) == 0) {
     // mac of interface itself is ignored, others added
     VLOG(2) << __FUNCTION__ << ": bridge port mac address is ignored";
-    return;
+    return false;
   }
+
+  return true;
+}
+
+// TODO this function could already be moved to nl_bridge
+void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
+  if (!check_ll_neigh(neigh))
+    return;
+
+  int ifindex = rtnl_neigh_get_ifindex(neigh);
+  rtnl_link *base_link = get_link(ifindex, AF_UNSPEC); // either tap, vxlan, ...
+  rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
 
   if (VLOG_IS_ON(2)) {
     if (base_link) {
@@ -1550,33 +1559,33 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
   }
 }
 
-void cnetlink::neigh_ll_updated(__attribute__((unused)) rtnl_neigh *old_neigh,
-                                __attribute__((unused))
+void cnetlink::neigh_ll_updated(rtnl_neigh *old_neigh,
                                 rtnl_neigh *new_neigh) noexcept {
-  LOG(WARNING) << __FUNCTION__ << ": neighbor update not supported";
+  if (!check_ll_neigh(old_neigh) || !check_ll_neigh(new_neigh))
+    return;
+
+  int old_ifindex = rtnl_neigh_get_ifindex(old_neigh);
+  rtnl_link *old_base_link =
+      get_link(old_ifindex, AF_UNSPEC); // either tap, vxlan, ...
+  int new_ifindex = rtnl_neigh_get_ifindex(new_neigh);
+  rtnl_link *new_base_link =
+      get_link(new_ifindex, AF_UNSPEC); // either tap, vxlan, ...
+
+  if (get_link_type(old_base_link) == LT_VXLAN ||
+      get_link_type(new_base_link) == LT_VXLAN) {
+    LOG(WARNING) << __FUNCTION__
+                 << ": neighbor update for VXLAN neighbors not supported";
+  } else {
+    bridge->add_neigh_to_fdb(new_neigh, true);
+  }
 }
 
 void cnetlink::neigh_ll_deleted(rtnl_neigh *neigh) noexcept {
+  if (!check_ll_neigh(neigh))
+    return;
+
   int ifindex = rtnl_neigh_get_ifindex(neigh);
-
-  if (ifindex == 0) {
-    VLOG(1) << __FUNCTION__ << ": no ifindex for neighbour " << neigh;
-    return;
-  }
-
   rtnl_link *l = get_link(ifindex, AF_UNSPEC);
-
-  if (l == nullptr) {
-    LOG(ERROR) << __FUNCTION__
-               << ": unknown link ifindex=" << rtnl_neigh_get_ifindex(neigh);
-    return;
-  }
-
-  // XXX move to bridge
-  if (nl_addr_cmp(rtnl_link_get_addr(l), rtnl_neigh_get_lladdr(neigh)) == 0) {
-    VLOG(2) << __FUNCTION__ << ": bridge port mac address is ignored";
-    return;
-  }
 
   auto lt = get_link_type(l);
 
