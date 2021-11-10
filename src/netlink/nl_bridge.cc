@@ -489,33 +489,33 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
       } else {
         done = 1;
       }
+    }
 
-      // Process untagged changes
-      i = -1;
-      done = 0;
-      while (!done) {
-        int j = find_next_bit(i, untagged_diff);
-        if (j > 0) {
-          // egress untagged changed
-          int vid = j - 1 + base_bit;
-          bool egress_untagged = false;
+    // Process untagged changes
+    i = -1;
+    done = 0;
+    while (!done) {
+      int j = find_next_bit(i, untagged_diff);
+      if (j > 0) {
+        // egress untagged changed
+        int vid = j - 1 + base_bit;
+        bool egress_untagged = false;
 
-          // check if egress is untagged
-          if (new_br_vlan->untagged_bitmap[k] & 1 << (j - 1)) {
-            egress_untagged = true;
-          }
-
-          VLOG(3) << __FUNCTION__ << ": change vid=" << vid
-                  << " on pport_no=" << pport_no
-                  << " egress untagged=" << egress_untagged
-                  << " link: " << OBJ_CAST(_link);
-
-          vlan->update_egress_bridge_vlan(_link, vid, egress_untagged);
-
-          i = j;
-        } else {
-          done = 1;
+        // check if egress is untagged
+        if (new_br_vlan->untagged_bitmap[k] & 1 << (j - 1)) {
+          egress_untagged = true;
         }
+
+        VLOG(3) << __FUNCTION__ << ": change vid=" << vid
+                << " on pport_no=" << pport_no
+                << " egress untagged=" << egress_untagged
+                << " link: " << OBJ_CAST(_link);
+
+        vlan->update_egress_bridge_vlan(_link, vid, egress_untagged);
+
+        i = j;
+      } else {
+        done = 1;
       }
     }
   }
