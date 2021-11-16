@@ -379,15 +379,6 @@ private:
                              rofl::openflow::cofmsg_packet_in &msg);
 
   void handle_bridging_table_rm(rofl::openflow::cofmsg_flow_removed &msg);
-
-  int l2_multicast_addr_add(uint32_t port, uint16_t vid,
-                            const rofl::caddress_ll &mac) noexcept;
-  int l2_multicast_addr_remove(uint32_t port, uint16_t vid,
-                               const rofl::caddress_ll &mac) noexcept;
-  int l2_multicast_group_add(uint32_t port, uint16_t vid,
-                             rofl::caddress_ll mc_group) noexcept;
-  int l2_multicast_group_remove(uint32_t port, uint16_t vid,
-                                rofl::caddress_ll mc_group) noexcept;
 }; // class controller
 
 } // end of namespace basebox

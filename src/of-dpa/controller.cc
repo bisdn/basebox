@@ -811,13 +811,12 @@ int controller::l2_overlay_addr_remove(uint32_t tunnel_id, uint32_t lport_id,
   return rv;
 }
 
-int controller::l2_multicast_group_add(uint32_t port, uint16_t vid,
-                                       rofl::caddress_ll mc_group) noexcept {
+int controller::l2_multicast_group_join(
+    uint32_t port, uint16_t vid, const rofl::caddress_ll &mc_group) noexcept {
   int rv = 0;
 
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-
     int index = 1;
     struct multicast_entry n_mcast;
     n_mcast.key = std::make_tuple(mc_group, vid);
@@ -851,6 +850,11 @@ int controller::l2_multicast_group_add(uint32_t port, uint16_t vid,
                              dpt.get_version(), index, vid, it->l2_interface,
                              (it->l2_interface.size() > 1)));
 
+    // create flow when creating group
+    if (it->l2_interface.size() == 1)
+      dpt.send_flow_mod_message(
+          rofl::cauxid(0), fm_driver.add_bridging_multicast_vlan(
+                               dpt.get_version(), it->index, vid, mc_group));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -865,13 +869,12 @@ int controller::l2_multicast_group_add(uint32_t port, uint16_t vid,
   return rv;
 }
 
-int controller::l2_multicast_group_remove(uint32_t port, uint16_t vid,
-                                          rofl::caddress_ll mc_group) noexcept {
+int controller::l2_multicast_group_leave(
+    uint32_t port, uint16_t vid, const rofl::caddress_ll &mc_group) noexcept {
   int rv = 0;
 
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-
     struct multicast_entry n_mcast;
     n_mcast.key = std::make_tuple(mc_group, vid);
 
@@ -893,15 +896,26 @@ int controller::l2_multicast_group_remove(uint32_t port, uint16_t vid,
 
     it->l2_interface.erase(set_it);
 
-    dpt.send_group_mod_message(
-        rofl::cauxid(0),
-        // send update without port
-        fm_driver.enable_group_l2_multicast(dpt.get_version(), it->index, vid,
-                                            it->l2_interface, true));
-
-    dpt.send_barrier_request(rofl::cauxid(0));
     if (it->l2_interface.size() != 0) {
-      return -ENOTEMPTY;
+      dpt.send_group_mod_message(
+          rofl::cauxid(0),
+          // send update without port
+          fm_driver.enable_group_l2_multicast(dpt.get_version(), it->index, vid,
+                                              it->l2_interface, true));
+
+      dpt.send_barrier_request(rofl::cauxid(0));
+    } else {
+      dpt.send_flow_mod_message(rofl::cauxid(0),
+                                fm_driver.remove_bridging_multicast_vlan(
+                                    dpt.get_version(), port, vid, mc_group));
+
+      dpt.send_barrier_request(rofl::cauxid(0));
+
+      dpt.send_group_mod_message(rofl::cauxid(0),
+                                 fm_driver.disable_group_l2_multicast(
+                                     dpt.get_version(), it->index, vid));
+
+      mc_groups.erase(it);
     }
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
@@ -917,115 +931,6 @@ int controller::l2_multicast_group_remove(uint32_t port, uint16_t vid,
   return rv;
 }
 
-int controller::l2_multicast_addr_add(uint32_t port, uint16_t vid,
-                                      const rofl::caddress_ll &mac) noexcept {
-  int rv = 0;
-
-  try {
-    rofl::crofdpt &dpt = set_dpt(dptid, true);
-    struct multicast_entry n_mcast;
-    n_mcast.key = std::make_tuple(mac, vid);
-
-    // find grp/vlan combination
-    auto it = std::find(mc_groups.begin(), mc_groups.end(), n_mcast);
-
-    dpt.send_flow_mod_message(rofl::cauxid(0),
-                              fm_driver.add_bridging_multicast_vlan(
-                                  dpt.get_version(), it->index, vid, mac));
-  } catch (rofl::eRofBaseNotFound &e) {
-    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
-    rv = -EINVAL;
-  } catch (rofl::eRofConnNotConnected &e) {
-    LOG(ERROR) << ": not connected msg=" << e.what();
-    rv = -ENOTCONN;
-  } catch (std::exception &e) {
-    LOG(ERROR) << ": caught unknown exception: " << e.what();
-    rv = -EINVAL;
-  }
-
-  return rv;
-}
-
-int controller::l2_multicast_addr_remove(
-    uint32_t port, uint16_t vid, const rofl::caddress_ll &mac) noexcept {
-  int rv = 0;
-
-  try {
-    rofl::crofdpt &dpt = set_dpt(dptid, true);
-
-    struct multicast_entry n_mcast;
-    n_mcast.key = std::make_tuple(mac, vid);
-
-    // find grp/vlan combination
-    auto it = std::find(mc_groups.begin(), mc_groups.end(), n_mcast);
-
-    dpt.send_flow_mod_message(rofl::cauxid(0),
-                              fm_driver.remove_bridging_multicast_vlan(
-                                  dpt.get_version(), port, vid, mac));
-
-    dpt.send_barrier_request(rofl::cauxid(0));
-
-    dpt.send_group_mod_message(
-        rofl::cauxid(0), fm_driver.disable_group_l2_multicast(dpt.get_version(),
-                                                              it->index, vid));
-
-    mc_groups.erase(it);
-
-  } catch (rofl::eRofBaseNotFound &e) {
-    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
-    rv = -EINVAL;
-  } catch (rofl::eRofConnNotConnected &e) {
-    LOG(ERROR) << ": not connected msg=" << e.what();
-    rv = -ENOTCONN;
-  } catch (std::exception &e) {
-    LOG(ERROR) << ": caught unknown exception: " << e.what();
-    rv = -EINVAL;
-  }
-
-  return rv;
-}
-
-int controller::l2_multicast_group_join(
-    uint32_t port, uint16_t vid, const rofl::caddress_ll &mc_group) noexcept {
-  int rv = l2_multicast_group_add(port, vid, mc_group);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to add Layer 2 Multicast Group Entry";
-    return rv;
-  }
-
-  rv = l2_multicast_addr_add(port, vid, mc_group);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
-    return rv;
-  }
-
-  return rv;
-}
-
-int controller::l2_multicast_group_leave(
-    uint32_t port, uint16_t vid, const rofl::caddress_ll &mc_group) noexcept {
-  int rv = l2_multicast_group_remove(port, vid, mc_group);
-
-  // nothing left to do, there are still entries in the mc group
-  if (rv < 0 && rv != -ENOTEMPTY) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to remove Layer 2 Multicast Group Entry";
-    return rv;
-  }
-
-  if (rv != -ENOTEMPTY) {
-    rv = l2_multicast_addr_remove(port, vid, mc_group);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to remove bridging MC entry";
-      return rv;
-    }
-  } else {
-    rv = 0;
-  }
-
-  return rv;
-}
 int controller::l3_termination_add(uint32_t sport, uint16_t vid,
                                    const rofl::caddress_ll &dmac) noexcept {
   int rv = 0;
