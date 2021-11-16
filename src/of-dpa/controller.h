@@ -345,7 +345,7 @@ private:
     multicast_entry() {}
     bool operator==(const struct multicast_entry c1) { return (c1.key == key); }
   };
-  std::deque<struct multicast_entry>
+  std::list<struct multicast_entry>
       mc_groups; // mac address, vlan , index, l2_interfaces
 
   rofl::cthread bb_thread;
