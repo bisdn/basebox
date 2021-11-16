@@ -65,19 +65,15 @@ public:
                                   bool permanent) noexcept = 0;
   virtual int l2_overlay_addr_remove(uint32_t tunnel_id, uint32_t lport_id,
                                      const rofl::cmacaddr &mac) noexcept = 0;
-  virtual int l2_multicast_addr_add(uint32_t port, uint16_t vid,
-                                    const rofl::caddress_ll &mac) noexcept = 0;
-  virtual int
-  l2_multicast_addr_remove(uint32_t port, uint16_t vid,
-                           const rofl::caddress_ll &mac) noexcept = 0;
   /* @} */
 
   /* @ Layer 2 Multicast { */
-  virtual int l2_multicast_group_add(uint32_t port, uint16_t vid,
-                                     rofl::caddress_ll mc_group) noexcept = 0;
   virtual int
-  l2_multicast_group_remove(uint32_t port, uint16_t vid,
-                            rofl::caddress_ll mc_group) noexcept = 0;
+  l2_multicast_group_join(uint32_t port, uint16_t vid,
+                          const rofl::caddress_ll &mc_group) noexcept = 0;
+  virtual int
+  l2_multicast_group_leave(uint32_t port, uint16_t vid,
+                           const rofl::caddress_ll &mc_group) noexcept = 0;
   /* @} */
 
   /* @ termination MAC { */

@@ -985,6 +985,47 @@ int controller::l2_multicast_addr_remove(
   return rv;
 }
 
+int controller::l2_multicast_group_join(
+    uint32_t port, uint16_t vid, const rofl::caddress_ll &mc_group) noexcept {
+  int rv = l2_multicast_group_add(port, vid, mc_group);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__
+               << ": failed to add Layer 2 Multicast Group Entry";
+    return rv;
+  }
+
+  rv = l2_multicast_addr_add(port, vid, mc_group);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to add bridging MC entry";
+    return rv;
+  }
+
+  return rv;
+}
+
+int controller::l2_multicast_group_leave(
+    uint32_t port, uint16_t vid, const rofl::caddress_ll &mc_group) noexcept {
+  int rv = l2_multicast_group_remove(port, vid, mc_group);
+
+  // nothing left to do, there are still entries in the mc group
+  if (rv < 0 && rv != -ENOTEMPTY) {
+    LOG(ERROR) << __FUNCTION__
+               << ": failed to remove Layer 2 Multicast Group Entry";
+    return rv;
+  }
+
+  if (rv != -ENOTEMPTY) {
+    rv = l2_multicast_addr_remove(port, vid, mc_group);
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to remove bridging MC entry";
+      return rv;
+    }
+  } else {
+    rv = 0;
+  }
+
+  return rv;
+}
 int controller::l3_termination_add(uint32_t sport, uint16_t vid,
                                    const rofl::caddress_ll &dmac) noexcept {
   int rv = 0;

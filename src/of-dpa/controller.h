@@ -165,16 +165,14 @@ public:
                           bool permanent) noexcept override;
   int l2_overlay_addr_remove(uint32_t tunnel_id, uint32_t lport_id,
                              const rofl::cmacaddr &mac) noexcept override;
-  int l2_multicast_addr_add(uint32_t port, uint16_t vid,
-                            const rofl::caddress_ll &mac) noexcept override;
-  int l2_multicast_addr_remove(uint32_t port, uint16_t vid,
-                               const rofl::caddress_ll &mac) noexcept override;
 
   /* @ Layer 2 Multicast { */
-  int l2_multicast_group_add(uint32_t port, uint16_t vid,
-                             rofl::caddress_ll mc_group) noexcept override;
-  int l2_multicast_group_remove(uint32_t port, uint16_t vid,
-                                rofl::caddress_ll mc_group) noexcept override;
+  int l2_multicast_group_join(
+      uint32_t port, uint16_t vid,
+      const rofl::caddress_ll &mc_group) noexcept override;
+  int l2_multicast_group_leave(
+      uint32_t port, uint16_t vid,
+      const rofl::caddress_ll &mc_group) noexcept override;
   /* @} */
 
   // dmac = Multicast or Unicast MAC Address
@@ -381,6 +379,15 @@ private:
                              rofl::openflow::cofmsg_packet_in &msg);
 
   void handle_bridging_table_rm(rofl::openflow::cofmsg_flow_removed &msg);
+
+  int l2_multicast_addr_add(uint32_t port, uint16_t vid,
+                            const rofl::caddress_ll &mac) noexcept;
+  int l2_multicast_addr_remove(uint32_t port, uint16_t vid,
+                               const rofl::caddress_ll &mac) noexcept;
+  int l2_multicast_group_add(uint32_t port, uint16_t vid,
+                             rofl::caddress_ll mc_group) noexcept;
+  int l2_multicast_group_remove(uint32_t port, uint16_t vid,
+                                rofl::caddress_ll mc_group) noexcept;
 }; // class controller
 
 } // end of namespace basebox
