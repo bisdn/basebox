@@ -1498,7 +1498,7 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
 // returns true if the neigh should be handled by us
 bool cnetlink::check_ll_neigh(rtnl_neigh *neigh) noexcept {
   if (nullptr == bridge) {
-    LOG(ERROR) << __FUNCTION__ << ": bridge not set";
+    VLOG(1) << __FUNCTION__ << ": bridge not set";
     return false;
   }
 
