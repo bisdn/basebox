@@ -888,13 +888,10 @@ int controller::l2_multicast_group_leave(
                             ? fm_driver.group_id_l2_trunk_interface(port, vid)
                             : fm_driver.group_id_l2_interface(port, vid);
 
-    auto set_it = it->l2_interface.find(group_id);
-    if (set_it == it->l2_interface.end()) {
+    if (it->l2_interface.erase(group_id) == 0) {
       LOG(ERROR) << __FUNCTION__ << ": interface group not found";
       return -EINVAL;
     }
-
-    it->l2_interface.erase(set_it);
 
     if (it->l2_interface.size() != 0) {
       dpt.send_group_mod_message(
