@@ -830,6 +830,8 @@ int controller::l2_multicast_group_join(
 
     if (it != mc_groups.end()) { // if mmac does exist, update
       it->l2_interface.emplace(group_id);
+      // in case it was disabled previously
+      it->disabled_l2_interface.erase(group_id);
       index = it->index;
     } else { // add
       for (auto i : mc_groups) {
@@ -869,8 +871,9 @@ int controller::l2_multicast_group_join(
   return rv;
 }
 
-int controller::l2_multicast_group_leave(
-    uint32_t port, uint16_t vid, const rofl::caddress_ll &mc_group) noexcept {
+int controller::l2_multicast_group_leave(uint32_t port, uint16_t vid,
+                                         const rofl::caddress_ll &mc_group,
+                                         bool disable_only) noexcept {
   int rv = 0;
 
   try {
@@ -889,9 +892,26 @@ int controller::l2_multicast_group_leave(
                             : fm_driver.group_id_l2_interface(port, vid);
 
     if (it->l2_interface.erase(group_id) == 0) {
-      LOG(ERROR) << __FUNCTION__ << ": interface group not found";
-      return -EINVAL;
+      if (disable_only) {
+        // either already disabled or never existed
+        LOG(ERROR) << __FUNCTION__ << ": interface group not found";
+        return -EINVAL;
+      }
+
+      if (it->disabled_l2_interface.erase(group_id) == 0) {
+        LOG(ERROR) << __FUNCTION__ << ": disabled interface group not found";
+        return -EINVAL;
+      }
+
+      // if no in-kernel mdb entries left, we can delete the the group reference
+      if (it->l2_interface.size() == 0 && it->disabled_l2_interface.size() == 0)
+        mc_groups.erase(it);
+
+      return 0;
     }
+
+    if (disable_only)
+      it->disabled_l2_interface.emplace(group_id);
 
     if (it->l2_interface.size() != 0) {
       dpt.send_group_mod_message(
@@ -911,8 +931,9 @@ int controller::l2_multicast_group_leave(
       dpt.send_group_mod_message(rofl::cauxid(0),
                                  fm_driver.disable_group_l2_multicast(
                                      dpt.get_version(), it->index, vid));
-
-      mc_groups.erase(it);
+      // only delete the group if there are no in-kernel mdb entries
+      if (it->disabled_l2_interface.size() == 0)
+        mc_groups.erase(it);
     }
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
