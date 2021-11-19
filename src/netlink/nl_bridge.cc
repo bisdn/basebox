@@ -431,6 +431,8 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
 
               // the PVID is already being handled outside of the loop
               vlan->add_bridge_vlan(_link, vid, false, !egress_untagged);
+              // restore multicast state in case there are existing mdb entries
+              sw->l2_multicast_group_rejoin_all_in_vlan(pport_no, vid);
 
 #ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
               // we might have missed the initial port vlan message since it
@@ -461,6 +463,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
 
             // delete all FM pointing to this group first
             sw->l2_addr_remove_all_in_vlan(pport_no, vid);
+            sw->l2_multicast_group_leave_all_in_vlan(pport_no, vid);
 
             std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> filter(
                 rtnl_neigh_alloc(), rtnl_neigh_put);
@@ -647,6 +650,7 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
       // this is no longer a normal bridge interface thus we delete all the
       // bridging entries
       sw->l2_addr_remove_all_in_vlan(pport_no, vid);
+      sw->l2_multicast_group_leave_all_in_vlan(pport_no, vid);
       vxlan->create_access_port(_br_port, tunnel_id, port_name, pport_no, vid,
                                 untagged, nullptr);
 
@@ -678,6 +682,7 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
         VLOG(3) << ": needs to be updated " << OBJ_CAST(n);
         add_neigh_to_fdb(n);
       }
+      sw->l2_multicast_group_rejoin_all_in_vlan(pport_no, vid);
     }
   }
 }
