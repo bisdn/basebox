@@ -1502,6 +1502,11 @@ bool cnetlink::check_ll_neigh(rtnl_neigh *neigh) noexcept {
     return false;
   }
 
+  if (rtnl_neigh_get_master(neigh) != bridge->get_ifindex()) {
+    VLOG(1) << __FUNCTION__ << ": bridge not ours for neighour " << neigh;
+    return false;
+  }
+
   int ifindex = rtnl_neigh_get_ifindex(neigh);
   if (ifindex == 0) {
     VLOG(1) << __FUNCTION__ << ": no ifindex for neighbour " << neigh;
