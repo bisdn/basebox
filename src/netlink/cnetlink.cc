@@ -1555,8 +1555,7 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
     // XXX TODO maybe we have to do this as well wrt. local bridging
     // normal bridging
     try {
-      if (bridge)
-        bridge->add_neigh_to_fdb(neigh);
+      bridge->add_neigh_to_fdb(neigh);
     } catch (std::exception &e) {
       LOG(ERROR) << __FUNCTION__
                  << ": failed to add mac to fdb"; // TODO log mac, port,...?
@@ -1601,8 +1600,7 @@ void cnetlink::neigh_ll_deleted(rtnl_neigh *neigh) noexcept {
   } break;
 
   default:
-    if (bridge)
-      bridge->remove_neigh_from_fdb(neigh);
+    bridge->remove_neigh_from_fdb(neigh);
   }
 }
 
