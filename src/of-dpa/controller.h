@@ -170,9 +170,9 @@ public:
   int l2_multicast_group_join(
       uint32_t port, uint16_t vid,
       const rofl::caddress_ll &mc_group) noexcept override;
-  int l2_multicast_group_leave(
-      uint32_t port, uint16_t vid,
-      const rofl::caddress_ll &mc_group) noexcept override;
+  int l2_multicast_group_leave(uint32_t port, uint16_t vid,
+                               const rofl::caddress_ll &mc_group,
+                               bool disable_only = false) noexcept override;
   /* @} */
 
   // dmac = Multicast or Unicast MAC Address
@@ -341,6 +341,7 @@ private:
     std::tuple<rofl::caddress_ll, uint16_t> key;
     int index;
     std::set<uint32_t> l2_interface;
+    std::set<uint32_t> disabled_l2_interface;
 
     multicast_entry() {}
     bool operator==(const struct multicast_entry c1) { return (c1.key == key); }
