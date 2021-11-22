@@ -1151,16 +1151,9 @@ void nl_bridge::set_port_stp_state(uint32_t port_id, uint8_t stp_state) {
 
   auto pv_states = bridge_stp_states.get_min_states(port_id);
   for (auto it : pv_states)
-    sw->ofdpa_stg_state_port_set(port_id, it.first, it.second);
+    set_port_vlan_stp_state(port_id, it.first, it.second);
 
-  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-    auto members = nl->get_bond_members_by_port_id(port_id);
-    for (auto mem : members) {
-      sw->ofdpa_stg_state_port_set(mem, 0, stp_state);
-    }
-  } else {
-    sw->ofdpa_stg_state_port_set(port_id, 0, stp_state);
-  }
+  set_port_vlan_stp_state(port_id, 0, stp_state);
 }
 
 int nl_bridge::add_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
@@ -1179,7 +1172,7 @@ int nl_bridge::add_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
   LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
             << " port_id= " << port_id << " VLAN =" << vid;
 
-  return sw->ofdpa_stg_state_port_set(port_id, vid, g_stp_state);
+  return set_port_vlan_stp_state(port_id, vid, g_stp_state);
 }
 
 int nl_bridge::del_port_vlan_stp_state(uint32_t port_id, uint16_t vid) {
@@ -1189,11 +1182,13 @@ int nl_bridge::del_port_vlan_stp_state(uint32_t port_id, uint16_t vid) {
   LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
             << " ifindex= " << port_id << " VLAN =" << vid;
 
-  auto err = sw->ofdpa_stg_state_port_set(port_id, vid, g_stp_state);
+  auto err = set_port_vlan_stp_state(port_id, vid, g_stp_state);
 
   bool last_member = bridge_stp_states.del_pvlan_state(port_id, vid);
   if (last_member) {
-    err = sw->ofdpa_stg_destroy(vid);
+    auto err2 = sw->ofdpa_stg_destroy(vid);
+    if (err2 < 0 && err == 0)
+      err = err2;
   }
 
   return err;
