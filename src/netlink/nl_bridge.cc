@@ -1127,6 +1127,25 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
   return rv;
 }
 
+int nl_bridge::set_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
+                                       uint8_t state) {
+  auto err = 0;
+
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_port_id(port_id);
+    auto err2 = 0;
+    for (auto mem : members) {
+      err2 = sw->ofdpa_stg_state_port_set(mem, vid, state);
+      if (err2 < 0)
+        err = err2;
+    }
+  } else {
+    err = sw->ofdpa_stg_state_port_set(port_id, vid, state);
+  }
+
+  return err;
+}
+
 void nl_bridge::set_port_stp_state(uint32_t port_id, uint8_t stp_state) {
   bridge_stp_states.add_global_state(port_id, stp_state);
 

@@ -215,6 +215,7 @@ private:
   int add_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
                               uint8_t stp_state);
   int del_port_vlan_stp_state(uint32_t port_id, uint16_t vid);
+  int set_port_vlan_stp_state(uint32_t port_id, uint16_t vid, uint8_t state);
 
   rtnl_link *bridge;
   switch_interface *sw;
