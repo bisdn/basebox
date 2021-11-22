@@ -71,9 +71,13 @@ public:
   virtual int
   l2_multicast_group_join(uint32_t port, uint16_t vid,
                           const rofl::caddress_ll &mc_group) noexcept = 0;
-  virtual int
-  l2_multicast_group_leave(uint32_t port, uint16_t vid,
-                           const rofl::caddress_ll &mc_group) noexcept = 0;
+  virtual int l2_multicast_group_leave(uint32_t port, uint16_t vid,
+                                       const rofl::caddress_ll &mc_group,
+                                       bool disable_only = false) noexcept = 0;
+  virtual int l2_multicast_group_rejoin_all_in_vlan(uint32_t port,
+                                         uint16_t vid) noexcept = 0;
+  virtual int l2_multicast_group_leave_all_in_vlan(uint32_t port,
+                                         uint16_t vid) noexcept = 0;
   /* @} */
 
   /* @ termination MAC { */

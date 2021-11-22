@@ -830,6 +830,8 @@ int controller::l2_multicast_group_join(
 
     if (it != mc_groups.end()) { // if mmac does exist, update
       it->l2_interface.emplace(group_id);
+      // in case it was disabled previously
+      it->disabled_l2_interface.erase(group_id);
       index = it->index;
     } else { // add
       for (auto i : mc_groups) {
@@ -869,8 +871,9 @@ int controller::l2_multicast_group_join(
   return rv;
 }
 
-int controller::l2_multicast_group_leave(
-    uint32_t port, uint16_t vid, const rofl::caddress_ll &mc_group) noexcept {
+int controller::l2_multicast_group_leave(uint32_t port, uint16_t vid,
+                                         const rofl::caddress_ll &mc_group,
+                                         bool disable_only) noexcept {
   int rv = 0;
 
   try {
@@ -888,13 +891,27 @@ int controller::l2_multicast_group_leave(
                             ? fm_driver.group_id_l2_trunk_interface(port, vid)
                             : fm_driver.group_id_l2_interface(port, vid);
 
-    auto set_it = it->l2_interface.find(group_id);
-    if (set_it == it->l2_interface.end()) {
-      LOG(ERROR) << __FUNCTION__ << ": interface group not found";
-      return -EINVAL;
+    if (it->l2_interface.erase(group_id) == 0) {
+      if (disable_only) {
+        // either already disabled or never existed
+        LOG(ERROR) << __FUNCTION__ << ": interface group not found";
+        return -EINVAL;
+      }
+
+      if (it->disabled_l2_interface.erase(group_id) == 0) {
+        LOG(ERROR) << __FUNCTION__ << ": disabled interface group not found";
+        return -EINVAL;
+      }
+
+      // if no in-kernel mdb entries left, we can delete the the group reference
+      if (it->l2_interface.size() == 0 && it->disabled_l2_interface.size() == 0)
+        mc_groups.erase(it);
+
+      return 0;
     }
 
-    it->l2_interface.erase(set_it);
+    if (disable_only)
+      it->disabled_l2_interface.emplace(group_id);
 
     if (it->l2_interface.size() != 0) {
       dpt.send_group_mod_message(
@@ -914,8 +931,9 @@ int controller::l2_multicast_group_leave(
       dpt.send_group_mod_message(rofl::cauxid(0),
                                  fm_driver.disable_group_l2_multicast(
                                      dpt.get_version(), it->index, vid));
-
-      mc_groups.erase(it);
+      // only delete the group if there are no in-kernel mdb entries
+      if (it->disabled_l2_interface.size() == 0)
+        mc_groups.erase(it);
     }
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
@@ -926,6 +944,44 @@ int controller::l2_multicast_group_leave(
   } catch (std::exception &e) {
     LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
+  }
+
+  return rv;
+}
+
+int controller::l2_multicast_group_rejoin_all_in_vlan(uint32_t port,
+                                                     uint16_t vid) noexcept {
+  int rv = 0;
+  uint32_t group_id = (nbi::get_port_type(port) == nbi::port_type_lag)
+                          ? fm_driver.group_id_l2_trunk_interface(port, vid)
+                          : fm_driver.group_id_l2_interface(port, vid);
+
+  for (auto it = mc_groups.begin(); it != mc_groups.end(); it++) {
+    if (std::get<1>(it->key) == vid &&
+        it->disabled_l2_interface.count(group_id) != 0) {
+      rv = l2_multicast_group_join(port, vid, std::get<0>(it->key));
+      if (rv != 0)
+        LOG(ERROR) << ": failed to rejoin L2 multicast group";
+    }
+  }
+
+  return rv;
+}
+
+int controller::l2_multicast_group_leave_all_in_vlan(uint32_t port,
+                                                     uint16_t vid) noexcept {
+  int rv = 0;
+  uint32_t group_id = (nbi::get_port_type(port) == nbi::port_type_lag)
+                          ? fm_driver.group_id_l2_trunk_interface(port, vid)
+                          : fm_driver.group_id_l2_interface(port, vid);
+
+  for (auto it = mc_groups.begin(); it != mc_groups.end(); it++) {
+    if (std::get<1>(it->key) == vid &&
+        it->l2_interface.count(group_id) != 0) {
+      rv = l2_multicast_group_leave(port, vid, std::get<0>(it->key), true);
+      if (rv != 0)
+        LOG(ERROR) << ": failed to leave L2 multicast group";
+    }
   }
 
   return rv;
