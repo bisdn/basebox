@@ -184,6 +184,8 @@ public:
   int delete_vlan_proto(rtnl_link *link);
   uint32_t get_vlan_filtering();
 
+  std::map<uint16_t, uint8_t> get_port_vlan_stp_states(rtnl_link *link);
+
   void clear_tpid_entries();
 
   // XXX Improve cache search mechanism

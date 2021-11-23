@@ -1242,4 +1242,16 @@ int nl_bridge::drop_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   return err;
 }
 
+std::map<uint16_t, uint8_t>
+nl_bridge::get_port_vlan_stp_states(rtnl_link *link) {
+  if (get_stp_state() == STP_STATE_DISABLED)
+    return {};
+
+  uint32_t port_id = nl->get_port_id(link);
+  if (port_id == 0)
+    return {};
+
+  return bridge_stp_states.get_min_states(port_id);
+}
+
 } /* namespace basebox */
