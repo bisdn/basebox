@@ -203,7 +203,6 @@ public:
 
 private:
   struct bridge_stp_states bridge_stp_states;
-  std::string stp_state_to_string(uint8_t state);
 
   void update_vlans(rtnl_link *, rtnl_link *);
 
