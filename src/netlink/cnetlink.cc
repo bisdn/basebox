@@ -1498,7 +1498,12 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
 // returns true if the neigh should be handled by us
 bool cnetlink::check_ll_neigh(rtnl_neigh *neigh) noexcept {
   if (nullptr == bridge) {
-    LOG(ERROR) << __FUNCTION__ << ": bridge not set";
+    VLOG(1) << __FUNCTION__ << ": bridge not set";
+    return false;
+  }
+
+  if (rtnl_neigh_get_master(neigh) != bridge->get_ifindex()) {
+    VLOG(1) << __FUNCTION__ << ": bridge not ours for neighour " << neigh;
     return false;
   }
 
@@ -1550,8 +1555,7 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
     // XXX TODO maybe we have to do this as well wrt. local bridging
     // normal bridging
     try {
-      if (bridge)
-        bridge->add_neigh_to_fdb(neigh);
+      bridge->add_neigh_to_fdb(neigh);
     } catch (std::exception &e) {
       LOG(ERROR) << __FUNCTION__
                  << ": failed to add mac to fdb"; // TODO log mac, port,...?
@@ -1596,8 +1600,7 @@ void cnetlink::neigh_ll_deleted(rtnl_neigh *neigh) noexcept {
   } break;
 
   default:
-    if (bridge)
-      bridge->remove_neigh_from_fdb(neigh);
+    bridge->remove_neigh_from_fdb(neigh);
   }
 }
 
