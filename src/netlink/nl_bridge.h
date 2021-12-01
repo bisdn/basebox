@@ -184,6 +184,8 @@ public:
   int delete_vlan_proto(rtnl_link *link);
   uint32_t get_vlan_filtering();
 
+  std::map<uint16_t, uint8_t> get_port_vlan_stp_states(rtnl_link *link);
+
   void clear_tpid_entries();
 
   // XXX Improve cache search mechanism
@@ -203,7 +205,6 @@ public:
 
 private:
   struct bridge_stp_states bridge_stp_states;
-  std::string stp_state_to_string(uint8_t state);
 
   void update_vlans(rtnl_link *, rtnl_link *);
 
@@ -216,6 +217,7 @@ private:
   int add_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
                               uint8_t stp_state);
   int del_port_vlan_stp_state(uint32_t port_id, uint16_t vid);
+  int set_port_vlan_stp_state(uint32_t port_id, uint16_t vid, uint8_t state);
 
   rtnl_link *bridge;
   switch_interface *sw;

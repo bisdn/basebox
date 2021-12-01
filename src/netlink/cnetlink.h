@@ -85,6 +85,11 @@ public:
     return bridge->get_stp_state();
   }
 
+  std::map<uint16_t, uint8_t> get_port_vlan_stp_states(rtnl_link *link) {
+    assert(bridge);
+    return bridge->get_port_vlan_stp_states(link);
+  }
+
   nl_cache *get_cache(enum nl_cache_t id) { return caches[id]; }
 
   void resend_state() noexcept;

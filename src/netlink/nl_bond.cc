@@ -239,30 +239,11 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
         return rv;
 
       auto new_state = rtnl_link_bridge_get_port_state(br_link);
-      std::string state;
-
-      switch (new_state) {
-      case BR_STATE_FORWARDING:
-        state = "forward";
-        break;
-      case BR_STATE_BLOCKING:
-        state = "block";
-        break;
-      case BR_STATE_DISABLED:
-        state = "disable";
-        break;
-      case BR_STATE_LISTENING:
-        state = "listen";
-        break;
-      case BR_STATE_LEARNING:
-        state = "learn";
-        break;
-      default:
-        VLOG(1) << __FUNCTION__ << ": stp state change not supported";
-        return rv;
+      swi->ofdpa_stg_state_port_set(port_id, 0, new_state);
+      auto pv_states = nl->get_port_vlan_stp_states(bond);
+      for (auto state : pv_states) {
+        swi->ofdpa_stg_state_port_set(port_id, state.first, state.second);
       }
-
-      swi->ofdpa_stg_state_port_set(port_id, 1, state);
     }
 
     rv = nl->set_bridge_port_vlan_tpid(br_link);
@@ -326,7 +307,11 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
   lag_members.erase(lm_rv);
 
   if (nl->is_bridge_interface(bond)) {
-    swi->ofdpa_stg_state_port_set(port_id, 1, "forward");
+    swi->ofdpa_stg_state_port_set(port_id, 0, BR_STATE_FORWARDING);
+    auto pv_states = nl->get_port_vlan_stp_states(bond);
+    for (auto state : pv_states) {
+      swi->ofdpa_stg_state_port_set(port_id, state.first, BR_STATE_FORWARDING);
+    }
 
     auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
     rv = nl->unset_bridge_port_vlan_tpid(br_link);
@@ -344,7 +329,7 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
       nl->remove_l3_configuration(bond);
 
     if (nl->is_bridge_interface(bond))
-      swi->ofdpa_stg_state_port_set(port_id, 1, "forward");
+      swi->ofdpa_stg_state_port_set(port_id, 1, BR_STATE_FORWARDING);
 
     for (auto vid : vlans) {
       swi->ingress_port_vlan_remove(port_id, vid, false);

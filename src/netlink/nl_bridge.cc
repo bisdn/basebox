@@ -1127,23 +1127,33 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
   return rv;
 }
 
+int nl_bridge::set_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
+                                       uint8_t state) {
+  auto err = 0;
+
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_port_id(port_id);
+    auto err2 = 0;
+    for (auto mem : members) {
+      err2 = sw->ofdpa_stg_state_port_set(mem, vid, state);
+      if (err2 < 0)
+        err = err2;
+    }
+  } else {
+    err = sw->ofdpa_stg_state_port_set(port_id, vid, state);
+  }
+
+  return err;
+}
+
 void nl_bridge::set_port_stp_state(uint32_t port_id, uint8_t stp_state) {
   bridge_stp_states.add_global_state(port_id, stp_state);
 
   auto pv_states = bridge_stp_states.get_min_states(port_id);
   for (auto it : pv_states)
-    sw->ofdpa_stg_state_port_set(port_id, it.first,
-                                 stp_state_to_string(it.second));
+    set_port_vlan_stp_state(port_id, it.first, it.second);
 
-  auto state = stp_state_to_string(stp_state);
-  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-    auto members = nl->get_bond_members_by_port_id(port_id);
-    for (auto mem : members) {
-      sw->ofdpa_stg_state_port_set(mem, 0, state);
-    }
-  } else {
-    sw->ofdpa_stg_state_port_set(port_id, 0, state);
-  }
+  set_port_vlan_stp_state(port_id, 0, stp_state);
 }
 
 int nl_bridge::add_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
@@ -1162,8 +1172,7 @@ int nl_bridge::add_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
   LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
             << " port_id= " << port_id << " VLAN =" << vid;
 
-  return sw->ofdpa_stg_state_port_set(port_id, vid,
-                                      stp_state_to_string(g_stp_state));
+  return set_port_vlan_stp_state(port_id, vid, g_stp_state);
 }
 
 int nl_bridge::del_port_vlan_stp_state(uint32_t port_id, uint16_t vid) {
@@ -1173,12 +1182,13 @@ int nl_bridge::del_port_vlan_stp_state(uint32_t port_id, uint16_t vid) {
   LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
             << " ifindex= " << port_id << " VLAN =" << vid;
 
-  auto err = sw->ofdpa_stg_state_port_set(port_id, vid,
-                                          stp_state_to_string(g_stp_state));
+  auto err = set_port_vlan_stp_state(port_id, vid, g_stp_state);
 
   bool last_member = bridge_stp_states.del_pvlan_state(port_id, vid);
   if (last_member) {
-    err = sw->ofdpa_stg_destroy(vid);
+    auto err2 = sw->ofdpa_stg_destroy(vid);
+    if (err2 < 0 && err == 0)
+      err = err2;
   }
 
   return err;
@@ -1232,29 +1242,16 @@ int nl_bridge::drop_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   return err;
 }
 
-std::string nl_bridge::stp_state_to_string(uint8_t state) {
-  std::string ret;
-  switch (state) {
-  case BR_STATE_FORWARDING:
-    ret = "forward";
-    break;
-  case BR_STATE_BLOCKING:
-    ret = "block";
-    break;
-  case BR_STATE_DISABLED:
-    ret = "disable";
-    break;
-  case BR_STATE_LISTENING:
-    ret = "listen";
-    break;
-  case BR_STATE_LEARNING:
-    ret = "learn";
-    break;
-  default:
-    ret = "";
-  }
+std::map<uint16_t, uint8_t>
+nl_bridge::get_port_vlan_stp_states(rtnl_link *link) {
+  if (get_stp_state() == STP_STATE_DISABLED)
+    return {};
 
-  return ret;
+  uint32_t port_id = nl->get_port_id(link);
+  if (port_id == 0)
+    return {};
+
+  return bridge_stp_states.get_min_states(port_id);
 }
 
 } /* namespace basebox */

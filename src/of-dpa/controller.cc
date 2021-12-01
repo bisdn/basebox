@@ -9,6 +9,7 @@
 #include <cstring>
 #include <thread>
 
+#include <linux/if_bridge.h>
 #include <linux/if_ether.h>
 #include <grpc++/grpc++.h>
 #include <systemd/sd-daemon.h>
@@ -2286,13 +2287,34 @@ int controller::ofdpa_stg_destroy(uint16_t vlan_id) noexcept {
 }
 
 int controller::ofdpa_stg_state_port_set(uint32_t port_id, uint16_t vlan_id,
-                                         std::string state) noexcept {
+                                         uint8_t state) noexcept {
+  std::string bcm_state;
   int rv;
   int stg_id = lookup_stpid(vlan_id);
   if (stg_id == 0)
     stg_id = 1;
 
-  rv = ofdpa->ofdpaStgStatePortSet(port_id, state, stg_id);
+  switch (state) {
+  case BR_STATE_FORWARDING:
+    bcm_state = "forward";
+    break;
+  case BR_STATE_BLOCKING:
+    bcm_state = "block";
+    break;
+  case BR_STATE_DISABLED:
+    bcm_state = "disable";
+    break;
+  case BR_STATE_LISTENING:
+    bcm_state = "listen";
+    break;
+  case BR_STATE_LEARNING:
+    bcm_state = "learn";
+    break;
+  default:
+    return -EINVAL;
+  }
+
+  rv = ofdpa->ofdpaStgStatePortSet(port_id, bcm_state, stg_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to set the STP state";
   }

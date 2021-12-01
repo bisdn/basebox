@@ -315,7 +315,7 @@ public:
   int ofdpa_stg_destroy(uint16_t vlan_id) noexcept override;
 
   int ofdpa_stg_state_port_set(uint32_t port_id, uint16_t vlan_id,
-                               std::string state) noexcept override;
+                               uint8_t state) noexcept override;
 
   /* print this */
   friend std::ostream &operator<<(std::ostream &os, const controller &box) {
