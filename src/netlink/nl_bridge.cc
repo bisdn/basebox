@@ -383,14 +383,15 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
          j = find_next_bit(j, vlan_diff)) {
       // vlan added or removed
       int vid = j - 1 + base_bit;
+      uint32_t vid_mask = 1U << (j - 1);
       bool egress_untagged = false;
 
       // check if egress is untagged
-      if (new_br_vlan->untagged_bitmap[k] & 1U << (j - 1)) {
+      if (new_br_vlan->untagged_bitmap[k] & vid_mask) {
         egress_untagged = true;
       }
 
-      if (new_br_vlan->vlan_bitmap[k] & 1U << (j - 1)) {
+      if (new_br_vlan->vlan_bitmap[k] & vid_mask) {
         // vlan added
         if (lt == LT_VXLAN) {
           // update vxlan domain
@@ -507,10 +508,11 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
          j = find_next_bit(j, untagged_diff)) {
       // egress untagged changed
       int vid = j - 1 + base_bit;
+      uint32_t vid_mask = 1U << (j - 1);
       bool egress_untagged = false;
 
       // check if egress is untagged
-      if (new_br_vlan->untagged_bitmap[k] & 1U << (j - 1)) {
+      if (new_br_vlan->untagged_bitmap[k] & vid_mask) {
         egress_untagged = true;
       }
 
