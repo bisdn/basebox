@@ -1356,12 +1356,8 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, uint32_t lport,
     return -EINVAL;
   }
 
-  bool permanent = true;
-
-  assert(bridge);
-  if (bridge->is_mac_in_l2_cache(neigh)) {
-    permanent = false;
-  }
+  bool permanent =
+      !!(rtnl_neigh_get_state(neigh) & (NUD_NOARP | NUD_PERMANENT));
 
   auto neigh_mac = rtnl_neigh_get_lladdr(neigh);
   rofl::caddress_ll mac((uint8_t *)nl_addr_get_binary_addr(neigh_mac),

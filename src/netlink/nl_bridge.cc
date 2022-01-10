@@ -691,7 +691,8 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
   assert(sw);
   assert(neigh);
 
-  uint32_t port = nl->get_port_id(rtnl_neigh_get_ifindex(neigh));
+  int ifindex = rtnl_neigh_get_ifindex(neigh);
+  uint32_t port = nl->get_port_id(ifindex);
   if (port == 0) {
     VLOG(1) << __FUNCTION__ << ": unknown port for neigh " << OBJ_CAST(neigh);
     return;
@@ -709,8 +710,6 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
     return;
   }
 
-  bool permanent = true;
-
   // for sure this is master (sw bridged)
   if (rtnl_neigh_get_master(neigh) &&
       !(rtnl_neigh_get_flags(neigh) & NTF_MASTER)) {
@@ -718,9 +717,27 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
   }
 
   // check if entry already exists in cache
-  if (is_mac_in_l2_cache(neigh)) {
-    permanent = false;
+  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n(rtnl_neigh_alloc(),
+                                                           rtnl_neigh_put);
+
+  rtnl_neigh_set_master(n.get(), rtnl_neigh_get_master(neigh));
+  rtnl_neigh_set_family(n.get(), AF_BRIDGE);
+  rtnl_neigh_set_vlan(n.get(), vid);
+  rtnl_neigh_set_lladdr(n.get(), mac);
+  rtnl_neigh_set_flags(n.get(), NTF_MASTER | NTF_EXT_LEARNED);
+  rtnl_neigh_set_state(n.get(), NUD_REACHABLE);
+
+  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n_lookup(
+      NEIGH_CAST(nl_cache_search(l2_cache.get(), OBJ_CAST(n.get()))),
+      rtnl_neigh_put);
+
+  if (n_lookup && rtnl_neigh_get_ifindex(n_lookup.get()) == ifindex) {
+    return;
   }
+  rtnl_neigh_set_ifindex(n.get(), ifindex);
+
+  bool permanent =
+      !!(rtnl_neigh_get_state(neigh) & (NUD_NOARP | NUD_PERMANENT));
 
   rofl::caddress_ll _mac((uint8_t *)nl_addr_get_binary_addr(mac),
                          nl_addr_get_len(mac));
@@ -730,6 +747,27 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
             << " vlan=" << (unsigned)vid << ", permanent=" << permanent;
   LOG(INFO) << __FUNCTION__ << ": object: " << OBJ_CAST(neigh);
   sw->l2_addr_add(port, vid, _mac, true, permanent, update);
+
+  if (!permanent) {
+    // take over dynamic entries from kernel
+    rtnl_neigh_set_flags(n.get(), NTF_EXT_LEARNED);
+
+    nl_msg *msg = nullptr;
+    rtnl_neigh_build_add_request(n.get(), NLM_F_REPLACE, &msg);
+    assert(msg);
+
+    // send the message and create new fdb entry
+    if (nl->send_nl_msg(msg) < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to send netlink message";
+      return;
+    }
+
+    // cache the entry
+    if (nl_cache_add(l2_cache.get(), OBJ_CAST(n.get())) < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to add entry to l2_cache "
+                 << OBJ_CAST(n.get());
+    }
+  }
 }
 
 void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {
@@ -783,111 +821,6 @@ bool nl_bridge::is_mac_in_l2_cache(rtnl_neigh *n) {
   }
 
   return false;
-}
-
-int nl_bridge::learn_source_mac(rtnl_link *br_link, packet *p) {
-  // we still assume vlan filtering bridge
-  assert(rtnl_link_get_family(br_link) == AF_BRIDGE);
-
-  VLOG(3) << __FUNCTION__ << ": pkt " << p << " on link " << OBJ_CAST(br_link);
-
-  rtnl_link_bridge_vlan *br_vlan = rtnl_link_bridge_get_port_vlan(br_link);
-
-  if (br_vlan == nullptr) {
-    LOG(ERROR) << __FUNCTION__
-               << ": only the vlan filtering bridge is supported";
-    return -EINVAL;
-  }
-
-  // parse ether frame and check for vid
-  auto *hdr = reinterpret_cast<basebox::vlan_hdr *>(p->data);
-  uint16_t vid = 0;
-
-  // XXX TODO maybe move this to the utils to have a std lib for parsing the
-  // ether frame
-  switch (ntohs(hdr->eth.h_proto)) {
-  case ETH_P_8021Q:
-  case ETH_P_8021AD:
-    // vid
-    vid = ntohs(hdr->vlan) & 0xfff;
-    break;
-  default:
-    // no vid, set vid to pvid
-    vid = br_vlan->pvid;
-    VLOG(3) << __FUNCTION__ << ": assuming untagged for ethertype "
-            << std::showbase << std::hex << ntohs(hdr->eth.h_proto);
-    break;
-  }
-
-  // verify that the vid is in use here
-  if (!is_vid_set(vid, br_vlan->vlan_bitmap)) {
-    LOG(WARNING) << __FUNCTION__ << ": got packet tagged with unconfigured vid = " << vid
-                 << " on bridge link = " << OBJ_CAST(br_link);
-    return -ENOTSUP;
-  }
-
-  // set nl neighbour to NL
-  std::unique_ptr<nl_addr, decltype(&nl_addr_put)> h_src(
-      nl_addr_build(AF_LLC, hdr->eth.h_source, sizeof(hdr->eth.h_source)),
-      nl_addr_put);
-
-  if (!h_src) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to allocate src mac";
-    return -ENOMEM;
-  }
-
-  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n(rtnl_neigh_alloc(),
-                                                           rtnl_neigh_put);
-
-  rtnl_neigh_set_master(n.get(), rtnl_link_get_master(br_link));
-  rtnl_neigh_set_family(n.get(), AF_BRIDGE);
-  rtnl_neigh_set_vlan(n.get(), vid);
-  rtnl_neigh_set_lladdr(n.get(), h_src.get());
-  rtnl_neigh_set_flags(n.get(), NTF_MASTER | NTF_EXT_LEARNED);
-  rtnl_neigh_set_state(n.get(), NUD_REACHABLE);
-
-  // check if entry already exists in cache
-  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n_lookup(
-      NEIGH_CAST(nl_cache_search(l2_cache.get(), OBJ_CAST(n.get()))),
-      rtnl_neigh_put);
-
-  int flags;
-
-  if (n_lookup) {
-    if (rtnl_neigh_get_ifindex(n_lookup.get()) ==
-        rtnl_link_get_ifindex(br_link))
-      return 0;
-
-    flags = NLM_F_REPLACE;
-  } else {
-    flags = NLM_F_CREATE | NLM_F_EXCL;
-  }
-  rtnl_neigh_set_ifindex(n.get(), rtnl_link_get_ifindex(br_link));
-
-  nl_msg *msg = nullptr;
-  rtnl_neigh_build_add_request(n.get(), flags, &msg);
-  assert(msg);
-
-  // send the message and create new fdb entry
-  if (nl->send_nl_msg(msg) < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to send netlink message";
-    return -EINVAL;
-  }
-
-  if (n_lookup) {
-    nl_cache_remove(OBJ_CAST(n_lookup.get()));
-  }
-
-  // cache the entry
-  if (nl_cache_add(l2_cache.get(), OBJ_CAST(n.get())) < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to add entry to l2_cache "
-               << OBJ_CAST(n.get());
-    return -EINVAL;
-  }
-
-  VLOG(3) << __FUNCTION__ << ": learned new source mac " << OBJ_CAST(n.get());
-
-  return 0;
 }
 
 int nl_bridge::fdb_timeout(rtnl_link *br_link, uint16_t vid,

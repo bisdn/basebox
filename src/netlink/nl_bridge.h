@@ -173,7 +173,6 @@ public:
   int mdb_entry_remove(rtnl_mdb *mdb_entry);
 
   bool is_mac_in_l2_cache(rtnl_neigh *n);
-  int learn_source_mac(rtnl_link *br_link, packet *p);
   int fdb_timeout(rtnl_link *br_link, uint16_t vid,
                   const rofl::caddress_ll &mac);
   int get_ifindex() { return bridge ? rtnl_link_get_ifindex(bridge) : 0; }
