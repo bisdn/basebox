@@ -472,8 +472,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
     return rv;
   }
 
-  int ifindex = rtnl_addr_get_ifindex(a);
-  int port_id = nl->get_port_id(ifindex);
+  int port_id = nl->get_port_id(link);
 
   addr = rtnl_link_get_addr(link);
   rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
