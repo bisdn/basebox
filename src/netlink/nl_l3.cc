@@ -1237,10 +1237,6 @@ int nl_l3::del_l3_termination(uint32_t port_id, uint16_t vid,
   }
 
   // check if not found
-
-  // Modifying the previously existing entries on the VLAN table requires
-  // removing the existing entry, since OFDPA requires that the VLAN must be
-  // configured with the same VRF
   if (i == termination_mac_mapping.end()) {
     LOG(WARNING)
         << __FUNCTION__
