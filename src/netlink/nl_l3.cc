@@ -406,7 +406,21 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
 
   int rv = 0;
   int family = rtnl_addr_get_family(a);
-  struct rtnl_link *link = rtnl_addr_get_link(a);
+
+  // The link needs to be obtained from the cache, as the link reference
+  // may be outdated
+  struct rtnl_link *link = nl->get_link(rtnl_addr_get_ifindex(a), AF_UNSPEC);
+
+  // The link object might have already been purged from the cache if the
+  // interface was deleted. Not much we can do here in that case until we start
+  // keeping track of mac addresses ourselves.
+  if (link == nullptr) {
+    LOG(ERROR) << __FUNCTION__
+               << ": unknown link ifindex=" << rtnl_addr_get_ifindex(a)
+               << " of addr=" << OBJ_CAST(a);
+    return -EINVAL;
+  }
+
   uint16_t vid = vlan->get_vid(link);
   uint32_t vrf_id = vlan->get_vrf_id(vid, link);
 
