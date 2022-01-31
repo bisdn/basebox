@@ -43,7 +43,7 @@ class cnetlink;
 class nl_vlan;
 class nl_vxlan;
 class switch_interface;
-class tap_manager;
+class port_manager;
 struct packet;
 
 struct key {
@@ -149,7 +149,7 @@ struct bridge_stp_states {
 
 class nl_bridge {
 public:
-  nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
+  nl_bridge(switch_interface *sw, std::shared_ptr<port_manager> port_man,
             cnetlink *nl, std::shared_ptr<nl_vlan> vlan,
             std::shared_ptr<nl_vxlan> vxlan);
 
@@ -193,7 +193,7 @@ public:
                                                    nl_addr *lladdr = nullptr);
 
   void get_bridge_ports(
-      std::tuple<std::shared_ptr<tap_manager>, std::deque<rtnl_link *> *>
+      std::tuple<std::shared_ptr<port_manager>, std::deque<rtnl_link *> *>
           &params, // XXX TODO make a struct here
       rtnl_link *br_port) noexcept;
 
@@ -220,7 +220,7 @@ private:
 
   rtnl_link *bridge;
   switch_interface *sw;
-  std::shared_ptr<tap_manager> tap_man;
+  std::shared_ptr<port_manager> port_man;
   cnetlink *nl;
   std::shared_ptr<nl_vlan> vlan;
   std::shared_ptr<nl_vxlan> vxlan;

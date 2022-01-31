@@ -11,12 +11,12 @@ namespace basebox {
 // forward declarations
 class NetworkStats;
 class switch_interface;
-class tap_manager;
+class port_manager;
 
 class ApiServer final {
 public:
   ApiServer(std::shared_ptr<switch_interface> swi,
-            std::shared_ptr<tap_manager> tap_man);
+            std::shared_ptr<port_manager> port_man);
   void runGRPCServer();
   ~ApiServer();
 

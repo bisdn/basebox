@@ -24,7 +24,7 @@ class nl_interface;
 class nl_l3;
 class nl_vlan;
 class nl_vxlan;
-class tap_manager;
+class port_manager;
 
 class cnetlink final : public rofl::cthread_env {
   friend class nl_bond;
@@ -103,7 +103,7 @@ public:
                        struct nl_object *new_obj, uint64_t diff, int action,
                        void *data);
 
-  void set_tapmanager(std::shared_ptr<tap_manager> tm);
+  void set_tapmanager(std::shared_ptr<port_manager> pm);
 
   int send_nl_msg(nl_msg *msg);
   void learn_l2(uint32_t port_id, int fd, packet *pkt);
@@ -147,7 +147,7 @@ private:
   enum nl_state state;
   std::deque<nl_obj> nl_objs;
 
-  std::shared_ptr<tap_manager> tap_man;
+  std::shared_ptr<port_manager> port_man;
   nl_bridge *bridge;
   std::shared_ptr<nl_interface> iface;
   std::shared_ptr<nl_bond> bond;

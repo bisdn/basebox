@@ -33,7 +33,7 @@
 #include "cnetlink.h"
 #include "netlink-utils.h"
 #include "nl_output.h"
-#include "tap_manager.h"
+#include "port_manager.h"
 
 #include "nl_bond.h"
 #include "nl_interface.h"
@@ -215,7 +215,7 @@ void cnetlink::init_subsystems() noexcept {
 }
 
 void cnetlink::shutdown_subsystems() noexcept {
-  tap_man->clear();
+  port_man->clear();
   bond->clear();
 }
 
@@ -692,7 +692,7 @@ int cnetlink::get_port_id(int ifindex) const {
   if (ifindex == 0)
     return 0;
 
-  int port_id = tap_man->get_port_id(ifindex);
+  int port_id = port_man->get_port_id(ifindex);
   if (port_id > 0)
     return port_id;
 
@@ -701,7 +701,7 @@ int cnetlink::get_port_id(int ifindex) const {
 
 int cnetlink::get_ifindex_by_port_id(uint32_t port_id) const {
 
-  return tap_man->get_ifindex(port_id);
+  return port_man->get_ifindex(port_id);
 }
 
 uint16_t cnetlink::get_vrf_table_id(rtnl_link *link) {
@@ -873,9 +873,9 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
     nl->nl_objs.emplace_back(action, old_obj, new_obj);
 }
 
-void cnetlink::set_tapmanager(std::shared_ptr<tap_manager> tm) {
-  tap_man = tm;
-  iface->set_tapmanager(tm);
+void cnetlink::set_tapmanager(std::shared_ptr<port_manager> pm) {
+  port_man = pm;
+  iface->set_tapmanager(pm);
 }
 
 int cnetlink::send_nl_msg(nl_msg *msg) { return nl_send_sync(sock_tx, msg); }
@@ -903,12 +903,12 @@ int cnetlink::handle_source_mac_learn() {
        cnt < nl_proc_max && _packet_in.size() && state == NL_STATE_RUNNING;
        cnt++) {
     auto p = _packet_in.front();
-    int ifindex = tap_man->get_ifindex(p.port_id);
+    int ifindex = port_man->get_ifindex(p.port_id);
 
     VLOG(3) << __FUNCTION__ << ": send pkt " << p.pkt
             << " to tap on fd=" << p.fd;
-    // pass process packets to tap_man
-    tap_man->enqueue(p.fd, p.pkt);
+    // pass process packets to port_man
+    port_man->enqueue(p.fd, p.pkt);
     _packet_in.pop_front();
   }
 
@@ -950,7 +950,7 @@ int cnetlink::handle_fdb_timeout() {
        cnt++) {
 
     auto fdbev = _fdb_evts.front();
-    int ifindex = tap_man->get_ifindex(fdbev.port_id);
+    int ifindex = port_man->get_ifindex(fdbev.port_id);
     rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
 
     if (br_link && bridge) {
@@ -1222,7 +1222,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
 void cnetlink::link_created(rtnl_link *link) noexcept {
   assert(link);
-  assert(tap_man);
+  assert(port_man);
 
   enum link_type lt = get_link_type(link);
 
@@ -1253,7 +1253,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       // use only the first bridge an interface is attached to
       // XXX TODO more bridges!
       if (bridge == nullptr) {
-        bridge = new nl_bridge(this->swi, tap_man, this, vlan, vxlan);
+        bridge = new nl_bridge(this->swi, port_man, this, vlan, vxlan);
         bridge->set_bridge_interface(br_link.get());
         vxlan->register_bridge(bridge);
         new_bridge = true;
@@ -1284,7 +1284,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     vxlan->create_endpoint(link);
   } break;
   case LT_TUN: {
-    tap_man->tapdev_ready(link);
+    port_man->tapdev_ready(link);
   } break;
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
@@ -1446,7 +1446,7 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
     }
     break;
   case LT_TUN:
-    tap_man->tapdev_removed(ifindex, portname);
+    port_man->tapdev_removed(ifindex, portname);
     break;
   case LT_BRIDGE:
     if (bridge && bridge->is_bridge_interface(link)) {

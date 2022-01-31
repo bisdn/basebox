@@ -6,7 +6,7 @@
 
 #include "cnetlink.h"
 #include "nbi_impl.h"
-#include "tap_manager.h"
+#include "port_manager.h"
 
 #include "netlink/ctapdev.h"
 #include "utils/utils.h"
@@ -14,9 +14,9 @@
 namespace basebox {
 
 nbi_impl::nbi_impl(std::shared_ptr<cnetlink> nl,
-                   std::shared_ptr<tap_manager> tap_man)
-    : nl(nl), tap_man(tap_man) {
-  nl->set_tapmanager(tap_man);
+                   std::shared_ptr<port_manager> port_man)
+    : nl(nl), port_man(port_man) {
+  nl->set_tapmanager(port_man);
   nl->start();
 }
 
@@ -37,8 +37,8 @@ void nbi_impl::port_notification(
     case PORT_EVENT_MODIFY:
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
-        tap_man->change_port_status(ntfy.name, ntfy.status);
-        tap_man->set_port_speed(ntfy.name, ntfy.speed, ntfy.duplex);
+        port_man->change_port_status(ntfy.name, ntfy.status);
+        port_man->set_port_speed(ntfy.name, ntfy.speed, ntfy.duplex);
         break;
       default:
         LOG(ERROR) << __FUNCTION__ << ": unknown port";
@@ -48,9 +48,9 @@ void nbi_impl::port_notification(
     case PORT_EVENT_ADD:
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
-        tap_man->create_tapdev(ntfy.port_id, ntfy.name, *this);
-        tap_man->change_port_status(ntfy.name, ntfy.status);
-        tap_man->set_port_speed(ntfy.name, ntfy.speed, ntfy.duplex);
+        port_man->create_tapdev(ntfy.port_id, ntfy.name, *this);
+        port_man->change_port_status(ntfy.name, ntfy.status);
+        port_man->set_port_speed(ntfy.name, ntfy.speed, ntfy.duplex);
         break;
       case nbi::port_type_vxlan:
         // XXX TODO notify this?
@@ -64,7 +64,7 @@ void nbi_impl::port_notification(
     case PORT_EVENT_DEL:
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
-        tap_man->destroy_tapdev(ntfy.port_id, ntfy.name);
+        port_man->destroy_tapdev(ntfy.port_id, ntfy.name);
         break;
       case nbi::port_type_vxlan:
         // XXX TODO notify this?
@@ -91,7 +91,7 @@ int nbi_impl::enqueue(uint32_t port_id, basebox::packet *pkt) noexcept {
   assert(pkt);
   try {
     // detour via netlink to learn the source mac
-    int fd = tap_man->get_fd(port_id);
+    int fd = port_man->get_fd(port_id);
     nl->learn_l2(port_id, fd, pkt);
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__
