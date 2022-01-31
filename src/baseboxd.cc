@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
             << ": using OpenFlow version-bitmap: " << versionbitmap;
 
   std::shared_ptr<cnetlink> nl(new cnetlink());
-  std::shared_ptr<tap_manager> tap_man(new tap_manager(nl));
+  std::shared_ptr<tap_manager> tap_man(new tap_manager());
   std::unique_ptr<nbi_impl> nbi(new nbi_impl(nl, tap_man));
   std::shared_ptr<controller> box(
       new controller(std::move(nbi), versionbitmap, FLAGS_ofdpa_grpc_port));

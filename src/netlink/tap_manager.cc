@@ -21,8 +21,7 @@
 
 namespace basebox {
 
-tap_manager::tap_manager(std::shared_ptr<cnetlink> nl)
-    : io(new tap_io()), nl(std::move(nl)) {}
+tap_manager::tap_manager() : io(new tap_io()) {}
 
 tap_manager::~tap_manager() {
   std::map<uint32_t, ctapdev *> ddevs;

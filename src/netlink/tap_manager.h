@@ -19,7 +19,6 @@ struct rtnl_link;
 
 namespace basebox {
 
-class cnetlink;
 class ctapdev;
 class tap_io;
 class tap_manager;
@@ -33,7 +32,7 @@ public:
 class tap_manager final {
 
 public:
-  tap_manager(std::shared_ptr<cnetlink> nl);
+  tap_manager();
   ~tap_manager();
 
   int create_tapdev(uint32_t port_id, const std::string &port_name,
@@ -102,7 +101,6 @@ private:
   std::map<uint32_t, int> id_to_ifindex;
 
   std::unique_ptr<tap_io> io;
-  std::shared_ptr<cnetlink> nl;
 
   int recreate_tapdev(int ifindex, const std::string &portname);
 };
