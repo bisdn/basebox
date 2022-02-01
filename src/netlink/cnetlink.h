@@ -106,7 +106,7 @@ public:
   void set_tapmanager(std::shared_ptr<port_manager> pm);
 
   int send_nl_msg(nl_msg *msg);
-  void learn_l2(uint32_t port_id, int fd, packet *pkt);
+  void learn_l2(uint32_t port_id, packet *pkt);
 
   void fdb_timeout(uint32_t port_id, uint16_t vid,
                    const rofl::caddress_ll &mac);
@@ -156,10 +156,8 @@ private:
   std::shared_ptr<nl_vxlan> vxlan;
 
   struct nl_pkt_in {
-    nl_pkt_in(uint32_t port_id, int fd, packet *pkt)
-        : port_id(port_id), fd(fd), pkt(pkt) {}
+    nl_pkt_in(uint32_t port_id, packet *pkt) : port_id(port_id), pkt(pkt) {}
     uint32_t port_id;
-    int fd;
     packet *pkt;
   };
 

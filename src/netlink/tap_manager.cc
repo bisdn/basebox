@@ -133,6 +133,8 @@ int tap_manager::enqueue(uint32_t port_id, basebox::packet *pkt) {
     return 0;
   }
 
+  VLOG(3) << __FUNCTION__ << ": send pkt " << pkt << " to tap on fd=" << fd;
+
   try {
     io->enqueue(fd, pkt);
   } catch (std::exception &e) {

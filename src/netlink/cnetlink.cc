@@ -880,13 +880,13 @@ void cnetlink::set_tapmanager(std::shared_ptr<port_manager> pm) {
 
 int cnetlink::send_nl_msg(nl_msg *msg) { return nl_send_sync(sock_tx, msg); }
 
-void cnetlink::learn_l2(uint32_t port_id, int fd, basebox::packet *pkt) {
+void cnetlink::learn_l2(uint32_t port_id, basebox::packet *pkt) {
   {
     std::lock_guard<std::mutex> scoped_lock(pi_mutex);
-    packet_in.emplace_back(port_id, fd, pkt);
+    packet_in.emplace_back(port_id, pkt);
   }
 
-  VLOG(2) << __FUNCTION__ << ": got pkt " << pkt << " for fd=" << fd;
+  VLOG(2) << __FUNCTION__ << ": got pkt " << pkt << " for port_id=" << port_id;
   thread.wakeup(this);
 }
 
@@ -905,8 +905,6 @@ int cnetlink::handle_source_mac_learn() {
     auto p = _packet_in.front();
     int ifindex = port_man->get_ifindex(p.port_id);
 
-    VLOG(3) << __FUNCTION__ << ": send pkt " << p.pkt
-            << " to tap on fd=" << p.fd;
     // pass process packets to port_man
     port_man->enqueue(p.port_id, p.pkt);
     _packet_in.pop_front();
