@@ -41,7 +41,7 @@ public:
   int set_port_speed(const std::string name, uint32_t speed, uint8_t duplex);
 
   // access from northbound (cnetlink)
-  int portdev_removed(int ifindex, const std::string &portname);
+  int portdev_removed(rtnl_link *link);
   void portdev_ready(rtnl_link *link);
   int update_mtu(rtnl_link *link);
 
