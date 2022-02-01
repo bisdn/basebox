@@ -1446,7 +1446,7 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
     }
     break;
   case LT_TUN:
-    port_man->tapdev_removed(ifindex, portname);
+    port_man->portdev_removed(ifindex, portname);
     break;
   case LT_BRIDGE:
     if (bridge && bridge->is_bridge_interface(link)) {

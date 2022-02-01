@@ -80,7 +80,7 @@ public:
                              uint8_t duplex) = 0;
 
   // access from northbound (cnetlink)
-  virtual int tapdev_removed(int ifindex, const std::string &portname) = 0;
+  virtual int portdev_removed(int ifindex, const std::string &portname) = 0;
   virtual void tapdev_ready(rtnl_link *link) = 0;
   virtual int update_mtu(rtnl_link *link) = 0;
 

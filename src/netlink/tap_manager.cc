@@ -222,7 +222,7 @@ int tap_manager::update_mtu(rtnl_link *link) {
   return 0;
 }
 
-int tap_manager::tapdev_removed(int ifindex, const std::string &portname) {
+int tap_manager::portdev_removed(int ifindex, const std::string &portname) {
   int rv = 0;
   bool port_removed(false);
   std::lock_guard<std::mutex> lock{tn_mutex};
