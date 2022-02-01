@@ -31,8 +31,8 @@ tap_manager::~tap_manager() {
   }
 }
 
-int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
-                               switch_callback &cb) {
+int tap_manager::create_portdev(uint32_t port_id, const std::string &port_name,
+                                switch_callback &cb) {
   int r = 0;
   bool dev_exists = false;
   bool dev_name_exists = false;

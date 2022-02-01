@@ -30,8 +30,8 @@ public:
   tap_manager();
   ~tap_manager();
 
-  int create_tapdev(uint32_t port_id, const std::string &port_name,
-                    switch_callback &callback);
+  int create_portdev(uint32_t port_id, const std::string &port_name,
+                     switch_callback &callback);
 
   int destroy_tapdev(uint32_t port_id, const std::string &port_name);
 
