@@ -78,8 +78,8 @@ public:
                              uint8_t duplex) = 0;
 
   // access from northbound (cnetlink)
-  virtual int portdev_removed(rtnl_link *link) = 0;
-  virtual void portdev_ready(rtnl_link *link) = 0;
+  virtual bool portdev_removed(rtnl_link *link) = 0;
+  virtual bool portdev_ready(rtnl_link *link) = 0;
   virtual int update_mtu(rtnl_link *link) = 0;
 
 protected:

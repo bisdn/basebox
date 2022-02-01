@@ -156,13 +156,13 @@ int tap_manager::get_fd(uint32_t port_id) const noexcept {
   return it->second->get_fd();
 }
 
-void tap_manager::portdev_ready(rtnl_link *link) {
+bool tap_manager::portdev_ready(rtnl_link *link) {
   assert(link);
 
   enum link_type lt = get_link_type(link);
   if (lt != LT_TUN) {
     VLOG(2) << __FUNCTION__ << ": ignore creation of device of type lt=" << lt;
-    return;
+    return false;
   }
 
   // already registered?
@@ -171,7 +171,7 @@ void tap_manager::portdev_ready(rtnl_link *link) {
   if (it != ifindex_to_id.end()) {
     LOG(ERROR) << __FUNCTION__ << ": already registered port "
                << rtnl_link_get_name(link);
-    return;
+    return false;
   }
 
   {
@@ -180,7 +180,7 @@ void tap_manager::portdev_ready(rtnl_link *link) {
     auto tn_it = port_names2id.find(name);
     if (tn_it == port_names2id.end()) {
       LOG(WARNING) << __FUNCTION__ << "invalid port name " << name;
-      return;
+      return false;
     }
 
     // update maps
@@ -216,6 +216,8 @@ void tap_manager::portdev_ready(rtnl_link *link) {
   }
 
   update_mtu(link);
+
+  return true;
 }
 
 int tap_manager::update_mtu(rtnl_link *link) {
@@ -236,18 +238,17 @@ int tap_manager::update_mtu(rtnl_link *link) {
   return 0;
 }
 
-int tap_manager::portdev_removed(rtnl_link *link) {
+bool tap_manager::portdev_removed(rtnl_link *link) {
   assert(link);
 
   int ifindex(rtnl_link_get_ifindex(link));
   std::string portname(rtnl_link_get_name(link));
   enum link_type lt = get_link_type(link);
-  int rv = 0;
   bool port_removed(false);
 
   if (lt != LT_TUN) {
     VLOG(2) << __FUNCTION__ << ": ignore removal of device of type lt=" << lt;
-    return rv;
+    return false;
   }
 
   std::lock_guard<std::mutex> lock{tn_mutex};
@@ -256,7 +257,7 @@ int tap_manager::portdev_removed(rtnl_link *link) {
   if (ifi2id_it == ifindex_to_id.end()) {
     VLOG(2) << __FUNCTION__
             << ": ignore removal of tap device with ifindex=" << ifindex;
-    return rv;
+    return false;
   }
 
   // check if this port was scheduled for deletion
@@ -287,7 +288,7 @@ int tap_manager::portdev_removed(rtnl_link *link) {
   if (pd_it != port_deleted.end())
     port_deleted.erase(pd_it);
 
-  return rv;
+  return true;
 }
 
 int tap_manager::recreate_tapdev(int ifindex, const std::string &portname) {
