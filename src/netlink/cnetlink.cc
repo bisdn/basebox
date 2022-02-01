@@ -1281,9 +1281,6 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
 
     vxlan->create_endpoint(link);
   } break;
-  case LT_TUN: {
-    port_man->portdev_ready(link);
-  } break;
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
     uint16_t vid = rtnl_link_vlan_get_id(link);
@@ -1296,10 +1293,12 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   case LT_VRF: {
     VLOG(1) << __FUNCTION__ << ": new vrf interface " << OBJ_CAST(link);
   } break;
-  default:
-    LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
-                 << " link:" << OBJ_CAST(link);
-    break;
+  default: {
+    bool handled = port_man->portdev_ready(link);
+    if (!handled)
+      LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
+                   << " link:" << OBJ_CAST(link);
+  } break;
   } // switch link type
 }
 
@@ -1440,9 +1439,6 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
       LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
     }
     break;
-  case LT_TUN:
-    port_man->portdev_removed(link);
-    break;
   case LT_BRIDGE:
     if (bridge && bridge->is_bridge_interface(link)) {
       LOG(INFO) << __FUNCTION__ << ": deleting bridge";
@@ -1473,9 +1469,11 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   } break;
   case LT_VRF:
   case LT_VRF_SLAVE:
-  default:
-    LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt;
-    break;
+  default: {
+    bool handled = port_man->portdev_removed(link);
+    if (!handled)
+      LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt;
+  } break;
   }
 }
 
