@@ -43,9 +43,9 @@ int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
 
   {
     std::lock_guard<std::mutex> lock{tn_mutex};
-    auto dev_name_it = tap_names2id.find(port_name);
+    auto dev_name_it = port_names2id.find(port_name);
 
-    if (dev_name_it != tap_names2id.end())
+    if (dev_name_it != port_names2id.end())
       dev_name_exists = true;
   }
 
@@ -60,7 +60,7 @@ int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
       tap_devs.insert(std::make_pair(port_id, dev));
       {
         std::lock_guard<std::mutex> lock{tn_mutex};
-        auto rv = tap_names2id.emplace(std::make_pair(port_name, port_id));
+        auto rv = port_names2id.emplace(std::make_pair(port_name, port_id));
 
         if (!rv.second) {
           LOG(FATAL) << __FUNCTION__ << ": failed to insert";
@@ -103,10 +103,10 @@ int tap_manager::destroy_tapdev(uint32_t port_id,
   // drop port from name mapping
   std::lock_guard<std::mutex> lock{tn_mutex};
   port_deleted.push_back(port_id);
-  auto tap_names_it = tap_names2id.find(port_name);
+  auto tap_names_it = port_names2id.find(port_name);
 
-  if (tap_names_it != tap_names2id.end()) {
-    tap_names2id.erase(tap_names_it);
+  if (tap_names_it != port_names2id.end()) {
+    port_names2id.erase(tap_names_it);
   }
 
   auto tap_names2fd_it = tap_names2fds.find(port_name);
@@ -163,8 +163,8 @@ void tap_manager::tapdev_ready(rtnl_link *link) {
   {
     std::string name(rtnl_link_get_name(link));
     std::lock_guard<std::mutex> lock{tn_mutex};
-    auto tn_it = tap_names2id.find(name);
-    if (tn_it == tap_names2id.end()) {
+    auto tn_it = port_names2id.find(name);
+    if (tn_it == port_names2id.end()) {
       LOG(WARNING) << __FUNCTION__ << "invalid port name " << name;
       return;
     }
@@ -288,7 +288,7 @@ int tap_manager::recreate_tapdev(int ifindex, const std::string &portname) {
               << " portname=" << portname << " fd=" << fd << " ptr=" << dev;
 
     tap_names2fds.emplace(std::make_pair(portname, fd));
-    tap_names2id.emplace(std::make_pair(portname, id->second));
+    port_names2id.emplace(std::make_pair(portname, id->second));
 
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << ": failed to create tapdev " << portname;

@@ -44,7 +44,7 @@ public:
 
   std::map<std::string, uint32_t> get_registered_ports() const {
     std::lock_guard<std::mutex> lock(tn_mutex);
-    return tap_names2id;
+    return port_names2id;
   }
 
   uint32_t get_port_id(int ifindex) const noexcept {
@@ -90,7 +90,7 @@ protected:
 
   // locked access
   mutable std::mutex tn_mutex; // tap names mutex
-  std::map<std::string, uint32_t> tap_names2id;
+  std::map<std::string, uint32_t> port_names2id;
 
   // only accessible from cnetlink
   std::map<int, uint32_t> ifindex_to_id;
