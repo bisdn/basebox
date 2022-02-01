@@ -159,6 +159,12 @@ int tap_manager::get_fd(uint32_t port_id) const noexcept {
 void tap_manager::portdev_ready(rtnl_link *link) {
   assert(link);
 
+  enum link_type lt = get_link_type(link);
+  if (lt != LT_TUN) {
+    VLOG(2) << __FUNCTION__ << ": ignore creation of device of type lt=" << lt;
+    return;
+  }
+
   // already registered?
   int ifindex = rtnl_link_get_ifindex(link);
   auto it = ifindex_to_id.find(ifindex);
@@ -235,8 +241,15 @@ int tap_manager::portdev_removed(rtnl_link *link) {
 
   int ifindex(rtnl_link_get_ifindex(link));
   std::string portname(rtnl_link_get_name(link));
+  enum link_type lt = get_link_type(link);
   int rv = 0;
   bool port_removed(false);
+
+  if (lt != LT_TUN) {
+    VLOG(2) << __FUNCTION__ << ": ignore removal of device of type lt=" << lt;
+    return rv;
+  }
+
   std::lock_guard<std::mutex> lock{tn_mutex};
 
   auto ifi2id_it = ifindex_to_id.find(ifindex);
