@@ -1284,7 +1284,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     vxlan->create_endpoint(link);
   } break;
   case LT_TUN: {
-    port_man->tapdev_ready(link);
+    port_man->portdev_ready(link);
   } break;
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);

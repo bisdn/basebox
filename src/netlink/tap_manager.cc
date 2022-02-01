@@ -148,7 +148,7 @@ int tap_manager::get_fd(uint32_t port_id) const noexcept {
   return it->second->get_fd();
 }
 
-void tap_manager::tapdev_ready(rtnl_link *link) {
+void tap_manager::portdev_ready(rtnl_link *link) {
   assert(link);
 
   // already registered?

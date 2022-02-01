@@ -44,7 +44,7 @@ public:
 
   // access from northbound (cnetlink)
   int portdev_removed(int ifindex, const std::string &portname);
-  void tapdev_ready(rtnl_link *link);
+  void portdev_ready(rtnl_link *link);
   int update_mtu(rtnl_link *link);
 
 private:
