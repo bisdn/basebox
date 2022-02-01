@@ -908,7 +908,7 @@ int cnetlink::handle_source_mac_learn() {
     VLOG(3) << __FUNCTION__ << ": send pkt " << p.pkt
             << " to tap on fd=" << p.fd;
     // pass process packets to port_man
-    port_man->enqueue(p.fd, p.pkt);
+    port_man->enqueue(p.port_id, p.pkt);
     _packet_in.pop_front();
   }
 

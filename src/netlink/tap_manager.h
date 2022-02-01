@@ -35,7 +35,7 @@ public:
 
   int destroy_portdev(uint32_t port_id, const std::string &port_name);
 
-  int enqueue(int fd, basebox::packet *pkt);
+  int enqueue(uint32_t port_id, basebox::packet *pkt);
 
   int get_fd(uint32_t port_id) const noexcept;
 

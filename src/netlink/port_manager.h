@@ -40,7 +40,7 @@ public:
   virtual int destroy_portdev(uint32_t port_id,
                               const std::string &port_name) = 0;
 
-  virtual int enqueue(int fd, basebox::packet *pkt) = 0;
+  virtual int enqueue(uint32_t port_id, basebox::packet *pkt) = 0;
 
   std::map<std::string, uint32_t> get_registered_ports() const {
     std::lock_guard<std::mutex> lock(tn_mutex);

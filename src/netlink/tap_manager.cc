@@ -126,7 +126,13 @@ int tap_manager::destroy_portdev(uint32_t port_id,
   return 0;
 }
 
-int tap_manager::enqueue(int fd, basebox::packet *pkt) {
+int tap_manager::enqueue(uint32_t port_id, basebox::packet *pkt) {
+  int fd = get_fd(port_id);
+  if (fd < 0) {
+    std::free(pkt);
+    return 0;
+  }
+
   try {
     io->enqueue(fd, pkt);
   } catch (std::exception &e) {
