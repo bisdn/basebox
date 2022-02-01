@@ -33,7 +33,7 @@ public:
   int create_portdev(uint32_t port_id, const std::string &port_name,
                      switch_callback &callback);
 
-  int destroy_tapdev(uint32_t port_id, const std::string &port_name);
+  int destroy_portdev(uint32_t port_id, const std::string &port_name);
 
   int enqueue(int fd, basebox::packet *pkt);
 

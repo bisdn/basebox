@@ -91,8 +91,8 @@ int tap_manager::create_portdev(uint32_t port_id, const std::string &port_name,
   return r;
 }
 
-int tap_manager::destroy_tapdev(uint32_t port_id,
-                                const std::string &port_name) {
+int tap_manager::destroy_portdev(uint32_t port_id,
+                                 const std::string &port_name) {
   auto it = tap_devs.find(port_id);
   if (it == tap_devs.end()) {
     LOG(WARNING) << __FUNCTION__ << ": called for invalid port_id=" << port_id

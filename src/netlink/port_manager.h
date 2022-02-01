@@ -37,8 +37,8 @@ public:
   virtual int create_portdev(uint32_t port_id, const std::string &port_name,
                              switch_callback &callback) = 0;
 
-  virtual int destroy_tapdev(uint32_t port_id,
-                             const std::string &port_name) = 0;
+  virtual int destroy_portdev(uint32_t port_id,
+                              const std::string &port_name) = 0;
 
   virtual int enqueue(int fd, basebox::packet *pkt) = 0;
 

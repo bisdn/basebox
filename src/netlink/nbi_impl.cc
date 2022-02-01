@@ -64,7 +64,7 @@ void nbi_impl::port_notification(
     case PORT_EVENT_DEL:
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
-        port_man->destroy_tapdev(ntfy.port_id, ntfy.name);
+        port_man->destroy_portdev(ntfy.port_id, ntfy.name);
         break;
       case nbi::port_type_vxlan:
         // XXX TODO notify this?
