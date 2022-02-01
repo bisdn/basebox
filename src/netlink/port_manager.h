@@ -73,8 +73,6 @@ public:
     id_to_ifindex.clear();
   }
 
-  virtual int get_fd(uint32_t port_id) const noexcept = 0;
-
   virtual int change_port_status(const std::string name, bool status) = 0;
   virtual int set_port_speed(const std::string name, uint32_t speed,
                              uint8_t duplex) = 0;

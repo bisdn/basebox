@@ -37,8 +37,6 @@ public:
 
   int enqueue(uint32_t port_id, basebox::packet *pkt);
 
-  int get_fd(uint32_t port_id) const noexcept;
-
   int change_port_status(const std::string name, bool status);
   int set_port_speed(const std::string name, uint32_t speed, uint8_t duplex);
 
@@ -60,6 +58,8 @@ private:
   std::unique_ptr<tap_io> io;
 
   int recreate_tapdev(int ifindex, const std::string &portname);
+
+  int get_fd(uint32_t port_id) const noexcept;
 };
 
 } // namespace basebox
