@@ -1338,7 +1338,8 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   case LT_BOND_SLAVE:
     if (lt_new == LT_BOND_SLAVE) { // bond slave updated
       bond->update_lag_member(old_link, new_link);
-    } else if (lt_new == LT_TUN) { // bond slave removed
+    } else if (port_man->get_port_id(rtnl_link_get_ifindex(new_link)) >
+               0) { // bond slave removed
       bond->remove_lag_member(old_link);
     }
     break;
@@ -1389,36 +1390,35 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     // happens when a bond/tap interface enslaved directly to a VRF and you set
     // nomaster
   } break;
-  case LT_TUN:
-    if (lt_new == LT_BOND_SLAVE) {
-      // XXX link enslaved
-      LOG(INFO) << __FUNCTION__ << ": link enslaved "
-                << rtnl_link_get_name(new_link);
-      rtnl_link *_bond = get_link(rtnl_link_get_master(new_link), AF_UNSPEC);
-      bond->add_lag_member(_bond, new_link);
-
-      LOG(INFO) << __FUNCTION__ << " set active member " << get_port_id(_bond)
-                << " port id " << rtnl_link_get_ifindex(new_link);
-    } else if (lt_new == LT_VRF_SLAVE) {
-      LOG(INFO) << __FUNCTION__ << ": link enslaved "
-                << rtnl_link_get_name(new_link) << " but not handled";
-    }
-    iface->changed(old_link, new_link);
-    break;
-  case LT_BOND:
     bond->update_lag(old_link, new_link);
     break;
   case LT_VRF: // No need to care about the vrf interface itself
   case LT_BRIDGE:
-  case LT_UNSUPPORTED:
     VLOG(2) << __FUNCTION__
             << ": ignoring update (not supported) of old_lt=" << lt_old
             << " old link: " << OBJ_CAST(old_link)
             << ", new link: " << OBJ_CAST(new_link);
     break;
   default:
-    LOG(ERROR) << __FUNCTION__ << ": link type not handled lt=" << lt_old
-               << ", link: " << OBJ_CAST(old_link);
+    if (port_man->get_port_id(rtnl_link_get_ifindex(new_link)) > 0) {
+      if (lt_new == LT_BOND_SLAVE) {
+        // XXX link enslaved
+        LOG(INFO) << __FUNCTION__ << ": link enslaved "
+                  << rtnl_link_get_name(new_link);
+        rtnl_link *_bond = get_link(rtnl_link_get_master(new_link), AF_UNSPEC);
+        bond->add_lag_member(_bond, new_link);
+
+        LOG(INFO) << __FUNCTION__ << " set active member " << get_port_id(_bond)
+                  << " port id " << rtnl_link_get_ifindex(new_link);
+      } else if (lt_new == LT_VRF_SLAVE) {
+        LOG(INFO) << __FUNCTION__ << ": link enslaved "
+                  << rtnl_link_get_name(new_link) << " but not handled";
+      }
+      iface->changed(old_link, new_link);
+    } else {
+      LOG(ERROR) << __FUNCTION__ << ": link type not handled lt=" << lt_old
+                 << ", link: " << OBJ_CAST(old_link);
+    }
     break;
   }
 }
