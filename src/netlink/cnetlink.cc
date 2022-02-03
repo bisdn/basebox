@@ -905,17 +905,6 @@ int cnetlink::handle_source_mac_learn() {
     auto p = _packet_in.front();
     int ifindex = tap_man->get_ifindex(p.port_id);
 
-    if (ifindex && bridge) {
-      rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
-      VLOG(3) << __FUNCTION__ << ": ifindex=" << ifindex
-              << ", bridge=" << bridge << ", br_link=" << OBJ_CAST(br_link);
-
-      if (br_link) {
-        // learn the source mac
-        bridge->learn_source_mac(br_link, p.pkt);
-      }
-    }
-
     VLOG(3) << __FUNCTION__ << ": send pkt " << p.pkt
             << " to tap on fd=" << p.fd;
     // pass process packets to tap_man
