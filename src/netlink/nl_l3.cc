@@ -515,11 +515,13 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
 }
 
 int nl_l3::get_l3_addrs(struct rtnl_link *link,
-                        std::deque<rtnl_addr *> *addresses) {
+                        std::deque<rtnl_addr *> *addresses, int af) {
   std::unique_ptr<rtnl_addr, decltype(&rtnl_addr_put)> filter(rtnl_addr_alloc(),
                                                               rtnl_addr_put);
 
   rtnl_addr_set_ifindex(filter.get(), rtnl_link_get_ifindex(link));
+  if (af != AF_UNSPEC)
+    rtnl_addr_set_family(filter.get(), af);
 
   VLOG(1) << __FUNCTION__
           << ": searching l3 addresses from interface=" << OBJ_CAST(link);
