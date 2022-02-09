@@ -21,8 +21,7 @@
 
 namespace basebox {
 
-tap_manager::tap_manager(std::shared_ptr<cnetlink> nl)
-    : io(new tap_io()), nl(std::move(nl)) {}
+tap_manager::tap_manager() : io(new tap_io()) {}
 
 tap_manager::~tap_manager() {
   std::map<uint32_t, ctapdev *> ddevs;
@@ -32,8 +31,8 @@ tap_manager::~tap_manager() {
   }
 }
 
-int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
-                               switch_callback &cb) {
+int tap_manager::create_portdev(uint32_t port_id, const std::string &port_name,
+                                switch_callback &cb) {
   int r = 0;
   bool dev_exists = false;
   bool dev_name_exists = false;
@@ -44,9 +43,9 @@ int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
 
   {
     std::lock_guard<std::mutex> lock{tn_mutex};
-    auto dev_name_it = tap_names2id.find(port_name);
+    auto dev_name_it = port_names2id.find(port_name);
 
-    if (dev_name_it != tap_names2id.end())
+    if (dev_name_it != port_names2id.end())
       dev_name_exists = true;
   }
 
@@ -61,7 +60,7 @@ int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
       tap_devs.insert(std::make_pair(port_id, dev));
       {
         std::lock_guard<std::mutex> lock{tn_mutex};
-        auto rv = tap_names2id.emplace(std::make_pair(port_name, port_id));
+        auto rv = port_names2id.emplace(std::make_pair(port_name, port_id));
 
         if (!rv.second) {
           LOG(FATAL) << __FUNCTION__ << ": failed to insert";
@@ -92,8 +91,8 @@ int tap_manager::create_tapdev(uint32_t port_id, const std::string &port_name,
   return r;
 }
 
-int tap_manager::destroy_tapdev(uint32_t port_id,
-                                const std::string &port_name) {
+int tap_manager::destroy_portdev(uint32_t port_id,
+                                 const std::string &port_name) {
   auto it = tap_devs.find(port_id);
   if (it == tap_devs.end()) {
     LOG(WARNING) << __FUNCTION__ << ": called for invalid port_id=" << port_id
@@ -104,10 +103,10 @@ int tap_manager::destroy_tapdev(uint32_t port_id,
   // drop port from name mapping
   std::lock_guard<std::mutex> lock{tn_mutex};
   port_deleted.push_back(port_id);
-  auto tap_names_it = tap_names2id.find(port_name);
+  auto tap_names_it = port_names2id.find(port_name);
 
-  if (tap_names_it != tap_names2id.end()) {
-    tap_names2id.erase(tap_names_it);
+  if (tap_names_it != port_names2id.end()) {
+    port_names2id.erase(tap_names_it);
   }
 
   auto tap_names2fd_it = tap_names2fds.find(port_name);
@@ -127,7 +126,15 @@ int tap_manager::destroy_tapdev(uint32_t port_id,
   return 0;
 }
 
-int tap_manager::enqueue(int fd, basebox::packet *pkt) {
+int tap_manager::enqueue(uint32_t port_id, basebox::packet *pkt) {
+  int fd = get_fd(port_id);
+  if (fd < 0) {
+    std::free(pkt);
+    return 0;
+  }
+
+  VLOG(3) << __FUNCTION__ << ": send pkt " << pkt << " to tap on fd=" << fd;
+
   try {
     io->enqueue(fd, pkt);
   } catch (std::exception &e) {
@@ -149,8 +156,14 @@ int tap_manager::get_fd(uint32_t port_id) const noexcept {
   return it->second->get_fd();
 }
 
-void tap_manager::tapdev_ready(rtnl_link *link) {
+bool tap_manager::portdev_ready(rtnl_link *link) {
   assert(link);
+
+  enum link_type lt = get_link_type(link);
+  if (lt != LT_TUN) {
+    VLOG(2) << __FUNCTION__ << ": ignore creation of device of type lt=" << lt;
+    return false;
+  }
 
   // already registered?
   int ifindex = rtnl_link_get_ifindex(link);
@@ -158,16 +171,16 @@ void tap_manager::tapdev_ready(rtnl_link *link) {
   if (it != ifindex_to_id.end()) {
     LOG(ERROR) << __FUNCTION__ << ": already registered port "
                << rtnl_link_get_name(link);
-    return;
+    return false;
   }
 
   {
     std::string name(rtnl_link_get_name(link));
     std::lock_guard<std::mutex> lock{tn_mutex};
-    auto tn_it = tap_names2id.find(name);
-    if (tn_it == tap_names2id.end()) {
+    auto tn_it = port_names2id.find(name);
+    if (tn_it == port_names2id.end()) {
       LOG(WARNING) << __FUNCTION__ << "invalid port name " << name;
-      return;
+      return false;
     }
 
     // update maps
@@ -203,6 +216,8 @@ void tap_manager::tapdev_ready(rtnl_link *link) {
   }
 
   update_mtu(link);
+
+  return true;
 }
 
 int tap_manager::update_mtu(rtnl_link *link) {
@@ -223,16 +238,26 @@ int tap_manager::update_mtu(rtnl_link *link) {
   return 0;
 }
 
-int tap_manager::tapdev_removed(int ifindex, const std::string &portname) {
-  int rv = 0;
+bool tap_manager::portdev_removed(rtnl_link *link) {
+  assert(link);
+
+  int ifindex(rtnl_link_get_ifindex(link));
+  std::string portname(rtnl_link_get_name(link));
+  enum link_type lt = get_link_type(link);
   bool port_removed(false);
+
+  if (lt != LT_TUN) {
+    VLOG(2) << __FUNCTION__ << ": ignore removal of device of type lt=" << lt;
+    return false;
+  }
+
   std::lock_guard<std::mutex> lock{tn_mutex};
 
   auto ifi2id_it = ifindex_to_id.find(ifindex);
   if (ifi2id_it == ifindex_to_id.end()) {
     VLOG(2) << __FUNCTION__
             << ": ignore removal of tap device with ifindex=" << ifindex;
-    return rv;
+    return false;
   }
 
   // check if this port was scheduled for deletion
@@ -263,7 +288,7 @@ int tap_manager::tapdev_removed(int ifindex, const std::string &portname) {
   if (pd_it != port_deleted.end())
     port_deleted.erase(pd_it);
 
-  return rv;
+  return true;
 }
 
 int tap_manager::recreate_tapdev(int ifindex, const std::string &portname) {
@@ -289,7 +314,7 @@ int tap_manager::recreate_tapdev(int ifindex, const std::string &portname) {
               << " portname=" << portname << " fd=" << fd << " ptr=" << dev;
 
     tap_names2fds.emplace(std::make_pair(portname, fd));
-    tap_names2id.emplace(std::make_pair(portname, id->second));
+    port_names2id.emplace(std::make_pair(portname, id->second));
 
   } catch (std::exception &e) {
     LOG(ERROR) << __FUNCTION__ << ": failed to create tapdev " << portname;

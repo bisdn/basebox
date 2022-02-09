@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
   using basebox::cnetlink;
   using basebox::controller;
   using basebox::nbi_impl;
+  using basebox::port_manager;
   using basebox::tap_manager;
 
   if (!gflags::RegisterFlagValidator(&FLAGS_port, &validate_port)) {
@@ -55,15 +56,15 @@ int main(int argc, char **argv) {
             << ": using OpenFlow version-bitmap: " << versionbitmap;
 
   std::shared_ptr<cnetlink> nl(new cnetlink());
-  std::shared_ptr<tap_manager> tap_man(new tap_manager(nl));
-  std::unique_ptr<nbi_impl> nbi(new nbi_impl(nl, tap_man));
+  std::shared_ptr<port_manager> port_man(new tap_manager());
+  std::unique_ptr<nbi_impl> nbi(new nbi_impl(nl, port_man));
   std::shared_ptr<controller> box(
       new controller(std::move(nbi), versionbitmap, FLAGS_ofdpa_grpc_port));
 
   rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"), FLAGS_port);
   box->dpt_sock_listen(baddr);
 
-  basebox::ApiServer grpcConnector(box, tap_man);
+  basebox::ApiServer grpcConnector(box, port_man);
   grpcConnector.runGRPCServer();
 
   LOG(INFO) << "bye";

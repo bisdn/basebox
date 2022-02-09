@@ -33,7 +33,7 @@
 #include "cnetlink.h"
 #include "netlink-utils.h"
 #include "nl_output.h"
-#include "tap_manager.h"
+#include "port_manager.h"
 
 #include "nl_bond.h"
 #include "nl_interface.h"
@@ -215,7 +215,7 @@ void cnetlink::init_subsystems() noexcept {
 }
 
 void cnetlink::shutdown_subsystems() noexcept {
-  tap_man->clear();
+  port_man->clear();
   bond->clear();
 }
 
@@ -722,7 +722,7 @@ int cnetlink::get_port_id(int ifindex) const {
   if (ifindex == 0)
     return 0;
 
-  int port_id = tap_man->get_port_id(ifindex);
+  int port_id = port_man->get_port_id(ifindex);
   if (port_id > 0)
     return port_id;
 
@@ -731,7 +731,7 @@ int cnetlink::get_port_id(int ifindex) const {
 
 int cnetlink::get_ifindex_by_port_id(uint32_t port_id) const {
 
-  return tap_man->get_ifindex(port_id);
+  return port_man->get_ifindex(port_id);
 }
 
 uint16_t cnetlink::get_vrf_table_id(rtnl_link *link) {
@@ -903,20 +903,20 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
     nl->nl_objs.emplace_back(action, old_obj, new_obj);
 }
 
-void cnetlink::set_tapmanager(std::shared_ptr<tap_manager> tm) {
-  tap_man = tm;
-  iface->set_tapmanager(tm);
+void cnetlink::set_tapmanager(std::shared_ptr<port_manager> pm) {
+  port_man = pm;
+  iface->set_tapmanager(pm);
 }
 
 int cnetlink::send_nl_msg(nl_msg *msg) { return nl_send_sync(sock_tx, msg); }
 
-void cnetlink::learn_l2(uint32_t port_id, int fd, basebox::packet *pkt) {
+void cnetlink::learn_l2(uint32_t port_id, basebox::packet *pkt) {
   {
     std::lock_guard<std::mutex> scoped_lock(pi_mutex);
-    packet_in.emplace_back(port_id, fd, pkt);
+    packet_in.emplace_back(port_id, pkt);
   }
 
-  VLOG(2) << __FUNCTION__ << ": got pkt " << pkt << " for fd=" << fd;
+  VLOG(2) << __FUNCTION__ << ": got pkt " << pkt << " for port_id=" << port_id;
   thread.wakeup(this);
 }
 
@@ -933,12 +933,10 @@ int cnetlink::handle_source_mac_learn() {
        cnt < nl_proc_max && _packet_in.size() && state == NL_STATE_RUNNING;
        cnt++) {
     auto p = _packet_in.front();
-    int ifindex = tap_man->get_ifindex(p.port_id);
+    int ifindex = port_man->get_ifindex(p.port_id);
 
-    VLOG(3) << __FUNCTION__ << ": send pkt " << p.pkt
-            << " to tap on fd=" << p.fd;
-    // pass process packets to tap_man
-    tap_man->enqueue(p.fd, p.pkt);
+    // pass process packets to port_man
+    port_man->enqueue(p.port_id, p.pkt);
     _packet_in.pop_front();
   }
 
@@ -980,7 +978,7 @@ int cnetlink::handle_fdb_timeout() {
        cnt++) {
 
     auto fdbev = _fdb_evts.front();
-    int ifindex = tap_man->get_ifindex(fdbev.port_id);
+    int ifindex = port_man->get_ifindex(fdbev.port_id);
     rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
 
     if (br_link && bridge) {
@@ -1252,7 +1250,7 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
 
 void cnetlink::link_created(rtnl_link *link) noexcept {
   assert(link);
-  assert(tap_man);
+  assert(port_man);
 
   enum link_type lt = get_link_type(link);
 
@@ -1283,7 +1281,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       // use only the first bridge an interface is attached to
       // XXX TODO more bridges!
       if (bridge == nullptr) {
-        bridge = new nl_bridge(this->swi, tap_man, this, vlan, vxlan);
+        bridge = new nl_bridge(this->swi, port_man, this, vlan, vxlan);
         bridge->set_bridge_interface(br_link.get());
         vxlan->register_bridge(bridge);
         new_bridge = true;
@@ -1313,9 +1311,6 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
 
     vxlan->create_endpoint(link);
   } break;
-  case LT_TUN: {
-    tap_man->tapdev_ready(link);
-  } break;
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
     uint16_t vid = rtnl_link_vlan_get_id(link);
@@ -1328,10 +1323,12 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   case LT_VRF: {
     VLOG(1) << __FUNCTION__ << ": new vrf interface " << OBJ_CAST(link);
   } break;
-  default:
-    LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
-                 << " link:" << OBJ_CAST(link);
-    break;
+  default: {
+    bool handled = port_man->portdev_ready(link);
+    if (!handled)
+      LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
+                   << " link:" << OBJ_CAST(link);
+  } break;
   } // switch link type
 }
 
@@ -1371,7 +1368,8 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   case LT_BOND_SLAVE:
     if (lt_new == LT_BOND_SLAVE) { // bond slave updated
       bond->update_lag_member(old_link, new_link);
-    } else if (lt_new == LT_TUN) { // bond slave removed
+    } else if (port_man->get_port_id(rtnl_link_get_ifindex(new_link)) >
+               0) { // bond slave removed
       bond->remove_lag_member(old_link);
     }
     break;
@@ -1422,36 +1420,35 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     // happens when a bond/tap interface enslaved directly to a VRF and you set
     // nomaster
   } break;
-  case LT_TUN:
-    if (lt_new == LT_BOND_SLAVE) {
-      // XXX link enslaved
-      LOG(INFO) << __FUNCTION__ << ": link enslaved "
-                << rtnl_link_get_name(new_link);
-      rtnl_link *_bond = get_link(rtnl_link_get_master(new_link), AF_UNSPEC);
-      bond->add_lag_member(_bond, new_link);
-
-      LOG(INFO) << __FUNCTION__ << " set active member " << get_port_id(_bond)
-                << " port id " << rtnl_link_get_ifindex(new_link);
-    } else if (lt_new == LT_VRF_SLAVE) {
-      LOG(INFO) << __FUNCTION__ << ": link enslaved "
-                << rtnl_link_get_name(new_link) << " but not handled";
-    }
-    iface->changed(old_link, new_link);
-    break;
-  case LT_BOND:
     bond->update_lag(old_link, new_link);
     break;
   case LT_VRF: // No need to care about the vrf interface itself
   case LT_BRIDGE:
-  case LT_UNSUPPORTED:
     VLOG(2) << __FUNCTION__
             << ": ignoring update (not supported) of old_lt=" << lt_old
             << " old link: " << OBJ_CAST(old_link)
             << ", new link: " << OBJ_CAST(new_link);
     break;
   default:
-    LOG(ERROR) << __FUNCTION__ << ": link type not handled lt=" << lt_old
-               << ", link: " << OBJ_CAST(old_link);
+    if (port_man->get_port_id(rtnl_link_get_ifindex(new_link)) > 0) {
+      if (lt_new == LT_BOND_SLAVE) {
+        // XXX link enslaved
+        LOG(INFO) << __FUNCTION__ << ": link enslaved "
+                  << rtnl_link_get_name(new_link);
+        rtnl_link *_bond = get_link(rtnl_link_get_master(new_link), AF_UNSPEC);
+        bond->add_lag_member(_bond, new_link);
+
+        LOG(INFO) << __FUNCTION__ << " set active member " << get_port_id(_bond)
+                  << " port id " << rtnl_link_get_ifindex(new_link);
+      } else if (lt_new == LT_VRF_SLAVE) {
+        LOG(INFO) << __FUNCTION__ << ": link enslaved "
+                  << rtnl_link_get_name(new_link) << " but not handled";
+      }
+      iface->changed(old_link, new_link);
+    } else {
+      LOG(ERROR) << __FUNCTION__ << ": link type not handled lt=" << lt_old
+                 << ", link: " << OBJ_CAST(old_link);
+    }
     break;
   }
 }
@@ -1460,9 +1457,6 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   assert(link);
 
   enum link_type lt = get_link_type(link);
-
-  int ifindex(rtnl_link_get_ifindex(link));
-  std::string portname(rtnl_link_get_name(link));
 
   switch (lt) {
   case LT_BRIDGE_SLAVE:
@@ -1474,9 +1468,6 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
     } catch (std::exception &e) {
       LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();
     }
-    break;
-  case LT_TUN:
-    tap_man->tapdev_removed(ifindex, portname);
     break;
   case LT_BRIDGE:
     if (bridge && bridge->is_bridge_interface(link)) {
@@ -1508,9 +1499,11 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   } break;
   case LT_VRF:
   case LT_VRF_SLAVE:
-  default:
-    LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt;
-    break;
+  default: {
+    bool handled = port_man->portdev_removed(link);
+    if (!handled)
+      LOG(ERROR) << __FUNCTION__ << ": link type not handled " << lt;
+  } break;
   }
 }
 

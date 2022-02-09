@@ -29,14 +29,15 @@
 #include "nl_vlan.h"
 #include "nl_vxlan.h"
 #include "sai.h"
-#include "tap_manager.h"
+#include "port_manager.h"
 
 namespace basebox {
 
-nl_bridge::nl_bridge(switch_interface *sw, std::shared_ptr<tap_manager> tap_man,
-                     cnetlink *nl, std::shared_ptr<nl_vlan> vlan,
+nl_bridge::nl_bridge(switch_interface *sw,
+                     std::shared_ptr<port_manager> port_man, cnetlink *nl,
+                     std::shared_ptr<nl_vlan> vlan,
                      std::shared_ptr<nl_vxlan> vxlan)
-    : bridge(nullptr), sw(sw), tap_man(std::move(tap_man)), nl(nl),
+    : bridge(nullptr), sw(sw), port_man(std::move(port_man)), nl(nl),
       vlan(std::move(vlan)), vxlan(std::move(vxlan)),
       l2_cache(nl_cache_alloc(nl_cache_ops_lookup("route/neigh")),
                nl_cache_free) {

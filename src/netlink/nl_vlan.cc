@@ -428,7 +428,10 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
     vid = rtnl_link_vlan_get_id(link);
     break;
   default:
-    if (rtnl_link_get_ifindex(link) != 1)
+    // port or bond interface
+    if (nl->get_port_id(link) > 0)
+      vid = default_vid;
+    else if (rtnl_link_get_ifindex(link) != 1)
       LOG(ERROR) << __FUNCTION__ << ": unsupported link type " << lt
                  << " of link " << OBJ_CAST(link);
     break;

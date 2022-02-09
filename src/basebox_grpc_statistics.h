@@ -12,14 +12,14 @@ namespace basebox {
 
 // forward declarations
 class switch_interface;
-class tap_manager;
+class port_manager;
 
 class NetworkStats final : public ::api::NetworkStatistics::Service {
 public:
   typedef ::empty::Empty Empty;
 
   NetworkStats(std::shared_ptr<switch_interface> swi,
-               std::shared_ptr<tap_manager> tap_man);
+               std::shared_ptr<port_manager> port_man);
 
   virtual ~NetworkStats(){};
 
@@ -29,7 +29,7 @@ public:
 
 private:
   std::shared_ptr<switch_interface> swi;
-  std::shared_ptr<tap_manager> tap_man;
+  std::shared_ptr<port_manager> port_man;
 };
 
 } // namespace basebox

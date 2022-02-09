@@ -17,8 +17,8 @@
 namespace basebox {
 
 ApiServer::ApiServer(std::shared_ptr<switch_interface> swi,
-                     std::shared_ptr<tap_manager> tap_man)
-    : stats(new NetworkStats(swi, tap_man)) {}
+                     std::shared_ptr<port_manager> port_man)
+    : stats(new NetworkStats(swi, port_man)) {}
 
 ApiServer::~ApiServer() { delete stats; }
 

@@ -8,7 +8,7 @@
 
 #include "basebox_grpc_statistics.h"
 #include "sai.h"
-#include "netlink/tap_manager.h"
+#include "netlink/port_manager.h"
 
 namespace basebox {
 
@@ -18,8 +18,8 @@ using openconfig_interfaces::Interfaces;
 using openconfig_interfaces::Interfaces_Interface;
 
 NetworkStats::NetworkStats(std::shared_ptr<switch_interface> swi,
-                           std::shared_ptr<tap_manager> tap_man)
-    : swi(std::move(swi)), tap_man(std::move(tap_man)) {}
+                           std::shared_ptr<port_manager> port_man)
+    : swi(std::move(swi)), port_man(std::move(port_man)) {}
 
 ::grpc::Status NetworkStats::GetStatistics(
     __attribute__((unused))::grpc::ServerContext *context,
@@ -39,7 +39,7 @@ NetworkStats::NetworkStats(std::shared_ptr<switch_interface> swi,
       switch_interface::SAI_PORT_STAT_RX_OVER_ERR,
       switch_interface::SAI_PORT_STAT_RX_CRC_ERR,
       switch_interface::SAI_PORT_STAT_COLLISIONS};
-  std::map<std::string, uint32_t> ports = tap_man->get_registered_ports();
+  std::map<std::string, uint32_t> ports = port_man->get_registered_ports();
 
   for (const auto &port : ports) {
     std::vector<uint64_t> stats(counter_ids.size());

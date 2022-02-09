@@ -7,20 +7,21 @@
 #include <memory>
 
 #include "sai.h"
-#include "tap_manager.h"
+#include "port_manager.h"
 
 namespace basebox {
 
 class cnetlink;
-class tap_manager;
+class port_manager;
 
 class nbi_impl : public nbi, public switch_callback {
   switch_interface *swi;
   std::shared_ptr<cnetlink> nl;
-  std::shared_ptr<tap_manager> tap_man;
+  std::shared_ptr<port_manager> port_man;
 
 public:
-  nbi_impl(std::shared_ptr<cnetlink> nl, std::shared_ptr<tap_manager> tap_man);
+  nbi_impl(std::shared_ptr<cnetlink> nl,
+           std::shared_ptr<port_manager> port_man);
   virtual ~nbi_impl();
 
   // nbi
@@ -35,7 +36,7 @@ public:
   // tap_callback
   int enqueue_to_switch(uint32_t port_id, struct basebox::packet *) override;
 
-  std::shared_ptr<tap_manager> get_tapmanager() { return tap_man; }
+  std::shared_ptr<port_manager> get_tapmanager() { return port_man; }
 };
 
 } // namespace basebox

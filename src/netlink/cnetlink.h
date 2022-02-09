@@ -24,7 +24,7 @@ class nl_interface;
 class nl_l3;
 class nl_vlan;
 class nl_vxlan;
-class tap_manager;
+class port_manager;
 
 class cnetlink final : public rofl::cthread_env {
   friend class nl_bond;
@@ -104,10 +104,10 @@ public:
                        struct nl_object *new_obj, uint64_t diff, int action,
                        void *data);
 
-  void set_tapmanager(std::shared_ptr<tap_manager> tm);
+  void set_tapmanager(std::shared_ptr<port_manager> pm);
 
   int send_nl_msg(nl_msg *msg);
-  void learn_l2(uint32_t port_id, int fd, packet *pkt);
+  void learn_l2(uint32_t port_id, packet *pkt);
 
   void fdb_timeout(uint32_t port_id, uint16_t vid,
                    const rofl::caddress_ll &mac);
@@ -148,7 +148,7 @@ private:
   enum nl_state state;
   std::deque<nl_obj> nl_objs;
 
-  std::shared_ptr<tap_manager> tap_man;
+  std::shared_ptr<port_manager> port_man;
   nl_bridge *bridge;
   std::shared_ptr<nl_interface> iface;
   std::shared_ptr<nl_bond> bond;
@@ -157,10 +157,8 @@ private:
   std::shared_ptr<nl_vxlan> vxlan;
 
   struct nl_pkt_in {
-    nl_pkt_in(uint32_t port_id, int fd, packet *pkt)
-        : port_id(port_id), fd(fd), pkt(pkt) {}
+    nl_pkt_in(uint32_t port_id, packet *pkt) : port_id(port_id), pkt(pkt) {}
     uint32_t port_id;
-    int fd;
     packet *pkt;
   };
 
