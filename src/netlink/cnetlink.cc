@@ -398,6 +398,36 @@ void cnetlink::get_vlan_links(int ifindex,
       vlan_list);
 }
 
+struct rtnl_link *cnetlink::get_vlan_link(int ifindex,
+                                          uint16_t vid) const noexcept {
+  std::deque<struct rtnl_link *> vlan_link;
+
+  std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> filter(rtnl_link_alloc(),
+                                                              &rtnl_link_put);
+  assert(filter && "out of memory");
+
+  rtnl_link_set_family(filter.get(), AF_UNSPEC);
+  rtnl_link_set_type(filter.get(), "vlan");
+  rtnl_link_set_link(filter.get(), ifindex);
+  rtnl_link_vlan_set_id(filter.get(), vid);
+
+  nl_cache_foreach_filter(
+      caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
+      [](struct nl_object *obj, void *arg) {
+        assert(arg);
+        auto *list = static_cast<std::deque<struct rtnl_link *> *>(arg);
+
+        VLOG(3) << __FUNCTION__ << ": found vlan interface " << obj;
+        list->push_back(LINK_CAST(obj));
+      },
+      &vlan_link);
+
+  if (vlan_link.empty())
+    return nullptr;
+
+  return vlan_link.front();
+}
+
 int cnetlink::add_l3_addresses(rtnl_link *link) {
   int rv = 0;
   assert(link);
