@@ -13,17 +13,17 @@ struct rtnl_link;
 namespace basebox {
 
 class cnetlink;
-class tap_manager;
+class port_manager;
 
 class nl_interface {
 public:
   nl_interface(cnetlink *nl);
 
-  void set_tapmanager(std::shared_ptr<tap_manager> tm) { this->tm = tm; }
+  void set_tapmanager(std::shared_ptr<port_manager> pm) { this->pm = pm; }
   int changed(rtnl_link *old_link, rtnl_link *new_link) noexcept;
 
 private:
-  std::shared_ptr<tap_manager> tm;
+  std::shared_ptr<port_manager> pm;
   cnetlink *nl;
 };
 
