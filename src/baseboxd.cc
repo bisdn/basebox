@@ -5,6 +5,8 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include <unistd.h>
+
 #include "basebox_api.h"
 #include "netlink/cnetlink.h"
 #include "netlink/nbi_impl.h"
@@ -33,6 +35,7 @@ int main(int argc, char **argv) {
   using basebox::nbi_impl;
   using basebox::port_manager;
   using basebox::tap_manager;
+  bool have_knet = false;
 
   if (!gflags::RegisterFlagValidator(&FLAGS_port, &validate_port)) {
     std::cerr << "Failed to register port validator" << std::endl;
@@ -61,7 +64,17 @@ int main(int argc, char **argv) {
   std::shared_ptr<cnetlink> nl(new cnetlink());
   std::shared_ptr<port_manager> port_man(nullptr);
 
-  if (FLAGS_use_knet)
+  if (FLAGS_use_knet) {
+    // make sure we can use knet interfaces
+    if (access("/proc/bcm/knet/", F_OK) == 0)
+      have_knet = true;
+    else
+      LOG(WARNING) << __FUNCTION__
+                   << ": bcm-knet interface not available, falling back to tap "
+                      "interfaces";
+  }
+
+  if (FLAGS_use_knet && have_knet)
     port_man.reset(new knet_manager());
   else
     port_man.reset(new tap_manager());
