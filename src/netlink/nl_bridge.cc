@@ -443,7 +443,21 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
                   (bridge_stp_states.get_pvlan_state(pport_no, vid) ==
                    -EINVAL)) {
                 // default state is FORWARDING in the kernel
-                add_port_vlan_stp_state(pport_no, vid, BR_STATE_FORWARDING);
+                int state = BR_STATE_FORWARDING;
+
+                // ask the bridge vlan cache for the current state
+                struct rtnl_bridge_vlan *bvlan = rtnl_bridge_vlan_get(
+                    nl->get_cache(cnetlink::NL_BVLAN_CACHE),
+                    rtnl_link_get_ifindex(_link), vid);
+                if (bvlan) {
+                  state = rtnl_bridge_vlan_get_state(bvlan);
+                  rtnl_bridge_vlan_put(bvlan);
+                }
+                VLOG(3) << __FUNCTION__ << ": initialize vid=" << vid
+                        << " on pport_no=" << pport_no
+                        << " to stp state=" << state
+                        << " link: " << OBJ_CAST(_link);
+                add_port_vlan_stp_state(pport_no, vid, state);
               }
 #endif
             }
