@@ -352,7 +352,8 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
   bool stp_enabled = (get_stp_state() != STP_STATE_DISABLED);
 
   // check for pvid changes
-  if (new_br_vlan->pvid != old_br_vlan->pvid && vlan->is_vid_valid(old_br_vlan->pvid)) {
+  if (new_br_vlan->pvid != old_br_vlan->pvid &&
+      vlan->is_vid_valid(old_br_vlan->pvid)) {
     int rv = vlan->remove_ingress_pvid(_link, old_br_vlan->pvid);
 
     if (rv < 0) {
@@ -539,16 +540,17 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
   }
 
   // check for pvid changes
-  if (new_br_vlan->pvid != old_br_vlan->pvid && vlan->is_vid_valid(new_br_vlan->pvid)) {
-      int rv = vlan->add_ingress_pvid(_link, new_br_vlan->pvid);
+  if (new_br_vlan->pvid != old_br_vlan->pvid &&
+      vlan->is_vid_valid(new_br_vlan->pvid)) {
+    int rv = vlan->add_ingress_pvid(_link, new_br_vlan->pvid);
 
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to update pvid=" << new_br_vlan->pvid
-                   << " link=" << OBJ_CAST(_link);
-        return;
-      }
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__
+                 << ": failed to update pvid=" << new_br_vlan->pvid
+                 << " link=" << OBJ_CAST(_link);
+      return;
     }
+  }
 }
 
 std::deque<rtnl_neigh *> nl_bridge::get_fdb_entries_of_port(rtnl_link *br_port,
