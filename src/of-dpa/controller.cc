@@ -698,7 +698,6 @@ int controller::l2_addr_add(uint32_t port, uint16_t vid,
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     bool lag = nbi::get_port_type(port) == nbi::port_type_lag;
 
-
     if (update) {
       // the port is part of the cookie, so we would need to update the cookie,
       // but we cannot update the cookie, so we will need to replace it with a
@@ -951,7 +950,7 @@ int controller::l2_multicast_group_leave(uint32_t port, uint16_t vid,
 }
 
 int controller::l2_multicast_group_rejoin_all_in_vlan(uint32_t port,
-                                                     uint16_t vid) noexcept {
+                                                      uint16_t vid) noexcept {
   int rv = 0;
   uint32_t group_id = (nbi::get_port_type(port) == nbi::port_type_lag)
                           ? fm_driver.group_id_l2_trunk_interface(port, vid)
@@ -977,8 +976,7 @@ int controller::l2_multicast_group_leave_all_in_vlan(uint32_t port,
                           : fm_driver.group_id_l2_interface(port, vid);
 
   for (auto it = mc_groups.begin(); it != mc_groups.end(); it++) {
-    if (std::get<1>(it->key) == vid &&
-        it->l2_interface.count(group_id) != 0) {
+    if (std::get<1>(it->key) == vid && it->l2_interface.count(group_id) != 0) {
       rv = l2_multicast_group_leave(port, vid, std::get<0>(it->key), true);
       if (rv != 0)
         LOG(ERROR) << ": failed to leave L2 multicast group";
@@ -2063,15 +2061,15 @@ int controller::subscribe_to(enum swi_flags flags) noexcept {
      * 09-00-2B-00-00-05 ("all intermediate systems")
      */
     dpt.send_flow_mod_message(
-        rofl::cauxid(0), fm_driver.enable_policy_l2(
-                             dpt.get_version(),
-                             rofl::caddress_ll("01:80:C2:00:00:14"),
-                             rofl::caddress_ll("ff:ff:ff:ff:ff:fe")));
+        rofl::cauxid(0),
+        fm_driver.enable_policy_l2(dpt.get_version(),
+                                   rofl::caddress_ll("01:80:C2:00:00:14"),
+                                   rofl::caddress_ll("ff:ff:ff:ff:ff:fe")));
     dpt.send_flow_mod_message(
-        rofl::cauxid(0), fm_driver.enable_policy_l2(
-                             dpt.get_version(),
-                             rofl::caddress_ll("09:00:2B:00:00:04"),
-                             rofl::caddress_ll("ff:ff:ff:ff:ff:fe")));
+        rofl::cauxid(0),
+        fm_driver.enable_policy_l2(dpt.get_version(),
+                                   rofl::caddress_ll("09:00:2B:00:00:04"),
+                                   rofl::caddress_ll("ff:ff:ff:ff:ff:fe")));
 
     // Adding policy entry so that the multicast packets reach the switch
     // The ff02:: address is a permanent multicast address with a link scope
