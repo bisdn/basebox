@@ -374,8 +374,8 @@ void cnetlink::get_vlans(int ifindex,
       vlan_list);
 }
 
-void cnetlink::get_vlan_links(int ifindex,
-                              std::deque<struct rtnl_link *> *vlan_list) const noexcept {
+void cnetlink::get_vlan_links(
+    int ifindex, std::deque<struct rtnl_link *> *vlan_list) const noexcept {
   assert(vlan_list);
 
   std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> filter(rtnl_link_alloc(),
@@ -495,8 +495,9 @@ int cnetlink::add_l3_routes(rtnl_link *link) {
       rv = l3->add_l3_route(i);
       break;
     default:
-      LOG(WARNING) << __FUNCTION__ << ": family not supported: " << rtnl_route_get_family(i)
-	           << " for route=" << OBJ_CAST(i);
+      LOG(WARNING) << __FUNCTION__
+                   << ": family not supported: " << rtnl_route_get_family(i)
+                   << " for route=" << OBJ_CAST(i);
       rv = -EINVAL;
       break;
     }
@@ -524,8 +525,9 @@ int cnetlink::remove_l3_routes(rtnl_link *link) {
       rv = l3->del_l3_route(i);
       break;
     default:
-      LOG(WARNING) << __FUNCTION__ << ": family not supported: " << rtnl_route_get_family(i)
-	           << " for route=" << OBJ_CAST(i);
+      LOG(WARNING) << __FUNCTION__
+                   << ": family not supported: " << rtnl_route_get_family(i)
+                   << " for route=" << OBJ_CAST(i);
       rv = -EINVAL;
       break;
     }
@@ -546,7 +548,7 @@ int cnetlink::add_l3_configuration(rtnl_link *link) {
   links.push_back(link);
   get_vlan_links(rtnl_link_get_ifindex(link), &links);
 
-  //add all ip addresses and routes from collected interfaces
+  // add all ip addresses and routes from collected interfaces
   for (auto l : links) {
     rv = add_l3_addresses(l);
     if (rv < 0)
@@ -570,7 +572,7 @@ int cnetlink::remove_l3_configuration(rtnl_link *link) {
   links.push_back(link);
   get_vlan_links(rtnl_link_get_ifindex(link), &links);
 
-  //remove all ip addresses and routes from collected interfaces
+  // remove all ip addresses and routes from collected interfaces
   for (auto l : links) {
     rv = remove_l3_routes(l);
     if (rv < 0)
@@ -1273,8 +1275,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       }
 
       auto br_link = get_link_by_ifindex(rtnl_link_get_master(link));
-      LOG(INFO) << __FUNCTION__ << ": using bridge "
-                << OBJ_CAST(br_link.get());
+      LOG(INFO) << __FUNCTION__ << ": using bridge " << OBJ_CAST(br_link.get());
 
       bool new_bridge = false;
       // slave interface
