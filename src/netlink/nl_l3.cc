@@ -230,8 +230,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
 
     if (prefixlen == 32)
       rv = sw->l3_unicast_host_add(ipv4_dst, 0, false, false);
-    else
-      rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0, false, false);
 
     return rv;
   }
@@ -247,13 +245,12 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
       update = true;
   }
 
-  if (prefixlen == 32)
+  if (prefixlen == 32) {
     rv = sw->l3_unicast_host_add(ipv4_dst, 0, false, update, vrf_id);
-  else
-    rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0, false, update, vrf_id);
-  if (rv < 0) {
-    // TODO shall we remove the l3_termination mac?
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
+    if (rv < 0) {
+      // TODO shall we remove the l3_termination mac?
+      LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
+    }
   }
 
   // Avoid adding table VLAN entry for the following two cases
@@ -342,14 +339,12 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   }
 
   // TODO support VRF on IPv6 addresses
-  if (prefixlen == 128)
+  if (prefixlen == 128) {
     rv = sw->l3_unicast_host_add(ipv6_dst, 0, false, update, 0);
-  else
-    rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, update, 0);
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup address " << OBJ_CAST(a);
-    return rv;
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to setup address " << OBJ_CAST(a);
+      return rv;
+    }
   }
 
   // Avoid adding table VLAN entry for the following two cases
@@ -395,8 +390,6 @@ int nl_l3::add_lo_addr_v6(struct rtnl_addr *a) {
 
   if (prefixlen == 128)
     rv = sw->l3_unicast_host_add(ipv6_dst, 0, false, false);
-  else
-    rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, false);
 
   return rv;
 }
@@ -450,12 +443,8 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
       return rv;
     }
 
-    if (prefixlen == 32) {
+    if (prefixlen == 32)
       rv = sw->l3_unicast_host_remove(ipv4_dst, vrf_id);
-    } else {
-      rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
-      rv = sw->l3_unicast_route_remove(ipv4_dst, mask, vrf_id);
-    }
   } else {
     assert(family == AF_INET6);
     rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
@@ -464,12 +453,8 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
       return rv;
     }
 
-    if (prefixlen == 128) {
+    if (prefixlen == 128)
       rv = sw->l3_unicast_host_remove(ipv6_dst, vrf_id);
-    } else {
-      rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
-      rv = sw->l3_unicast_route_remove(ipv6_dst, mask, vrf_id);
-    }
   }
 
   if (link == nullptr) {
