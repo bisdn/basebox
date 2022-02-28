@@ -1442,9 +1442,6 @@ int nl_l3::get_neighbours_of_route(
     if (!nh_addr)
       nh_addr = rtnl_route_nh_get_via(nh);
 
-    if (!nh_addr)
-      nh_addr = route_dst;
-
     if (nh_addr) {
       switch (nl_addr_get_family(nh_addr)) {
       case AF_INET:
@@ -1471,7 +1468,7 @@ int nl_l3::get_neighbours_of_route(
 
     if (neigh)
       neighs->push_back(neigh);
-    else
+    else if (nh_addr)
       unresolved_nh->push_back({nh_addr, ifindex});
   }
 
@@ -1754,8 +1751,7 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     // If the next-hop is currently unresolved, we store the route and
     // process it when the nh is found
     if (!is_ipv6_link_local_address(rtnl_route_get_dst(r)) &&
-        !is_ipv6_multicast_address(rtnl_route_get_dst(r)) &&
-        rtnl_route_get_scope(r) != RT_SCOPE_LINK)
+        !is_ipv6_multicast_address(rtnl_route_get_dst(r)))
       notify_on_nh_reachable(
           this, nh_params{net_params{rtnl_route_get_dst(r), nh.ifindex}, nh});
   }
