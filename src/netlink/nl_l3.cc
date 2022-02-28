@@ -1883,7 +1883,7 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   }
 
   if (neighs.size() == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": no nexthop for this route " << OBJ_CAST(r);
+    VLOG(2) << __FUNCTION__ << ": no nexthop for this route " << OBJ_CAST(r);
     return rv;
   }
 
