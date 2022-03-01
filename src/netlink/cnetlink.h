@@ -53,7 +53,8 @@ public:
 
   void get_vlans(int ifindex, std::deque<uint16_t> *vid_list) const noexcept;
 
-  void get_vlan_links(int ifindex, std::deque<struct rtnl_link *> *vlan_list) const noexcept;
+  void get_vlan_links(int ifindex,
+                      std::deque<struct rtnl_link *> *vlan_list) const noexcept;
   struct rtnl_link *get_vlan_link(int ifindex, uint16_t vid) const noexcept;
 
   uint16_t get_vrf_table_id(rtnl_link *link);
@@ -211,7 +212,6 @@ private:
   void link_created(rtnl_link *) noexcept;
   void link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept;
   void link_deleted(rtnl_link *) noexcept;
-
 
   bool check_ll_neigh(rtnl_neigh *neigh) noexcept;
 

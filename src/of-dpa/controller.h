@@ -174,7 +174,7 @@ public:
                                const rofl::caddress_ll &mc_group,
                                bool disable_only = false) noexcept override;
   int l2_multicast_group_rejoin_all_in_vlan(uint32_t port,
-                                           uint16_t vid) noexcept override;
+                                            uint16_t vid) noexcept override;
   int l2_multicast_group_leave_all_in_vlan(uint32_t port,
                                            uint16_t vid) noexcept override;
   /* @} */
