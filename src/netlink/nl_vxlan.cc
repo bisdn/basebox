@@ -970,40 +970,46 @@ int nl_vxlan::create_next_hop(rtnl_link *vxlan_link, nl_addr *remote,
                  << ": ecmp not supported, only first next hop will be used.";
   }
 
-  std::deque<struct rtnl_neigh *> neighs;
-  std::deque<nh_stub> unresolved_nh;
-  rv = l3->get_neighbours_of_route(route.get(), &neighs, &unresolved_nh);
+  std::deque<struct rtnl_nexthop *> nhs;
+  l3->get_nexthops_of_route(route.get(), &nhs);
+  int ifindex = 0;
+  nl_addr *nh_addr = nullptr;
 
-  if (rv == -ENETUNREACH)
-    return rv;
+  if (nhs.size() == 0)
+    return -ENETUNREACH;
 
-  for (auto nh : unresolved_nh) {
-    VLOG(3) << __FUNCTION__ << ": got unresolved nh ifindex=" << nh.ifindex
-            << ", nh=" << nh.nh;
-    l3->notify_on_nh_reachable(
-        this,
-        nh_params{net_params{remote, rtnl_link_get_ifindex(vxlan_link)}, nh});
+  // check if we have a ip next hop
+  for (auto nh : nhs) {
+    ifindex = rtnl_route_nh_get_ifindex(nh);
+    nh_addr = rtnl_route_nh_get_gateway(nh);
+
+    if (!nh_addr)
+      nh_addr = rtnl_route_nh_get_via(nh);
+
+    if (nh_addr)
+      break;
   }
 
-  if (neighs.size() == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": neighs.size()=" << neighs.size();
+  // if not, directly use the remote as next hop
+  // the ifindex is the one of the ip less nexthop (which marks a on-link route)
+  if (!nh_addr)
+    nh_addr = remote;
+
+  auto neigh = nl->get_neighbour(ifindex, nh_addr);
+  if (!neigh || rtnl_neigh_get_lladdr(neigh) == nullptr) {
+
+    VLOG(3) << __FUNCTION__ << ": got unresolved nh ifindex=" << ifindex
+            << ", nh=" << nh_addr;
+    l3->notify_on_nh_reachable(
+        this, nh_params{net_params{remote, rtnl_link_get_ifindex(vxlan_link)},
+                        nh_stub{nh_addr, ifindex}});
     return -EDESTADDRREQ;
   }
 
-  // XXX TODO for ecmp we may need to resolve a neigh if neighs.size!=nnh
-
-  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> neigh(neighs.front(),
-                                                               &rtnl_neigh_put);
-  neighs.pop_front();
-
-  // clean others
-  for (auto n : neighs)
-    rtnl_neigh_put(n);
-
-  rv = create_next_hop(neigh.get(), next_hop_id);
+  rv = create_next_hop(neigh, next_hop_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to create next hop "
-               << OBJ_CAST(neigh.get());
+               << OBJ_CAST(neigh);
     return -EINVAL;
   }
 
