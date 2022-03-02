@@ -1403,14 +1403,13 @@ void nl_l3::get_nexthops_of_route(
   // verify next hop
   for (auto nh : _nhs) {
     auto ifindex = rtnl_route_nh_get_ifindex(nh);
-    uint16_t pport_id = nl->get_port_id(ifindex);
     auto link = nl->get_link_by_ifindex(ifindex);
 
     // Guarantee that the interface is found
     if (!link.get())
       continue;
 
-    if (pport_id == 0 && !nl->is_bridge_interface(link.get())) {
+    if (!nl->is_switch_interface(link.get())) {
       VLOG(1) << __FUNCTION__ << ": ignoring next hop " << nh;
       continue;
     }
