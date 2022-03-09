@@ -230,8 +230,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
 
     if (prefixlen == 32)
       rv = sw->l3_unicast_host_add(ipv4_dst, 0, false, false);
-    else
-      rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0, false, false);
 
     return rv;
   }
@@ -247,13 +245,12 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
       update = true;
   }
 
-  if (prefixlen == 32)
+  if (prefixlen == 32) {
     rv = sw->l3_unicast_host_add(ipv4_dst, 0, false, update, vrf_id);
-  else
-    rv = sw->l3_unicast_route_add(ipv4_dst, mask, 0, false, update, vrf_id);
-  if (rv < 0) {
-    // TODO shall we remove the l3_termination mac?
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
+    if (rv < 0) {
+      // TODO shall we remove the l3_termination mac?
+      LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
+    }
   }
 
   // Avoid adding table VLAN entry for the following two cases
@@ -342,14 +339,12 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   }
 
   // TODO support VRF on IPv6 addresses
-  if (prefixlen == 128)
+  if (prefixlen == 128) {
     rv = sw->l3_unicast_host_add(ipv6_dst, 0, false, update, 0);
-  else
-    rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, update, 0);
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup address " << OBJ_CAST(a);
-    return rv;
+    if (rv < 0) {
+      LOG(ERROR) << __FUNCTION__ << ": failed to setup address " << OBJ_CAST(a);
+      return rv;
+    }
   }
 
   // Avoid adding table VLAN entry for the following two cases
@@ -395,8 +390,6 @@ int nl_l3::add_lo_addr_v6(struct rtnl_addr *a) {
 
   if (prefixlen == 128)
     rv = sw->l3_unicast_host_add(ipv6_dst, 0, false, false);
-  else
-    rv = sw->l3_unicast_route_add(ipv6_dst, mask, 0, false, false);
 
   return rv;
 }
@@ -450,12 +443,8 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
       return rv;
     }
 
-    if (prefixlen == 32) {
+    if (prefixlen == 32)
       rv = sw->l3_unicast_host_remove(ipv4_dst, vrf_id);
-    } else {
-      rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
-      rv = sw->l3_unicast_route_remove(ipv4_dst, mask, vrf_id);
-    }
   } else {
     assert(family == AF_INET6);
     rofl::caddress_in6 ipv6_dst = libnl_in6addr_2_rofl(addr, &rv);
@@ -464,12 +453,8 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
       return rv;
     }
 
-    if (prefixlen == 128) {
+    if (prefixlen == 128)
       rv = sw->l3_unicast_host_remove(ipv6_dst, vrf_id);
-    } else {
-      rofl::caddress_in6 mask = rofl::build_mask_in6(prefixlen);
-      rv = sw->l3_unicast_route_remove(ipv6_dst, mask, vrf_id);
-    }
   }
 
   if (link == nullptr) {
@@ -1403,14 +1388,13 @@ void nl_l3::get_nexthops_of_route(
   // verify next hop
   for (auto nh : _nhs) {
     auto ifindex = rtnl_route_nh_get_ifindex(nh);
-    uint16_t pport_id = nl->get_port_id(ifindex);
     auto link = nl->get_link_by_ifindex(ifindex);
 
     // Guarantee that the interface is found
     if (!link.get())
       continue;
 
-    if (pport_id == 0 && !nl->is_bridge_interface(link.get())) {
+    if (!nl->is_switch_interface(link.get())) {
       VLOG(1) << __FUNCTION__ << ": ignoring next hop " << nh;
       continue;
     }
@@ -1443,9 +1427,6 @@ int nl_l3::get_neighbours_of_route(
     if (!nh_addr)
       nh_addr = rtnl_route_nh_get_via(nh);
 
-    if (!nh_addr)
-      nh_addr = route_dst;
-
     if (nh_addr) {
       switch (nl_addr_get_family(nh_addr)) {
       case AF_INET:
@@ -1472,7 +1453,7 @@ int nl_l3::get_neighbours_of_route(
 
     if (neigh)
       neighs->push_back(neigh);
-    else
+    else if (nh_addr)
       unresolved_nh->push_back({nh_addr, ifindex});
   }
 
@@ -1755,8 +1736,7 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     // If the next-hop is currently unresolved, we store the route and
     // process it when the nh is found
     if (!is_ipv6_link_local_address(rtnl_route_get_dst(r)) &&
-        !is_ipv6_multicast_address(rtnl_route_get_dst(r)) &&
-        rtnl_route_get_scope(r) != RT_SCOPE_LINK)
+        !is_ipv6_multicast_address(rtnl_route_get_dst(r)))
       notify_on_nh_reachable(
           this, nh_params{net_params{rtnl_route_get_dst(r), nh.ifindex}, nh});
   }
@@ -1888,7 +1868,7 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   }
 
   if (neighs.size() == 0) {
-    LOG(ERROR) << __FUNCTION__ << ": no nexthop for this route " << OBJ_CAST(r);
+    VLOG(2) << __FUNCTION__ << ": no nexthop for this route " << OBJ_CAST(r);
     return rv;
   }
 
