@@ -32,7 +32,7 @@ class port_manager {
 
 public:
   port_manager(){};
-  ~port_manager(){};
+  virtual ~port_manager(){};
 
   virtual int create_portdev(uint32_t port_id, const std::string &port_name,
                              switch_callback &callback) = 0;
