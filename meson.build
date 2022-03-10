@@ -40,6 +40,8 @@ sources = files('''
   src/netlink/nl_vlan.h
   src/netlink/nl_vxlan.cc
   src/netlink/nl_vxlan.h
+  src/netlink/knet_manager.cc
+  src/netlink/knet_manager.h
   src/netlink/tap_io.cc
   src/netlink/tap_io.h
   src/netlink/tap_manager.cc
