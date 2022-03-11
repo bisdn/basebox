@@ -729,6 +729,18 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
   }
 
   if (add_host_entry) {
+    // unless we have route, we should not route l3 neighbors
+    struct nh_stub nh {
+      addr, rtnl_neigh_get_ifindex(n)
+    };
+
+    if (is_l3_neigh_routable(n)) {
+      routable_l3_neighs.emplace(nh);
+    } else {
+      unroutable_l3_neighs.emplace(nh);
+      return -ENETUNREACH;
+    }
+
     rv = add_l3_neigh_egress(n, &l3_interface_id, &vrf_id);
     LOG(INFO) << __FUNCTION__ << ": adding l3 neigh egress for neigh "
               << OBJ_CAST(n);
@@ -827,6 +839,14 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
     VLOG(1) << __FUNCTION__ << ": neighbour ll changed: new neighbor "
             << n_ll_new << " ifindex=" << ifindex;
 
+    struct nh_stub nh {
+      rtnl_neigh_get_dst(n_old), ifindex
+    };
+    if (unroutable_l3_neighs.count(nh) > 0) {
+      VLOG(1) << __FUNCTION__ << ": ignoring update on unroutable neighbor";
+      return -EINVAL;
+    }
+
     auto link = nl->get_link_by_ifindex(ifindex);
 
     if (link.get() == nullptr) {
@@ -922,6 +942,17 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
 
   if (!link)
     return -EINVAL;
+
+  struct nh_stub nh {
+    addr, rtnl_neigh_get_ifindex(n)
+  };
+  if (unroutable_l3_neighs.erase(nh) > 0) {
+    VLOG(2) << __FUNCTION__ << ": l3 neigh was disabled, nothing to do for "
+            << OBJ_CAST(n);
+    return 0;
+  }
+
+  routable_l3_neighs.erase(nh);
 
   std::deque<rtnl_addr *> link_addresses;
   get_l3_addrs(link.get(), &link_addresses);
@@ -1808,6 +1839,25 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
                << " rv=" << rv;
   }
 
+  VLOG(2) << __FUNCTION__ << ": enabling l3 neighs reachable by route "
+          << OBJ_CAST(r);
+  auto l3_neighs =
+      get_l3_neighs_of_prefix(unroutable_l3_neighs, rtnl_route_get_dst(r));
+  for (auto n : l3_neighs) {
+    auto neigh = nl->get_neighbour(n.ifindex, n.nh);
+    if (!neigh) {
+      // should we remove it from unroutable?
+      VLOG(2) << __FUNCTION__ << ": unknown l3 neigh ifindex=" << n.ifindex
+              << ", addr=" << n.nh;
+      continue;
+    }
+
+    VLOG(2) << __FUNCTION__ << ": enabling l3 neigh " << OBJ_CAST(neigh);
+    unroutable_l3_neighs.erase(n);
+    add_l3_neigh(neigh);
+    rtnl_neigh_put(neigh);
+  }
+
   // cleanup
   for (auto n : neighs)
     rtnl_neigh_put(n);
@@ -1842,6 +1892,27 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
       LOG(ERROR) << __FUNCTION__ << ": failed to remove dst=" << dst;
       // fallthrough
     }
+  }
+
+  VLOG(2) << __FUNCTION__ << ": disabling l3 neighs reachable by route "
+          << OBJ_CAST(r);
+  auto l3_neighs =
+      get_l3_neighs_of_prefix(routable_l3_neighs, rtnl_route_get_dst(r));
+  for (auto n : l3_neighs) {
+    auto neigh = nl->get_neighbour(n.ifindex, n.nh);
+    if (!neigh) {
+      // neigh is already purged from nl cache, so neigh will be
+      // removed when handling the DEL_NEIGH notification
+      VLOG(2) << __FUNCTION__
+              << ": skipping non-existing l3 neigh ifindex=" << n.ifindex
+              << ", addr=" << n.nh;
+      continue;
+    }
+
+    VLOG(2) << __FUNCTION__ << ": disabling l3 neigh " << OBJ_CAST(neigh);
+    del_l3_neigh(neigh);
+    rtnl_neigh_put(neigh);
+    unroutable_l3_neighs.emplace(n);
   }
 
   std::deque<struct rtnl_neigh *> neighs;
@@ -1932,6 +2003,43 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   }
 
   return rv;
+}
+
+bool nl_l3::is_l3_neigh_routable(struct rtnl_neigh *n) {
+  bool routable = false;
+  nl_route_query rq;
+
+  auto route = rq.query_route(rtnl_neigh_get_dst(n));
+  if (route) {
+    VLOG(2) << __FUNCTION__ << ": got route " << OBJ_CAST(route)
+            << " for neigh " << OBJ_CAST(n);
+    if (rtnl_route_get_nnexthops(route) > 0) {
+      std::deque<struct rtnl_nexthop *> nhs;
+      get_nexthops_of_route(route, &nhs);
+      if (nhs.size() > 0) {
+        VLOG(2) << __FUNCTION__ << ": neigh is routable in by us";
+        routable = true;
+      }
+    }
+    nl_object_put(OBJ_CAST(route));
+  } else {
+    VLOG(2) << __FUNCTION__ << ": no route for neigh " << OBJ_CAST(n);
+  }
+
+  return routable;
+};
+
+std::deque<nh_stub> nl_l3::get_l3_neighs_of_prefix(std::set<nh_stub> &list,
+                                                   nl_addr *prefix) {
+  std::deque<nh_stub> ret;
+
+  auto l3_neighs =
+      std::equal_range(list.begin(), list.end(), prefix, l3_prefix_comp);
+  std::deque<nh_stub> nhs;
+  for (auto n = l3_neighs.first; n != l3_neighs.second; ++n) {
+    ret.push_back(*n);
+  }
+  return ret;
 }
 
 } // namespace basebox

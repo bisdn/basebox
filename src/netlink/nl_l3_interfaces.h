@@ -51,6 +51,13 @@ struct nh_stub {
     nl_addr_put(nh);
   }
 
+  bool operator<(const nh_stub& other) const {
+         if (nl_addr_cmp(nh, other.nh) < 0)
+		return true;
+
+	 return ifindex < other.ifindex;
+  }
+
   nl_addr *nh;
   int ifindex;
 };

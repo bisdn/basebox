@@ -32,6 +32,17 @@ class nl_vlan;
 class nl_bridge;
 class switch_interface;
 
+class l3_prefix_comp final {
+public:
+  bool operator()(const nh_stub &nh, const struct nl_addr *addr) const {
+    return nl_addr_cmp_prefix(nh.nh, addr) < 0;
+  }
+
+  bool operator()(const struct nl_addr *addr, const nh_stub &nh) const {
+    return nl_addr_cmp_prefix(addr, nh.nh) < 0;
+  }
+};
+
 class nl_l3 : public nh_reachable, public nh_unreachable {
 public:
   nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl);
@@ -133,12 +144,22 @@ private:
     return !nl_addr_cmp_prefix(mc_addr.get(), addr);
   }
 
+  bool is_l3_neigh_routable(struct rtnl_neigh *n);
+
+  std::deque<nh_stub> get_l3_neighs_of_prefix(std::set<nh_stub> &list,
+                                              nl_addr *prefix);
+
   switch_interface *sw;
   std::shared_ptr<nl_vlan> vlan;
   cnetlink *nl;
   std::list<std::pair<net_reachable *, net_params>> net_callbacks;
   std::list<std::pair<nh_reachable *, nh_params>> nh_callbacks;
   std::list<std::pair<nh_unreachable *, nh_params>> nh_unreach_callbacks;
+
+  std::set<nh_stub> routable_l3_neighs;
+  std::set<nh_stub> unroutable_l3_neighs;
+  struct l3_prefix_comp l3_prefix_comp;
+
   const uint8_t MAIN_ROUTING_TABLE = 254;
 };
 
