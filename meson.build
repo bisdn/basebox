@@ -239,3 +239,6 @@ executable('baseboxd',
   ],
   install: true,
   install_dir: bindir)
+
+install_data('scripts/baseboxd-knet-reset.py',
+  install_dir: bindir)

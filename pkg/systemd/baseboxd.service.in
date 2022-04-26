@@ -5,6 +5,7 @@ After=network.target
 [Service]
 Type=notify
 ExecStart=@bindir@/baseboxd
+ExecStopPost=@bindir@/baseboxd-knet-reset.py
 EnvironmentFile=-@sysconfdir@/sysconfig/baseboxd
 Restart=always
 NotifyAccess=main
