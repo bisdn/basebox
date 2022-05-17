@@ -1715,16 +1715,32 @@ int nl_l3::del_l3_ecmp_route(rtnl_route *r,
 }
 
 void nl_l3::nh_reachable_notification(struct nh_params p) noexcept {
-  nl_route_query rq;
-  auto rt = rq.query_route(p.np.addr);
-  auto ad = rtnl_route_get_dst(rt);
+  std::unique_ptr<rtnl_route, decltype(&rtnl_route_put)> filter(
+      rtnl_route_alloc(), rtnl_route_put);
+  std::deque<rtnl_route *> routes;
+  auto nh = rtnl_route_nh_alloc();
 
-  // guarantee the correct prefixlen
-  nl_addr_set_prefixlen(ad, nl_addr_get_prefixlen(p.np.addr));
+  rtnl_route_nh_set_ifindex(nh, p.np.ifindex);
+  rtnl_route_add_nexthop(filter.get(), nh);
 
-  add_l3_unicast_route(rt, true);
-  // return object has to be freed using nl_object_put
-  nl_object_put(OBJ_CAST(rt));
+  rtnl_route_set_type(filter.get(), RTN_UNICAST);
+  rtnl_route_set_dst(filter.get(), p.np.addr);
+
+  nl_cache_foreach_filter(
+      nl->get_cache(cnetlink::NL_ROUTE_CACHE), OBJ_CAST(filter.get()),
+      [](struct nl_object *o, void *arg) {
+        auto *route = (std::deque<rtnl_route *> *)arg;
+        route->push_back(ROUTE_CAST(o));
+      },
+      &routes);
+
+  if (routes.size() == 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to find route for dst=" << p.np.addr
+               << " on ifindex=" << p.nh.ifindex;
+    return;
+  }
+
+  add_l3_unicast_route(routes.front(), true);
 }
 
 void nl_l3::nh_unreachable_notification(struct rtnl_neigh *n,
