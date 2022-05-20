@@ -19,3 +19,6 @@ GLOG_logtostderr=1
 
 # verbose log level:
 # GLOG_v=0
+
+# verbose per-module log level:
+# GLOG_vmodule=
