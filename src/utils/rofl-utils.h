@@ -11,7 +11,10 @@ namespace rofl {
 
 inline caddress_in4 build_mask_in4(unsigned prefix_len) {
   caddress_in4 mask;
-  uint32_t m = ~((UINT32_C(1) << (32 - prefix_len)) - 1);
+  uint32_t m = 0;
+
+  if (prefix_len > 0)
+    m = ~((UINT32_C(1) << (32 - prefix_len)) - 1);
   mask.set_addr_hbo(m);
   return mask;
 }
