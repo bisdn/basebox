@@ -2081,6 +2081,24 @@ int controller::subscribe_to(enum swi_flags flags) noexcept {
         rofl::cauxid(0), fm_driver.enable_policy_ipv4_multicast(
                              dpt.get_version(), rofl::caddress_in4("224.0.0.0"),
                              rofl::build_mask_in4(4)));
+
+    // Enable BOOTP/DHCP client -> server to CONTROLLER
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0), fm_driver.enable_policy_udp(
+                             dpt.get_version(), ETH_P_IP, 67, 68));
+    // Enable BOOTP/DHCP server -> client to CONTROLLER
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0), fm_driver.enable_policy_udp(
+                             dpt.get_version(), ETH_P_IP, 68, 67));
+
+    // Enable DHCPv6 client -> server to CONTROLLER
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0), fm_driver.enable_policy_udp(
+                             dpt.get_version(), ETH_P_IPV6, 546, 547));
+    // Enable DHCPv6 server -> client to CONTROLLER
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0), fm_driver.enable_policy_udp(
+                             dpt.get_version(), ETH_P_IPV6, 547, 546));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
