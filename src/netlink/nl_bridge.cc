@@ -477,10 +477,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
                     << " on pport_no=" << pport_no
                     << " link: " << OBJ_CAST(_link);
 
-            // delete all FM pointing to this group first
-            sw->l2_addr_remove_all_in_vlan(pport_no, vid);
-            sw->l2_multicast_group_leave_all_in_vlan(pport_no, vid);
-
+            // delete all cache entries first
             std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> filter(
                 rtnl_neigh_alloc(), rtnl_neigh_put);
 
@@ -498,6 +495,10 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
                   nl_cache_remove(o);
                 },
                 nullptr);
+
+            // then delete all FM pointing to this group
+            sw->l2_addr_remove_all_in_vlan(pport_no, vid);
+            sw->l2_multicast_group_leave_all_in_vlan(pport_no, vid);
 
             // the PVID is already being handled outside of the loop
             vlan->remove_bridge_vlan(_link, vid, false, !egress_untagged);
