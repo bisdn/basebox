@@ -246,7 +246,24 @@ void cnetlink::destroy_caches() { nl_cache_mngr_free(mngr); }
 
 std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)>
 cnetlink::get_link_by_ifindex(int ifindex) const {
-  rtnl_link *link = rtnl_link_get(caches[NL_LINK_CACHE], ifindex);
+  struct rtnl_link *link = nullptr;
+  std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> filter(rtnl_link_alloc(),
+                                                              &rtnl_link_put);
+
+  rtnl_link_set_ifindex(filter.get(), ifindex);
+
+  // search link by filter
+  nl_cache_foreach_filter(
+      caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
+      [](struct nl_object *obj, void *arg) {
+        assert(arg);
+
+        if (rtnl_link_get_family(LINK_CAST(arg)) != AF_INET6) {
+          nl_object_get(obj);
+          *static_cast<nl_object **>(arg) = obj;
+        }
+      },
+      &link);
 
   // check the garbage
   if (link == nullptr) {
