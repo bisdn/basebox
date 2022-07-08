@@ -258,7 +258,7 @@ cnetlink::get_link_by_ifindex(int ifindex) const {
       [](struct nl_object *obj, void *arg) {
         assert(arg);
 
-        if (rtnl_link_get_family(LINK_CAST(arg)) != AF_INET6) {
+        if (rtnl_link_get_family(LINK_CAST(obj)) != AF_INET6) {
           nl_object_get(obj);
           *static_cast<nl_object **>(arg) = obj;
         }
