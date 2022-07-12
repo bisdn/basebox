@@ -364,21 +364,21 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     }
   }
 
-  for (int k = 0; k < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; k++) {
+  for (int i = 0; i < RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN; i++) {
     int base_bit;
-    uint32_t vlan_old = old_br_vlan->vlan_bitmap[k];
-    uint32_t vlan_new = new_br_vlan->vlan_bitmap[k];
+    uint32_t vlan_old = old_br_vlan->vlan_bitmap[i];
+    uint32_t vlan_new = new_br_vlan->vlan_bitmap[i];
     uint32_t vlan_diff = vlan_old ^ vlan_new;
 
-    uint32_t untagged_old = old_br_vlan->untagged_bitmap[k];
-    uint32_t untagged_new = new_br_vlan->untagged_bitmap[k];
+    uint32_t untagged_old = old_br_vlan->untagged_bitmap[i];
+    uint32_t untagged_new = new_br_vlan->untagged_bitmap[i];
     uint32_t untagged_diff = untagged_old ^ untagged_new;
 
     // vids handled by vlan_diff will
     // already have the proper egress_untagged state
     untagged_diff &= ~vlan_diff;
 
-    base_bit = k * 32;
+    base_bit = i * 32;
     for (int j = find_next_bit(-1, vlan_diff); j > 0;
          j = find_next_bit(j, vlan_diff)) {
       // vlan added or removed
