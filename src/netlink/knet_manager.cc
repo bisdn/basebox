@@ -25,15 +25,14 @@ knet_manager::~knet_manager() {
     uint32_t netif_id = dev.second;
 
     int ret = system(("/usr/sbin/client_drivshell knet filter destroy " +
-                            std::to_string(netif_id + 1))
-                               .c_str());
+                      std::to_string(netif_id + 1))
+                         .c_str());
     if (!WIFEXITED(ret) || WEXITSTATUS(ret) != 0)
       LOG(WARNING) << __FUNCTION__ << ": failed to remove filter with id "
                    << netif_id + 1;
     ret = system(("/usr/sbin/client_drivshell knet netif destroy " +
-                        std::to_string(netif_id))
-                           .c_str()
-                       );
+                  std::to_string(netif_id))
+                     .c_str());
     if (!WIFEXITED(ret) || WEXITSTATUS(ret) != 0)
       LOG(WARNING) << __FUNCTION__ << ": failed to remove knet netif with id "
                    << netif_id;
