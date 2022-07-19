@@ -48,6 +48,7 @@ int knet_manager::get_next_netif_id(void) {
 }
 
 int knet_manager::create_portdev(uint32_t port_id, const std::string &port_name,
+                                 const rofl::caddress_ll &hwaddr,
                                  switch_callback &cb) {
   int r = 0;
   bool dev_exists = false;

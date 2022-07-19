@@ -31,6 +31,7 @@ public:
   ~tap_manager();
 
   int create_portdev(uint32_t port_id, const std::string &port_name,
+                     const rofl::caddress_ll &hwaddr,
                      switch_callback &callback);
 
   int destroy_portdev(uint32_t port_id, const std::string &port_name);

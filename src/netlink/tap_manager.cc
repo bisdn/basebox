@@ -32,6 +32,7 @@ tap_manager::~tap_manager() {
 }
 
 int tap_manager::create_portdev(uint32_t port_id, const std::string &port_name,
+                                const rofl::caddress_ll &hwaddr,
                                 switch_callback &cb) {
   int r = 0;
   bool dev_exists = false;
