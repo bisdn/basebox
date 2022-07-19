@@ -69,6 +69,9 @@ int knet_manager::create_portdev(uint32_t port_id, const std::string &port_name,
   if (!dev_exists && !dev_name_exists) {
     // create a new tap device
     int netif_id;
+    char mac_string[18];
+    sprintf(mac_string, "%02x:%02x:%02x:%02x:%02x:%02x", hwaddr[0], hwaddr[1],
+            hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
     try {
       {
         std::lock_guard<std::mutex> lock{tn_mutex};
@@ -85,7 +88,7 @@ int knet_manager::create_portdev(uint32_t port_id, const std::string &port_name,
         }
         r = system(("/usr/sbin/client_drivshell knet netif create port=" +
                     std::to_string(port_id) + " ifname=" + port_name +
-                    " keeprxtag=yes")
+                    " mac=" + mac_string + " keeprxtag=yes")
                        .c_str());
         if (!WIFEXITED(r) || WEXITSTATUS(r) != 0)
           LOG(FATAL) << __FUNCTION__
