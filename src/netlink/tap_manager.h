@@ -58,7 +58,8 @@ private:
 
   std::unique_ptr<tap_io> io;
 
-  int recreate_tapdev(int ifindex, const std::string &portname);
+  int recreate_tapdev(int ifindex, const std::string &portname,
+                      const rofl::caddress_ll &hwaddr);
 
   int get_fd(uint32_t port_id) const noexcept;
 };
