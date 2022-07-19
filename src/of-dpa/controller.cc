@@ -2084,21 +2084,21 @@ int controller::subscribe_to(enum swi_flags flags) noexcept {
 
     // Enable BOOTP/DHCP client -> server to CONTROLLER
     dpt.send_flow_mod_message(
-        rofl::cauxid(0), fm_driver.enable_policy_udp(
-                             dpt.get_version(), ETH_P_IP, 67, 68));
+        rofl::cauxid(0),
+        fm_driver.enable_policy_udp(dpt.get_version(), ETH_P_IP, 67, 68));
     // Enable BOOTP/DHCP server -> client to CONTROLLER
     dpt.send_flow_mod_message(
-        rofl::cauxid(0), fm_driver.enable_policy_udp(
-                             dpt.get_version(), ETH_P_IP, 68, 67));
+        rofl::cauxid(0),
+        fm_driver.enable_policy_udp(dpt.get_version(), ETH_P_IP, 68, 67));
 
     // Enable DHCPv6 client -> server to CONTROLLER
     dpt.send_flow_mod_message(
-        rofl::cauxid(0), fm_driver.enable_policy_udp(
-                             dpt.get_version(), ETH_P_IPV6, 546, 547));
+        rofl::cauxid(0),
+        fm_driver.enable_policy_udp(dpt.get_version(), ETH_P_IPV6, 546, 547));
     // Enable DHCPv6 server -> client to CONTROLLER
     dpt.send_flow_mod_message(
-        rofl::cauxid(0), fm_driver.enable_policy_udp(
-                             dpt.get_version(), ETH_P_IPV6, 547, 546));
+        rofl::cauxid(0),
+        fm_driver.enable_policy_udp(dpt.get_version(), ETH_P_IPV6, 547, 546));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
