@@ -255,6 +255,7 @@ public:
   struct port_notification_data {
     enum port_event ev;
     uint32_t port_id;
+    rofl::caddress_ll hwaddr;
     std::string name;
     bool status;
     uint32_t speed;

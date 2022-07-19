@@ -112,8 +112,9 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
 
     for (auto &id : dpt.get_ports().keys()) {
       auto &port = dpt.get_ports().get_port(id);
-      ntfys.emplace_back(nbi::port_notification_data{
-          nbi::PORT_EVENT_DEL, port.get_port_no(), port.get_name()});
+      ntfys.emplace_back(
+          nbi::port_notification_data{nbi::PORT_EVENT_DEL, port.get_port_no(),
+                                      port.get_hwaddr(), port.get_name()});
     }
 
     nb->port_notification(ntfys);
@@ -244,7 +245,7 @@ void controller::handle_port_status(rofl::crofdpt &dpt,
   uint8_t duplex = get_duplex(port.get_ethernet().get_curr());
 
   ntfys.emplace_back(nbi::port_notification_data{
-      (nbi::port_event)msg.get_reason(), port.get_port_no(),
+      (nbi::port_event)msg.get_reason(), port.get_port_no(), port.get_hwaddr(),
       msg.get_port().get_name(), status, speed, duplex});
   nb->port_notification(ntfys);
 }
@@ -281,9 +282,9 @@ void controller::handle_port_desc_stats_reply(
     uint32_t speed = port.get_ethernet().get_curr_speed();
     uint8_t duplex = get_duplex(port.get_ethernet().get_curr());
 
-    notifications.emplace_back(
-        nbi::port_notification_data{nbi::PORT_EVENT_ADD, port.get_port_no(),
-                                    port.get_name(), status, speed, duplex});
+    notifications.emplace_back(nbi::port_notification_data{
+        nbi::PORT_EVENT_ADD, port.get_port_no(), port.get_hwaddr(),
+        port.get_name(), status, speed, duplex});
   }
 
   /* init 1:1 port mapping */
