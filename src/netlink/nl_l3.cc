@@ -164,15 +164,16 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  struct rtnl_link *link = rtnl_addr_get_link(a);
-  if (link == nullptr) {
+  int ifindex = rtnl_addr_get_ifindex(a);
+  auto l = nl->get_link_by_ifindex(ifindex);
+  if (l == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": no link for addr a=" << OBJ_CAST(a);
     return -EINVAL;
   }
+  struct rtnl_link *link = l.get();
 
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
   bool is_bridge = rtnl_link_is_bridge(link); // XXX TODO svi as well?
-  int ifindex = 0;
   uint16_t vid = vlan->get_vid(link);
   uint32_t vrf_id = vlan->get_vrf_id(vid, link);
 
@@ -192,7 +193,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
 
   // XXX TODO split this into several functions
   if (!is_loopback) {
-    ifindex = rtnl_addr_get_ifindex(a);
     int port_id = nl->get_port_id(link);
     auto addr = rtnl_link_get_addr(link);
     rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
@@ -281,11 +281,13 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  struct rtnl_link *link = rtnl_addr_get_link(a);
-  if (link == nullptr) {
+  int ifindex = rtnl_addr_get_ifindex(a);
+  auto l = nl->get_link_by_ifindex(ifindex);
+  if (l == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": no link for addr a=" << OBJ_CAST(a);
     return -EINVAL;
   }
+  struct rtnl_link *link = l.get();
 
   bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
 
