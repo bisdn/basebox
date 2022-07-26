@@ -32,6 +32,7 @@ tap_manager::~tap_manager() {
 }
 
 int tap_manager::create_portdev(uint32_t port_id, const std::string &port_name,
+                                const rofl::caddress_ll &hwaddr,
                                 switch_callback &cb) {
   int r = 0;
   bool dev_exists = false;
@@ -56,7 +57,7 @@ int tap_manager::create_portdev(uint32_t port_id, const std::string &port_name,
     try {
       int fd = -1;
 
-      dev = new ctapdev(port_name);
+      dev = new ctapdev(port_name, hwaddr);
       tap_devs.insert(std::make_pair(port_id, dev));
       {
         std::lock_guard<std::mutex> lock{tn_mutex};
@@ -279,8 +280,10 @@ bool tap_manager::portdev_removed(rtnl_link *link) {
     port_removed = true;
   }
 
-  if (port_removed)
-    recreate_tapdev(ifindex, portname);
+  if (port_removed) {
+    auto pn_it = tap_devs.find(ifi2id_it->second);
+    recreate_tapdev(ifindex, portname, pn_it->second->get_hwaddr());
+  }
 
   ifindex_to_id.erase(ifi2id_it);
   if (id2ifi_it != id_to_ifindex.end())
@@ -291,7 +294,8 @@ bool tap_manager::portdev_removed(rtnl_link *link) {
   return true;
 }
 
-int tap_manager::recreate_tapdev(int ifindex, const std::string &portname) {
+int tap_manager::recreate_tapdev(int ifindex, const std::string &portname,
+                                 const rofl::caddress_ll &hwaddr) {
   int rv = 0;
 
   VLOG(1) << __FUNCTION__ << ": recreating port " << portname
@@ -299,7 +303,7 @@ int tap_manager::recreate_tapdev(int ifindex, const std::string &portname) {
   ctapdev *dev;
 
   try {
-    dev = new ctapdev(portname);
+    dev = new ctapdev(portname, hwaddr);
     auto id = ifindex_to_id.find(ifindex);
 
     tap_devs.erase(id->second);
