@@ -1271,6 +1271,14 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   assert(link);
   assert(port_man);
 
+  // libnl 3.6+ sends IPv6 configuration updates as incomplete AF_INET6
+  // link objects, which may lead to duplicated creation handling, so
+  // ignore it.
+  if (rtnl_link_get_family(link) == AF_INET6) {
+    VLOG(1) << __FUNCTION__ << ": ignoring link " << OBJ_CAST(link);
+    return;
+  }
+
   enum link_type lt = get_link_type(link);
 
   switch (lt) {
@@ -1365,6 +1373,14 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
           << ", new_link_slave_type="
           << safe_string_view(rtnl_link_get_slave_type(new_link))
           << ", af_old=" << af_old << ", af_new=" << af_new;
+
+  // libnl 3.6+ sends IPv6 configuration updates as incomplete AF_INET6
+  // link objects, which may lead to unexpected side effects, so ignore it.
+  if (af_old == AF_INET6 || af_new == AF_INET6) {
+    VLOG(1) << __FUNCTION__ << ": ignoring old link " << OBJ_CAST(old_link)
+            << " new link " << OBJ_CAST(new_link);
+    return;
+  }
 
   if (nl_addr_cmp(rtnl_link_get_addr(old_link), rtnl_link_get_addr(new_link)) &&
       is_switch_interface(old_link)) {
@@ -1473,6 +1489,14 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
 
 void cnetlink::link_deleted(rtnl_link *link) noexcept {
   assert(link);
+
+  // libnl 3.6+ sends IPv6 configuration updates as incomplete AF_INET6
+  // link objects, which may lead to duplicated deletion handling, so
+  // ignore it.
+  if (rtnl_link_get_family(link) == AF_INET6) {
+    VLOG(1) << __FUNCTION__ << ": ignoring link " << OBJ_CAST(link);
+    return;
+  }
 
   enum link_type lt = get_link_type(link);
 
