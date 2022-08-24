@@ -46,32 +46,12 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     return 0;
   }
 
-  int rv = swi->ingress_port_vlan_add(port_id, vid, !tagged, vrf_id);
+  int rv = add_ingress_vlan(port_id, vid, tagged, vrf_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to setup ingress vlan " << vid
                << (tagged ? " (tagged)" : " (untagged)")
                << " on port_id=" << port_id << "; rv=" << rv;
     return rv;
-  }
-
-  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-    auto members = nl->get_bond_members_by_port_id(port_id);
-    for (auto mem : members) {
-      rv = swi->ingress_port_vlan_add(mem, vid, !tagged, vrf_id);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to setup ingress vlan " << vid
-                   << (tagged ? " (tagged)" : " (untagged)")
-                   << " on port_id=" << port_id << "; rv=" << rv;
-        break;
-      }
-    }
-
-    if (rv < 0) {
-      for (auto mem : members) {
-        (void)swi->ingress_port_vlan_remove(mem, vid, !tagged, vrf_id);
-      }
-      return rv;
-    }
   }
 
   // setup egress interface
@@ -81,14 +61,7 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
                << (tagged ? " (tagged)" : " (untagged)")
                << " on port_id=" << port_id << "; rv=" << rv;
-    (void)swi->ingress_port_vlan_remove(port_id, vid, !tagged);
-
-    if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-      auto members = nl->get_bond_members_by_port_id(port_id);
-      for (auto mem : members) {
-        (void)swi->ingress_port_vlan_remove(mem, vid, !tagged, vrf_id);
-      }
-    }
+    (void)remove_ingress_vlan(port_id, vid, tagged, vrf_id);
 
     return rv;
   }
@@ -110,10 +83,9 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     if (rv < 0) {
       for (auto mem : members) {
         (void)swi->egress_port_vlan_remove(mem, vid);
-        (void)swi->ingress_port_vlan_remove(mem, vid, !tagged, vrf_id);
       }
       (void)swi->egress_port_vlan_remove(port_id, vid);
-      (void)swi->ingress_port_vlan_remove(port_id, vid, !tagged);
+      (void)remove_ingress_vlan(port_id, vid, tagged, vrf_id);
 
       return rv;
     }
@@ -254,14 +226,7 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   port_vlan.erase(refcount);
 
   // remove vid at ingress
-  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-    auto members = nl->get_bond_members_by_port_id(port_id);
-    for (auto mem : members) {
-      (void)swi->ingress_port_vlan_remove(mem, vid, !tagged, vrf_id);
-    }
-  }
-  rv = swi->ingress_port_vlan_remove(port_id, vid, !tagged, vrf_id);
-
+  rv = remove_ingress_vlan(port_id, vid, tagged, vrf_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv=" << rv
                << " to remove vid=" << vid << "(tagged=" << tagged
