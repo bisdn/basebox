@@ -292,6 +292,54 @@ int nl_vlan::disable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
   return rv;
 }
 
+int nl_vlan::enable_vlans(rtnl_link *link) {
+  assert(swi);
+
+  uint32_t port_id = nl->get_port_id(link);
+
+  if (port_id == 0) {
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    return -EINVAL;
+  }
+
+  for (auto const &it : port_vlan) {
+    if (it.first.first != port_id)
+      continue;
+
+    uint16_t vid = it.first.second;
+    uint16_t vrf_id = get_vrf_id(vid, link);
+
+    // assume the default vlan is untagged
+    (void)enable_vlan(port_id, it.first.second, vid != default_vid, vrf_id);
+  }
+
+  return 0;
+}
+
+int nl_vlan::disable_vlans(rtnl_link *link) {
+  assert(swi);
+
+  uint32_t port_id = nl->get_port_id(link);
+
+  if (port_id == 0) {
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    return -EINVAL;
+  }
+
+  for (auto const &it : port_vlan) {
+    if (it.first.first != port_id)
+      continue;
+
+    uint16_t vid = it.first.second;
+    uint16_t vrf_id = get_vrf_id(vid, link);
+
+    // assume the default vlan is untagged
+    (void)disable_vlan(port_id, it.first.second, vid != default_vid, vrf_id);
+  }
+
+  return 0;
+}
+
 int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
                              bool tagged) {
   int rv;
