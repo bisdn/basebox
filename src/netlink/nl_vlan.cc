@@ -46,50 +46,15 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     return 0;
   }
 
-  int rv = add_ingress_vlan(port_id, vid, tagged, vrf_id);
+  int rv = enable_vlan(port_id, vid, tagged, vrf_id);
   if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup ingress vlan " << vid
+    LOG(ERROR) << __FUNCTION__ << ": failed to enable vlan " << vid
                << (tagged ? " (tagged)" : " (untagged)")
                << " on port_id=" << port_id << "; rv=" << rv;
-    return rv;
-  }
-
-  // setup egress interface
-  rv = swi->egress_port_vlan_add(port_id, vid, !tagged);
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
-               << (tagged ? " (tagged)" : " (untagged)")
-               << " on port_id=" << port_id << "; rv=" << rv;
-    (void)remove_ingress_vlan(port_id, vid, tagged, vrf_id);
-
     return rv;
   }
 
   port_vlan.emplace(key, 1);
-
-  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-    auto members = nl->get_bond_members_by_port_id(port_id);
-    for (auto mem : members) {
-      rv = swi->egress_port_vlan_add(mem, vid, !tagged);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
-                   << (tagged ? " (tagged)" : " (untagged)")
-                   << " on port_id=" << port_id << "; rv=" << rv;
-        break;
-      }
-    }
-
-    if (rv < 0) {
-      for (auto mem : members) {
-        (void)swi->egress_port_vlan_remove(mem, vid);
-      }
-      (void)swi->egress_port_vlan_remove(port_id, vid);
-      (void)remove_ingress_vlan(port_id, vid, tagged, vrf_id);
-
-      return rv;
-    }
-  }
 
   return rv;
 }
@@ -226,7 +191,72 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   port_vlan.erase(refcount);
 
   // remove vid at ingress
-  rv = remove_ingress_vlan(port_id, vid, tagged, vrf_id);
+  rv = disable_vlan(port_id, vid, tagged, vrf_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed with rv=" << rv
+               << " to remove vid=" << vid << "(tagged=" << tagged
+               << ") of link " << OBJ_CAST(link);
+  }
+
+  return rv;
+}
+
+int nl_vlan::enable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
+                         uint16_t vrf_id) {
+  assert(swi);
+
+  int rv = add_ingress_vlan(port_id, vid, tagged, vrf_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to setup ingress vlan " << vid
+               << (tagged ? " (tagged)" : " (untagged)")
+               << " on port_id=" << port_id << "; rv=" << rv;
+    return rv;
+  }
+
+  // setup egress interface
+  rv = swi->egress_port_vlan_add(port_id, vid, !tagged);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
+               << (tagged ? " (tagged)" : " (untagged)")
+               << " on port_id=" << port_id << "; rv=" << rv;
+    (void)remove_ingress_vlan(port_id, vid, tagged, vrf_id);
+
+    return rv;
+  }
+
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    auto members = nl->get_bond_members_by_port_id(port_id);
+    for (auto mem : members) {
+      rv = swi->egress_port_vlan_add(mem, vid, !tagged);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
+                   << (tagged ? " (tagged)" : " (untagged)")
+                   << " on port_id=" << port_id << "; rv=" << rv;
+        break;
+      }
+    }
+
+    if (rv < 0) {
+      for (auto mem : members) {
+        (void)swi->egress_port_vlan_remove(mem, vid);
+      }
+      (void)swi->egress_port_vlan_remove(port_id, vid);
+      (void)remove_ingress_vlan(port_id, vid, tagged, vrf_id);
+
+      return rv;
+    }
+  }
+
+  return rv;
+}
+
+int nl_vlan::disable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
+                          uint16_t vrf_id) {
+  assert(swi);
+
+  // remove vid at ingress
+  int rv = remove_ingress_vlan(port_id, vid, tagged, vrf_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv=" << rv
                << " to remove vid=" << vid << "(tagged=" << tagged
