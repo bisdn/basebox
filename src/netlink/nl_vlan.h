@@ -28,6 +28,9 @@ public:
   int add_ingress_vlan(uint32_t port_id, uint16_t vid, bool pvid,
                        uint16_t vrf_id = 0);
 
+  int enable_vlans(rtnl_link *link);
+  int disable_vlans(rtnl_link *link);
+
   int add_ingress_pvid(rtnl_link *link, uint16_t pvid);
   int remove_ingress_pvid(rtnl_link *link, uint16_t vid);
 
@@ -56,6 +59,11 @@ private:
   static const uint16_t vid_low = 1;
   static const uint16_t vid_high = 0xfff;
   static const uint16_t default_vid = vid_low;
+
+  int enable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
+                  uint16_t vrf_id = 0);
+  int disable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
+                   uint16_t vrf_id = 0);
 
   // ifindex - vlan - refcount
   std::map<std::pair<uint32_t, uint16_t>, uint32_t> port_vlan;

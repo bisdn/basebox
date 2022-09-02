@@ -1316,6 +1316,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       LOG(INFO) << __FUNCTION__ << ": enslaving interface "
                 << rtnl_link_get_name(link);
 
+      vlan->disable_vlans(link);
       bridge->add_interface(link);
 
       // Scan the bridge for L3 addresses and routes we ignored previously
@@ -1504,8 +1505,10 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   case LT_BRIDGE_SLAVE:
     try {
       if (bridge) {
-        if (rtnl_link_get_family(link) == AF_BRIDGE)
+        if (rtnl_link_get_family(link) == AF_BRIDGE) {
           bridge->delete_interface(link);
+          vlan->enable_vlans(link);
+        }
       }
     } catch (std::exception &e) {
       LOG(ERROR) << __FUNCTION__ << ": failed: " << e.what();

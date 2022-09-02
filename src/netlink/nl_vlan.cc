@@ -46,78 +46,15 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     return 0;
   }
 
-  int rv = swi->ingress_port_vlan_add(port_id, vid, !tagged, vrf_id);
+  int rv = enable_vlan(port_id, vid, tagged, vrf_id);
   if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup ingress vlan " << vid
+    LOG(ERROR) << __FUNCTION__ << ": failed to enable vlan " << vid
                << (tagged ? " (tagged)" : " (untagged)")
                << " on port_id=" << port_id << "; rv=" << rv;
-    return rv;
-  }
-
-  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-    auto members = nl->get_bond_members_by_port_id(port_id);
-    for (auto mem : members) {
-      rv = swi->ingress_port_vlan_add(mem, vid, !tagged, vrf_id);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to setup ingress vlan " << vid
-                   << (tagged ? " (tagged)" : " (untagged)")
-                   << " on port_id=" << port_id << "; rv=" << rv;
-        break;
-      }
-    }
-
-    if (rv < 0) {
-      for (auto mem : members) {
-        (void)swi->ingress_port_vlan_remove(mem, vid, !tagged, vrf_id);
-      }
-      return rv;
-    }
-  }
-
-  // setup egress interface
-  rv = swi->egress_port_vlan_add(port_id, vid, !tagged);
-
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
-               << (tagged ? " (tagged)" : " (untagged)")
-               << " on port_id=" << port_id << "; rv=" << rv;
-    (void)swi->ingress_port_vlan_remove(port_id, vid, !tagged);
-
-    if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-      auto members = nl->get_bond_members_by_port_id(port_id);
-      for (auto mem : members) {
-        (void)swi->ingress_port_vlan_remove(mem, vid, !tagged, vrf_id);
-      }
-    }
-
     return rv;
   }
 
   port_vlan.emplace(key, 1);
-
-  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-    auto members = nl->get_bond_members_by_port_id(port_id);
-    for (auto mem : members) {
-      rv = swi->egress_port_vlan_add(mem, vid, !tagged);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
-                   << (tagged ? " (tagged)" : " (untagged)")
-                   << " on port_id=" << port_id << "; rv=" << rv;
-        break;
-      }
-    }
-
-    if (rv < 0) {
-      for (auto mem : members) {
-        (void)swi->egress_port_vlan_remove(mem, vid);
-        (void)swi->ingress_port_vlan_remove(mem, vid, !tagged, vrf_id);
-      }
-      (void)swi->egress_port_vlan_remove(port_id, vid);
-      (void)swi->ingress_port_vlan_remove(port_id, vid, !tagged);
-
-      return rv;
-    }
-  }
 
   return rv;
 }
@@ -254,14 +191,72 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   port_vlan.erase(refcount);
 
   // remove vid at ingress
+  rv = disable_vlan(port_id, vid, tagged, vrf_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed with rv=" << rv
+               << " to remove vid=" << vid << "(tagged=" << tagged
+               << ") of link " << OBJ_CAST(link);
+  }
+
+  return rv;
+}
+
+int nl_vlan::enable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
+                         uint16_t vrf_id) {
+  assert(swi);
+
+  int rv = add_ingress_vlan(port_id, vid, tagged, vrf_id);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to setup ingress vlan " << vid
+               << (tagged ? " (tagged)" : " (untagged)")
+               << " on port_id=" << port_id << "; rv=" << rv;
+    return rv;
+  }
+
+  // setup egress interface
+  rv = swi->egress_port_vlan_add(port_id, vid, !tagged);
+
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
+               << (tagged ? " (tagged)" : " (untagged)")
+               << " on port_id=" << port_id << "; rv=" << rv;
+    (void)remove_ingress_vlan(port_id, vid, tagged, vrf_id);
+
+    return rv;
+  }
+
   if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
     auto members = nl->get_bond_members_by_port_id(port_id);
     for (auto mem : members) {
-      (void)swi->ingress_port_vlan_remove(mem, vid, !tagged, vrf_id);
+      rv = swi->egress_port_vlan_add(mem, vid, !tagged);
+      if (rv < 0) {
+        LOG(ERROR) << __FUNCTION__ << ": failed to setup egress vlan " << vid
+                   << (tagged ? " (tagged)" : " (untagged)")
+                   << " on port_id=" << port_id << "; rv=" << rv;
+        break;
+      }
+    }
+
+    if (rv < 0) {
+      for (auto mem : members) {
+        (void)swi->egress_port_vlan_remove(mem, vid);
+      }
+      (void)swi->egress_port_vlan_remove(port_id, vid);
+      (void)remove_ingress_vlan(port_id, vid, tagged, vrf_id);
+
+      return rv;
     }
   }
-  rv = swi->ingress_port_vlan_remove(port_id, vid, !tagged, vrf_id);
 
+  return rv;
+}
+
+int nl_vlan::disable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
+                          uint16_t vrf_id) {
+  assert(swi);
+
+  // remove vid at ingress
+  int rv = remove_ingress_vlan(port_id, vid, tagged, vrf_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv=" << rv
                << " to remove vid=" << vid << "(tagged=" << tagged
@@ -295,6 +290,54 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   }
 
   return rv;
+}
+
+int nl_vlan::enable_vlans(rtnl_link *link) {
+  assert(swi);
+
+  uint32_t port_id = nl->get_port_id(link);
+
+  if (port_id == 0) {
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    return -EINVAL;
+  }
+
+  for (auto const &it : port_vlan) {
+    if (it.first.first != port_id)
+      continue;
+
+    uint16_t vid = it.first.second;
+    uint16_t vrf_id = get_vrf_id(vid, link);
+
+    // assume the default vlan is untagged
+    (void)enable_vlan(port_id, it.first.second, vid != default_vid, vrf_id);
+  }
+
+  return 0;
+}
+
+int nl_vlan::disable_vlans(rtnl_link *link) {
+  assert(swi);
+
+  uint32_t port_id = nl->get_port_id(link);
+
+  if (port_id == 0) {
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    return -EINVAL;
+  }
+
+  for (auto const &it : port_vlan) {
+    if (it.first.first != port_id)
+      continue;
+
+    uint16_t vid = it.first.second;
+    uint16_t vrf_id = get_vrf_id(vid, link);
+
+    // assume the default vlan is untagged
+    (void)disable_vlan(port_id, it.first.second, vid != default_vid, vrf_id);
+  }
+
+  return 0;
 }
 
 int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
