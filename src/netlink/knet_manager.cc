@@ -313,6 +313,15 @@ int knet_manager::set_port_speed(const std::string name, uint32_t speed,
   return 1;
 }
 
-int knet_manager::set_offloaded(rtnl_link *link, bool offloaded) { return 0; }
+int knet_manager::set_offloaded(rtnl_link *link, bool offloaded) {
+  std::string name(rtnl_link_get_name(link));
+  std::ofstream file("/proc/bcm/knet/link");
+
+  if (file.is_open()) {
+    file << (name + (offloaded ? "=offload" : "=no-offload"));
+    file.close();
+  }
+  return 0;
+}
 
 } // namespace basebox
