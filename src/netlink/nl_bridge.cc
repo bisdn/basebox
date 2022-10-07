@@ -1113,7 +1113,7 @@ int nl_bridge::add_port_vlan_stp_state(uint32_t port_id, uint16_t vid,
 
 int nl_bridge::del_port_vlan_stp_state(uint32_t port_id, uint16_t vid) {
   // default state when not part of the vlan
-  auto g_stp_state = BR_STATE_DISABLED;
+  auto g_stp_state = BR_STATE_FORWARDING;
 
   LOG(INFO) << __FUNCTION__ << ": set state=" << g_stp_state
             << " ifindex= " << port_id << " VLAN =" << vid;
