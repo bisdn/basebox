@@ -425,4 +425,6 @@ int tap_manager::set_port_speed(const std::string name, uint32_t speed,
   return error;
 }
 
+int tap_manager::set_offloaded(rtnl_link *link, bool offloaded) { return 0; }
+
 } // namespace basebox

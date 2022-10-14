@@ -77,6 +77,7 @@ public:
   virtual int change_port_status(const std::string name, bool status) = 0;
   virtual int set_port_speed(const std::string name, uint32_t speed,
                              uint8_t duplex) = 0;
+  virtual int set_offloaded(rtnl_link *link, bool offloaded) = 0;
 
   // access from northbound (cnetlink)
   virtual bool portdev_removed(rtnl_link *link) = 0;
