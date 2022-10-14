@@ -313,4 +313,6 @@ int knet_manager::set_port_speed(const std::string name, uint32_t speed,
   return 1;
 }
 
+int knet_manager::set_offloaded(rtnl_link *link, bool offloaded) { return 0; }
+
 } // namespace basebox
