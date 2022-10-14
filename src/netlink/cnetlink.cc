@@ -42,6 +42,7 @@
 #include "nl_vxlan.h"
 
 DECLARE_bool(multicast);
+DECLARE_bool(mark_fwd_offload);
 
 namespace basebox {
 
@@ -1352,7 +1353,9 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   } break;
   default: {
     bool handled = port_man->portdev_ready(link);
-    if (!handled)
+    if (handled)
+      port_man->set_offloaded(link, FLAGS_mark_fwd_offload);
+    else
       LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
                    << " link:" << OBJ_CAST(link);
   } break;
