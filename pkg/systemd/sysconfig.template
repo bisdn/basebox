@@ -10,7 +10,7 @@
 # FLAGS_ofdpa_grpc_port=50051
 #
 # Use KNET interfaces:
-# FLAGS_use_knet=false
+# FLAGS_use_knet=true
 
 ### glog
 #
