@@ -19,7 +19,7 @@ DECLARE_string(tryfromenv); // from gflags
 DEFINE_bool(multicast, true, "Enable multicast support");
 DEFINE_int32(port, 6653, "Listening port");
 DEFINE_int32(ofdpa_grpc_port, 50051, "Listening port of ofdpa gRPC server");
-DEFINE_bool(use_knet, false, "Use KNET interfaces (experimental)");
+DEFINE_bool(use_knet, false, "Use KNET interfaces");
 
 static bool validate_port(const char *flagname, gflags::int32 value) {
   VLOG(3) << __FUNCTION__ << ": flagname=" << flagname << ", value=" << value;
