@@ -1455,6 +1455,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     // happens when a bond/tap interface enslaved directly to a VRF and you set
     // nomaster
   } break;
+  case LT_BOND:
     bond->update_lag(old_link, new_link);
     break;
   case LT_VRF: // No need to care about the vrf interface itself
