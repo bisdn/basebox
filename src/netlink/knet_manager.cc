@@ -84,8 +84,15 @@ int knet_manager::create_portdev(uint32_t port_id, const std::string &port_name,
         auto rv = port_names2id.emplace(std::make_pair(port_name, port_id));
 
         if (!rv.second) {
-          LOG(FATAL) << __FUNCTION__ << ": failed to insert";
+          LOG(FATAL) << __FUNCTION__ << ": failed to insert port name";
         }
+
+        auto rv2 = id_to_hwaddr.emplace(std::make_pair(port_id, hwaddr));
+
+        if (!rv2.second) {
+          LOG(FATAL) << __FUNCTION__ << ": failed to insert hwaddr";
+        }
+
         r = system(("/usr/sbin/client_drivshell knet netif create port=" +
                     std::to_string(port_id) + " ifname=" + port_name +
                     " mac=" + mac_string + " keeprxtag=yes")
