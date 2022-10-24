@@ -1402,12 +1402,13 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     return;
   }
 
+  uint32_t port_id = port_man->get_port_id(rtnl_link_get_ifindex(new_link));
+
   switch (lt_old) {
   case LT_BOND_SLAVE:
     if (lt_new == LT_BOND_SLAVE) { // bond slave updated
       bond->update_lag_member(old_link, new_link);
-    } else if (port_man->get_port_id(rtnl_link_get_ifindex(new_link)) >
-               0) { // bond slave removed
+    } else if (port_id > 0) { // bond slave removed
       bond->remove_lag_member(old_link);
     }
     break;
@@ -1468,7 +1469,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
             << ", new link: " << OBJ_CAST(new_link);
     break;
   default:
-    if (port_man->get_port_id(rtnl_link_get_ifindex(new_link)) > 0) {
+    if (port_id > 0) {
       if (lt_new == LT_BOND_SLAVE) {
         // XXX link enslaved
         LOG(INFO) << __FUNCTION__ << ": link enslaved "
