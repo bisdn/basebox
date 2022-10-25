@@ -1403,6 +1403,11 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   }
 
   uint32_t port_id = port_man->get_port_id(rtnl_link_get_ifindex(new_link));
+  if (port_id > 0 && (rtnl_link_get_flags(old_link) & IFF_UP) !=
+                         (rtnl_link_get_flags(new_link) & IFF_UP)) {
+    swi->port_set_config(port_id, port_man->get_hwaddr(port_id),
+                         !!(rtnl_link_get_flags(new_link) & IFF_UP));
+  }
 
   switch (lt_old) {
   case LT_BOND_SLAVE:
