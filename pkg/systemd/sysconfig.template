@@ -11,6 +11,9 @@
 #
 # Use KNET interfaces:
 # FLAGS_use_knet=true
+#
+# Mark switched packets as offloaded:
+# FLAGS_mark_fwd_offload=true
 
 ### glog
 #
