@@ -267,6 +267,9 @@ public:
                      const sai_port_stat_t *counter_ids,
                      uint64_t *counters) noexcept override;
 
+  int port_set_config(uint32_t port_id, const rofl::caddress_ll &mac,
+                      bool up) noexcept override;
+
   /* IO */
   int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept override;
 
