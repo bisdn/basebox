@@ -1353,11 +1353,15 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   } break;
   default: {
     bool handled = port_man->portdev_ready(link);
-    if (handled)
+    if (handled) {
+      uint32_t port_id = get_port_id(link);
+
       port_man->set_offloaded(link, FLAGS_mark_fwd_offload);
-    else
+      swi->port_set_config(port_id, port_man->get_hwaddr(port_id), false);
+    } else {
       LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
                    << " link:" << OBJ_CAST(link);
+    }
   } break;
   } // switch link type
 }
