@@ -147,6 +147,8 @@ int nl_bond::add_lag(rtnl_link *bond) {
       nl->link_created(br_link);
     }
   }
+  nl->add_termination_mac(bond);
+
 #endif
 
   return rv;
@@ -161,6 +163,8 @@ int nl_bond::remove_lag(rtnl_link *bond) {
     LOG(WARNING) << __FUNCTION__ << ": lag does not exist for " << bond;
     return -ENODEV;
   }
+
+  nl->remove_termination_mac(bond);
 
   rv = swi->lag_remove(it->second);
   if (rv < 0) {
