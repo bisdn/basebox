@@ -69,10 +69,6 @@ std::unordered_map<
     l3_interface>
     l3_interface_mapping;
 
-// key: source port_id, vid, src_mac, af ; value: refcount
-std::unordered_set<std::tuple<int, uint16_t, rofl::caddress_ll, uint16_t>>
-    termination_mac_entries;
-
 // ECMP mapping
 std::unordered_multimap<std::set<uint32_t>, l3_interface> l3_ecmp_mapping;
 
@@ -191,21 +187,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  // XXX TODO split this into several functions
-  if (!is_loopback) {
-    int port_id = nl->get_port_id(link);
-    auto addr = rtnl_link_get_addr(link);
-    rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
-
-    rv = add_l3_termination(port_id, vid, mac, AF_INET);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": failed to setup termination mac port_id=" << port_id
-                 << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
-      return rv;
-    }
-  }
-
   // get v4 dst (local v4 addr)
   auto prefixlen = rtnl_addr_get_prefixlen(a);
   auto addr = rtnl_addr_get_local(a);
@@ -213,7 +194,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   rofl::caddress_in4 mask = rofl::build_mask_in4(prefixlen);
 
   if (rv < 0) {
-    // TODO shall we remove the l3_termination mac?
     LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
     return rv;
   }
@@ -248,7 +228,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   if (prefixlen == 32) {
     rv = sw->l3_unicast_host_add(ipv4_dst, 0, false, update, vrf_id);
     if (rv < 0) {
-      // TODO shall we remove the l3_termination mac?
       LOG(ERROR) << __FUNCTION__ << ": failed to setup l3 addr " << addr;
     }
   }
@@ -298,20 +277,6 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   }
 
   uint16_t vid = vlan->get_vid(link);
-
-  if (!is_loopback) {
-    int port_id = nl->get_port_id(link);
-    auto addr = rtnl_link_get_addr(link);
-    rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
-
-    rv = add_l3_termination(port_id, vid, mac, AF_INET6);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": failed to setup termination mac port_id=" << port_id
-                 << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
-      return rv;
-    }
-  }
 
   if (is_loopback) {
     rv = add_lo_addr_v6(a);
@@ -489,20 +454,6 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
 
     if (other != nullptr)
       get_l3_addrs(other, &addresses, family);
-  }
-
-  if (addresses.empty()) {
-    int port_id = nl->get_port_id(link);
-
-    addr = rtnl_link_get_addr(link);
-    rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
-
-    rv = del_l3_termination(port_id, vid, mac, family);
-    if (rv < 0 && rv != -ENODATA) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": failed to remove l3 termination mac(local) vid=" << vid
-                 << "; rv=" << rv;
-    }
   }
 
   // del vlan
@@ -1221,133 +1172,6 @@ int nl_l3::del_l3_route(struct rtnl_route *r) {
   default:
     return -EINVAL;
   }
-}
-
-int nl_l3::add_l3_termination(uint32_t port_id, uint16_t vid,
-                              const rofl::caddress_ll &mac, int af) noexcept {
-  int rv = 0;
-
-  // lookup if this already exists
-  auto needle = std::make_tuple(port_id, vid, mac, static_cast<uint16_t>(af));
-  auto it = termination_mac_entries.find(needle);
-  if (it != termination_mac_entries.end())
-    return 0;
-
-  termination_mac_entries.emplace(std::move(needle));
-
-  switch (af) {
-  case AF_INET:
-    rv = sw->l3_termination_add(port_id, vid, mac);
-    break;
-
-  case AF_INET6:
-    rv = sw->l3_termination_add_v6(port_id, vid, mac);
-    break;
-
-  default:
-    LOG(FATAL) << __FUNCTION__ << ": invalid address family " << af;
-    break;
-  }
-
-  if (rv == 0)
-
-    VLOG(3) << __FUNCTION__ << ": added l3 termination for port=" << port_id
-            << " vid=" << vid << " mac=" << mac << " af=" << af;
-
-  return rv;
-}
-
-int nl_l3::del_l3_termination(uint32_t port_id, uint16_t vid,
-                              const rofl::caddress_ll &mac, int af) noexcept {
-  int rv = 0;
-
-  VLOG(4) << __FUNCTION__ << ": trying to delete for port_id=" << port_id
-          << ", vid=" << vid << ", mac=" << mac << ", af=" << af;
-
-  // lookup if this exists
-  auto needle = std::make_tuple(port_id, vid, mac, static_cast<uint16_t>(af));
-  auto it = termination_mac_entries.find(needle);
-  if (it == termination_mac_entries.end()) {
-    LOG(WARNING)
-        << __FUNCTION__
-        << ": tried to delete a non existing termination mac for port_id="
-        << port_id << ", vid=" << vid << ", mac=" << mac << ", af=" << af;
-    return -ENODATA;
-  }
-
-  switch (af) {
-  case AF_INET:
-    rv = sw->l3_termination_remove(port_id, vid, mac);
-    break;
-
-  case AF_INET6:
-    rv = sw->l3_termination_remove_v6(port_id, vid, mac);
-    break;
-
-  default:
-    LOG(FATAL) << __FUNCTION__ << ": invalid address family " << af;
-    break;
-  }
-
-  termination_mac_entries.erase(it);
-
-  return rv;
-}
-
-int nl_l3::update_l3_termination(int port_id, uint16_t vid,
-                                 struct nl_addr *old_mac,
-                                 struct nl_addr *new_mac) noexcept {
-  int rv = 0;
-
-  auto o_mac = libnl_lladdr_2_rofl(old_mac);
-  auto n_mac = libnl_lladdr_2_rofl(new_mac);
-
-  // parse the AF list and remove the entry from the termination mac set
-  // call the switch function to remove and insert the entry with the
-  // new mac address.
-  if (termination_mac_entries.find(std::make_tuple(
-          port_id, vid, o_mac, AF_INET)) != termination_mac_entries.end()) {
-    rv = del_l3_termination(port_id, vid, o_mac, AF_INET);
-    if (rv < 0)
-      VLOG(3) << __FUNCTION__
-              << ": failed to remove termination mac port=" << port_id
-              << " vid=" << vid << " mac=" << o_mac;
-    rv = add_l3_termination(port_id, vid, n_mac, AF_INET);
-    if (rv < 0) {
-      VLOG(3) << __FUNCTION__
-              << ": failed to add termination mac port=" << port_id
-              << " vid=" << vid << " mac=" << n_mac;
-      return rv;
-    }
-
-    VLOG(2) << __FUNCTION__
-            << ": updated Termination MAC for port_id=" << port_id
-            << " old mac address=" << o_mac << " new mac address=" << n_mac
-            << " AF=" << AF_INET;
-  }
-
-  if (termination_mac_entries.find(std::make_tuple(
-          port_id, vid, o_mac, AF_INET6)) != termination_mac_entries.end()) {
-    rv = del_l3_termination(port_id, vid, o_mac, AF_INET6);
-    if (rv < 0)
-      VLOG(3) << __FUNCTION__
-              << ": failed to remove termination mac port=" << port_id
-              << " vid=" << vid << " mac=" << o_mac;
-    rv = add_l3_termination(port_id, vid, n_mac, AF_INET6);
-    if (rv < 0) {
-      VLOG(3) << __FUNCTION__
-              << ": failed to add termination mac port=" << port_id
-              << " vid=" << vid << " mac=" << n_mac;
-      return rv;
-    }
-
-    VLOG(2) << __FUNCTION__
-            << ": updated Termination MAC for port_id=" << port_id
-            << " old mac address=" << o_mac << " new mac address=" << n_mac
-            << " AF=" << AF_INET6;
-  }
-
-  return rv;
 }
 
 int nl_l3::update_l3_egress(int port_id, uint16_t vid, struct nl_addr *old_mac,

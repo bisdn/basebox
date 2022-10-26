@@ -142,6 +142,8 @@ int nl_bond::add_lag(rtnl_link *bond) {
       swi->lag_remove(lag_id);
   }
 
+  nl->add_termination_mac(bond);
+
 #endif
 
   return rv;
@@ -157,6 +159,8 @@ int nl_bond::remove_lag(rtnl_link *bond) {
                  << OBJ_CAST(bond);
     return -ENODEV;
   }
+
+  nl->remove_termination_mac(bond);
 
   rv = swi->lag_remove(it->second);
   if (rv < 0) {
