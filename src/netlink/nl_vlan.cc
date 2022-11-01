@@ -22,6 +22,10 @@ nl_vlan::nl_vlan(cnetlink *nl) : swi(nullptr), nl(nl) {}
 int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   assert(swi);
 
+  if (vid == 0 && !tagged) {
+    vid = default_vid;
+  }
+
   if (!is_vid_valid(vid)) {
     LOG(ERROR) << __FUNCTION__ << ": invalid vid " << vid;
     return -EINVAL;
@@ -164,6 +168,10 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   assert(swi);
 
   uint16_t vrf_id = get_vrf_id(vid, link);
+
+  if (vid == 0 && !tagged) {
+    vid = default_vid;
+  }
 
   if (!is_vid_valid(vid)) {
     LOG(ERROR) << __FUNCTION__ << ": invalid vid " << vid;
