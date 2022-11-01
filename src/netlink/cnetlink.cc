@@ -614,13 +614,19 @@ int cnetlink::add_termination_mac(rtnl_link *link) {
   auto mac = rofl::caddress_ll((uint8_t *)nl_addr_get_binary_addr(addr),
                                nl_addr_get_len(addr));
   uint32_t port_id = get_port_id(link);
+  bool tagged = false;
   uint16_t vid = 0;
 
-  if (rtnl_link_is_vlan(link))
+  if (rtnl_link_is_vlan(link)) {
     vid = rtnl_link_vlan_get_id(link);
+    tagged = true;
+  }
 
   swi->l3_termination_add(port_id, vid, mac);
   swi->l3_termination_add_v6(port_id, vid, mac);
+
+  if (port_id > 0)
+    vlan->add_vlan(link, vid, tagged);
 
   return 0;
 }
@@ -630,10 +636,16 @@ int cnetlink::remove_termination_mac(rtnl_link *link) {
   auto mac = rofl::caddress_ll((uint8_t *)nl_addr_get_binary_addr(addr),
                                nl_addr_get_len(addr));
   uint32_t port_id = get_port_id(link);
+  bool tagged = false;
   uint16_t vid = 0;
 
-  if (rtnl_link_is_vlan(link))
+  if (rtnl_link_is_vlan(link)) {
     vid = rtnl_link_vlan_get_id(link);
+    tagged = true;
+  }
+
+  if (port_id > 0)
+    vlan->remove_vlan(link, vid, tagged);
 
   swi->l3_termination_remove_v6(port_id, vid, mac);
   swi->l3_termination_remove(port_id, vid, mac);

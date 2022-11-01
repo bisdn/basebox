@@ -232,20 +232,6 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
     }
   }
 
-  // Avoid adding table VLAN entry for the following two cases
-  // Loopback: does not require entry on the Ingress table
-  // Bridges and Bridge Interfaces: Entry already set
-  if (!is_loopback && !is_bridge && !nl->is_bridge_interface(link)) {
-    assert(ifindex);
-    // add vlan
-    bool tagged = !!rtnl_link_is_vlan(link);
-    rv = vlan->add_vlan(link, vid, tagged);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
-                 << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
-    }
-  }
-
   return rv;
 }
 
@@ -311,19 +297,6 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed to setup address " << OBJ_CAST(a);
       return rv;
-    }
-  }
-
-  // Avoid adding table VLAN entry for the following two cases
-  // Loopback: does not require entry on the Ingress table
-  // Bridges and Bridge Interfaces: Entry already set
-  if (!is_loopback && !nl->is_bridge_interface(link)) {
-    // add vlan
-    bool tagged = !!rtnl_link_is_vlan(link);
-    rv = vlan->add_vlan(link, vid, tagged);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to add vlan id " << vid
-                 << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
     }
   }
 
@@ -456,19 +429,6 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
       get_l3_addrs(other, &addresses, family);
   }
 
-  // del vlan
-  // Avoid deleting table VLAN entry for the following two cases
-  // Loopback: does not require entry on the Ingress table
-  // Bridges and Bridge Interfaces: Entry set through bridge vlan table
-  if (!is_loopback && !nl->is_bridge_interface(link)) {
-    bool tagged = !!rtnl_link_is_vlan(link);
-    rv = vlan->remove_vlan(link, vid, tagged);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to remove vlan id " << vid
-                 << " (tagged=" << tagged << " to link " << OBJ_CAST(link);
-    }
-  }
-
   return rv;
 }
 
@@ -562,14 +522,6 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
       auto neigh_ifindex = rtnl_neigh_get_ifindex(neigh);
       auto neigh_link = nl->get_link_by_ifindex(neigh_ifindex);
 
-      rv = vlan->add_vlan(neigh_link.get(), vid, tagged);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": failed to setup vid ingress vid=" << vid << " on link "
-                   << OBJ_CAST(link.get());
-        return rv;
-      }
-
       rv = add_l3_egress(neigh_ifindex, vid, s_mac, d_mac, l3_interface_id);
 
       if (rv < 0) {
@@ -578,14 +530,6 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
                    << OBJ_CAST(link.get());
       }
     }
-    return rv;
-  }
-
-  // XXX TODO is this still needed?
-  rv = vlan->add_vlan(link.get(), vid, tagged);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to setup vid ingress vid=" << vid
-               << " on link " << OBJ_CAST(link.get());
     return rv;
   }
 
