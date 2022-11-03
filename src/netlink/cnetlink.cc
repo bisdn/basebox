@@ -1353,11 +1353,15 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   } break;
   default: {
     bool handled = port_man->portdev_ready(link);
-    if (handled)
+    if (handled) {
+      uint32_t port_id = get_port_id(link);
+
       port_man->set_offloaded(link, FLAGS_mark_fwd_offload);
-    else
+      swi->port_set_config(port_id, port_man->get_hwaddr(port_id), false);
+    } else {
       LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
                    << " link:" << OBJ_CAST(link);
+    }
   } break;
   } // switch link type
 }
@@ -1402,12 +1406,18 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     return;
   }
 
+  uint32_t port_id = port_man->get_port_id(rtnl_link_get_ifindex(new_link));
+  if (port_id > 0 && (rtnl_link_get_flags(old_link) & IFF_UP) !=
+                         (rtnl_link_get_flags(new_link) & IFF_UP)) {
+    swi->port_set_config(port_id, port_man->get_hwaddr(port_id),
+                         !!(rtnl_link_get_flags(new_link) & IFF_UP));
+  }
+
   switch (lt_old) {
   case LT_BOND_SLAVE:
     if (lt_new == LT_BOND_SLAVE) { // bond slave updated
       bond->update_lag_member(old_link, new_link);
-    } else if (port_man->get_port_id(rtnl_link_get_ifindex(new_link)) >
-               0) { // bond slave removed
+    } else if (port_id > 0) { // bond slave removed
       bond->remove_lag_member(old_link);
     }
     break;
@@ -1468,7 +1478,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
             << ", new link: " << OBJ_CAST(new_link);
     break;
   default:
-    if (port_man->get_port_id(rtnl_link_get_ifindex(new_link)) > 0) {
+    if (port_id > 0) {
       if (lt_new == LT_BOND_SLAVE) {
         // XXX link enslaved
         LOG(INFO) << __FUNCTION__ << ": link enslaved "

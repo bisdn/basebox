@@ -68,10 +68,21 @@ public:
     }
   }
 
+  const rofl::caddress_ll get_hwaddr(uint32_t port_id) const noexcept {
+    // XXX TODO add assert wrt threading
+    auto it = id_to_hwaddr.find(port_id);
+    if (it == id_to_hwaddr.end()) {
+      return nulladdr;
+    } else {
+      return it->second;
+    }
+  }
+
   void clear() noexcept {
     std::lock_guard<std::mutex> lock(tn_mutex);
     ifindex_to_id.clear();
     id_to_ifindex.clear();
+    id_to_hwaddr.clear();
   }
 
   virtual int change_port_status(const std::string name, bool status) = 0;
@@ -95,6 +106,9 @@ protected:
   // only accessible from cnetlink
   std::map<int, uint32_t> ifindex_to_id;
   std::map<uint32_t, int> id_to_ifindex;
+  std::map<uint32_t, rofl::caddress_ll> id_to_hwaddr;
+
+  const rofl::caddress_ll nulladdr;
 };
 
 } // namespace basebox

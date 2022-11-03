@@ -2042,6 +2042,28 @@ int controller::delete_egress_tpid(uint32_t port) noexcept {
   }
   return rv;
 }
+
+int controller::port_set_config(uint32_t port, const rofl::caddress_ll &mac,
+                                bool up) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_port_mod_message(rofl::cauxid(0), port, mac,
+                              up ? 0 : rofl::openflow13::OFPPC_PORT_DOWN,
+                              rofl::openflow13::OFPPC_PORT_DOWN, 0);
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
 int controller::subscribe_to(enum swi_flags flags) noexcept {
   int rv = 0;
   this->flags = this->flags | flags;
