@@ -66,6 +66,9 @@ public:
   int add_l3_configuration(rtnl_link *link);
   int remove_l3_configuration(rtnl_link *link);
 
+  int add_termination_mac(rtnl_link *link);
+  int remove_termination_mac(rtnl_link *link);
+
   int update_on_mac_change(rtnl_link *old_link, rtnl_link *new_link);
 
   bool has_l3_addresses(rtnl_link *link);
