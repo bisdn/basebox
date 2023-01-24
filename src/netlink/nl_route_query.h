@@ -83,7 +83,7 @@ public:
     if (err < 0)
       LOG(FATAL) << __FUNCTION__ << ":%s" << nl_geterror(err);
 
-    if (nl_recvmsgs_default(sock) < 0)
+    if ((err = nl_recvmsgs_default(sock)) < 0)
       LOG(FATAL) << __FUNCTION__ << ":%s" << nl_geterror(err);
 
     VLOG(3) << __FUNCTION__ << ": got route " << route;
