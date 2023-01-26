@@ -83,8 +83,17 @@ public:
     if (err < 0)
       LOG(FATAL) << __FUNCTION__ << ":%s" << nl_geterror(err);
 
-    if (nl_recvmsgs_default(sock) < 0)
+    if ((err = nl_recvmsgs_default(sock)) < 0) {
+      /*
+       * if there is no default route, and no matching route, the kernel will
+       * respond with -ENETUNREACH or -EHOSTUNREACH, which libnl translates to
+       * -NLE_FAILURE.
+       */
+      if (err == -NLE_FAILURE)
+        return nullptr;
+
       LOG(FATAL) << __FUNCTION__ << ":%s" << nl_geterror(err);
+    }
 
     VLOG(3) << __FUNCTION__ << ": got route " << route;
 
