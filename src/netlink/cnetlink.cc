@@ -211,7 +211,6 @@ void cnetlink::init_caches() {
 void cnetlink::init_subsystems() noexcept {
   assert(swi);
   l3->init();
-  vxlan->init();
 }
 
 void cnetlink::shutdown_subsystems() noexcept {
