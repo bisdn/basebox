@@ -29,8 +29,6 @@ public:
   nl_vxlan(std::shared_ptr<nl_l3> l3, cnetlink *nl);
   ~nl_vxlan() {}
 
-  int init();
-
   void net_reachable_notification(struct net_params) noexcept override;
   void nh_reachable_notification(struct nh_params) noexcept override;
 

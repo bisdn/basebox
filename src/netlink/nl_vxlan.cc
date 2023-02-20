@@ -189,7 +189,40 @@ static struct access_tunnel_port get_access_tunnel_port(uint32_t pport,
 nl_vxlan::nl_vxlan(std::shared_ptr<nl_l3> l3, cnetlink *nl)
     : sw(nullptr), bridge(nullptr), l3(std::move(l3)), nl(nl) {}
 
-int nl_vxlan::init() {
+void nl_vxlan::net_reachable_notification(struct net_params params) noexcept {
+
+  // lookup vxlan interface
+  auto vxlan_link = nl->get_link(params.ifindex, AF_UNSPEC);
+
+  if (!vxlan_link) {
+    VLOG(1) << __FUNCTION__
+            << ": interface not found ifindex=" << params.ifindex;
+    return;
+  }
+
+  if (!rtnl_link_is_vxlan(vxlan_link)) {
+    VLOG(1) << __FUNCTION__ << ": not a vxlan interface "
+            << OBJ_CAST(vxlan_link);
+    return;
+  }
+
+  auto br_link = nl->get_link(params.ifindex, AF_BRIDGE);
+
+  create_endpoint(vxlan_link, br_link, params.addr);
+}
+
+void nl_vxlan::nh_reachable_notification(struct nh_params p) noexcept {
+  // call create endpoint?
+  net_reachable_notification(p.np);
+}
+
+void nl_vxlan::register_switch_interface(switch_interface *sw) {
+  this->sw = sw;
+}
+
+void nl_vxlan::register_bridge(nl_bridge *bridge) {
+  this->bridge = bridge;
+
   nl_cache *c = nl->get_cache(cnetlink::NL_LINK_CACHE);
   std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> link_filter(
       rtnl_link_alloc(), &rtnl_link_put);
@@ -197,7 +230,7 @@ int nl_vxlan::init() {
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to set link type";
-    return rv;
+    return;
   }
 
   std::deque<rtnl_link *> vxlan_links;
@@ -257,42 +290,7 @@ int nl_vxlan::init() {
       }
     }
   }
-
-  return 0;
 }
-
-void nl_vxlan::net_reachable_notification(struct net_params params) noexcept {
-
-  // lookup vxlan interface
-  auto vxlan_link = nl->get_link(params.ifindex, AF_UNSPEC);
-
-  if (!vxlan_link) {
-    VLOG(1) << __FUNCTION__
-            << ": interface not found ifindex=" << params.ifindex;
-    return;
-  }
-
-  if (!rtnl_link_is_vxlan(vxlan_link)) {
-    VLOG(1) << __FUNCTION__ << ": not a vxlan interface "
-            << OBJ_CAST(vxlan_link);
-    return;
-  }
-
-  auto br_link = nl->get_link(params.ifindex, AF_BRIDGE);
-
-  create_endpoint(vxlan_link, br_link, params.addr);
-}
-
-void nl_vxlan::nh_reachable_notification(struct nh_params p) noexcept {
-  // call create endpoint?
-  net_reachable_notification(p.np);
-}
-
-void nl_vxlan::register_switch_interface(switch_interface *sw) {
-  this->sw = sw;
-}
-
-void nl_vxlan::register_bridge(nl_bridge *bridge) { this->bridge = bridge; }
 
 // XXX TODO alter this function to pass the vni instead of tunnel_id
 int nl_vxlan::create_access_port(rtnl_link *br_link, uint32_t tunnel_id,
