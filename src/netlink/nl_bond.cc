@@ -235,9 +235,6 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
               << ": bond was already bridge slave: " << OBJ_CAST(br_link);
       nl->link_created(br_link);
 
-      if (nl->get_bridge_stp_state() == 0)
-        return rv;
-
       auto new_state = rtnl_link_bridge_get_port_state(br_link);
       swi->ofdpa_stg_state_port_set(port_id, 0, new_state);
       auto pv_states = nl->get_port_vlan_stp_states(bond);
