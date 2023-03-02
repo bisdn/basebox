@@ -21,10 +21,6 @@
 #define BR_STATE_FORWARDING 3
 #define BR_STATE_BLOCKING 4
 
-#define STP_STATE_DISABLED 0
-#define STP_STATE_KERNEL 1
-#define STP_STATE_USERSPACE 2
-
 extern "C" {
 struct rtnl_bridge_vlan;
 struct rtnl_link;
@@ -177,7 +173,6 @@ public:
                   const rofl::caddress_ll &mac);
   int get_ifindex() { return bridge ? rtnl_link_get_ifindex(bridge) : 0; }
 
-  uint32_t get_stp_state();
   uint32_t get_vlan_proto();
   int set_vlan_proto(rtnl_link *link);
   int delete_vlan_proto(rtnl_link *link);

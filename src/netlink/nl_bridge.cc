@@ -84,12 +84,6 @@ bool nl_bridge::is_bridge_interface(rtnl_link *link) {
   return is_bridge_interface(rtnl_link_get_ifindex(link));
 }
 
-// Read sysfs to obtain the value for STP state on a bridge
-uint32_t nl_bridge::get_stp_state() {
-  std::string portname(rtnl_link_get_name(bridge));
-  return nl->load_from_file("/sys/class/net/" + portname + "/bridge/stp_state");
-}
-
 // Read sysfs to obtain the value for the VLAN protocol on the switch.
 // Only two values are suported: 0x8100 and 0x88a8
 uint32_t nl_bridge::get_vlan_proto() {
@@ -199,11 +193,9 @@ void nl_bridge::add_interface(rtnl_link *link) {
     return;
   }
 
-  if (get_stp_state() != STP_STATE_DISABLED) {
-    auto state = rtnl_link_bridge_get_port_state(link);
-    auto port_id = nl->get_port_id(link);
-    set_port_stp_state(port_id, state);
-  }
+  auto state = rtnl_link_bridge_get_port_state(link);
+  auto port_id = nl->get_port_id(link);
+  set_port_stp_state(port_id, state);
 
   // configure bonds and physical ports (non members of bond)
   update_vlans(nullptr, link);
@@ -232,9 +224,6 @@ void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
   std::string state;
 
   if (old_state != new_state) {
-    if (get_stp_state() == STP_STATE_DISABLED)
-      return;
-
     LOG(INFO) << __FUNCTION__ << " STP state changed, old=" << old_state
               << " new=" << new_state;
 
@@ -349,7 +338,6 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     }
   }
   auto members = nl->get_bond_members_by_lag(_link);
-  bool stp_enabled = (get_stp_state() != STP_STATE_DISABLED);
 
   // check for pvid changes
   if (new_br_vlan->pvid != old_br_vlan->pvid &&
@@ -438,7 +426,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
             // we might have missed the initial port vlan message since it
             // may come before the attachment message, make sure that any
             // existing vlans have their expected stp states.
-            if (stp_enabled && old_link == nullptr &&
+            if (old_link == nullptr &&
                 (bridge_stp_states.get_pvlan_state(pport_no, vid) == -EINVAL)) {
               // default state is FORWARDING in the kernel
               int state = BR_STATE_FORWARDING;
@@ -1143,9 +1131,6 @@ int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   int err = 0;
 
 #ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
-  if (get_stp_state() == STP_STATE_DISABLED)
-    return err;
-
   uint32_t ifindex = rtnl_bridge_vlan_get_ifindex(bvlan_info);
   int port_id = nl->get_port_id(ifindex);
   uint16_t vlan_id = rtnl_bridge_vlan_get_vlan_id(bvlan_info);
@@ -1163,9 +1148,6 @@ int nl_bridge::drop_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   int err = 0;
 
 #ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
-  if (get_stp_state() == STP_STATE_DISABLED)
-    return err;
-
   uint32_t ifindex = rtnl_bridge_vlan_get_ifindex(bvlan_info);
   int port_id = nl->get_port_id(ifindex);
   uint16_t vlan_id = rtnl_bridge_vlan_get_vlan_id(bvlan_info);
@@ -1180,9 +1162,6 @@ int nl_bridge::drop_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
 
 std::map<uint16_t, uint8_t>
 nl_bridge::get_port_vlan_stp_states(rtnl_link *link) {
-  if (get_stp_state() == STP_STATE_DISABLED)
-    return {};
-
   uint32_t port_id = nl->get_port_id(link);
   if (port_id == 0)
     return {};
