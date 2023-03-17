@@ -183,6 +183,11 @@ public:
   virtual int delete_egress_tpid(uint32_t port) noexcept = 0;
   /* @} */
 
+  /* @ port  { */
+  virtual int port_set_config(uint32_t port_id, const rofl::caddress_ll &mac,
+                              bool up) noexcept = 0;
+  /* @} */
+
   /* @ control  { */
   virtual int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept = 0;
   virtual int subscribe_to(enum swi_flags flags) noexcept = 0;

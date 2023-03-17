@@ -64,7 +64,13 @@ int tap_manager::create_portdev(uint32_t port_id, const std::string &port_name,
         auto rv = port_names2id.emplace(std::make_pair(port_name, port_id));
 
         if (!rv.second) {
-          LOG(FATAL) << __FUNCTION__ << ": failed to insert";
+          LOG(FATAL) << __FUNCTION__ << ": failed to insert port name";
+        }
+
+        auto rv2 = id_to_hwaddr.emplace(std::make_pair(port_id, hwaddr));
+
+        if (!rv2.second) {
+          LOG(FATAL) << __FUNCTION__ << ": failed to insert hwaddr";
         }
 
         dev->tap_open();
@@ -424,5 +430,7 @@ int tap_manager::set_port_speed(const std::string name, uint32_t speed,
   close(sockFd);
   return error;
 }
+
+int tap_manager::set_offloaded(rtnl_link *link, bool offloaded) { return 0; }
 
 } // namespace basebox
