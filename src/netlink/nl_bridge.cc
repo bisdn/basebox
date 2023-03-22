@@ -195,7 +195,8 @@ void nl_bridge::add_interface(rtnl_link *link) {
 
   auto state = rtnl_link_bridge_get_port_state(link);
   auto port_id = nl->get_port_id(link);
-  set_port_stp_state(port_id, state);
+  if (port_id > 0)
+    set_port_stp_state(port_id, state);
 
   // configure bonds and physical ports (non members of bond)
   update_vlans(nullptr, link);
@@ -228,7 +229,8 @@ void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
               << " new=" << new_state;
 
     auto port_id = nl->get_port_id(new_link);
-    set_port_stp_state(port_id, new_state);
+    if (port_id > 0)
+      set_port_stp_state(port_id, new_state);
     return;
   }
 
@@ -256,7 +258,8 @@ void nl_bridge::delete_interface(rtnl_link *link) {
 
   auto port_id = nl->get_port_id(link);
   // interface default is to STP state forward by default
-  set_port_stp_state(port_id, BR_STATE_FORWARDING);
+  if (port_id > 0)
+    set_port_stp_state(port_id, BR_STATE_FORWARDING);
 }
 
 void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
@@ -1139,7 +1142,8 @@ int nl_bridge::set_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   if (is_bridge_interface(ifindex))
     return err;
 
-  err = add_port_vlan_stp_state(port_id, vlan_id, stp_state);
+  if (port_id > 0)
+    err = add_port_vlan_stp_state(port_id, vlan_id, stp_state);
 #endif
   return err;
 }
@@ -1155,7 +1159,8 @@ int nl_bridge::drop_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   if (is_bridge_interface(ifindex))
     return err;
 
-  err = del_port_vlan_stp_state(port_id, vlan_id);
+  if (port_id > 0)
+    err = del_port_vlan_stp_state(port_id, vlan_id);
 #endif
   return err;
 }
