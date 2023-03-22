@@ -1761,9 +1761,15 @@ int controller::egress_port_vlan_remove(uint32_t port, uint16_t vid) noexcept {
   try {
     // remove filtered egress interface
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    dpt.send_group_mod_message(
-        rofl::cauxid(0),
-        fm_driver.disable_group_l2_interface(dpt.get_version(), port, vid));
+    rofl::openflow::cofgroupmod gm;
+
+    if (nbi::get_port_type(port) == nbi::port_type_lag) {
+      gm = fm_driver.disable_group_l2_trunk_interface(dpt.get_version(), port,
+                                                      vid);
+    } else {
+      gm = fm_driver.disable_group_l2_interface(dpt.get_version(), port, vid);
+    }
+    dpt.send_group_mod_message(rofl::cauxid(0), gm);
     uint32_t xid = 0;
     dpt.send_barrier_request(rofl::cauxid(0), 1, &xid);
     VLOG(2) << __FUNCTION__ << ": sent barrier with xid=" << (unsigned)xid;
