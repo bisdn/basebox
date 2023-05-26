@@ -107,9 +107,16 @@ int tap_manager::destroy_portdev(uint32_t port_id,
     return 0;
   }
 
-  // drop port from name mapping
   std::lock_guard<std::mutex> lock{tn_mutex};
   port_deleted.push_back(port_id);
+
+  // drop port from hw addr mapping
+  auto hw_addr_it = id_to_hwaddr.find(port_id);
+  if (hw_addr_it != id_to_hwaddr.end()) {
+    id_to_hwaddr.erase(hw_addr_it);
+  }
+
+  // drop port from name mapping
   auto tap_names_it = port_names2id.find(port_name);
 
   if (tap_names_it != port_names2id.end()) {
