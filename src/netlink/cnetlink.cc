@@ -682,7 +682,7 @@ bool cnetlink::is_bridge_interface(rtnl_link *l) const {
       get_bridge_ports(rtnl_link_get_ifindex(_l.get()), &bridge_interfaces);
 
       for (auto br_intf : bridge_interfaces) {
-        if (get_port_id(rtnl_link_get_ifindex(br_intf)) != 0)
+        if (is_switch_interface(br_intf))
           return true;
       }
       // handle this better, need to check for link
