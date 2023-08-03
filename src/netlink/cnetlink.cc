@@ -714,6 +714,14 @@ bool cnetlink::is_switch_interface(rtnl_link *l) const {
   if (get_port_id(link) > 0)
     return true;
 
+  // if it is a vxlan interface and has a tunnel id, it is a switch interface
+  if (rtnl_link_is_vxlan(link)) {
+    uint32_t tunnel_id;
+
+    if (vxlan->get_tunnel_id(link, nullptr, &tunnel_id) == 0)
+      return true;
+  }
+
   // if it is "our" bridge, it is a switch interface
   if (bridge && bridge->is_bridge_interface(link))
     return true;
