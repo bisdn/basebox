@@ -1328,6 +1328,8 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       LOG(INFO) << __FUNCTION__ << ": enslaving interface "
                 << rtnl_link_get_name(link);
 
+      if (rtnl_link_is_vxlan(base_link) && !new_bridge)
+        vxlan->create_endpoint(base_link);
       vlan->disable_vlans(link);
       bridge->add_interface(link);
 
@@ -1347,8 +1349,6 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
                  << OBJ_CAST(link);
       break;
     }
-
-    vxlan->create_endpoint(link);
   } break;
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
