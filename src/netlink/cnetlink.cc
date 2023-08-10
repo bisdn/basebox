@@ -682,7 +682,7 @@ bool cnetlink::is_bridge_interface(rtnl_link *l) const {
       get_bridge_ports(rtnl_link_get_ifindex(_l.get()), &bridge_interfaces);
 
       for (auto br_intf : bridge_interfaces) {
-        if (get_port_id(rtnl_link_get_ifindex(br_intf)) != 0)
+        if (is_switch_interface(br_intf))
           return true;
       }
       // handle this better, need to check for link
@@ -713,6 +713,14 @@ bool cnetlink::is_switch_interface(rtnl_link *l) const {
   // if it has a port_id, it is a switch interface
   if (get_port_id(link) > 0)
     return true;
+
+  // if it is a vxlan interface and has a tunnel id, it is a switch interface
+  if (rtnl_link_is_vxlan(link)) {
+    uint32_t tunnel_id;
+
+    if (vxlan->get_tunnel_id(link, nullptr, &tunnel_id) == 0)
+      return true;
+  }
 
   // if it is "our" bridge, it is a switch interface
   if (bridge && bridge->is_bridge_interface(link))
@@ -1291,9 +1299,13 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
         return;
       }
 
+      // get the base link instead of the bridged link object
+      rtnl_link *base_link = get_link(rtnl_link_get_ifindex(link), AF_UNSPEC);
+
       // we only care if we attach a link that is backed by openflow,
-      // i.e. a tap device or a bond with attached tap devices
-      if (get_port_id(link) == 0) {
+      // i.e. a tap device, a bond with attached tap devices, or vxlan
+      // interfaces
+      if (!is_switch_interface(base_link)) {
         VLOG(1) << __FUNCTION__ << ": ignoring untracked interface "
                 << rtnl_link_get_name(link);
         break;
@@ -1316,6 +1328,8 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       LOG(INFO) << __FUNCTION__ << ": enslaving interface "
                 << rtnl_link_get_name(link);
 
+      if (rtnl_link_is_vxlan(base_link) && !new_bridge)
+        vxlan->create_endpoint(base_link);
       vlan->disable_vlans(link);
       bridge->add_interface(link);
 
@@ -1335,8 +1349,6 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
                  << OBJ_CAST(link);
       break;
     }
-
-    vxlan->create_endpoint(link);
   } break;
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
