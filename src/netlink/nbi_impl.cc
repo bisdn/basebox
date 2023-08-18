@@ -29,6 +29,19 @@ void nbi_impl::register_switch(switch_interface *swi) noexcept {
   nl->register_switch(swi);
 }
 
+void nbi_impl::switch_state_notification(enum switch_state state) noexcept {
+  switch (state) {
+  case SWITCH_STATE_UP:
+  case SWITCH_STATE_DOWN:
+  case SWITCH_STATE_FAILED:
+  case SWITCH_STATE_UNKNOWN:
+    break;
+  default:
+    LOG(FATAL) << __FUNCTION__ << ": invalid state";
+    break;
+  }
+}
+
 void nbi_impl::port_notification(
     std::deque<port_notification_data> &notifications) noexcept {
 

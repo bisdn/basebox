@@ -129,6 +129,8 @@ void controller::handle_dpt_close(const rofl::cdptid &dptid) {
   }
 
   this->dptid = rofl::cdptid(0);
+
+  nb->switch_state_notification(nbi::SWITCH_STATE_DOWN);
 }
 
 void controller::handle_conn_terminated(rofl::crofdpt &dpt,
@@ -195,6 +197,7 @@ void controller::handle_desc_stats_reply(
 
   // TODO evaluate switch here?
 
+  nb->switch_state_notification(nbi::SWITCH_STATE_UP);
   dpt.send_port_desc_stats_request(rofl::cauxid(0), 0, 2);
 }
 
