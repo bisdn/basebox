@@ -96,6 +96,7 @@ public:
   void unregister_switch(switch_interface *) noexcept;
   void start() noexcept;
   void stop() noexcept;
+  void switch_connected() noexcept;
 
   static void nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
                        struct nl_object *new_obj, uint64_t diff, int action,

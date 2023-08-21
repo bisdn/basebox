@@ -795,7 +795,6 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
 
   switch (state) {
   case NL_STATE_INIT:
-    init_subsystems();
     state = NL_STATE_RUNNING;
     break;
   case NL_STATE_RUNNING:
@@ -1724,6 +1723,8 @@ void cnetlink::stop() noexcept {
   state = NL_STATE_SHUTDOWN;
   thread.wakeup(this);
 }
+
+void cnetlink::switch_connected() noexcept { init_subsystems(); }
 
 bool cnetlink::is_bridge_configured(rtnl_link *l) {
   assert(l);

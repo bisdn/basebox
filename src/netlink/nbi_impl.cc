@@ -32,6 +32,8 @@ void nbi_impl::register_switch(switch_interface *swi) noexcept {
 void nbi_impl::switch_state_notification(enum switch_state state) noexcept {
   switch (state) {
   case SWITCH_STATE_UP:
+    nl->switch_connected();
+    break;
   case SWITCH_STATE_DOWN:
   case SWITCH_STATE_FAILED:
   case SWITCH_STATE_UNKNOWN:
