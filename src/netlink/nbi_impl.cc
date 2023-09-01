@@ -60,6 +60,7 @@ void nbi_impl::port_notification(
         break;
       }
       break;
+    case PORT_EVENT_TABLE:
     case PORT_EVENT_ADD:
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
