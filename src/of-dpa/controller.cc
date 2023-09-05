@@ -286,7 +286,7 @@ void controller::handle_port_desc_stats_reply(
     uint8_t duplex = get_duplex(port.get_ethernet().get_curr());
 
     notifications.emplace_back(nbi::port_notification_data{
-        nbi::PORT_EVENT_ADD, port.get_port_no(), port.get_hwaddr(),
+        nbi::PORT_EVENT_TABLE, port.get_port_no(), port.get_hwaddr(),
         port.get_name(), status, speed, duplex});
   }
 

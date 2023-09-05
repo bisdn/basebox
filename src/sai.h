@@ -250,6 +250,7 @@ public:
     PORT_EVENT_ADD,
     PORT_EVENT_DEL,
     PORT_EVENT_MODIFY,
+    PORT_EVENT_TABLE,
   };
 
   enum port_status {
