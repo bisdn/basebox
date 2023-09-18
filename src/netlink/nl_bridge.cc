@@ -827,20 +827,19 @@ int nl_bridge::fdb_timeout(rtnl_link *br_link, uint16_t vid,
   std::unique_ptr<nl_addr, decltype(&nl_addr_put)> h_src(
       nl_addr_build(AF_LLC, mac.somem(), mac.memlen()), nl_addr_put);
 
-  rtnl_neigh_set_ifindex(n.get(), rtnl_link_get_ifindex(br_link));
   rtnl_neigh_set_master(n.get(), rtnl_link_get_master(br_link));
   rtnl_neigh_set_family(n.get(), AF_BRIDGE);
   rtnl_neigh_set_vlan(n.get(), vid);
   rtnl_neigh_set_lladdr(n.get(), h_src.get());
   rtnl_neigh_set_flags(n.get(), NTF_MASTER | NTF_EXT_LEARNED);
-  rtnl_neigh_set_state(n.get(), NUD_REACHABLE);
 
   // find entry in local l2_cache
   std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n_lookup(
       NEIGH_CAST(nl_cache_search(l2_cache.get(), OBJ_CAST(n.get()))),
       rtnl_neigh_put);
 
-  if (n_lookup) {
+  if (n_lookup && rtnl_neigh_get_ifindex(n_lookup.get()) ==
+                      rtnl_link_get_ifindex(br_link)) {
     // * remove l2 entry from kernel
     nl_msg *msg = nullptr;
     rtnl_neigh_build_delete_request(n.get(), NLM_F_REQUEST, &msg);
