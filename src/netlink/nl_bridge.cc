@@ -722,8 +722,11 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
       NEIGH_CAST(nl_cache_search(l2_cache.get(), OBJ_CAST(n.get()))),
       rtnl_neigh_put);
 
-  if (n_lookup && rtnl_neigh_get_ifindex(n_lookup.get()) == ifindex) {
-    return;
+  if (n_lookup) {
+    if (rtnl_neigh_get_ifindex(n_lookup.get()) == ifindex)
+      return;
+
+    nl_cache_remove(OBJ_CAST(n_lookup.get()));
   }
   rtnl_neigh_set_ifindex(n.get(), ifindex);
 
