@@ -1146,16 +1146,6 @@ int nl_l3::add_l3_route(struct rtnl_route *r) {
     return -EINVAL;
   }
 
-  // check for reachable addresses
-  for (auto cb = std::begin(net_callbacks); cb != std::end(net_callbacks);) {
-    if (nl_addr_cmp_prefix(cb->second.addr, rtnl_route_get_dst(r)) == 0) {
-      cb->first->net_reachable_notification(cb->second);
-      cb = net_callbacks.erase(cb);
-    } else {
-      ++cb;
-    }
-  }
-
   return rv;
 }
 
@@ -1879,6 +1869,18 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   // cleanup
   for (auto n : neighs)
     rtnl_neigh_put(n);
+
+  if (!update_route) {
+    // check for reachable addresses
+    for (auto cb = std::begin(net_callbacks); cb != std::end(net_callbacks);) {
+      if (nl_addr_cmp_prefix(cb->second.addr, rtnl_route_get_dst(r)) == 0) {
+        cb->first->net_reachable_notification(cb->second);
+        cb = net_callbacks.erase(cb);
+      } else {
+        ++cb;
+      }
+    }
+  }
 
   return rv;
 }
