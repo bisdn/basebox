@@ -1146,16 +1146,6 @@ int nl_l3::add_l3_route(struct rtnl_route *r) {
     return -EINVAL;
   }
 
-  // check for reachable addresses
-  for (auto cb = std::begin(net_callbacks); cb != std::end(net_callbacks);) {
-    if (nl_addr_cmp_prefix(cb->second.addr, rtnl_route_get_dst(r)) == 0) {
-      cb->first->net_reachable_notification(cb->second);
-      cb = net_callbacks.erase(cb);
-    } else {
-      ++cb;
-    }
-  }
-
   return rv;
 }
 
@@ -1768,6 +1758,37 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     return -ENOTSUP;
   }
 
+  // FRR may occationally install link-local routes again with a different
+  // priority. Since we cannot handle multiple routes with different
+  // priorities/metrics yet, ignore the duplicated route.
+  if (rtnl_route_get_priority(r) > 0 &&
+      rtnl_route_get_protocol(r) != RTPROT_KERNEL) {
+    nl_route_query rq;
+
+    auto route = rq.query_route(rtnl_route_get_dst(r));
+
+    if (route) {
+      bool duplicate = false;
+      VLOG(2) << __FUNCTION__ << ": got route " << OBJ_CAST(route)
+              << " for dst " << OBJ_CAST(rtnl_route_get_dst(r));
+      if (rtnl_route_get_protocol(route) == RTPROT_KERNEL &&
+          nl_addr_cmp_prefix(rtnl_route_get_dst(r),
+                             rtnl_route_get_dst(route)) == 0) {
+        // we already have a kernel route for the same dst
+        duplicate = true;
+      }
+      nl_object_put(OBJ_CAST(route));
+
+      // there already is a kernel route, so ignore this one
+      if (duplicate)
+        return 0;
+    } else {
+      // huh?
+      VLOG(2) << __FUNCTION__ << ": no route for dst "
+              << OBJ_CAST(rtnl_route_get_dst(r));
+    }
+  }
+
   std::deque<struct rtnl_neigh *> neighs;
   std::deque<nh_stub> unresolved_nh;
   int rv = get_neighbours_of_route(r, &neighs, &unresolved_nh);
@@ -1880,6 +1901,18 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   for (auto n : neighs)
     rtnl_neigh_put(n);
 
+  if (!update_route) {
+    // check for reachable addresses
+    for (auto cb = std::begin(net_callbacks); cb != std::end(net_callbacks);) {
+      if (nl_addr_cmp_prefix(cb->second.addr, rtnl_route_get_dst(r)) == 0) {
+        cb->first->net_reachable_notification(cb->second);
+        cb = net_callbacks.erase(cb);
+      } else {
+        ++cb;
+      }
+    }
+  }
+
   return rv;
 }
 
@@ -1903,6 +1936,34 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   // table, but will enter the wrong info into the OFDPA tables
   if (vrf_id == MAIN_ROUTING_TABLE)
     vrf_id = 0;
+
+  if (rtnl_route_get_priority(r) > 0 &&
+      rtnl_route_get_protocol(r) != RTPROT_KERNEL) {
+    nl_route_query rq;
+
+    auto route = rq.query_route(rtnl_route_get_dst(r));
+
+    if (route) {
+      bool duplicate = false;
+      VLOG(2) << __FUNCTION__ << ": got route " << OBJ_CAST(route)
+              << " for dst " << OBJ_CAST(rtnl_route_get_dst(r));
+      if (rtnl_route_get_protocol(route) == RTPROT_KERNEL &&
+          nl_addr_cmp_prefix(rtnl_route_get_dst(r),
+                             rtnl_route_get_dst(route)) == 0) {
+        // we have a kernel route for the same dst
+        duplicate = true;
+      }
+      nl_object_put(OBJ_CAST(route));
+
+      // there is still a kernel route, so ignore this one
+      if (duplicate)
+        return 0;
+    } else {
+      // no route anymore, this is fine
+      VLOG(2) << __FUNCTION__ << ": no route for dst "
+              << OBJ_CAST(rtnl_route_get_dst(r));
+    }
+  }
 
   if (!keep_route) {
     rv = del_l3_unicast_route(dst, vrf_id);
