@@ -20,6 +20,7 @@
 #endif
 #include <netlink/route/link.h>
 #include <netlink/route/link/bonding.h>
+#include <netlink/route/link/bridge_info.h>
 #include <netlink/route/link/vlan.h>
 #include <netlink/route/link/vrf.h>
 #include <netlink/route/link/vxlan.h>
@@ -1291,10 +1292,19 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   switch (lt) {
   case LT_BRIDGE_SLAVE: // a new bridge slave was created
     try {
+      auto master = rtnl_link_get_master(link);
+      uint8_t vlan_filtering = 0;
+
       // check for new bridge slaves
-      if (rtnl_link_get_master(link) == 0) {
+      if (master == 0) {
         LOG(ERROR) << __FUNCTION__ << ": bridge slave without master "
                    << OBJ_CAST(link);
+        return;
+      }
+
+      if (ignored_bridges.find(master) != ignored_bridges.end()) {
+        LOG(WARNING) << __FUNCTION__
+                     << ": ignoring attachment to unsupported bridge";
         return;
       }
 
@@ -1310,8 +1320,19 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
         break;
       }
 
-      auto br_link = get_link_by_ifindex(rtnl_link_get_master(link));
+      auto br_link = get_link_by_ifindex(master);
       LOG(INFO) << __FUNCTION__ << ": using bridge " << OBJ_CAST(br_link.get());
+
+      // we only support vlan aware bridges
+      if (rtnl_link_bridge_get_vlan_filtering(br_link.get(), &vlan_filtering) <
+              0 ||
+          vlan_filtering != 1) {
+        LOG(WARNING)
+            << __FUNCTION__
+            << ": unsupported bridge: configured with vlan_filtering 0";
+        ignored_bridges.insert(master);
+        return;
+      }
 
       bool new_bridge = false;
       // slave interface
@@ -1322,6 +1343,10 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
         bridge->set_bridge_interface(br_link.get());
         vxlan->register_bridge(bridge);
         new_bridge = true;
+      } else if (!bridge->is_bridge_interface(master)) {
+        LOG(WARNING) << __FUNCTION__ << ": using multple bridges not supported";
+        ignored_bridges.insert(master);
+        return;
       }
 
       LOG(INFO) << __FUNCTION__ << ": enslaving interface "
@@ -1528,7 +1553,7 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   switch (lt) {
   case LT_BRIDGE_SLAVE:
     try {
-      if (bridge) {
+      if (bridge && bridge->is_bridge_interface(rtnl_link_get_master(link))) {
         if (rtnl_link_get_family(link) == AF_BRIDGE) {
           bridge->delete_interface(link);
           vlan->enable_vlans(link);
@@ -1545,6 +1570,8 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
       bridge->clear_tpid_entries(); // clear the Egress TPID table
       delete bridge;
       bridge = nullptr;
+    } else {
+      ignored_bridges.erase(rtnl_link_get_ifindex(link));
     }
     break;
   case LT_VXLAN: {
