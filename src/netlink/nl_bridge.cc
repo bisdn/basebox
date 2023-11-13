@@ -329,14 +329,12 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     nl->get_bridge_ports(rtnl_link_get_master(_link), &bridge_ports);
 
     if (vxlan->get_tunnel_id(_link, nullptr, &tunnel_id) != 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to get vni of link "
-                 << OBJ_CAST(_link);
+      LOG(ERROR) << __FUNCTION__ << ": failed to get vni of link " << _link;
     }
   } else {
     pport_no = nl->get_port_id(_link);
     if (pport_no == 0) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": invalid pport_no=0 of link: " << OBJ_CAST(_link);
+      LOG(ERROR) << __FUNCTION__ << ": invalid pport_no=0 of link: " << _link;
       return;
     }
   }
@@ -350,7 +348,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__
                  << ": failed to remove ingress vlan=" << old_br_vlan->pvid
-                 << " link=" << OBJ_CAST(_link);
+                 << " link=" << _link;
       return;
     }
   }
@@ -417,8 +415,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
           } else {
             // normal vlan port
             VLOG(3) << __FUNCTION__ << ": add vid=" << vid
-                    << " on pport_no=" << pport_no
-                    << " link: " << OBJ_CAST(_link);
+                    << " on pport_no=" << pport_no << " link: " << _link;
 
             // the PVID is already being handled outside of the loop
             vlan->add_bridge_vlan(_link, vid, false, !egress_untagged);
@@ -444,8 +441,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
               }
               VLOG(3) << __FUNCTION__ << ": initialize vid=" << vid
                       << " on pport_no=" << pport_no
-                      << " to stp state=" << state
-                      << " link: " << OBJ_CAST(_link);
+                      << " to stp state=" << state << " link: " << _link;
               add_port_vlan_stp_state(pport_no, vid, state);
             }
 #endif
@@ -462,8 +458,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
                               tunnel_id, bridge_ports, false);
         } else {
           VLOG(3) << __FUNCTION__ << ": remove vid=" << vid
-                  << " on pport_no=" << pport_no
-                  << " link: " << OBJ_CAST(_link);
+                  << " on pport_no=" << pport_no << " link: " << _link;
 
           // delete all cache entries first
           std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> filter(
@@ -509,8 +504,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
 
       VLOG(3) << __FUNCTION__ << ": change vid=" << vid
               << " on pport_no=" << pport_no
-              << " egress untagged=" << egress_untagged
-              << " link: " << OBJ_CAST(_link);
+              << " egress untagged=" << egress_untagged << " link: " << _link;
 
       vlan->update_egress_bridge_vlan(_link, vid, egress_untagged);
     }
@@ -524,7 +518,7 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__
                  << ": failed to update pvid=" << new_br_vlan->pvid
-                 << " link=" << OBJ_CAST(_link);
+                 << " link=" << _link;
       return;
     }
   }
@@ -547,7 +541,7 @@ std::deque<rtnl_neigh *> nl_bridge::get_fdb_entries_of_port(rtnl_link *br_port,
   if (lladdr)
     rtnl_neigh_set_lladdr(filter.get(), lladdr);
 
-  VLOG(3) << __FUNCTION__ << ": searching for " << OBJ_CAST(filter.get());
+  VLOG(3) << __FUNCTION__ << ": searching for " << filter.get();
   std::deque<rtnl_neigh *> neighs;
   nl_cache_foreach_filter(
       nl->get_cache(cnetlink::NL_NEIGH_CACHE), OBJ_CAST(filter.get()),
@@ -626,8 +620,7 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
     uint32_t pport_no = nl->get_port_id(ifindex);
 
     if (pport_no == 0) {
-      LOG(WARNING) << __FUNCTION__ << ": ignoring unknown port "
-                   << OBJ_CAST(_br_port);
+      LOG(WARNING) << __FUNCTION__ << ": ignoring unknown port " << _br_port;
       continue;
     }
 
@@ -636,7 +629,7 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
     VLOG(2) << __FUNCTION__ << ": vid=" << vid << ", untagged=" << untagged
             << ", tunnel_id=" << tunnel_id << ", add=" << add
             << ", ifindex=" << ifindex << ", pport_no=" << pport_no
-            << ", port: " << OBJ_CAST(_br_port);
+            << ", port: " << _br_port;
 
     if (add) {
       std::string port_name = std::string(rtnl_link_get_name(_br_port));
@@ -655,7 +648,7 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
             0) {
           continue;
         }
-        VLOG(3) << ": needs to be updated " << OBJ_CAST(n);
+        VLOG(3) << ": needs to be updated " << n;
         vxlan->add_l2_neigh(n, link, br_link);
       }
 
@@ -673,7 +666,7 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
             0) {
           continue;
         }
-        VLOG(3) << ": needs to be updated " << OBJ_CAST(n);
+        VLOG(3) << ": needs to be updated " << n;
         add_neigh_to_fdb(n);
       }
       sw->l2_multicast_group_rejoin_all_in_vlan(pport_no, vid);
@@ -688,7 +681,7 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
   int ifindex = rtnl_neigh_get_ifindex(neigh);
   uint32_t port = nl->get_port_id(ifindex);
   if (port == 0) {
-    VLOG(1) << __FUNCTION__ << ": unknown port for neigh " << OBJ_CAST(neigh);
+    VLOG(1) << __FUNCTION__ << ": unknown port for neigh " << neigh;
     return;
   }
 
@@ -699,8 +692,7 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
   // rtnl_neigh_get_vlan() returns -1 when vid is unset,
   // which is not a valid VID.
   if (vid < 0) {
-    VLOG(2) << __FUNCTION__
-            << ": vlan not set, skipping add neigh=" << OBJ_CAST(neigh);
+    VLOG(2) << __FUNCTION__ << ": vlan not set, skipping add neigh=" << neigh;
     return;
   }
 
@@ -742,7 +734,7 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
   LOG(INFO) << __FUNCTION__ << ": add mac=" << _mac << " to bridge "
             << rtnl_link_get_name(bridge) << " on port=" << port
             << " vlan=" << (unsigned)vid << ", permanent=" << permanent;
-  LOG(INFO) << __FUNCTION__ << ": object: " << OBJ_CAST(neigh);
+  LOG(INFO) << __FUNCTION__ << ": object: " << neigh;
   sw->l2_addr_add(port, vid, _mac, true, permanent, update);
 
   if (!permanent) {
@@ -762,7 +754,7 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
     // cache the entry
     if (nl_cache_add(l2_cache.get(), OBJ_CAST(n.get())) < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed to add entry to l2_cache "
-                 << OBJ_CAST(n.get());
+                 << n.get();
     }
   }
 }
@@ -778,7 +770,7 @@ void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {
   // as well
   if (vid < 0) {
     VLOG(2) << __FUNCTION__
-            << ": vlan not set, skipping remove neigh=" << OBJ_CAST(neigh);
+            << ": vlan not set, skipping remove neigh=" << neigh;
     return;
   }
 
@@ -813,7 +805,7 @@ bool nl_bridge::is_mac_in_l2_cache(rtnl_neigh *n) {
 
   if (n_lookup) {
     VLOG(2) << __FUNCTION__ << ": found existing l2_cache entry "
-            << OBJ_CAST(n_lookup.get());
+            << n_lookup.get();
     return true;
   }
 

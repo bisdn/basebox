@@ -35,7 +35,7 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   uint32_t port_id = nl->get_port_id(link);
 
   if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << link;
     return -EINVAL;
   }
 
@@ -175,7 +175,7 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   uint32_t port_id = nl->get_port_id(link);
 
   if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": unknown link " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": unknown link " << link;
     return -EINVAL;
   }
 
@@ -195,7 +195,7 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv=" << rv
                << " to remove vid=" << vid << "(tagged=" << tagged
-               << ") of link " << OBJ_CAST(link);
+               << ") of link " << link;
   }
 
   return rv;
@@ -260,7 +260,7 @@ int nl_vlan::disable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv=" << rv
                << " to remove vid=" << vid << "(tagged=" << tagged
-               << ") of link " << OBJ_CAST(link);
+               << ") of link " << link;
     return rv;
   }
 
@@ -270,7 +270,7 @@ int nl_vlan::disable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv= " << rv
                << " to remove all bridge entries in vid=" << vid << " link "
-               << OBJ_CAST(link);
+               << link;
     return rv;
   }
 
@@ -285,7 +285,7 @@ int nl_vlan::disable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv= " << rv
-               << " to remove vid=" << vid << " of link " << OBJ_CAST(link);
+               << " to remove vid=" << vid << " of link " << link;
     return rv;
   }
 
@@ -298,7 +298,7 @@ int nl_vlan::enable_vlans(rtnl_link *link) {
   uint32_t port_id = nl->get_port_id(link);
 
   if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << link;
     return -EINVAL;
   }
 
@@ -322,7 +322,7 @@ int nl_vlan::disable_vlans(rtnl_link *link) {
   uint32_t port_id = nl->get_port_id(link);
 
   if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << link;
     return -EINVAL;
   }
 
@@ -358,7 +358,7 @@ int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
   uint32_t port_id = nl->get_port_id(link);
 
   if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << link;
     return -EINVAL;
   }
 
@@ -401,7 +401,7 @@ int nl_vlan::update_egress_bridge_vlan(rtnl_link *link, uint16_t vid,
   uint32_t port_id = nl->get_port_id(link);
 
   if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << link;
     return -EINVAL;
   }
 
@@ -430,7 +430,7 @@ void nl_vlan::remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
   uint32_t port_id = nl->get_port_id(link);
 
   if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": unknown interface " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << link;
     return;
   }
 
@@ -476,11 +476,11 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
       vid = default_vid;
     else if (rtnl_link_get_ifindex(link) != 1)
       LOG(ERROR) << __FUNCTION__ << ": unsupported link type " << lt
-                 << " of link " << OBJ_CAST(link);
+                 << " of link " << link;
     break;
   }
 
-  VLOG(2) << __FUNCTION__ << ": vid=" << vid << " interface=" << OBJ_CAST(link);
+  VLOG(2) << __FUNCTION__ << ": vid=" << vid << " interface=" << link;
 
   return vid;
 }
@@ -525,8 +525,7 @@ void nl_vlan::vrf_attach(rtnl_link *old_link, rtnl_link *new_link) {
     add_ingress_vlan(nl->get_port_id(link.get()), vid, true, vrf);
   }
 
-  VLOG(1) << __FUNCTION__ << ": attached=" << OBJ_CAST(new_link)
-          << " to VRF id=" << vrf;
+  VLOG(1) << __FUNCTION__ << ": attached=" << new_link << " to VRF id=" << vrf;
 }
 
 void nl_vlan::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
@@ -554,7 +553,7 @@ void nl_vlan::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
     add_ingress_vlan(nl->get_port_id(link.get()), vid, true);
   }
 
-  VLOG(1) << __FUNCTION__ << ": detached=" << OBJ_CAST(new_link)
+  VLOG(1) << __FUNCTION__ << ": detached=" << new_link
           << " to VRF id=" << vrf->second;
   vlan_vrf.erase(vrf);
 }
