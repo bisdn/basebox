@@ -260,7 +260,7 @@ int nl_vlan::disable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv=" << rv
                << " to remove vid=" << vid << "(tagged=" << tagged
-               << ") of link " << link;
+               << ") of port_id " << port_id;
     return rv;
   }
 
@@ -269,8 +269,8 @@ int nl_vlan::disable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv= " << rv
-               << " to remove all bridge entries in vid=" << vid << " link "
-               << link;
+               << " to remove all bridge entries in vid=" << vid << " port_id "
+               << port_id;
     return rv;
   }
 
@@ -285,7 +285,7 @@ int nl_vlan::disable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed with rv= " << rv
-               << " to remove vid=" << vid << " of link " << link;
+               << " to remove vid=" << vid << " of port_id " << port_id;
     return rv;
   }
 
