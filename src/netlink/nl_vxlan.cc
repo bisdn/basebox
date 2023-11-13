@@ -671,7 +671,7 @@ int nl_vxlan::create_endpoint(rtnl_link *vxlan_link, rtnl_link *br_link,
     rv = add_l2_neigh(neigh, lport_id, tunnel_id);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed (rv=" << rv
-                 << ") to add l2 neigh " << link;
+                 << ") to add l2 neigh " << neigh;
     }
   }
 
