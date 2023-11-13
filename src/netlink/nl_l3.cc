@@ -727,6 +727,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
       VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
       // we must not route IPv6 LL addresses, so do not add a host entry
       add_host_entry = false;
+      rv = 0;
     }
   }
 
