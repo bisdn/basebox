@@ -220,6 +220,9 @@ private:
   int remove_l3_addresses(rtnl_link *link);
   int add_l3_routes(rtnl_link *link);
   int remove_l3_routes(rtnl_link *link);
+
+  // bridges with unsupported configuration
+  std::set<int> ignored_bridges;
 };
 
 } // end of namespace basebox
