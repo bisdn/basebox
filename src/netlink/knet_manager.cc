@@ -268,14 +268,12 @@ bool knet_manager::portdev_removed(rtnl_link *link) {
   auto pd_it =
       std::find(port_deleted.begin(), port_deleted.end(), ifi2id_it->second);
   if (pd_it == port_deleted.end()) {
-    LOG(FATAL) << __FUNCTION__ << ": unexpected port removal of "
-               << OBJ_CAST(link);
+    LOG(FATAL) << __FUNCTION__ << ": unexpected port removal of " << link;
   }
 
   auto id2ifi_it = id_to_ifindex.find(ifi2id_it->second);
   if (id2ifi_it == id_to_ifindex.end()) {
-    LOG(FATAL) << __FUNCTION__ << ": unexpected port removal of "
-               << OBJ_CAST(link);
+    LOG(FATAL) << __FUNCTION__ << ": unexpected port removal of " << link;
   }
 
   ifindex_to_id.erase(ifi2id_it);

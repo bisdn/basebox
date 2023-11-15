@@ -201,8 +201,7 @@ void nl_vxlan::net_reachable_notification(struct net_params params) noexcept {
   }
 
   if (!rtnl_link_is_vxlan(vxlan_link)) {
-    VLOG(1) << __FUNCTION__ << ": not a vxlan interface "
-            << OBJ_CAST(vxlan_link);
+    VLOG(1) << __FUNCTION__ << ": not a vxlan interface " << vxlan_link;
     return;
   }
 
@@ -248,7 +247,7 @@ void nl_vxlan::register_bridge(nl_bridge *bridge) {
 
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed (rv=" << rv
-                 << ") to create vni for link " << OBJ_CAST(link);
+                 << ") to create vni for link " << link;
       continue;
     }
 
@@ -260,7 +259,7 @@ void nl_vxlan::register_bridge(nl_bridge *bridge) {
     rv = create_endpoint(link);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed (rv=" << rv
-                 << ") to create create endpoint " << OBJ_CAST(link);
+                 << ") to create create endpoint " << link;
     }
 
     // get neighs on vxlan link
@@ -286,7 +285,7 @@ void nl_vxlan::register_bridge(nl_bridge *bridge) {
       rv = add_l2_neigh(neigh, link, br_link);
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__ << ": failed (rv=" << rv
-                   << ") to add l2 neigh " << OBJ_CAST(link);
+                   << ") to add l2 neigh " << link;
       }
     }
   }
@@ -500,7 +499,7 @@ int nl_vxlan::remove_vni(rtnl_link *link) {
   auto v2t_it = vni2tunnel.find(vni);
 
   if (v2t_it == vni2tunnel.end()) {
-    LOG(ERROR) << __FUNCTION__ << ": could not delete vni " << OBJ_CAST(link);
+    LOG(ERROR) << __FUNCTION__ << ": could not delete vni " << link;
     return -EINVAL;
   }
 
@@ -547,8 +546,7 @@ int nl_vxlan::create_endpoint(rtnl_link *vxlan_link) {
 
   if (nl_addr_get_family(addr) != AF_INET) {
     LOG(ERROR) << __FUNCTION__
-               << ": detected unsupported remote address family "
-               << OBJ_CAST(vxlan_link);
+               << ": detected unsupported remote address family " << vxlan_link;
     return -ENOTSUP;
   }
 
@@ -673,7 +671,7 @@ int nl_vxlan::create_endpoint(rtnl_link *vxlan_link, rtnl_link *br_link,
     rv = add_l2_neigh(neigh, lport_id, tunnel_id);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed (rv=" << rv
-                 << ") to add l2 neigh " << OBJ_CAST(link);
+                 << ") to add l2 neigh " << neigh;
     }
   }
 
@@ -839,7 +837,7 @@ static auto lookup_endpoint(rtnl_link *vxlan_link, nl_addr *local_,
   int rv = rtnl_link_vxlan_get_id(vxlan_link, &vni);
 
   if (rv < 0) {
-    LOG(FATAL) << __FUNCTION__ << ": not a vxlan link " << OBJ_CAST(vxlan_link);
+    LOG(FATAL) << __FUNCTION__ << ": not a vxlan link " << vxlan_link;
   }
 
   uint32_t initiator_udp_dst_port = 4789;
@@ -857,7 +855,7 @@ static auto lookup_endpoint(rtnl_link *vxlan_link, nl_addr *local_,
     VLOG(1) << __FUNCTION__
             << ": endpoint not found having the following parameter local addr "
             << local_ << ", remote addr " << remote_ << ", on link "
-            << OBJ_CAST(vxlan_link);
+            << vxlan_link;
     return endpoint_id.end();
   }
 
@@ -885,14 +883,14 @@ int nl_vxlan::delete_endpoint(rtnl_link *vxlan_link, nl_addr *local_,
   int rv = get_tunnel_id(vxlan_link, &vni, &tunnel_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": cannot retrieve tunnel ids of "
-               << OBJ_CAST(vxlan_link);
+               << vxlan_link;
     return -EINVAL;
   }
 
   auto ep_it = lookup_endpoint(vxlan_link, local_, remote_);
   if (ep_it == endpoint_id.end()) {
     LOG(WARNING) << __FUNCTION__ << ": endpoint already deleted for "
-                 << OBJ_CAST(vxlan_link);
+                 << vxlan_link;
     return 0;
   }
 
@@ -959,8 +957,8 @@ int nl_vxlan::create_next_hop(rtnl_link *vxlan_link, nl_addr *remote,
 
   int nnh = rtnl_route_get_nnexthops(route.get());
 
-  VLOG(2) << __FUNCTION__ << ": route " << OBJ_CAST(route.get()) << " with "
-          << nnh << " next hop(s)";
+  VLOG(2) << __FUNCTION__ << ": route " << route.get() << " with " << nnh
+          << " next hop(s)";
   // XXX TODO implement ecmp
   if (nnh > 1) {
     // ecmp
@@ -1006,8 +1004,7 @@ int nl_vxlan::create_next_hop(rtnl_link *vxlan_link, nl_addr *remote,
 
   rv = create_next_hop(neigh, next_hop_id);
   if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to create next hop "
-               << OBJ_CAST(neigh);
+    LOG(ERROR) << __FUNCTION__ << ": failed to create next hop " << neigh;
     return -EINVAL;
   }
 
@@ -1040,7 +1037,7 @@ int nl_vxlan::create_next_hop(rtnl_neigh *neigh, uint32_t *next_hop_id) {
   nl_addr *addr = rtnl_link_get_addr(local_link.get());
   if (addr == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": invalid link (no ll addr) "
-               << OBJ_CAST(local_link.get());
+               << local_link.get();
     return -EINVAL;
   }
 
@@ -1049,8 +1046,7 @@ int nl_vxlan::create_next_hop(rtnl_neigh *neigh, uint32_t *next_hop_id) {
   // get neigh and set dst_mac
   addr = rtnl_neigh_get_lladdr(neigh);
   if (addr == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid neigh (no ll addr) "
-               << OBJ_CAST(neigh);
+    LOG(ERROR) << __FUNCTION__ << ": invalid neigh (no ll addr) " << neigh;
     return -EINVAL;
   }
 
@@ -1117,7 +1113,7 @@ int nl_vxlan::delete_next_hop(rtnl_neigh *neigh) {
   nl_addr *addr = rtnl_link_get_addr(local_link.get());
   if (addr == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": invalid link (no ll addr) "
-               << OBJ_CAST(local_link.get());
+               << local_link.get();
     return -EINVAL;
   }
 
@@ -1126,8 +1122,7 @@ int nl_vxlan::delete_next_hop(rtnl_neigh *neigh) {
   // get neigh and set dst_mac
   addr = rtnl_neigh_get_lladdr(neigh);
   if (addr == nullptr) {
-    LOG(ERROR) << __FUNCTION__ << ": invalid neigh (no ll addr) "
-               << OBJ_CAST(neigh);
+    LOG(ERROR) << __FUNCTION__ << ": invalid neigh (no ll addr) " << neigh;
     return -EINVAL;
   }
 
@@ -1203,8 +1198,7 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *link,
 
   if (nl_addr_cmp(neigh_mac, link_mac) == 0) {
     VLOG(2) << __FUNCTION__
-            << ": (silently) ignoring interface address of link "
-            << OBJ_CAST(link);
+            << ": (silently) ignoring interface address of link " << link;
     return 0;
   }
 
@@ -1212,8 +1206,8 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *link,
     /* find according endpoint port */
   case LT_VXLAN: {
 
-    LOG(INFO) << __FUNCTION__ << ": add neigh " << OBJ_CAST(neigh)
-              << " on vxlan interface " << OBJ_CAST(link);
+    LOG(INFO) << __FUNCTION__ << ": add neigh " << neigh
+              << " on vxlan interface " << link;
 
     bool is_endpoint = nl_addr_iszero(neigh_mac);
 
@@ -1252,7 +1246,7 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *link,
     rv = get_tunnel_id(link, &vni, &tunnel_id);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": could not look up vni/tunnel id of "
-                 << OBJ_CAST(link);
+                 << link;
       return -EINVAL;
     }
 
@@ -1309,7 +1303,7 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *link,
     // TODO second check on the same here
     if (ep_it == endpoint_id.end()) {
       LOG(ERROR) << __FUNCTION__ << ": found no endpoint for neighbour "
-                 << OBJ_CAST(neigh);
+                 << neigh;
       return -EINVAL;
     }
 
@@ -1334,8 +1328,7 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, rtnl_link *link,
     uint32_t pport = nl->get_port_id(ifindex);
 
     if (pport == 0) {
-      LOG(WARNING) << __FUNCTION__ << ": ignoring unknown link "
-                   << OBJ_CAST(link);
+      LOG(WARNING) << __FUNCTION__ << ": ignoring unknown link " << link;
       return -EINVAL;
     }
 
@@ -1354,9 +1347,8 @@ int nl_vxlan::add_l2_neigh(rtnl_neigh *neigh, uint32_t lport,
                            uint32_t tunnel_id) {
   if (lport == 0 || tunnel_id == 0) {
     LOG(ERROR) << __FUNCTION__
-               << ": could not find vxlan port details to add neigh "
-               << OBJ_CAST(neigh) << ", lport=" << lport
-               << ", tunnel_id=" << tunnel_id;
+               << ": could not find vxlan port details to add neigh " << neigh
+               << ", lport=" << lport << ", tunnel_id=" << tunnel_id;
     return -EINVAL;
   }
 
@@ -1385,8 +1377,8 @@ int nl_vxlan::delete_l2_neigh(rtnl_neigh *neigh, rtnl_link *link,
   switch (lt) {
   case LT_VXLAN: {
     /* find according endpoint port */
-    LOG(INFO) << __FUNCTION__ << ": neigh " << OBJ_CAST(neigh)
-              << " on vxlan interface " << OBJ_CAST(link);
+    LOG(INFO) << __FUNCTION__ << ": neigh " << neigh << " on vxlan interface "
+              << link;
 
     uint32_t dst_port;
     int rv = rtnl_link_vxlan_get_port(link, &dst_port);
@@ -1480,8 +1472,7 @@ int nl_vxlan::delete_l2_neigh_endpoint(rtnl_link *vxlan_link, nl_addr *local,
     LOG(ERROR)
         << __FUNCTION__
         << ": endpoint not found having the following parameter local addr "
-        << local << ", remote addr " << remote << ", on link "
-        << OBJ_CAST(vxlan_link);
+        << local << ", remote addr " << remote << ", on link " << vxlan_link;
     return -EINVAL;
   }
 
@@ -1527,8 +1518,7 @@ int nl_vxlan::delete_l2_neigh_access(rtnl_link *link, uint16_t vlan,
   uint32_t pport = nl->get_port_id(ifindex);
 
   if (pport == 0) {
-    LOG(WARNING) << __FUNCTION__ << ": ignoring unknown link "
-                 << OBJ_CAST(link);
+    LOG(WARNING) << __FUNCTION__ << ": ignoring unknown link " << link;
     return -EINVAL;
   }
 

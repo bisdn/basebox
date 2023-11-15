@@ -313,7 +313,7 @@ struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
 
       if (nl_object_match_filter(obj.get_old_obj(), OBJ_CAST(filter.get()))) {
         _link = LINK_CAST(obj.get_old_obj());
-        VLOG(1) << __FUNCTION__ << ": found deleted link " << OBJ_CAST(_link);
+        VLOG(1) << __FUNCTION__ << ": found deleted link " << _link;
         break;
       }
     }
@@ -454,7 +454,7 @@ int cnetlink::add_l3_addresses(rtnl_link *link) {
   l3->get_l3_addrs(link, &addresses);
 
   for (auto i : addresses) {
-    LOG(INFO) << __FUNCTION__ << ": adding address=" << OBJ_CAST(i);
+    LOG(INFO) << __FUNCTION__ << ": adding address=" << i;
 
     switch (rtnl_addr_get_family(i)) {
     case AF_INET:
@@ -466,16 +466,16 @@ int cnetlink::add_l3_addresses(rtnl_link *link) {
     default:
       LOG(ERROR) << __FUNCTION__
                  << ": unsupported family=" << rtnl_addr_get_family(i)
-                 << " for address=" << OBJ_CAST(i);
+                 << " for address=" << i;
       rv = -EINVAL;
       break;
     }
 
     if (rv < 0)
-      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address " << OBJ_CAST(i)
-                 << " to " << OBJ_CAST(link);
+      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address " << i << " to "
+                 << link;
   }
-  LOG(INFO) << __FUNCTION__ << ": added l3 addresses to " << OBJ_CAST(link);
+  LOG(INFO) << __FUNCTION__ << ": added l3 addresses to " << link;
 
   return rv;
 }
@@ -491,7 +491,7 @@ int cnetlink::remove_l3_addresses(rtnl_link *link) {
     rv = l3->del_l3_addr(i);
     if (rv < 0)
       LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 address from "
-                 << OBJ_CAST(link);
+                 << link;
   }
 
   return rv;
@@ -505,7 +505,7 @@ int cnetlink::add_l3_routes(rtnl_link *link) {
   l3->get_l3_routes(link, &routes);
 
   for (auto i : routes) {
-    LOG(INFO) << __FUNCTION__ << ": adding route=" << OBJ_CAST(i);
+    LOG(INFO) << __FUNCTION__ << ": adding route=" << i;
 
     switch (rtnl_route_get_family(i)) {
     case AF_INET:
@@ -515,16 +515,16 @@ int cnetlink::add_l3_routes(rtnl_link *link) {
     default:
       LOG(WARNING) << __FUNCTION__
                    << ": family not supported: " << rtnl_route_get_family(i)
-                   << " for route=" << OBJ_CAST(i);
+                   << " for route=" << i;
       rv = -EINVAL;
       break;
     }
 
     if (rv < 0)
-      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 route " << OBJ_CAST(i)
-                 << " to " << OBJ_CAST(link);
+      LOG(ERROR) << __FUNCTION__ << ":failed to add l3 route " << i << " to "
+                 << link;
   }
-  LOG(INFO) << __FUNCTION__ << ": added l3 routes to " << OBJ_CAST(link);
+  LOG(INFO) << __FUNCTION__ << ": added l3 routes to " << link;
 
   return rv;
 }
@@ -545,14 +545,13 @@ int cnetlink::remove_l3_routes(rtnl_link *link) {
     default:
       LOG(WARNING) << __FUNCTION__
                    << ": family not supported: " << rtnl_route_get_family(i)
-                   << " for route=" << OBJ_CAST(i);
+                   << " for route=" << i;
       rv = -EINVAL;
       break;
     }
 
     if (rv < 0)
-      LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 route from "
-                 << OBJ_CAST(link);
+      LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 route from " << link;
   }
 
   return rv;
@@ -571,12 +570,12 @@ int cnetlink::add_l3_configuration(rtnl_link *link) {
     rv = add_l3_addresses(l);
     if (rv < 0)
       LOG(WARNING) << __FUNCTION__ << ": failed to add l3 addresses (" << rv
-                   << ") for link " << OBJ_CAST(l);
+                   << ") for link " << l;
 
     rv = add_l3_routes(l);
     if (rv < 0)
       LOG(WARNING) << __FUNCTION__ << ": failed to add l3 routes (" << rv
-                   << ") for link " << OBJ_CAST(l);
+                   << ") for link " << l;
   }
 
   return rv;
@@ -595,12 +594,12 @@ int cnetlink::remove_l3_configuration(rtnl_link *link) {
     rv = remove_l3_routes(l);
     if (rv < 0)
       LOG(WARNING) << __FUNCTION__ << ": failed to remove l3 routes (" << rv
-                   << " from link " << OBJ_CAST(l);
+                   << " from link " << l;
 
     rv = remove_l3_addresses(l);
     if (rv < 0)
       LOG(WARNING) << __FUNCTION__ << ": failed to remove l3 addresses (" << rv
-                   << " from link " << OBJ_CAST(l);
+                   << " from link " << l;
   }
 
   return rv;
@@ -615,8 +614,9 @@ int cnetlink::update_on_mac_change(rtnl_link *old_link, rtnl_link *new_link) {
 
   rv = l3->update_l3_termination(port_id, vid, old_mac, new_mac);
   if (rv < 0)
-    VLOG(1) << __FUNCTION__ << ": failed to update termination MAC, old link="
-            << OBJ_CAST(old_link) << " new link=" << OBJ_CAST(new_link);
+    VLOG(1) << __FUNCTION__
+            << ": failed to update termination MAC, old link=" << old_link
+            << " new link=" << new_link;
 
   // In response to the MAC address change on the interface, linux deletes the
   // neighbors configured on the interface. We are tracking the state
@@ -630,8 +630,8 @@ int cnetlink::update_on_mac_change(rtnl_link *old_link, rtnl_link *new_link) {
   rv = l3->update_l3_egress(port_id, vid, old_mac, new_mac);
   if (rv < 0)
     VLOG(1) << __FUNCTION__
-            << ": failed to update l3 egress, old link=" << OBJ_CAST(old_link)
-            << " new link=" << OBJ_CAST(new_link);
+            << ": failed to update l3 egress, old link=" << old_link
+            << " new link=" << new_link;
 
   return rv;
 }
@@ -675,7 +675,7 @@ bool cnetlink::is_bridge_interface(rtnl_link *l) const {
 
     auto lt = get_link_type(_l.get());
 
-    LOG(INFO) << __FUNCTION__ << ": lt=" << lt << " " << OBJ_CAST(_l.get());
+    LOG(INFO) << __FUNCTION__ << ": lt=" << lt << " " << _l.get();
     if (lt == LT_BRIDGE) {
       LOG(INFO) << __FUNCTION__ << ": vlan ok";
 
@@ -769,8 +769,7 @@ uint16_t cnetlink::get_vrf_table_id(rtnl_link *link) {
   if (vrf.get() && !rtnl_link_is_vrf(link) && rtnl_link_is_vrf(vrf.get())) {
     link = vrf.get();
   } else {
-    VLOG(2) << __FUNCTION__ << ": link=" << OBJ_CAST(link)
-            << " is not a VRF interface ";
+    VLOG(2) << __FUNCTION__ << ": link=" << link << " is not a VRF interface ";
     return 0;
   }
 
@@ -779,7 +778,7 @@ uint16_t cnetlink::get_vrf_table_id(rtnl_link *link) {
 
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
-               << ": error fetching vrf table id for link=" << OBJ_CAST(link);
+               << ": error fetching vrf table id for link=" << link;
     return 0;
   }
 
@@ -1283,7 +1282,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   // link objects, which may lead to duplicated creation handling, so
   // ignore it.
   if (rtnl_link_get_family(link) == AF_INET6) {
-    VLOG(1) << __FUNCTION__ << ": ignoring link " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": ignoring link " << link;
     return;
   }
 
@@ -1297,8 +1296,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
 
       // check for new bridge slaves
       if (master == 0) {
-        LOG(ERROR) << __FUNCTION__ << ": bridge slave without master "
-                   << OBJ_CAST(link);
+        LOG(ERROR) << __FUNCTION__ << ": bridge slave without master " << link;
         return;
       }
 
@@ -1321,7 +1319,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       }
 
       auto br_link = get_link_by_ifindex(master);
-      LOG(INFO) << __FUNCTION__ << ": using bridge " << OBJ_CAST(br_link.get());
+      LOG(INFO) << __FUNCTION__ << ": using bridge " << br_link.get();
 
       // we only support vlan aware bridges
       if (rtnl_link_bridge_get_vlan_filtering(br_link.get(), &vlan_filtering) <
@@ -1369,22 +1367,21 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     int rv = vxlan->create_vni(link);
 
     if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to create vni for link "
-                 << OBJ_CAST(link);
+      LOG(ERROR) << __FUNCTION__ << ": failed to create vni for link " << link;
       break;
     }
   } break;
   case LT_VLAN: {
-    VLOG(1) << __FUNCTION__ << ": new vlan interface " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": new vlan interface " << link;
     uint16_t vid = rtnl_link_vlan_get_id(link);
     vlan->add_vlan(link, vid, true);
   } break;
   case LT_BOND: {
-    VLOG(1) << __FUNCTION__ << ": new bond interface " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": new bond interface " << link;
     bond->add_lag(link);
   } break;
   case LT_VRF: {
-    VLOG(1) << __FUNCTION__ << ": new vrf interface " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": new vrf interface " << link;
   } break;
   default: {
     bool handled = port_man->portdev_ready(link);
@@ -1395,7 +1392,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       swi->port_set_config(port_id, port_man->get_hwaddr(port_id), false);
     } else {
       LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
-                   << " link:" << OBJ_CAST(link);
+                   << " link:" << link;
     }
   } break;
   } // switch link type
@@ -1420,8 +1417,8 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   // libnl 3.6+ sends IPv6 configuration updates as incomplete AF_INET6
   // link objects, which may lead to unexpected side effects, so ignore it.
   if (af_old == AF_INET6 || af_new == AF_INET6) {
-    VLOG(1) << __FUNCTION__ << ": ignoring old link " << OBJ_CAST(old_link)
-            << " new link " << OBJ_CAST(new_link);
+    VLOG(1) << __FUNCTION__ << ": ignoring old link " << old_link
+            << " new link " << new_link;
     return;
   }
 
@@ -1429,8 +1426,8 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       is_switch_interface(old_link)) {
     if (update_on_mac_change(old_link, new_link) < 0)
       LOG(ERROR) << __FUNCTION__
-                 << ": failed to update MAC old_link=" << OBJ_CAST(old_link)
-                 << " new_link=" << OBJ_CAST(new_link);
+                 << ": failed to update MAC old_link=" << old_link
+                 << " new_link=" << new_link;
   }
 
   if (af_old != af_new) {
@@ -1474,8 +1471,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     }
     LOG(INFO) << __FUNCTION__ << ": link enslaved "
               << rtnl_link_get_name(new_link) << " to vrf "
-              << OBJ_CAST(
-                     get_link_by_ifindex(rtnl_link_get_master(new_link)).get());
+              << get_link_by_ifindex(rtnl_link_get_master(new_link)).get();
     // Lookup l3 addresses to delete
     // We can delete the addresses on the interface because we will later
     // receive a notification readding the addresses, that time with the correct
@@ -1486,8 +1482,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   } break;
   case LT_VRF_SLAVE: {
     if (lt_new == LT_VLAN) {
-      LOG(INFO) << __FUNCTION__ << ": freed vrf slave interface "
-                << OBJ_CAST(old_link);
+      LOG(INFO) << __FUNCTION__ << ": freed vrf slave interface " << old_link;
 
       // Lookup l3 addresses to delete
       // We can delete the addresses on the interface because we will later
@@ -1496,7 +1491,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       remove_l3_addresses(old_link);
       vlan->vrf_detach(old_link, new_link);
     } else if (lt_new == LT_VRF_SLAVE) {
-      LOG(INFO) << __FUNCTION__ << ": link updated " << OBJ_CAST(new_link);
+      LOG(INFO) << __FUNCTION__ << ": link updated " << new_link;
       vlan->vrf_attach(old_link, new_link);
     }
     // TODO handle LT_TAP/LT_BOND, currently unimplemented
@@ -1510,8 +1505,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
   case LT_BRIDGE:
     VLOG(2) << __FUNCTION__
             << ": ignoring update (not supported) of old_lt=" << lt_old
-            << " old link: " << OBJ_CAST(old_link)
-            << ", new link: " << OBJ_CAST(new_link);
+            << " old link: " << old_link << ", new link: " << new_link;
     break;
   default:
     if (port_id > 0) {
@@ -1531,7 +1525,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       iface->changed(old_link, new_link);
     } else {
       LOG(ERROR) << __FUNCTION__ << ": link type not handled lt=" << lt_old
-                 << ", link: " << OBJ_CAST(old_link);
+                 << ", link: " << old_link;
     }
     break;
   }
@@ -1544,7 +1538,7 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   // link objects, which may lead to duplicated deletion handling, so
   // ignore it.
   if (rtnl_link_get_family(link) == AF_INET6) {
-    VLOG(1) << __FUNCTION__ << ": ignoring link " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": ignoring link " << link;
     return;
   }
 
@@ -1581,16 +1575,16 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
 
     if (rv < 0) {
       LOG(WARNING) << __FUNCTION__ << ": could not remove vni represented by "
-                   << OBJ_CAST(link);
+                   << link;
     }
 
   } break;
   case LT_VLAN:
-    VLOG(1) << __FUNCTION__ << ": removed vlan interface " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": removed vlan interface " << link;
     vlan->remove_vlan(link, rtnl_link_vlan_get_id(link), true);
     break;
   case LT_BOND: {
-    VLOG(1) << __FUNCTION__ << ": removed bond interface " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": removed bond interface " << link;
     bond->remove_lag(link);
   } break;
   case LT_VRF:
@@ -1650,10 +1644,10 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
 
   if (VLOG_IS_ON(2)) {
     if (base_link) {
-      LOG(INFO) << __FUNCTION__ << ": base link: " << OBJ_CAST(base_link);
+      LOG(INFO) << __FUNCTION__ << ": base link: " << base_link;
     }
     if (br_link) {
-      LOG(INFO) << __FUNCTION__ << ": br link: " << OBJ_CAST(br_link);
+      LOG(INFO) << __FUNCTION__ << ": br link: " << br_link;
     }
   }
 

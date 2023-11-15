@@ -42,15 +42,13 @@ uint32_t nl_bond::get_lag_id(int ifindex) {
 std::set<uint32_t> nl_bond::get_members(rtnl_link *bond) {
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
   if (it == ifi2lag.end()) {
-    LOG(WARNING) << __FUNCTION__ << ": lag does not exist for "
-                 << OBJ_CAST(bond);
+    LOG(WARNING) << __FUNCTION__ << ": lag does not exist for " << bond;
     return {};
   }
 
   auto mem_it = lag_members.find(it->second);
   if (mem_it == lag_members.end()) {
-    LOG(WARNING) << __FUNCTION__ << ": lag does not exist for "
-                 << OBJ_CAST(bond);
+    LOG(WARNING) << __FUNCTION__ << ": lag does not exist for " << bond;
     return {};
   }
 
@@ -78,20 +76,18 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
 
   if (lag_id == 0) {
     VLOG(2) << __FUNCTION__ << ": ignoring update for foreign bond interface "
-            << OBJ_CAST(new_link);
+            << new_link;
     return 0;
   }
 
   rv = rtnl_link_bond_get_mode(old_link, &o_mode);
   if (rv < 0) {
-    VLOG(1) << __FUNCTION__ << ": failed to get mode for "
-            << OBJ_CAST(new_link);
+    VLOG(1) << __FUNCTION__ << ": failed to get mode for " << new_link;
   }
 
   rv = rtnl_link_bond_get_mode(new_link, &n_mode);
   if (rv < 0) {
-    VLOG(1) << __FUNCTION__ << ": failed to get mode for "
-            << OBJ_CAST(new_link);
+    VLOG(1) << __FUNCTION__ << ": failed to get mode for " << new_link;
   }
 
   if (o_mode != n_mode) {
@@ -101,7 +97,7 @@ int nl_bond::update_lag(rtnl_link *old_link, rtnl_link *new_link) {
 
     if (rv < 0) {
       VLOG(1) << __FUNCTION__ << ": failed to set active state for "
-              << OBJ_CAST(new_link);
+              << new_link;
     }
 
     return 0;
@@ -122,8 +118,7 @@ int nl_bond::add_lag(rtnl_link *bond) {
   assert(bond);
   rv = swi->lag_create(&lag_id, rtnl_link_get_name(bond), mode);
   if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__ << ": failed to create lag for "
-               << OBJ_CAST(bond);
+    LOG(ERROR) << __FUNCTION__ << ": failed to create lag for " << bond;
     return rv;
   }
 
@@ -135,7 +130,7 @@ int nl_bond::add_lag(rtnl_link *bond) {
   if (!rv_emp.second) {
     VLOG(1) << __FUNCTION__
             << ": lag exists with lag_id=" << rv_emp.first->second
-            << " for bond " << OBJ_CAST(bond);
+            << " for bond " << bond;
     rv = rv_emp.first->second;
 
     if (lag_id != rv_emp.first->second)
@@ -153,8 +148,7 @@ int nl_bond::remove_lag(rtnl_link *bond) {
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
 
   if (it == ifi2lag.end()) {
-    LOG(WARNING) << __FUNCTION__ << ": lag does not exist for "
-                 << OBJ_CAST(bond);
+    LOG(WARNING) << __FUNCTION__ << ": lag does not exist for " << bond;
     return -ENODEV;
   }
 
@@ -162,7 +156,7 @@ int nl_bond::remove_lag(rtnl_link *bond) {
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to remove lag with lag_id=" << it->second
-               << " for bond " << OBJ_CAST(bond);
+               << " for bond " << bond;
     return rv;
   }
 
@@ -181,8 +175,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
 
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
   if (it == ifi2lag.end()) {
-    VLOG(1) << __FUNCTION__ << ": no lag_id found creating new for "
-            << OBJ_CAST(bond);
+    VLOG(1) << __FUNCTION__ << ": no lag_id found creating new for " << bond;
 
     rv = add_lag(bond);
     if (rv < 0)
@@ -196,7 +189,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
 
   uint32_t port_id = nl->get_port_id(link);
   if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": ignoring port " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": ignoring port " << link;
     return -EINVAL;
   }
 
@@ -211,8 +204,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
 
   rv = rtnl_link_bond_slave_get_state(link, &state);
   if (rv < 0) {
-    VLOG(1) << __FUNCTION__ << ": failed to get slave state for "
-            << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": failed to get slave state for " << link;
   }
 
   rv = swi->lag_add_member(lag_id, port_id);
@@ -231,8 +223,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
     // check bridge attachement
     auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
     if (br_link) {
-      VLOG(2) << __FUNCTION__
-              << ": bond was already bridge slave: " << OBJ_CAST(br_link);
+      VLOG(2) << __FUNCTION__ << ": bond was already bridge slave: " << br_link;
       nl->link_created(br_link);
 
       auto new_state = rtnl_link_bridge_get_port_state(br_link);
@@ -246,8 +237,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
     rv = nl->set_bridge_port_vlan_tpid(br_link);
     if (rv < 0)
       LOG(ERROR) << __FUNCTION__
-                 << ": failed to set egress TPID entry for port "
-                 << OBJ_CAST(link);
+                 << ": failed to set egress TPID entry for port " << link;
   } else {
     std::deque<uint16_t> vlans;
 
@@ -284,19 +274,18 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
 #ifdef HAVE_RTNL_LINK_BOND_GET_MODE
   auto it = ifi2lag.find(rtnl_link_get_ifindex(bond));
   if (it == ifi2lag.end()) {
-    LOG(FATAL) << __FUNCTION__ << ": no lag_id found for " << OBJ_CAST(bond);
+    LOG(FATAL) << __FUNCTION__ << ": no lag_id found for " << bond;
   }
 
   uint32_t port_id = nl->get_port_id(link);
   if (port_id == 0) {
-    VLOG(1) << __FUNCTION__ << ": ignore invalid lag port " << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": ignore invalid lag port " << link;
     return -EINVAL;
   }
 
   auto lm_rv = lag_members.find(it->second);
   if (lm_rv == lag_members.end()) {
-    VLOG(1) << __FUNCTION__ << ": ignore invalid attached port "
-            << OBJ_CAST(link);
+    VLOG(1) << __FUNCTION__ << ": ignore invalid attached port " << link;
     return -EINVAL;
   }
 
@@ -315,8 +304,7 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
 
     if (rv < 0)
       LOG(ERROR) << __FUNCTION__
-                 << ": failed to set egress TPID entry for port "
-                 << OBJ_CAST(link);
+                 << ": failed to set egress TPID entry for port " << link;
   } else {
     std::deque<uint16_t> vlans;
 
