@@ -58,13 +58,14 @@ public:
   /**
    * return object has to be freed using nl_object_put
    */
-  struct rtnl_route *query_route(struct nl_addr *dst) {
+  struct rtnl_route *query_route(struct nl_addr *dst, uint32_t flags = 0) {
     int err = 1;
     struct nl_msg *m;
     struct rtmsg rmsg;
     memset(&rmsg, 0, sizeof(rmsg));
     rmsg.rtm_family = nl_addr_get_family(dst);
     rmsg.rtm_dst_len = nl_addr_get_prefixlen(dst);
+    rmsg.rtm_flags = flags;
 
     struct nl_object *route = nullptr;
     nl_socket_modify_cb(sock, NL_CB_VALID, NL_CB_CUSTOM, cb, &route);

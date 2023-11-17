@@ -1760,7 +1760,7 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
       rtnl_route_get_protocol(r) != RTPROT_KERNEL) {
     nl_route_query rq;
 
-    auto route = rq.query_route(rtnl_route_get_dst(r));
+    auto route = rq.query_route(rtnl_route_get_dst(r), RTM_F_FIB_MATCH);
 
     if (route) {
       bool duplicate = false;
@@ -1933,7 +1933,7 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
       rtnl_route_get_protocol(r) != RTPROT_KERNEL) {
     nl_route_query rq;
 
-    auto route = rq.query_route(rtnl_route_get_dst(r));
+    auto route = rq.query_route(rtnl_route_get_dst(r), RTM_F_FIB_MATCH);
 
     if (route) {
       bool duplicate = false;
