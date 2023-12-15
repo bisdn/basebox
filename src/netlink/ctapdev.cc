@@ -43,7 +43,7 @@ void ctapdev::tap_open() {
   }
 
   memset(&ifr, 0, sizeof(ifr));
-  ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
+  ifr.ifr_flags = IFF_TAP | IFF_NO_PI | IFF_NO_CARRIER;
   strncpy(ifr.ifr_name, devname.c_str(), IFNAMSIZ - 1);
   hwaddr.pack(reinterpret_cast<uint8_t *>(ifr.ifr_hwaddr.sa_data), ETH_ALEN);
 
