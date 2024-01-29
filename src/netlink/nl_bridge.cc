@@ -286,14 +286,6 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     _link = nl->get_link(rtnl_link_get_ifindex(new_link), AF_UNSPEC);
   }
 
-  if (old_br_vlan == nullptr) {
-    old_br_vlan = &empty_br_vlan;
-  }
-
-  if (new_br_vlan == nullptr) {
-    new_br_vlan = &empty_br_vlan;
-  }
-
   if (_link == nullptr) {
     // XXX FIXME in case a vxlan has been deleted the vxlan_domain and
     // vxlan_dom_bitmap need an update, maybe this can be handled already from
@@ -311,6 +303,14 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     auto _l = nl->get_link(master, AF_BRIDGE);
     old_br_vlan = &empty_br_vlan;
     new_br_vlan = rtnl_link_bridge_get_port_vlan(_l);
+  }
+
+  if (old_br_vlan == nullptr) {
+    old_br_vlan = &empty_br_vlan;
+  }
+
+  if (new_br_vlan == nullptr) {
+    new_br_vlan = &empty_br_vlan;
   }
 
   // check for vid changes
