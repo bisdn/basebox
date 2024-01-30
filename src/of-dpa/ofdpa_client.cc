@@ -14,6 +14,23 @@ namespace basebox {
 ofdpa_client::ofdpa_client(std::shared_ptr<Channel> channel)
     : stub_(ofdpa::OfdpaRpc::NewStub(channel)) {}
 
+OfdpaStatus::OfdpaStatusCode ofdpa_client::ofdpaTunnelReset() {
+  ::Empty request;
+  ::OfdpaStatus response;
+  ::ClientContext context;
+
+  context.set_wait_for_ready(true);
+
+  ::Status rv = stub_->ofdpaTunnelReset(&context, request, &response);
+
+  if (not rv.ok()) {
+    // LOG status
+    return ofdpa::OfdpaStatus::OFDPA_E_RPC;
+  }
+
+  return response.status();
+}
+
 OfdpaStatus::OfdpaStatusCode
 ofdpa_client::ofdpaTunnelTenantCreate(uint32_t tunnel_id, uint32_t vni) {
   // TODO maybe use ofdpa_datatypes as parameters
@@ -291,6 +308,23 @@ ofdpa_client::ofdpaTunnelPortTenantDelete(uint32_t port_id,
       stub_->ofdpaTunnelPortTenantDelete(&context, request, &response);
 
   if (not rv.ok()) {
+    return ofdpa::OfdpaStatus::OFDPA_E_RPC;
+  }
+
+  return response.status();
+}
+
+OfdpaStatus::OfdpaStatusCode ofdpa_client::ofdpaStgReset() {
+  ::Empty request;
+  ::OfdpaStatus response;
+  ::ClientContext context;
+
+  context.set_wait_for_ready(true);
+
+  ::Status rv = stub_->ofdpaStgReset(&context, request, &response);
+
+  if (not rv.ok()) {
+    // LOG status
     return ofdpa::OfdpaStatus::OFDPA_E_RPC;
   }
 

@@ -11,6 +11,7 @@
 
 #include <linux/if_bridge.h>
 #include <linux/if_ether.h>
+#include <gflags/gflags.h>
 #include <grpc++/grpc++.h>
 #include <systemd/sd-daemon.h>
 
@@ -19,6 +20,8 @@
 #include "ofdpa_datatypes.h"
 #include "utils/utils.h"
 #include "utils/rofl-utils.h"
+
+DECLARE_bool(clear_switch_configuration);
 
 namespace basebox {
 
@@ -80,6 +83,22 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 
   // open connection already
   chan->GetState(true);
+
+  if (FLAGS_clear_switch_configuration) {
+    // first delete all flows, as they may reference groups
+    dpt.flow_mod_reset();
+    dpt.send_barrier_request(rofl::cauxid(0));
+    // now we can delete all groups, which may reference logical ports
+    dpt.group_mod_reset();
+    dpt.send_barrier_request(rofl::cauxid(0));
+
+    // now we can delete all tunnel ports, tenents and nexthops
+    // LAG ports will be handled separately
+    ofdpa->ofdpaTunnelReset();
+
+    // finally reset the STG groups
+    ofdpa->ofdpaStgReset();
+  }
 
   dpt.send_features_request(rofl::cauxid(0), 1);
   dpt.send_desc_stats_request(rofl::cauxid(0), 0, 1);
@@ -279,6 +298,17 @@ void controller::handle_port_desc_stats_reply(
 
   for (auto i : msg.get_ports().keys()) {
     const cofport &port = msg.get_ports().get_port(i);
+    uint32_t port_no = port.get_port_no();
+
+    if (nbi::get_port_type(port_no) == nbi::port_type_lag) {
+      ofdpa->OfdpaTrunkDelete(port_no);
+      continue;
+    }
+
+    if (nbi::get_port_type(port_no) == nbi::port_type_vxlan) {
+      // should not exist anymore - warn about?
+      continue;
+    }
 
     bool status = (!(port.get_config() & rofl::openflow13::OFPPC_PORT_DOWN) &&
                    !(port.get_state() & rofl::openflow13::OFPPS_LINK_DOWN));

@@ -21,6 +21,8 @@ DEFINE_int32(port, 6653, "Listening port");
 DEFINE_int32(ofdpa_grpc_port, 50051, "Listening port of ofdpa gRPC server");
 DEFINE_bool(use_knet, true, "Use KNET interfaces");
 DEFINE_bool(mark_fwd_offload, true, "Mark switched packets as offloaded");
+DEFINE_bool(clear_switch_configuration, true,
+            "Clear switch configuration on connect");
 
 static bool validate_port(const char *flagname, gflags::int32 value) {
   VLOG(3) << __FUNCTION__ << ": flagname=" << flagname << ", value=" << value;
