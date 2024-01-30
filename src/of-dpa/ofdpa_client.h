@@ -16,6 +16,7 @@ class ofdpa_client {
 public:
   ofdpa_client(std::shared_ptr<grpc::Channel> channel);
 
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaTunnelReset();
   ofdpa::OfdpaStatus::OfdpaStatusCode
   ofdpaTunnelTenantCreate(uint32_t tunnel_id, uint32_t vni);
 
@@ -54,6 +55,7 @@ public:
   ofdpa::OfdpaStatus::OfdpaStatusCode
   ofdpaTunnelPortTenantDelete(uint32_t port_id, uint32_t tunnel_id);
 
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgReset();
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgCreate(uint16_t stg_id);
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaStgDestroy(uint16_t stg_id);
 
