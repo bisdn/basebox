@@ -14,6 +14,9 @@
 #
 # Mark switched packets as offloaded:
 # FLAGS_mark_fwd_offload=true
+#
+# Clear switch configuration on connect
+# FLAGS_clear_switch_configuration=true
 
 ### glog
 #
