@@ -77,6 +77,7 @@ public:
   void get_nexthops_of_route(rtnl_route *route,
                              std::deque<struct rtnl_nexthop *> *nhs) noexcept;
 
+  int get_neighbours_of_route(rtnl_route *r, std::set<nh_stub> *nhs) noexcept;
   int get_neighbours_of_route(rtnl_route *r,
                               std::deque<struct rtnl_neigh *> *neighs,
                               std::deque<nh_stub> *unresolved_nh) noexcept;

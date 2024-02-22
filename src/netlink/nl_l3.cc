@@ -1427,24 +1427,21 @@ void nl_l3::get_nexthops_of_route(
   }
 }
 
-int nl_l3::get_neighbours_of_route(
-    rtnl_route *route, std::deque<struct rtnl_neigh *> *neighs,
-    std::deque<nh_stub> *unresolved_nh) noexcept {
+int nl_l3::get_neighbours_of_route(rtnl_route *route,
+                                   std::set<nh_stub> *nhs) noexcept {
 
-  std::deque<struct rtnl_nexthop *> nhs;
+  std::deque<struct rtnl_nexthop *> rnhs;
 
   assert(route);
-  assert(neighs);
-  assert(unresolved_nh);
+  assert(nhs);
 
-  get_nexthops_of_route(route, &nhs);
+  get_nexthops_of_route(route, &rnhs);
 
-  if (nhs.size() == 0)
+  if (rnhs.size() == 0)
     return -ENETUNREACH;
 
-  for (auto nh : nhs) {
+  for (auto nh : rnhs) {
     int ifindex = rtnl_route_nh_get_ifindex(nh);
-    rtnl_neigh *neigh = nullptr;
     nl_addr *nh_addr = rtnl_route_nh_get_gateway(nh);
 
     if (!nh_addr)
@@ -1459,24 +1456,44 @@ int nl_l3::get_neighbours_of_route(
       default:
         LOG(ERROR) << "gw " << nh_addr
                    << " unsupported family=" << nl_addr_get_family(nh_addr);
-        nh_addr = nullptr;
+        continue;
       }
 
-      neigh = nl->get_neighbour(ifindex, nh_addr);
-      VLOG(2) << __FUNCTION__ << ": get neigh=" << neigh
-              << " of nh_addr=" << nh_addr;
-
-      if (neigh && rtnl_neigh_get_lladdr(neigh) == nullptr) {
-        VLOG(2) << __FUNCTION__ << ": neigh=" << neigh << " is not reachable";
-        rtnl_neigh_put(neigh);
-        neigh = nullptr;
-      }
+      nhs->emplace(nh_stub{nh_addr, ifindex});
     }
+  }
 
+  return nhs->size();
+}
+
+int nl_l3::get_neighbours_of_route(
+    rtnl_route *route, std::deque<struct rtnl_neigh *> *neighs,
+    std::deque<nh_stub> *unresolved_nh) noexcept {
+
+  std::set<nh_stub> nhs;
+
+  assert(route);
+  assert(neighs);
+  assert(unresolved_nh);
+
+  auto ret = get_neighbours_of_route(route, &nhs);
+  if (ret < 0)
+    return ret;
+
+  for (auto nh : nhs) {
+    neigh = nl->get_neighbour(nh.ifindex, nh.nh);
+    VLOG(2) << __FUNCTION__ << ": get neigh=" << neigh
+            << " of nh_addr=" << nh.addr;
+
+    if (neigh && rtnl_neigh_get_lladdr(neigh) == nullptr) {
+      VLOG(2) << __FUNCTION__ << ": neigh=" << neigh << " is not reachable";
+      rtnl_neigh_put(neigh);
+      neigh = nullptr;
+    }
     if (neigh)
       neighs->push_back(neigh);
-    else if (nh_addr)
-      unresolved_nh->push_back({nh_addr, ifindex});
+    else
+      unresolved_nh->push_back(nh);
   }
 
   return nhs.size();
