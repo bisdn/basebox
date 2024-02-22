@@ -390,14 +390,16 @@ int tap_manager::set_port_speed(const std::string name, uint32_t speed,
   // mode bitmaps.
 
   struct {
-    struct ethtool_link_settings req;
     __u32 link_mode_data[3 * ETHTOOL_LINK_MODE_MASK_MAX_KERNEL_NU32];
-  } link_settings;
+    struct ethtool_link_settings req;
+  } link_settings_request;
+  auto *link_settings =
+      reinterpret_cast<struct ethtool_link_settings *>(&link_settings_request);
 
-  memset(&link_settings, 0, sizeof(link_settings));
-  link_settings.req.cmd = ETHTOOL_GLINKSETTINGS;
+  memset(&link_settings_request, 0, sizeof(link_settings_request));
+  link_settings->cmd = ETHTOOL_GLINKSETTINGS;
 
-  ifr.ifr_data = reinterpret_cast<char *>(&link_settings);
+  ifr.ifr_data = reinterpret_cast<char *>(link_settings);
   int error = ioctl(sockFd, SIOCETHTOOL, static_cast<void *>(&ifr));
   if (error < 0) {
     LOG(ERROR) << __FUNCTION__ << " handshake failed error=" << error;
@@ -405,16 +407,16 @@ int tap_manager::set_port_speed(const std::string name, uint32_t speed,
     return error;
   }
 
-  if (link_settings.req.link_mode_masks_nwords >= 0 ||
-      link_settings.req.cmd != ETHTOOL_GLINKSETTINGS) {
+  if (link_settings->link_mode_masks_nwords >= 0 ||
+      link_settings->cmd != ETHTOOL_GLINKSETTINGS) {
     close(sockFd);
     return -EOPNOTSUPP;
   }
 
-  link_settings.req.link_mode_masks_nwords =
-      -link_settings.req.link_mode_masks_nwords;
+  link_settings->link_mode_masks_nwords =
+      -link_settings->link_mode_masks_nwords;
 
-  ifr.ifr_data = reinterpret_cast<char *>(&link_settings);
+  ifr.ifr_data = reinterpret_cast<char *>(link_settings);
   error = ioctl(sockFd, SIOCETHTOOL, static_cast<void *>(&ifr));
   if (error < 0) {
     LOG(ERROR) << __FUNCTION__ << " failed to get port= " << name
@@ -423,11 +425,11 @@ int tap_manager::set_port_speed(const std::string name, uint32_t speed,
     return error;
   }
 
-  link_settings.req.duplex = duplex;
-  link_settings.req.speed = ETHTOOL_SPEED(speed);
-  link_settings.req.cmd = ETHTOOL_SLINKSETTINGS;
+  link_settings->duplex = duplex;
+  link_settings->speed = ETHTOOL_SPEED(speed);
+  link_settings->cmd = ETHTOOL_SLINKSETTINGS;
 
-  ifr.ifr_data = reinterpret_cast<char *>(&link_settings);
+  ifr.ifr_data = reinterpret_cast<char *>(link_settings);
   error = ioctl(sockFd, SIOCETHTOOL, static_cast<void *>(&ifr));
   if (error < 0) {
     LOG(ERROR) << __FUNCTION__ << " failed to set port= " << name
