@@ -1803,9 +1803,8 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     }
   }
 
-  std::deque<struct rtnl_neigh *> neighs;
-  std::deque<nh_stub> unresolved_nh;
-  int rv = get_neighbours_of_route(r, &neighs, &unresolved_nh);
+  std::set<nh_stub> nhs;
+  int rv = get_neighbours_of_route(r, &nhs);
 
   // no neighbours reachable
   if (rv < 0) {
@@ -1813,26 +1812,31 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     return rv;
   }
 
-  for (auto nh : unresolved_nh) {
-    VLOG(2) << __FUNCTION__ << ": got unresolved nh ifindex=" << nh.ifindex
-            << ", nh=" << nh.nh;
-
-    // If the next-hop is currently unresolved, we store the route and
-    // process it when the nh is found
-    if (!is_ipv6_link_local_address(rtnl_route_get_dst(r)) &&
-        !is_ipv6_multicast_address(rtnl_route_get_dst(r)))
-      notify_on_nh_reachable(
-          this, nh_params{net_params{rtnl_route_get_dst(r), nh.ifindex}, nh});
-  }
-
-  VLOG(2) << __FUNCTION__ << ": got " << neighs.size() << " neighbours ("
-          << unresolved_nh.size() << " unresolved next hops)";
-
+  std::deque<struct rtnl_neigh *> neighs;
   // each route increments the ref counter for all nexthops (l3 interface)
   std::set<uint32_t> l3_interfaces; // all create l3 interface ids
-  for (auto n : neighs) {
+  int unresolved_nhs = 0;
+
+  for (auto nh : nhs) {
     uint32_t l3_interface_id = 0;
-    auto ifindex = rtnl_neigh_get_ifindex(n);
+    auto n = nl->get_neighbour(nh.ifindex, nh.nh);
+    VLOG(2) << __FUNCTION__ << ": get neigh=" << n << " of nh_addr=" << nh.nh;
+
+    if (n == nullptr || rtnl_neigh_get_lladdr(n) == nullptr) {
+      VLOG(2) << __FUNCTION__ << ": got unresolved nh ifindex=" << nh.ifindex
+              << ", nh=" << nh.nh;
+      unresolved_nhs++;
+
+      // If the next-hop is currently unresolved, we store the route and
+      // process it when the nh is found
+      if (!is_ipv6_link_local_address(rtnl_route_get_dst(r)) &&
+          !is_ipv6_multicast_address(rtnl_route_get_dst(r)))
+        notify_on_nh_reachable(
+            this, nh_params{net_params{rtnl_route_get_dst(r), nh.ifindex}, nh});
+      if (n)
+        rtnl_neigh_put(n);
+      continue;
+    }
 
     // add neigh
     rv = add_l3_neigh_egress(n, &l3_interface_id);
@@ -1845,13 +1849,12 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
     VLOG(2) << __FUNCTION__ << ": got l3_interface_id=" << l3_interface_id;
     l3_interfaces.emplace(l3_interface_id);
 
-    // Register route to track nexthop changes
-    struct nh_stub nh {
-      rtnl_neigh_get_dst(n), ifindex
-    };
     notify_on_nh_unreachable(
         this, nh_params{net_params{rtnl_route_get_dst(r), nh.ifindex}, nh});
   }
+
+  VLOG(2) << __FUNCTION__ << ": got " << l3_interfaces.size() << " neighbours ("
+          << unresolved_nhs << " unresolved next hops)";
 
   if (nnhs == 1) {
     uint32_t route_dst_interface;
