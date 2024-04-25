@@ -1292,7 +1292,6 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   case LT_BRIDGE_SLAVE: // a new bridge slave was created
     try {
       auto master = rtnl_link_get_master(link);
-      uint8_t vlan_filtering = 0;
 
       // check for new bridge slaves
       if (master == 0) {
@@ -1321,22 +1320,23 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       auto br_link = get_link_by_ifindex(master);
       LOG(INFO) << __FUNCTION__ << ": using bridge " << br_link.get();
 
-      // we only support vlan aware bridges
-      if (rtnl_link_bridge_get_vlan_filtering(br_link.get(), &vlan_filtering) <
-              0 ||
-          vlan_filtering != 1) {
-        LOG(WARNING)
-            << __FUNCTION__
-            << ": unsupported bridge: configured with vlan_filtering 0";
-        ignored_bridges.insert(master);
-        return;
-      }
-
       bool new_bridge = false;
       // slave interface
       // use only the first bridge an interface is attached to
       // XXX TODO more bridges!
       if (bridge == nullptr) {
+        uint8_t vlan_filtering = 0;
+
+        // we only support vlan aware bridges
+        if (rtnl_link_bridge_get_vlan_filtering(br_link.get(),
+                                                &vlan_filtering) < 0 ||
+            vlan_filtering != 1) {
+          LOG(WARNING)
+              << __FUNCTION__
+              << ": unsupported bridge: configured with vlan_filtering 0";
+          ignored_bridges.insert(master);
+          return;
+        }
         bridge = new nl_bridge(this->swi, port_man, this, vlan, vxlan);
         bridge->set_bridge_interface(br_link.get());
         vxlan->register_bridge(bridge);
