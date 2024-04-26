@@ -52,8 +52,12 @@ struct nh_stub {
   }
 
   bool operator<(const nh_stub &other) const {
-    if (nl_addr_cmp(nh, other.nh) < 0)
+    int cmp = nl_addr_cmp(nh, other.nh);
+
+    if (cmp < 0)
       return true;
+    if (cmp > 0)
+      return false;
 
     return ifindex < other.ifindex;
   }
