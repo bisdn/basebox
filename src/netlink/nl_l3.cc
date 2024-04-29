@@ -1998,9 +1998,8 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   for (auto i : unresolved_nh) {
     auto it = std::find_if(nh_callbacks.begin(), nh_callbacks.end(),
                            [&](std::pair<nh_reachable *, nh_params> &cb) {
-                             return cb.first == this &&
-                                    cb.second.nh.ifindex == i.ifindex &&
-                                    !nl_addr_cmp_prefix(cb.second.np.addr, dst);
+                             return cb.first == this && cb.second.nh == i &&
+                                    !nl_addr_cmp(cb.second.np.addr, dst);
                            });
 
     if (it != nh_callbacks.end())
