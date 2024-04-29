@@ -108,12 +108,6 @@ private:
                            uint16_t vrf_id = 0);
   int del_l3_unicast_route(nl_addr *rt_dst, uint16_t vrf_id = 0);
 
-  int add_l3_ecmp_route(rtnl_route *r,
-                        const std::set<uint32_t> &l3_interface_ids,
-                        bool update_route);
-  int del_l3_ecmp_route(rtnl_route *r,
-                        const std::set<uint32_t> &l3_interface_ids);
-
   int add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
                           uint16_t *vrf_id = nullptr);
   int del_l3_neigh_egress(struct rtnl_neigh *n);

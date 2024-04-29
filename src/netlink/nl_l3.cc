@@ -101,7 +101,6 @@ std::unordered_set<std::tuple<int, uint16_t, rofl::caddress_ll, uint16_t>>
     termination_mac_entries;
 
 // ECMP mapping
-std::unordered_multimap<std::set<uint32_t>, l3_interface> l3_ecmp_mapping;
 std::unordered_map<std::set<nh_stub>, l3_interface> nh_grp_to_l3_ecmp_mapping;
 
 nl_l3::nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl)
@@ -1614,98 +1613,6 @@ int nl_l3::del_l3_unicast_route(nl_addr *rt_dst, uint16_t vrf_id) {
   }
 
   return rv;
-}
-
-int nl_l3::add_l3_ecmp_route(rtnl_route *r,
-                             const std::set<uint32_t> &l3_interface_ids,
-                             bool update_route) {
-  assert(r);
-
-  int rv = 0;
-  uint32_t vrf_id = rtnl_route_get_table(r);
-  uint32_t l3_ecmp_id = -1;
-  auto it_range = l3_ecmp_mapping.equal_range(l3_interface_ids);
-  auto i = it_range.first;
-
-  // check if an ecmp ID already exists
-  for (; i != it_range.second; ++i) {
-    if (i->first == l3_interface_ids) {
-      i->second.refcnt++;
-      l3_ecmp_id = i->second.l3_interface_id;
-
-      VLOG(2) << __FUNCTION__
-              << ": found ecmp id: " << i->second.l3_interface_id
-              << ", refcnt=" << i->second.refcnt;
-      break;
-    }
-  }
-
-  // no l3_ecmp_id found -> create a new one
-  if (l3_ecmp_id == (uint32_t)-1) {
-    rv = sw->l3_ecmp_add(&l3_ecmp_id, l3_interface_ids);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__
-                 << ": failed to create l3 ecmp id=" << l3_ecmp_id;
-
-      return -EINVAL;
-    }
-
-    // register the new l3_ecmp_id
-    l3_ecmp_mapping.emplace(
-        std::make_pair(l3_interface_ids, l3_interface(l3_ecmp_id)));
-  }
-
-  // create route
-  rv = add_l3_unicast_route(rtnl_route_get_dst(r), l3_ecmp_id, true,
-                            update_route, vrf_id);
-  if (rv < 0) {
-    LOG(ERROR) << __FUNCTION__
-               << ": failed to create l3 unicast route with ecmp_id="
-               << l3_ecmp_id << ", route: " << r;
-  }
-
-  return rv;
-}
-
-int nl_l3::del_l3_ecmp_route(rtnl_route *r,
-                             const std::set<uint32_t> &l3_interface_ids) {
-  assert(r);
-
-  auto it_range = l3_ecmp_mapping.equal_range(l3_interface_ids);
-
-  if (it_range.first == l3_ecmp_mapping.end()) {
-    LOG(ERROR) << __FUNCTION__ << ": ecmp group not found for route " << r;
-    if (VLOG_IS_ON(4)) {
-      std::string str;
-      for (auto id : l3_interface_ids) {
-        str += std::to_string(id) + " ";
-      }
-      LOG(INFO) << __FUNCTION__ << ": l3_interfaces: " << str;
-    }
-    return -EINVAL;
-  }
-
-  for (auto i = it_range.first; i != it_range.second; ++i) {
-    if (i->first == l3_interface_ids) {
-      // found
-      i->second.refcnt--;
-      VLOG(4) << __FUNCTION__ << ": found l3 interface id for ecmp route id="
-              << i->second.l3_interface_id << ", refcount=" << i->second.refcnt
-              << ", route " << r;
-
-      if (i->second.refcnt <= 0) {
-        int rv = sw->l3_ecmp_remove(i->second.l3_interface_id);
-        l3_ecmp_mapping.erase(i);
-        return rv;
-      } else
-        return 0;
-    }
-  }
-
-  LOG(ERROR) << __FUNCTION__
-             << ": tried to delete invalid ecmp interface for route " << r;
-
-  return -EINVAL;
 }
 
 void nl_l3::nh_reachable_notification(struct nh_params p) noexcept {
