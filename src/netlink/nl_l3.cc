@@ -2051,38 +2051,45 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   }
 
   std::deque<struct rtnl_neigh *> neighs;
-  std::deque<nh_stub> unresolved_nh;
-  get_neighbours_of_route(r, &neighs, &unresolved_nh);
+  std::set<nh_stub> nhs;
+  rv = get_neighbours_of_route(r, &nhs);
+
+  // no neighbours reachable
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__ << ": no next hops for route " << r;
+    return rv;
+  }
 
   VLOG(2) << __FUNCTION__ << ": number of next hops is "
           << rtnl_route_get_nnexthops(r);
 
-  // Cleanup the unresolved route on deletion. Make sure to only remove the
-  // first hit, as we want to keep the second one that will have been added
-  // by add_l3_unicast_route() from update_l3_unicact_route().
-  // If this is an actual deletion, there should only be one anyway.
-  for (auto i : unresolved_nh) {
-    auto it = std::find_if(nh_callbacks.begin(), nh_callbacks.end(),
-                           [&](std::pair<nh_reachable *, nh_params> &cb) {
-                             return cb.first == this && cb.second.nh == i &&
-                                    !nl_addr_cmp(cb.second.np.addr, dst);
-                           });
+  std::set<uint32_t> l3_interfaces; // all create l3 interface ids
 
-    if (it != nh_callbacks.end())
-      nh_callbacks.erase(it);
-  }
+  for (auto nh : nhs) {
+    auto neigh = nl->get_neighbour(nh.ifindex, nh.nh);
+    VLOG(2) << __FUNCTION__ << ": get neigh=" << neigh
+            << " of nh_addr=" << nh.nh;
 
-  if (neighs.size() == 0) {
-    VLOG(2) << __FUNCTION__ << ": no nexthop for this route " << r;
-    return rv;
-  }
+    if (neigh == nullptr || rtnl_neigh_get_lladdr(neigh) == nullptr) {
+      VLOG(2) << __FUNCTION__ << ": got unresolved nh ifindex=" << nh.ifindex
+              << ", nh=" << nh.nh;
+      // Cleanup the unresolved route on deletion. Make sure to only remove the
+      // first hit, as we want to keep the second one that will have been added
+      // by add_l3_unicast_route() from update_l3_unicact_route().
+      // If this is an actual deletion, there should only be one anyway.
+      auto it = std::find_if(nh_callbacks.begin(), nh_callbacks.end(),
+                             [&](std::pair<nh_reachable *, nh_params> &cb) {
+                               return cb.first == this && cb.second.nh == nh &&
+                                      !nl_addr_cmp(cb.second.np.addr, dst);
+                             });
 
-  if (nnhs > 1) {
-    // get all l3 interfaces
-    std::set<uint32_t> l3_interfaces; // all create l3 interface ids
-    for (auto n : neighs) {
+      if (it != nh_callbacks.end())
+        nh_callbacks.erase(it);
+      if (neigh)
+        rtnl_neigh_put(neigh);
+    } else {
       uint32_t l3_interface_id = 0;
-      auto ifindex = rtnl_neigh_get_ifindex(n);
+      auto ifindex = rtnl_neigh_get_ifindex(neigh);
 
       auto link = nl->get_link_by_ifindex(ifindex);
       auto vid = vlan->get_vid(link.get());
@@ -2110,9 +2117,11 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
 
       VLOG(4) << __FUNCTION__ << ": got l3_interface_id=" << l3_interface_id;
       l3_interfaces.emplace(l3_interface_id);
+      neighs.push_back(neigh);
     }
+  }
 
-    // XXX FIXME delete ecmp first then delete all l3_interfaces
+  if (nnhs > 1) {
     rv = del_l3_ecmp_route(r, l3_interfaces);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed to delete l3 ecmp route " << r;
