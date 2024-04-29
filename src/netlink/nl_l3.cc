@@ -46,9 +46,33 @@ template <class T, class A> struct hash<std::set<T, A>> {
   using result_type = std::size_t;
   result_type operator()(argument_type const &arg) const noexcept {
     result_type seed = 0;
-    for (const auto v : arg) {
+    for (const auto &v : arg) {
       hash_combine(seed, v);
     }
+    return seed;
+  }
+};
+
+template <> struct hash<basebox::nh_stub> {
+  using argument_type = basebox::nh_stub;
+  using result_type = std::size_t;
+  result_type operator()(argument_type const &nh) const noexcept {
+    size_t seed = 0;
+    if (nh.nh == nullptr) {
+      hash_combine(seed, nullptr);
+    } else {
+      auto len = nl_addr_get_len(nh.nh);
+
+      hash_combine(seed, nl_addr_get_family(nh.nh));
+      hash_combine(seed, nl_addr_get_prefixlen(nh.nh));
+
+      if (len > 0) {
+        hash_combine(seed, std::string_view{reinterpret_cast<const char *>(
+                                                nl_addr_get_binary_addr(nh.nh)),
+                                            len});
+      }
+    }
+    hash_combine(seed, nh.ifindex);
     return seed;
   }
 };
@@ -78,6 +102,7 @@ std::unordered_set<std::tuple<int, uint16_t, rofl::caddress_ll, uint16_t>>
 
 // ECMP mapping
 std::unordered_multimap<std::set<uint32_t>, l3_interface> l3_ecmp_mapping;
+std::unordered_map<std::set<nh_stub>, l3_interface> nh_grp_to_l3_ecmp_mapping;
 
 nl_l3::nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl)
     : sw(nullptr), vlan(std::move(vlan)), nl(nl) {}
@@ -2119,6 +2144,63 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   }
 
   return rv;
+}
+
+int nl_l3::add_l3_ecmp_group(const std::set<nh_stub> &nhs,
+                             uint32_t *l3_ecmp_id) {
+  std::set<uint32_t> empty;
+
+  auto it = nh_grp_to_l3_ecmp_mapping.find(nhs);
+  if (it != nh_grp_to_l3_ecmp_mapping.end()) {
+    it->second.refcnt++;
+    *l3_ecmp_id = it->second.l3_interface_id;
+
+    VLOG(2) << __FUNCTION__ << ": found ecmp id: " << it->second.l3_interface_id
+            << ", refcnt=" << it->second.refcnt;
+  } else {
+    sw->l3_ecmp_add(l3_ecmp_id, empty);
+    nh_grp_to_l3_ecmp_mapping.emplace(
+        std::make_pair(nhs, l3_interface(*l3_ecmp_id)));
+    VLOG(2) << __FUNCTION__ << ": created ecmp id: " << l3_ecmp_id_next;
+  }
+
+  return 0;
+}
+
+int nl_l3::get_l3_ecmp_group(const std::set<nh_stub> &nhs,
+                             uint32_t *l3_ecmp_id) {
+  auto it = nh_grp_to_l3_ecmp_mapping.find(nhs);
+
+  if (it != nh_grp_to_l3_ecmp_mapping.end()) {
+    *l3_ecmp_id = it->second.l3_interface_id;
+    VLOG(2) << __FUNCTION__ << ": found ecmp id: " << it->second.l3_interface_id
+            << ", refcnt=" << it->second.refcnt;
+  } else {
+    VLOG(2) << __FUNCTION__ << ": failed to find ecmp id";
+    return -EINVAL;
+  }
+
+  return 0;
+}
+
+int nl_l3::del_l3_ecmp_group(const std::set<nh_stub> &nhs) {
+  auto it = nh_grp_to_l3_ecmp_mapping.find(nhs);
+  if (it == nh_grp_to_l3_ecmp_mapping.end()) {
+    VLOG(2) << __FUNCTION__ << ": failed to find ecmp id";
+    return -EINVAL;
+  }
+
+  it->second.refcnt--;
+  VLOG(2) << __FUNCTION__ << ": found ecmp id: " << it->second.l3_interface_id
+          << ", refcnt=" << it->second.refcnt;
+
+  if (it->second.refcnt <= 0) {
+    int rv = sw->l3_ecmp_remove(it->second.l3_interface_id);
+    nh_grp_to_l3_ecmp_mapping.erase(nhs);
+    return rv;
+  }
+
+  return 0;
 }
 
 bool nl_l3::is_l3_neigh_routable(struct rtnl_neigh *n) {

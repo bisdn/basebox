@@ -126,6 +126,10 @@ private:
   int search_neigh_cache(int ifindex, struct nl_addr *addr, int family,
                          std::list<struct rtnl_neigh *> *neigh);
 
+  int add_l3_ecmp_group(const std::set<nh_stub> &nhs, uint32_t *l3_ecmp_id);
+  int get_l3_ecmp_group(const std::set<nh_stub> &nhs, uint32_t *l3_ecmp_id);
+  int del_l3_ecmp_group(const std::set<nh_stub> &nhs);
+
   bool is_ipv6_link_local_address(const struct nl_addr *addr) {
     auto p = nl_addr_alloc(16);
     nl_addr_parse("fe80::/10", AF_INET6, &p);
