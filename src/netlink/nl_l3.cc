@@ -1466,39 +1466,6 @@ int nl_l3::get_neighbours_of_route(rtnl_route *route,
   return nhs->size();
 }
 
-int nl_l3::get_neighbours_of_route(
-    rtnl_route *route, std::deque<struct rtnl_neigh *> *neighs,
-    std::deque<nh_stub> *unresolved_nh) noexcept {
-
-  std::set<nh_stub> nhs;
-
-  assert(route);
-  assert(neighs);
-  assert(unresolved_nh);
-
-  auto ret = get_neighbours_of_route(route, &nhs);
-  if (ret < 0)
-    return ret;
-
-  for (auto nh : nhs) {
-    neigh = nl->get_neighbour(nh.ifindex, nh.nh);
-    VLOG(2) << __FUNCTION__ << ": get neigh=" << neigh
-            << " of nh_addr=" << nh.addr;
-
-    if (neigh && rtnl_neigh_get_lladdr(neigh) == nullptr) {
-      VLOG(2) << __FUNCTION__ << ": neigh=" << neigh << " is not reachable";
-      rtnl_neigh_put(neigh);
-      neigh = nullptr;
-    }
-    if (neigh)
-      neighs->push_back(neigh);
-    else
-      unresolved_nh->push_back(nh);
-  }
-
-  return nhs.size();
-}
-
 void nl_l3::register_switch_interface(switch_interface *sw) { this->sw = sw; }
 
 void nl_l3::notify_on_net_reachable(net_reachable *f,
