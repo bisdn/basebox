@@ -1843,9 +1843,9 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   VLOG(2) << __FUNCTION__ << ": got " << l3_interfaces.size() << " neighbours ("
           << unresolved_nhs << " unresolved next hops)";
 
-  if (nnhs == 1) {
-    uint32_t route_dst_interface;
+  uint32_t route_dst_interface;
 
+  if (nnhs == 1) {
     if (l3_interfaces.size() == 0) {
       // Not yet resolved next-hop, or on-link route, the rule must be installed
       // to the switch pointing to controller and then updated after neighbor
@@ -1855,13 +1855,23 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
       // single, resolved nexthop
       route_dst_interface = *l3_interfaces.begin(); /* resolved nexthop */
     }
-    rv = add_l3_unicast_route(rtnl_route_get_dst(r), route_dst_interface, false,
-                              update_route, vrf_id);
   } else {
-    // create ecmp group
-    rv = add_l3_ecmp_route(r, l3_interfaces, update_route);
+    // ecmp route
+    add_l3_ecmp_group(nhs, &route_dst_interface);
+
+    if (l3_interfaces.size() == 0) {
+      // No yet resolved next-hops, the rule must be installed
+      // to the switch pointing to controller and then updated after neighbor
+      // registration.
+      route_dst_interface = 0;
+    } else {
+      // At least one resolved nexthop, update ecmp group
+      sw->l3_ecmp_update(route_dst_interface, l3_interfaces);
+    }
   }
 
+  rv = add_l3_unicast_route(rtnl_route_get_dst(r), route_dst_interface,
+                            nnhs > 1, update_route, vrf_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to add route to dst=" << rtnl_route_get_dst(r)
@@ -2050,7 +2060,8 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   VLOG(2) << __FUNCTION__ << ": number of next hops is "
           << rtnl_route_get_nnexthops(r);
 
-  std::set<uint32_t> l3_interfaces; // all create l3 interface ids
+  if (nnhs > 1)
+    del_l3_ecmp_group(nhs);
 
   for (auto nh : nhs) {
     auto neigh = nl->get_neighbour(nh.ifindex, nh.nh);
@@ -2075,72 +2086,26 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
       if (neigh)
         rtnl_neigh_put(neigh);
     } else {
-      uint32_t l3_interface_id = 0;
-      auto ifindex = rtnl_neigh_get_ifindex(neigh);
+      auto it =
+          std::find_if(nh_unreach_callbacks.begin(), nh_unreach_callbacks.end(),
+                       [&](std::pair<nh_unreachable *, nh_params> &cb) {
+                         return cb.first == this && cb.second.nh == nh &&
+                                !nl_addr_cmp(cb.second.np.addr, dst);
+                       });
 
-      auto link = nl->get_link_by_ifindex(ifindex);
-      auto vid = vlan->get_vid(link.get());
+      if (it != nh_unreach_callbacks.end())
+        nh_unreach_callbacks.erase(it);
+      // remove egress reference
+      rv = del_l3_neigh_egress(neigh);
 
-      struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
-      struct nl_addr *d_mac = rtnl_neigh_get_lladdr(n);
-
-      // For the Bridge SVI, the l3 interface already exists
-      // so we can just get that one
-      if (nl->is_bridge_interface(ifindex)) {
-        auto fdb_res = nl->search_fdb(vid, d_mac);
-
-        assert(fdb_res.size() == 1);
-        ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+      if (rv < 0 and rv != -EEXIST) {
+        // clean up
+        LOG(ERROR) << __FUNCTION__ << ": del l3 egress failed for neigh "
+                   << neigh;
+        // fallthrough
       }
-      // add neigh
-      rv = get_l3_interface_id(ifindex, s_mac, d_mac, &l3_interface_id, vid);
-
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__
-                   << ": could not retrieve l3 interface id for neigh " << n;
-        // XXX TODO check how this can be handled
-        continue;
-      }
-
-      VLOG(4) << __FUNCTION__ << ": got l3_interface_id=" << l3_interface_id;
-      l3_interfaces.emplace(l3_interface_id);
-      neighs.push_back(neigh);
+      rtnl_neigh_put(neigh);
     }
-  }
-
-  if (nnhs > 1) {
-    rv = del_l3_ecmp_route(r, l3_interfaces);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to delete l3 ecmp route " << r;
-    }
-  }
-
-  // remove egress references
-  for (auto n : neighs) {
-    int ifindex = rtnl_neigh_get_ifindex(n);
-    struct nl_addr *addr = rtnl_neigh_get_dst(n);
-
-    auto it =
-        std::find_if(nh_unreach_callbacks.begin(), nh_unreach_callbacks.end(),
-                     [&](std::pair<nh_unreachable *, nh_params> &cb) {
-                       return cb.first == this &&
-                              cb.second.nh.ifindex == ifindex &&
-                              !nl_addr_cmp(cb.second.nh.nh, addr) &&
-                              !nl_addr_cmp(cb.second.np.addr, dst);
-                     });
-
-    if (it != nh_unreach_callbacks.end())
-      nh_unreach_callbacks.erase(it);
-    rv = del_l3_neigh_egress(n);
-
-    if (rv < 0 and rv != -EEXIST) {
-      // clean up
-      LOG(ERROR) << __FUNCTION__ << ": del l3 egress failed for neigh " << n;
-      // fallthrough
-    }
-
-    // drop reference
-    rtnl_neigh_put(n);
   }
 
   return rv;
@@ -2161,7 +2126,7 @@ int nl_l3::add_l3_ecmp_group(const std::set<nh_stub> &nhs,
     sw->l3_ecmp_add(l3_ecmp_id, empty);
     nh_grp_to_l3_ecmp_mapping.emplace(
         std::make_pair(nhs, l3_interface(*l3_ecmp_id)));
-    VLOG(2) << __FUNCTION__ << ": created ecmp id: " << l3_ecmp_id_next;
+    VLOG(2) << __FUNCTION__ << ": created ecmp id: " << *l3_ecmp_id;
   }
 
   return 0;
