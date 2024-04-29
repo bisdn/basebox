@@ -58,6 +58,13 @@ struct nh_stub {
     return ifindex < other.ifindex;
   }
 
+  bool operator==(const nh_stub &other) const {
+    if (nl_addr_cmp(nh, other.nh) != 0)
+      return false;
+
+    return ifindex == other.ifindex;
+  }
+
   nl_addr *nh;
   int ifindex;
 };
