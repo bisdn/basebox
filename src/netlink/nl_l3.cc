@@ -1530,9 +1530,9 @@ int nl_l3::get_l3_interface_id(int ifindex, const struct nl_addr *s_mac,
   auto it = l3_interface_mapping.find(needle);
 
   if (it == l3_interface_mapping.end()) {
-    LOG(ERROR) << __FUNCTION__ << ": l3_interface_id entry not found for port "
-               << port_id << ", src_mac " << src_mac << ", dst_mac " << dst_mac
-               << ", vid " << vid;
+    VLOG(1) << __FUNCTION__ << ": l3_interface_id entry not found for port "
+            << port_id << ", src_mac " << src_mac << ", dst_mac " << dst_mac
+            << ", vid " << vid;
     return -ENODATA;
   }
 
@@ -1669,17 +1669,110 @@ void nl_l3::nh_reachable_notification(struct rtnl_neigh *n,
 
   if (routes.size() == 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to find route for dst=" << p.np.addr
-               << " on ifindex=" << p.nh.ifindex;
+               << " on ifindex=" << p.nh.ifindex << " for nh" << p.nh.nh;
     return;
   }
 
-  add_l3_unicast_route(routes.front(), true);
+  auto route = routes.front();
+
+  std::set<nh_stub> nhs;
+  std::set<uint32_t> l3_interface_ids;
+  get_neighbours_of_route(route, &nhs);
+
+  uint32_t route_dst;
+  uint32_t vrf_id = rtnl_route_get_table(route);
+  if (vrf_id == MAIN_ROUTING_TABLE)
+    vrf_id = 0;
+
+  for (auto rnh : nhs) {
+    uint32_t l3_interface_id;
+    int rv;
+
+    if (rnh == p.nh) {
+      rv = add_l3_neigh_egress(n, &l3_interface_id);
+    } else {
+      rv = get_l3_interface_id(rnh, &l3_interface_id);
+    }
+
+    if (rv == 0)
+      l3_interface_ids.insert(l3_interface_id);
+  }
+
+  notify_on_nh_unreachable(this, p);
+
+  assert(l3_interface_ids.size() > 0);
+
+  if (nhs.size() > 1) {
+    get_l3_ecmp_group(nhs, &route_dst);
+    sw->l3_ecmp_update(route_dst, l3_interface_ids);
+  } else {
+    route_dst = *l3_interface_ids.begin();
+  }
+
+  add_l3_unicast_route(p.np.addr, route_dst, nhs.size() > 1, true, vrf_id);
 }
 
 void nl_l3::nh_unreachable_notification(struct rtnl_neigh *n,
                                         struct nh_params p) noexcept {
-  // TODO handle VRF
-  add_l3_unicast_route(p.np.addr, 0, false, true, 0);
+  std::unique_ptr<rtnl_route, decltype(&rtnl_route_put)> filter(
+      rtnl_route_alloc(), rtnl_route_put);
+  std::deque<rtnl_route *> routes;
+  auto nh = rtnl_route_nh_alloc();
+
+  rtnl_route_nh_set_ifindex(nh, p.np.ifindex);
+  rtnl_route_add_nexthop(filter.get(), nh);
+
+  rtnl_route_set_type(filter.get(), RTN_UNICAST);
+  rtnl_route_set_dst(filter.get(), p.np.addr);
+
+  nl_cache_foreach_filter(
+      nl->get_cache(cnetlink::NL_ROUTE_CACHE), OBJ_CAST(filter.get()),
+      [](struct nl_object *o, void *arg) {
+        auto *route = (std::deque<rtnl_route *> *)arg;
+        route->push_back(ROUTE_CAST(o));
+      },
+      &routes);
+
+  if (routes.size() == 0) {
+    VLOG(1) << __FUNCTION__ << ": failed to find route for dst=" << p.np.addr
+            << " on ifindex=" << p.nh.ifindex << " for nh" << p.nh.nh;
+    // let's assume we failed to removed the notification, but the route is
+    // already removed
+    del_l3_neigh_egress(n);
+    return;
+  }
+
+  auto route = routes.front();
+  uint32_t vrf_id = rtnl_route_get_table(route);
+  if (vrf_id == MAIN_ROUTING_TABLE)
+    vrf_id = 0;
+
+  std::set<nh_stub> nhs;
+  std::set<uint32_t> l3_interface_ids;
+  get_neighbours_of_route(route, &nhs);
+
+  uint32_t route_dst;
+
+  for (auto rnh : nhs) {
+    uint32_t l3_interface_id;
+
+    if (rnh == p.nh)
+      continue;
+
+    auto rv = get_l3_interface_id(rnh, &l3_interface_id);
+    if (rv == 0)
+      l3_interface_ids.insert(l3_interface_id);
+  }
+
+  if (nhs.size() > 1) {
+    get_l3_ecmp_group(nhs, &route_dst);
+    sw->l3_ecmp_update(route_dst, l3_interface_ids);
+  }
+
+  if (l3_interface_ids.size() == 0)
+    route_dst = 0;
+
+  add_l3_unicast_route(p.np.addr, route_dst, nhs.size() > 1, true, vrf_id);
   del_l3_neigh_egress(n);
   notify_on_nh_reachable(this, p);
 }
