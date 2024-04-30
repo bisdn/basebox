@@ -811,7 +811,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
     if (cb->second.nh.ifindex == rtnl_neigh_get_ifindex(n) &&
         nl_addr_cmp(cb->second.nh.nh, rtnl_neigh_get_dst(n)) == 0) {
       // XXX TODO add l3_interface?
-      cb->first->nh_reachable_notification(cb->second);
+      cb->first->nh_reachable_notification(n, cb->second);
       cb = nh_callbacks.erase(cb);
     } else {
       ++cb;
@@ -1646,7 +1646,8 @@ int nl_l3::del_l3_unicast_route(nl_addr *rt_dst, uint16_t vrf_id) {
   return rv;
 }
 
-void nl_l3::nh_reachable_notification(struct nh_params p) noexcept {
+void nl_l3::nh_reachable_notification(struct rtnl_neigh *n,
+                                      struct nh_params p) noexcept {
   std::unique_ptr<rtnl_route, decltype(&rtnl_route_put)> filter(
       rtnl_route_alloc(), rtnl_route_put);
   std::deque<rtnl_route *> routes;

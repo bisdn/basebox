@@ -85,7 +85,8 @@ public:
   void notify_on_nh_reachable(nh_reachable *f, struct nh_params p) noexcept;
   void notify_on_nh_unreachable(nh_unreachable *f, struct nh_params p) noexcept;
 
-  void nh_reachable_notification(struct nh_params) noexcept override;
+  void nh_reachable_notification(struct rtnl_neigh *,
+                                 struct nh_params) noexcept override;
   void nh_unreachable_notification(struct rtnl_neigh *,
                                    struct nh_params) noexcept override;
 
