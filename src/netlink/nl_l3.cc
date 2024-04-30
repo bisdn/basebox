@@ -1544,6 +1544,37 @@ int nl_l3::get_l3_interface_id(int ifindex, const struct nl_addr *s_mac,
   return 0;
 }
 
+int nl_l3::get_l3_interface_id(const nh_stub &nh, uint32_t *l3_interface_id) {
+  rtnl_neigh *neigh = nl->get_neighbour(nh.ifindex, nh.nh);
+
+  VLOG(2) << __FUNCTION__ << ": get neigh=" << neigh << " of nh_addr=" << nh.nh;
+
+  if (!neigh || rtnl_neigh_get_lladdr(neigh) == nullptr) {
+    VLOG(2) << __FUNCTION__ << ": neigh=" << neigh << " is not reachable";
+    rtnl_neigh_put(neigh);
+    return -EHOSTUNREACH;
+  }
+
+  auto ifindex = nh.ifindex;
+  auto link = nl->get_link_by_ifindex(nh.ifindex);
+  auto vid = vlan->get_vid(link.get());
+  struct nl_addr *s_mac = rtnl_link_get_addr(link.get());
+  struct nl_addr *d_mac = rtnl_neigh_get_lladdr(neigh);
+
+  // For the Bridge SVI, the l3 interface already exists
+  // so we can just get that one
+  if (nl->is_bridge_interface(ifindex)) {
+    auto fdb_res = nl->search_fdb(vid, d_mac);
+
+    assert(fdb_res.size() == 1);
+    ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+  }
+  auto rv = get_l3_interface_id(ifindex, s_mac, d_mac, l3_interface_id, vid);
+  rtnl_neigh_put(neigh);
+
+  return rv;
+}
+
 int nl_l3::add_l3_unicast_route(nl_addr *rt_dst, uint32_t l3_interface_id,
                                 bool is_ecmp, bool update_route,
                                 uint16_t vrf_id) {
