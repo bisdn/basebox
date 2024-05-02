@@ -1,0 +1,5 @@
+[Match]
+Name=port*
+
+[Network]
+Bridge=swbridge

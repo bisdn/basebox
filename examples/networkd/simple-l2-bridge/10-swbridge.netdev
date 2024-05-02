@@ -1,5 +1,5 @@
 [NetDev]
-Name=switchbr
+Name=swbridge
 Kind=bridge
 
 [Bridge]
