@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
@@ -27,6 +28,8 @@
 #include "nl_route_query.h"
 #include "sai.h"
 #include "utils/rofl-utils.h"
+
+DECLARE_int32(port_untagged_vid);
 
 namespace std {
 
@@ -476,7 +479,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
 
   std::deque<rtnl_addr *> addresses;
   get_l3_addrs(link, &addresses, family);
-  if (vid == 1 && addresses.empty()) {
+  if (vid == FLAGS_port_untagged_vid && addresses.empty()) {
     struct rtnl_link *other;
 
     if (rtnl_link_is_vlan(link)) {

@@ -58,7 +58,6 @@ public:
 private:
   static const uint16_t vid_low = 1;
   static const uint16_t vid_high = 0xfff;
-  static const uint16_t default_vid = vid_low;
 
   int enable_vlan(uint32_t port_id, uint16_t vid, bool tagged,
                   uint16_t vrf_id = 0);

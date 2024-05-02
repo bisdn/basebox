@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <utility>
 
+#include <gflags/gflags.h>
+
 #include <netlink/cache.h>
 #include <netlink/route/link.h>
 #include <netlink/route/neighbour.h>
@@ -25,6 +27,8 @@
 #include "nl_output.h"
 #include "nl_route_query.h"
 #include "nl_vxlan.h"
+
+DECLARE_int32(port_untagged_vid);
 
 namespace basebox {
 
@@ -1051,7 +1055,8 @@ int nl_vxlan::create_next_hop(rtnl_neigh *neigh, uint32_t *next_hop_id) {
   }
 
   uint64_t dst_mac = nlall2uint64(addr);
-  uint16_t vlan_id = 1; // XXX TODO currently hardcoded to vid 1
+  uint16_t vlan_id =
+      FLAGS_port_untagged_vid; // XXX TODO currently hardcoded to untagged vid
   auto tnh = tunnel_nh(src_mac, dst_mac, physical_port, vlan_id);
   auto tnh_it = tunnel_next_hop_id.equal_range(tnh);
 
@@ -1127,7 +1132,8 @@ int nl_vxlan::delete_next_hop(rtnl_neigh *neigh) {
   }
 
   uint64_t dst_mac = nlall2uint64(addr);
-  uint16_t vlan_id = 1; // XXX TODO currently hardcoded to vid 1
+  uint16_t vlan_id =
+      FLAGS_port_untagged_vid; // XXX TODO currently hardcoded to untagged vid
   auto tnh = tunnel_nh(src_mac, dst_mac, physical_port, vlan_id);
 
   return delete_next_hop(tnh);
