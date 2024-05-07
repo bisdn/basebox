@@ -5,6 +5,7 @@
 #include "nl_bond.h"
 
 #include <cassert>
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <linux/if_bridge.h>
 #include <netlink/route/link.h>
@@ -13,6 +14,8 @@
 #include "cnetlink.h"
 #include "nl_output.h"
 #include "sai.h"
+
+DECLARE_int32(port_untagged_vid);
 
 namespace basebox {
 
@@ -242,8 +245,8 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
     std::deque<uint16_t> vlans;
 
     if (nl->has_l3_addresses(bond)) {
-      swi->ingress_port_vlan_add(port_id, 1, true);
-      swi->egress_port_vlan_add(port_id, 1, true);
+      swi->ingress_port_vlan_add(port_id, FLAGS_port_untagged_vid, true);
+      swi->egress_port_vlan_add(port_id, FLAGS_port_untagged_vid, true);
     }
 
     nl->get_vlans(rtnl_link_get_ifindex(bond), &vlans);
@@ -322,8 +325,8 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
     }
 
     if (nl->has_l3_addresses(bond)) {
-      swi->ingress_port_vlan_remove(port_id, 1, true);
-      swi->egress_port_vlan_remove(port_id, 1);
+      swi->ingress_port_vlan_remove(port_id, FLAGS_port_untagged_vid, true);
+      swi->egress_port_vlan_remove(port_id, FLAGS_port_untagged_vid);
     }
   }
 #endif

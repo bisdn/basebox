@@ -17,6 +17,9 @@
 #
 # Clear switch configuration on connect
 # FLAGS_clear_switch_configuration=true
+#
+# Vlan ID used for untagged traffic on unbridged ports (1-4095):
+# FLAGS_port_untagged_vid=1
 
 ### glog
 #

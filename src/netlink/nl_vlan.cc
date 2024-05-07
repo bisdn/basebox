@@ -4,6 +4,7 @@
 
 #include <cassert>
 
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <netlink/route/link.h>
 #include <netlink/route/link/vlan.h>
@@ -14,6 +15,8 @@
 #include "nl_output.h"
 #include "nl_vlan.h"
 #include "sai.h"
+
+DECLARE_int32(port_untagged_vid);
 
 namespace basebox {
 
@@ -310,7 +313,8 @@ int nl_vlan::enable_vlans(rtnl_link *link) {
     uint16_t vrf_id = get_vrf_id(vid, link);
 
     // assume the default vlan is untagged
-    (void)enable_vlan(port_id, it.first.second, vid != default_vid, vrf_id);
+    (void)enable_vlan(port_id, it.first.second, vid != FLAGS_port_untagged_vid,
+                      vrf_id);
   }
 
   return 0;
@@ -334,7 +338,8 @@ int nl_vlan::disable_vlans(rtnl_link *link) {
     uint16_t vrf_id = get_vrf_id(vid, link);
 
     // assume the default vlan is untagged
-    (void)disable_vlan(port_id, it.first.second, vid != default_vid, vrf_id);
+    (void)disable_vlan(port_id, it.first.second, vid != FLAGS_port_untagged_vid,
+                       vrf_id);
   }
 
   return 0;
@@ -459,12 +464,13 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
 
   switch (lt) {
   case LT_BRIDGE:
-    VLOG(2) << __FUNCTION__ << ": bridge default vid " << default_vid;
-    vid = default_vid;
+    VLOG(2) << __FUNCTION__ << ": bridge default vid "
+            << FLAGS_port_untagged_vid;
+    vid = FLAGS_port_untagged_vid;
     break;
   case LT_TUN:
   case LT_BOND:
-    vid = default_vid;
+    vid = FLAGS_port_untagged_vid;
     break;
   case LT_VLAN:
   case LT_VRF_SLAVE:
@@ -473,7 +479,7 @@ uint16_t nl_vlan::get_vid(rtnl_link *link) {
   default:
     // port or bond interface
     if (nl->get_port_id(link) > 0)
-      vid = default_vid;
+      vid = FLAGS_port_untagged_vid;
     else if (rtnl_link_get_ifindex(link) != 1)
       LOG(ERROR) << __FUNCTION__ << ": unsupported link type " << lt
                  << " of link " << link;
