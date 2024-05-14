@@ -837,7 +837,7 @@ int nl_bridge::fdb_timeout(rtnl_link *br_link, uint16_t vid,
                       rtnl_link_get_ifindex(br_link)) {
     // * remove l2 entry from kernel
     nl_msg *msg = nullptr;
-    rtnl_neigh_build_delete_request(n.get(), NLM_F_REQUEST, &msg);
+    rtnl_neigh_build_delete_request(n_lookup.get(), NLM_F_REQUEST, &msg);
     assert(msg);
 
     // send the message and create new fdb entry

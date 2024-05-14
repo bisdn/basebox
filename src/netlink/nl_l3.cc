@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <netlink/route/addr.h>
 #include <netlink/route/link.h>
@@ -27,6 +28,8 @@
 #include "nl_route_query.h"
 #include "sai.h"
 #include "utils/rofl-utils.h"
+
+DECLARE_int32(port_untagged_vid);
 
 namespace std {
 
@@ -476,7 +479,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
 
   std::deque<rtnl_addr *> addresses;
   get_l3_addrs(link, &addresses, family);
-  if (vid == 1 && addresses.empty()) {
+  if (vid == FLAGS_port_untagged_vid && addresses.empty()) {
     struct rtnl_link *other;
 
     if (rtnl_link_is_vlan(link)) {
@@ -1998,9 +2001,8 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   for (auto i : unresolved_nh) {
     auto it = std::find_if(nh_callbacks.begin(), nh_callbacks.end(),
                            [&](std::pair<nh_reachable *, nh_params> &cb) {
-                             return cb.first == this &&
-                                    cb.second.nh.ifindex == i.ifindex &&
-                                    !nl_addr_cmp_prefix(cb.second.np.addr, dst);
+                             return cb.first == this && cb.second.nh == i &&
+                                    !nl_addr_cmp(cb.second.np.addr, dst);
                            });
 
     if (it != nh_callbacks.end())
@@ -2056,6 +2058,20 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
 
   // remove egress references
   for (auto n : neighs) {
+    int ifindex = rtnl_neigh_get_ifindex(n);
+    struct nl_addr *addr = rtnl_neigh_get_dst(n);
+
+    auto it =
+        std::find_if(nh_unreach_callbacks.begin(), nh_unreach_callbacks.end(),
+                     [&](std::pair<nh_unreachable *, nh_params> &cb) {
+                       return cb.first == this &&
+                              cb.second.nh.ifindex == ifindex &&
+                              !nl_addr_cmp(cb.second.nh.nh, addr) &&
+                              !nl_addr_cmp(cb.second.np.addr, dst);
+                     });
+
+    if (it != nh_unreach_callbacks.end())
+      nh_unreach_callbacks.erase(it);
     rv = del_l3_neigh_egress(n);
 
     if (rv < 0 and rv != -EEXIST) {

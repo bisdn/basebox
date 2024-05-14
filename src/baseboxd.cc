@@ -21,10 +21,19 @@ DEFINE_int32(port, 6653, "Listening port");
 DEFINE_int32(ofdpa_grpc_port, 50051, "Listening port of ofdpa gRPC server");
 DEFINE_bool(use_knet, true, "Use KNET interfaces");
 DEFINE_bool(mark_fwd_offload, true, "Mark switched packets as offloaded");
+DEFINE_int32(port_untagged_vid, 1,
+             "VLAN ID used for untagged traffic on unbridged ports");
 
 static bool validate_port(const char *flagname, gflags::int32 value) {
   VLOG(3) << __FUNCTION__ << ": flagname=" << flagname << ", value=" << value;
   if (value > 0 && value <= UINT16_MAX) // value is ok
+    return true;
+  return false;
+}
+
+static bool validate_vid(const char *flagname, gflags::int32 value) {
+  VLOG(3) << __FUNCTION__ << ": flagname=" << flagname << ", value=" << value;
+  if (value > 0 && value <= 4095) // value is ok
     return true;
   return false;
 }
@@ -48,9 +57,14 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  if (!gflags::RegisterFlagValidator(&FLAGS_port_untagged_vid, &validate_vid)) {
+    std::cerr << "Failed to register vid validator" << std::endl;
+    exit(1);
+  }
+
   // all variables can be set from env
-  FLAGS_tryfromenv =
-      std::string("multicast,port,ofdpa_grpc_port,use_knet,mark_fwd_offload");
+  FLAGS_tryfromenv = std::string("multicast,port,ofdpa_grpc_port,use_knet,mark_"
+                                 "fwd_offload,port_untagged_vid");
   gflags::SetUsageMessage("");
   gflags::SetVersionString(PROJECT_VERSION);
 
