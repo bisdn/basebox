@@ -2024,7 +2024,7 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
     return rv;
   }
 
-  if (neighs.size() > 1) {
+  if (nnhs > 1) {
     // get all l3 interfaces
     std::set<uint32_t> l3_interfaces; // all create l3 interface ids
     for (auto n : neighs) {
