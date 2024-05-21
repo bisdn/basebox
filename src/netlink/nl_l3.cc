@@ -1849,22 +1849,23 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
         this, nh_params{net_params{rtnl_route_get_dst(r), nh.ifindex}, nh});
   }
 
-  switch (nnhs) {
-  case 0:
-    // Not yet determined next-hop, the rule must be installed to the switch
-    // pointing to controller and then updated after next-hop registration
-    rv = add_l3_unicast_route(rtnl_route_get_dst(r), 0, false, update_route,
-                              vrf_id);
-    break;
-  case 1:
-    // Single known next-hop
-    rv = add_l3_unicast_route(rtnl_route_get_dst(r), *l3_interfaces.begin(),
-                              false, update_route, vrf_id);
-    break;
-  default:
+  if (nnhs == 1) {
+    uint32_t route_dst_interface;
+
+    if (l3_interfaces.size() == 0) {
+      // Not yet resolved next-hop, or on-link route, the rule must be installed
+      // to the switch pointing to controller and then updated after neighbor
+      // registration.
+      route_dst_interface = 0;
+    } else {
+      // single, resolved nexthop
+      route_dst_interface = *l3_interfaces.begin(); /* resolved nexthop */
+    }
+    rv = add_l3_unicast_route(rtnl_route_get_dst(r), route_dst_interface, false,
+                              update_route, vrf_id);
+  } else {
     // create ecmp group
     rv = add_l3_ecmp_route(r, l3_interfaces, update_route);
-    break;
   }
 
   if (rv < 0) {
