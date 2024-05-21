@@ -1926,12 +1926,18 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   int rv = 0;
   auto dst = rtnl_route_get_dst(r);
 
+  int nnhs = rtnl_route_get_nnexthops(r);
   uint16_t vrf_id = rtnl_route_get_table(r);
   // Routing table 254 id matches the main routing table on linux.
   // Adding a vrf with this id will collide with the main routing
   // table, but will enter the wrong info into the OFDPA tables
   if (vrf_id == MAIN_ROUTING_TABLE)
     vrf_id = 0;
+
+  if (nnhs == 0) {
+    LOG(WARNING) << __FUNCTION__ << ": no neighbours of route " << r;
+    return -ENOTSUP;
+  }
 
   if (rtnl_route_get_priority(r) > 0 &&
       rtnl_route_get_protocol(r) != RTPROT_KERNEL) {
