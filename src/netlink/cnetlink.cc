@@ -322,6 +322,50 @@ struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
   return _link;
 }
 
+std::unique_ptr<struct rtnl_route, decltype(&rtnl_route_put)>
+cnetlink::get_route_by_dst_ifindex(struct nl_addr *dst, int ifindex) const {
+  struct rtnl_route *route = nullptr;
+  std::unique_ptr<rtnl_route, decltype(&rtnl_route_put)> filter(
+      rtnl_route_alloc(), &rtnl_route_put);
+
+  auto nh = rtnl_route_nh_alloc();
+
+  rtnl_route_nh_set_ifindex(nh, ifindex);
+  rtnl_route_add_nexthop(filter.get(), nh);
+
+  rtnl_route_set_type(filter.get(), RTN_UNICAST);
+  rtnl_route_set_dst(filter.get(), dst);
+
+  nl_cache_foreach_filter(
+      caches[NL_ROUTE_CACHE], OBJ_CAST(filter.get()),
+      [](struct nl_object *obj, void *arg) {
+        struct nl_object **tmp = static_cast<nl_object **>(arg);
+        if (*tmp == nullptr) {
+          *tmp = nl_object_clone(obj);
+        }
+      },
+      &route);
+
+  if (route == nullptr) {
+    // check the garbage
+    for (auto &obj : nl_objs) {
+      if (obj.get_action() == NL_ACT_NEW)
+        continue;
+
+      if (nl_object_match_filter(obj.get_old_obj(), OBJ_CAST(filter.get()))) {
+        nl_object_get(obj.get_old_obj());
+        route = ROUTE_CAST(obj.get_old_obj());
+        VLOG(1) << __FUNCTION__ << ": found deleted route " << route;
+        break;
+      }
+    }
+  }
+
+  std::unique_ptr<struct rtnl_route, decltype(&rtnl_route_put)> ret(
+      route, *rtnl_route_put);
+  return ret;
+}
+
 void cnetlink::get_bridge_ports(
     int br_ifindex, std::deque<rtnl_link *> *link_list) const noexcept {
   assert(link_list);
