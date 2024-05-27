@@ -925,8 +925,17 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
   auto nl = static_cast<cnetlink *>(data);
 
   // only enqueue nl msgs if not in stopped state
-  if (nl->state != NL_STATE_STOPPED)
-    nl->nl_objs.emplace_back(action, old_obj, new_obj);
+  if (nl->state != NL_STATE_STOPPED) {
+    // If libnl updated the object instead of replacing it, old_obj will be a
+    // clone of the old object, and new_obj is the updated old object. Since
+    // later notifications may update the new_obj further, clone
+    // it to keep it in the state of the notification.
+    auto local_new = nl_object_clone(new_obj);
+
+    nl->nl_objs.emplace_back(action, old_obj, local_new);
+
+    nl_object_put(local_new);
+  }
 }
 
 void cnetlink::set_tapmanager(std::shared_ptr<port_manager> pm) {
