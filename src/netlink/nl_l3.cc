@@ -2093,13 +2093,10 @@ bool nl_l3::is_l3_neigh_routable(struct rtnl_neigh *n) {
   auto route = rq.query_route(rtnl_neigh_get_dst(n));
   if (route) {
     VLOG(2) << __FUNCTION__ << ": got route " << route << " for neigh " << n;
-    if (rtnl_route_get_nnexthops(route) > 0) {
-      std::deque<struct rtnl_nexthop *> nhs;
-      get_nexthops_of_route(route, &nhs);
-      if (nhs.size() > 0) {
-        VLOG(2) << __FUNCTION__ << ": neigh is routable in by us";
-        routable = true;
-      }
+
+    if (rtnl_route_guess_scope(route) == RT_SCOPE_LINK) {
+      VLOG(2) << __FUNCTION__ << ": neigh is routable in by us";
+      routable = true;
     }
     nl_object_put(OBJ_CAST(route));
   } else {
@@ -2107,7 +2104,7 @@ bool nl_l3::is_l3_neigh_routable(struct rtnl_neigh *n) {
   }
 
   return routable;
-};
+}
 
 std::deque<nh_stub> nl_l3::get_l3_neighs_of_prefix(std::set<nh_stub> &list,
                                                    nl_addr *prefix) {
