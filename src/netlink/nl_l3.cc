@@ -1430,7 +1430,6 @@ int nl_l3::get_neighbours_of_route(
     rtnl_route *route, std::deque<struct rtnl_neigh *> *neighs,
     std::deque<nh_stub> *unresolved_nh) noexcept {
 
-  auto route_dst = rtnl_route_get_dst(route);
   std::deque<struct rtnl_nexthop *> nhs;
 
   assert(route);
