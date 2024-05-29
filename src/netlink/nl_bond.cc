@@ -200,7 +200,7 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
   if (mem_it == lag_members.end()) { // No ports in lag
     std::set<uint32_t> members;
     members.insert(port_id);
-    auto lm_rv = lag_members.emplace(lag_id, members);
+    lag_members.emplace(lag_id, members);
   } else {
     mem_it->second.insert(port_id);
   }
