@@ -959,7 +959,6 @@ int cnetlink::handle_source_mac_learn() {
        cnt < nl_proc_max && _packet_in.size() && state == NL_STATE_RUNNING;
        cnt++) {
     auto p = _packet_in.front();
-    int ifindex = port_man->get_ifindex(p.port_id);
 
     // pass process packets to port_man
     port_man->enqueue(p.port_id, p.pkt);

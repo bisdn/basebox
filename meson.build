@@ -5,6 +5,7 @@ project('baseboxd', 'cpp',
     'b_asneeded=false',
     'prefix=/usr',
     'sysconfdir=/etc',
+    'werror=true',
   ])
 
 sources = files('''

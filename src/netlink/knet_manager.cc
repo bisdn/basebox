@@ -253,8 +253,6 @@ bool knet_manager::portdev_removed(rtnl_link *link) {
 
   int ifindex(rtnl_link_get_ifindex(link));
   std::string portname(rtnl_link_get_name(link));
-  int rv = 0;
-  bool port_removed(false);
   std::lock_guard<std::mutex> lock{tn_mutex};
 
   auto ifi2id_it = ifindex_to_id.find(ifindex);

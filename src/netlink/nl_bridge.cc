@@ -892,7 +892,7 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
       &mdb);
 
   for (auto i : mdb) {
-    uint32_t port_ifindex = rtnl_mdb_entry_get_ifindex(i);
+    int port_ifindex = rtnl_mdb_entry_get_ifindex(i);
     uint32_t port_id = nl->get_port_id(port_ifindex);
     uint16_t vid = rtnl_mdb_entry_get_vid(i);
     unsigned char buf[ETH_ALEN];
@@ -991,7 +991,7 @@ int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
       &mdb);
 
   for (auto i : mdb) {
-    uint32_t port_ifindex = rtnl_mdb_entry_get_ifindex(i);
+    int port_ifindex = rtnl_mdb_entry_get_ifindex(i);
     uint32_t port_id = nl->get_port_id(port_ifindex);
     uint16_t vid = rtnl_mdb_entry_get_vid(i);
     unsigned char buf[ETH_ALEN];
