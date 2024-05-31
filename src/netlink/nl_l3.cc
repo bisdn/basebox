@@ -602,7 +602,8 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
     // attached to the bridge
     auto lladdr = rtnl_neigh_get_lladdr(n);
     uint16_t vid = vlan->get_vid(link.get());
-    *vrf_id = vlan->get_vrf_id(vid, link.get());
+    if (vrf_id)
+      *vrf_id = vlan->get_vrf_id(vid, link.get());
 
     auto fdb_neigh = nl->search_fdb(vid, lladdr);
     for (auto neigh : fdb_neigh) {
