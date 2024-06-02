@@ -1585,11 +1585,20 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     bond->update_lag(old_link, new_link);
     break;
   case LT_VRF: // No need to care about the vrf interface itself
-  case LT_BRIDGE:
-    VLOG(2) << __FUNCTION__
-            << ": ignoring update (not supported) of old_lt=" << lt_old
-            << " old link: " << old_link << ", new link: " << new_link;
-    break;
+  case LT_BRIDGE: {
+    int old_ageing_time = rtnl_bridge_get_ageing_time(old_link);
+    int new_ageing_time = rtnl_bridge_get_ageing_time(new_link);
+
+    if (!bridge || !bridge->is_bridge_interface(new_link)) {
+      VLOG(1) << __FUNCTION__ << ": ignoring update on untracked bridge "
+              << new_link;
+      break;
+    }
+
+    if (old_ageing_time != new_ageing_time && new_ageing_time > 0)
+      bridge->set_ageing_time(new_ageing_time);
+
+  } break;
   default:
     if (port_id > 0) {
       if (lt_new == LT_BOND_SLAVE) {
