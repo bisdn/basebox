@@ -161,6 +161,7 @@ public:
   void update_interface(rtnl_link *old_link, rtnl_link *new_link);
   void delete_interface(rtnl_link *);
 
+  void set_ageing_time(uint32_t ageing_time);
   void add_neigh_to_fdb(rtnl_neigh *, bool update = false);
   void remove_neigh_from_fdb(rtnl_neigh *);
 
