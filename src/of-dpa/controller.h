@@ -58,7 +58,7 @@ public:
                  rofl::openflow::cofhello_elem_versionbitmap(),
              uint16_t ofdpa_grpc_port = 50051)
       : nb(std::move(nb)), bb_thread(1), egress_interface_id(1),
-        ecmp_interface_id(1), default_idle_timeout(0), connected(false),
+        ecmp_interface_id(1), default_idle_timeout(300), connected(false),
         ofdpa(nullptr), ofdpa_grpc_port(ofdpa_grpc_port) {
     this->nb->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
