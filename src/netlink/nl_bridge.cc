@@ -69,6 +69,9 @@ void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
   if (!get_vlan_filtering())
     LOG(FATAL) << __FUNCTION__
                << " unsupported: bridge configured with vlan_filtering 0";
+
+  if (rtnl_bridge_get_ageing_time(bridge) > 0)
+    set_ageing_time(rtnl_bridge_get_ageing_time(bridge));
 }
 
 bool nl_bridge::is_bridge_interface(int ifindex) {
