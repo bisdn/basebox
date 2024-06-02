@@ -67,6 +67,8 @@ static rofl::caddress_in4 libnl_in4addr_2_rofl(struct nl_addr *addr, int *rv) {
 }
 
 void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
+  uint32_t ageing_time;
+
   assert(bridge);
   assert((rtnl_link_get_type(bridge) != nullptr &&
           std::string("bridge").compare(rtnl_link_get_type(bridge)) == 0) ||
@@ -79,6 +81,9 @@ void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
   if (!get_vlan_filtering())
     LOG(FATAL) << __FUNCTION__
                << " unsupported: bridge configured with vlan_filtering 0";
+
+  if (rtnl_link_bridge_get_ageing_time(bridge, &ageing_time) == 0)
+    set_ageing_time(ageing_time);
 }
 
 bool nl_bridge::is_bridge_interface(int ifindex) {
