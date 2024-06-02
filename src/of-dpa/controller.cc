@@ -446,6 +446,10 @@ void controller::handle_bridging_table_rm(
   rofl::caddress_ll eth_dst;
   uint16_t vid = 0;
 
+  // we only care about flows being timed out
+  if (msg.get_reason() != rofl::openflow13::OFPRR_IDLE_TIMEOUT)
+    return;
+
   try {
     eth_dst = msg.get_match().get_eth_dst();
     vid = msg.get_match().get_vlan_vid() & 0xfff;
