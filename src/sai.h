@@ -81,6 +81,8 @@ public:
   /* @} */
 
   /* @ Layer 2 bridging { */
+  virtual int l2_set_idle_timeout(uint16_t idle_timeout) noexcept = 0;
+
   virtual int l2_addr_remove_all_in_vlan(uint32_t port,
                                          uint16_t vid) noexcept = 0;
   virtual int l2_addr_add(uint32_t port, uint16_t vid,

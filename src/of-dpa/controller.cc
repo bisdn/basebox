@@ -790,6 +790,13 @@ int controller::overlay_tunnel_remove(uint32_t tunnel_id) noexcept {
   }
   return rv;
 }
+int controller::l2_set_idle_timeout(uint16_t idle_timeout) noexcept {
+  if (idle_timeout == 0)
+    return -EINVAL;
+
+  default_idle_timeout = idle_timeout;
+  return 0;
+};
 
 int controller::l2_addr_remove_all_in_vlan(uint32_t port,
                                            uint16_t vid) noexcept {

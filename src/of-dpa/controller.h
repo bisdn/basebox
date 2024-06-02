@@ -157,6 +157,7 @@ public:
   int overlay_tunnel_add(uint32_t tunnel_id) noexcept override;
   int overlay_tunnel_remove(uint32_t tunnel_id) noexcept override;
 
+  int l2_set_idle_timeout(uint16_t idle_timeout) noexcept override;
   int l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept override;
   int l2_addr_add(uint32_t port, uint16_t vid, const rofl::caddress_ll &mac,
                   bool filtered, bool permanent,
