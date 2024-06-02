@@ -836,7 +836,7 @@ int controller::l2_addr_add(uint32_t port, uint16_t vid,
     auto fm = fm_driver.add_bridging_unicast_vlan(dpt.get_version(), port, vid,
                                                   mac, filtered, lag);
     if (!permanent)
-      fm.set_idle_timeout(300);
+      fm.set_idle_timeout(default_idle_timeout);
 
     dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
@@ -883,7 +883,7 @@ int controller::l2_overlay_addr_add(uint32_t lport, uint32_t tunnel_id,
     auto fm = fm_driver.add_bridging_unicast_overlay(dpt.get_version(), lport,
                                                      tunnel_id, mac);
     if (!permanent)
-      fm.set_idle_timeout(300);
+      fm.set_idle_timeout(default_idle_timeout);
 
     dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
