@@ -870,32 +870,37 @@ void nl_bridge::clear_tpid_entries() {
   }
 }
 
-int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
-  int rv = 0;
-#ifdef HAVE_NETLINK_ROUTE_MDB_H
-  std::deque<struct rtnl_mdb_entry *> mdb;
-  uint32_t bridge = rtnl_mdb_get_ifindex(mdb_entry);
+int nl_bridge::mdb_to_set(
+    rtnl_mdb *mdb,
+    std::set<std::tuple<uint32_t, uint16_t, rofl::caddress_ll>> *set) {
+  assert(mdb);
+  assert(set);
 
-  if (!is_bridge_interface(nl->get_link_by_ifindex(bridge).get())) {
+#ifdef HAVE_NETLINK_ROUTE_MDB_H
+  // rtnl_mdb_get_ifindex() returns an uint32_t, while all other *_get_ifindex()
+  // functions return an int
+  if (static_cast<int>(rtnl_mdb_get_ifindex(mdb)) != get_ifindex()) {
     LOG(ERROR) << ": bridge not set correctly";
     return -EINVAL;
   }
 
-  // parse MDB object to get all nested information
+  std::deque<struct rtnl_mdb_entry *> mdb_entries;
+
   rtnl_mdb_foreach_entry(
-      mdb_entry,
+      mdb,
       [](struct rtnl_mdb_entry *it, void *arg) {
         auto m_database =
             static_cast<std::deque<struct rtnl_mdb_entry *> *>(arg);
         m_database->push_back(it);
       },
-      &mdb);
+      &mdb_entries);
 
-  for (auto i : mdb) {
+  for (auto i : mdb_entries) {
     int port_ifindex = rtnl_mdb_entry_get_ifindex(i);
     uint32_t port_id = nl->get_port_id(port_ifindex);
     uint16_t vid = rtnl_mdb_entry_get_vid(i);
     unsigned char buf[ETH_ALEN];
+    int rv;
 
     if (port_ifindex == get_ifindex()) {
       continue;
@@ -918,7 +923,7 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
       rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-        return rv;
+        continue;
       }
 
       unsigned char buf[ETH_ALEN];
@@ -952,100 +957,88 @@ int nl_bridge::mdb_entry_add(rtnl_mdb *mdb_entry) {
       multicast_ipv6_to_ll(v6_addr, buf);
     }
 
-    rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
-
-    rv = sw->l2_multicast_group_join(port_id, vid, mc_ll);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to join Layer 2 Multicast Group";
-      return rv;
-    }
-
-    VLOG(2) << __FUNCTION__ << ": mdb entry added, port" << port_id
-            << " grp= " << addr;
+    set->emplace(port_id, vid, rofl::caddress_ll(buf, ETH_ALEN));
   }
 #endif
 
-  return rv;
+  return 0;
 }
 
-int nl_bridge::mdb_entry_remove(rtnl_mdb *mdb_entry) {
-  int rv = 0;
-#ifdef HAVE_NETLINK_ROUTE_MDB_H
-  uint32_t bridge = rtnl_mdb_get_ifindex(mdb_entry);
+int nl_bridge::mdb_update(rtnl_mdb *old_mdb, rtnl_mdb *new_mdb) {
+  std::set<std::tuple<uint32_t, uint16_t, rofl::caddress_ll>> old_entries;
+  std::set<std::tuple<uint32_t, uint16_t, rofl::caddress_ll>> new_entries;
 
-  if (!is_bridge_interface(nl->get_link_by_ifindex(bridge).get())) {
-    LOG(ERROR) << ": bridge not set correctly";
-    return -EINVAL;
-  }
+  if (old_mdb)
+    mdb_to_set(old_mdb, &old_entries);
+  if (new_mdb)
+    mdb_to_set(new_mdb, &new_entries);
 
-  std::deque<struct rtnl_mdb_entry *> mdb;
+  auto it_old = old_entries.begin();
+  auto it_new = new_entries.begin();
 
-  // parse MDB object to get all nested information
-  rtnl_mdb_foreach_entry(
-      mdb_entry,
-      [](struct rtnl_mdb_entry *it, void *arg) {
-        auto m_database =
-            static_cast<std::deque<struct rtnl_mdb_entry *> *>(arg);
-        m_database->push_back(it);
-      },
-      &mdb);
+  // go through both ordered sets in parallel, and whenever the iterator points
+  // to an entry not present in both, we are at one that changed
+  while (it_old != old_entries.end() && it_new != new_entries.end()) {
+    // entry only in old set => remove
+    if (*it_old < *it_new) {
+      uint32_t port_id = std::get<0>(*it_old);
+      uint16_t vid = std::get<1>(*it_old);
+      rofl::caddress_ll mc_ll = std::get<2>(*it_old);
 
-  for (auto i : mdb) {
-    int port_ifindex = rtnl_mdb_entry_get_ifindex(i);
-    uint32_t port_id = nl->get_port_id(port_ifindex);
-    uint16_t vid = rtnl_mdb_entry_get_vid(i);
-    unsigned char buf[ETH_ALEN];
+      VLOG(2) << __FUNCTION__ << ": port " << port_id << ", vid " << vid
+              << " leaving " << mc_ll;
 
-    if (port_ifindex == get_ifindex()) {
+      sw->l2_multicast_group_leave(port_id, vid, mc_ll);
+      it_old++;
       continue;
     }
 
-    auto addr = rtnl_mdb_entry_get_addr(i);
-    if (rtnl_mdb_entry_get_proto(i) == ETH_P_IP) {
-      auto p = nl_addr_alloc(4);
-      nl_addr_parse("224.0.0.0/24", AF_INET, &p);
-      std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
-      if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
-        continue;
+    // entry only in new set => add
+    if (*it_new < *it_old) {
+      uint32_t port_id = std::get<0>(*it_new);
+      uint16_t vid = std::get<1>(*it_new);
+      rofl::caddress_ll mc_ll = std::get<2>(*it_new);
 
-      rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
-      if (rv < 0) {
-        LOG(ERROR) << __FUNCTION__ << ": could not parse addr " << addr;
-        return rv;
-      }
+      VLOG(2) << __FUNCTION__ << ": port " << port_id << ", vid " << vid
+              << " joining " << mc_ll;
 
-      multicast_ipv4_to_ll(ipv4_dst.get_addr_hbo(), buf);
-    } else if (rtnl_mdb_entry_get_proto(i) == ETH_P_IPV6) {
-
-      auto p = nl_addr_alloc(16);
-      nl_addr_parse("ff02::1/128", AF_INET6, &p);
-      std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
-      if (!nl_addr_cmp(addr, tm_addr.get()))
-        continue;
-      nl_addr_parse("ff00::/15", AF_INET6, &p);
-      if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
-        continue;
-
-      struct in6_addr *v6_addr =
-          (struct in6_addr *)nl_addr_get_binary_addr(addr);
-
-      multicast_ipv6_to_ll(v6_addr, buf);
+      sw->l2_multicast_group_join(port_id, vid, mc_ll);
+      it_new++;
+      continue;
     }
 
-    rofl::caddress_ll mc_ll = rofl::caddress_ll(buf, ETH_ALEN);
-
-    rv = sw->l2_multicast_group_leave(port_id, vid, mc_ll);
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to leave Layer 2 Multicast Group";
-      return rv;
-    }
-
-    VLOG(2) << __FUNCTION__ << ": mdb entry removed, port" << port_id
-            << " grp= " << addr;
+    // entry in both => keep
+    it_old++;
+    it_new++;
   }
-#endif
 
-  return rv;
+  // any remaining entries in old => remove
+  while (it_old != old_entries.end()) {
+    uint32_t port_id = std::get<0>(*it_old);
+    uint16_t vid = std::get<1>(*it_old);
+    rofl::caddress_ll mc_ll = std::get<2>(*it_old);
+
+    VLOG(2) << __FUNCTION__ << ": port " << port_id << ", vid " << vid
+            << " leaving " << mc_ll;
+
+    sw->l2_multicast_group_leave(port_id, vid, mc_ll);
+    it_old++;
+  }
+
+  // any remaining entries in new => add
+  while (it_new != new_entries.end()) {
+    uint32_t port_id = std::get<0>(*it_new);
+    uint16_t vid = std::get<1>(*it_new);
+    rofl::caddress_ll mc_ll = std::get<2>(*it_new);
+
+    VLOG(2) << __FUNCTION__ << ": port " << port_id << ", vid " << vid
+            << " joining " << mc_ll;
+
+    sw->l2_multicast_group_join(port_id, vid, mc_ll);
+    it_new++;
+  }
+
+  return 0;
 }
 
 int nl_bridge::set_port_vlan_stp_state(uint32_t port_id, uint16_t vid,

@@ -1796,20 +1796,35 @@ std::deque<rtnl_neigh *> cnetlink::search_fdb(uint16_t vid, nl_addr *lladdr) {
 
 void cnetlink::route_mdb_apply(const nl_obj &obj) {
 
-  switch (obj.get_msg_type()) {
-  case RTM_NEWMDB:
+  switch (obj.get_action()) {
+  case NL_ACT_NEW:
     assert(obj.get_new_obj());
-    LOG(INFO) << __FUNCTION__ << ": new mdb entry";
+
+    VLOG(2) << __FUNCTION__ << ": add mdb " << obj.get_old_obj();
 
     if (bridge)
-      bridge->mdb_entry_add(MDB_CAST(obj.get_new_obj()));
+      bridge->mdb_update(nullptr, MDB_CAST(obj.get_new_obj()));
     break;
-  case RTM_DELMDB:
+  case NL_ACT_CHANGE:
+    assert(obj.get_new_obj());
     assert(obj.get_old_obj());
-    LOG(INFO) << __FUNCTION__ << ": deleting mdb entry";
+
+    VLOG(2) << __FUNCTION__ << ": change new mdb " << obj.get_new_obj();
+    VLOG(2) << __FUNCTION__ << ": change old mdb " << obj.get_old_obj();
 
     if (bridge)
-      bridge->mdb_entry_remove(MDB_CAST(obj.get_new_obj()));
+      bridge->mdb_update(MDB_CAST(obj.get_old_obj()),
+                         MDB_CAST(obj.get_new_obj()));
+
+    break;
+  case NL_ACT_DEL:
+    assert(obj.get_old_obj());
+
+    VLOG(2) << __FUNCTION__ << ": del mdb " << obj.get_old_obj();
+
+    if (bridge)
+      bridge->mdb_update(MDB_CAST(obj.get_old_obj()), nullptr);
+
     break;
   default:
     LOG(ERROR) << __FUNCTION__ << ": invalid action " << obj.get_action();

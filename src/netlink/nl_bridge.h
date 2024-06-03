@@ -165,8 +165,7 @@ public:
   void add_neigh_to_fdb(rtnl_neigh *, bool update = false);
   void remove_neigh_from_fdb(rtnl_neigh *);
 
-  int mdb_entry_add(rtnl_mdb *mdb_entry);
-  int mdb_entry_remove(rtnl_mdb *mdb_entry);
+  int mdb_update(rtnl_mdb *old_mdb, rtnl_mdb *new_mdb);
 
   bool is_mac_in_l2_cache(rtnl_neigh *n);
   int fdb_timeout(rtnl_link *br_link, uint16_t vid,
@@ -212,6 +211,9 @@ private:
                               uint8_t stp_state);
   int del_port_vlan_stp_state(uint32_t port_id, uint16_t vid);
   int set_port_vlan_stp_state(uint32_t port_id, uint16_t vid, uint8_t state);
+
+  int mdb_to_set(rtnl_mdb *,
+                 std::set<std::tuple<uint32_t, uint16_t, rofl::caddress_ll>> *);
 
   rtnl_link *bridge;
   switch_interface *sw;
