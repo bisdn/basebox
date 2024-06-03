@@ -233,6 +233,8 @@ public:
 
   int l3_ecmp_add(uint32_t *l3_ecmp_id,
                   const std::set<uint32_t> &l3_interfaces) noexcept override;
+  int l3_ecmp_update(uint32_t l3_ecmp_id,
+                     const std::set<uint32_t> &l3_interfaces) noexcept override;
   int l3_ecmp_remove(uint32_t l3_ecmp_id) noexcept override;
 
   int ingress_port_vlan_accept_all(uint32_t port) noexcept override;
