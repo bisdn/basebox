@@ -1226,12 +1226,7 @@ int controller::l3_egress_remove(uint32_t l3_interface_id) noexcept {
     rv = -EINVAL;
   }
 
-  if (l3_interface_id == egress_interface_id + 1) {
-    egress_interface_id--;
-    // TODO free even more ids from set?
-  } else {
-    freed_egress_interfaces_ids.insert(l3_interface_id);
-  }
+  freed_egress_interfaces_ids.insert(l3_interface_id);
 
   return rv;
 }
