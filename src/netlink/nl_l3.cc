@@ -1599,7 +1599,6 @@ int nl_l3::add_l3_ecmp_route(rtnl_route *r,
   int rv = 0;
   uint32_t vrf_id = rtnl_route_get_table(r);
   uint32_t l3_ecmp_id = -1;
-  static uint32_t l3_ecmp_id_next = 1;
   auto it_range = l3_ecmp_mapping.equal_range(l3_interface_ids);
   auto i = it_range.first;
 
@@ -1618,8 +1617,7 @@ int nl_l3::add_l3_ecmp_route(rtnl_route *r,
 
   // no l3_ecmp_id found -> create a new one
   if (l3_ecmp_id == (uint32_t)-1) {
-    l3_ecmp_id = l3_ecmp_id_next;
-    rv = sw->l3_ecmp_add(l3_ecmp_id, l3_interface_ids);
+    rv = sw->l3_ecmp_add(&l3_ecmp_id, l3_interface_ids);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__
                  << ": failed to create l3 ecmp id=" << l3_ecmp_id;
@@ -1630,9 +1628,6 @@ int nl_l3::add_l3_ecmp_route(rtnl_route *r,
     // register the new l3_ecmp_id
     l3_ecmp_mapping.emplace(
         std::make_pair(l3_interface_ids, l3_interface(l3_ecmp_id)));
-
-    // increment l3_ecmp_id
-    l3_ecmp_id_next++;
   }
 
   // create route

@@ -140,7 +140,7 @@ public:
   /* @} */
 
   /* @ Layer3 ECMP { */
-  virtual int l3_ecmp_add(uint32_t l3_ecmp_id,
+  virtual int l3_ecmp_add(uint32_t *l3_ecmp_id,
                           const std::set<uint32_t> &l3_interfaces) noexcept = 0;
   virtual int l3_ecmp_remove(uint32_t l3_ecmp_id) noexcept = 0;
   /* @} */
