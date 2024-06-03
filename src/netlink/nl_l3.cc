@@ -1873,22 +1873,24 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
                << " rv=" << rv;
   }
 
-  VLOG(2) << __FUNCTION__ << ": enabling l3 neighs reachable by route " << r;
-  auto l3_neighs =
-      get_l3_neighs_of_prefix(unroutable_l3_neighs, rtnl_route_get_dst(r));
-  for (auto n : l3_neighs) {
-    auto neigh = nl->get_neighbour(n.ifindex, n.nh);
-    if (!neigh) {
-      // should we remove it from unroutable?
-      VLOG(2) << __FUNCTION__ << ": unknown l3 neigh ifindex=" << n.ifindex
-              << ", addr=" << n.nh;
-      continue;
-    }
+  if (rtnl_route_guess_scope(r) == RT_SCOPE_LINK) {
+    VLOG(2) << __FUNCTION__ << ": enabling l3 neighs reachable by route " << r;
+    auto l3_neighs =
+        get_l3_neighs_of_prefix(unroutable_l3_neighs, rtnl_route_get_dst(r));
+    for (auto n : l3_neighs) {
+      auto neigh = nl->get_neighbour(n.ifindex, n.nh);
+      if (!neigh) {
+        // should we remove it from unroutable?
+        VLOG(2) << __FUNCTION__ << ": unknown l3 neigh ifindex=" << n.ifindex
+                << ", addr=" << n.nh;
+        continue;
+      }
 
-    VLOG(2) << __FUNCTION__ << ": enabling l3 neigh " << neigh;
-    unroutable_l3_neighs.erase(n);
-    add_l3_neigh(neigh);
-    rtnl_neigh_put(neigh);
+      VLOG(2) << __FUNCTION__ << ": enabling l3 neigh " << neigh;
+      unroutable_l3_neighs.erase(n);
+      add_l3_neigh(neigh);
+      rtnl_neigh_put(neigh);
+    }
   }
 
   // cleanup
@@ -1966,24 +1968,26 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
     }
   }
 
-  VLOG(2) << __FUNCTION__ << ": disabling l3 neighs reachable by route " << r;
-  auto l3_neighs =
-      get_l3_neighs_of_prefix(routable_l3_neighs, rtnl_route_get_dst(r));
-  for (auto n : l3_neighs) {
-    auto neigh = nl->get_neighbour(n.ifindex, n.nh);
-    if (!neigh) {
-      // neigh is already purged from nl cache, so neigh will be
-      // removed when handling the DEL_NEIGH notification
-      VLOG(2) << __FUNCTION__
-              << ": skipping non-existing l3 neigh ifindex=" << n.ifindex
-              << ", addr=" << n.nh;
-      continue;
-    }
+  if (rtnl_route_guess_scope(r) == RT_SCOPE_LINK) {
+    VLOG(2) << __FUNCTION__ << ": disabling l3 neighs reachable by route " << r;
+    auto l3_neighs =
+        get_l3_neighs_of_prefix(routable_l3_neighs, rtnl_route_get_dst(r));
+    for (auto n : l3_neighs) {
+      auto neigh = nl->get_neighbour(n.ifindex, n.nh);
+      if (!neigh) {
+        // neigh is already purged from nl cache, so neigh will be
+        // removed when handling the DEL_NEIGH notification
+        VLOG(2) << __FUNCTION__
+                << ": skipping non-existing l3 neigh ifindex=" << n.ifindex
+                << ", addr=" << n.nh;
+        continue;
+      }
 
-    VLOG(2) << __FUNCTION__ << ": disabling l3 neigh " << neigh;
-    del_l3_neigh(neigh);
-    rtnl_neigh_put(neigh);
-    unroutable_l3_neighs.emplace(n);
+      VLOG(2) << __FUNCTION__ << ": disabling l3 neigh " << neigh;
+      del_l3_neigh(neigh);
+      rtnl_neigh_put(neigh);
+      unroutable_l3_neighs.emplace(n);
+    }
   }
 
   std::deque<struct rtnl_neigh *> neighs;
@@ -2093,13 +2097,10 @@ bool nl_l3::is_l3_neigh_routable(struct rtnl_neigh *n) {
   auto route = rq.query_route(rtnl_neigh_get_dst(n));
   if (route) {
     VLOG(2) << __FUNCTION__ << ": got route " << route << " for neigh " << n;
-    if (rtnl_route_get_nnexthops(route) > 0) {
-      std::deque<struct rtnl_nexthop *> nhs;
-      get_nexthops_of_route(route, &nhs);
-      if (nhs.size() > 0) {
-        VLOG(2) << __FUNCTION__ << ": neigh is routable in by us";
-        routable = true;
-      }
+
+    if (rtnl_route_guess_scope(route) == RT_SCOPE_LINK) {
+      VLOG(2) << __FUNCTION__ << ": neigh is routable in by us";
+      routable = true;
     }
     nl_object_put(OBJ_CAST(route));
   } else {
@@ -2107,7 +2108,7 @@ bool nl_l3::is_l3_neigh_routable(struct rtnl_neigh *n) {
   }
 
   return routable;
-};
+}
 
 std::deque<nh_stub> nl_l3::get_l3_neighs_of_prefix(std::set<nh_stub> &list,
                                                    nl_addr *prefix) {
