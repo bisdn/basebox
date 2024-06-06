@@ -21,12 +21,15 @@
 # Vlan ID used for untagged traffic on unbridged ports (1-4095):
 # FLAGS_port_untagged_vid=1
 
-### glog
+### glog logging configuration
 #
 # log to stderr by default:
 GLOG_logtostderr=1
 
-# verbose log level:
+# Adjust stderr log level (0 INFO, 1 WARNING, 2 ERROR, 3 FATAL)
+# GLOG_minloglevel=1
+
+# Configure verbose logging level (0 = least verbose, 4 = most verbose)
 # GLOG_v=0
 
 # verbose per-module log level:
