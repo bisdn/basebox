@@ -649,8 +649,39 @@ struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
                                            struct nl_addr *a) const {
   assert(ifindex);
   assert(a);
+
+  auto neigh = rtnl_neigh_get(caches[NL_NEIGH_CACHE], ifindex, a);
+
+  // check the garbage
+  if (neigh == nullptr) {
+    for (auto &obj : nl_objs) {
+      rtnl_neigh *n;
+
+      if (obj.get_action() != NL_ACT_DEL)
+        continue;
+
+      if (std::string("route/neigh")
+              .compare(nl_object_get_type(obj.get_old_obj())) != 0)
+        continue;
+
+      n = NEIGH_CAST(obj.get_old_obj());
+
+      if (rtnl_neigh_get_ifindex(n) != ifindex)
+        continue;
+
+      if (rtnl_neigh_get_family(n) != nl_addr_get_family(a))
+        continue;
+
+      if (nl_addr_cmp(rtnl_neigh_get_dst(n), a) == 0) {
+        nl_object_get(OBJ_CAST(n));
+        neigh = n;
+        break;
+      }
+    }
+  }
+
   // XXX TODO return unique_ptr
-  return rtnl_neigh_get(caches[NL_NEIGH_CACHE], ifindex, a);
+  return neigh;
 }
 
 bool cnetlink::is_bridge_interface(int ifindex) const {
