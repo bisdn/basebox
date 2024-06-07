@@ -1,0 +1,7 @@
+[Match]
+Name=swbridge
+
+[BridgeVLAN]
+PVID=1
+EgressUntagged=1
+VLAN=1
