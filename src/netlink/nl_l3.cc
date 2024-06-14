@@ -1968,6 +1968,52 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   }
 
   if (!keep_route) {
+    // OpenFlow / OF-DPA does not support per-interface routes, so we can only
+    // have one IPv6LL route. Therefore make sure we only delete it if there are
+    // no interfaces left with one.
+    if (is_ipv6_link_local_address(dst)) {
+      std::unique_ptr<rtnl_route, decltype(&rtnl_route_put)> filter(
+          rtnl_route_alloc(), rtnl_route_put);
+      std::deque<rtnl_route *> routes;
+
+      rtnl_route_set_type(filter.get(), RTN_UNICAST);
+      rtnl_route_set_dst(filter.get(), dst);
+
+      nl_cache_foreach_filter(
+          nl->get_cache(cnetlink::NL_ROUTE_CACHE), OBJ_CAST(filter.get()),
+          [](struct nl_object *o, void *arg) {
+            auto *routes = (std::deque<rtnl_route *> *)arg;
+            auto route = ROUTE_CAST(o);
+
+            if (rtnl_route_get_nnexthops(route) != 1)
+              return;
+
+            if (rtnl_route_guess_scope(route) != RT_SCOPE_LINK)
+              return;
+
+            nl_object_get(o);
+            routes->push_back(route);
+          },
+          &routes);
+
+      for (auto route : routes) {
+        auto nh = rtnl_route_nexthop_n(route, 0);
+        if (!keep_route &&
+            nl->is_switch_interface(rtnl_route_nh_get_ifindex(nh))) {
+          keep_route = true;
+        }
+
+        rtnl_route_put(route);
+      }
+    }
+
+    if (keep_route) {
+      VLOG(2) << __FUNCTION__
+              << ": IPv6LL route still present on other interfaces, not "
+                 "removing it";
+      return 0;
+    }
+
     rv = del_l3_unicast_route(dst, vrf_id);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed to remove dst=" << dst;
