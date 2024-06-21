@@ -69,6 +69,9 @@ void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
   if (!get_vlan_filtering())
     LOG(FATAL) << __FUNCTION__
                << " unsupported: bridge configured with vlan_filtering 0";
+
+  if (rtnl_bridge_get_ageing_time(bridge) > 0)
+    set_ageing_time(rtnl_bridge_get_ageing_time(bridge));
 }
 
 bool nl_bridge::is_bridge_interface(int ifindex) {
@@ -671,6 +674,56 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
       }
       sw->l2_multicast_group_rejoin_all_in_vlan(pport_no, vid);
     }
+  }
+}
+void nl_bridge::set_ageing_time(uint32_t ageing_time) {
+  assert(sw);
+  std::deque<rtnl_neigh *> neighs;
+
+  // ageing time is in centiseconds, so convert it to seconds, rounded
+  uint32_t new_aging_time = (ageing_time + 50) / 100;
+
+  if (new_ageing_time > UINT16_MAX) {
+    LOG(WARNING) << __FUNCTION__ << ": ageing time " << new_ageing_time
+                 << "larger than maximum supported, limiting to " << UINT16_MAX;
+    new_aging_time = UINT16_MAX;
+  }
+
+  sw->l2_set_idle_timeout(new_aging_time);
+
+  // get all tracked neighs
+  nl_cache_foreach(
+      l2_cache.get(),
+      [](struct nl_object *obj, void *arg) {
+        assert(arg);
+        auto *list = static_cast<std::deque<rtnl_neigh *> *>(arg);
+        auto neigh = NEIGH_CAST(obj);
+
+        // skip permanent neighs
+        if (!!(rtnl_neigh_get_flags(neigh) & NUD_NOARP | NUD_PERMANENT))
+          continue;
+
+        nl_object_get(obj);
+        list->push_back(neigh);
+      },
+      neigh_list);
+
+  for (auto neigh : neighs) {
+    int ifindex = rtnl_neigh_get_ifindex(neigh);
+    uint32_t port = nl->get_port_id(ifindex);
+    nl_addr *mac = rtnl_neigh_get_lladdr(neigh);
+    int vid = rtnl_neigh_get_vlan(neigh);
+    rofl::caddress_ll _mac((uint8_t *)nl_addr_get_binary_addr(mac),
+                           nl_addr_get_len(mac));
+
+    VLOG(2) << __FUNCTION__ << ": updating l2 neigh " << neigh;
+
+    // openflow does not support updating idle timeout, so we need to
+    // re-add all entries
+    sw->l2_addr_remove(port, vid, _mac);
+    sw->l2_addr_add(port, vid, _mac, true, false, false);
+
+    rtnl_neigh_put(neigh);
   }
 }
 
