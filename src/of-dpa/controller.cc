@@ -1226,12 +1226,7 @@ int controller::l3_egress_remove(uint32_t l3_interface_id) noexcept {
     rv = -EINVAL;
   }
 
-  if (l3_interface_id == egress_interface_id + 1) {
-    egress_interface_id--;
-    // TODO free even more ids from set?
-  } else {
-    freed_egress_interfaces_ids.insert(l3_interface_id);
-  }
+  freed_egress_interfaces_ids.insert(l3_interface_id);
 
   return rv;
 }
@@ -1452,12 +1447,18 @@ int controller::l3_unicast_route_add(const rofl::caddress_in6 &ipv6_dst,
   return rv;
 }
 
-int controller::l3_ecmp_add(uint32_t l3_ecmp_id,
+int controller::l3_ecmp_add(uint32_t *l3_ecmp_id,
                             const std::set<uint32_t> &l3_interfaces) noexcept {
   int rv = 0;
+  uint32_t _ecmp_interface_id;
+  bool increment = false;
 
-  if (l3_ecmp_id > 0x0fffffff)
-    return -EINVAL;
+  if (freed_ecmp_interfaces_ids.size()) {
+    _ecmp_interface_id = *freed_ecmp_interfaces_ids.begin();
+  } else {
+    _ecmp_interface_id = ecmp_interface_id;
+    increment = true;
+  }
 
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
@@ -1468,11 +1469,50 @@ int controller::l3_ecmp_add(uint32_t l3_ecmp_id,
         std::inserter(l3_interface_groups, l3_interface_groups.end()),
         [&](uint32_t id) { return fm_driver.group_id_l3_unicast(id); });
 
-    l3_ecmp_id = fm_driver.group_id_l3_ecmp(l3_ecmp_id);
     dpt.send_group_mod_message(
         rofl::cauxid(0),
-        fm_driver.enable_group_l3_ecmp(dpt.get_version(), l3_ecmp_id,
-                                       l3_interface_groups));
+        fm_driver.enable_group_l3_ecmp(
+            dpt.get_version(), fm_driver.group_id_l3_ecmp(_ecmp_interface_id),
+            l3_interface_groups, false));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+
+  if (increment) {
+    ecmp_interface_id++;
+  } else {
+    freed_ecmp_interfaces_ids.erase(freed_ecmp_interfaces_ids.begin());
+  }
+
+  *l3_ecmp_id = _ecmp_interface_id;
+  return rv;
+}
+
+int controller::l3_ecmp_update(
+    uint32_t l3_ecmp_id, const std::set<uint32_t> &l3_interfaces) noexcept {
+  int rv = 0;
+
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+
+    std::set<uint32_t> l3_interface_groups;
+    std::transform(
+        l3_interfaces.begin(), l3_interfaces.end(),
+        std::inserter(l3_interface_groups, l3_interface_groups.end()),
+        [&](uint32_t id) { return fm_driver.group_id_l3_unicast(id); });
+
+    dpt.send_group_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_group_l3_ecmp(dpt.get_version(),
+                                       fm_driver.group_id_l3_ecmp(l3_ecmp_id),
+                                       l3_interface_groups, true));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1496,10 +1536,10 @@ int controller::l3_ecmp_remove(uint32_t l3_ecmp_id) noexcept {
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
-    l3_ecmp_id = fm_driver.group_id_l3_ecmp(l3_ecmp_id);
     dpt.send_group_mod_message(
         rofl::cauxid(0),
-        fm_driver.disable_group_l3_ecmp(dpt.get_version(), l3_ecmp_id));
+        fm_driver.disable_group_l3_ecmp(
+            dpt.get_version(), fm_driver.group_id_l3_ecmp(l3_ecmp_id)));
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
     rv = -EINVAL;
@@ -1510,6 +1550,8 @@ int controller::l3_ecmp_remove(uint32_t l3_ecmp_id) noexcept {
     LOG(ERROR) << ": caught unknown exception: " << e.what();
     rv = -EINVAL;
   }
+
+  freed_ecmp_interfaces_ids.insert(l3_ecmp_id);
 
   return rv;
 }

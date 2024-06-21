@@ -10,6 +10,7 @@
 #include <tuple>
 
 #include <netlink/cache.h>
+#include <netlink/route/route.h>
 #include <rofl/common/cthread.hpp>
 
 #include "nl_bridge.h"
@@ -62,6 +63,9 @@ public:
    * @return rtnl_neigh* which needs to be freed using rtnl_neigh_put
    */
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
+
+  std::unique_ptr<struct rtnl_route, decltype(&rtnl_route_put)>
+  get_route_by_dst_ifindex(struct nl_addr *dst, int ifindex) const;
 
   int add_l3_configuration(rtnl_link *link);
   int remove_l3_configuration(rtnl_link *link);

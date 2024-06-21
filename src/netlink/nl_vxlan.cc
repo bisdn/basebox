@@ -214,7 +214,8 @@ void nl_vxlan::net_reachable_notification(struct net_params params) noexcept {
   create_endpoint(vxlan_link, br_link, params.addr);
 }
 
-void nl_vxlan::nh_reachable_notification(struct nh_params p) noexcept {
+void nl_vxlan::nh_reachable_notification(struct rtnl_neigh *n,
+                                         struct nh_params p) noexcept {
   // call create endpoint?
   net_reachable_notification(p.np);
 }

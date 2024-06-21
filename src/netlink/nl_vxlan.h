@@ -30,7 +30,8 @@ public:
   ~nl_vxlan() {}
 
   void net_reachable_notification(struct net_params) noexcept override;
-  void nh_reachable_notification(struct nh_params) noexcept override;
+  void nh_reachable_notification(struct rtnl_neigh *,
+                                 struct nh_params) noexcept override;
 
   int create_vni(rtnl_link *link);
   int remove_vni(rtnl_link *link);

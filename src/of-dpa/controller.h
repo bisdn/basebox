@@ -59,8 +59,8 @@ public:
                  rofl::openflow::cofhello_elem_versionbitmap(),
              uint16_t ofdpa_grpc_port = 50051)
       : nb(std::move(nb)), bb_thread(1), egress_interface_id(1),
-        default_idle_timeout(0), connected(false), ofdpa(nullptr),
-        ofdpa_grpc_port(ofdpa_grpc_port) {
+        ecmp_interface_id(1), default_idle_timeout(0), connected(false),
+        ofdpa(nullptr), ofdpa_grpc_port(ofdpa_grpc_port) {
     this->nb->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
     bb_thread.start();
@@ -231,8 +231,10 @@ public:
                               const rofl::caddress_in6 &mask,
                               uint16_t vrf_id = 0) noexcept override;
 
-  int l3_ecmp_add(uint32_t l3_ecmp_id,
+  int l3_ecmp_add(uint32_t *l3_ecmp_id,
                   const std::set<uint32_t> &l3_interfaces) noexcept override;
+  int l3_ecmp_update(uint32_t l3_ecmp_id,
+                     const std::set<uint32_t> &l3_interfaces) noexcept override;
   int l3_ecmp_remove(uint32_t l3_ecmp_id) noexcept override;
 
   int ingress_port_vlan_accept_all(uint32_t port) noexcept override;
@@ -360,6 +362,8 @@ private:
   rofl::openflow::cofportstatsarray stats_array;
   uint32_t egress_interface_id;
   std::set<uint32_t> freed_egress_interfaces_ids;
+  uint32_t ecmp_interface_id;
+  std::set<uint32_t> freed_ecmp_interfaces_ids;
   uint16_t default_idle_timeout;
   bool connected;
   std::shared_ptr<ofdpa_client> ofdpa;

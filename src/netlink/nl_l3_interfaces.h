@@ -88,7 +88,8 @@ public:
 class nh_reachable {
 public:
   virtual ~nh_reachable() = default;
-  virtual void nh_reachable_notification(struct nh_params) noexcept = 0;
+  virtual void nh_reachable_notification(struct rtnl_neigh *,
+                                         struct nh_params) noexcept = 0;
 };
 
 class nh_unreachable {

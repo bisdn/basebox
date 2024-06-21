@@ -77,9 +77,7 @@ public:
   void get_nexthops_of_route(rtnl_route *route,
                              std::deque<struct rtnl_nexthop *> *nhs) noexcept;
 
-  int get_neighbours_of_route(rtnl_route *r,
-                              std::deque<struct rtnl_neigh *> *neighs,
-                              std::deque<nh_stub> *unresolved_nh) noexcept;
+  int get_neighbours_of_route(rtnl_route *r, std::set<nh_stub> *nhs) noexcept;
 
   void register_switch_interface(switch_interface *sw);
 
@@ -87,7 +85,8 @@ public:
   void notify_on_nh_reachable(nh_reachable *f, struct nh_params p) noexcept;
   void notify_on_nh_unreachable(nh_unreachable *f, struct nh_params p) noexcept;
 
-  void nh_reachable_notification(struct nh_params) noexcept override;
+  void nh_reachable_notification(struct rtnl_neigh *,
+                                 struct nh_params) noexcept override;
   void nh_unreachable_notification(struct rtnl_neigh *,
                                    struct nh_params) noexcept override;
 
@@ -95,6 +94,7 @@ private:
   int get_l3_interface_id(int ifindex, const struct nl_addr *s_mac,
                           const struct nl_addr *d_mac,
                           uint32_t *l3_interface_id, uint16_t vid = 0);
+  int get_l3_interface_id(const nh_stub &nh, uint32_t *l3_interface_id);
 
   int add_l3_termination(uint32_t port_id, uint16_t vid,
                          const rofl::caddress_ll &mac, int af) noexcept;
@@ -110,12 +110,6 @@ private:
                            uint16_t vrf_id = 0);
   int del_l3_unicast_route(nl_addr *rt_dst, uint16_t vrf_id = 0);
 
-  int add_l3_ecmp_route(rtnl_route *r,
-                        const std::set<uint32_t> &l3_interface_ids,
-                        bool update_route);
-  int del_l3_ecmp_route(rtnl_route *r,
-                        const std::set<uint32_t> &l3_interface_ids);
-
   int add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
                           uint16_t *vrf_id = nullptr);
   int del_l3_neigh_egress(struct rtnl_neigh *n);
@@ -127,6 +121,10 @@ private:
                     const struct nl_addr *d_mac);
   int search_neigh_cache(int ifindex, struct nl_addr *addr, int family,
                          std::list<struct rtnl_neigh *> *neigh);
+
+  int add_l3_ecmp_group(const std::set<nh_stub> &nhs, uint32_t *l3_ecmp_id);
+  int get_l3_ecmp_group(const std::set<nh_stub> &nhs, uint32_t *l3_ecmp_id);
+  int del_l3_ecmp_group(const std::set<nh_stub> &nhs);
 
   bool is_ipv6_link_local_address(const struct nl_addr *addr) {
     auto p = nl_addr_alloc(16);
