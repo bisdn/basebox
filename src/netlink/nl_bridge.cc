@@ -25,6 +25,7 @@
 #include "cnetlink.h"
 #include "netlink-utils.h"
 #include "nl_bridge.h"
+#include "nl_fdb_flush.h"
 #include "nl_output.h"
 #include "nl_vlan.h"
 #include "nl_vxlan.h"
@@ -485,6 +486,15 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
 
           // the PVID is already being handled outside of the loop
           vlan->remove_bridge_vlan(_link, vid, false, !egress_untagged);
+
+          // remove all fdb entries by us
+          nl_fdb_flush ff;
+
+          auto ret = ff.flush_fdb(rtnl_link_get_ifindex(_link), vid,
+                                  NTF_MASTER | NTF_EXT_LEARNED);
+          if (ret < 0)
+            LOG(WARNING) << __FUNCTION__ << ": failed to flush vid=" << vid
+                         << " on port " << _link;
         }
       }
     }
@@ -781,13 +791,20 @@ void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {
     return;
   }
 
-  // lookup l2_cache as well
-  std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n_lookup(
-      NEIGH_CAST(nl_cache_search(l2_cache.get(), OBJ_CAST(neigh))),
-      rtnl_neigh_put);
+  if ((rtnl_neigh_get_flags(neigh) & NTF_EXT_LEARNED) == NTF_EXT_LEARNED) {
+    // lookup l2_cache as well
+    std::unique_ptr<rtnl_neigh, decltype(&rtnl_neigh_put)> n_lookup(
+        NEIGH_CAST(nl_cache_search(l2_cache.get(), OBJ_CAST(neigh))),
+        rtnl_neigh_put);
 
-  if (n_lookup) {
-    nl_cache_remove(OBJ_CAST(n_lookup.get()));
+    if (n_lookup) {
+      nl_cache_remove(OBJ_CAST(n_lookup.get()));
+    } else {
+      // if we flushed the entry, we already removed it from cache and flows, so
+      // no need to do anything here
+      VLOG(2) << __FUNCTION__ << ": neigh not found in cache" << neigh;
+      return;
+    }
   }
 
   const uint32_t port = nl->get_port_id(rtnl_neigh_get_ifindex(neigh));
