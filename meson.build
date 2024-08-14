@@ -29,6 +29,7 @@ sources = files('''
   src/netlink/nl_hashing.h
   src/netlink/nl_interface.cc
   src/netlink/nl_interface.h
+  src/netlink/nl_fdb_flush.h
   src/netlink/nl_l3.cc
   src/netlink/nl_l3.h
   src/netlink/nl_l3_interfaces.h
