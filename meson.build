@@ -60,7 +60,12 @@ sources = files('''
 
 # setup paths
 prefixdir = get_option('prefix')
-systemunitdir = '/usr/lib/systemd/system'
+systemd = dependency('systemd', required: false)
+if systemd.found()
+  systemunitdir = systemd.get_variable('systemdsystemunitdir')
+else
+  systemunitdir = '/lib/systemd/system'
+endif
 if not prefixdir.startswith('/')
         error('Prefix is not absolute: "@0@"'.format(prefixdir))
 endif
