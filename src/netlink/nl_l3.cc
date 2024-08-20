@@ -657,6 +657,7 @@ int nl_l3::del_l3_neigh_egress(struct rtnl_neigh *n) {
     return -EINVAL;
 
   uint16_t vid = vlan->get_vid(link.get());
+  auto tagged = !!rtnl_link_is_vlan(link.get());
   auto s_mac = rtnl_link_get_addr(link.get());
 
   if (nl->is_bridge_interface(ifindex)) {
@@ -688,6 +689,7 @@ int nl_l3::del_l3_neigh_egress(struct rtnl_neigh *n) {
       }
 
       ifindex = nl->get_ifindex_by_port_id(portid);
+      link = nl->get_link_by_ifindex(ifindex);
     }
   }
 
@@ -700,8 +702,7 @@ int nl_l3::del_l3_neigh_egress(struct rtnl_neigh *n) {
                << ": failed to remove l3 egress ifindex=" << ifindex
                << " vid=" << vid;
   }
-
-  return rv;
+  return vlan->remove_vlan(link.get(), vid, tagged);
 }
 
 int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
