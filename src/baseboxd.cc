@@ -25,6 +25,9 @@ DEFINE_bool(clear_switch_configuration, true,
             "Clear switch configuration on connect");
 DEFINE_int32(port_untagged_vid, 1,
              "VLAN ID used for untagged traffic on unbridged ports");
+DEFINE_int32(
+    rx_rate_limit, -1,
+    "PPS limit for traffic to controller (-1 = auto, 0 = force unlimited)");
 
 static bool validate_port(const char *flagname, gflags::int32 value) {
   VLOG(3) << __FUNCTION__ << ": flagname=" << flagname << ", value=" << value;
