@@ -37,8 +37,9 @@ void nbi_impl::port_notification(
     case PORT_EVENT_MODIFY:
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
+        if (ntfy.status)
+          port_man->set_port_speed(ntfy.name, ntfy.speed, ntfy.duplex);
         port_man->change_port_status(ntfy.name, ntfy.status);
-        port_man->set_port_speed(ntfy.name, ntfy.speed, ntfy.duplex);
         break;
       default:
         LOG(ERROR) << __FUNCTION__ << ": unknown port";
@@ -49,8 +50,9 @@ void nbi_impl::port_notification(
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
         port_man->create_portdev(ntfy.port_id, ntfy.name, ntfy.hwaddr, *this);
+        if (ntfy.status)
+          port_man->set_port_speed(ntfy.name, ntfy.speed, ntfy.duplex);
         port_man->change_port_status(ntfy.name, ntfy.status);
-        port_man->set_port_speed(ntfy.name, ntfy.speed, ntfy.duplex);
         break;
       case nbi::port_type_vxlan:
         // XXX TODO notify this?
