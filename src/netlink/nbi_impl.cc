@@ -49,6 +49,14 @@ void nbi_impl::port_notification(
     case PORT_EVENT_ADD:
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
+        swi->port_set_learn(
+            ntfy.port_id,
+            switch_interface::
+                SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_LOG_NOTIFICATION);
+        swi->port_set_move_learn(
+            ntfy.port_id,
+            switch_interface::
+                SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_LOG_NOTIFICATION);
         port_man->create_portdev(ntfy.port_id, ntfy.name, ntfy.hwaddr, *this);
         if (ntfy.status)
           port_man->set_port_speed(ntfy.name, ntfy.speed, ntfy.duplex);
