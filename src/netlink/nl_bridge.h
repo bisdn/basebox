@@ -196,6 +196,8 @@ public:
   int update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
                           const uint32_t tunnel_id, bool add);
 
+  void set_port_locked(rtnl_link *link, bool locked);
+
 private:
   struct bridge_stp_states bridge_stp_states;
 

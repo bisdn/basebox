@@ -199,6 +199,9 @@ void nl_bridge::add_interface(rtnl_link *link) {
   if (port_id > 0)
     set_port_stp_state(port_id, state);
 
+  auto locked = (rtnl_link_bridge_get_flags(link) & RTNL_BRIDGE_LOCKED) != 0;
+  set_port_locked(link, locked);
+
   // configure bonds and physical ports (non members of bond)
   update_vlans(nullptr, link);
 
@@ -236,6 +239,14 @@ void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
   }
 
   update_vlans(old_link, new_link);
+
+  auto old_locked =
+      (rtnl_link_bridge_get_flags(old_link) & RTNL_BRIDGE_LOCKED) != 0;
+  auto new_locked =
+      (rtnl_link_bridge_get_flags(new_link) & RTNL_BRIDGE_LOCKED) != 0;
+
+  if (old_locked != new_locked)
+    set_port_locked(new_link, new_locked);
 }
 
 void nl_bridge::delete_interface(rtnl_link *link) {
@@ -261,6 +272,7 @@ void nl_bridge::delete_interface(rtnl_link *link) {
   // interface default is to STP state forward by default
   if (port_id > 0)
     set_port_stp_state(port_id, BR_STATE_FORWARDING);
+  set_port_locked(link, false);
 }
 
 void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
@@ -1176,6 +1188,42 @@ nl_bridge::get_port_vlan_stp_states(rtnl_link *link) {
     return {};
 
   return bridge_stp_states.get_min_states(port_id);
+}
+
+void nl_bridge::set_port_locked(rtnl_link *link, bool locked) {
+  uint32_t port_id = nl->get_port_id(link);
+  std::set<uint32_t> ports;
+
+  if (port_id == 0)
+    return;
+
+  LOG(INFO) << __FUNCTION__ << ": " << (locked ? "locking" : "unlocking")
+            << " port " << rtnl_link_get_name(link);
+
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag)
+    ports = nl->get_bond_members_by_port_id(port_id);
+  else
+    ports.insert(port_id);
+
+  for (auto port : ports) {
+    if (locked) {
+      // learn pending, but don't forward
+      sw->port_set_learn(
+          port,
+          switch_interface::SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_NOTIFICATION);
+      // kernel does not allow roaming to locked ports, so just drop it
+      sw->port_set_move_learn(
+          port, switch_interface::SAI_BRIDGE_PORT_FDB_LEARNING_MODE_DROP);
+    } else {
+      // everything goes
+      sw->port_set_learn(
+          port, switch_interface::
+                    SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_LOG_NOTIFICATION);
+      sw->port_set_move_learn(
+          port, switch_interface::
+                    SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_LOG_NOTIFICATION);
+    }
+  }
 }
 
 } /* namespace basebox */
