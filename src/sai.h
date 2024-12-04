@@ -35,6 +35,36 @@ public:
     SAI_PORT_STAT_COLLISIONS,
   } sai_port_stat_t;
 
+  typedef enum {
+    // Drop packets with unknown source MAC. Do not learn. Do not forward.
+    SAI_BRIDGE_PORT_FDB_LEARNING_MODE_DROP,
+    // Do not learn unknown source MAC. Forward based on destination MAC.
+    SAI_BRIDGE_PORT_FDB_LEARNING_MODE_DISABLE,
+    // Hardware learning. Learn source MAC. Forward based on destination MAC.
+    SAI_BRIDGE_PORT_FDB_LEARNING_MODE_HW,
+    // Trap packets with unknown source MAC to CPU. Do not learn. Do not
+    // forward.
+    SAI_BRIDGE_PORT_FDB_LEARNING_MODE_CPU_TRAP,
+    // Trap packets with unknown source MAC to CPU. Do not learn. Forward based
+    // on destination MAC.
+    SAI_BRIDGE_PORT_FDB_LEARNING_MODE_CPU_LOG,
+    // Do not learn in hardware. Do not forward. This mode will generate only
+    // one notification per unknown source MAC to FDB callback.
+    SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_NOTIFICATION,
+    // Do not learn in hardware, but forward. This mode will generate only one
+    // notification per unknown source MAC to FDB callback.
+    // Not an official SAI mode, but there is no equivalent to what we currently
+    // do by default in OF-DPA.
+    SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_LOG_NOTIFICATION,
+  } sai_bridge_port_fdb_learning_t;
+
+  virtual int
+  port_set_learn(uint32_t port_id,
+                 sai_bridge_port_fdb_learning_t l2_learn) noexcept = 0;
+  virtual int
+  port_set_move_learn(uint32_t port_id,
+                      sai_bridge_port_fdb_learning_t l2_learn) noexcept = 0;
+
   /* @ LAG { */
   virtual int lag_create(uint32_t *lag_id, std::string name,
                          uint8_t mode) noexcept = 0;
