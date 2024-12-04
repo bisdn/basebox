@@ -62,6 +62,52 @@ ofdpa_client::ofdpaTunnelTenantDelete(uint32_t tunnel_id) {
 }
 
 OfdpaStatus::OfdpaStatusCode
+ofdpa_client::ofdpaPortSourceMacLearningSet(uint32_t port_num,
+                                            uint32_t l2_learn) {
+  ::ofdpa::PortSrcMacLearning request;
+  ::ClientContext context;
+  ::OfdpaStatus response;
+
+  context.set_wait_for_ready(true);
+
+  request.set_port_num(port_num);
+  request.set_l2_learn(l2_learn);
+
+  ::Status rv =
+      stub_->ofdpaPortSourceMacLearningSet(&context, request, &response);
+
+  if (not rv.ok()) {
+    // LOG status
+    return ofdpa::OfdpaStatus::OFDPA_E_RPC;
+  }
+
+  return response.status();
+}
+
+OfdpaStatus::OfdpaStatusCode
+ofdpa_client::ofdpaPortSourceMacMoveLearningSet(uint32_t port_num,
+                                                uint32_t l2_learn) {
+  ::ofdpa::PortSrcMacLearning request;
+  ::ClientContext context;
+  ::OfdpaStatus response;
+
+  context.set_wait_for_ready(true);
+
+  request.set_port_num(port_num);
+  request.set_l2_learn(l2_learn);
+
+  ::Status rv =
+      stub_->ofdpaPortSourceMacMoveLearningSet(&context, request, &response);
+
+  if (not rv.ok()) {
+    // LOG status
+    return ofdpa::OfdpaStatus::OFDPA_E_RPC;
+  }
+
+  return response.status();
+}
+
+OfdpaStatus::OfdpaStatusCode
 ofdpa_client::ofdpaTunnelNextHopCreate(uint32_t next_hop_id, uint64_t src_mac,
                                        uint64_t dst_mac, uint32_t physical_port,
                                        uint16_t vlan_id) {

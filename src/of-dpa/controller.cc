@@ -494,6 +494,76 @@ errout:
   std::free(pkt);
   return rv;
 }
+int controller::sai_learn_mode_to_flags(sai_bridge_port_fdb_learning_t mode,
+                                        uint32_t *flags) {
+  uint32_t hw_flags;
+
+  switch (mode) {
+  case SAI_BRIDGE_PORT_FDB_LEARNING_MODE_DROP:
+    hw_flags = ofdpa_client::SRC_MAC_LEARN_NONE;
+    break;
+  case SAI_BRIDGE_PORT_FDB_LEARNING_MODE_DISABLE:
+    hw_flags = ofdpa_client::SRC_MAC_LEARN_FWD;
+    break;
+  case SAI_BRIDGE_PORT_FDB_LEARNING_MODE_HW:
+    hw_flags =
+        ofdpa_client::SRC_MAC_LEARN_FWD | ofdpa_client::SRC_MAC_LEARN_ARL;
+    break;
+  case SAI_BRIDGE_PORT_FDB_LEARNING_MODE_CPU_TRAP:
+    hw_flags = ofdpa_client::SRC_MAC_LEARN_CPU;
+    break;
+  case SAI_BRIDGE_PORT_FDB_LEARNING_MODE_CPU_LOG:
+    hw_flags =
+        ofdpa_client::SRC_MAC_LEARN_FWD | ofdpa_client::SRC_MAC_LEARN_CPU;
+    break;
+  case SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_NOTIFICATION:
+    hw_flags = ofdpa_client::SRC_MAC_LEARN_CPU |
+               ofdpa_client::SRC_MAC_LEARN_ARL |
+               ofdpa_client::SRC_MAC_LEARN_PENDING;
+    break;
+  case SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_LOG_NOTIFICATION:
+    hw_flags =
+        ofdpa_client::SRC_MAC_LEARN_FWD | ofdpa_client::SRC_MAC_LEARN_CPU |
+        ofdpa_client::SRC_MAC_LEARN_ARL | ofdpa_client::SRC_MAC_LEARN_PENDING;
+    break;
+  default:
+    return -EINVAL;
+  }
+
+  *flags = hw_flags;
+
+  return 0;
+}
+
+int controller::port_set_learn(
+    uint32_t port_id, sai_bridge_port_fdb_learning_t l2_learn) noexcept {
+  if (!connected) {
+    VLOG(1) << __FUNCTION__ << ": not connected";
+    return -EAGAIN;
+  }
+
+  uint32_t flags;
+  int rv = sai_learn_mode_to_flags(l2_learn, &flags);
+  if (rv)
+    return rv;
+
+  return ofdpa->ofdpaPortSourceMacLearningSet(port_id, flags);
+}
+
+int controller::port_set_move_learn(
+    uint32_t port_id, sai_bridge_port_fdb_learning_t l2_learn) noexcept {
+  if (!connected) {
+    VLOG(1) << __FUNCTION__ << ": not connected";
+    return -EAGAIN;
+  }
+
+  uint32_t flags;
+  int rv = sai_learn_mode_to_flags(l2_learn, &flags);
+  if (rv)
+    return rv;
+
+  return ofdpa->ofdpaPortSourceMacMoveLearningSet(port_id, l2_learn);
+}
 
 int controller::lag_create(uint32_t *lag_id, std::string name,
                            uint8_t mode) noexcept {
