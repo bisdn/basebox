@@ -107,7 +107,7 @@ void tap_io::handle_read_event(rofl::cthread &thread, int fd) {
     return;
   }
 
-  pkt->len = read(fd, pkt->data, len);
+  pkt->len = read(fd, pkt->data, len - sizeof(pkt->len));
 
   if (pkt->len > 0) {
     VLOG(3) << __FUNCTION__ << ": read " << pkt->len << " bytes from fd=" << fd
