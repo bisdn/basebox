@@ -32,6 +32,10 @@ inline std::ostream &operator<<(std::ostream &stream,
   return operator<<(stream, OBJ_CAST(route));
 }
 
+inline std::ostream &operator<<(std::ostream &stream, struct rtnl_nh *route) {
+  return operator<<(stream, OBJ_CAST(route));
+}
+
 inline std::string_view safe_string_view(const char *str) {
   return std::string_view(str ? str : "(null)");
 }

@@ -13,6 +13,7 @@ struct rtnl_addr;
 struct rtnl_bridge_vlan;
 struct rtnl_link;
 struct rtnl_neigh;
+struct rtnl_nh;
 struct rtnl_route;
 struct rtnl_mdb;
 }
@@ -20,6 +21,7 @@ struct rtnl_mdb;
 #define LINK_CAST(obj) reinterpret_cast<struct rtnl_link *>(obj)
 #define NEIGH_CAST(obj) reinterpret_cast<struct rtnl_neigh *>(obj)
 #define ROUTE_CAST(obj) reinterpret_cast<struct rtnl_route *>(obj)
+#define NH_CAST(obj) reinterpret_cast<struct rtnl_nh *>(obj)
 #define ADDR_CAST(obj) reinterpret_cast<struct rtnl_addr *>(obj)
 #define MDB_CAST(obj) reinterpret_cast<struct rtnl_mdb *>(obj)
 #define BRIDGE_VLAN_CAST(obj) reinterpret_cast<struct rtnl_bridge_vlan *>(obj)

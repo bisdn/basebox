@@ -10,6 +10,7 @@
 #include <tuple>
 
 #include <netlink/cache.h>
+#include <netlink/route/nh.h>
 #include <netlink/route/route.h>
 #include <rofl/common/cthread.hpp>
 
@@ -36,6 +37,7 @@ public:
     NL_LINK_CACHE,
     NL_NEIGH_CACHE,
     NL_ROUTE_CACHE,
+    NL_NH_CACHE,
     NL_MDB_CACHE,
     NL_BVLAN_CACHE,
     NL_MAX_CACHE,
@@ -179,6 +181,7 @@ private:
   void route_link_apply(const nl_obj &obj);
   void route_neigh_apply(const nl_obj &obj);
   void route_route_apply(const nl_obj &obj);
+  void route_nh_apply(const nl_obj &obj);
   void route_mdb_apply(const nl_obj &obj);
   void route_bridge_vlan_apply(const nl_obj &obj);
 
