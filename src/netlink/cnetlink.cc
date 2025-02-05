@@ -340,10 +340,14 @@ cnetlink::get_route_by_nh_params(const struct nh_params &p) const {
   std::unique_ptr<rtnl_route, decltype(&rtnl_route_put)> filter(
       rtnl_route_alloc(), &rtnl_route_put);
 
-  auto nh = rtnl_route_nh_alloc();
+  if (p.nh.nhid > 0) {
+    rtnl_route_set_nhid(filter.get(), p.nh.nhid);
+  } else {
+    auto nh = rtnl_route_nh_alloc();
 
-  rtnl_route_nh_set_ifindex(nh, p.nh.ifindex);
-  rtnl_route_add_nexthop(filter.get(), nh);
+    rtnl_route_nh_set_ifindex(nh, p.nh.ifindex);
+    rtnl_route_add_nexthop(filter.get(), nh);
+  }
 
   rtnl_route_set_type(filter.get(), RTN_UNICAST);
   rtnl_route_set_dst(filter.get(), p.np.addr);
