@@ -1454,40 +1454,93 @@ void nl_l3::get_nexthops_of_route(
 
 int nl_l3::get_neighbours_of_route(rtnl_route *route,
                                    std::set<nh_stub> *nhs) noexcept {
-
-  std::deque<struct rtnl_nexthop *> rnhs;
+  std::deque<nh_stub> rnhs;
 
   assert(route);
   assert(nhs);
 
   uint32_t nhid = rtnl_route_get_nhid(route);
 
-  get_nexthops_of_route(route, &rnhs);
+  // extract next hops
+  if (rtnl_route_get_nnexthops(route) == 0) {
+    struct rtnl_nh *nh;
+
+    // not sure how we can land here
+    if (nhid == 0)
+      return -EINVAL;
+
+    nh = nl->get_nh_by_id(nhid);
+    if (!nh)
+      return -EINVAL;
+
+    int group_size = rtnl_nh_get_group_size(nh);
+    if (group_size > 0) {
+      for (int i = 0; i < group_size; i++) {
+        auto n = nl->get_nh_by_id(rtnl_nh_get_group_entry(nh, i));
+        if (!n)
+          continue;
+
+        int ifindex = rtnl_nh_get_oif(n);
+        nl_addr *nh_addr = rtnl_nh_get_gateway(n);
+
+        if (ifindex > 0 && nh_addr)
+          rnhs.push_back(nh_stub{nh_addr, ifindex});
+
+        rtnl_nh_put(n);
+      }
+    } else {
+      int ifindex = rtnl_nh_get_oif(nh);
+      nl_addr *nh_addr = rtnl_nh_get_gateway(nh);
+
+      if (ifindex > 0 && nh_addr)
+        rnhs.push_back(nh_stub{nh_addr, ifindex});
+    }
+    rtnl_nh_put(nh);
+  } else {
+    rtnl_route_foreach_nexthop(
+        route,
+        [](struct rtnl_nexthop *nh, void *arg) {
+          auto nhops = static_cast<std::deque<nh_stub> *>(arg);
+
+          auto ifindex = rtnl_route_nh_get_ifindex(nh);
+          nl_addr *nh_addr = rtnl_route_nh_get_gateway(nh);
+          if (!nh_addr)
+            nh_addr = rtnl_route_nh_get_via(nh);
+
+          if (nh_addr)
+            nhops->push_back(nh_stub{nh_addr, ifindex});
+        },
+        &rnhs);
+  }
 
   if (rnhs.size() == 0)
     return -ENETUNREACH;
 
+  // Verify next hop
   for (auto nh : rnhs) {
-    int ifindex = rtnl_route_nh_get_ifindex(nh);
-    nl_addr *nh_addr = rtnl_route_nh_get_gateway(nh);
+    auto link = nl->get_link_by_ifindex(nh.ifindex);
 
-    if (!nh_addr)
-      nh_addr = rtnl_route_nh_get_via(nh);
+    // Guarantee that the interface is found
+    if (!link.get())
+      continue;
 
-    if (nh_addr) {
-      switch (nl_addr_get_family(nh_addr)) {
-      case AF_INET:
-      case AF_INET6:
-        VLOG(2) << __FUNCTION__ << ": ifindex=" << ifindex << " gw=" << nh_addr;
-        break;
-      default:
-        LOG(ERROR) << "gw " << nh_addr
-                   << " unsupported family=" << nl_addr_get_family(nh_addr);
-        continue;
-      }
-
-      nhs->emplace(nh_stub{nh_addr, ifindex, nhid});
+    if (!nl->is_switch_interface(link.get())) {
+      VLOG(1) << __FUNCTION__ << ": ignoring next hop " << nh.nh;
+      continue;
     }
+
+    switch (nl_addr_get_family(nh.nh)) {
+    case AF_INET:
+    case AF_INET6:
+      VLOG(2) << __FUNCTION__ << ": ifindex=" << nh.ifindex << " gw=" << nh.nh;
+      break;
+    default:
+      LOG(ERROR) << "gw " << nh.nh
+                 << " unsupported family=" << nl_addr_get_family(nh.nh);
+      continue;
+    }
+
+    nhs->emplace(nh_stub{nh.nh, nh.ifindex, nhid});
   }
 
   return nhs->size();
