@@ -1460,6 +1460,8 @@ int nl_l3::get_neighbours_of_route(rtnl_route *route,
   assert(route);
   assert(nhs);
 
+  uint32_t nhid = rtnl_route_get_nhid(route);
+
   get_nexthops_of_route(route, &rnhs);
 
   if (rnhs.size() == 0)
@@ -1484,7 +1486,7 @@ int nl_l3::get_neighbours_of_route(rtnl_route *route,
         continue;
       }
 
-      nhs->emplace(nh_stub{nh_addr, ifindex});
+      nhs->emplace(nh_stub{nh_addr, ifindex, nhid});
     }
   }
 

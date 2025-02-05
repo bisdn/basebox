@@ -34,7 +34,8 @@ struct net_params {
 };
 
 struct nh_stub {
-  nh_stub(nl_addr *nh, int ifindex) : nh(nh), ifindex(ifindex) {
+  nh_stub(nl_addr *nh, int ifindex, uint32_t nhid = 0)
+      : nh(nh), ifindex(ifindex), nhid(nhid) {
     VLOG(4) << __FUNCTION__ << ": this=" << this;
     nl_addr_get(nh);
   }
@@ -52,11 +53,17 @@ struct nh_stub {
   }
 
   bool operator<(const nh_stub &other) const {
+
     int cmp = nl_addr_cmp(nh, other.nh);
 
     if (cmp < 0)
       return true;
     if (cmp > 0)
+      return false;
+
+    if (nhid < other.nhid)
+      return true;
+    if (nhid > other.nhid)
       return false;
 
     return ifindex < other.ifindex;
@@ -66,11 +73,15 @@ struct nh_stub {
     if (nl_addr_cmp(nh, other.nh) != 0)
       return false;
 
+    if (nhid != other.nhid)
+      return false;
+
     return ifindex == other.ifindex;
   }
 
   nl_addr *nh;
   int ifindex;
+  uint32_t nhid;
 };
 
 struct nh_params {
