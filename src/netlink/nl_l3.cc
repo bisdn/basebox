@@ -1649,7 +1649,7 @@ int nl_l3::del_l3_unicast_route(nl_addr *rt_dst, uint16_t vrf_id) {
 
 void nl_l3::nh_reachable_notification(struct rtnl_neigh *n,
                                       struct nh_params p) noexcept {
-  auto route = nl->get_route_by_dst_ifindex(p.np.addr, p.nh.ifindex);
+  auto route = nl->get_route_by_nh_params(p);
   if (route == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": failed to find route for dst=" << p.np.addr
                << " on ifindex=" << p.nh.ifindex << " for nh" << p.nh.nh;
@@ -1695,7 +1695,7 @@ void nl_l3::nh_reachable_notification(struct rtnl_neigh *n,
 
 void nl_l3::nh_unreachable_notification(struct rtnl_neigh *n,
                                         struct nh_params p) noexcept {
-  auto route = nl->get_route_by_dst_ifindex(p.np.addr, p.nh.ifindex);
+  auto route = nl->get_route_by_nh_params(p);
   if (route == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": failed to find route for dst=" << p.np.addr
                << " on ifindex=" << p.nh.ifindex << " for nh" << p.nh.nh;

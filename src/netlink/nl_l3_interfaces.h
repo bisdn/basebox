@@ -39,7 +39,7 @@ struct nh_stub {
     nl_addr_get(nh);
   }
 
-  nh_stub(const nh_stub &r) : nh(r.nh), ifindex(r.ifindex) {
+  nh_stub(const nh_stub &r) : nh(r.nh), ifindex(r.ifindex), nhid(r.nhid) {
     VLOG(4) << __FUNCTION__ << ": this=" << this
             << ", refcnt=" << nl_object_get_refcnt(OBJ_CAST(nh));
     nl_addr_get(nh);
