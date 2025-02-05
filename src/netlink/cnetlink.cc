@@ -335,18 +335,18 @@ struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
 }
 
 std::unique_ptr<struct rtnl_route, decltype(&rtnl_route_put)>
-cnetlink::get_route_by_dst_ifindex(struct nl_addr *dst, int ifindex) const {
+cnetlink::get_route_by_nh_params(const struct nh_params &p) const {
   struct rtnl_route *route = nullptr;
   std::unique_ptr<rtnl_route, decltype(&rtnl_route_put)> filter(
       rtnl_route_alloc(), &rtnl_route_put);
 
   auto nh = rtnl_route_nh_alloc();
 
-  rtnl_route_nh_set_ifindex(nh, ifindex);
+  rtnl_route_nh_set_ifindex(nh, p.nh.ifindex);
   rtnl_route_add_nexthop(filter.get(), nh);
 
   rtnl_route_set_type(filter.get(), RTN_UNICAST);
-  rtnl_route_set_dst(filter.get(), dst);
+  rtnl_route_set_dst(filter.get(), p.np.addr);
 
   nl_cache_foreach_filter(
       caches[NL_ROUTE_CACHE], OBJ_CAST(filter.get()),

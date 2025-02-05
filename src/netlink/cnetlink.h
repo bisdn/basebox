@@ -67,7 +67,7 @@ public:
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
   std::unique_ptr<struct rtnl_route, decltype(&rtnl_route_put)>
-  get_route_by_dst_ifindex(struct nl_addr *dst, int ifindex) const;
+  get_route_by_nh_params(const struct nh_params &p) const;
 
   int add_l3_configuration(rtnl_link *link);
   int remove_l3_configuration(rtnl_link *link);
