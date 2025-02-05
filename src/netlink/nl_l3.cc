@@ -1803,18 +1803,12 @@ void nl_l3::nh_unreachable_notification(struct rtnl_neigh *n,
 
 int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   assert(r);
-  int nnhs = rtnl_route_get_nnexthops(r);
   uint32_t vrf_id = rtnl_route_get_table(r);
   if (vrf_id == MAIN_ROUTING_TABLE)
     vrf_id = 0;
 
   VLOG(2) << __FUNCTION__ << ": adding route= " << r
           << " update=" << update_route;
-
-  if (nnhs == 0) {
-    LOG(WARNING) << __FUNCTION__ << ": no neighbours of route " << r;
-    return -ENOTSUP;
-  }
 
   // FRR may occationally install link-local routes again with a different
   // priority. Since we cannot handle multiple routes with different
@@ -1901,7 +1895,7 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
 
   uint32_t route_dst_interface;
 
-  if (nnhs == 1) {
+  if (nhs.size() <= 1) {
     if (l3_interfaces.size() == 0) {
       // Not yet resolved next-hop, or on-link route, the rule must be installed
       // to the switch pointing to controller and then updated after neighbor
@@ -1927,7 +1921,7 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   }
 
   rv = add_l3_unicast_route(rtnl_route_get_dst(r), route_dst_interface,
-                            nnhs > 1, update_route, vrf_id);
+                            nhs.size() > 1, update_route, vrf_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to add route to dst=" << rtnl_route_get_dst(r)
@@ -1987,18 +1981,12 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   int rv = 0;
   auto dst = rtnl_route_get_dst(r);
 
-  int nnhs = rtnl_route_get_nnexthops(r);
   uint16_t vrf_id = rtnl_route_get_table(r);
   // Routing table 254 id matches the main routing table on linux.
   // Adding a vrf with this id will collide with the main routing
   // table, but will enter the wrong info into the OFDPA tables
   if (vrf_id == MAIN_ROUTING_TABLE)
     vrf_id = 0;
-
-  if (nnhs == 0) {
-    LOG(WARNING) << __FUNCTION__ << ": no neighbours of route " << r;
-    return -ENOTSUP;
-  }
 
   if (rtnl_route_get_priority(r) > 0 &&
       rtnl_route_get_protocol(r) != RTPROT_KERNEL) {
@@ -2113,10 +2101,9 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
     return rv;
   }
 
-  VLOG(2) << __FUNCTION__ << ": number of next hops is "
-          << rtnl_route_get_nnexthops(r);
+  VLOG(2) << __FUNCTION__ << ": number of next hops is " << rv;
 
-  if (nnhs > 1)
+  if (nhs.size() > 1)
     del_l3_ecmp_group(nhs);
 
   for (auto nh : nhs) {
