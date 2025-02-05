@@ -1445,9 +1445,6 @@ int controller::l3_unicast_route_add(const rofl::caddress_in4 &ipv4_dst,
   if (l3_interface_id > 0x0fffffff)
     return -EINVAL;
 
-  if (is_ecmp && l3_interface_id == 0)
-    return -EINVAL;
-
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
@@ -1486,9 +1483,6 @@ int controller::l3_unicast_route_add(const rofl::caddress_in6 &ipv6_dst,
   int rv = 0;
 
   if (l3_interface_id > 0x0fffffff)
-    return -EINVAL;
-
-  if (is_ecmp && l3_interface_id == 0)
     return -EINVAL;
 
   try {
