@@ -1713,6 +1713,13 @@ bool cnetlink::check_ll_neigh(rtnl_neigh *neigh) noexcept {
     return false;
   }
 
+  uint32_t ext_flags;
+  if (!rtnl_neigh_get_ext_flags(neigh, &ext_flags) &&
+      ext_flags & NTF_EXT_LOCKED) {
+    VLOG(1) << __FUNCTION__ << ": state is locked for neighour " << neigh;
+    return false;
+  }
+
   return true;
 }
 
