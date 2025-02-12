@@ -141,6 +141,11 @@ protected:
 
 public:
   // switch_interface
+  int port_set_learn(uint32_t port_id,
+                     sai_bridge_port_fdb_learning_t l2_learn) noexcept override;
+  int port_set_move_learn(
+      uint32_t port_id,
+      sai_bridge_port_fdb_learning_t l2_learn) noexcept override;
   int lag_create(uint32_t *lag_id, std::string name,
                  uint8_t mode) noexcept override;
   int lag_remove(uint32_t lag_id) noexcept override;
@@ -375,6 +380,9 @@ private:
     else
       return 1;
   }
+
+  int sai_learn_mode_to_flags(sai_bridge_port_fdb_learning_t mode,
+                              uint32_t *flags);
 
   enum timer_t {
     /* handle_timeout will be called as well from crofbase, hence we need some

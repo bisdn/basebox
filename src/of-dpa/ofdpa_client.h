@@ -14,6 +14,14 @@ namespace basebox {
 
 class ofdpa_client {
 public:
+  typedef enum {
+    SRC_MAC_LEARN_NONE = 0,
+    SRC_MAC_LEARN_ARL = 1,
+    SRC_MAC_LEARN_CPU = 2,
+    SRC_MAC_LEARN_FWD = 4,
+    SRC_MAC_LEARN_PENDING = 8,
+  } ofdpa_src_mac_learn_mode_t;
+
   ofdpa_client(std::shared_ptr<grpc::Channel> channel);
 
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaTunnelReset();
@@ -22,6 +30,11 @@ public:
 
   ofdpa::OfdpaStatus::OfdpaStatusCode
   ofdpaTunnelTenantDelete(uint32_t tunnel_id);
+
+  ofdpa::OfdpaStatus::OfdpaStatusCode
+  ofdpaPortSourceMacLearningSet(uint32_t port_num, uint32_t l2_learn);
+  ofdpa::OfdpaStatus::OfdpaStatusCode
+  ofdpaPortSourceMacMoveLearningSet(uint32_t port_num, uint32_t l2_learn);
 
   ofdpa::OfdpaStatus::OfdpaStatusCode
   ofdpaTunnelNextHopCreate(uint32_t next_hop_id, uint64_t src_mac,

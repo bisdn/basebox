@@ -1713,6 +1713,13 @@ bool cnetlink::check_ll_neigh(rtnl_neigh *neigh) noexcept {
     return false;
   }
 
+  uint32_t ext_flags;
+  if (!rtnl_neigh_get_ext_flags(neigh, &ext_flags) &&
+      ext_flags & NTF_EXT_LOCKED) {
+    VLOG(1) << __FUNCTION__ << ": state is locked for neighour " << neigh;
+    return false;
+  }
+
   return true;
 }
 
@@ -1750,8 +1757,24 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
 
 void cnetlink::neigh_ll_updated(rtnl_neigh *old_neigh,
                                 rtnl_neigh *new_neigh) noexcept {
-  if (!check_ll_neigh(old_neigh) || !check_ll_neigh(new_neigh))
+  bool handle_old = check_ll_neigh(old_neigh);
+  bool handle_new = check_ll_neigh(new_neigh);
+
+  // nothing to do here
+  if (!handle_old && !handle_new)
     return;
+
+  // we ignored the previous one, so this is like a new neigh
+  if (!handle_old) {
+    neigh_ll_created(new_neigh);
+    return;
+  }
+
+  // we won't handle the neigh anymore
+  if (!handle_new) {
+    neigh_ll_deleted(old_neigh);
+    return;
+  }
 
   int old_ifindex = rtnl_neigh_get_ifindex(old_neigh);
   rtnl_link *old_base_link =
