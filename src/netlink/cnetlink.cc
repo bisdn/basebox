@@ -1351,7 +1351,16 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
   } break;
   default: {
     bool handled = port_man->portdev_ready(link);
-    if (!handled)
+    if (handled) {
+      uint32_t port_id = get_port_id(link);
+
+      swi->port_set_learn(
+          port_id, switch_interface::
+                       SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_LOG_NOTIFICATION);
+      swi->port_set_move_learn(
+          port_id, switch_interface::
+                       SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_LOG_NOTIFICATION);
+    } else {
       LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
                    << " link:" << OBJ_CAST(link);
   } break;
