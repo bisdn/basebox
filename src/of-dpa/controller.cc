@@ -562,7 +562,7 @@ int controller::port_set_move_learn(
   if (rv)
     return rv;
 
-  return ofdpa->ofdpaPortSourceMacMoveLearningSet(port_id, l2_learn);
+  return ofdpa->ofdpaPortSourceMacMoveLearningSet(port_id, flags);
 }
 
 int controller::lag_create(uint32_t *lag_id, std::string name,
