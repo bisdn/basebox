@@ -1473,6 +1473,12 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
 
       port_man->set_offloaded(link, FLAGS_mark_fwd_offload);
       swi->port_set_config(port_id, port_man->get_hwaddr(port_id), false);
+      swi->port_set_learn(
+          port_id, switch_interface::
+                       SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_LOG_NOTIFICATION);
+      swi->port_set_move_learn(
+          port_id, switch_interface::
+                       SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_LOG_NOTIFICATION);
     } else {
       LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
                    << " link:" << link;
