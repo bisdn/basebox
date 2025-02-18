@@ -52,7 +52,7 @@ bumpversionminor bumpversionmajor bumpversionpatch:
 	fi; \
 	BUMPED_VER="$${ver[0]}.$${ver[1]}.$${ver[2]}"; \
 	echo "$$BUMPED_VER" > VERSION; \
-	git commit -vsm "Bump version to $$BUMPED_VER" VERSION
+	git commit -S -vsm "Bump version to $$BUMPED_VER" VERSION
 	@echo "Don't forget to run 'make tag'"
 
 tag:
