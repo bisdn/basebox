@@ -39,6 +39,7 @@ bumpversionminor bumpversionmajor:
 	@IFS='.' read -r -a ver <<< "$(VERSION)"; \
 	if [ "$(BUMP)" = "major" ]; then \
 	  ver[0]=$$(($${ver[0]} + 1)); \
+	  ver[1]=0; \
 	elif [ "$(BUMP)" = "minor" ]; then \
 	  ver[1]=$$(($${ver[1]} + 1)); \
 	else \
