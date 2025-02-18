@@ -34,7 +34,7 @@ srpm: $(BUILDDIR)
 srpm-release: $(BUILDDIR)
 	make -C pkg/release/rpm outdir=$(CURDIR)
 
-bumpversionminor bumpversionmajor:
+bumpversionminor bumpversionmajor bumpversionpatch:
 	$(eval BUMP = $(shell echo $@ | sed 's/bumpversion//'))
 	@IFS='.' read -r -a ver <<< "$(VERSION)"; \
 	if [ "$(BUMP)" = "major" ]; then \
@@ -44,6 +44,8 @@ bumpversionminor bumpversionmajor:
 	elif [ "$(BUMP)" = "minor" ]; then \
 	  ver[1]=$$(($${ver[1]} + 1)); \
 	  ver[2]=0; \
+	elif [ "$(BUMP)" = "patch" ]; then \
+	  ver[2]=$$(($${ver[2]} + 1)); \
 	else \
 	  echo invalid bump target \'$(BUMP)\'; \
 	  exit -1; \
