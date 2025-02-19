@@ -34,20 +34,25 @@ srpm: $(BUILDDIR)
 srpm-release: $(BUILDDIR)
 	make -C pkg/release/rpm outdir=$(CURDIR)
 
-bumpversionminor bumpversionmajor:
+bumpversionminor bumpversionmajor bumpversionpatch:
 	$(eval BUMP = $(shell echo $@ | sed 's/bumpversion//'))
 	@IFS='.' read -r -a ver <<< "$(VERSION)"; \
 	if [ "$(BUMP)" = "major" ]; then \
 	  ver[0]=$$(($${ver[0]} + 1)); \
+	  ver[1]=0; \
+	  ver[2]=0; \
 	elif [ "$(BUMP)" = "minor" ]; then \
 	  ver[1]=$$(($${ver[1]} + 1)); \
+	  ver[2]=0; \
+	elif [ "$(BUMP)" = "patch" ]; then \
+	  ver[2]=$$(($${ver[2]} + 1)); \
 	else \
 	  echo invalid bump target \'$(BUMP)\'; \
 	  exit -1; \
 	fi; \
-	BUMPED_VER="$${ver[0]}.$${ver[1]}"; \
+	BUMPED_VER="$${ver[0]}.$${ver[1]}.$${ver[2]}"; \
 	echo "$$BUMPED_VER" > VERSION; \
-	git commit -vsam "Bump version to $$BUMPED_VER"
+	git commit -S -vsm "Bump version to $$BUMPED_VER" VERSION
 	@echo "Don't forget to run 'make tag'"
 
 tag:
