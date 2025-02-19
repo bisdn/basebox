@@ -40,13 +40,15 @@ bumpversionminor bumpversionmajor:
 	if [ "$(BUMP)" = "major" ]; then \
 	  ver[0]=$$(($${ver[0]} + 1)); \
 	  ver[1]=0; \
+	  ver[2]=0; \
 	elif [ "$(BUMP)" = "minor" ]; then \
 	  ver[1]=$$(($${ver[1]} + 1)); \
+	  ver[2]=0; \
 	else \
 	  echo invalid bump target \'$(BUMP)\'; \
 	  exit -1; \
 	fi; \
-	BUMPED_VER="$${ver[0]}.$${ver[1]}"; \
+	BUMPED_VER="$${ver[0]}.$${ver[1]}.$${ver[2]}"; \
 	echo "$$BUMPED_VER" > VERSION; \
 	git commit -vsam "Bump version to $$BUMPED_VER"
 	@echo "Don't forget to run 'make tag'"
