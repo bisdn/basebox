@@ -98,28 +98,28 @@ grpc_cpp = find_program('grpc_cpp_plugin')
 librofl_common = dependency('rofl_common')
 librofl_ofdpa = dependency('rofl_ofdpa')
 
-libgflags = dependency('libgflags', required: false)
+libgflags = dependency('gflags', required: false)
 if not libgflags.found()
   # find the lib without pkg-config
-  libgflags = cppc.find_library('libgflags')
+  libgflags = cppc.find_library('gflags')
 endif
 
 libsystemd = dependency('libsystemd', required: false)
 if not libsystemd.found()
   # find the lib without pkg-config
-  libsystemd = cppc.find_library('libsystemd')
+  libsystemd = cppc.find_library('systemd')
 endif
 
-glog = dependency('libglog', version: '>= 0.3.3', required: false)
+glog = dependency('glog', version: '>= 0.3.3', required: false)
 if not glog.found()
   # find the lib without pkg-config
-  glog = cppc.find_library('libglog')
+  glog = cppc.find_library('glog')
 endif
 
 libnl = dependency('libnl-3.0', required: false)
 if not libnl.found()
   # find the lib without pkg-config
-  libnl = cppc.find_library('libnl-3')
+  libnl = cppc.find_library('nl-3')
 endif
 
 if cppc.has_header('netlink/route/mdb.h', dependencies: libnl, required: false)
