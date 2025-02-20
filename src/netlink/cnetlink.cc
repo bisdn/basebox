@@ -1363,6 +1363,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     } else {
       LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
                    << " link:" << OBJ_CAST(link);
+    }
   } break;
   } // switch link type
 }
