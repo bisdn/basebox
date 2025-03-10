@@ -559,4 +559,21 @@ ofdpa_client::ofdpaTrunkPortPSCSet(uint32_t lag_id, uint8_t mode) {
   return response.status();
 }
 
+ofdpa::OfdpaStatus::OfdpaStatusCode ofdpa_client::ofdpaRxRateSet(int32_t pps) {
+  ::OfdpaStatus response;
+  ::ClientContext context;
+  ::Pps request;
+
+  context.set_wait_for_ready(true);
+
+  request.set_pps(pps);
+
+  ::Status rv = stub_->ofdpaRxRateSet(&context, request, &response);
+  if (not rv.ok()) {
+    return ofdpa::OfdpaStatus::OFDPA_E_RPC;
+  }
+
+  return response.status();
+}
+
 } // namespace basebox
