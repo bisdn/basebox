@@ -212,6 +212,25 @@ public:
   /* @} */
 
   /* @ QnQ  { */
+
+  /* translate double tag to single tag on ingress */
+  virtual int ingress_port_stacked_vlan_enable(uint32_t port,
+                                               uint16_t vid) noexcept = 0;
+  virtual int ingress_port_stacked_vlan_disable(uint32_t port,
+                                                uint16_t vid) noexcept = 0;
+  virtual int ingress_port_pop_vlan_add(uint32_t port, uint16_t outer_vid,
+                                        uint16_t inner_vid,
+                                        uint16_t vrf_id = 0) noexcept = 0;
+  virtual int ingress_port_pop_vlan_remove(uint32_t port, uint16_t outer_vid,
+                                           uint16_t inner_vid,
+                                           uint16_t vrf_id = 0) noexcept = 0;
+
+  /* translate single tag to double tag on egress */
+  virtual int egress_port_push_vlan_add(uint32_t port, uint16_t vid,
+                                        uint16_t push_vid) noexcept = 0;
+  virtual int egress_port_push_vlan_remove(uint32_t port, uint16_t vid,
+                                           uint16_t push_vid) noexcept = 0;
+
   virtual int set_egress_tpid(uint32_t port) noexcept = 0;
   virtual int delete_egress_tpid(uint32_t port) noexcept = 0;
   /* @} */
