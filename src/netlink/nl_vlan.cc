@@ -376,6 +376,7 @@ int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
   std::set<uint32_t> ports;
 
   uint16_t vrf_id = get_vrf_id(vid, link);
+  uint16_t outer_vid = 0;
 
   VLOG(2) << __FUNCTION__ << ": add vid=" << vid << " pvid=" << pvid
           << " tagged=" << tagged << " vrf=" << vrf_id;
@@ -392,14 +393,18 @@ int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
     return -EINVAL;
   }
 
+  const char *type = rtnl_link_get_type(link);
+  if (type && strcmp(type, "vlan") == 0)
+    outer_vid = rtnl_link_vlan_get_id(link);
+
   auto vlans = bridge_vlan.find(port_id);
   if (vlans == bridge_vlan.end()) {
-    std::map<uint16_t, bool> _vlans;
-    _vlans.emplace(vid, tagged);
+    std::map<uint16_t, std::pair<uint16_t, bool>> _vlans;
+    _vlans.try_emplace(vid, outer_vid, tagged);
     bridge_vlan.emplace(port_id, _vlans);
   } else {
     if (vlans->second.find(vid) == vlans->second.end()) {
-      vlans->second.emplace(vid, tagged);
+      vlans->second.try_emplace(vid, outer_vid, tagged);
     } else {
       LOG(WARNING) << __FUNCTION__ << ": vid " << vid
                    << " is already configured for port_id " << port_id;
@@ -429,9 +434,19 @@ int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
     if (rv < 0)
       break;
 
-    rv = swi->ingress_port_vlan_add(port, vid, pvid, vrf_id);
-    if (rv < 0)
-      break;
+    if (outer_vid > 0) {
+      rv = swi->egress_port_push_vlan_add(port, vid, outer_vid);
+      if (rv < 0)
+        break;
+
+      rv = swi->ingress_port_pop_vlan_add(port, outer_vid, vid, vrf_id);
+      if (rv < 0)
+        break;
+    } else {
+      rv = swi->ingress_port_vlan_add(port, vid, pvid, vrf_id);
+      if (rv < 0)
+        break;
+    }
   }
 
   if (rv < 0)
@@ -470,11 +485,11 @@ int nl_vlan::update_egress_bridge_vlan(rtnl_link *link, uint16_t vid,
       return -EINVAL;
     }
 
-    if (vlan_config->second == !untagged)
+    if (vlan_config->second.second == !untagged)
       LOG(WARNING) << __FUNCTION__ << ": vid " << vid
                    << " was already configured as " << (untagged ? "un" : "")
                    << "tagged for port_id " << port_id;
-    vlan_config->second = !untagged;
+    vlan_config->second.second = !untagged;
   }
 
   VLOG(2) << __FUNCTION__ << ": update egress vid=" << vid
@@ -499,6 +514,7 @@ void nl_vlan::remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
                                  bool tagged) {
   assert(swi);
   std::set<uint32_t> ports;
+  uint16_t outer_vid = 0;
 
   uint16_t vrf_id = get_vrf_id(vid, link);
 
@@ -516,6 +532,10 @@ void nl_vlan::remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
     VLOG(1) << __FUNCTION__ << ": unknown interface " << link;
     return;
   }
+
+  const char *type = rtnl_link_get_type(link);
+  if (type && strcmp(type, "vlan") == 0)
+    outer_vid = rtnl_link_vlan_get_id(link);
 
   auto vlans = bridge_vlan.find(port_id);
   if (vlans != bridge_vlan.end()) {
@@ -551,7 +571,12 @@ void nl_vlan::remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
 
   for (auto port : ports) {
     swi->egress_bridge_port_vlan_remove(port, vid);
-    swi->ingress_port_vlan_remove(port, vid, pvid, vrf_id);
+    if (outer_vid > 0) {
+      swi->ingress_port_pop_vlan_remove(port, outer_vid, vid, vrf_id);
+      swi->egress_port_push_vlan_remove(port, vid, outer_vid);
+    } else {
+      swi->ingress_port_vlan_remove(port, vid, pvid, vrf_id);
+    }
   }
 }
 
@@ -699,11 +724,19 @@ int nl_vlan::bond_member_attached(rtnl_link *bond, rtnl_link *member) {
 
       for (auto const &it : vlans->second) {
         uint16_t vid = it.first;
-        bool tagged = it.second;
+        uint16_t outer_vid = it.second.first;
+        bool tagged = it.second.second;
         uint16_t vrf_id = get_vrf_id(vid, bond);
 
         swi->egress_bridge_port_vlan_add(port_id, vid, !tagged);
         swi->ingress_port_vlan_add(port_id, vid, vid == pvid, vrf_id);
+
+        if (outer_vid > 0) {
+          swi->egress_port_push_vlan_add(port_id, vid, outer_vid);
+          swi->ingress_port_pop_vlan_add(port_id, outer_vid, vid, vrf_id);
+        } else {
+          swi->ingress_port_vlan_add(port_id, vid, pvid, vrf_id);
+        }
       }
 
       return 0;
@@ -756,10 +789,16 @@ int nl_vlan::bond_member_detached(rtnl_link *bond, rtnl_link *member) {
 
       for (auto const &it : vlans->second) {
         uint16_t vid = it.first;
+        uint16_t outer_vid = it.second.first;
         uint16_t vrf_id = get_vrf_id(vid, bond);
 
         swi->egress_bridge_port_vlan_remove(port_id, vid);
-        swi->ingress_port_vlan_remove(port_id, vid, vid == pvid, vrf_id);
+        if (outer_vid > 0) {
+          swi->ingress_port_pop_vlan_remove(port_id, outer_vid, vid, vrf_id);
+          swi->egress_port_push_vlan_remove(port_id, vid, outer_vid);
+        } else {
+          swi->ingress_port_vlan_remove(port_id, vid, pvid, vrf_id);
+        }
       }
 
       return 0;

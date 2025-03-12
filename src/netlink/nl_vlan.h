@@ -72,8 +72,8 @@ private:
   // vlan - vrf
   std::map<uint16_t, uint16_t> vlan_vrf;
 
-  // ifindex - vlan - untagged
-  std::map<uint32_t, std::map<uint16_t, bool>> bridge_vlan;
+  // ifindex - vlan - ovid, untagged
+  std::map<uint32_t, std::map<uint16_t, std::pair<uint16_t, bool>>> bridge_vlan;
   // ifindex - pvid
   std::map<uint32_t, uint16_t> port_pvid;
 
