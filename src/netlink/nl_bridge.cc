@@ -812,7 +812,8 @@ void nl_bridge::add_neigh_to_fdb(rtnl_neigh *neigh, bool update) {
   assert(neigh);
 
   int ifindex = rtnl_neigh_get_ifindex(neigh);
-  uint32_t port = nl->get_port_id(ifindex);
+  auto link = nl->get_link(ifindex, AF_UNSPEC);
+  uint32_t port = nl->get_port_id(link);
   if (port == 0) {
     VLOG(1) << __FUNCTION__ << ": unknown port for neigh " << neigh;
     return;
@@ -930,7 +931,8 @@ void nl_bridge::remove_neigh_from_fdb(rtnl_neigh *neigh) {
     }
   }
 
-  const uint32_t port = nl->get_port_id(rtnl_neigh_get_ifindex(neigh));
+  auto link = nl->get_link(rtnl_neigh_get_ifindex(neigh), AF_UNSPEC);
+  const uint32_t port = nl->get_port_id(link);
   rofl::caddress_ll mac((uint8_t *)nl_addr_get_binary_addr(addr),
                         nl_addr_get_len(addr));
 
