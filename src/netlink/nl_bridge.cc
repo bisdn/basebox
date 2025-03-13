@@ -93,37 +93,90 @@ uint32_t nl_bridge::get_vlan_proto() {
       "/sys/class/net/" + portname + "/bridge/vlan_protocol", 16);
 }
 
-int nl_bridge::set_vlan_proto(rtnl_link *link) {
+int nl_bridge::set_vlan_proto(rtnl_link *link, uint32_t port_id) {
+  uint16_t bridge_proto = get_vlan_proto();
+  uint16_t link_proto = 0;
+  uint16_t outer_vid = 0;
   int rv = 0;
-  if (get_vlan_proto() != ETH_P_8021AD)
-    return rv;
 
-  auto port_id = nl->get_port_id(link);
-  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-    auto members = nl->get_bond_members_by_lag(link);
-    for (auto mem : members)
-      rv = sw->set_egress_tpid(mem);
+  const char *type = rtnl_link_get_type(link);
 
-  } else {
-    rv = sw->set_egress_tpid(port_id);
+  if (type && strcmp(type, "vlan") == 0) {
+    outer_vid = rtnl_link_vlan_get_id(link);
+    link_proto = ntohs(rtnl_link_vlan_get_protocol(link));
+    if (!link_proto)
+      link_proto = ETH_P_8021Q;
+  }
+
+  // nothing to do if bridge is 802.1Q and no vlan member
+  if (bridge_proto == ETH_P_8021Q && link_proto == 0)
+    return 0;
+
+  // cannot set inner tag to 802.1AD
+  if (bridge_proto == ETH_P_8021AD && link_proto != 0) {
+    LOG(ERROR) << __FUNCTION__
+               << ": inner 802.1ad tag is not supported with link " << link;
+    return -EINVAL;
+  }
+
+  std::set<uint32_t> ports;
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag)
+    ports = nl->get_bond_members_by_port_id(port_id);
+  else
+    ports.insert(port_id);
+
+  for (auto port : ports) {
+    if (outer_vid > 0) {
+      rv = sw->ingress_port_stacked_vlan_enable(port, outer_vid);
+      if (rv < 0)
+        break;
+    }
+
+    if (bridge_proto == ETH_P_8021AD || link_proto == ETH_P_8021AD) {
+      rv = sw->set_egress_tpid(port);
+      if (rv < 0)
+        break;
+    }
   }
 
   return rv;
 }
 
-int nl_bridge::delete_vlan_proto(rtnl_link *link) {
+int nl_bridge::delete_vlan_proto(rtnl_link *link, uint32_t port_id) {
+  uint16_t bridge_proto = get_vlan_proto();
+  uint16_t link_proto = 0;
+  uint16_t outer_vid = 0;
   int rv = 0;
-  if (get_vlan_proto() != ETH_P_8021AD)
+
+  const char *type = rtnl_link_get_type(link);
+
+  if (type && strcmp(type, "vlan") == 0) {
+    outer_vid = rtnl_link_vlan_get_id(link);
+    link_proto = ntohs(rtnl_link_vlan_get_protocol(link));
+    if (!link_proto)
+      link_proto = ETH_P_8021Q;
+  }
+
+  // nothing to do if bridge is 802.1Q and no vlan member
+  if (bridge_proto == ETH_P_8021Q && link_proto == 0)
     return rv;
 
-  auto port_id = nl->get_port_id(link);
-  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
-    auto members = nl->get_bond_members_by_lag(link);
-    for (auto mem : members)
-      rv = sw->delete_egress_tpid(mem);
+  // inner 802.1ad tag is not supported, we never did anything here
+  if (bridge_proto == ETH_P_8021AD && link_proto != 0)
+    return rv;
 
-  } else {
-    rv = sw->delete_egress_tpid(port_id);
+  std::set<uint32_t> ports;
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag)
+    ports = nl->get_bond_members_by_port_id(port_id);
+  else
+    ports.insert(port_id);
+
+  for (auto port : ports) {
+    if (outer_vid > 0)
+      sw->ingress_port_stacked_vlan_disable(port, outer_vid);
+
+    if (bridge_proto == ETH_P_8021AD || link_proto == ETH_P_8021AD)
+      sw->delete_egress_tpid(port);
   }
 
   return rv;
@@ -194,8 +247,9 @@ void nl_bridge::add_interface(rtnl_link *link) {
     return;
   }
 
+  auto base_link = nl->get_link(rtnl_link_get_ifindex(link), AF_UNSPEC);
   auto state = rtnl_link_bridge_get_port_state(link);
-  auto port_id = nl->get_port_id(link);
+  auto port_id = nl->get_port_id(base_link);
   if (port_id > 0)
     set_port_stp_state(port_id, state);
 
@@ -205,7 +259,7 @@ void nl_bridge::add_interface(rtnl_link *link) {
   // configure bonds and physical ports (non members of bond)
   update_vlans(nullptr, link);
 
-  set_vlan_proto(link);
+  set_vlan_proto(base_link, port_id);
 }
 
 void nl_bridge::update_interface(rtnl_link *old_link, rtnl_link *new_link) {
@@ -266,12 +320,13 @@ void nl_bridge::delete_interface(rtnl_link *link) {
 
   update_vlans(link, nullptr);
 
-  delete_vlan_proto(link);
-
-  auto port_id = nl->get_port_id(link);
-  // interface default is to STP state forward by default
-  if (port_id > 0)
+  auto base_link = nl->get_link(rtnl_link_get_ifindex(link), AF_UNSPEC);
+  auto port_id = nl->get_port_id(base_link);
+  if (port_id > 0) {
+    delete_vlan_proto(base_link, port_id);
+    // interface default is to STP state forward by default
     set_port_stp_state(port_id, BR_STATE_FORWARDING);
+  }
   set_port_locked(link, false);
 }
 
@@ -568,7 +623,7 @@ int nl_bridge::bond_member_attached(rtnl_link *bond, rtnl_link *member) {
   auto locked = (rtnl_link_bridge_get_flags(br_link) & RTNL_BRIDGE_LOCKED) != 0;
   set_port_locked(member, locked);
 
-  set_vlan_proto(member);
+  set_vlan_proto(bond, port_id);
 
   return 0;
 }
@@ -597,7 +652,7 @@ int nl_bridge::bond_member_detached(rtnl_link *bond, rtnl_link *member) {
 
   set_port_locked(member, false);
 
-  delete_vlan_proto(member);
+  delete_vlan_proto(bond, port_id);
 
   return 0;
 }
@@ -951,7 +1006,7 @@ void nl_bridge::clear_tpid_entries() {
   nl->get_bridge_ports(rtnl_link_get_ifindex(bridge), &bridge_ports);
 
   for (auto iface : bridge_ports) {
-    delete_vlan_proto(iface);
+    delete_vlan_proto(iface, nl->get_port_id(iface));
   }
 }
 

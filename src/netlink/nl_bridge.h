@@ -213,8 +213,8 @@ private:
   int del_port_vlan_stp_state(uint32_t port_id, uint16_t vid);
   int set_port_vlan_stp_state(uint32_t port_id, uint16_t vid, uint8_t state);
 
-  int set_vlan_proto(rtnl_link *link);
-  int delete_vlan_proto(rtnl_link *link);
+  int set_vlan_proto(rtnl_link *link, uint32_t port_id);
+  int delete_vlan_proto(rtnl_link *link, uint32_t port_id);
 
   int mdb_to_set(rtnl_mdb *,
                  std::set<std::tuple<uint32_t, uint16_t, rofl::caddress_ll>> *);
