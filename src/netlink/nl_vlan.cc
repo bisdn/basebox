@@ -691,8 +691,28 @@ int nl_vlan::bond_member_attached(rtnl_link *bond, rtnl_link *member) {
     auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
 
     // bridge VLANs are handled by bridge
-    if (br_link)
+    if (br_link) {
+      auto vlans = bridge_vlan.find(bond_id);
+      if (vlans == bridge_vlan.end())
+        return 0;
+
+      uint16_t pvid = 0;
+
+      auto pv_it = port_pvid.find(bond_id);
+      if (pv_it != port_pvid.end())
+        pvid = pv_it->second;
+
+      for (auto const &it : vlans->second) {
+        uint16_t vid = it.first;
+        bool tagged = it.second;
+        uint16_t vrf_id = get_vrf_id(vid, bond);
+
+        swi->egress_bridge_port_vlan_add(port_id, vid, !tagged);
+        swi->ingress_port_vlan_add(port_id, vid, vid == pvid, vrf_id);
+      }
+
       return 0;
+    }
   }
 
   for (auto const &it : port_vlan) {
@@ -728,9 +748,27 @@ int nl_vlan::bond_member_detached(rtnl_link *bond, rtnl_link *member) {
     // check bridge attachement
     auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
 
-    // bridge VLANs are handled by bridge
-    if (br_link)
+    if (br_link) {
+      auto vlans = bridge_vlan.find(bond_id);
+      if (vlans == bridge_vlan.end())
+        return 0;
+
+      uint16_t pvid = 0;
+
+      auto pv_it = port_pvid.find(bond_id);
+      if (pv_it != port_pvid.end())
+        pvid = pv_it->second;
+
+      for (auto const &it : vlans->second) {
+        uint16_t vid = it.first;
+        uint16_t vrf_id = get_vrf_id(vid, bond);
+
+        swi->egress_bridge_port_vlan_remove(port_id, vid);
+        swi->ingress_port_vlan_remove(port_id, vid, vid == pvid, vrf_id);
+      }
+
       return 0;
+    }
   }
 
   for (auto const &it : port_vlan) {
