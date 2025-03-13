@@ -241,19 +241,6 @@ int nl_bond::add_lag_member(rtnl_link *bond, rtnl_link *link) {
     if (rv < 0)
       LOG(ERROR) << __FUNCTION__
                  << ": failed to set egress TPID entry for port " << link;
-  } else {
-    std::deque<uint16_t> vlans;
-
-    if (nl->has_l3_addresses(bond)) {
-      swi->ingress_port_vlan_add(port_id, FLAGS_port_untagged_vid, true);
-      swi->egress_port_vlan_add(port_id, FLAGS_port_untagged_vid, true);
-    }
-
-    nl->get_vlans(rtnl_link_get_ifindex(bond), &vlans);
-    for (auto vid : vlans) {
-      swi->ingress_port_vlan_add(port_id, vid, false);
-      swi->egress_port_vlan_add(port_id, vid, false);
-    }
   }
 
   if (new_lag)
@@ -308,26 +295,6 @@ int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
     if (rv < 0)
       LOG(ERROR) << __FUNCTION__
                  << ": failed to set egress TPID entry for port " << link;
-  } else {
-    std::deque<uint16_t> vlans;
-
-    nl->get_vlans(rtnl_link_get_ifindex(bond), &vlans);
-
-    if (lm_rv->second.empty())
-      nl->remove_l3_configuration(bond);
-
-    if (nl->is_bridge_interface(bond))
-      swi->ofdpa_stg_state_port_set(port_id, 1, BR_STATE_FORWARDING);
-
-    for (auto vid : vlans) {
-      swi->ingress_port_vlan_remove(port_id, vid, false);
-      swi->egress_port_vlan_remove(port_id, vid);
-    }
-
-    if (nl->has_l3_addresses(bond)) {
-      swi->ingress_port_vlan_remove(port_id, FLAGS_port_untagged_vid, true);
-      swi->egress_port_vlan_remove(port_id, FLAGS_port_untagged_vid);
-    }
   }
 #endif
 

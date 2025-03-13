@@ -672,4 +672,80 @@ void nl_vlan::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
   vlan_vrf.erase(vrf);
 }
 
+int nl_vlan::bond_member_attached(rtnl_link *bond, rtnl_link *member) {
+  uint32_t bond_id = nl->get_port_id(bond);
+  uint32_t port_id = nl->get_port_id(member);
+
+  if (bond_id == 0) {
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << bond;
+    return -EINVAL;
+  }
+
+  if (port_id == 0) {
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << member;
+    return -EINVAL;
+  }
+
+  if (rtnl_link_get_master(bond)) {
+    // check bridge attachement
+    auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
+
+    // bridge VLANs are handled by bridge
+    if (br_link)
+      return 0;
+  }
+
+  for (auto const &it : port_vlan) {
+    if (it.first.first != bond_id)
+      continue;
+
+    uint16_t vid = it.first.second;
+    uint16_t vrf_id = get_vrf_id(vid, bond);
+
+    // assume the default vlan is untagged
+    (void)enable_vlan(port_id, it.first.second, vid != FLAGS_port_untagged_vid,
+                      vrf_id);
+  }
+
+  return 0;
+}
+
+int nl_vlan::bond_member_detached(rtnl_link *bond, rtnl_link *member) {
+  uint32_t bond_id = nl->get_port_id(bond);
+  uint32_t port_id = nl->get_port_id(member);
+
+  if (bond_id == 0) {
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << bond;
+    return -EINVAL;
+  }
+
+  if (port_id == 0) {
+    VLOG(1) << __FUNCTION__ << ": unknown interface " << member;
+    return -EINVAL;
+  }
+
+  if (rtnl_link_get_master(bond)) {
+    // check bridge attachement
+    auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
+
+    // bridge VLANs are handled by bridge
+    if (br_link)
+      return 0;
+  }
+
+  for (auto const &it : port_vlan) {
+    if (it.first.first != bond_id)
+      continue;
+
+    uint16_t vid = it.first.second;
+    uint16_t vrf_id = get_vrf_id(vid, bond);
+
+    // assume the default vlan is untagged
+    (void)disable_vlan(port_id, it.first.second, vid != FLAGS_port_untagged_vid,
+                       vrf_id);
+  }
+
+  return 0;
+}
+
 } // namespace basebox
