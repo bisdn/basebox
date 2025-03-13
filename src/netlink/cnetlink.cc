@@ -1541,6 +1541,8 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     } else if (port_id > 0) { // bond slave removed
       rtnl_link *_bond = get_link(rtnl_link_get_master(old_link), AF_UNSPEC);
       vlan->bond_member_detached(_bond, old_link);
+      if (bridge)
+        bridge->bond_member_detached(_bond, old_link);
       bond->remove_lag_member(old_link);
     }
     break;
@@ -1606,6 +1608,8 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
                   << rtnl_link_get_name(new_link);
         rtnl_link *_bond = get_link(rtnl_link_get_master(new_link), AF_UNSPEC);
         bond->add_lag_member(_bond, new_link);
+        if (bridge)
+          bridge->bond_member_attached(_bond, new_link);
         vlan->bond_member_attached(_bond, new_link);
 
         LOG(INFO) << __FUNCTION__ << " set active member " << get_port_id(_bond)
@@ -1874,22 +1878,6 @@ bool cnetlink::is_bridge_configured(rtnl_link *l) {
     return is_bridge_interface(l);
 
   return bridge->is_bridge_interface(l);
-}
-
-int cnetlink::set_bridge_port_vlan_tpid(rtnl_link *l) {
-  if (!bridge) {
-    return -EINVAL;
-  }
-
-  return bridge->set_vlan_proto(l);
-}
-
-int cnetlink::unset_bridge_port_vlan_tpid(rtnl_link *l) {
-  if (!bridge) {
-    return -EINVAL;
-  }
-
-  return bridge->delete_vlan_proto(l);
 }
 
 std::deque<rtnl_neigh *> cnetlink::search_fdb(uint16_t vid, nl_addr *lladdr) {
