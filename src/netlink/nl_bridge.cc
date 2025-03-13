@@ -539,6 +539,62 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
   }
 }
 
+int nl_bridge::bond_member_attached(rtnl_link *bond, rtnl_link *member) {
+  if (rtnl_link_get_master(bond) != rtnl_link_get_ifindex(bridge))
+    return 0;
+
+  auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
+  if (!br_link) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to find AF_BRIDGE link for "
+               << bond;
+    return -EINVAL;
+  }
+  auto bond_id = nl->get_port_id(bond);
+  auto port_id = nl->get_port_id(member);
+
+  auto state = rtnl_link_bridge_get_port_state(br_link);
+  auto pv_states = bridge_stp_states.get_min_states(bond_id);
+  for (auto it : pv_states)
+    set_port_vlan_stp_state(port_id, it.first, it.second);
+  set_port_vlan_stp_state(port_id, 0, state);
+
+  auto locked = (rtnl_link_bridge_get_flags(br_link) & RTNL_BRIDGE_LOCKED) != 0;
+  set_port_locked(member, locked);
+
+  set_vlan_proto(member);
+
+  return 0;
+}
+
+int nl_bridge::bond_member_detached(rtnl_link *bond, rtnl_link *member) {
+  if (rtnl_link_get_master(bond) != rtnl_link_get_ifindex(bridge))
+    return 0;
+
+  auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
+  if (!br_link) {
+    LOG(ERROR) << __FUNCTION__ << ": failed to find AF_BRIDGE link for "
+               << bond;
+    return -EINVAL;
+  }
+
+  auto bond_id = nl->get_port_id(bond);
+  auto port_id = nl->get_port_id(member);
+
+  // interface default is to STP state forward by default
+  set_port_stp_state(port_id, BR_STATE_FORWARDING);
+
+  auto pv_states = bridge_stp_states.get_min_states(bond_id);
+  for (auto it : pv_states)
+    set_port_vlan_stp_state(port_id, it.first, BR_STATE_FORWARDING);
+  set_port_vlan_stp_state(port_id, 0, BR_STATE_FORWARDING);
+
+  set_port_locked(member, false);
+
+  delete_vlan_proto(member);
+
+  return 0;
+}
+
 std::deque<rtnl_neigh *> nl_bridge::get_fdb_entries_of_port(rtnl_link *br_port,
                                                             uint16_t vid,
                                                             nl_addr *lladdr) {
@@ -1170,15 +1226,6 @@ int nl_bridge::drop_pvlan_stp(struct rtnl_bridge_vlan *bvlan_info) {
   err = del_port_vlan_stp_state(port_id, vlan_id);
 #endif
   return err;
-}
-
-std::map<uint16_t, uint8_t>
-nl_bridge::get_port_vlan_stp_states(rtnl_link *link) {
-  uint32_t port_id = nl->get_port_id(link);
-  if (port_id == 0)
-    return {};
-
-  return bridge_stp_states.get_min_states(port_id);
 }
 
 void nl_bridge::set_port_locked(rtnl_link *link, bool locked) {
