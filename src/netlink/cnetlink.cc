@@ -382,6 +382,10 @@ cnetlink::get_route_by_nh_params(const struct nh_params &p) const {
   return ret;
 }
 
+struct rtnl_nh *cnetlink::get_nh_by_id(int nhid) const {
+  return rtnl_nh_get(caches[NL_NH_CACHE], nhid);
+}
+
 void cnetlink::get_bridge_ports(
     int br_ifindex, std::deque<rtnl_link *> *link_list) const noexcept {
   assert(link_list);

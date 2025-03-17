@@ -68,6 +68,7 @@ public:
 
   std::unique_ptr<struct rtnl_route, decltype(&rtnl_route_put)>
   get_route_by_nh_params(const struct nh_params &p) const;
+  struct rtnl_nh *get_nh_by_id(int nh_id) const;
 
   int add_l3_configuration(rtnl_link *link);
   int remove_l3_configuration(rtnl_link *link);
