@@ -446,7 +446,7 @@ int nl_vlan::add_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
 
 int nl_vlan::update_egress_bridge_vlan(rtnl_link *link, uint16_t vid,
                                        bool untagged) {
-  int rv;
+  int rv = 0;
   assert(swi);
 
   if (!is_vid_valid(vid)) {
@@ -484,7 +484,17 @@ int nl_vlan::update_egress_bridge_vlan(rtnl_link *link, uint16_t vid,
   VLOG(2) << __FUNCTION__ << ": update egress vid=" << vid
           << " tagged=" << untagged;
 
-  rv = swi->egress_port_vlan_add(port_id, vid, untagged, true);
+  std::set<uint32_t> ports;
+  if (nbi::get_port_type(port_id) == nbi::port_type_lag) {
+    ports = nl->get_bond_members_by_port_id(port_id);
+  }
+  ports.insert(port_id);
+
+  for (auto port : ports) {
+    rv = swi->egress_port_vlan_add(port, vid, untagged, true);
+    if (rv < 0)
+      break;
+  }
 
   return rv;
 }
