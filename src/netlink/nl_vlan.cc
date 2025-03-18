@@ -49,6 +49,9 @@ int nl_vlan::add_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     return 0;
   }
 
+  if (nl->is_bridge_interface(link))
+    return 0;
+
   int rv = enable_vlan(port_id, vid, tagged, vrf_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__ << ": failed to enable vlan " << vid
@@ -216,6 +219,9 @@ int nl_vlan::remove_vlan(rtnl_link *link, uint16_t vid, bool tagged) {
     return rv;
 
   port_vlan.erase(refcount);
+
+  if (nl->is_bridge_interface(link))
+    return 0;
 
   // remove vid at ingress
   rv = disable_vlan(port_id, vid, tagged, vrf_id);
