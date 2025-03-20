@@ -2155,6 +2155,131 @@ int controller::egress_bridge_port_vlan_remove(uint32_t port,
   }
   return rv;
 }
+int controller::ingress_port_stacked_vlan_enable(uint32_t port,
+                                                 uint16_t vid) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0), fm_driver.enable_port_vid_ingress(dpt.get_version(),
+                                                           port, vid, 0, true));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+int controller::ingress_port_stacked_vlan_disable(uint32_t port,
+                                                  uint16_t vid) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.disable_port_vid_ingress(
+                                  dpt.get_version(), port, vid, 0, true));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+int controller::ingress_port_pop_vlan_add(uint32_t port, uint16_t outer_vid,
+                                          uint16_t inner_vid,
+                                          uint16_t vrf_id) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.enable_port_pop_tag_ingress(dpt.get_version(), port,
+                                              inner_vid, outer_vid, vrf_id));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+int controller::ingress_port_pop_vlan_remove(uint32_t port, uint16_t outer_vid,
+                                             uint16_t inner_vid,
+                                             uint16_t vrf_id) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(
+        rofl::cauxid(0),
+        fm_driver.disable_port_pop_tag_ingress(dpt.get_version(), port,
+                                               inner_vid, outer_vid, vrf_id));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+
+int controller::egress_port_push_vlan_add(uint32_t port, uint16_t vid,
+                                          uint16_t push_vid) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.enable_vlan_egress_push_tag(
+                                  dpt.get_version(), port, vid, push_vid));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
+int controller::egress_port_push_vlan_remove(uint32_t port, uint16_t vid,
+                                             uint16_t push_vid) noexcept {
+  int rv = 0;
+  try {
+    rofl::crofdpt &dpt = set_dpt(dptid, true);
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.disable_vlan_egress_push_tag(
+                                  dpt.get_version(), port, vid, push_vid));
+  } catch (rofl::eRofBaseNotFound &e) {
+    LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
+    rv = -EINVAL;
+  } catch (rofl::eRofConnNotConnected &e) {
+    LOG(ERROR) << ": not connected msg=" << e.what();
+    rv = -ENOTCONN;
+  } catch (std::exception &e) {
+    LOG(ERROR) << ": caught unknown exception: " << e.what();
+    rv = -EINVAL;
+  }
+  return rv;
+}
 
 int controller::set_egress_tpid(uint32_t port) noexcept {
   int rv = 0;
