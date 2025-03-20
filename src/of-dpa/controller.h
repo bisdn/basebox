@@ -265,6 +265,23 @@ public:
                                   bool untagged) noexcept override;
   int egress_bridge_port_vlan_remove(uint32_t port,
                                      uint16_t vid) noexcept override;
+
+  int ingress_port_stacked_vlan_enable(uint32_t port,
+                                       uint16_t vid) noexcept override;
+  int ingress_port_stacked_vlan_disable(uint32_t port,
+                                        uint16_t vid) noexcept override;
+  int ingress_port_pop_vlan_add(uint32_t port, uint16_t outer_vid,
+                                uint16_t inner_vid,
+                                uint16_t vrf_id = 0) noexcept override;
+  int ingress_port_pop_vlan_remove(uint32_t port, uint16_t outer_vid,
+                                   uint16_t inner_vid,
+                                   uint16_t vrf_id = 0) noexcept override;
+
+  int egress_port_push_vlan_add(uint32_t port, uint16_t vid,
+                                uint16_t push_vid) noexcept override;
+  int egress_port_push_vlan_remove(uint32_t port, uint16_t vid,
+                                   uint16_t push_vid) noexcept override;
+
   int set_egress_tpid(uint32_t port) noexcept override;
   int delete_egress_tpid(uint32_t port) noexcept override;
 

@@ -174,11 +174,7 @@ public:
   int get_ifindex() { return bridge ? rtnl_link_get_ifindex(bridge) : 0; }
 
   uint32_t get_vlan_proto();
-  int set_vlan_proto(rtnl_link *link);
-  int delete_vlan_proto(rtnl_link *link);
   uint32_t get_vlan_filtering();
-
-  std::map<uint16_t, uint8_t> get_port_vlan_stp_states(rtnl_link *link);
 
   void clear_tpid_entries();
 
@@ -199,6 +195,9 @@ public:
 
   void set_port_locked(rtnl_link *link, bool locked);
 
+  int bond_member_attached(rtnl_link *bond, rtnl_link *member);
+  int bond_member_detached(rtnl_link *bond, rtnl_link *member);
+
 private:
   struct bridge_stp_states bridge_stp_states;
 
@@ -214,6 +213,9 @@ private:
                               uint8_t stp_state);
   int del_port_vlan_stp_state(uint32_t port_id, uint16_t vid);
   int set_port_vlan_stp_state(uint32_t port_id, uint16_t vid, uint8_t state);
+
+  int set_vlan_proto(rtnl_link *link, uint32_t port_id);
+  int delete_vlan_proto(rtnl_link *link, uint32_t port_id);
 
   rtnl_link *bridge;
   switch_interface *sw;
