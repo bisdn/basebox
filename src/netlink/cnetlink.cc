@@ -170,6 +170,18 @@ void cnetlink::init_caches() {
     LOG(FATAL) << __FUNCTION__ << ": add route/neigh to cache mngr";
   }
 
+  /* init nh cache */
+  rc = rtnl_nh_alloc_cache(nullptr, AF_UNSPEC, &caches[NL_NH_CACHE]);
+  if (0 != rc) {
+    LOG(FATAL) << __FUNCTION__
+               << ": rtnl_nh_alloc_cache_flags failed rc=" << rc;
+  }
+  rc = nl_cache_mngr_add_cache_v2(mngr, caches[NL_NH_CACHE],
+                                  (change_func_v2_t)&nl_cb_v2, this);
+  if (0 != rc) {
+    LOG(FATAL) << __FUNCTION__ << ": add route/nh to cache mngr";
+  }
+
 #ifdef HAVE_NETLINK_ROUTE_MDB_H
   if (FLAGS_multicast) {
     /* init mdb cache */
@@ -323,18 +335,22 @@ struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
 }
 
 std::unique_ptr<struct rtnl_route, decltype(&rtnl_route_put)>
-cnetlink::get_route_by_dst_ifindex(struct nl_addr *dst, int ifindex) const {
+cnetlink::get_route_by_nh_params(const struct nh_params &p) const {
   struct rtnl_route *route = nullptr;
   std::unique_ptr<rtnl_route, decltype(&rtnl_route_put)> filter(
       rtnl_route_alloc(), &rtnl_route_put);
 
-  auto nh = rtnl_route_nh_alloc();
+  if (p.nh.nhid > 0) {
+    rtnl_route_set_nhid(filter.get(), p.nh.nhid);
+  } else {
+    auto nh = rtnl_route_nh_alloc();
 
-  rtnl_route_nh_set_ifindex(nh, ifindex);
-  rtnl_route_add_nexthop(filter.get(), nh);
+    rtnl_route_nh_set_ifindex(nh, p.nh.ifindex);
+    rtnl_route_add_nexthop(filter.get(), nh);
+  }
 
   rtnl_route_set_type(filter.get(), RTN_UNICAST);
-  rtnl_route_set_dst(filter.get(), dst);
+  rtnl_route_set_dst(filter.get(), p.np.addr);
 
   nl_cache_foreach_filter(
       caches[NL_ROUTE_CACHE], OBJ_CAST(filter.get()),
@@ -364,6 +380,10 @@ cnetlink::get_route_by_dst_ifindex(struct nl_addr *dst, int ifindex) const {
   std::unique_ptr<struct rtnl_route, decltype(&rtnl_route_put)> ret(
       route, *rtnl_route_put);
   return ret;
+}
+
+struct rtnl_nh *cnetlink::get_nh_by_id(int nhid) const {
+  return rtnl_nh_get(caches[NL_NH_CACHE], nhid);
 }
 
 void cnetlink::get_bridge_ports(
@@ -904,6 +924,10 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     case RTM_DELROUTE:
       route_route_apply(obj);
       break;
+    case RTM_NEWNEXTHOP:
+    case RTM_DELNEXTHOP:
+      route_nh_apply(obj);
+      break;
     case RTM_NEWADDR:
     case RTM_DELADDR:
       route_addr_apply(obj);
@@ -1349,6 +1373,37 @@ void cnetlink::route_route_apply(const nl_obj &obj) {
       LOG(WARNING) << __FUNCTION__ << ": family not supported: " << family;
       break;
     }
+    break;
+
+  default:
+    LOG(ERROR) << __FUNCTION__ << ": invalid action " << obj.get_action();
+    break;
+  }
+}
+
+void cnetlink::route_nh_apply(const nl_obj &obj) {
+  switch (obj.get_action()) {
+  case NL_ACT_NEW:
+    assert(obj.get_new_obj());
+
+    VLOG(2) << __FUNCTION__ << ": new nh " << obj.get_new_obj();
+
+    break;
+
+  case NL_ACT_CHANGE:
+    assert(obj.get_new_obj());
+    assert(obj.get_old_obj());
+
+    VLOG(2) << __FUNCTION__ << ": change new nh " << obj.get_new_obj();
+    VLOG(2) << __FUNCTION__ << ": change old nh " << obj.get_old_obj();
+
+    break;
+
+  case NL_ACT_DEL:
+    assert(obj.get_old_obj());
+
+    VLOG(2) << __FUNCTION__ << ": del nh " << obj.get_old_obj();
+
     break;
 
   default:

@@ -1455,37 +1455,99 @@ void nl_l3::get_nexthops_of_route(
 int nl_l3::get_neighbours_of_route(rtnl_route *route,
                                    std::set<nh_stub> *nhs) noexcept {
 
-  std::deque<struct rtnl_nexthop *> rnhs;
-
   assert(route);
   assert(nhs);
 
-  get_nexthops_of_route(route, &rnhs);
+  uint32_t nhid = rtnl_route_get_nhid(route);
 
-  if (rnhs.size() == 0)
-    return -ENETUNREACH;
+  if (rtnl_route_get_nnexthops(route) > 0) {
+    std::deque<struct rtnl_nexthop *> rnhs;
+    get_nexthops_of_route(route, &rnhs);
 
-  for (auto nh : rnhs) {
-    int ifindex = rtnl_route_nh_get_ifindex(nh);
-    nl_addr *nh_addr = rtnl_route_nh_get_gateway(nh);
+    if (rnhs.size() == 0)
+      return -ENETUNREACH;
 
-    if (!nh_addr)
-      nh_addr = rtnl_route_nh_get_via(nh);
+    for (auto nh : rnhs) {
+      int ifindex = rtnl_route_nh_get_ifindex(nh);
+      nl_addr *nh_addr = rtnl_route_nh_get_gateway(nh);
 
-    if (nh_addr) {
-      switch (nl_addr_get_family(nh_addr)) {
-      case AF_INET:
-      case AF_INET6:
-        VLOG(2) << __FUNCTION__ << ": ifindex=" << ifindex << " gw=" << nh_addr;
-        break;
-      default:
-        LOG(ERROR) << "gw " << nh_addr
-                   << " unsupported family=" << nl_addr_get_family(nh_addr);
+      if (!nh_addr)
+        nh_addr = rtnl_route_nh_get_via(nh);
+
+      if (nh_addr) {
+        switch (nl_addr_get_family(nh_addr)) {
+        case AF_INET:
+        case AF_INET6:
+          VLOG(2) << __FUNCTION__ << ": ifindex=" << ifindex
+                  << " gw=" << nh_addr;
+          break;
+        default:
+          LOG(ERROR) << "gw " << nh_addr
+                     << " unsupported family=" << nl_addr_get_family(nh_addr);
+          continue;
+        }
+
+        nhs->emplace(nh_stub{nh_addr, ifindex, nhid});
+      }
+    }
+  } else {
+    std::deque<struct rtnl_nh *> rnhs;
+
+    if (nhid > 0) {
+      auto route_nh = nl->get_nh_by_id(nhid);
+      if (route_nh == nullptr)
+        return -EINVAL;
+
+      int group_size = rtnl_nh_get_group_size(route_nh);
+      if (group_size > 0) {
+        for (int i = 0; i < group_size; i++) {
+          auto nh = nl->get_nh_by_id(rtnl_nh_get_group_entry(route_nh, i));
+          if (!nh)
+            continue;
+
+          rnhs.push_back(nh);
+        }
+        // no need for the route nh anymore
+        rtnl_nh_put(route_nh);
+      } else {
+        rnhs.push_back(route_nh);
+      }
+    } else {
+      return -EINVAL;
+    }
+
+    for (auto nh : rnhs) {
+      int ifindex = rtnl_nh_get_oif(nh);
+      auto nh_addr = rtnl_nh_get_gateway(nh);
+
+      auto link = nl->get_link_by_ifindex(ifindex);
+      if (!link.get())
+        continue;
+
+      if (!nl->is_switch_interface(link.get())) {
+        VLOG(1) << __FUNCTION__ << ": ignoring next hop " << nh;
         continue;
       }
 
-      nhs->emplace(nh_stub{nh_addr, ifindex});
+      if (nh_addr) {
+        switch (nl_addr_get_family(nh_addr)) {
+        case AF_INET:
+        case AF_INET6:
+          VLOG(2) << __FUNCTION__ << ": ifindex=" << ifindex
+                  << " gw=" << nh_addr;
+          break;
+        default:
+          LOG(ERROR) << "gw " << nh_addr
+                     << " unsupported family=" << nl_addr_get_family(nh_addr);
+          continue;
+        }
+      }
+
+      nhs->emplace(nh_stub{nh_addr, ifindex, nhid});
     }
+
+    for (auto nh : rnhs)
+      rtnl_nh_put(nh);
   }
 
   return nhs->size();
@@ -1649,7 +1711,7 @@ int nl_l3::del_l3_unicast_route(nl_addr *rt_dst, uint16_t vrf_id) {
 
 void nl_l3::nh_reachable_notification(struct rtnl_neigh *n,
                                       struct nh_params p) noexcept {
-  auto route = nl->get_route_by_dst_ifindex(p.np.addr, p.nh.ifindex);
+  auto route = nl->get_route_by_nh_params(p);
   if (route == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": failed to find route for dst=" << p.np.addr
                << " on ifindex=" << p.nh.ifindex << " for nh" << p.nh.nh;
@@ -1695,7 +1757,7 @@ void nl_l3::nh_reachable_notification(struct rtnl_neigh *n,
 
 void nl_l3::nh_unreachable_notification(struct rtnl_neigh *n,
                                         struct nh_params p) noexcept {
-  auto route = nl->get_route_by_dst_ifindex(p.np.addr, p.nh.ifindex);
+  auto route = nl->get_route_by_nh_params(p);
   if (route == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": failed to find route for dst=" << p.np.addr
                << " on ifindex=" << p.nh.ifindex << " for nh" << p.nh.nh;
@@ -1741,18 +1803,12 @@ void nl_l3::nh_unreachable_notification(struct rtnl_neigh *n,
 
 int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   assert(r);
-  int nnhs = rtnl_route_get_nnexthops(r);
   uint32_t vrf_id = rtnl_route_get_table(r);
   if (vrf_id == MAIN_ROUTING_TABLE)
     vrf_id = 0;
 
   VLOG(2) << __FUNCTION__ << ": adding route= " << r
           << " update=" << update_route;
-
-  if (nnhs == 0) {
-    LOG(WARNING) << __FUNCTION__ << ": no neighbours of route " << r;
-    return -ENOTSUP;
-  }
 
   // FRR may occationally install link-local routes again with a different
   // priority. Since we cannot handle multiple routes with different
@@ -1839,7 +1895,7 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
 
   uint32_t route_dst_interface;
 
-  if (nnhs == 1) {
+  if (nhs.size() <= 1) {
     if (l3_interfaces.size() == 0) {
       // Not yet resolved next-hop, or on-link route, the rule must be installed
       // to the switch pointing to controller and then updated after neighbor
@@ -1865,7 +1921,7 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   }
 
   rv = add_l3_unicast_route(rtnl_route_get_dst(r), route_dst_interface,
-                            nnhs > 1, update_route, vrf_id);
+                            nhs.size() > 1, update_route, vrf_id);
   if (rv < 0) {
     LOG(ERROR) << __FUNCTION__
                << ": failed to add route to dst=" << rtnl_route_get_dst(r)
@@ -1925,18 +1981,12 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
   int rv = 0;
   auto dst = rtnl_route_get_dst(r);
 
-  int nnhs = rtnl_route_get_nnexthops(r);
   uint16_t vrf_id = rtnl_route_get_table(r);
   // Routing table 254 id matches the main routing table on linux.
   // Adding a vrf with this id will collide with the main routing
   // table, but will enter the wrong info into the OFDPA tables
   if (vrf_id == MAIN_ROUTING_TABLE)
     vrf_id = 0;
-
-  if (nnhs == 0) {
-    LOG(WARNING) << __FUNCTION__ << ": no neighbours of route " << r;
-    return -ENOTSUP;
-  }
 
   if (rtnl_route_get_priority(r) > 0 &&
       rtnl_route_get_protocol(r) != RTPROT_KERNEL) {
@@ -2051,10 +2101,9 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
     return rv;
   }
 
-  VLOG(2) << __FUNCTION__ << ": number of next hops is "
-          << rtnl_route_get_nnexthops(r);
+  VLOG(2) << __FUNCTION__ << ": number of next hops is " << rv;
 
-  if (nnhs > 1)
+  if (nhs.size() > 1)
     del_l3_ecmp_group(nhs);
 
   for (auto nh : nhs) {

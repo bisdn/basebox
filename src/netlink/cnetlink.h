@@ -10,6 +10,7 @@
 #include <tuple>
 
 #include <netlink/cache.h>
+#include <netlink/route/nh.h>
 #include <netlink/route/route.h>
 #include <rofl/common/cthread.hpp>
 
@@ -36,6 +37,7 @@ public:
     NL_LINK_CACHE,
     NL_NEIGH_CACHE,
     NL_ROUTE_CACHE,
+    NL_NH_CACHE,
     NL_MDB_CACHE,
     NL_BVLAN_CACHE,
     NL_MAX_CACHE,
@@ -65,7 +67,8 @@ public:
   struct rtnl_neigh *get_neighbour(int ifindex, struct nl_addr *a) const;
 
   std::unique_ptr<struct rtnl_route, decltype(&rtnl_route_put)>
-  get_route_by_dst_ifindex(struct nl_addr *dst, int ifindex) const;
+  get_route_by_nh_params(const struct nh_params &p) const;
+  struct rtnl_nh *get_nh_by_id(int nh_id) const;
 
   int add_l3_configuration(rtnl_link *link);
   int remove_l3_configuration(rtnl_link *link);
@@ -179,6 +182,7 @@ private:
   void route_link_apply(const nl_obj &obj);
   void route_neigh_apply(const nl_obj &obj);
   void route_route_apply(const nl_obj &obj);
+  void route_nh_apply(const nl_obj &obj);
   void route_mdb_apply(const nl_obj &obj);
   void route_bridge_vlan_apply(const nl_obj &obj);
 
