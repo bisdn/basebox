@@ -55,6 +55,9 @@ public:
   void vrf_detach(rtnl_link *old_link, rtnl_link *new_link);
   uint16_t get_vrf_id(uint16_t vid, rtnl_link *link);
 
+  int bond_member_attached(rtnl_link *bond, rtnl_link *member);
+  int bond_member_detached(rtnl_link *bond, rtnl_link *member);
+
 private:
   static const uint16_t vid_low = 1;
   static const uint16_t vid_high = 0xfff;
@@ -69,6 +72,11 @@ private:
   std::map<std::pair<uint32_t, uint16_t>, uint32_t> port_vlan;
   // vlan - vrf
   std::map<uint16_t, uint16_t> vlan_vrf;
+
+  // ifindex - vlan - ovid, untagged
+  std::map<uint32_t, std::map<uint16_t, std::pair<uint16_t, bool>>> bridge_vlan;
+  // ifindex - pvid
+  std::map<uint32_t, uint16_t> port_pvid;
 
   switch_interface *swi;
   cnetlink *nl;
