@@ -973,6 +973,11 @@ void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
   if (fd == nl_cache_mngr_get_fd(mngr)) {
     int rv = nl_cache_mngr_data_ready(mngr);
     VLOG(3) << __FUNCTION__ << ": #processed=" << rv;
+    if (sync_route_cache) {
+      sync_route_cache = false;
+      nl_cache_resync_v2(sock_tx, caches[NL_ROUTE_CACHE],
+                         (change_func_v2_t)&nl_cb_v2, this);
+    }
     // notify update
     if (state != NL_STATE_STOPPED) {
       this->thread.wakeup(this);
@@ -1025,6 +1030,27 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
 
   // only enqueue nl msgs if not in stopped state
   if (nl->state != NL_STATE_STOPPED) {
+    // linkdown events will silently delete routes with nexthops from that link,
+    // so we need to explicitly resync routes to catch those removed routes
+    if ((action == NL_ACT_CHANGE &&
+         nl_object_get_msgtype(old_obj) == RTM_NEWLINK) ||
+        (action == NL_ACT_DEL &&
+         nl_object_get_msgtype(old_obj) == RTM_DELLINK)) {
+      bool old_link, new_link = false;
+
+      old_link = (rtnl_link_get_flags(LINK_CAST(old_obj)) &
+                  (IFF_UP | IFF_RUNNING)) == (IFF_UP | IFF_RUNNING);
+
+      if (new_obj != nullptr)
+        new_link = (rtnl_link_get_flags(LINK_CAST(new_obj)) &
+                    (IFF_UP | IFF_RUNNING)) == (IFF_UP | IFF_RUNNING);
+
+      // link state event => nh and routes targeting them may have been altered
+      // silently by kernel, so sync the route cache
+      if (old_link != new_link)
+        nl->sync_route_cache = true;
+    }
+
     // If libnl updated the object instead of replacing it, old_obj will be a
     // clone of the old object, and new_obj is the updated old object. Since
     // later notifications may update the new_obj further, clone
