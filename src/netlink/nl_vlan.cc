@@ -589,35 +589,20 @@ void nl_vlan::remove_bridge_vlan(rtnl_link *link, uint16_t vid, bool pvid,
 uint16_t nl_vlan::get_vid(rtnl_link *link) {
   uint16_t vid = 0;
   uint32_t pport_id = nl->get_port_id(link);
-  auto lt = get_link_type(link);
 
   if (!nl->is_bridge_interface(link) && pport_id == 0) {
     VLOG(2) << __FUNCTION__ << ": invalid interface";
     return vid;
   }
 
-  switch (lt) {
-  case LT_BRIDGE:
+  if (rtnl_link_is_bridge(link)) {
     VLOG(2) << __FUNCTION__ << ": bridge default vid "
             << FLAGS_port_untagged_vid;
     vid = FLAGS_port_untagged_vid;
-    break;
-  case LT_TUN:
-  case LT_BOND:
-    vid = FLAGS_port_untagged_vid;
-    break;
-  case LT_VLAN:
-  case LT_VRF_SLAVE:
+  } else if (rtnl_link_is_vlan(link)) {
     vid = rtnl_link_vlan_get_id(link);
-    break;
-  default:
-    // port or bond interface
-    if (nl->get_port_id(link) > 0)
-      vid = FLAGS_port_untagged_vid;
-    else if (rtnl_link_get_ifindex(link) != 1)
-      LOG(ERROR) << __FUNCTION__ << ": unsupported link type " << lt
-                 << " of link " << link;
-    break;
+  } else {
+    vid = FLAGS_port_untagged_vid;
   }
 
   VLOG(2) << __FUNCTION__ << ": vid=" << vid << " interface=" << link;
