@@ -1624,6 +1624,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     // We can delete the addresses on the interface because we will later
     // receive a notification readding the addresses, that time with the correct
     // VRF
+    remove_l3_routes(old_link);
     remove_l3_addresses(old_link);
 
     vlan->vrf_attach(old_link, new_link);
@@ -1636,6 +1637,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       // We can delete the addresses on the interface because we will later
       // receive a notification readding the addresses, that time with the
       // correct VRF
+      remove_l3_routes(old_link);
       remove_l3_addresses(old_link);
       vlan->vrf_detach(old_link, new_link);
     } else if (lt_new == LT_VRF_SLAVE) {
