@@ -2026,6 +2026,7 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
 
       rtnl_route_set_type(filter.get(), RTN_UNICAST);
       rtnl_route_set_dst(filter.get(), dst);
+      rtnl_route_set_table(filter.get(), rtnl_route_get_table(r));
 
       nl_cache_foreach_filter(
           nl->get_cache(cnetlink::NL_ROUTE_CACHE), OBJ_CAST(filter.get()),
