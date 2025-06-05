@@ -775,6 +775,13 @@ int controller::overlay_tunnel_remove(uint32_t tunnel_id) noexcept {
   }
   return rv;
 }
+int controller::l2_set_idle_timeout(uint16_t idle_timeout) noexcept {
+  if (idle_timeout == 0)
+    return -EINVAL;
+
+  default_idle_timeout = idle_timeout;
+  return 0;
+};
 
 int controller::l2_addr_remove_all_in_vlan(uint32_t port,
                                            uint16_t vid) noexcept {
@@ -817,15 +824,12 @@ int controller::l2_addr_add(uint32_t port, uint16_t vid,
     }
 
     if (!permanent)
-      fm_driver.set_idle_timeout(300);
+      fm_driver.set_idle_timeout(default_idle_timeout);
 
     // XXX have the knowlege here about filtered/unfiltered?
     dpt.send_flow_mod_message(
         rofl::cauxid(0), fm_driver.add_bridging_unicast_vlan(
                              dpt.get_version(), port, vid, mac, filtered, lag));
-
-    if (!permanent)
-      fm_driver.set_idle_timeout(default_idle_timeout);
 
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
@@ -869,14 +873,11 @@ int controller::l2_overlay_addr_add(uint32_t lport, uint32_t tunnel_id,
     rofl::crofdpt &dpt = set_dpt(dptid, true);
 
     if (!permanent)
-      fm_driver.set_idle_timeout(300);
+      fm_driver.set_idle_timeout(default_idle_timeout);
 
     dpt.send_flow_mod_message(rofl::cauxid(0),
                               fm_driver.add_bridging_unicast_overlay(
                                   dpt.get_version(), lport, tunnel_id, mac));
-
-    if (!permanent)
-      fm_driver.set_idle_timeout(default_idle_timeout);
 
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
