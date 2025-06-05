@@ -144,6 +144,7 @@ private:
 
   int nl_proc_max;
   enum nl_state state;
+  bool sync_route_cache;
   std::deque<nl_obj> nl_objs;
 
   std::shared_ptr<port_manager> port_man;
