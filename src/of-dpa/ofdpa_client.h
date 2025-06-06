@@ -93,6 +93,7 @@ public:
 
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaTrunkPortPSCSet(uint32_t lag_id,
                                                            uint8_t mode);
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaRxRateSet(int32_t pps);
 
 private:
   ofdpa::OfdpaStatus::OfdpaStatusCode
