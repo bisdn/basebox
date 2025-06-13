@@ -1970,9 +1970,14 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
 int nl_l3::update_l3_unicast_route(rtnl_route *r_old, rtnl_route *r_new) {
   int rv = 0;
 
-  // currently we will only handle next hop changes
-  add_l3_unicast_route(r_new, true);
-  del_l3_unicast_route(r_old, true);
+  if (rtnl_route_guess_scope(r_old) != RT_SCOPE_LINK &&
+      rtnl_route_guess_scope(r_new) != RT_SCOPE_LINK) {
+    // currently we will only handle next hop changes
+    add_l3_unicast_route(r_new, true);
+    del_l3_unicast_route(r_old, true);
+  } else {
+    VLOG(2) << __FUNCTION__ << ": update of link scope routes not supported";
+  }
 
   return rv;
 }
