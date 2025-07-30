@@ -22,6 +22,8 @@
 #include "utils/rofl-utils.h"
 
 DECLARE_bool(clear_switch_configuration);
+DECLARE_bool(use_knet);
+DECLARE_int32(rx_rate_limit);
 
 namespace basebox {
 
@@ -99,6 +101,20 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
     // finally reset the STG groups
     ofdpa->ofdpaStgReset();
   }
+
+  int rate = FLAGS_rx_rate_limit;
+  if (rate < 0) {
+    if (FLAGS_use_knet)
+      // Packets use a different channel, so set unlimited.
+      rate = 0;
+    else
+      // TAP packets use the same channel as control traffic, so set the
+      // default limit of 1024 pps (about ~11 Mbit/s) to ensure the OpenFlow
+      // connection is stable.
+      rate = 1024;
+  }
+
+  ofdpa->ofdpaRxRateSet(rate);
 
   dpt.send_features_request(rofl::cauxid(0), 1);
   dpt.send_desc_stats_request(rofl::cauxid(0), 0, 1);

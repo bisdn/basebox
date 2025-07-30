@@ -20,6 +20,12 @@
 #
 # Vlan ID used for untagged traffic on unbridged ports (1-4095):
 # FLAGS_port_untagged_vid=1
+#
+# Set a Packets per Seconds rate limit for traffic to controller.
+#  -1 = auto (unlimited for KNET, 1024 for TAP)
+#   0 = force unlimited
+# Default is auto.
+# FLAGS_rx_rate_limit=-1
 
 ### glog logging configuration
 #
