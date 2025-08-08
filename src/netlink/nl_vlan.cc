@@ -648,6 +648,8 @@ void nl_vlan::vrf_attach(rtnl_link *old_link, rtnl_link *new_link) {
     auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
 
     add_ingress_vlan(nl->get_port_id(link.get()), vid, true, vrf);
+
+    rtnl_neigh_put(entry);
   }
 
   VLOG(1) << __FUNCTION__ << ": attached=" << new_link << " to VRF id=" << vrf;
@@ -676,6 +678,8 @@ void nl_vlan::vrf_detach(rtnl_link *old_link, rtnl_link *new_link) {
     auto link = nl->get_link_by_ifindex(rtnl_neigh_get_ifindex(entry));
 
     add_ingress_vlan(nl->get_port_id(link.get()), vid, true);
+
+    rtnl_neigh_put(entry);
   }
 
   VLOG(1) << __FUNCTION__ << ": detached=" << new_link

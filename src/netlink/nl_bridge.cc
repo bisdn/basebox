@@ -680,6 +680,7 @@ std::deque<rtnl_neigh *> nl_bridge::get_fdb_entries_of_port(rtnl_link *br_port,
       nl->get_cache(cnetlink::NL_NEIGH_CACHE), OBJ_CAST(filter.get()),
       [](struct nl_object *o, void *arg) {
         auto *neighs = (std::deque<rtnl_neigh *> *)arg;
+        nl_object_get(o);
         neighs->push_back(NEIGH_CAST(o));
         VLOG(3) << "needs to be updated " << o;
       },
@@ -777,12 +778,12 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
       auto neighs = get_fdb_entries_of_port(_br_port, vid);
       for (auto n : neighs) {
         // ignore ll addr of bridge on slave
-        if (nl_addr_cmp(rtnl_link_get_addr(bridge), rtnl_neigh_get_lladdr(n)) ==
+        if (nl_addr_cmp(rtnl_link_get_addr(bridge), rtnl_neigh_get_lladdr(n)) !=
             0) {
-          continue;
+          VLOG(3) << ": needs to be updated " << n;
+          vxlan->add_l2_neigh(n, link, br_link);
         }
-        VLOG(3) << ": needs to be updated " << n;
-        vxlan->add_l2_neigh(n, link, br_link);
+        rtnl_neigh_put(n);
       }
 
     } else {
@@ -795,12 +796,12 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
       auto neighs = get_fdb_entries_of_port(_br_port, vid);
       for (auto n : neighs) {
         // ignore ll addr of bridge on slave
-        if (nl_addr_cmp(rtnl_link_get_addr(bridge), rtnl_neigh_get_lladdr(n)) ==
+        if (nl_addr_cmp(rtnl_link_get_addr(bridge), rtnl_neigh_get_lladdr(n)) !=
             0) {
-          continue;
+          VLOG(3) << ": needs to be updated " << n;
+          add_neigh_to_fdb(n);
         }
-        VLOG(3) << ": needs to be updated " << n;
-        add_neigh_to_fdb(n);
+        rtnl_neigh_put(n);
       }
       sw->l2_multicast_group_rejoin_all_in_vlan(pport_no, vid);
     }

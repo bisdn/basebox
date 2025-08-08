@@ -642,7 +642,7 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
         LOG(ERROR) << __FUNCTION__
                    << ": failed to setup vid ingress vid=" << vid << " on link "
                    << link.get();
-        return rv;
+        break;
       }
 
       rv = add_l3_egress(neigh_ifindex, vid, s_mac, d_mac, l3_interface_id);
@@ -653,6 +653,9 @@ int nl_l3::add_l3_neigh_egress(struct rtnl_neigh *n, uint32_t *l3_interface_id,
                    << link.get();
       }
     }
+    for (auto neigh : fdb_neigh)
+      rtnl_neigh_put(neigh);
+
     return rv;
   }
 
@@ -692,6 +695,7 @@ int nl_l3::del_l3_neigh_egress(struct rtnl_neigh *n) {
     assert(fdb_res.size() <= 1);
     if (fdb_res.size() == 1) {
       ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+      rtnl_neigh_put(fdb_res.front());
     } else {
       // neighbor already purged from fdb, so check map
       uint32_t portid = 0;
@@ -890,6 +894,7 @@ int nl_l3::update_l3_neigh(struct rtnl_neigh *n_old, struct rtnl_neigh *n_new) {
 
       assert(fdb_res.size() == 1);
       ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+      rtnl_neigh_put(fdb_res.front());
     }
 
     uint32_t port_id = nl->get_port_id(ifindex);
@@ -1631,6 +1636,7 @@ int nl_l3::get_l3_interface_id(const nh_stub &nh, uint32_t *l3_interface_id) {
 
     assert(fdb_res.size() == 1);
     ifindex = rtnl_neigh_get_ifindex(fdb_res.front());
+    rtnl_neigh_put(fdb_res.front());
   }
   auto rv = get_l3_interface_id(ifindex, s_mac, d_mac, l3_interface_id, vid);
   rtnl_neigh_put(neigh);
