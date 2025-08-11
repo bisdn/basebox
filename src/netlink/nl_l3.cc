@@ -134,6 +134,7 @@ int nl_l3::init() noexcept {
   std::list<struct rtnl_addr *> lo_addr;
   std::unique_ptr<struct rtnl_addr, void (*)(rtnl_addr *)> addr_filter(
       rtnl_addr_alloc(), &rtnl_addr_put);
+  int ret = 0;
 
   rtnl_addr_set_ifindex(addr_filter.get(), 1);
   rtnl_addr_set_family(addr_filter.get(), AF_INET);
@@ -145,16 +146,23 @@ int nl_l3::init() noexcept {
 
         auto *add_list = static_cast<std::list<struct rtnl_addr *> *>(arg);
 
+        nl_object_get(obj);
         add_list->emplace_back(ADDR_CAST(obj));
       },
       &lo_addr);
 
   for (auto addr : lo_addr) {
-    if (add_l3_addr(addr) < 0)
-      return -EINVAL;
+    if (add_l3_addr(addr) < 0) {
+      ret = -EINVAL;
+      break;
+    }
   }
 
-  return 0;
+  for (auto addr : lo_addr) {
+    rtnl_addr_put(addr);
+  }
+
+  return ret;
 }
 
 // searches the neigh cache for an address on one interface
