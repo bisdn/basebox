@@ -504,21 +504,19 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   std::deque<rtnl_addr *> addresses;
   get_l3_addrs(link.get(), &addresses, family);
   if (vid == FLAGS_port_untagged_vid && addresses.empty()) {
-    struct rtnl_link *other;
-    std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)> base(
+    std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)> other(
         nullptr, *rtnl_link_put);
 
     if (rtnl_link_is_vlan(link.get())) {
       // get the base link
-      base = nl->get_link(rtnl_link_get_link(link.get()), AF_UNSPEC);
-      other = base.get();
+      other = nl->get_link(rtnl_link_get_link(link.get()), AF_UNSPEC);
     } else {
       // check if we have a vlan interface for VID 1
       other = nl->get_vlan_link(rtnl_link_get_ifindex(link.get()), 1);
     }
 
     if (other != nullptr)
-      get_l3_addrs(other, &addresses, family);
+      get_l3_addrs(other.get(), &addresses, family);
   }
 
   if (addresses.empty()) {

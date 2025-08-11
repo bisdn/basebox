@@ -485,9 +485,11 @@ void cnetlink::get_vlan_links(
       vlan_list);
 }
 
-struct rtnl_link *cnetlink::get_vlan_link(int ifindex,
-                                          uint16_t vid) const noexcept {
+std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)>
+cnetlink::get_vlan_link(int ifindex, uint16_t vid) const noexcept {
   std::deque<struct rtnl_link *> vlan_link;
+  std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)> ret(
+      nullptr, *rtnl_link_put);
 
   std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> filter(rtnl_link_alloc(),
                                                               &rtnl_link_put);
@@ -503,16 +505,17 @@ struct rtnl_link *cnetlink::get_vlan_link(int ifindex,
       [](struct nl_object *obj, void *arg) {
         assert(arg);
         auto *list = static_cast<std::deque<struct rtnl_link *> *>(arg);
+        nl_object_get(obj);
 
         VLOG(3) << __FUNCTION__ << ": found vlan interface " << obj;
         list->push_back(LINK_CAST(obj));
       },
       &vlan_link);
 
-  if (vlan_link.empty())
-    return nullptr;
+  if (!vlan_link.empty())
+    ret.reset(vlan_link.front());
 
-  return vlan_link.front();
+  return ret;
 }
 
 int cnetlink::add_l3_addresses(rtnl_link *link) {

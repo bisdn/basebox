@@ -59,7 +59,8 @@ public:
 
   void get_vlan_links(int ifindex,
                       std::deque<struct rtnl_link *> *vlan_list) const noexcept;
-  struct rtnl_link *get_vlan_link(int ifindex, uint16_t vid) const noexcept;
+  std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)>
+  get_vlan_link(int ifindex, uint16_t vid) const noexcept;
 
   uint16_t get_vrf_table_id(rtnl_link *link);
   /**
