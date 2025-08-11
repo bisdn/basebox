@@ -527,6 +527,9 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
                  << ": failed to remove l3 termination mac(local) vid=" << vid
                  << "; rv=" << rv;
     }
+  } else {
+    for (auto a : addresses)
+      rtnl_addr_put(a);
   }
 
   // del vlan
@@ -560,6 +563,7 @@ int nl_l3::get_l3_addrs(struct rtnl_link *link,
       nl->get_cache(cnetlink::NL_ADDR_CACHE), OBJ_CAST(filter.get()),
       [](struct nl_object *o, void *arg) {
         auto *addr = (std::deque<rtnl_addr *> *)arg;
+        nl_object_get(o);
         addr->push_back(ADDR_CAST(o));
       },
       addresses);
@@ -993,6 +997,8 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
       break;
     }
   }
+  for (auto i : link_addresses)
+    rtnl_addr_put(i);
 
   if (family == AF_INET && !skip_addr_remove) {
     rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);

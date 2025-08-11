@@ -550,6 +550,10 @@ int cnetlink::add_l3_addresses(rtnl_link *link) {
       LOG(ERROR) << __FUNCTION__ << ":failed to add l3 address " << i << " to "
                  << link;
   }
+
+  for (auto i : addresses)
+    rtnl_addr_put(i);
+
   LOG(INFO) << __FUNCTION__ << ": added l3 addresses to " << link;
 
   return rv;
@@ -567,6 +571,7 @@ int cnetlink::remove_l3_addresses(rtnl_link *link) {
     if (rv < 0)
       LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 address from "
                  << link;
+    rtnl_addr_put(i);
   }
 
   return rv;
@@ -722,8 +727,12 @@ bool cnetlink::has_l3_addresses(rtnl_link *link) {
 
   std::deque<rtnl_addr *> addresses;
   l3->get_l3_addrs(link, &addresses);
+  bool res = !addresses.empty();
 
-  return !addresses.empty();
+  for (auto i : addresses)
+    rtnl_addr_put(i);
+
+  return res;
 }
 
 struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
