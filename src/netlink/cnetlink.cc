@@ -412,6 +412,7 @@ void cnetlink::get_bridge_ports(
         auto *list = static_cast<std::deque<rtnl_link *> *>(arg);
 
         VLOG(3) << __FUNCTION__ << ": found bridge port " << obj;
+        nl_object_get(obj);
         list->push_back(LINK_CAST(obj));
       },
       link_list);
@@ -422,6 +423,7 @@ void cnetlink::get_bridge_ports(
       continue;
 
     if (nl_object_match_filter(obj.get_old_obj(), OBJ_CAST(filter.get()))) {
+      nl_object_get(obj.get_old_obj());
       link_list->push_back(LINK_CAST(obj.get_old_obj()));
     }
   }
@@ -792,10 +794,14 @@ bool cnetlink::is_bridge_interface(rtnl_link *l) const {
       std::deque<rtnl_link *> bridge_interfaces;
       get_bridge_ports(rtnl_link_get_ifindex(_l.get()), &bridge_interfaces);
 
+      bool switch_interface = false;
       for (auto br_intf : bridge_interfaces) {
         if (is_switch_interface(br_intf))
-          return true;
+          switch_interface = true;
+        rtnl_link_put(br_intf);
       }
+
+      return switch_interface;
       // handle this better, need to check for link
     } else if (lt == LT_BRIDGE_SLAVE)
       return true;
@@ -1966,6 +1972,7 @@ std::deque<rtnl_neigh *> cnetlink::search_fdb(uint16_t vid, nl_addr *lladdr) {
     auto fdb = bridge->get_fdb_entries_of_port(port, vid, lladdr);
 
     std::copy(fdb.begin(), fdb.end(), std::back_inserter(fdb_entries));
+    rtnl_link_put(port);
   }
 
   return fdb_entries;

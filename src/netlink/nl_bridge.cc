@@ -421,6 +421,8 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
       LOG(ERROR) << __FUNCTION__
                  << ": failed to remove ingress vlan=" << old_br_vlan->pvid
                  << " link=" << _link.get();
+      for (auto p : bridge_ports)
+        rtnl_link_put(p);
       return;
     }
   }
@@ -595,6 +597,10 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
     }
   }
 
+  // clean up bridge ports
+  for (auto p : bridge_ports)
+    rtnl_link_put(p);
+
   // check for pvid changes
   if (new_br_vlan->pvid != old_br_vlan->pvid &&
       vlan->is_vid_valid(new_br_vlan->pvid)) {
@@ -736,6 +742,9 @@ int nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
 
   // update vxlan_domain
   vxlan_domain.emplace(vid, tunnel_id);
+
+  for (auto p : bridge_ports)
+    rtnl_link_put(p);
 
   return 0;
 }
@@ -1019,6 +1028,7 @@ void nl_bridge::clear_tpid_entries() {
 
   for (auto iface : bridge_ports) {
     delete_vlan_proto(iface, nl->get_port_id(iface));
+    rtnl_link_put(iface);
   }
 }
 
