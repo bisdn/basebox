@@ -604,6 +604,10 @@ int cnetlink::add_l3_routes(rtnl_link *link) {
       LOG(ERROR) << __FUNCTION__ << ":failed to add l3 route " << i << " to "
                  << link;
   }
+
+  for (auto i : routes)
+    rtnl_route_put(i);
+
   LOG(INFO) << __FUNCTION__ << ": added l3 routes to " << link;
 
   return rv;
@@ -633,6 +637,9 @@ int cnetlink::remove_l3_routes(rtnl_link *link) {
     if (rv < 0)
       LOG(ERROR) << __FUNCTION__ << ":failed to remove l3 route from " << link;
   }
+
+  for (auto i : routes)
+    rtnl_route_put(i);
 
   return rv;
 }

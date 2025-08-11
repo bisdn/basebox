@@ -586,6 +586,7 @@ int nl_l3::get_l3_routes(struct rtnl_link *link,
       nl->get_cache(cnetlink::NL_ROUTE_CACHE), OBJ_CAST(filter.get()),
       [](struct nl_object *o, void *arg) {
         auto *route = (std::deque<rtnl_route *> *)arg;
+        nl_object_get(o);
         route->push_back(ROUTE_CAST(o));
       },
       routes);
