@@ -480,6 +480,7 @@ void cnetlink::get_vlan_links(
         auto *list = static_cast<std::deque<struct rtnl_link *> *>(arg);
 
         VLOG(3) << __FUNCTION__ << ": found vlan interface " << obj;
+        nl_object_get(obj);
         list->push_back(LINK_CAST(obj));
       },
       vlan_list);
@@ -635,6 +636,8 @@ int cnetlink::add_l3_configuration(rtnl_link *link) {
 
   // collect base interface and all vlan interfaces on top
   links.push_back(link);
+  // so we can just drop references on all members
+  nl_object_get(OBJ_CAST(link));
   get_vlan_links(rtnl_link_get_ifindex(link), &links);
 
   // add all ip addresses and routes from collected interfaces
@@ -648,6 +651,7 @@ int cnetlink::add_l3_configuration(rtnl_link *link) {
     if (rv < 0)
       LOG(WARNING) << __FUNCTION__ << ": failed to add l3 routes (" << rv
                    << ") for link " << l;
+    rtnl_link_put(l);
   }
 
   return rv;
@@ -659,6 +663,8 @@ int cnetlink::remove_l3_configuration(rtnl_link *link) {
 
   // collect base interface and all vlan interfaces on top
   links.push_back(link);
+  // so we can just drop references on all members
+  nl_object_get(OBJ_CAST(link));
   get_vlan_links(rtnl_link_get_ifindex(link), &links);
 
   // remove all ip addresses and routes from collected interfaces
@@ -672,6 +678,7 @@ int cnetlink::remove_l3_configuration(rtnl_link *link) {
     if (rv < 0)
       LOG(WARNING) << __FUNCTION__ << ": failed to remove l3 addresses (" << rv
                    << " from link " << l;
+    rtnl_link_put(l);
   }
 
   return rv;
