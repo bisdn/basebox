@@ -165,11 +165,12 @@ int nl_l3::init() noexcept {
   return ret;
 }
 
-// searches the neigh cache for an address on one interface
-int nl_l3::search_neigh_cache(int ifindex, struct nl_addr *addr, int family,
-                              std::list<struct rtnl_neigh *> *neigh) {
+// checks the neigh cache for an address on one interface
+bool nl_l3::have_neigh(int ifindex, struct nl_addr *addr, int family) {
   std::unique_ptr<struct rtnl_neigh, void (*)(rtnl_neigh *)> neigh_filter(
       rtnl_neigh_alloc(), &rtnl_neigh_put);
+
+  bool found = false;
 
   rtnl_neigh_set_ifindex(neigh_filter.get(), ifindex);
   rtnl_neigh_set_dst(neigh_filter.get(), addr);
@@ -178,13 +179,13 @@ int nl_l3::search_neigh_cache(int ifindex, struct nl_addr *addr, int family,
   nl_cache_foreach_filter(
       nl->get_cache(cnetlink::NL_NEIGH_CACHE), OBJ_CAST(neigh_filter.get()),
       [](struct nl_object *obj, void *arg) {
-        auto *add_list = static_cast<std::list<struct rtnl_neigh *> *>(arg);
+        auto res = static_cast<bool *>(arg);
 
-        add_list->emplace_back(NEIGH_CAST(obj));
+        *res = true;
       },
-      neigh);
+      &found);
 
-  return 0;
+  return found;
 }
 
 // XXX separate function to make it possible to add lo addresses more directly
@@ -270,15 +271,9 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   }
 
   // check if neighbor is configured on this interface
-  // if neighbor exists, list size > 0, then force the address entry on
+  // if neighbor exists, then force the address entry on
   // the ASIC
-  bool update = false;
-  if (std::list<struct rtnl_neigh *> neigh;
-      search_neigh_cache(ifindex, addr, AF_INET, &neigh) == 0) {
-    VLOG(2) << __FUNCTION__ << ": list neigh size " << neigh.size();
-    if (neigh.size() > 0)
-      update = true;
-  }
+  bool update = have_neigh(ifindex, addr, AF_INET);
 
   if (prefixlen == 32) {
     rv = sw->l3_unicast_host_add(ipv4_dst, 0, false, update, vrf_id);
@@ -364,16 +359,9 @@ int nl_l3::add_l3_addr_v6(struct rtnl_addr *a) {
   }
 
   // check if neighbor is configured on this interface
-  // if neighbor exists, list size > 0, then force the address entry on
+  // if neighbor exists, then force the address entry on
   // the ASIC
-  bool update = false;
-  if (std::list<struct rtnl_neigh *> neigh;
-      search_neigh_cache(rtnl_addr_get_ifindex(a), addr, AF_INET6, &neigh) ==
-      0) {
-    VLOG(3) << __FUNCTION__ << ": list neigh size " << neigh.size();
-    if (neigh.size() > 0)
-      update = true;
-  }
+  bool update = have_neigh(rtnl_addr_get_ifindex(a), addr, AF_INET6);
 
   // TODO support VRF on IPv6 addresses
   if (prefixlen == 128) {
