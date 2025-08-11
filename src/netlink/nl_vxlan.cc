@@ -672,6 +672,7 @@ int nl_vxlan::create_endpoint(rtnl_link *vxlan_link, rtnl_link *br_link,
 
         VLOG(3) << "found neigh for endpoint " << obj;
         auto neighs = static_cast<std::deque<rtnl_neigh *> *>(arg);
+        nl_object_get(obj);
         neighs->push_back(n);
       },
       &neighs);
@@ -682,6 +683,7 @@ int nl_vxlan::create_endpoint(rtnl_link *vxlan_link, rtnl_link *br_link,
       LOG(ERROR) << __FUNCTION__ << ": failed (rv=" << rv
                  << ") to add l2 neigh " << neigh;
     }
+    rtnl_neigh_put(neigh);
   }
 
   return rv;
