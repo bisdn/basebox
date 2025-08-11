@@ -48,7 +48,8 @@ public:
 
   std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)>
   get_link_by_ifindex(int ifindex) const;
-  struct rtnl_link *get_link(int ifindex, int family) const;
+  std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)>
+  get_link(int ifindex, int family) const;
   void get_bridge_ports(int br_ifindex,
                         std::deque<rtnl_link *> *link_list) const noexcept;
   std::set<uint32_t> get_bond_members_by_lag(rtnl_link *bond_link);

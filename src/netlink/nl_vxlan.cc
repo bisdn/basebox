@@ -204,14 +204,14 @@ void nl_vxlan::net_reachable_notification(struct net_params params) noexcept {
     return;
   }
 
-  if (!rtnl_link_is_vxlan(vxlan_link)) {
-    VLOG(1) << __FUNCTION__ << ": not a vxlan interface " << vxlan_link;
+  if (!rtnl_link_is_vxlan(vxlan_link.get())) {
+    VLOG(1) << __FUNCTION__ << ": not a vxlan interface " << vxlan_link.get();
     return;
   }
 
   auto br_link = nl->get_link(params.ifindex, AF_BRIDGE);
 
-  create_endpoint(vxlan_link, br_link, params.addr);
+  create_endpoint(vxlan_link.get(), br_link.get(), params.addr);
 }
 
 void nl_vxlan::nh_reachable_notification(struct rtnl_neigh *n,
@@ -287,7 +287,7 @@ void nl_vxlan::register_bridge(nl_bridge *bridge) {
 
     for (auto neigh : neighs) {
       auto br_link = nl->get_link(rtnl_link_get_ifindex(link), AF_BRIDGE);
-      rv = add_l2_neigh(neigh, link, br_link);
+      rv = add_l2_neigh(neigh, link, br_link.get());
       if (rv < 0) {
         LOG(ERROR) << __FUNCTION__ << ": failed (rv=" << rv
                    << ") to add l2 neigh " << link;

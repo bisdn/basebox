@@ -213,7 +213,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   // checks if the bridge is already configured with an address
   int master_id = rtnl_link_get_master(link);
   if (master_id && is_bridge &&
-      rtnl_link_get_addr(nl->get_link(master_id, AF_BRIDGE))) {
+      rtnl_link_get_addr(nl->get_link(master_id, AF_BRIDGE).get())) {
     VLOG(1) << __FUNCTION__ << ": ignoring address on " << link;
     return -EINVAL;
   }
@@ -432,7 +432,7 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
 
   // The link needs to be obtained from the cache, as the link reference
   // may be outdated
-  struct rtnl_link *link = nl->get_link(rtnl_addr_get_ifindex(a), AF_UNSPEC);
+  auto link = nl->get_link(rtnl_addr_get_ifindex(a), AF_UNSPEC);
 
   // The link object might have already been purged from the cache if the
   // interface was deleted. Not much we can do here in that case until we start
@@ -444,19 +444,19 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
     return -EINVAL;
   }
 
-  uint16_t vid = vlan->get_vid(link);
-  uint32_t vrf_id = vlan->get_vrf_id(vid, link);
+  uint16_t vid = vlan->get_vid(link.get());
+  uint32_t vrf_id = vlan->get_vrf_id(vid, link.get());
 
   if (a == nullptr) {
     LOG(ERROR) << __FUNCTION__ << ": addr can't be null";
     return -EINVAL;
   }
 
-  bool is_loopback = (rtnl_link_get_flags(link) & IFF_LOOPBACK);
+  bool is_loopback = (rtnl_link_get_flags(link.get()) & IFF_LOOPBACK);
 
   // if it isn't on loopback and not our interfaces, ignore it
-  if (!is_loopback && !nl->is_switch_interface(link)) {
-    VLOG(1) << __FUNCTION__ << ": ignoring " << link;
+  if (!is_loopback && !nl->is_switch_interface(link.get())) {
+    VLOG(1) << __FUNCTION__ << ": ignoring " << link.get();
     return -EINVAL;
   }
 
@@ -502,16 +502,19 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   }
 
   std::deque<rtnl_addr *> addresses;
-  get_l3_addrs(link, &addresses, family);
+  get_l3_addrs(link.get(), &addresses, family);
   if (vid == FLAGS_port_untagged_vid && addresses.empty()) {
     struct rtnl_link *other;
+    std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)> base(
+        nullptr, *rtnl_link_put);
 
-    if (rtnl_link_is_vlan(link)) {
+    if (rtnl_link_is_vlan(link.get())) {
       // get the base link
-      other = nl->get_link(rtnl_link_get_link(link), AF_UNSPEC);
+      base = nl->get_link(rtnl_link_get_link(link.get()), AF_UNSPEC);
+      other = base.get();
     } else {
       // check if we have a vlan interface for VID 1
-      other = nl->get_vlan_link(rtnl_link_get_ifindex(link), 1);
+      other = nl->get_vlan_link(rtnl_link_get_ifindex(link.get()), 1);
     }
 
     if (other != nullptr)
@@ -519,9 +522,9 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   }
 
   if (addresses.empty()) {
-    int port_id = nl->get_port_id(link);
+    int port_id = nl->get_port_id(link.get());
 
-    addr = rtnl_link_get_addr(link);
+    addr = rtnl_link_get_addr(link.get());
     rofl::caddress_ll mac = libnl_lladdr_2_rofl(addr);
 
     rv = del_l3_termination(port_id, vid, mac, family);
@@ -536,12 +539,12 @@ int nl_l3::del_l3_addr(struct rtnl_addr *a) {
   // Avoid deleting table VLAN entry for the following two cases
   // Loopback: does not require entry on the Ingress table
   // Bridges and Bridge Interfaces: Entry set through bridge vlan table
-  if (!is_loopback && !nl->is_bridge_interface(link)) {
-    bool tagged = !!rtnl_link_is_vlan(link);
-    rv = vlan->remove_vlan(link, vid, tagged);
+  if (!is_loopback && !nl->is_bridge_interface(link.get())) {
+    bool tagged = !!rtnl_link_is_vlan(link.get());
+    rv = vlan->remove_vlan(link.get(), vid, tagged);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed to remove vlan id " << vid
-                 << " (tagged=" << tagged << " to link " << link;
+                 << " (tagged=" << tagged << " to link " << link.get();
     }
   }
 

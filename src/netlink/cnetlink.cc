@@ -301,7 +301,8 @@ cnetlink::get_link_by_ifindex(int ifindex) const {
   return ret;
 }
 
-struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
+std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)>
+cnetlink::get_link(int ifindex, int family) const {
   struct rtnl_link *_link = nullptr;
   std::unique_ptr<rtnl_link, decltype(&rtnl_link_put)> filter(rtnl_link_alloc(),
                                                               &rtnl_link_put);
@@ -313,6 +314,7 @@ struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
   nl_cache_foreach_filter(
       caches[NL_LINK_CACHE], OBJ_CAST(filter.get()),
       [](struct nl_object *obj, void *arg) {
+        nl_object_get(obj);
         *static_cast<nl_object **>(arg) = obj;
       },
       &_link);
@@ -325,13 +327,16 @@ struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
 
       if (nl_object_match_filter(obj.get_old_obj(), OBJ_CAST(filter.get()))) {
         _link = LINK_CAST(obj.get_old_obj());
+        nl_object_get(OBJ_CAST(_link));
         VLOG(1) << __FUNCTION__ << ": found deleted link " << _link;
         break;
       }
     }
   }
 
-  return _link;
+  std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)> ret(
+      _link, *rtnl_link_put);
+  return ret;
 }
 
 std::unique_ptr<struct rtnl_route, decltype(&rtnl_route_put)>
@@ -1112,10 +1117,10 @@ int cnetlink::handle_fdb_timeout() {
 
     auto fdbev = _fdb_evts.front();
     int ifindex = port_man->get_ifindex(fdbev.port_id);
-    rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
+    auto br_link = get_link(ifindex, AF_BRIDGE);
 
     if (br_link && bridge) {
-      bridge->fdb_timeout(br_link, fdbev.vid, fdbev.mac);
+      bridge->fdb_timeout(br_link.get(), fdbev.vid, fdbev.mac);
     }
 
     _fdb_evts.pop_front();
@@ -1444,12 +1449,12 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       }
 
       // get the base link instead of the bridged link object
-      rtnl_link *base_link = get_link(rtnl_link_get_ifindex(link), AF_UNSPEC);
+      auto base_link = get_link(rtnl_link_get_ifindex(link), AF_UNSPEC);
 
       // we only care if we attach a link that is backed by openflow,
       // i.e. a tap device, a bond with attached tap devices, or vxlan
       // interfaces
-      if (!is_switch_interface(base_link)) {
+      if (!is_switch_interface(base_link.get())) {
         VLOG(1) << __FUNCTION__ << ": ignoring untracked interface "
                 << rtnl_link_get_name(link);
         break;
@@ -1488,8 +1493,8 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       LOG(INFO) << __FUNCTION__ << ": enslaving interface "
                 << rtnl_link_get_name(link);
 
-      if (rtnl_link_is_vxlan(base_link) && !new_bridge)
-        vxlan->create_endpoint(base_link);
+      if (rtnl_link_is_vxlan(base_link.get()) && !new_bridge)
+        vxlan->create_endpoint(base_link.get());
       vlan->disable_vlans(link);
       bridge->add_interface(link);
 
@@ -1594,10 +1599,10 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     if (lt_new == LT_BOND_SLAVE) { // bond slave updated
       bond->update_lag_member(old_link, new_link);
     } else if (port_id > 0) { // bond slave removed
-      rtnl_link *_bond = get_link(rtnl_link_get_master(old_link), AF_UNSPEC);
-      vlan->bond_member_detached(_bond, old_link);
+      auto _bond = get_link(rtnl_link_get_master(old_link), AF_UNSPEC);
+      vlan->bond_member_detached(_bond.get(), old_link);
       if (bridge)
-        bridge->bond_member_detached(_bond, old_link);
+        bridge->bond_member_detached(_bond.get(), old_link);
       bond->remove_lag_member(old_link);
     }
     break;
@@ -1663,14 +1668,15 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
         // XXX link enslaved
         LOG(INFO) << __FUNCTION__ << ": link enslaved "
                   << rtnl_link_get_name(new_link);
-        rtnl_link *_bond = get_link(rtnl_link_get_master(new_link), AF_UNSPEC);
-        bond->add_lag_member(_bond, new_link);
+        auto _bond = get_link(rtnl_link_get_master(new_link), AF_UNSPEC);
+        bond->add_lag_member(_bond.get(), new_link);
         if (bridge)
-          bridge->bond_member_attached(_bond, new_link);
-        vlan->bond_member_attached(_bond, new_link);
+          bridge->bond_member_attached(_bond.get(), new_link);
+        vlan->bond_member_attached(_bond.get(), new_link);
 
-        LOG(INFO) << __FUNCTION__ << " set active member " << get_port_id(_bond)
-                  << " port id " << rtnl_link_get_ifindex(new_link);
+        LOG(INFO) << __FUNCTION__ << " set active member "
+                  << get_port_id(_bond.get()) << " port id "
+                  << rtnl_link_get_ifindex(new_link);
       } else if (lt_new == LT_VRF_SLAVE) {
         LOG(INFO) << __FUNCTION__ << ": link enslaved "
                   << rtnl_link_get_name(new_link) << " but not handled";
@@ -1768,7 +1774,7 @@ bool cnetlink::check_ll_neigh(rtnl_neigh *neigh) noexcept {
     return false;
   }
 
-  rtnl_link *base_link = get_link(ifindex, AF_UNSPEC); // either tap, vxlan, ...
+  auto base_link = get_link(ifindex, AF_UNSPEC); // either tap, vxlan, ...
   if (base_link == nullptr) {
     LOG(ERROR) << __FUNCTION__
                << ": unknown link ifindex=" << rtnl_neigh_get_ifindex(neigh)
@@ -1776,7 +1782,7 @@ bool cnetlink::check_ll_neigh(rtnl_neigh *neigh) noexcept {
     return false;
   }
 
-  if (nl_addr_cmp(rtnl_link_get_addr(base_link),
+  if (nl_addr_cmp(rtnl_link_get_addr(base_link.get()),
                   rtnl_neigh_get_lladdr(neigh)) == 0) {
     // mac of interface itself is ignored, others added
     VLOG(2) << __FUNCTION__ << ": bridge port mac address is ignored";
@@ -1799,19 +1805,19 @@ void cnetlink::neigh_ll_created(rtnl_neigh *neigh) noexcept {
     return;
 
   int ifindex = rtnl_neigh_get_ifindex(neigh);
-  rtnl_link *base_link = get_link(ifindex, AF_UNSPEC); // either tap, vxlan, ...
-  rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
+  auto base_link = get_link(ifindex, AF_UNSPEC); // either tap, vxlan, ...
+  auto br_link = get_link(ifindex, AF_BRIDGE);
 
   if (VLOG_IS_ON(2)) {
     if (base_link) {
-      LOG(INFO) << __FUNCTION__ << ": base link: " << base_link;
+      LOG(INFO) << __FUNCTION__ << ": base link: " << base_link.get();
     }
     if (br_link) {
-      LOG(INFO) << __FUNCTION__ << ": br link: " << br_link;
+      LOG(INFO) << __FUNCTION__ << ": br link: " << br_link.get();
     }
   }
 
-  if (vxlan->add_l2_neigh(neigh, base_link, br_link) == 0) {
+  if (vxlan->add_l2_neigh(neigh, base_link.get(), br_link.get()) == 0) {
     // vxlan domain
   } else {
     // XXX TODO maybe we have to do this as well wrt. local bridging
@@ -1847,14 +1853,14 @@ void cnetlink::neigh_ll_updated(rtnl_neigh *old_neigh,
   }
 
   int old_ifindex = rtnl_neigh_get_ifindex(old_neigh);
-  rtnl_link *old_base_link =
+  auto old_base_link =
       get_link(old_ifindex, AF_UNSPEC); // either tap, vxlan, ...
   int new_ifindex = rtnl_neigh_get_ifindex(new_neigh);
-  rtnl_link *new_base_link =
+  auto new_base_link =
       get_link(new_ifindex, AF_UNSPEC); // either tap, vxlan, ...
 
-  if (get_link_type(old_base_link) == LT_VXLAN ||
-      get_link_type(new_base_link) == LT_VXLAN) {
+  if (get_link_type(old_base_link.get()) == LT_VXLAN ||
+      get_link_type(new_base_link.get()) == LT_VXLAN) {
     LOG(WARNING) << __FUNCTION__
                  << ": neighbor update for VXLAN neighbors not supported";
   } else {
@@ -1867,14 +1873,14 @@ void cnetlink::neigh_ll_deleted(rtnl_neigh *neigh) noexcept {
     return;
 
   int ifindex = rtnl_neigh_get_ifindex(neigh);
-  rtnl_link *l = get_link(ifindex, AF_UNSPEC);
+  auto l = get_link(ifindex, AF_UNSPEC);
 
-  auto lt = get_link_type(l);
+  auto lt = get_link_type(l.get());
 
   switch (lt) {
   case LT_VXLAN: {
-    rtnl_link *br_link = get_link(ifindex, AF_BRIDGE);
-    vxlan->delete_l2_neigh(neigh, l, br_link);
+    auto br_link = get_link(ifindex, AF_BRIDGE);
+    vxlan->delete_l2_neigh(neigh, l.get(), br_link.get());
   } break;
 
   default:

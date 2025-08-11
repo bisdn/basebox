@@ -144,8 +144,9 @@ int nl_bond::add_lag(rtnl_link *bond) {
     // check bridge attachement
     auto br_link = nl->get_link(rtnl_link_get_ifindex(bond), AF_BRIDGE);
     if (br_link) {
-      VLOG(2) << __FUNCTION__ << ": bond was already bridge slave: " << br_link;
-      nl->link_created(br_link);
+      VLOG(2) << __FUNCTION__
+              << ": bond was already bridge slave: " << br_link.get();
+      nl->link_created(br_link.get());
     }
   }
 #endif
@@ -243,7 +244,7 @@ int nl_bond::remove_lag_member(rtnl_link *link) {
   int master_id = rtnl_link_get_master(link);
   auto master = nl->get_link(master_id, AF_UNSPEC);
 
-  return remove_lag_member(master, link);
+  return remove_lag_member(master.get(), link);
 }
 
 int nl_bond::remove_lag_member(rtnl_link *bond, rtnl_link *link) {
@@ -303,7 +304,7 @@ int nl_bond::update_lag_member(rtnl_link *old_slave, rtnl_link *new_slave) {
     return -EINVAL;
   }
 
-  rv = swi->lag_set_member_active(nl->get_port_id(new_master), port_id,
+  rv = swi->lag_set_member_active(nl->get_port_id(new_master.get()), port_id,
                                   new_state == 0);
 #endif
   return 0;
