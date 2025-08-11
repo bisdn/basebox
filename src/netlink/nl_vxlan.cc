@@ -243,6 +243,7 @@ void nl_vxlan::register_bridge(nl_bridge *bridge) {
       [](struct nl_object *obj, void *arg) {
         LOG(INFO) << "found link " << obj;
         auto vxlan_links = static_cast<std::deque<rtnl_link *> *>(arg);
+        nl_object_get(obj);
         vxlan_links->push_back(LINK_CAST(obj));
       },
       &vxlan_links);
@@ -281,6 +282,7 @@ void nl_vxlan::register_bridge(nl_bridge *bridge) {
         [](struct nl_object *obj, void *arg) {
           LOG(INFO) << "found neigh " << obj;
           auto neighs = static_cast<std::deque<rtnl_neigh *> *>(arg);
+          nl_object_get(obj);
           neighs->push_back(NEIGH_CAST(obj));
         },
         &neighs);
@@ -292,7 +294,9 @@ void nl_vxlan::register_bridge(nl_bridge *bridge) {
         LOG(ERROR) << __FUNCTION__ << ": failed (rv=" << rv
                    << ") to add l2 neigh " << link;
       }
+      rtnl_neigh_put(neigh);
     }
+    rtnl_link_put(link);
   }
 }
 
