@@ -108,7 +108,7 @@ nl_l3::nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl)
   nl_addr_parse("127.0.0.0/8", AF_INET, &ipv4_lo);
   nl_addr_parse("::1/128", AF_INET6, &ipv6_lo);
   nl_addr_parse("fe80::/10", AF_INET6, &ipv6_ll);
-  nl_addr_parse("ff80::/10", AF_INET6, &ipv6_mc);
+  nl_addr_parse("ff00::/8", AF_INET6, &ipv6_mc);
 }
 
 nl_l3::~nl_l3() {
