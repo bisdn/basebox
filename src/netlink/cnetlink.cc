@@ -1489,7 +1489,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
                 << rtnl_link_get_name(link);
 
       if (rtnl_link_is_vxlan(base_link) && !new_bridge)
-        vxlan->create_endpoint(base_link);
+        vxlan->create_endpoint(base_link, link);
       vlan->disable_vlans(link);
       bridge->add_interface(link);
 
