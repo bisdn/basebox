@@ -104,8 +104,19 @@ std::unordered_set<std::tuple<int, uint16_t, rofl::caddress_ll, uint16_t>>
 std::unordered_map<std::set<nh_stub>, l3_interface> nh_grp_to_l3_ecmp_mapping;
 
 nl_l3::nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl)
-    : sw(nullptr), vlan(std::move(vlan)), nl(nl) {}
+    : sw(nullptr), vlan(std::move(vlan)), nl(nl) {
+  nl_addr_parse("127.0.0.0/8", AF_INET, &ipv4_lo);
+  nl_addr_parse("::1/128", AF_INET6, &ipv6_lo);
+  nl_addr_parse("fe80::/10", AF_INET6, &ipv6_ll);
+  nl_addr_parse("ff00::/8", AF_INET6, &ipv6_mc);
+}
 
+nl_l3::~nl_l3() {
+  nl_addr_put(ipv4_lo);
+  nl_addr_put(ipv6_lo);
+  nl_addr_put(ipv6_ll);
+  nl_addr_put(ipv6_mc);
+}
 rofl::caddress_ll libnl_lladdr_2_rofl(const struct nl_addr *lladdr) {
   // XXX check for family
   return rofl::caddress_ll((uint8_t *)nl_addr_get_binary_addr(lladdr),
@@ -246,11 +257,7 @@ int nl_l3::add_l3_addr(struct rtnl_addr *a) {
   }
 
   if (is_loopback) {
-    auto p = nl_addr_alloc(255);
-    nl_addr_parse("127.0.0.0/8", AF_INET, &p);
-    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
-
-    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
+    if (!nl_addr_cmp_prefix(addr, ipv4_lo)) {
       VLOG(3) << __FUNCTION__ << ": skipping 127.0.0.0/8";
       return 0;
     }
@@ -398,11 +405,7 @@ int nl_l3::add_lo_addr_v6(struct rtnl_addr *a) {
   int rv = 0;
   auto addr = rtnl_addr_get_local(a);
 
-  auto p = nl_addr_alloc(16);
-  nl_addr_parse("::1/128", AF_INET6, &p);
-  std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
-
-  if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
+  if (!nl_addr_cmp_prefix(addr, ipv6_lo)) {
     VLOG(1) << __FUNCTION__ << ": skipping loopback address";
     rv = -EINVAL;
     return rv;
@@ -746,11 +749,7 @@ int nl_l3::add_l3_neigh(struct rtnl_neigh *n) {
 
   addr = rtnl_neigh_get_dst(n);
   if (family == AF_INET6) {
-    auto p = nl_addr_alloc(16);
-    nl_addr_parse("fe80::/10", AF_INET6, &p);
-    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
-
-    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
+    if (!nl_addr_cmp_prefix(addr, ipv6_ll)) {
       VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
       // we must not route IPv6 LL addresses, so do not add a host entry
       add_host_entry = false;
@@ -1002,11 +1001,7 @@ int nl_l3::del_l3_neigh(struct rtnl_neigh *n) {
     // delete next hop
     rv = sw->l3_unicast_host_remove(ipv4_dst);
   } else if (family == AF_INET6 && !skip_addr_remove) {
-    auto p = nl_addr_alloc(16);
-    nl_addr_parse("fe80::/10", AF_INET6, &p);
-    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> lo_addr(p, nl_addr_put);
-
-    if (!nl_addr_cmp_prefix(addr, lo_addr.get())) {
+    if (!nl_addr_cmp_prefix(addr, ipv6_ll)) {
       VLOG(1) << __FUNCTION__ << ": skipping fe80::/10";
       // we never added a host route, and therefore no egress interface
       skip_egress_remove = true;

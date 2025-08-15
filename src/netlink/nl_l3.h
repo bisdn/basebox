@@ -46,7 +46,7 @@ public:
 class nl_l3 : public nh_reachable, public nh_unreachable {
 public:
   nl_l3(std::shared_ptr<nl_vlan> vlan, cnetlink *nl);
-  ~nl_l3() {}
+  ~nl_l3();
 
   int init() noexcept;
 
@@ -127,19 +127,11 @@ private:
   int del_l3_ecmp_group(const std::set<nh_stub> &nhs);
 
   bool is_ipv6_link_local_address(const struct nl_addr *addr) {
-    auto p = nl_addr_alloc(16);
-    nl_addr_parse("fe80::/10", AF_INET6, &p);
-    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> ll_addr(p, nl_addr_put);
-
-    return !nl_addr_cmp_prefix(ll_addr.get(), addr);
+    return !nl_addr_cmp_prefix(ipv6_ll, addr);
   }
 
   bool is_ipv6_multicast_address(const struct nl_addr *addr) {
-    auto p = nl_addr_alloc(16);
-    nl_addr_parse("ff80::/10", AF_INET6, &p);
-    std::unique_ptr<nl_addr, decltype(&nl_addr_put)> mc_addr(p, nl_addr_put);
-
-    return !nl_addr_cmp_prefix(mc_addr.get(), addr);
+    return !nl_addr_cmp_prefix(ipv6_mc, addr);
   }
 
   bool is_l3_neigh_routable(struct rtnl_neigh *n);
@@ -159,6 +151,11 @@ private:
   struct l3_prefix_comp l3_prefix_comp;
 
   const uint8_t MAIN_ROUTING_TABLE = 254;
+
+  nl_addr *ipv4_lo;
+  nl_addr *ipv6_lo;
+  nl_addr *ipv6_ll;
+  nl_addr *ipv6_mc;
 };
 
 } // namespace basebox

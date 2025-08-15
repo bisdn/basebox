@@ -44,9 +44,18 @@ nl_bridge::nl_bridge(switch_interface *sw,
                nl_cache_free) {
   memset(&empty_br_vlan, 0, sizeof(rtnl_link_bridge_vlan));
   memset(&vxlan_dom_bitmap, 0, sizeof(vxlan_dom_bitmap));
+
+  nl_addr_parse("224.0.0.0/24", AF_INET, &ipv4_igmp);
+  nl_addr_parse("ff02::1/128", AF_INET6, &ipv6_all_hosts);
+  nl_addr_parse("ff00::/15", AF_INET6, &ipv6_mld);
 }
 
-nl_bridge::~nl_bridge() { rtnl_link_put(bridge); }
+nl_bridge::~nl_bridge() {
+  rtnl_link_put(bridge);
+  nl_addr_put(ipv4_igmp);
+  nl_addr_put(ipv6_all_hosts);
+  nl_addr_put(ipv6_mld);
+}
 
 static rofl::caddress_in4 libnl_in4addr_2_rofl(struct nl_addr *addr, int *rv) {
   struct sockaddr_in sin;
@@ -1056,10 +1065,7 @@ int nl_bridge::mdb_to_set(
       //
       // Therefore we must not create groups for them to ensure that.
 
-      auto p = nl_addr_alloc(4);
-      nl_addr_parse("224.0.0.0/24", AF_INET, &p);
-      std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
-      if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
+      if (!nl_addr_cmp_prefix(addr, ipv4_igmp))
         continue;
 
       rofl::caddress_in4 ipv4_dst = libnl_in4addr_2_rofl(addr, &rv);
@@ -1079,18 +1085,14 @@ int nl_bridge::mdb_to_set(
       // link-scope address for which MLD messages are never sent.  Packets
       // with the all hosts link-scope address should be forwarded on all
       // ports.
-      auto p = nl_addr_alloc(16);
-      nl_addr_parse("ff02::1/128", AF_INET6, &p);
-      std::unique_ptr<nl_addr, decltype(&nl_addr_put)> tm_addr(p, nl_addr_put);
-      if (!nl_addr_cmp(addr, tm_addr.get()))
+      if (!nl_addr_cmp(addr, ipv6_all_hosts))
         continue;
 
       // MLD messages are also not sent regarding groups with addresses in the
       // range FF00::/15 (which encompasses both the reserved FF00::/16 and
       // node-local FF01::/16 IPv6 address spaces).  These addresses should
       // never appear in packets on the link.
-      nl_addr_parse("ff00::/15", AF_INET6, &p);
-      if (!nl_addr_cmp_prefix(addr, tm_addr.get()))
+      if (!nl_addr_cmp_prefix(addr, ipv6_mld))
         continue;
 
       struct in6_addr *v6_addr =

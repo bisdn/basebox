@@ -230,6 +230,10 @@ private:
   rtnl_link_bridge_vlan empty_br_vlan;
   uint32_t vxlan_dom_bitmap[RTNL_LINK_BRIDGE_VLAN_BITMAP_LEN];
   std::map<uint16_t, uint32_t> vxlan_domain;
+
+  nl_addr *ipv4_igmp;
+  nl_addr *ipv6_all_hosts;
+  nl_addr *ipv6_mld;
 };
 
 } /* namespace basebox */
