@@ -54,7 +54,7 @@ public:
   int delete_access_port(rtnl_link *br_link, uint32_t pport_no, uint16_t vid,
                          bool wipe_l2_addresses);
 
-  int create_endpoint(rtnl_link *vxlan_link);
+  int create_endpoint(rtnl_link *vxlan_link, rtnl_link *br_link);
   int delete_endpoint(rtnl_link *vxlan_link);
 
 private:

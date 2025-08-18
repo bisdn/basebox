@@ -260,8 +260,10 @@ void nl_vxlan::register_bridge(nl_bridge *bridge) {
     if (rtnl_link_get_master(link) == 0)
       continue;
 
+    auto br_link = nl->get_link(rtnl_link_get_ifindex(link), AF_BRIDGE);
+
     // XXX TODO maybe before cont.
-    rv = create_endpoint(link);
+    rv = create_endpoint(link, br_link);
     if (rv < 0) {
       LOG(ERROR) << __FUNCTION__ << ": failed (rv=" << rv
                  << ") to create create endpoint " << link;
@@ -529,7 +531,7 @@ int nl_vxlan::remove_vni(rtnl_link *link) {
   return 0;
 }
 
-int nl_vxlan::create_endpoint(rtnl_link *vxlan_link) {
+int nl_vxlan::create_endpoint(rtnl_link *vxlan_link, rtnl_link *br_link) {
   assert(vxlan_link);
 
   if (!rtnl_link_is_vxlan(vxlan_link)) {
@@ -555,9 +557,7 @@ int nl_vxlan::create_endpoint(rtnl_link *vxlan_link) {
     return -ENOTSUP;
   }
 
-  // XXX get br_link if master exists
-
-  create_endpoint(vxlan_link, nullptr, group_.get());
+  create_endpoint(vxlan_link, br_link, group_.get());
 
   return 0;
 }
