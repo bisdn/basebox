@@ -122,6 +122,8 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 
   ofdpa->ofdpaRxRateSet(rate);
 
+  nb->switch_state_notification(nbi::SWITCH_STATE_UP);
+
   dpt.send_features_request(rofl::cauxid(0), 1);
   dpt.send_desc_stats_request(rofl::cauxid(0), 0, 1);
 
@@ -238,7 +240,6 @@ void controller::handle_desc_stats_reply(
 
   // TODO evaluate switch here?
 
-  nb->switch_state_notification(nbi::SWITCH_STATE_UP);
   dpt.send_port_desc_stats_request(rofl::cauxid(0), 0, 2);
 }
 
