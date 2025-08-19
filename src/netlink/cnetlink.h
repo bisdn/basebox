@@ -177,6 +177,8 @@ private:
   int handle_source_mac_learn();
   int handle_fdb_timeout();
 
+  void netlink_event_apply(const nl_obj &obj);
+
   void route_addr_apply(const nl_obj &obj);
   void route_link_apply(const nl_obj &obj);
   void route_neigh_apply(const nl_obj &obj);
