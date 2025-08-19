@@ -901,54 +901,6 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     return;
   }
 
-  // loop through nl_objs
-  for (int cnt = 0;
-       cnt < nl_proc_max && nl_objs.size() && state == NL_STATE_RUNNING;
-       cnt++) {
-    auto obj = nl_objs.front();
-    nl_objs.pop_front();
-
-    switch (obj.get_msg_type()) {
-    case RTM_NEWLINK:
-    case RTM_DELLINK:
-      route_link_apply(obj);
-      break;
-    case RTM_NEWNEIGH:
-    case RTM_DELNEIGH:
-      route_neigh_apply(obj);
-      break;
-    case RTM_NEWROUTE:
-    case RTM_DELROUTE:
-      route_route_apply(obj);
-      break;
-    case RTM_NEWNEXTHOP:
-    case RTM_DELNEXTHOP:
-      route_nh_apply(obj);
-      break;
-    case RTM_NEWADDR:
-    case RTM_DELADDR:
-      route_addr_apply(obj);
-      break;
-#ifdef HAVE_NETLINK_ROUTE_MDB_H
-    case RTM_NEWMDB:
-    case RTM_DELMDB:
-      assert(FLAGS_multicast);
-      route_mdb_apply(obj);
-      break;
-#endif
-#ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
-    case RTM_NEWVLAN:
-    case RTM_DELVLAN:
-      route_bridge_vlan_apply(obj);
-      break;
-#endif
-    default:
-      LOG(ERROR) << __FUNCTION__ << ": unexpected netlink type "
-                 << obj.get_msg_type();
-      break;
-    }
-  }
-
   if (handle_source_mac_learn()) {
     do_wakeup = true;
   }
@@ -974,6 +926,48 @@ void cnetlink::handle_read_event(rofl::cthread &thread, int fd) {
     if (state != NL_STATE_STOPPED) {
       this->thread.wakeup(this);
     }
+  }
+}
+
+void cnetlink::netlink_event_apply(const nl_obj &obj) {
+  switch (obj.get_msg_type()) {
+  case RTM_NEWLINK:
+  case RTM_DELLINK:
+    route_link_apply(obj);
+    break;
+  case RTM_NEWNEIGH:
+  case RTM_DELNEIGH:
+    route_neigh_apply(obj);
+    break;
+  case RTM_NEWROUTE:
+  case RTM_DELROUTE:
+    route_route_apply(obj);
+    break;
+  case RTM_NEWNEXTHOP:
+  case RTM_DELNEXTHOP:
+    route_nh_apply(obj);
+    break;
+  case RTM_NEWADDR:
+  case RTM_DELADDR:
+    route_addr_apply(obj);
+    break;
+#ifdef HAVE_NETLINK_ROUTE_MDB_H
+  case RTM_NEWMDB:
+  case RTM_DELMDB:
+    assert(FLAGS_multicast);
+    route_mdb_apply(obj);
+    break;
+#endif
+#ifdef HAVE_NETLINK_ROUTE_BRIDGE_VLAN_H
+  case RTM_NEWVLAN:
+  case RTM_DELVLAN:
+    route_bridge_vlan_apply(obj);
+    break;
+#endif
+  default:
+    LOG(ERROR) << __FUNCTION__ << ": unexpected netlink type "
+               << obj.get_msg_type();
+    break;
   }
 }
 
@@ -1020,18 +1014,8 @@ void cnetlink::nl_cb_v2(struct nl_cache *cache, struct nl_object *old_obj,
   assert(data);
   auto nl = static_cast<cnetlink *>(data);
 
-  // only enqueue nl msgs if not in stopped state
-  if (nl->state != NL_STATE_STOPPED) {
-    // If libnl updated the object instead of replacing it, old_obj will be a
-    // clone of the old object, and new_obj is the updated old object. Since
-    // later notifications may update the new_obj further, clone
-    // it to keep it in the state of the notification.
-    auto local_new = nl_object_clone(new_obj);
-
-    nl->nl_objs.emplace_back(action, old_obj, local_new);
-
-    nl_object_put(local_new);
-  }
+  if (nl->state == NL_STATE_RUNNING)
+    nl->netlink_event_apply({action, old_obj, new_obj});
 }
 
 void cnetlink::set_tapmanager(std::shared_ptr<port_manager> pm) {
