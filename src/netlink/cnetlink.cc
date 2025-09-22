@@ -889,9 +889,6 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     return;
 
   switch (state) {
-  case NL_STATE_INIT:
-    state = NL_STATE_RUNNING;
-    break;
   case NL_STATE_RUNNING:
     break;
   case NL_STATE_SHUTDOWN:
@@ -1908,7 +1905,7 @@ void cnetlink::start() noexcept {
   if (state == NL_STATE_RUNNING)
     return;
   VLOG(1) << __FUNCTION__ << ": started netlink processing";
-  state = NL_STATE_INIT;
+  state = NL_STATE_RUNNING;
   thread.wakeup(this);
 }
 

@@ -126,7 +126,6 @@ private:
 
   enum nl_state {
     NL_STATE_RUNNING,
-    NL_STATE_INIT,
     NL_STATE_SHUTDOWN,
     NL_STATE_STOPPED,
   };
