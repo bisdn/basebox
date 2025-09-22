@@ -277,24 +277,6 @@ cnetlink::get_link_by_ifindex(int ifindex) const {
       },
       &link);
 
-  // check the garbage
-  if (link == nullptr) {
-    for (auto &obj : nl_objs) {
-      if (obj.get_action() != NL_ACT_DEL)
-        continue;
-
-      if (std::string("route/link")
-              .compare(nl_object_get_type(obj.get_old_obj())) != 0)
-        continue;
-
-      if (rtnl_link_get_ifindex(LINK_CAST(obj.get_old_obj())) == ifindex) {
-        link = LINK_CAST(obj.get_old_obj());
-        nl_object_get(OBJ_CAST(link));
-        break;
-      }
-    }
-  }
-
   std::unique_ptr<struct rtnl_link, decltype(&rtnl_link_put)> ret(
       link, *rtnl_link_put);
   return ret;
@@ -315,20 +297,6 @@ struct rtnl_link *cnetlink::get_link(int ifindex, int family) const {
         *static_cast<nl_object **>(arg) = obj;
       },
       &_link);
-
-  if (_link == nullptr) {
-    // check the garbage
-    for (auto &obj : nl_objs) {
-      if (obj.get_action() != NL_ACT_DEL)
-        continue;
-
-      if (nl_object_match_filter(obj.get_old_obj(), OBJ_CAST(filter.get()))) {
-        _link = LINK_CAST(obj.get_old_obj());
-        VLOG(1) << __FUNCTION__ << ": found deleted link " << _link;
-        break;
-      }
-    }
-  }
 
   return _link;
 }
@@ -360,21 +328,6 @@ cnetlink::get_route_by_nh_params(const struct nh_params &p) const {
         }
       },
       &route);
-
-  if (route == nullptr) {
-    // check the garbage
-    for (auto &obj : nl_objs) {
-      if (obj.get_action() == NL_ACT_NEW)
-        continue;
-
-      if (nl_object_match_filter(obj.get_old_obj(), OBJ_CAST(filter.get()))) {
-        nl_object_get(obj.get_old_obj());
-        route = ROUTE_CAST(obj.get_old_obj());
-        VLOG(1) << __FUNCTION__ << ": found deleted route " << route;
-        break;
-      }
-    }
-  }
 
   std::unique_ptr<struct rtnl_route, decltype(&rtnl_route_put)> ret(
       route, *rtnl_route_put);
@@ -409,16 +362,6 @@ void cnetlink::get_bridge_ports(
         list->push_back(LINK_CAST(obj));
       },
       link_list);
-
-  // check the garbage
-  for (auto &obj : nl_objs) {
-    if (obj.get_action() != NL_ACT_DEL)
-      continue;
-
-    if (nl_object_match_filter(obj.get_old_obj(), OBJ_CAST(filter.get()))) {
-      link_list->push_back(LINK_CAST(obj.get_old_obj()));
-    }
-  }
 }
 
 std::set<uint32_t> cnetlink::get_bond_members_by_lag(rtnl_link *bond_link) {
@@ -713,38 +656,7 @@ struct rtnl_neigh *cnetlink::get_neighbour(int ifindex,
   assert(ifindex);
   assert(a);
 
-  auto neigh = rtnl_neigh_get(caches[NL_NEIGH_CACHE], ifindex, a);
-
-  // check the garbage
-  if (neigh == nullptr) {
-    for (auto &obj : nl_objs) {
-      rtnl_neigh *n;
-
-      if (obj.get_action() != NL_ACT_DEL)
-        continue;
-
-      if (std::string("route/neigh")
-              .compare(nl_object_get_type(obj.get_old_obj())) != 0)
-        continue;
-
-      n = NEIGH_CAST(obj.get_old_obj());
-
-      if (rtnl_neigh_get_ifindex(n) != ifindex)
-        continue;
-
-      if (rtnl_neigh_get_family(n) != nl_addr_get_family(a))
-        continue;
-
-      if (nl_addr_cmp(rtnl_neigh_get_dst(n), a) == 0) {
-        nl_object_get(OBJ_CAST(n));
-        neigh = n;
-        break;
-      }
-    }
-  }
-
-  // XXX TODO return unique_ptr
-  return neigh;
+  return rtnl_neigh_get(caches[NL_NEIGH_CACHE], ifindex, a);
 }
 
 bool cnetlink::is_bridge_interface(int ifindex) const {
@@ -911,9 +823,8 @@ void cnetlink::handle_wakeup(rofl::cthread &thread) {
     do_wakeup = true;
   }
 
-  if (do_wakeup || nl_objs.size()) {
-    VLOG(3) << __FUNCTION__
-            << ": calling wakeup nl_objs.size()=" << nl_objs.size();
+  if (do_wakeup) {
+    VLOG(3) << __FUNCTION__ << ": calling wakeup";
     this->thread.wakeup(this);
   }
 }
