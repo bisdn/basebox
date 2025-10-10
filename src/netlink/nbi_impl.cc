@@ -16,7 +16,6 @@ nbi_impl::nbi_impl(std::shared_ptr<cnetlink> nl,
                    std::shared_ptr<port_manager> port_man)
     : nl(nl), port_man(port_man) {
   nl->set_tapmanager(port_man);
-  nl->start();
 }
 
 nbi_impl::~nbi_impl() { nl->stop(); }
@@ -52,6 +51,7 @@ void nbi_impl::port_notification(
     case PORT_EVENT_TABLE:
       switch (get_port_type(ntfy.port_id)) {
       case nbi::port_type_physical:
+        nl->start();
         port_man->create_portdev(ntfy.port_id, ntfy.name, ntfy.hwaddr, *this);
         break;
       default:
