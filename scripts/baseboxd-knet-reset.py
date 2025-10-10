@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 #
+# SPDX-FileCopyrightText: © 2017 BISDN GmbH
+# SPDX-License-Identifier: MPL-2.0-no-copyleft-exception
+#
 # Helper script for resetting KNET to its initial state by removing all
 # added interfaces and filters, intended to be called after stopping
 # baseboxd.
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 
 from ctypes import *
 import fcntl
