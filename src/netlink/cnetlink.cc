@@ -1666,7 +1666,7 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
       break;
     }
 
-    if (old_ageing_time != new_ageing_time && new_ageing_time > 0)
+    if (old_ageing_time != new_ageing_time)
       bridge->set_ageing_time(new_ageing_time);
 
   } break;

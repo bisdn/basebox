@@ -834,7 +834,7 @@ void nl_bridge::set_ageing_time(uint32_t ageing_time) {
     new_ageing_time = UINT16_MAX;
   }
 
-  if (new_ageing_time == 0) {
+  if (ageing_time > 0 && new_ageing_time == 0) {
     LOG(WARNING) << __FUNCTION__ << ": ageing time " << (ageing_time * 10)
                  << " ms less than minimum supported, raising to 1000 ms";
     new_ageing_time = 1;
