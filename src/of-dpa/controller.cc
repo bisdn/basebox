@@ -791,9 +791,6 @@ int controller::overlay_tunnel_remove(uint32_t tunnel_id) noexcept {
   return rv;
 }
 int controller::l2_set_idle_timeout(uint16_t idle_timeout) noexcept {
-  if (idle_timeout == 0)
-    return -EINVAL;
-
   default_idle_timeout = idle_timeout;
   return 0;
 };
@@ -841,7 +838,7 @@ int controller::l2_addr_add(uint32_t port, uint16_t vid,
     // XXX have the knowlege here about filtered/unfiltered?
     auto fm = fm_driver.add_bridging_unicast_vlan(dpt.get_version(), port, vid,
                                                   mac, filtered, lag);
-    if (!permanent) {
+    if (!permanent && default_idle_timeout > 0) {
       fm.set_idle_timeout(default_idle_timeout);
       fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
     }
@@ -890,7 +887,7 @@ int controller::l2_overlay_addr_add(uint32_t lport, uint32_t tunnel_id,
     rofl::crofdpt &dpt = set_dpt(dptid, true);
     auto fm = fm_driver.add_bridging_unicast_overlay(dpt.get_version(), lport,
                                                      tunnel_id, mac);
-    if (!permanent) {
+    if (!permanent && default_idle_timeout > 0) {
       fm.set_idle_timeout(default_idle_timeout);
       fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
     }
