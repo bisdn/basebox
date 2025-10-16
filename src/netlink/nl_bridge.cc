@@ -828,9 +828,16 @@ void nl_bridge::set_ageing_time(uint32_t ageing_time) {
   uint32_t new_ageing_time = (ageing_time + 50) / 100;
 
   if (new_ageing_time > UINT16_MAX) {
-    LOG(WARNING) << __FUNCTION__ << ": ageing time " << new_ageing_time
-                 << "larger than maximum supported, limiting to " << UINT16_MAX;
+    LOG(WARNING) << __FUNCTION__ << ": ageing time " << (ageing_time * 10)
+                 << "ms larger than maximum supported, limiting to "
+                 << (UINT16_MAX * 1000) << " ms";
     new_ageing_time = UINT16_MAX;
+  }
+
+  if (new_ageing_time == 0) {
+    LOG(WARNING) << __FUNCTION__ << ": ageing time " << (ageing_time * 10)
+                 << " ms less than minimum supported, raising to 1000 ms";
+    new_ageing_time = 1;
   }
 
   VLOG(1) << __FUNCTION__ << ": updating ageing time to " << new_ageing_time;
