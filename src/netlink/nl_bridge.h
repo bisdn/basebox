@@ -1,6 +1,5 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// SPDX-FileCopyrightText: © 2015 BISDN GmbH
+// SPDX-License-Identifier: MPL-2.0-no-copyleft-exception
 
 #pragma once
 
@@ -162,6 +161,7 @@ public:
   void update_interface(rtnl_link *old_link, rtnl_link *new_link);
   void delete_interface(rtnl_link *);
 
+  void set_ageing_time(uint32_t ageing_time);
   void add_neigh_to_fdb(rtnl_neigh *, bool update = false);
   void remove_neigh_from_fdb(rtnl_neigh *);
 

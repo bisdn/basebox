@@ -1,6 +1,5 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// SPDX-FileCopyrightText: © 2014 BISDN GmbH
+// SPDX-License-Identifier: MPL-2.0-no-copyleft-exception
 
 #pragma once
 
@@ -59,7 +58,7 @@ public:
                  rofl::openflow::cofhello_elem_versionbitmap(),
              uint16_t ofdpa_grpc_port = 50051)
       : nb(std::move(nb)), bb_thread(1), egress_interface_id(1),
-        ecmp_interface_id(1), default_idle_timeout(0), connected(false),
+        ecmp_interface_id(1), default_idle_timeout(300), connected(false),
         ofdpa(nullptr), ofdpa_grpc_port(ofdpa_grpc_port) {
     this->nb->register_switch(this);
     rofl::crofbase::set_versionbitmap(versionbitmap);
@@ -158,6 +157,7 @@ public:
   int overlay_tunnel_add(uint32_t tunnel_id) noexcept override;
   int overlay_tunnel_remove(uint32_t tunnel_id) noexcept override;
 
+  int l2_set_idle_timeout(uint16_t idle_timeout) noexcept override;
   int l2_addr_remove_all_in_vlan(uint32_t port, uint16_t vid) noexcept override;
   int l2_addr_add(uint32_t port, uint16_t vid, const rofl::caddress_ll &mac,
                   bool filtered, bool permanent,

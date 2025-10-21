@@ -1,6 +1,5 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// SPDX-FileCopyrightText: © 2015 BISDN GmbH
+// SPDX-License-Identifier: MPL-2.0-no-copyleft-exception
 
 #include <cassert>
 #include <cstring>
@@ -17,6 +16,7 @@
 #ifdef HAVE_NETLINK_ROUTE_MDB_H
 #include <netlink/route/mdb.h>
 #endif
+#include <netlink/route/link/bridge_info.h>
 #include <netlink/route/link/vlan.h>
 #include <netlink/route/link/vxlan.h>
 #include <netlink/route/neighbour.h>
@@ -67,6 +67,8 @@ static rofl::caddress_in4 libnl_in4addr_2_rofl(struct nl_addr *addr, int *rv) {
 }
 
 void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
+  uint32_t ageing_time;
+
   assert(bridge);
   assert((rtnl_link_get_type(bridge) != nullptr &&
           std::string("bridge").compare(rtnl_link_get_type(bridge)) == 0) ||
@@ -79,6 +81,9 @@ void nl_bridge::set_bridge_interface(rtnl_link *bridge) {
   if (!get_vlan_filtering())
     LOG(FATAL) << __FUNCTION__
                << " unsupported: bridge configured with vlan_filtering 0";
+
+  if (rtnl_link_bridge_get_ageing_time(bridge, &ageing_time) == 0)
+    set_ageing_time(ageing_time);
 }
 
 bool nl_bridge::is_bridge_interface(int ifindex) {
@@ -813,6 +818,63 @@ void nl_bridge::update_access_ports(rtnl_link *vxlan_link, rtnl_link *br_link,
       }
       sw->l2_multicast_group_rejoin_all_in_vlan(pport_no, vid);
     }
+  }
+}
+void nl_bridge::set_ageing_time(uint32_t ageing_time) {
+  assert(sw);
+  std::deque<rtnl_neigh *> neighs;
+
+  // ageing time is in centiseconds, so convert it to seconds, rounded
+  uint32_t new_ageing_time = (ageing_time + 50) / 100;
+
+  if (new_ageing_time > UINT16_MAX) {
+    LOG(WARNING) << __FUNCTION__ << ": ageing time " << (ageing_time * 10)
+                 << "ms larger than maximum supported, limiting to "
+                 << (UINT16_MAX * 1000) << " ms";
+    new_ageing_time = UINT16_MAX;
+  }
+
+  if (ageing_time > 0 && new_ageing_time == 0) {
+    LOG(WARNING) << __FUNCTION__ << ": ageing time " << (ageing_time * 10)
+                 << " ms less than minimum supported, raising to 1000 ms";
+    new_ageing_time = 1;
+  }
+
+  VLOG(1) << __FUNCTION__ << ": updating ageing time to " << new_ageing_time;
+
+  sw->l2_set_idle_timeout(new_ageing_time);
+
+  // get all tracked neighs
+  nl_cache_foreach(
+      l2_cache.get(),
+      [](struct nl_object *obj, void *arg) {
+        assert(arg);
+        auto *list = static_cast<std::deque<rtnl_neigh *> *>(arg);
+        auto neigh = NEIGH_CAST(obj);
+
+        // skip permanent neighs
+        if (!!(rtnl_neigh_get_flags(neigh) & (NUD_NOARP | NUD_PERMANENT)))
+          return;
+
+        nl_object_get(obj);
+        list->push_back(neigh);
+      },
+      &neighs);
+
+  for (auto neigh : neighs) {
+    int ifindex = rtnl_neigh_get_ifindex(neigh);
+    uint32_t port = nl->get_port_id(ifindex);
+    nl_addr *mac = rtnl_neigh_get_lladdr(neigh);
+    int vid = rtnl_neigh_get_vlan(neigh);
+    rofl::caddress_ll _mac((uint8_t *)nl_addr_get_binary_addr(mac),
+                           nl_addr_get_len(mac));
+
+    VLOG(2) << __FUNCTION__ << ": updating l2 neigh " << neigh;
+
+    // update entry to update its ageing time
+    sw->l2_addr_add(port, vid, _mac, true, false, true);
+
+    rtnl_neigh_put(neigh);
   }
 }
 

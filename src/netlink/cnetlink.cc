@@ -1,6 +1,5 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// SPDX-FileCopyrightText: © 2014 BISDN GmbH
+// SPDX-License-Identifier: MPL-2.0-no-copyleft-exception
 
 #include <cassert>
 #include <cstring>
@@ -1652,11 +1651,25 @@ void cnetlink::link_updated(rtnl_link *old_link, rtnl_link *new_link) noexcept {
     bond->update_lag(old_link, new_link);
     break;
   case LT_VRF: // No need to care about the vrf interface itself
-  case LT_BRIDGE:
-    VLOG(2) << __FUNCTION__
-            << ": ignoring update (not supported) of old_lt=" << lt_old
-            << " old link: " << old_link << ", new link: " << new_link;
     break;
+  case LT_BRIDGE: {
+    uint32_t old_ageing_time, new_ageing_time;
+
+    if (rtnl_link_bridge_get_ageing_time(old_link, &old_ageing_time))
+      old_ageing_time = 0;
+    if (rtnl_link_bridge_get_ageing_time(new_link, &new_ageing_time))
+      new_ageing_time = 0;
+
+    if (!bridge || !bridge->is_bridge_interface(new_link)) {
+      VLOG(1) << __FUNCTION__ << ": ignoring update on untracked bridge "
+              << new_link;
+      break;
+    }
+
+    if (old_ageing_time != new_ageing_time)
+      bridge->set_ageing_time(new_ageing_time);
+
+  } break;
   default:
     if (port_id > 0) {
       if (lt_new == LT_BOND_SLAVE) {

@@ -1,6 +1,5 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// SPDX-FileCopyrightText: © 2014 BISDN GmbH
+// SPDX-License-Identifier: MPL-2.0-no-copyleft-exception
 
 #include <cassert>
 #include <cerrno>
@@ -791,6 +790,10 @@ int controller::overlay_tunnel_remove(uint32_t tunnel_id) noexcept {
   }
   return rv;
 }
+int controller::l2_set_idle_timeout(uint16_t idle_timeout) noexcept {
+  default_idle_timeout = idle_timeout;
+  return 0;
+};
 
 int controller::l2_addr_remove_all_in_vlan(uint32_t port,
                                            uint16_t vid) noexcept {
@@ -832,16 +835,15 @@ int controller::l2_addr_add(uint32_t port, uint16_t vid,
       dpt.send_barrier_request(rofl::cauxid(0));
     }
 
-    if (!permanent)
-      fm_driver.set_idle_timeout(300);
-
     // XXX have the knowlege here about filtered/unfiltered?
-    dpt.send_flow_mod_message(
-        rofl::cauxid(0), fm_driver.add_bridging_unicast_vlan(
-                             dpt.get_version(), port, vid, mac, filtered, lag));
+    auto fm = fm_driver.add_bridging_unicast_vlan(dpt.get_version(), port, vid,
+                                                  mac, filtered, lag);
+    if (!permanent && default_idle_timeout > 0) {
+      fm.set_idle_timeout(default_idle_timeout);
+      fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
+    }
 
-    if (!permanent)
-      fm_driver.set_idle_timeout(default_idle_timeout);
+    dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
@@ -883,16 +885,14 @@ int controller::l2_overlay_addr_add(uint32_t lport, uint32_t tunnel_id,
   int rv = 0;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
+    auto fm = fm_driver.add_bridging_unicast_overlay(dpt.get_version(), lport,
+                                                     tunnel_id, mac);
+    if (!permanent && default_idle_timeout > 0) {
+      fm.set_idle_timeout(default_idle_timeout);
+      fm.set_flags(rofl::openflow::OFPFF_SEND_FLOW_REM);
+    }
 
-    if (!permanent)
-      fm_driver.set_idle_timeout(300);
-
-    dpt.send_flow_mod_message(rofl::cauxid(0),
-                              fm_driver.add_bridging_unicast_overlay(
-                                  dpt.get_version(), lport, tunnel_id, mac));
-
-    if (!permanent)
-      fm_driver.set_idle_timeout(default_idle_timeout);
+    dpt.send_flow_mod_message(rofl::cauxid(0), fm);
 
   } catch (rofl::eRofBaseNotFound &e) {
     LOG(ERROR) << ": caught rofl::eRofBaseNotFound";
