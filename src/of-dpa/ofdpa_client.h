@@ -94,6 +94,9 @@ public:
                                                            uint8_t mode);
   ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaRxRateSet(int32_t pps);
 
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaPortKnetCreate(uint32_t port_id);
+  ofdpa::OfdpaStatus::OfdpaStatusCode ofdpaPortKnetDelete(uint32_t port_id);
+
 private:
   ofdpa::OfdpaStatus::OfdpaStatusCode
   ofdpaTunnelPortCreate(const ::ofdpa::TunnelPortCreate &request);
