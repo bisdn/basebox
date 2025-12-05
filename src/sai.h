@@ -239,6 +239,9 @@ public:
   /* @ port  { */
   virtual int port_set_config(uint32_t port_id, const rofl::caddress_ll &mac,
                               bool up) noexcept = 0;
+
+  virtual int port_knet_create(uint32_t port_id) noexcept = 0;
+  virtual int port_knet_delete(uint32_t port_id) noexcept = 0;
   /* @} */
 
   /* @ control  { */
