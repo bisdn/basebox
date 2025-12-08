@@ -30,8 +30,8 @@ public:
 class port_manager {
 
 public:
-  port_manager(){};
-  virtual ~port_manager(){};
+  port_manager() {};
+  virtual ~port_manager() {};
 
   virtual int create_portdev(uint32_t port_id, const std::string &port_name,
                              const rofl::caddress_ll &hwaddr,
@@ -45,6 +45,11 @@ public:
   std::map<std::string, uint32_t> get_registered_ports() const {
     std::lock_guard<std::mutex> lock(tn_mutex);
     return port_names2id;
+  }
+  void register_switch(switch_interface *swi) noexcept { this->swi = swi; }
+
+  void unregister_switch(switch_interface *swi) noexcept {
+    this->swi = nullptr;
   }
 
   uint32_t get_port_id(int ifindex) const noexcept {
@@ -108,6 +113,8 @@ protected:
   std::map<uint32_t, rofl::caddress_ll> id_to_hwaddr;
 
   const rofl::caddress_ll nulladdr;
+
+  switch_interface *swi;
 };
 
 } // namespace basebox

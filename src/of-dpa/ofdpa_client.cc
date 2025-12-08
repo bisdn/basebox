@@ -585,7 +585,7 @@ ofdpa_client::ofdpaPortKnetCreate(uint32_t port_id) {
 
   request.set_port_num(port_id);
 
-  ::Status rv = stub_->ofdpaPortKnetDelete(&context, request, &response);
+  ::Status rv = stub_->ofdpaPortKnetCreate(&context, request, &response);
   if (not rv.ok()) {
     return ofdpa::OfdpaStatus::OFDPA_E_RPC;
   }
