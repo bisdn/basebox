@@ -130,6 +130,10 @@ if cppc.has_header_symbol('netlink/route/link/bonding.h', 'rtnl_link_bond_get_mo
   add_global_arguments('-DHAVE_RTNL_LINK_BOND_GET_MODE',  language: 'cpp')
 endif
 
+if not cppc.has_header_symbol('netlink/errno.h', 'NLE_HOSTUNREACH', dependencies: libnl, required: false)
+  add_global_arguments('-DNLE_HOSTUNREACH=35',  language: 'cpp')
+endif
+
 if cppc.has_header('netlink/route/bridge_vlan.h', dependencies: libnl, required: false)
   add_global_arguments('-DHAVE_NETLINK_ROUTE_BRIDGE_VLAN_H',  language: 'cpp')
 endif
