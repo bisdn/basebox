@@ -87,9 +87,9 @@ public:
       /*
        * if there is no default route, and no matching route, the kernel will
        * respond with -ENETUNREACH or -EHOSTUNREACH, which libnl translates to
-       * -NLE_FAILURE.
+       * -NLE_FAILURE resp -NLE_HOSTUNREACH.
        */
-      if (err == -NLE_FAILURE)
+      if (err == -NLE_HOSTUNREACH || err == -NLE_FAILURE)
         return nullptr;
 
       LOG(FATAL) << __FUNCTION__ << ":%s" << nl_geterror(err);
