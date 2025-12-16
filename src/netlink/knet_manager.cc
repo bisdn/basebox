@@ -67,19 +67,9 @@ int knet_manager::create_portdev(uint32_t port_id, const std::string &port_name,
 
   if (!dev_exists && !dev_name_exists) {
     // create a new tap device
-    int netif_id;
-    char mac_string[18];
-    sprintf(mac_string, "%02x:%02x:%02x:%02x:%02x:%02x", hwaddr[0], hwaddr[1],
-            hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5]);
     try {
       {
         std::lock_guard<std::mutex> lock{tn_mutex};
-
-        netif_id = get_next_netif_id();
-        if (netif_id < 0)
-          return netif_id;
-
-        knet_devs.insert(std::make_pair(port_id, netif_id));
         auto rv = port_names2id.emplace(std::make_pair(port_name, port_id));
 
         if (!rv.second) {
@@ -92,30 +82,12 @@ int knet_manager::create_portdev(uint32_t port_id, const std::string &port_name,
           LOG(FATAL) << __FUNCTION__ << ": failed to insert hwaddr";
         }
 
-        r = system(("/usr/sbin/client_drivshell knet netif create port=" +
-                    std::to_string(port_id) + " ifname=" + port_name +
-                    " mac=" + mac_string + " keeprxtag=yes")
-                       .c_str());
-        if (!WIFEXITED(r) || WEXITSTATUS(r) != 0)
+        r = swi->port_knet_create(port_id);
+        if (r != 0)
           LOG(FATAL) << __FUNCTION__
-                     << ": failed to create knet interface for port_id "
-                     << port_id;
-        r = system(
-            ("/usr/sbin/client_drivshell knet filter create dt=netif did=" +
-             std::to_string(netif_id) + " ip=" + std::to_string(port_id))
-                .c_str());
-        if (!WIFEXITED(r) || WEXITSTATUS(r) != 0)
-          LOG(FATAL) << __FUNCTION__
-                     << ": failed to create knet filter for port_id "
-                     << port_id;
-        netif_ids_in_use[netif_id] = true;
+                     << ": failed to create knet netif for port_id " << port_id;
         change_port_status(port_name, false);
       }
-
-      LOG(INFO) << __FUNCTION__
-                << ": created device having the following details: port_id="
-                << port_id << " portname=" << port_name
-                << " netif_id=" << netif_id;
 
     } catch (std::exception &e) {
       LOG(ERROR) << __FUNCTION__ << ": failed to create portdev " << port_name;
@@ -132,14 +104,6 @@ int knet_manager::create_portdev(uint32_t port_id, const std::string &port_name,
 int knet_manager::destroy_portdev(uint32_t port_id,
                                   const std::string &port_name) {
   int ret = 0;
-  auto it = knet_devs.find(port_id);
-  if (it == knet_devs.end()) {
-    LOG(WARNING) << __FUNCTION__ << ": called for invalid port_id=" << port_id
-                 << " port_name=" << port_name;
-    return 0;
-  }
-
-  uint32_t netif_id = it->second;
 
   std::lock_guard<std::mutex> lock{tn_mutex};
   port_deleted.push_back(port_id);
@@ -157,23 +121,10 @@ int knet_manager::destroy_portdev(uint32_t port_id,
     port_names2id.erase(port_names_it);
   }
 
-  // filter id 1 is the RxAPI, so filter API ids are always one off
-  ret = system(("/usr/sbin/client_drivshell knet filter destroy " +
-                std::to_string(netif_id + 1))
-                   .c_str());
-  if (!WIFEXITED(ret) || WEXITSTATUS(ret) != 0)
-    LOG(WARNING) << __FUNCTION__ << ": failed to remove filter with id "
-                 << netif_id + 1;
-  ret = system(("/usr/sbin/client_drivshell knet netif destroy " +
-                std::to_string(netif_id))
-                   .c_str());
-  if (!WIFEXITED(ret) || WEXITSTATUS(ret) != 0)
-    LOG(WARNING) << __FUNCTION__ << ": failed to remove knet netif with id "
-                 << netif_id;
-
-  netif_ids_in_use[netif_id] = false;
-  knet_devs.erase(it);
-
+  ret = swi->port_knet_delete(port_id);
+  if (ret != 0)
+    LOG(WARNING) << __FUNCTION__ << ": failed to remove knet netif for port_id "
+                 << port_id;
   return 0;
 }
 
