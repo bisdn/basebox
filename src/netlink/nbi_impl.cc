@@ -26,6 +26,7 @@ void nbi_impl::resend_state() noexcept { nl->resend_state(); }
 void nbi_impl::register_switch(switch_interface *swi) noexcept {
   this->swi = swi;
   nl->register_switch(swi);
+  port_man->register_switch(swi);
 }
 
 void nbi_impl::switch_state_notification(enum switch_state state) noexcept {

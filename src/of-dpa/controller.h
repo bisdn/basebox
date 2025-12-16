@@ -145,6 +145,8 @@ public:
   int port_set_move_learn(
       uint32_t port_id,
       sai_bridge_port_fdb_learning_t l2_learn) noexcept override;
+  int port_knet_create(uint32_t port_id) noexcept override;
+  int port_knet_delete(uint32_t port_id) noexcept override;
   int lag_create(uint32_t *lag_id, std::string name,
                  uint8_t mode) noexcept override;
   int lag_remove(uint32_t lag_id) noexcept override;

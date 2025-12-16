@@ -46,6 +46,11 @@ public:
     std::lock_guard<std::mutex> lock(tn_mutex);
     return port_names2id;
   }
+  void register_switch(switch_interface *swi) noexcept { this->swi = swi; }
+
+  void unregister_switch(switch_interface *swi) noexcept {
+    this->swi = nullptr;
+  }
 
   uint32_t get_port_id(int ifindex) const noexcept {
     // XXX TODO add assert wrt threading
@@ -108,6 +113,8 @@ protected:
   std::map<uint32_t, rofl::caddress_ll> id_to_hwaddr;
 
   const rofl::caddress_ll nulladdr;
+
+  switch_interface *swi;
 };
 
 } // namespace basebox

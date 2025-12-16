@@ -2686,4 +2686,12 @@ int controller::ofdpa_stg_create(uint16_t vlan_id) noexcept {
   return rv;
 }
 
+int controller::port_knet_create(uint32_t port_id) noexcept {
+  return ofdpa->ofdpaPortKnetCreate(port_id);
+}
+
+int controller::port_knet_delete(uint32_t port_id) noexcept {
+  return ofdpa->ofdpaPortKnetDelete(port_id);
+}
+
 } // namespace basebox
