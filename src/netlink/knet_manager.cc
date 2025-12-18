@@ -289,6 +289,15 @@ bool knet_manager::portdev_removed(rtnl_link *link) {
  * @return 0 on success
  */
 int knet_manager::change_port_status(const std::string name, bool status) {
+  {
+    std::lock_guard<std::mutex> lock{tn_mutex};
+
+    if (port_names2id.find(name) == port_names2id.end()) {
+      VLOG(1) << __FUNCTION__ << ": unknown port " << name;
+      return -EINVAL;
+    }
+  }
+
   std::ofstream file("/proc/bcm/knet/link");
 
   if (file.is_open()) {
@@ -311,6 +320,15 @@ int knet_manager::change_port_status(const std::string name, bool status) {
  */
 int knet_manager::set_port_speed(const std::string name, uint32_t speed,
                                  uint8_t duplex) {
+  {
+    std::lock_guard<std::mutex> lock{tn_mutex};
+
+    if (port_names2id.find(name) == port_names2id.end()) {
+      VLOG(1) << __FUNCTION__ << ": unknown port " << name;
+      return -EINVAL;
+    }
+  }
+
   std::ofstream file("/proc/bcm/knet/link");
 
   if (file.is_open()) {
