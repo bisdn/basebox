@@ -1807,7 +1807,8 @@ void nl_l3::nh_unreachable_notification(struct rtnl_neigh *n,
   notify_on_nh_reachable(this, p);
 }
 
-int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
+int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route,
+                                rtnl_nh *nexthop) {
   assert(r);
   uint32_t vrf_id = rtnl_route_get_table(r);
   if (vrf_id == MAIN_ROUTING_TABLE)
@@ -1847,7 +1848,13 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
   }
 
   std::set<nh_stub> nhs;
-  int rv = get_neighbours_of_route(r, &nhs);
+  int rv = 0;
+
+  if (nexthop) {
+    nh_to_nh_stubs(nexthop, &nhs);
+  } else {
+    rv = get_neighbours_of_route(r, &nhs);
+  }
 
   // no neighbours reachable
   if (rv < 0) {
@@ -1983,7 +1990,8 @@ int nl_l3::update_l3_unicast_route(rtnl_route *r_old, rtnl_route *r_new) {
   return rv;
 }
 
-int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
+int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route,
+                                rtnl_nh *nexthop) {
   int rv = 0;
   auto dst = rtnl_route_get_dst(r);
 
@@ -2100,7 +2108,12 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
 
   std::deque<struct rtnl_neigh *> neighs;
   std::set<nh_stub> nhs;
-  rv = get_neighbours_of_route(r, &nhs);
+
+  if (nexthop) {
+    nh_to_nh_stubs(nexthop, &nhs);
+  } else {
+    rv = get_neighbours_of_route(r, &nhs);
+  }
 
   // no neighbours reachable
   if (rv < 0) {

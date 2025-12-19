@@ -100,9 +100,11 @@ private:
   int del_l3_termination(uint32_t port_id, uint16_t vid,
                          const rofl::caddress_ll &mac, int af) noexcept;
 
-  int add_l3_unicast_route(rtnl_route *r, bool update_route);
+  int add_l3_unicast_route(rtnl_route *r, bool update_route,
+                           rtnl_nh *nexthop = nullptr);
   int update_l3_unicast_route(rtnl_route *r_old, rtnl_route *r_new);
-  int del_l3_unicast_route(rtnl_route *r, bool keep_route);
+  int del_l3_unicast_route(rtnl_route *r, bool keep_route,
+                           rtnl_nh *nexthop = nullptr);
 
   int add_l3_unicast_route(nl_addr *rt_dst, uint32_t l3_interface_id,
                            bool is_ecmp, bool update_route,
