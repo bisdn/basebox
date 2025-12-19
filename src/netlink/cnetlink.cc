@@ -1414,6 +1414,8 @@ void cnetlink::route_nh_apply(const nl_obj &obj) {
     VLOG(2) << __FUNCTION__ << ": change new nh " << obj.get_new_obj();
     VLOG(2) << __FUNCTION__ << ": change old nh " << obj.get_old_obj();
 
+    l3->update_nh(NH_CAST(obj.get_old_obj()), NH_CAST(obj.get_new_obj()));
+
     break;
 
   case NL_ACT_DEL:

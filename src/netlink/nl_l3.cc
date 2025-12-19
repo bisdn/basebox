@@ -1983,11 +1983,32 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route,
 int nl_l3::update_l3_unicast_route(rtnl_route *r_old, rtnl_route *r_new) {
   int rv = 0;
 
+  int old_nhid = rtnl_route_get_nhid(r_old);
+  int new_nhid = rtnl_route_get_nhid(r_new);
+
+  // nh updates are handled separately
+  if (old_nhid > 0 && old_nhid == new_nhid)
+    return rv;
+
   // currently we will only handle next hop changes
   add_l3_unicast_route(r_new, true);
   del_l3_unicast_route(r_old, true);
 
   return rv;
+}
+
+int nl_l3::update_nh(rtnl_nh *nh_old, rtnl_nh *nh_new) {
+  int nhid = rtnl_nh_get_id(nh_old);
+  std::deque<rtnl_route *> routes;
+
+  nl->get_routes_via_nhid(nhid, &routes);
+
+  for (auto r : routes) {
+    add_l3_unicast_route(r, true, nh_new);
+    del_l3_unicast_route(r, true, nh_old);
+  }
+
+  return 0;
 }
 
 int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route,

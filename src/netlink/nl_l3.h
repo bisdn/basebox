@@ -66,6 +66,8 @@ public:
   int update_l3_route(struct rtnl_route *r_old, struct rtnl_route *r_new);
   int del_l3_route(struct rtnl_route *r);
 
+  int update_nh(struct rtnl_nh *nh_old, struct rtnl_nh *nh_new);
+
   int get_l3_routes(struct rtnl_link *link, std::deque<rtnl_route *> *routes);
 
   int update_l3_termination(int port_id, uint16_t vid, struct nl_addr *old_mac,
