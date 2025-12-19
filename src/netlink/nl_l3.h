@@ -137,6 +137,7 @@ private:
 
   std::deque<nh_stub> get_l3_neighs_of_prefix(std::set<nh_stub> &list,
                                               nl_addr *prefix);
+  void nh_to_nh_stubs(rtnl_nh *nh, std::set<nh_stub> *nhs) noexcept;
 
   switch_interface *sw;
   std::shared_ptr<nl_vlan> vlan;
