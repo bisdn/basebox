@@ -385,6 +385,24 @@ struct rtnl_nh *cnetlink::get_nh_by_id(int nhid) const {
   return rtnl_nh_get(caches[NL_NH_CACHE], nhid);
 }
 
+void cnetlink::get_routes_via_nhid(int nhid,
+                                   std::deque<rtnl_route *> *routes) const {
+  std::unique_ptr<rtnl_route, decltype(&rtnl_route_put)> filter(
+      rtnl_route_alloc(), &rtnl_route_put);
+
+  rtnl_route_set_type(filter.get(), RTN_UNICAST);
+  rtnl_route_set_nhid(filter.get(), nhid);
+
+  nl_cache_foreach_filter(
+      caches[NL_ROUTE_CACHE], OBJ_CAST(filter.get()),
+      [](struct nl_object *obj, void *arg) {
+        assert(arg);
+        auto *list = static_cast<std::deque<rtnl_route *> *>(arg);
+        list->push_back(ROUTE_CAST(obj));
+      },
+      routes);
+};
+
 void cnetlink::get_bridge_ports(
     int br_ifindex, std::deque<rtnl_link *> *link_list) const noexcept {
   assert(link_list);
