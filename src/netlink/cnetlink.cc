@@ -382,7 +382,27 @@ cnetlink::get_route_by_nh_params(const struct nh_params &p) const {
 }
 
 struct rtnl_nh *cnetlink::get_nh_by_id(int nhid) const {
-  return rtnl_nh_get(caches[NL_NH_CACHE], nhid);
+  rtnl_nh *nh = rtnl_nh_get(caches[NL_NH_CACHE], nhid);
+
+  if (nh == nullptr) {
+    // check the garbage
+    for (auto &obj : nl_objs) {
+      if (obj.get_action() != NL_ACT_DEL)
+        continue;
+
+      if (std::string("route/nh")
+              .compare(nl_object_get_type(obj.get_old_obj())) != 0)
+        continue;
+
+      if (rtnl_nh_get_id(NH_CAST(obj.get_old_obj())) == nhid) {
+        nh = NH_CAST(obj.get_old_obj());
+        nl_object_get(OBJ_CAST(nh));
+        break;
+      }
+    }
+  }
+
+  return nh;
 }
 
 void cnetlink::get_routes_via_nhid(int nhid,
