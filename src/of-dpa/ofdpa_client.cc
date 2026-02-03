@@ -575,4 +575,40 @@ ofdpa::OfdpaStatus::OfdpaStatusCode ofdpa_client::ofdpaRxRateSet(int32_t pps) {
   return response.status();
 }
 
+ofdpa::OfdpaStatus::OfdpaStatusCode
+ofdpa_client::ofdpaPortKnetCreate(uint32_t port_id) {
+  ::OfdpaStatus response;
+  ::ClientContext context;
+  ::PortNum request;
+
+  context.set_wait_for_ready(true);
+
+  request.set_port_num(port_id);
+
+  ::Status rv = stub_->ofdpaPortKnetCreate(&context, request, &response);
+  if (not rv.ok()) {
+    return ofdpa::OfdpaStatus::OFDPA_E_RPC;
+  }
+
+  return response.status();
+}
+
+ofdpa::OfdpaStatus::OfdpaStatusCode
+ofdpa_client::ofdpaPortKnetDelete(uint32_t port_id) {
+  ::OfdpaStatus response;
+  ::ClientContext context;
+  ::PortNum request;
+
+  context.set_wait_for_ready(true);
+
+  request.set_port_num(port_id);
+
+  ::Status rv = stub_->ofdpaPortKnetDelete(&context, request, &response);
+  if (not rv.ok()) {
+    return ofdpa::OfdpaStatus::OFDPA_E_RPC;
+  }
+
+  return response.status();
+}
+
 } // namespace basebox
