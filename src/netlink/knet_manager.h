@@ -47,6 +47,8 @@ private:
   knet_manager(const knet_manager &other) = delete; // non construction-copyable
   knet_manager &operator=(const knet_manager &) = delete; // non copyable
 
+  int change_port_status_unlocked(const std::string name, bool status);
+
   std::bitset<128> netif_ids_in_use;
   int get_next_netif_id();
 
