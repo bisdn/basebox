@@ -86,7 +86,7 @@ int knet_manager::create_portdev(uint32_t port_id, const std::string &port_name,
         if (r != 0)
           LOG(FATAL) << __FUNCTION__
                      << ": failed to create knet netif for port_id " << port_id;
-        change_port_status(port_name, false);
+        change_port_status_unlocked(port_name, false);
       }
 
     } catch (std::exception &e) {
@@ -231,6 +231,19 @@ bool knet_manager::portdev_removed(rtnl_link *link) {
   return true;
 }
 
+int knet_manager::change_port_status_unlocked(const std::string name,
+                                              bool status) {
+  std::ofstream file("/proc/bcm/knet/link");
+
+  if (file.is_open()) {
+    file << (name + "=" + (status ? "up" : "down"));
+    file.close();
+    return 0;
+  }
+
+  return 1;
+}
+
 /*
  * set netif link state according to open flow link state
  * Status is determined via the portstatus/port_desc_reply message
@@ -249,15 +262,7 @@ int knet_manager::change_port_status(const std::string name, bool status) {
     }
   }
 
-  std::ofstream file("/proc/bcm/knet/link");
-
-  if (file.is_open()) {
-    file << (name + "=" + (status ? "up" : "down"));
-    file.close();
-    return 0;
-  }
-
-  return 1;
+  return change_port_status_unlocked(name, status);
 }
 
 /*
