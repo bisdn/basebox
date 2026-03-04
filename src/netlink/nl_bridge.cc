@@ -568,14 +568,18 @@ void nl_bridge::update_vlans(rtnl_link *old_link, rtnl_link *new_link) {
           // the PVID is already being handled outside of the loop
           vlan->remove_bridge_vlan(_link, vid, false, !egress_untagged);
 
-          // remove all fdb entries by us
-          nl_fdb_flush ff;
+          // only flush on updating interfaces, kernel will take of it when
+          // removing from the bridge (new_link is a nullptr)
+          if (new_link) {
+            // remove all fdb entries by us
+            nl_fdb_flush ff;
 
-          auto ret = ff.flush_fdb(rtnl_link_get_ifindex(_link), vid,
-                                  NTF_MASTER | NTF_EXT_LEARNED);
-          if (ret < 0)
-            LOG(WARNING) << __FUNCTION__ << ": failed to flush vid=" << vid
-                         << " on port " << _link;
+            auto ret = ff.flush_fdb(rtnl_link_get_ifindex(_link), vid,
+                                    NTF_MASTER | NTF_EXT_LEARNED);
+            if (ret < 0)
+              LOG(WARNING) << __FUNCTION__ << ": failed to flush vid=" << vid
+                           << " on port " << _link;
+          }
         }
       }
     }
