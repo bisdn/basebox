@@ -1907,8 +1907,6 @@ void cnetlink::register_switch(switch_interface *swi) noexcept {
   vlan->register_switch_interface(swi);
   bond->register_switch_interface(swi);
   vxlan->register_switch_interface(swi);
-
-  swi->subscribe_to(switch_interface::SWIF_ARP);
 }
 
 void cnetlink::unregister_switch(__attribute__((unused))

@@ -118,8 +118,7 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
   dpt.send_features_request(rofl::cauxid(0), 1);
   dpt.send_desc_stats_request(rofl::cauxid(0), 0, 1);
 
-  if (flags)
-    subscribe_to(flags);
+  subscribe_to();
 
   connected = true;
 }
@@ -2354,15 +2353,12 @@ int controller::port_set_config(uint32_t port, const rofl::caddress_ll &mac,
   return rv;
 }
 
-int controller::subscribe_to(enum swi_flags flags) noexcept {
+int controller::subscribe_to() noexcept {
   int rv = 0;
-  this->flags = this->flags | flags;
   try {
     rofl::crofdpt &dpt = set_dpt(dptid, true);
-    if (flags & switch_interface::SWIF_ARP) {
-      dpt.send_flow_mod_message(rofl::cauxid(0),
-                                fm_driver.enable_policy_arp(dpt.get_version()));
-    }
+    dpt.send_flow_mod_message(rofl::cauxid(0),
+                              fm_driver.enable_policy_arp(dpt.get_version()));
     dpt.send_flow_mod_message(rofl::cauxid(0),
                               fm_driver.enable_tmac_bpdu_multicast_mac(
                                   dpt.get_version(),

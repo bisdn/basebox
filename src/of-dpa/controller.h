@@ -47,7 +47,6 @@ class controller : public rofl::crofbase,
   };
 
   std::unique_ptr<nbi> nb;
-  std::atomic<enum swi_flags> flags;
 
   controller(const controller &) = delete;
   controller &operator=(const controller &) = delete;
@@ -301,8 +300,6 @@ public:
 
   bool is_connected() noexcept override { return connected; }
 
-  int subscribe_to(enum swi_flags flags) noexcept override;
-
   /* tunnel */
   int tunnel_tenant_create(uint32_t tunnel_id, uint32_t vni) noexcept override;
   int tunnel_tenant_delete(uint32_t tunnel_id) noexcept override;
@@ -418,6 +415,8 @@ private:
                              rofl::openflow::cofmsg_packet_in &msg);
 
   void handle_bridging_table_rm(rofl::openflow::cofmsg_flow_removed &msg);
+
+  int subscribe_to() noexcept;
 }; // class controller
 
 } // end of namespace basebox

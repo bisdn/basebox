@@ -15,9 +15,6 @@ namespace basebox {
 class switch_interface {
 public:
   virtual ~switch_interface() = default;
-  enum swi_flags {
-    SWIF_ARP = 1 << 0,
-  };
 
   typedef enum {
     SAI_PORT_STAT_RX_PACKETS,
@@ -246,7 +243,6 @@ public:
 
   /* @ control  { */
   virtual int enqueue(uint32_t port_id, basebox::packet *pkt) noexcept = 0;
-  virtual int subscribe_to(enum swi_flags flags) noexcept = 0;
 
   virtual bool is_connected() noexcept = 0;
 
@@ -358,11 +354,5 @@ public:
   virtual int fdb_timeout(uint32_t port_id, uint16_t vid,
                           const rofl::caddress_ll &mac) noexcept = 0;
 };
-
-inline switch_interface::swi_flags operator|(switch_interface::swi_flags a,
-                                             switch_interface::swi_flags b) {
-  return static_cast<switch_interface::swi_flags>(static_cast<int>(a) |
-                                                  static_cast<int>(b));
-}
 
 } // namespace basebox
