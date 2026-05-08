@@ -53,6 +53,9 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 
   // set max queue size in rofl
   dpt.set_conn(rofl::cauxid(0)).set_txqueue_max_size(128 * 1024);
+  // set timeout limits
+  dpt.set_conn(rofl::cauxid(0)).set_timeout_echo(6);
+  dpt.set_conn(rofl::cauxid(0)).set_timeout_lifecheck(10);
 
   rofl::csockaddr raddr = dpt.set_conn(rofl::cauxid(0)).get_raddr();
   std::string buf;
