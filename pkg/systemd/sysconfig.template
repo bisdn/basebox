@@ -26,6 +26,12 @@
 #   0 = force unlimited
 # Default is auto.
 # FLAGS_rx_rate_limit=-1
+#
+# Set OpenFlow echo request timeout in seconds:
+# FLAGS_of_timeout_echo=6
+#
+# Set OpenFlow idle delay for sending echo requests:
+# FLAGS_of_timeout_lifecheck=10
 
 ### glog logging configuration
 #

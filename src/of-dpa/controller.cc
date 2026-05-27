@@ -24,6 +24,9 @@ DECLARE_bool(clear_switch_configuration);
 DECLARE_bool(use_knet);
 DECLARE_int32(rx_rate_limit);
 
+DECLARE_int32(of_timeout_echo);
+DECLARE_int32(of_timeout_lifecheck);
+
 namespace basebox {
 
 void controller::handle_conn_established(rofl::crofdpt &dpt,
@@ -53,6 +56,10 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
 
   // set max queue size in rofl
   dpt.set_conn(rofl::cauxid(0)).set_txqueue_max_size(128 * 1024);
+  // set timeout limits
+  dpt.set_conn(rofl::cauxid(0)).set_timeout_echo(FLAGS_of_timeout_echo);
+  dpt.set_conn(rofl::cauxid(0))
+      .set_timeout_lifecheck(FLAGS_of_timeout_lifecheck);
 
   rofl::csockaddr raddr = dpt.set_conn(rofl::cauxid(0)).get_raddr();
   std::string buf;

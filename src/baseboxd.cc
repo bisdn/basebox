@@ -27,6 +27,8 @@ DEFINE_int32(port_untagged_vid, 1,
 DEFINE_int32(
     rx_rate_limit, -1,
     "PPS limit for traffic to controller (-1 = auto, 0 = force unlimited)");
+DEFINE_int32(of_timeout_echo, 6, "timeout of sent echo requests");
+DEFINE_int32(of_timeout_lifecheck, 10, "delay of life check after last rx");
 
 static bool validate_port(const char *flagname, gflags::int32 value) {
   VLOG(3) << __FUNCTION__ << ": flagname=" << flagname << ", value=" << value;
@@ -67,8 +69,10 @@ int main(int argc, char **argv) {
   }
 
   // all variables can be set from env
-  FLAGS_tryfromenv = std::string("multicast,port,ofdpa_grpc_port,use_knet,mark_"
-                                 "fwd_offload,port_untagged_vid");
+  FLAGS_tryfromenv =
+      std::string("multicast,port,ofdpa_grpc_port,use_knet,mark_"
+                  "fwd_offload,port_untagged_vid,of_timeout_lifecheck,of_"
+                  "timeout_echo");
   gflags::SetUsageMessage("");
   gflags::SetVersionString(PROJECT_VERSION);
 
