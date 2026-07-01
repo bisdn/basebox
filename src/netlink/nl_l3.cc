@@ -1818,8 +1818,7 @@ int nl_l3::add_l3_unicast_route(rtnl_route *r, bool update_route) {
       VLOG(2) << __FUNCTION__ << ": got route " << route << " for dst "
               << rtnl_route_get_dst(r);
       if (rtnl_route_get_protocol(route) == RTPROT_KERNEL &&
-          nl_addr_cmp_prefix(rtnl_route_get_dst(r),
-                             rtnl_route_get_dst(route)) == 0) {
+          nl_addr_cmp(rtnl_route_get_dst(r), rtnl_route_get_dst(route)) == 0) {
         // we already have a kernel route for the same dst
         duplicate = true;
       }
@@ -1993,8 +1992,7 @@ int nl_l3::del_l3_unicast_route(rtnl_route *r, bool keep_route) {
       VLOG(2) << __FUNCTION__ << ": got route " << route << " for dst "
               << rtnl_route_get_dst(r);
       if (rtnl_route_get_protocol(route) == RTPROT_KERNEL &&
-          nl_addr_cmp_prefix(rtnl_route_get_dst(r),
-                             rtnl_route_get_dst(route)) == 0) {
+          nl_addr_cmp(rtnl_route_get_dst(r), rtnl_route_get_dst(route)) == 0) {
         // we have a kernel route for the same dst
         duplicate = true;
       }
