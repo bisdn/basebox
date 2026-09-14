@@ -18,6 +18,8 @@ DECLARE_string(tryfromenv); // from gflags
 DEFINE_bool(multicast, true, "Enable multicast support");
 DEFINE_int32(port, 6653, "Listening port");
 DEFINE_int32(ofdpa_grpc_port, 50051, "Listening port of ofdpa gRPC server");
+DEFINE_string(ofdpa_grpc_transport, "auto",
+              "ofdpa gRPC server transport (auto/tcp)");
 DEFINE_bool(use_knet, true, "Use KNET interfaces");
 DEFINE_bool(mark_fwd_offload, true, "Mark switched packets as offloaded");
 DEFINE_bool(clear_switch_configuration, true,
@@ -44,6 +46,13 @@ static bool validate_vid(const char *flagname, gflags::int32 value) {
   return false;
 }
 
+static bool validate_transport(const char *flagname, const std::string &value) {
+  VLOG(3) << __FUNCTION__ << ": flagname=" << flagname << ", value=" << value;
+  if (value == "auto" || value == "tcp") // value is ok
+    return true;
+  return false;
+}
+
 int main(int argc, char **argv) {
   using basebox::cnetlink;
   using basebox::controller;
@@ -63,16 +72,22 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  if (!gflags::RegisterFlagValidator(&FLAGS_ofdpa_grpc_transport,
+                                     &validate_transport)) {
+    std::cerr << "Failed to register transport validator" << std::endl;
+    exit(1);
+  }
+
   if (!gflags::RegisterFlagValidator(&FLAGS_port_untagged_vid, &validate_vid)) {
     std::cerr << "Failed to register vid validator" << std::endl;
     exit(1);
   }
 
   // all variables can be set from env
-  FLAGS_tryfromenv =
-      std::string("multicast,port,ofdpa_grpc_port,use_knet,mark_"
-                  "fwd_offload,port_untagged_vid,of_timeout_lifecheck,of_"
-                  "timeout_echo");
+  FLAGS_tryfromenv = std::string(
+      "multicast,port,ofdpa_grpc_port,ofdpa_grpc_transport,use_knet,mark_"
+      "fwd_offload,port_untagged_vid,of_timeout_lifecheck,of_"
+      "timeout_echo");
   gflags::SetUsageMessage("");
   gflags::SetVersionString(PROJECT_VERSION);
 
