@@ -27,6 +27,8 @@ DECLARE_int32(rx_rate_limit);
 DECLARE_int32(of_timeout_echo);
 DECLARE_int32(of_timeout_lifecheck);
 
+DECLARE_string(ofdpa_grpc_transport);
+
 namespace basebox {
 
 void controller::handle_conn_established(rofl::crofdpt &dpt,
@@ -80,7 +82,13 @@ void controller::handle_dpt_open(rofl::crofdpt &dpt) {
     return;
   }
 
-  std::string remote = buf + ":" + std::to_string(ofdpa_grpc_port);
+  std::string remote;
+
+  // use unix socket for localhost connections by default
+  if (FLAGS_ofdpa_grpc_transport == "auto" && buf == "127.0.0.1")
+    remote = "unix:/run/ofdpa-grpc.sock";
+  else
+    remote = buf + ":" + std::to_string(ofdpa_grpc_port);
 
   VLOG(1) << __FUNCTION__ << ": remote=" << remote;
 

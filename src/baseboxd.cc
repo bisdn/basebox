@@ -18,6 +18,7 @@ DECLARE_string(tryfromenv); // from gflags
 DEFINE_bool(multicast, true, "Enable multicast support");
 DEFINE_int32(port, 6653, "Listening port");
 DEFINE_int32(ofdpa_grpc_port, 50051, "Listening port of ofdpa gRPC server");
+DEFINE_string(ofdpa_grpc_transport, "auto", "ofdpa gRPC server transport (auto/tcp)");
 DEFINE_bool(use_knet, true, "Use KNET interfaces");
 DEFINE_bool(mark_fwd_offload, true, "Mark switched packets as offloaded");
 DEFINE_bool(clear_switch_configuration, true,
