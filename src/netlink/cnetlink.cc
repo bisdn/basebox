@@ -1448,7 +1448,8 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       // we only care if we attach a link that is backed by openflow,
       // i.e. a tap device, a bond with attached tap devices, or vxlan
       // interfaces
-      if (!is_switch_interface(base_link)) {
+      if (!is_switch_interface(base_link) &&
+          !(bridge && rtnl_link_is_vxlan(base_link))) {
         VLOG(1) << __FUNCTION__ << ": ignoring untracked interface "
                 << rtnl_link_get_name(link);
         break;
@@ -1487,8 +1488,11 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       LOG(INFO) << __FUNCTION__ << ": enslaving interface "
                 << rtnl_link_get_name(link);
 
-      if (rtnl_link_is_vxlan(base_link) && !new_bridge)
+      if (rtnl_link_is_vxlan(base_link) && !new_bridge) {
+        vxlan->create_vni(base_link);
         vxlan->create_endpoint(base_link, link);
+      }
+
       vlan->disable_vlans(link);
       bridge->add_interface(link);
 
@@ -1501,12 +1505,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     }
     break;
   case LT_VXLAN: {
-    int rv = vxlan->create_vni(link);
-
-    if (rv < 0) {
-      LOG(ERROR) << __FUNCTION__ << ": failed to create vni for link " << link;
-      break;
-    }
+    VLOG(1) << __FUNCTION__ << ": new vxlan interface " << link;
   } break;
   case LT_VLAN: {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << link;
@@ -1714,9 +1713,17 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   case LT_BRIDGE_SLAVE:
     try {
       if (bridge && bridge->is_bridge_interface(rtnl_link_get_master(link))) {
+        // get the base link instead of the bridged link object
+        rtnl_link *base_link = get_link(rtnl_link_get_ifindex(link), AF_UNSPEC);
+
         if (rtnl_link_get_family(link) == AF_BRIDGE) {
           bridge->delete_interface(link);
           vlan->enable_vlans(link);
+
+          if (rtnl_link_is_vxlan(base_link)) {
+            vxlan->delete_endpoint(link);
+            vxlan->remove_vni(link);
+          }
         }
       }
     } catch (std::exception &e) {
@@ -1735,15 +1742,7 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
     }
     break;
   case LT_VXLAN: {
-    int rv = vxlan->delete_endpoint(link);
-    // XXX TODO check
-    rv = vxlan->remove_vni(link);
-
-    if (rv < 0) {
-      LOG(WARNING) << __FUNCTION__ << ": could not remove vni represented by "
-                   << link;
-    }
-
+    VLOG(1) << __FUNCTION__ << ": removed vxlan interface " << link;
   } break;
   case LT_VLAN:
     VLOG(1) << __FUNCTION__ << ": removed vlan interface " << link;
