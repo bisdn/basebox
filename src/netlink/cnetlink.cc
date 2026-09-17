@@ -630,6 +630,8 @@ int cnetlink::add_l3_configuration(rtnl_link *link) {
 
   // add all ip addresses and routes from collected interfaces
   for (auto l : links) {
+    add_termination_mac(l);
+
     rv = add_l3_addresses(l);
     if (rv < 0)
       LOG(WARNING) << __FUNCTION__ << ": failed to add l3 addresses (" << rv
@@ -663,9 +665,62 @@ int cnetlink::remove_l3_configuration(rtnl_link *link) {
     if (rv < 0)
       LOG(WARNING) << __FUNCTION__ << ": failed to remove l3 addresses (" << rv
                    << " from link " << l;
+    remove_termination_mac(l);
   }
 
   return rv;
+}
+
+void cnetlink::add_termination_mac(rtnl_link *link) {
+  struct nl_addr *addr = rtnl_link_get_addr(link);
+  auto mac = rofl::caddress_ll((uint8_t *)nl_addr_get_binary_addr(addr),
+                               nl_addr_get_len(addr));
+  uint32_t port_id = get_port_id(link);
+  uint16_t vid = 0;
+  int rv;
+
+  if (rtnl_link_is_vlan(link))
+    vid = rtnl_link_vlan_get_id(link);
+
+  rv = swi->l3_termination_add(port_id, vid, mac);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__
+               << ": failed to setup termination mac port_id=" << port_id
+               << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
+  }
+
+  rv = swi->l3_termination_add_v6(port_id, vid, mac);
+  if (rv < 0) {
+    LOG(ERROR) << __FUNCTION__
+               << ": failed to setup v6 termination mac port_id=" << port_id
+               << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
+  }
+}
+
+void cnetlink::remove_termination_mac(rtnl_link *link) {
+  struct nl_addr *addr = rtnl_link_get_addr(link);
+  auto mac = rofl::caddress_ll((uint8_t *)nl_addr_get_binary_addr(addr),
+                               nl_addr_get_len(addr));
+  uint32_t port_id = get_port_id(link);
+  uint16_t vid = 0;
+  int rv;
+
+  if (rtnl_link_is_vlan(link))
+    vid = rtnl_link_vlan_get_id(link);
+
+  rv = swi->l3_termination_remove_v6(port_id, vid, mac);
+  if (rv < 0 && rv != -ENODATA) {
+    LOG(WARNING) << __FUNCTION__
+                 << ": failed to remove v6 termination mac port_id=" << port_id
+                 << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
+  }
+
+  rv = swi->l3_termination_remove(port_id, vid, mac);
+  if (rv < 0 && rv != -ENODATA) {
+    LOG(WARNING) << __FUNCTION__
+                 << ": failed to remove termination mac port_id=" << port_id
+                 << ", vid=" << vid << " mac=" << mac << "; rv=" << rv;
+  }
 }
 
 int cnetlink::update_on_mac_change(rtnl_link *old_link, rtnl_link *new_link) {
@@ -675,11 +730,8 @@ int cnetlink::update_on_mac_change(rtnl_link *old_link, rtnl_link *new_link) {
   struct nl_addr *old_mac = rtnl_link_get_addr(old_link);
   struct nl_addr *new_mac = rtnl_link_get_addr(new_link);
 
-  rv = l3->update_l3_termination(port_id, vid, old_mac, new_mac);
-  if (rv < 0)
-    VLOG(1) << __FUNCTION__
-            << ": failed to update termination MAC, old link=" << old_link
-            << " new link=" << new_link;
+  remove_termination_mac(old_link);
+  add_termination_mac(new_link);
 
   // In response to the MAC address change on the interface, linux deletes the
   // neighbors configured on the interface. We are tracking the state
@@ -1512,6 +1564,8 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
     VLOG(1) << __FUNCTION__ << ": new vlan interface " << link;
     uint16_t vid = rtnl_link_vlan_get_id(link);
     vlan->add_vlan(link, vid, true);
+    if (is_switch_interface(link))
+      add_termination_mac(link);
   } break;
   case LT_BOND: {
     VLOG(1) << __FUNCTION__ << ": new bond interface " << link;
@@ -1533,6 +1587,7 @@ void cnetlink::link_created(rtnl_link *link) noexcept {
       swi->port_set_move_learn(
           port_id, switch_interface::
                        SAI_BRIDGE_PORT_FDB_LEARNING_MODE_FDB_LOG_NOTIFICATION);
+      add_termination_mac(link);
     } else {
       LOG(WARNING) << __FUNCTION__ << ": ignoring link with lt=" << lt
                    << " link:" << link;
@@ -1732,6 +1787,7 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
       bridge = nullptr;
     } else {
       ignored_bridges.erase(rtnl_link_get_ifindex(link));
+      remove_termination_mac(link);
     }
     break;
   case LT_VXLAN: {
@@ -1748,6 +1804,8 @@ void cnetlink::link_deleted(rtnl_link *link) noexcept {
   case LT_VLAN:
     VLOG(1) << __FUNCTION__ << ": removed vlan interface " << link;
     vlan->remove_vlan(link, rtnl_link_vlan_get_id(link), true);
+    if (is_switch_interface(link))
+      remove_termination_mac(link);
     break;
   case LT_BOND: {
     VLOG(1) << __FUNCTION__ << ": removed bond interface " << link;
