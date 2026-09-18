@@ -3,6 +3,14 @@ Description=baseboxd
 After=network.target
 
 [Service]
+SystemCallFilter=@system-service
+SystemCallFilter=~@aio
+SystemCallFilter=~@chown
+SystemCallFilter=~@keyring
+SystemCallFilter=~@memlock
+SystemCallFilter=~@resources
+SystemCallFilter=~@setuid
+SystemCallFilter=~@sync
 Type=notify
 ExecStart=@bindir@/baseboxd
 ExecStopPost=@bindir@/baseboxd-knet-reset.py
