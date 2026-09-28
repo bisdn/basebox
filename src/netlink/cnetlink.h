@@ -146,7 +146,6 @@ private:
 
   int nl_proc_max;
   enum nl_state state;
-  std::deque<nl_obj> nl_objs;
 
   std::shared_ptr<port_manager> port_man;
   nl_bridge *bridge;
@@ -179,6 +178,8 @@ private:
   int handle_port_status_events();
   int handle_source_mac_learn();
   int handle_fdb_timeout();
+
+  void netlink_event_apply(const nl_obj &obj);
 
   void route_addr_apply(const nl_obj &obj);
   void route_link_apply(const nl_obj &obj);
