@@ -110,8 +110,18 @@ if not libsystemd.found()
   libsystemd = cppc.find_library('systemd')
 endif
 
-glog = dependency('glog', version: '>= 0.3.3', required: false)
-if not glog.found()
+glog = dependency('libglog', version: '>= 0.3.3', required: false)
+if glog.found()
+  # glog does not export its required flags, so guess them
+  if glog.version() >= '0.7.0'
+    add_global_arguments(
+      '-DGFLAGS_IS_A_DLL=0',
+      '-DGLOG_USE_GFLAGS',
+      '-DGLOG_USE_GLOG_EXPORT',
+      language: 'cpp',
+    )
+  endif
+else
   # find the lib without pkg-config
   glog = cppc.find_library('glog')
 endif
