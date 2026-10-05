@@ -9,6 +9,11 @@
 # gRPC listening port:
 # FLAGS_ofdpa_grpc_port=50051
 #
+# OF-DPA gRPC connection transport to use:
+#  auto = unix when local, tcp when remote
+#   tcp = force tcp even when local
+# FLAGS_ofdpa_grpc_transport=auto
+#
 # Use KNET interfaces:
 # FLAGS_use_knet=true
 #
