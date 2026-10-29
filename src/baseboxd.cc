@@ -125,8 +125,13 @@ int main(int argc, char **argv) {
   rofl::csockaddr baddr(AF_INET, std::string("0.0.0.0"), FLAGS_port);
   box->dpt_sock_listen(baddr);
 
-  basebox::ApiServer grpcConnector(box, port_man);
-  grpcConnector.runGRPCServer();
+  if (!FLAGS_use_knet || !have_knet) {
+    basebox::ApiServer grpcConnector(box, port_man);
+    grpcConnector.runGRPCServer();
+  } else {
+    // stats are available via netlink on KNET directly
+    VLOG(1) << __FUNCTION__ << ": bcm-knet available, not enabling gRPC server";
+  }
 
   LOG(INFO) << "bye";
   return EXIT_SUCCESS;
